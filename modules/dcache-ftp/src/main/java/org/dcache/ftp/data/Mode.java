@@ -533,7 +533,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      * Called by a Connection object when a new connection has been
      * established.
      */
-    abstract protected void newConnection(Multiplexer multiplexer,
+    protected abstract void newConnection(Multiplexer multiplexer,
                                           SocketChannel channel)
         throws IOException;
 

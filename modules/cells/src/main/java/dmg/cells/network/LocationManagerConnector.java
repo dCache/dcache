@@ -29,7 +29,7 @@ public class LocationManagerConnector
     extends CellAdapter
     implements Runnable
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger("org.dcache.cells.network");
 
     private final String _domain;

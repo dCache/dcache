@@ -10,15 +10,15 @@ public class  CellEvent {
     private final Object _source;
     private final int    _type;
 
-    public final static int EXCEPTION_EVENT = 1;
-    public final static int REMOVAL_EVENT = 2;
-    public final static int CELL_CREATED_EVENT = 3;
-    public final static int CELL_DIED_EVENT = 4;
-    public final static int CELL_EXPORTED_EVENT = 5;
-    public final static int CELL_UNEXPORTED_EVENT = 6;
-    public final static int CELL_ROUTE_ADDED_EVENT = 7;
-    public final static int CELL_ROUTE_DELETED_EVENT = 8;
-    public final static int OTHER_EVENT = 9;
+    public static final int EXCEPTION_EVENT = 1;
+    public static final int REMOVAL_EVENT = 2;
+    public static final int CELL_CREATED_EVENT = 3;
+    public static final int CELL_DIED_EVENT = 4;
+    public static final int CELL_EXPORTED_EVENT = 5;
+    public static final int CELL_UNEXPORTED_EVENT = 6;
+    public static final int CELL_ROUTE_ADDED_EVENT = 7;
+    public static final int CELL_ROUTE_DELETED_EVENT = 8;
+    public static final int OTHER_EVENT = 9;
 
     public CellEvent() {
        this(null, OTHER_EVENT);

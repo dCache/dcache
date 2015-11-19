@@ -14,7 +14,7 @@ public enum Transport {
     /** Encrypted transport, using SSL protocol (over TCP) */
     SSL;
 
-    static private final String COMMA_SEPARATED_LIST;
+    private static final String COMMA_SEPARATED_LIST;
 
     static {
         StringBuilder sb = new StringBuilder();
@@ -35,7 +35,7 @@ public enum Transport {
      * Provide the Transport that matches the given name. The name should be
      * provided by the {@link #getName} method.
      */
-    static public Transport transportFor( String name) {
+    public static Transport transportFor( String name) {
         for( Transport t : Transport.values()) {
             if( t.name().equalsIgnoreCase( name)) {
                 return t;

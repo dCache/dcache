@@ -87,7 +87,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
      * PaintInfo object that describes the different access methods for this
      * pool. Pools with the same PaintInfo are members of the same NAS.
      */
-    static protected class PaintInfo
+    protected static class PaintInfo
     {
         public static final String NAS_NAME_INACCESSIBLE = "inaccessible";
         public static final String NAS_NAME_TOO_LONG_PREFIX = "complex-";
@@ -262,7 +262,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
      * poolgroup, but with the restriction that every pool is a member of
      * precisely one NAS.
      */
-    static private class NasInfo
+    private static class NasInfo
     {
         private final SpaceInfo _spaceInfo = new SpaceInfo();
         private final Set<String> _pools = new HashSet<>();

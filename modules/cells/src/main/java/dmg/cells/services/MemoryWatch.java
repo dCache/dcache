@@ -16,7 +16,7 @@ import org.dcache.util.Args;
 
 public class MemoryWatch extends CellAdapter implements Runnable {
 
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(MemoryWatch.class);
 
    private CellNucleus _nucleus;

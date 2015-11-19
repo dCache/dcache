@@ -26,62 +26,62 @@ public interface PoolsDAO {
      * @param poolGroup poolgroup asked for containing pools
      * @return delivers a list of Pools in given pool group
      */
-    public Set<Pool> getPoolsOfPoolGroup(String poolGroup) throws DAOException;
+    Set<Pool> getPoolsOfPoolGroup(String poolGroup) throws DAOException;
 
     /**
      *
      * @return delivers a list of Pools in dCache
      */
-    public Set<Pool> getPools() throws DAOException;
+    Set<Pool> getPools() throws DAOException;
 
     /**
      *
      * @return delivers a list of names of all Poolgroups in dCache
      */
-    public Set<String> getPoolGroupNames() throws DAOException;
+    Set<String> getPoolGroupNames() throws DAOException;
 
     /**
      *
      * @return delivers a list of Poolgroups in dCache
      */
-    public Set<SelectionPoolGroup> getPoolGroups() throws DAOException;
+    Set<SelectionPoolGroup> getPoolGroups() throws DAOException;
 
     /**
      * @param poolName asking for poolgroups this pool is member of
      * @return delivers a list of Poolgroups the asked pool is member of
      */
-    public Set<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) throws DAOException;
+    Set<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) throws DAOException;
 
     /**
      *
      * @return delivers a list of all Links in dCache
      */
-    public Set<SelectionLink> getLinks() throws DAOException;
+    Set<SelectionLink> getLinks() throws DAOException;
 
     /**
      *
      * @return delivers a list of all Units in dCache
      */
-    public Set<SelectionUnit> getUnits() throws DAOException;
+    Set<SelectionUnit> getUnits() throws DAOException;
 
     /**
      *
      * @return delivers a list of all Unit Groups in dCache
      */
-    public Set<SelectionUnitGroup> getUnitGroups() throws DAOException;
+    Set<SelectionUnitGroup> getUnitGroups() throws DAOException;
 
     /**
      * @param poolGroup asking for links pointing to this poolgroup
      * @return delivers a list of Links pointing to given poolgroupname
      */
-    public Set<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws DAOException;
+    Set<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws DAOException;
 
     /**
      * @return delivers a list of pool preferences that match the supplied values
      */
-    public PoolPreferenceLevel[] match(DirectionType type, String netUnitName,
-            String protocolUnitName, String hsm, String storageClass,
-            String linkGroupName) throws DAOException;
+    PoolPreferenceLevel[] match(DirectionType type, String netUnitName,
+                                String protocolUnitName, String hsm, String storageClass,
+                                String linkGroupName) throws DAOException;
 
     /**
      *
@@ -89,12 +89,12 @@ public interface PoolsDAO {
      * @param poolMode mode to change to
      * @param userName user who calls the method
      */
-    public void changePoolMode(Set<String> poolIds, PoolV2Mode poolMode, String userName)
+    void changePoolMode(Set<String> poolIds, PoolV2Mode poolMode, String userName)
             throws DAOException;
 
     /**
      * @return returns a Map with name of the Partition as key and the Partition
      * itself as a value
      */
-    public Map<String, Partition> getPartitions() throws DAOException;
+    Map<String, Partition> getPartitions() throws DAOException;
 }

@@ -1027,7 +1027,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             return mode;
         }
     }
-    abstract protected  class PnfsSessionHandler  extends SessionHandler  {
+    protected abstract class PnfsSessionHandler  extends SessionHandler  {
 
         protected String       _path;
         protected FileAttributes _fileAttributes;
@@ -1187,7 +1187,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             fileAttributesAvailable();
         }
 
-        abstract protected void fileAttributesAvailable();
+        protected abstract void fileAttributesAvailable();
 
         protected boolean fileAttributesNotAvailable() throws CacheException
         {

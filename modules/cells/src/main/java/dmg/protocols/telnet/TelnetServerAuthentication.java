@@ -4,8 +4,8 @@ import java.net.InetAddress;
 
 public interface TelnetServerAuthentication {
 
-     public boolean isHostOk( InetAddress host ) ;
-     public boolean isUserOk( InetAddress host , String user ) ;
-     public boolean isPasswordOk( InetAddress host , String user , String passwd );
+     boolean isHostOk(InetAddress host) ;
+     boolean isUserOk(InetAddress host, String user) ;
+     boolean isPasswordOk(InetAddress host, String user, String passwd);
 
 }

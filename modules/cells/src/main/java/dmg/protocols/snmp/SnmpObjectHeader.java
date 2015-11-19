@@ -117,7 +117,7 @@ class SnmpObjectHeader {
       }
       return _codedLength = ( off - offIn ) ;
    }
-   static public String snmpCodeToString( int code ){
+   public static String snmpCodeToString(int code ){
      String s ;
      switch( code ){
        case INTEGER            : s = "Integer" ; break ;
@@ -139,7 +139,7 @@ class SnmpObjectHeader {
      }
      return s ;
    }
-   static public String _print( byte [] b , int off , int len ){
+   public static String _print(byte [] b , int off , int len ){
       int x ;
       StringBuilder sb = new StringBuilder() ;
       

@@ -12,5 +12,5 @@ public interface PluginCaller<T extends GPlazmaPlugin> {
      * @param plugin
      * @throws AuthenticationException
      */
-    public void call(GPlazmaPluginService<T> plugin) throws AuthenticationException;
+    void call(GPlazmaPluginService<T> plugin) throws AuthenticationException;
 }

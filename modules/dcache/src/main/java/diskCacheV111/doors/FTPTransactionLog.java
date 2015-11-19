@@ -37,7 +37,7 @@ import java.net.InetAddress;
 
 public class	FTPTransactionLog
 {
-        private final static Logger _log =
+        private static final Logger _log =
             LoggerFactory.getLogger(FTPTransactionLog.class);
 
 	private FileWriter LWriter;

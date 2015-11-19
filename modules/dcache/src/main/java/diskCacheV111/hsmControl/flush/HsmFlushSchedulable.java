@@ -21,13 +21,13 @@ public interface HsmFlushSchedulable {
        * the HsmFlushController.
        *
        */
-     public void init() ;
+     void init() ;
      /**
        * Is called if the driver should be prepare for unload. The routine
        * shouldn't return until all resources are returned.
        *
        */
-     public void prepareUnload() ;
+     void prepareUnload() ;
      /**
        * Is called after a pool reported a flush process to be finished.
        *
@@ -35,26 +35,26 @@ public interface HsmFlushSchedulable {
        * @param storageClassName Name of the storage class which finished the flush process.
        * @param flushInfo Detailed information on the storage class of this pool.
        */
-     public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo ) ;
+     void flushingDone(String poolName, String storageClassName, HsmFlushControlCore.FlushInfo flushInfo) ;
      /**
        * Is called whenever new information arrived from a pool.
        *
        * @param poolName Name of the pool which finished the flush process.
        * @param pool Detailed information on the pool.
        */
-     public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ) ;
+     void poolFlushInfoUpdated(String poolName, HsmFlushControlCore.Pool pool) ;
      /**
        * Is called whenever a 'driver command' was issued from within the HsmFlushController.
        *
        * @param poolName Name of the pool which finished the flush process.
        * @param args Detailed information on the pool.
        */
-     public void command( Args args ) ;
+     void command(Args args) ;
      /**
        * Is called whenever the pool setup was updated. This is usually the case if
        * 'configured pools' become active resp. inactive.
        */
-     public void poolSetupUpdated() ;
+     void poolSetupUpdated() ;
      /**
        * Is called whenever the properties (resp. parameters) of the driver is
        * supposed to change or it may be used to query the current status of
@@ -67,28 +67,28 @@ public interface HsmFlushSchedulable {
        * If the arriving property map is empty this call is equivalent to a
        * properties query.
        */
-     public void propertiesUpdated( Map<String,Object> properties ) ;
+     void propertiesUpdated(Map<String, Object> properties) ;
      /**
        * Is frequently called.
        */
-     public void timer() ;
+     void timer() ;
      /**
        * Is called the driver should reset its status as if it would have been
        * newly loaded.
        */
-     public void reset() ;
+     void reset() ;
      /**
        * Called on adding a pool.
        *
        * @param poolName Name of the pool which was added.
        */
-     public void configuredPoolAdded( String poolName ) ;
+     void configuredPoolAdded(String poolName) ;
      /**
        * Called on removing a pool.
        *
        * @param poolName Name of the pool which was removed.
        */
-     public void configuredPoolRemoved( String poolName ) ;
+     void configuredPoolRemoved(String poolName) ;
      /**
        * Called whenever the I/O mode of a pool might have changed. (From readOnly to readWrite or
        * vise versa). It might happen that the method is called although the
@@ -97,6 +97,6 @@ public interface HsmFlushSchedulable {
        * @param poolName Name of the pool which was removed.
        * @param pool Detailed information on the pool.
        */
-     public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ) ;
+     void poolIoModeUpdated(String poolName, HsmFlushControlCore.Pool pool) ;
 
 }

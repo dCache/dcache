@@ -20,7 +20,7 @@ import org.dcache.util.Args;
 
 public class BatchCell extends CellAdapter implements Runnable
 {
-    private final static Logger _log = LoggerFactory.getLogger(BatchCell.class);
+    private static final Logger _log = LoggerFactory.getLogger(BatchCell.class);
 
     private final Reader _in;
     private final String _source;

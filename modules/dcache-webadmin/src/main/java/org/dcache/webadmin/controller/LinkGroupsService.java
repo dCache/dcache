@@ -12,5 +12,5 @@ import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
  */
 public interface LinkGroupsService {
 
-    public List<LinkGroupBean> getLinkGroups() throws LinkGroupsServiceException;
+    List<LinkGroupBean> getLinkGroups() throws LinkGroupsServiceException;
 }

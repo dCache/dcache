@@ -155,7 +155,7 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
     /*
      * struct passwd equivalent  as defined in <pwd.h>
      */
-    static public class __password extends Structure {
+    public static class __password extends Structure {
 
         public String name;
         public String passwd;
@@ -169,7 +169,7 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
     /*
      * struct group equivalent as defined in <pwd.h>
      */
-    static public class __group extends Structure {
+    public static class __group extends Structure {
 
         public String name;
         public String passwd;

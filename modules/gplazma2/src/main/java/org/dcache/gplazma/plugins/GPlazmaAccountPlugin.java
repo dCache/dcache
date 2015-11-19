@@ -12,6 +12,6 @@ import org.dcache.gplazma.AuthenticationException;
  *  - rejecting users with illegal or non-authorized principal sets
  */
 public interface GPlazmaAccountPlugin extends GPlazmaPlugin {
-    public void account(Set<Principal> authorizedPrincipals)
+    void account(Set<Principal> authorizedPrincipals)
                 throws AuthenticationException;
 }

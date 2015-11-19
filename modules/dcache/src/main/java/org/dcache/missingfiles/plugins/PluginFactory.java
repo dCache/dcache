@@ -13,7 +13,7 @@ public interface PluginFactory
      *  The name of the plugin, as used by the dCache adminstrator to
      *  configure the list of active plugins.
      */
-    public String getName();
+    String getName();
 
 
     /**
@@ -21,6 +21,6 @@ public interface PluginFactory
      *  collection of keyword-value pairs taken from the dCache
      *  configuration.
      */
-    public Plugin createPlugin(ConfigurationProperties properties);
+    Plugin createPlugin(ConfigurationProperties properties);
 
 }

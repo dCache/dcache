@@ -107,13 +107,13 @@ package org.dcache.srm;
  */
 public interface PrepareToPutInSpaceCallbacks {
     
-    public void GetStorageInfoFailed(String reason);
+    void GetStorageInfoFailed(String reason);
     
-    public void StorageInfoArrived(String fileId);
+    void StorageInfoArrived(String fileId);
     
-    public void Exception(Exception e);
+    void Exception(Exception e);
     
-    public void Timeout();
+    void Timeout();
     
-    public void Error(String error);
+    void Error(String error);
 }

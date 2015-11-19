@@ -12,11 +12,11 @@ public interface ConfigurationLoadingStrategy
     /**
      * @return latest configuration
      */
-    public Configuration load() throws GPlazmaInternalException;
+    Configuration load() throws GPlazmaInternalException;
 
     /**
      * @return true if the configuration has been updated since the load method
      * has been called last time
      */
-    public boolean hasUpdated();
+    boolean hasUpdated();
 }

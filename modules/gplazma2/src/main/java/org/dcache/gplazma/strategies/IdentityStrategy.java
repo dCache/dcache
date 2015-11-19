@@ -14,6 +14,6 @@ import org.dcache.gplazma.plugins.GPlazmaIdentityPlugin;
 public interface IdentityStrategy
                  extends GPlazmaStrategy<GPlazmaIdentityPlugin> {
 
-    public Principal map(Principal principal) throws NoSuchPrincipalException;
-    public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException;
+    Principal map(Principal principal) throws NoSuchPrincipalException;
+    Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException;
 }

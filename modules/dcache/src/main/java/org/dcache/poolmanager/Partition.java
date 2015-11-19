@@ -62,7 +62,7 @@ import static com.google.common.collect.Maps.filterValues;
  *
  * The class is thread safe.
  */
-abstract public class Partition implements Serializable
+public abstract class Partition implements Serializable
 {
     private static final long serialVersionUID = -4195341006626972862L;
 
@@ -151,7 +151,7 @@ abstract public class Partition implements Serializable
      * Advanced implementations may choose to preserve additional
      * state that isn't captured by configuraton parameters.
      */
-    abstract protected Partition create(Map<String,String> inherited,
+    protected abstract Partition create(Map<String,String> inherited,
                                         Map<String,String> defined);
 
     /**
@@ -335,7 +335,7 @@ abstract public class Partition implements Serializable
      * Returns the short name of the partitions type. Must correspond
      * to the short name used by the Partition's factory.
      */
-    abstract public String getType();
+    public abstract String getType();
 
     /**
      * Selects a pool for writing among a set of pools. May modify
@@ -343,7 +343,7 @@ abstract public class Partition implements Serializable
      *
      * An implementation cannot rely on any file attributes being defined.
      */
-    abstract public PoolInfo
+    public abstract PoolInfo
         selectWritePool(CostModule cm,
                         List<PoolInfo> pools,
                         FileAttributes attributes,
@@ -357,7 +357,7 @@ abstract public class Partition implements Serializable
      * An implementation cannot rely on any file attributes other than
      * PNFS id, storage info and locations being defined.
      */
-    abstract public PoolInfo
+    public abstract PoolInfo
         selectReadPool(CostModule cm,
                        List<PoolInfo> pools,
                        FileAttributes attributes)
@@ -370,7 +370,7 @@ abstract public class Partition implements Serializable
      * An implementation cannot rely on any file attributes other than
      * PNFS id, storage info and locations being defined.
      */
-    abstract public P2pPair
+    public abstract P2pPair
         selectPool2Pool(CostModule cm,
                         List<PoolInfo> src,
                         List<PoolInfo> dst,
@@ -385,7 +385,7 @@ abstract public class Partition implements Serializable
      * An implementation cannot rely on any file attributes other than
      * PNFS id, storage info and locations being defined.
      */
-    abstract public PoolInfo selectStagePool(CostModule cm,
+    public abstract PoolInfo selectStagePool(CostModule cm,
                                              List<PoolInfo> pools,
                                              String previousPool,
                                              String previousHost,

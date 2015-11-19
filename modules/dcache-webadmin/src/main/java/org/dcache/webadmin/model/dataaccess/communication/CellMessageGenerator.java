@@ -13,22 +13,22 @@ import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.C
  */
 public interface CellMessageGenerator<M extends Serializable> extends Iterable<CellMessageRequest<M>> {
 
-    public int getNumberOfMessages();
+    int getNumberOfMessages();
 
     interface CellMessageRequest<M> {
 
-        public M getPayload();
+        M getPayload();
 
-        public Class<M> getPayloadType();
+        Class<M> getPayloadType();
 
-        public boolean isSuccessful();
+        boolean isSuccessful();
 
-        public void setSuccessful(boolean successful);
+        void setSuccessful(boolean successful);
 
-        public CellPath getDestination();
+        CellPath getDestination();
 
-        public void setAnswer(Serializable answer);
+        void setAnswer(Serializable answer);
 
-        public M getAnswer();
+        M getAnswer();
     }
 }

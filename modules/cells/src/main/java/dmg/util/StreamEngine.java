@@ -15,39 +15,39 @@ public interface StreamEngine {
      *
      * @return {@link Subject} associated with the connections
      */
-   public Subject    getSubject() ;
+    Subject    getSubject() ;
 
    /**
     *
     * @return Socket object associated with the connections
     */
-   public Socket      getSocket() ;
+   Socket      getSocket() ;
 
    /**
     *
     * @return local InetAddress
     */
-   public InetAddress getLocalAddress();
+   InetAddress getLocalAddress();
 
    /**
     *
     * @return remote InetAddress
     */
-   public InetAddress getInetAddress() ;
+   InetAddress getInetAddress() ;
 
    /**
     *
     * @return socket input stream
     */
-   public InputStream getInputStream() ;
+   InputStream getInputStream() ;
 
    /**
     *
     * @return return socket output stream
     */
-   public OutputStream getOutputStream() ;
-   public Reader       getReader() ;
-   public Writer       getWriter() ;
+   OutputStream getOutputStream() ;
+   Reader       getReader() ;
+   Writer       getWriter() ;
 
     /** Returns the terminal type (vt100, vt220, etc). */
     String getTerminalType();

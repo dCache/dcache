@@ -11,7 +11,7 @@ import org.dcache.webadmin.view.beans.UserBean;
  */
 public interface LogInService {
 
-    public UserBean authenticate(String username, char[] password) throws LogInServiceException;
+    UserBean authenticate(String username, char[] password) throws LogInServiceException;
 
-    public UserBean authenticate(X509Certificate[] certChain) throws LogInServiceException;
+    UserBean authenticate(X509Certificate[] certChain) throws LogInServiceException;
 }

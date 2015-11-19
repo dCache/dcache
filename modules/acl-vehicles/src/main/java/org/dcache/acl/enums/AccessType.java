@@ -23,7 +23,7 @@ public enum AccessType {
 
     private final int _value;
 
-    private AccessType(int value) {
+    AccessType(int value) {
         _value = value;
     }
 

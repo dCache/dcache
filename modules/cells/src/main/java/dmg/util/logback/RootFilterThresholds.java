@@ -8,7 +8,7 @@ import ch.qos.logback.classic.Level;
  */
 public abstract class RootFilterThresholds
 {
-    private final static FilterThresholdSet _instance =
+    private static final FilterThresholdSet _instance =
         new FilterThresholdSet();
 
     public static FilterThresholdSet getInstance()

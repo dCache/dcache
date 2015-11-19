@@ -105,7 +105,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author  timur
  */
 public final class GetRequest extends ContainerRequest<GetFileRequest> {
-    private final static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
     protected final String[] protocols;

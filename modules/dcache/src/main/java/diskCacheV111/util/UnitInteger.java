@@ -2,11 +2,11 @@ package diskCacheV111.util ;
 
 public class UnitInteger {
 
-    private final static String INFINITY = "Infinity";
-    private final static long TEBI = (1L << 40);
-    private final static long GIBI = (1L << 30);
-    private final static long MEBI = (1L << 20);
-    private final static long KIBI = (1L << 10);
+    private static final String INFINITY = "Infinity";
+    private static final long TEBI = (1L << 40);
+    private static final long GIBI = (1L << 30);
+    private static final long MEBI = (1L << 20);
+    private static final long KIBI = (1L << 10);
 
     private long _value;
     public UnitInteger( long value ){

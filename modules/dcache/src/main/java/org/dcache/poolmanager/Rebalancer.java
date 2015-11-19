@@ -26,10 +26,10 @@ import org.dcache.util.Args;
 public class Rebalancer
     implements CellCommandListener
 {
-    private final static String JOB_NAME = "rebalance";
+    private static final String JOB_NAME = "rebalance";
 
-    private final static String METRIC_RELATIVE = "relative";
-    private final static String METRIC_FREE_COST = "free";
+    private static final String METRIC_RELATIVE = "relative";
+    private static final String METRIC_FREE_COST = "free";
 
     private PoolSelectionUnit _psu;
     private CostModule _cm;
@@ -60,9 +60,9 @@ public class Rebalancer
         }
     }
 
-    public final static String hh_rebalance_pgroup =
+    public static final String hh_rebalance_pgroup =
         "[-metric=relative|free] [-refresh=<period>] <pgroup>";
-    public final static String fh_rebalance_pgroup =
+    public static final String fh_rebalance_pgroup =
         "Moves files between pools of a pool group to balance space usage.\n\n" +
 
         "A migration job will be submitted to each pool in the pool group.\n" +
@@ -170,9 +170,9 @@ public class Rebalancer
             Joiner.on(", ").join(names) + ".";
     }
 
-    public final static String hh_rebalance_cancel_pgroup =
+    public static final String hh_rebalance_cancel_pgroup =
         "<pgroup>";
-    public final static String fh_rebalance_cancel_pgroup =
+    public static final String fh_rebalance_cancel_pgroup =
         "Cancels migration jobs created by the rebalancer.";
     public String ac_rebalance_cancel_pgroup_$_1(Args args)
         throws CacheException, InterruptedException

@@ -8,5 +8,5 @@ import org.dcache.webadmin.model.exceptions.DataGatheringException;
  */
 public interface XMLDataGatherer {
 
-    public String getXML() throws DataGatheringException;
+    String getXML() throws DataGatheringException;
 }

@@ -29,7 +29,7 @@ public enum AccessLatency {
      * @param name
      * @return the corresponding AccessLatency, if valid, null otherwise.
      */
-    static public AccessLatency parseStringValue(String name) {
+    public static AccessLatency parseStringValue(String name) {
         for (AccessLatency accessLatency : AccessLatency.values()) {
             if (accessLatency.getName().equals(name)) {
                 return accessLatency;

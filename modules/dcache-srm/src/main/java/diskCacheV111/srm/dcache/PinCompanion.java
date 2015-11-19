@@ -107,10 +107,10 @@ import static diskCacheV111.util.CacheException.*;
 
 public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(PinCompanion.class);
 
-    public final static String DISK_PIN_ID =
+    public static final String DISK_PIN_ID =
         "disk";
 
     private final Subject _subject;

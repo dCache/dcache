@@ -9,16 +9,16 @@ import java.util.Map;
   */
 public interface HttpRequest {
 
-    public Map<String,String> getRequestAttributes() ;
-    public OutputStream getOutputStream() ;
-    public PrintWriter  getPrintWriter() ;
-    public String []    getRequestTokens() ;
-    public int          getRequestTokenOffset() ;
-    public String getParameter(String parameter);
-    public boolean      isDirectory() ;
-    public void         printHttpHeader( int size ) ;
-    public boolean isAuthenticated();
-    public String getUserName();
-    public String getPassword();
-    public void    setContentType( String type ) ;
+    Map<String,String> getRequestAttributes() ;
+    OutputStream getOutputStream() ;
+    PrintWriter  getPrintWriter() ;
+    String []    getRequestTokens() ;
+    int          getRequestTokenOffset() ;
+    String getParameter(String parameter);
+    boolean      isDirectory() ;
+    void         printHttpHeader(int size) ;
+    boolean isAuthenticated();
+    String getUserName();
+    String getPassword();
+    void    setContentType(String type) ;
 }

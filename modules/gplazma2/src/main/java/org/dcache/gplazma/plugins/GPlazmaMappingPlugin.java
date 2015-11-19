@@ -15,6 +15,6 @@ import org.dcache.gplazma.AuthenticationException;
  */
 public interface GPlazmaMappingPlugin extends GPlazmaPlugin
 {
-    public void map(Set<Principal> principals)
+    void map(Set<Principal> principals)
         throws AuthenticationException;
 }

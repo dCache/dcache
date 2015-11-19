@@ -10,7 +10,7 @@ public class ReservationInfo
     {
         ONLINE("ONLINE"), NEARLINE("NEARLINE"), OFFLINE("OFFLINE");
 
-        final private String _metricValue;
+        private final String _metricValue;
 
         AccessLatency(String metricValue)
         {
@@ -29,7 +29,7 @@ public class ReservationInfo
          * @param metricValue
          * @return the corresponding AccessLatency, if valid, null otherwise.
          */
-        static public AccessLatency parseMetricValue(String metricValue)
+        public static AccessLatency parseMetricValue(String metricValue)
         {
             for (AccessLatency al : AccessLatency.values()) {
                 if (al.getMetricValue().equals(metricValue)) {
@@ -44,7 +44,7 @@ public class ReservationInfo
     {
         REPLICA("REPLICA"), OUTPUT("OUTPUT"), CUSTODIAL("CUSTODIAL");
 
-        final private String _metricValue;
+        private final String _metricValue;
 
         RetentionPolicy(String metricValue)
         {
@@ -64,7 +64,7 @@ public class ReservationInfo
          * @return the corresponding RetentionPolicy, if valid, null
          *         otherwise.
          */
-        static public RetentionPolicy parseMetricValue(String metricValue) {
+        public static RetentionPolicy parseMetricValue(String metricValue) {
             for (RetentionPolicy rp : RetentionPolicy.values()) {
                 if (rp.getMetricValue().equals(metricValue)) {
                     return rp;
@@ -78,8 +78,8 @@ public class ReservationInfo
         RESERVED("RESERVED", false), RELEASED("RELEASED", true),
         EXPIRED("EXPIRED", true);
 
-        final private String _metricValue;
-        final private boolean _isFinalState;
+        private final String _metricValue;
+        private final boolean _isFinalState;
 
         State(String metricValue, boolean isFinalState) {
             _metricValue = metricValue;
@@ -101,7 +101,7 @@ public class ReservationInfo
          * @param metricValue
          * @return the corresponding State, if valid, null otherwise.
          */
-        static public State parseMetricValue(String metricValue)
+        public static State parseMetricValue(String metricValue)
         {
             for (State state : State.values()) {
                 if (state.getMetricValue().equals(metricValue)) {
@@ -115,7 +115,7 @@ public class ReservationInfo
     private RetentionPolicy _rp;
     private AccessLatency _al;
     private State _state;
-    final private String _id;
+    private final String _id;
     private long _lifetime;
     private boolean _haveLifetime;
     private String _description;

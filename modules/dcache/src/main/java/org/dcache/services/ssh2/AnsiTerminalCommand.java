@@ -52,7 +52,7 @@ import static org.fusesource.jansi.Ansi.Color.RED;
 
 public class AnsiTerminalCommand implements Command, Runnable {
 
-    private final static Logger _logger =
+    private static final Logger _logger =
         LoggerFactory.getLogger(AnsiTerminalCommand.class);
     private static final int HISTORY_SIZE = 50;
     private UserAdminShell _userAdminShell;

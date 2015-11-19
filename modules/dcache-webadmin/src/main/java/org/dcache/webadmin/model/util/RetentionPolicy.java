@@ -29,7 +29,7 @@ public enum RetentionPolicy {
      * @param name
      * @return the corresponding RetentionPolicy, if valid, null otherwise.
      */
-    static public RetentionPolicy parseStringValue(String name) {
+    public static RetentionPolicy parseStringValue(String name) {
         for (RetentionPolicy policy : RetentionPolicy.values()) {
             if (policy.getName().equals(name)) {
                 return policy;

@@ -112,7 +112,7 @@ public interface SpaceManagerDatabase
     int remove(FileCriterion criterion);
 
     /** Selection criterion for link groups. */
-    public interface LinkGroupCriterion
+    interface LinkGroupCriterion
     {
         LinkGroupCriterion whereUpdateTimeAfter(long latestLinkGroupUpdateTime);
 
@@ -126,7 +126,7 @@ public interface SpaceManagerDatabase
     }
 
     /** Selection criterion for space reservations. */
-    public interface SpaceCriterion
+    interface SpaceCriterion
     {
         SpaceCriterion whereStateIsIn(SpaceState... state);
 
@@ -158,7 +158,7 @@ public interface SpaceManagerDatabase
     }
 
     /** Selection criterion for file reservations. */
-    public interface FileCriterion
+    interface FileCriterion
     {
         FileCriterion whereGroupMatches(Glob group);
 

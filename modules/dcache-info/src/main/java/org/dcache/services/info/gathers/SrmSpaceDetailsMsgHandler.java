@@ -25,7 +25,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler
     private static final StatePath LINKGROUPS = new StatePath("linkgroups");
     private static final String SRM_ROLE_WILDCARD = "*";
 
-    final private StateUpdateManager _sum;
+    private final StateUpdateManager _sum;
 
     public SrmSpaceDetailsMsgHandler(StateUpdateManager sum)
     {

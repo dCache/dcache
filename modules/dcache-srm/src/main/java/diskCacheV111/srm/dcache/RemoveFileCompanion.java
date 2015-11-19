@@ -105,7 +105,7 @@ public class RemoveFileCompanion
     private static Logger _log =
         LoggerFactory.getLogger(RemoveFileCompanion.class);
 
-    private final static CellPath BILLING_PATH = new CellPath("billing");
+    private static final CellPath BILLING_PATH = new CellPath("billing");
 
     private final Subject _subject;
     private final RemoveFileCallback _callback;

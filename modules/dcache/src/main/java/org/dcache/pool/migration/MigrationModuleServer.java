@@ -56,7 +56,7 @@ public class MigrationModuleServer
     extends AbstractCellComponent
     implements CellMessageReceiver
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(MigrationModuleServer.class);
 
     private Map<UUID, Request> _requests = new ConcurrentHashMap<>();

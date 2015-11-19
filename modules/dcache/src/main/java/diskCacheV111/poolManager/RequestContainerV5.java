@@ -325,7 +325,7 @@ public class RequestContainerV5
             .println(_maxRestore<0?"unlimited":(""+_maxRestore));
     }
 
-    public final static String hh_rc_set_sameHostCopy =
+    public static final String hh_rc_set_sameHostCopy =
         STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED;
     public String ac_rc_set_sameHostCopy_$_1(Args args)
     {
@@ -333,7 +333,7 @@ public class RequestContainerV5
         return "";
     }
 
-    public final static String hh_rc_set_sameHostRetry =
+    public static final String hh_rc_set_sameHostRetry =
         STRING_NEVER+"|"+STRING_BESTEFFORT+"|"+STRING_NOTCHECKED;
     public String ac_rc_set_sameHostRetry_$_1(Args args)
     {

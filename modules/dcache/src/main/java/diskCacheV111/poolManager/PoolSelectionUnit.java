@@ -24,27 +24,27 @@ public interface PoolSelectionUnit  {
      *      ANY   - any of above
      * </pre>
      */
-    public enum DirectionType {
+    enum DirectionType {
         READ,
         WRITE,
         CACHE,
         P2P,
         ANY,
     }
-    public interface SelectionEntity {
+    interface SelectionEntity {
 
-        public String getName();
+        String getName();
     }
-   public interface SelectionLink extends SelectionEntity{
+   interface SelectionLink extends SelectionEntity{
       /**
        * Get a defensive copy of the pools defined accessible through this link.
        * @return collection of pools
        */
-      public Collection<SelectionPool> getPools() ;
-      public String  getTag() ;
-      public LinkReadWritePreferences getPreferences();
-      public Collection<SelectionPoolGroup> getPoolGroupsPointingTo();
-      public Collection<SelectionUnitGroup> getUnitGroupsTargetedBy();
+      Collection<SelectionPool> getPools() ;
+      String  getTag() ;
+      LinkReadWritePreferences getPreferences();
+      Collection<SelectionPoolGroup> getPoolGroupsPointingTo();
+      Collection<SelectionUnitGroup> getUnitGroupsTargetedBy();
    }
 
     /**
@@ -52,21 +52,21 @@ public interface PoolSelectionUnit  {
      * updated periodically. Due to the distributed nature of dCache,
      * the information may be outdated.
      */
-    public interface SelectionPool extends SelectionEntity
+    interface SelectionPool extends SelectionEntity
     {
 
         /**
          * Returns the time in milliseconds since the last heartbeat
          * from the pool.
          */
-        public long    getActive();
+        long    getActive();
 
         /**
          * Sets whether the pool is active or not. This is also used to
          * deliver a hearbeat, i.e. calling this method with an
          * argument of 'true' will reset the heartbeat counter.
          */
-        public void    setActive(boolean active);
+        void    setActive(boolean active);
 
         /**
          * Returns true if the pool has been marked as read-only in the
@@ -74,23 +74,23 @@ public interface PoolSelectionUnit  {
          * the pool can actually write, as there are other places that
          * a pool can be marked read-only.
          */
-        public boolean isReadOnly();
+        boolean isReadOnly();
         /**
          * Sets the read-only flag.
          */
-        public void    setReadOnly(boolean rdOnly);
+        void    setReadOnly(boolean rdOnly);
 
         /**
          * Returns true if the pool is enabled. This is the case if no
          * operations of the pool have been disabled.
          */
-        public boolean isEnabled() ;
+        boolean isEnabled() ;
 
         /**
          * Sets the ID of the pool. Used to detect when a pool was
          * restarted. Returns true if and only if the serial ID was changed.
          */
-        public boolean setSerialId(long serialId);
+        boolean setSerialId(long serialId);
 
         /**
          * Returns true if the pool is marked as active. This is
@@ -98,61 +98,61 @@ public interface PoolSelectionUnit  {
          * the last five minutes. Notice that this is unrelated to
          * isEnabled(), e.g., a disabled pool can be active.
          */
-        public boolean isActive();
+        boolean isActive();
 
         /**
          * Sets the pool mode. The pool mode defines which operations
          * are enabled at the pool.
          */
-        public void setPoolMode(PoolV2Mode mode);
+        void setPoolMode(PoolV2Mode mode);
 
         /**
          * Returns the pool mode.
          *
          * @see setPoolMode
          */
-        public PoolV2Mode getPoolMode();
+        PoolV2Mode getPoolMode();
 
         /**
          * Returns whether the pool can perform read operations.
          */
-        public boolean canRead();
+        boolean canRead();
 
         /**
          * Returns whether the pool can perform write operations.
          */
-        public boolean canWrite();
+        boolean canWrite();
 
         /**
          * Returns whether the pool can perform stage files from tape
          * operations.
          */
-        public boolean canReadFromTape();
+        boolean canReadFromTape();
 
         /**
          * Returns whether the pool can perform serve files for P2P
          * operations.
          */
-        public boolean canReadForP2P();
+        boolean canReadForP2P();
 
         /** Returns the names of attached HSM instances. */
-        public Set<String> getHsmInstances();
+        Set<String> getHsmInstances();
 
         /** Sets the set of names of attached HSM instances. */
-        public void setHsmInstances(Set<String> hsmInstances);
+        void setHsmInstances(Set<String> hsmInstances);
 
-        public Collection<SelectionPoolGroup> getPoolGroupsMemberOf();
-        public Collection<SelectionLink> getLinksTargetingPool();
+        Collection<SelectionPoolGroup> getPoolGroupsMemberOf();
+        Collection<SelectionLink> getLinksTargetingPool();
 
         CellAddressCore getAddress();
 
         void setAddress(CellAddressCore address);
     }
-    public interface SelectionPoolGroup extends SelectionEntity {
+    interface SelectionPoolGroup extends SelectionEntity {
     }
-   public interface SelectionLinkGroup extends SelectionEntity{
-	   public void add(SelectionLink link);
-	   public boolean remove(SelectionLink link);
+   interface SelectionLinkGroup extends SelectionEntity{
+	   void add(SelectionLink link);
+	   boolean remove(SelectionLink link);
 	   Collection<SelectionLink> getLinks();
 
        void setCustodialAllowed(boolean isAllowed);
@@ -161,42 +161,42 @@ public interface PoolSelectionUnit  {
        void setOnlineAllowed(boolean isAllowed);
        void setNearlineAllowed(boolean isAllowed);
 
-	   public boolean isCustodialAllowed();
-	   public boolean isOutputAllowed();
-	   public boolean isReplicaAllowed();
-	   public boolean isOnlineAllowed();
-	   public boolean isNearlineAllowed();
+	   boolean isCustodialAllowed();
+	   boolean isOutputAllowed();
+	   boolean isReplicaAllowed();
+	   boolean isOnlineAllowed();
+	   boolean isNearlineAllowed();
 	}
-    public interface SelectionUnit extends SelectionEntity{
-        public String getUnitType();
-        public Collection<SelectionUnitGroup> getMemberOfUnitGroups();
+    interface SelectionUnit extends SelectionEntity{
+        String getUnitType();
+        Collection<SelectionUnitGroup> getMemberOfUnitGroups();
     }
 
-    public interface SelectionUnitGroup extends SelectionEntity {
-        public Collection<SelectionUnit> getMemeberUnits();
-        public Collection<SelectionLink> getLinksPointingTo();
+    interface SelectionUnitGroup extends SelectionEntity {
+        Collection<SelectionUnit> getMemeberUnits();
+        Collection<SelectionLink> getLinksPointingTo();
     }
-   public SelectionPool getPool( String poolName ) ;
-   public SelectionPool getPool( String poolName , boolean create ) ;
-   public SelectionLink getLinkByName( String linkName ) throws NoSuchElementException ;
-   public PoolPreferenceLevel []
-            match( DirectionType type, String net , String protocol,
-                   FileAttributes fileAttributes, String linkGroup ) ;
-   public String [] getActivePools() ;
-   public String [] getDefinedPools( boolean enabledOnly ) ;
-   public String    getVersion() ;
-   public String getNetIdentifier( String address ) throws UnknownHostException;
-   public String getProtocolUnit( String protocolUnitName ) ;
-   public SelectionLinkGroup getLinkGroupByName(String linkGroupName) throws NoSuchElementException ;
-   public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup) throws NoSuchElementException;
-   public Collection<SelectionPool> getAllDefinedPools( boolean enabledOnly ) ;
-   public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName);
-   public Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws NoSuchElementException;
+   SelectionPool getPool(String poolName) ;
+   SelectionPool getPool(String poolName, boolean create) ;
+   SelectionLink getLinkByName(String linkName) throws NoSuchElementException ;
+   PoolPreferenceLevel []
+            match(DirectionType type, String net, String protocol,
+                  FileAttributes fileAttributes, String linkGroup) ;
+   String [] getActivePools() ;
+   String [] getDefinedPools(boolean enabledOnly) ;
+   String    getVersion() ;
+   String getNetIdentifier(String address) throws UnknownHostException;
+   String getProtocolUnit(String protocolUnitName) ;
+   SelectionLinkGroup getLinkGroupByName(String linkGroupName) throws NoSuchElementException ;
+   Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup) throws NoSuchElementException;
+   Collection<SelectionPool> getAllDefinedPools(boolean enabledOnly) ;
+   Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName);
+   Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws NoSuchElementException;
 
-   public Map<String, SelectionLink> getLinks();
-   public Map<String, SelectionPool> getPools();
-   public Map<String, SelectionPoolGroup> getPoolGroups();
-   public Map<String, SelectionLinkGroup> getLinkGroups();
-   public Map<String, SelectionUnit> getSelectionUnits();
-   public Map<String, SelectionUnitGroup> getUnitGroups();
+   Map<String, SelectionLink> getLinks();
+   Map<String, SelectionPool> getPools();
+   Map<String, SelectionPoolGroup> getPoolGroups();
+   Map<String, SelectionLinkGroup> getLinkGroups();
+   Map<String, SelectionUnit> getSelectionUnits();
+   Map<String, SelectionUnitGroup> getUnitGroups();
 }

@@ -8,8 +8,8 @@ import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 
 public interface ActiveTransfersService
 {
-    public List<ActiveTransfersBean> getTransfers();
+    List<ActiveTransfersBean> getTransfers();
 
-    public void kill(Collection<ActiveTransfersBean.Key> keys)
+    void kill(Collection<ActiveTransfersBean.Key> keys)
             throws ActiveTransfersServiceException;
 }

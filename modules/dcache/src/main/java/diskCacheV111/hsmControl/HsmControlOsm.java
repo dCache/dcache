@@ -25,10 +25,10 @@ import org.dcache.util.Args;
 
 public class HsmControlOsm extends CellAdapter implements Runnable {
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(HsmControlOsm.class);
 
-    private final static int MAX_QUEUE_SIZE = 100 ;
+    private static final int MAX_QUEUE_SIZE = 100 ;
 
     private CellNucleus _nucleus ;
     private Args        _args ;

@@ -39,7 +39,7 @@ import org.dcache.util.TransferRetryPolicy;
 public class CopyManager extends AbstractCellComponent
     implements CellMessageReceiver, CellCommandListener
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(CopyManager.class);
 
     private final Map<Long,CopyHandler> _activeTransfers =
@@ -64,7 +64,7 @@ public class CopyManager extends AbstractCellComponent
         _localAddr = new InetSocketAddress(InetAddress.getLocalHost(), 0);
     }
 
-    public final static String hh_set_max_transfers = "<#max transfers>";
+    public static final String hh_set_max_transfers = "<#max transfers>";
     public String ac_set_max_transfers_$_1(Args args)
     {
         int max = Integer.parseInt(args.argv(0));
@@ -75,7 +75,7 @@ public class CopyManager extends AbstractCellComponent
         return "set maximum number of active transfers to " + max;
     }
 
-    public final static String hh_set_mover_timeout = "<#seconds>";
+    public static final String hh_set_mover_timeout = "<#seconds>";
     public String ac_set_mover_timeout_$_1(Args args)
     {
         int timeout = Integer.parseInt(args.argv(0));
@@ -87,7 +87,7 @@ public class CopyManager extends AbstractCellComponent
         return "set mover timeout to " + timeout +  " seconds";
     }
 
-    public final static String hh_set_pool_timeout = "<#seconds>";
+    public static final String hh_set_pool_timeout = "<#seconds>";
     public String ac_set_pool_timeout_$_1(Args args)
     {
         int timeout = Integer.parseInt(args.argv(0));
@@ -99,7 +99,7 @@ public class CopyManager extends AbstractCellComponent
         return "set pool timeout to " + timeout +  " seconds";
     }
 
-    public final static String hh_set_pool_manager_timeout = "<#seconds>";
+    public static final String hh_set_pool_manager_timeout = "<#seconds>";
     public String ac_set_pool_manager_timeout_$_1(Args args)
     {
         int timeout = Integer.parseInt(args.argv(0));
@@ -111,7 +111,7 @@ public class CopyManager extends AbstractCellComponent
         return "set pool manager timeout to "+ timeout +  " seconds";
     }
 
-    public final static String hh_ls = "[-l] [<#transferId>]";
+    public static final String hh_ls = "[-l] [<#transferId>]";
     public String ac_ls_$_0_1(Args args)
     {
         boolean long_format = args.hasOption("l");
@@ -136,7 +136,7 @@ public class CopyManager extends AbstractCellComponent
         return sb.toString();
     }
 
-    public final static String hh_queue = "[-l]";
+    public static final String hh_queue = "[-l]";
     public synchronized String ac_queue_$_0(Args args)
     {
         boolean long_format = args.hasOption("l");

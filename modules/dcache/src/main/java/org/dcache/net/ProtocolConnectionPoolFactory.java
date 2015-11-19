@@ -8,7 +8,7 @@ import java.io.IOException;
 public class ProtocolConnectionPoolFactory {
 
 
-	private final static Object _initLock = new Object();
+	private static final Object _initLock = new Object();
 	private static ProtocolConnectionPool _protocolConnectionPool;
 
 	private int _port;

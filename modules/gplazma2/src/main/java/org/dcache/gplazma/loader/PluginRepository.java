@@ -65,8 +65,8 @@ public class PluginRepository
      * one at a time, allowing arbitrary processing of that plugin's static
      * metadata.
      */
-    public static interface PluginMetadataProcessor
+    public interface PluginMetadataProcessor
     {
-        public void process(PluginMetadata plugin);
+        void process(PluginMetadata plugin);
     }
 }

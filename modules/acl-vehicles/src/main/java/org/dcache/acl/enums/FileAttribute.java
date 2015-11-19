@@ -96,7 +96,7 @@ public enum FileAttribute {
 
     private final int _value;
 
-    private FileAttribute(int value) {
+    FileAttribute(int value) {
         _value = value;
     }
 

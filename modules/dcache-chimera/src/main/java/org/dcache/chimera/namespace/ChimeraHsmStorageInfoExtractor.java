@@ -29,7 +29,7 @@ import org.dcache.chimera.store.InodeStorageInformation;
 public abstract class ChimeraHsmStorageInfoExtractor implements
        ChimeraStorageInfoExtractable {
 
-    private final static Logger LOGGER =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(ChimeraHsmStorageInfoExtractor.class);
 
     /**

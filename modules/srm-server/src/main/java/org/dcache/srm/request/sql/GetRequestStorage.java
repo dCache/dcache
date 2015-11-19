@@ -32,7 +32,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public class GetRequestStorage extends DatabaseContainerRequestStorage<GetRequest,GetFileRequest> {
-    private final static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(GetRequestStorage.class);
     public static final String TABLE_NAME ="getrequests";
     private static final String UPDATE_PREFIX = "UPDATE " + TABLE_NAME + " SET "+

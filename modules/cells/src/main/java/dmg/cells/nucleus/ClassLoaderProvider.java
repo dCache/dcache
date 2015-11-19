@@ -175,7 +175,7 @@ class CDPDummy implements ClassDataProvider {
 }
 class ClassDataProvider0 implements ClassDataProvider {
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(ClassDataProvider0.class);
 
     private CellNucleus _nucleus;

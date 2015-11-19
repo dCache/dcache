@@ -27,7 +27,7 @@ import org.dcache.util.Version;
   */
 public class BootstrapStore implements Cell {
 
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(BootstrapStore.class);
 
    private String _storeBase;

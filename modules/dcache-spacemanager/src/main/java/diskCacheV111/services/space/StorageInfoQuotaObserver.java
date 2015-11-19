@@ -38,7 +38,7 @@ import org.dcache.util.Args;
 
 public class StorageInfoQuotaObserver extends CellAdapter {
 
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(StorageInfoQuotaObserver.class);
 
    private CellNucleus   _nucleus;

@@ -20,7 +20,7 @@ public interface MetaDataRecord
     /**
      * Get the PnfsId of this entry.
      */
-    public PnfsId getPnfsId();
+    PnfsId getPnfsId();
 
     /**
      * Set the size of this entry. An entry has a size which normally
@@ -35,39 +35,39 @@ public interface MetaDataRecord
      * The size stored in the entries StorageInfo record is a cached
      * copy of the size stored in PNFS.
      */
-    public void setSize(long size);
+    void setSize(long size);
 
     /**
      * Get the size of this entry. May be different from the size of
      * the on-disk file.
      */
-    public long getSize();
+    long getSize();
 
-    public void setFileAttributes(FileAttributes attributes) throws CacheException;
+    void setFileAttributes(FileAttributes attributes) throws CacheException;
 
-    public FileAttributes getFileAttributes() throws CacheException;
+    FileAttributes getFileAttributes() throws CacheException;
 
-    public void setState(EntryState state)
+    void setState(EntryState state)
         throws CacheException;
 
-    public EntryState getState();
+    EntryState getState();
 
-    public File getDataFile()
+    File getDataFile()
             ;
 
-    public long getCreationTime();
+    long getCreationTime();
 
-    public long getLastAccessTime();
+    long getLastAccessTime();
 
-    public void setLastAccessTime(long time) throws CacheException;
+    void setLastAccessTime(long time) throws CacheException;
 
-    public void touch() throws CacheException;
+    void touch() throws CacheException;
 
-    public void decrementLinkCount();
+    void decrementLinkCount();
 
-    public void incrementLinkCount();
+    void incrementLinkCount();
 
-    public int getLinkCount();
+    int getLinkCount();
 
     /**
      * Returns true if and only if the entry has one or more sticky
@@ -77,14 +77,14 @@ public interface MetaDataRecord
      * @return true if the stickyRecords methods would return a non
      * empty collection, false otherwise.
      */
-    public boolean isSticky();
+    boolean isSticky();
 
     /**
      * Removes expired sticky from the entry.
      *
      * @return The expired sticky flags removed from the record.
      */
-    public Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException;
+    Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException;
 
     /**
      * Set sticky flag for a given owner and time. There is at most
@@ -103,11 +103,11 @@ public interface MetaDataRecord
      * @return true if the collection returned by the stickyRecords
      * method has changed due to this call.
      */
-    public boolean setSticky(String owner, long validTill, boolean overwrite)
+    boolean setSticky(String owner, long validTill, boolean overwrite)
         throws CacheException;
 
     /**
      * @return list of StickyRecords held by the file
      */
-    public Collection<StickyRecord> stickyRecords();
+    Collection<StickyRecord> stickyRecords();
 }

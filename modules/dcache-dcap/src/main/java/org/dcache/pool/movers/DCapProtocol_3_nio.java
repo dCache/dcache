@@ -46,7 +46,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
     private static Logger _log = LoggerFactory.getLogger(DCapProtocol_3_nio.class);
     private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
-    private final static Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
+    private static final Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
     private static final int INC_SPACE  =  (50*1024*1024);
 
     private final Args          _args   ;

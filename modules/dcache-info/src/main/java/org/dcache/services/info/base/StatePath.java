@@ -41,7 +41,7 @@ public class StatePath
      * @param path the path, as an ordered list of path elements, each element separated by a dot.
      * @return the corresponding StatePath.
      */
-    static public StatePath parsePath(String path)
+    public static StatePath parsePath(String path)
     {
         String elements[] = path.split("\\.");
         return new StatePath(elements);
@@ -61,7 +61,7 @@ public class StatePath
      * @param pathElements  The List of path elements from which to construct the state path.
      * @return the corresponding StatePath
      */
-    static public StatePath buildFromList(List<String> pathElements )
+    public static StatePath buildFromList(List<String> pathElements )
     {
         return new StatePath(pathElements, pathElements.size());
     }

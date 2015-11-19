@@ -11,6 +11,6 @@ import org.dcache.webadmin.view.beans.CellServicesBean;
  */
 public interface CellsService {
 
-    public List<CellServicesBean> getCellServicesBeans()
+    List<CellServicesBean> getCellServicesBeans()
             throws CellsServiceException;
 }

@@ -15,7 +15,7 @@ import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 public interface SessionStrategy
                  extends GPlazmaStrategy<GPlazmaSessionPlugin>
 {
-    public void session(LoginMonitor monitor,
-        Set<Principal> authorizedPrincipals, Set<Object> attrib)
+    void session(LoginMonitor monitor,
+                 Set<Principal> authorizedPrincipals, Set<Object> attrib)
         throws AuthenticationException;
 }

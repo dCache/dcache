@@ -21,7 +21,7 @@ public class AliasEntry
 
         private final String type;
 
-        private AliasType(String type)
+        AliasType(String type)
         {
             this.type = type;
         }

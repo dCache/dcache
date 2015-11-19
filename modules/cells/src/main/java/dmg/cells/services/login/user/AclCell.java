@@ -31,7 +31,7 @@ import static java.util.Arrays.asList;
 public class       AclCell
        extends     CellAdapter            {
 
-  private final static Logger _log =
+  private static final Logger _log =
       LoggerFactory.getLogger(AclCell.class);
 
   private String       _cellName ;

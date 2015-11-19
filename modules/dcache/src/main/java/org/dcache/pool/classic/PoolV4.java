@@ -118,25 +118,25 @@ public class PoolV4
                CellCommandListener,
                CellMessageReceiver
 {
-    private final static int DUP_REQ_NONE = 0;
-    private final static int DUP_REQ_IGNORE = 1;
-    private final static int DUP_REQ_REFRESH = 2;
+    private static final int DUP_REQ_NONE = 0;
+    private static final int DUP_REQ_IGNORE = 1;
+    private static final int DUP_REQ_REFRESH = 2;
 
-    private final static int P2P_CACHED = 1;
-    private final static int P2P_PRECIOUS = 2;
-    private final static int HEARTBEAT = 30;
+    private static final int P2P_CACHED = 1;
+    private static final int P2P_PRECIOUS = 2;
+    private static final int HEARTBEAT = 30;
 
-    private final static double DEFAULT_BREAK_EVEN = 0.7;
+    private static final double DEFAULT_BREAK_EVEN = 0.7;
 
-    private final static Pattern TAG_PATTERN =
+    private static final Pattern TAG_PATTERN =
         Pattern.compile("([^=]+)=(\\S*)\\s*");
 
     /**
      * The name of a queue used by pool-to-pool transfers.
      */
-    private final static String P2P_QUEUE_NAME= "p2p";
+    private static final String P2P_QUEUE_NAME= "p2p";
 
-    private final static Logger _log = LoggerFactory.getLogger(PoolV4.class);
+    private static final Logger _log = LoggerFactory.getLogger(PoolV4.class);
 
     private final String _poolName;
 

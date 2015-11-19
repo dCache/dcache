@@ -19,7 +19,7 @@ public enum RsType {
 
     private final int _value;
 
-    private RsType(int value) {
+    RsType(int value) {
         _value = value;
     }
 

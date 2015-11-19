@@ -14,7 +14,7 @@ import java.io.IOException;
  */
 public interface DataBlocksRecipient
 {
-    public void receiveEBlock(byte[] array, int offset, int length,
-                              long offsetOfArrayInFile)
+    void receiveEBlock(byte[] array, int offset, int length,
+                       long offsetOfArrayInFile)
         throws IOException;
 }

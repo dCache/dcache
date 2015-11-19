@@ -91,7 +91,7 @@ public enum FileState
     private final int stateId;
 
 
-    private FileState(int stateId)
+    FileState(int stateId)
     {
         this.stateId = stateId;
     }

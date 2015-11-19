@@ -437,13 +437,13 @@ public abstract class AbstractFtpDoorV1
         // "DCAU"
     };
 
-    private final static int DEFAULT_DATA_PORT = 20;
+    private static final int DEFAULT_DATA_PORT = 20;
 
     /**
      * The maximum number of retries done on write. Must be one to
      * avoid that empty replicas are left on pools.
      */
-    private final static int MAX_RETRIES_WRITE = 1;
+    private static final int MAX_RETRIES_WRITE = 1;
 
     /**
      * Time stamp format as defined in RFC 3659.
@@ -4241,7 +4241,7 @@ public abstract class AbstractFtpDoorV1
      */
     private abstract class FactPrinter implements DirectoryListPrinter
     {
-        private final static int MODE_MASK = 07777;
+        private static final int MODE_MASK = 07777;
 
         protected final PrintWriter _out;
 

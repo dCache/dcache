@@ -19,7 +19,7 @@ public interface StateWatcher
      * in evaluate() returning a different result.
      * @return a Set of predicates
      */
-    public Collection<StatePathPredicate> getPredicate();
+    Collection<StatePathPredicate> getPredicate();
 
     /**
      * This method is called when a pending transition alters
@@ -32,6 +32,6 @@ public interface StateWatcher
      * If this is so, the new metric values are to be added to the provided
      * StateUpdate object.
      */
-    public void trigger(StateUpdate update, StateExhibitor currentState,
-            StateExhibitor futureState);
+    void trigger(StateUpdate update, StateExhibitor currentState,
+                 StateExhibitor futureState);
 }

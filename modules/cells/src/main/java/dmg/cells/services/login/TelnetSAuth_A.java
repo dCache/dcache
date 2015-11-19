@@ -23,7 +23,7 @@ import org.dcache.util.Args;
 public class      TelnetSAuth_A
        implements TelnetServerAuthentication  {
 
-  private final static Logger _log =
+  private static final Logger _log =
       LoggerFactory.getLogger(TelnetSAuth_A.class);
 
   private CellNucleus  _nucleus ;

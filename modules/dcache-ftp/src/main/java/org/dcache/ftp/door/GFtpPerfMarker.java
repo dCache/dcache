@@ -87,7 +87,7 @@ package org.dcache.ftp.door;
  * NO SYNCHRONIZATION done (yet) !!!
  */
 public class GFtpPerfMarker {
-    private final static String _cvsId = "$Id: GFtpPerfMarker.java,v 1.2 2005-10-26 17:56:41 aik Exp $";
+    private static final String _cvsId = "$Id: GFtpPerfMarker.java,v 1.2 2005-10-26 17:56:41 aik Exp $";
 
     private long _timeStamp;
     private long _stripeIndex;

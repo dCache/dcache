@@ -72,9 +72,9 @@ import org.dcache.util.Args;
 public class CellShell extends CommandInterpreter
        implements Replaceable, ClassDataProvider
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(CellShell.class);
-    private final static Logger _logNucleus =
+    private static final Logger _logNucleus =
         LoggerFactory.getLogger(CellNucleus.class);
 
    private final CellNucleus  _nucleus ;
@@ -1616,7 +1616,7 @@ public class CellShell extends CommandInterpreter
       return sb.toString() ;
    }
 
-   public final static String fh_test =
+   public static final String fh_test =
       "test <kind> <target>\n\n" +
       "  Check whether <target>, of type <kind>, is available in the current environment.\n" +
       "  If <target> is present then the return-code is zero, if not then a non-zero\n" +
@@ -1626,7 +1626,7 @@ public class CellShell extends CommandInterpreter
       "     -e <file>   test if <file> exists,\n" +
       "     -f <file>   test if <file> exists and is a normal file,\n" +
       "     -d <file>   test if <file> exists and is a directory";
-   public final static String hh_test = "-i <cell> | -e <file> | -f <file> | -d <file>";
+   public static final String hh_test = "-i <cell> | -e <file> | -f <file> | -d <file>";
    public String ac_test_$_1(Args args) throws CommandEvaluationException {
        Tester tester = testerForArgs(args);
 
@@ -1655,7 +1655,7 @@ public class CellShell extends CommandInterpreter
        }
    }
 
-   public final static String fh_exec =
+   public static final String fh_exec =
       "exec [<options>] <url> [<args>]\n" +
       "exec context [<options>] <contextName> [<args>]\n" +
       "exec env [<options>] <envName> [<args>]\n"+
@@ -1670,7 +1670,7 @@ public class CellShell extends CommandInterpreter
       "                         specified value of <varName> is '0'\n"+
       "                         The default <varName> is 'rc'\n"+
       "     -ifnotok[=<varName>]  : negation of -ifok\n\n";
-    public final static String hh_exec =
+    public static final String hh_exec =
         "[-shell] [-nooutput] [-loop=<variable>] [-ifok[=<variable>]|-ifnotok[=<variable>}] <url> [<args>]";
     public String ac_exec_$_1_99(Args args)
         throws CommandException
@@ -1684,8 +1684,8 @@ public class CellShell extends CommandInterpreter
         }
     }
 
-    public final static String fh_exec_env = fh_exec;
-    public final static String hh_exec_env =
+    public static final String fh_exec_env = fh_exec;
+    public static final String hh_exec_env =
         "[-shell] [-nooutput] [-loop=<variable>] [-ifok[=<variable>]|-ifnotok[=<variable>}] <envName> [<args>]";
     public String ac_exec_env_$_1_99(Args args) throws CommandException
     {
@@ -1698,8 +1698,8 @@ public class CellShell extends CommandInterpreter
         }
     }
 
-    public final static String fh_exec_context = fh_exec;
-    public final static String hh_exec_context =
+    public static final String fh_exec_context = fh_exec;
+    public static final String hh_exec_context =
         "[-shell] [-nooutput] [-loop=<variable>] [-ifok[=<variable>]|-ifnotok[=<variable>}] <contextName> [<args>]";
     public String ac_exec_context_$_1_99(Args args) throws CommandException
     {
@@ -2199,9 +2199,9 @@ public class CellShell extends CommandInterpreter
 
     private interface Tester {
         /** check for something */
-        public boolean test();
+        boolean test();
         /** Useful message if answer is false */
-        public String getMessage();
+        String getMessage();
     }
 
 

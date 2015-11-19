@@ -14,7 +14,7 @@ public enum FileLocality
     private final TFileLocality _locality;
     private final boolean _isCached;
 
-    private FileLocality(TFileLocality locality, boolean cached) {
+    FileLocality(TFileLocality locality, boolean cached) {
         _locality = locality;
         _isCached = cached;
     }

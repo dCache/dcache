@@ -47,7 +47,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ChecksumScanner
     implements CellCommandListener, CellLifeCycleAware
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(ChecksumScanner.class);
 
     private final FullScan _fullScan = new FullScan();
@@ -489,7 +489,7 @@ public class ChecksumScanner
         }
     }
 
-    abstract private class Singleton
+    private abstract class Singleton
     {
         private final String  _name;
 
@@ -502,7 +502,7 @@ public class ChecksumScanner
             _name = name;
         }
 
-        abstract protected void runIt() throws Exception;
+        protected abstract void runIt() throws Exception;
 
         public synchronized void kill()
         {

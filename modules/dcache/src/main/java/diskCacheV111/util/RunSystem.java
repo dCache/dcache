@@ -13,8 +13,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class RunSystem implements Runnable {
-    private final static Logger _log = LoggerFactory.getLogger(RunSystem.class);
-    private final static Runtime __runtime = Runtime.getRuntime() ;
+    private static final Logger _log = LoggerFactory.getLogger(RunSystem.class);
+    private static final Runtime __runtime = Runtime.getRuntime() ;
     private final String[] _exec ;
     private final int    _maxLines ;
     private final long   _timeout ;

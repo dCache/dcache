@@ -318,11 +318,11 @@ public class Crypt {
 			 *((c)++)=(unsigned char)(((l)>>24)&0xff))
 
 */
-   static public String byteToHexString( byte b ) {
+public static String byteToHexString( byte b ) {
       String str = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
       return str.length() == 1 ? "0"+str : str ;
    }
-   static public String byteToHexString( byte [] bytes ) {
+   public static String byteToHexString(byte [] bytes ) {
 	      
 		  StringBuilder sb = new StringBuilder(bytes.length +1);
 

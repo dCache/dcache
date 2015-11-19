@@ -18,11 +18,11 @@ package org.dcache.chimera.posix;
 
 public interface User {
 
-    public String principal();
+    String principal();
 
-    public String[] groups();
+    String[] groups();
 
-    public String role();
+    String role();
 
-    public String locations();
+    String locations();
 }

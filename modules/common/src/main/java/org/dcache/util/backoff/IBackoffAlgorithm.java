@@ -70,7 +70,7 @@ public interface IBackoffAlgorithm {
      * Value returned when the algorithm indicates no further waiting to be
      * done
      */
-    final long NO_WAIT = -1;
+    long NO_WAIT = -1;
 
     /**
      * Simple binary return value for callable which either succeeds or doesn't

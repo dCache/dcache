@@ -99,7 +99,7 @@ public class CellCron implements Runnable {
       }
    }
    public interface TaskRunnable {
-      public void run( TimerTask task );
+      void run(TimerTask task);
    }
    public TimerTask add( int minutes , TaskRunnable runner , String name ){
        return add( NEXT , minutes , runner , name );

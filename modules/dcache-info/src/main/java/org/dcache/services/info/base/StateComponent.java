@@ -74,7 +74,7 @@ interface StateComponent
      * @return the Date when an object should be removed, or null indicating that either is never to
      * be removed or else the removal time cannot be predicted in advance.
      */
-    public Date getExpiryDate();
+    Date getExpiryDate();
 
 
     /**
@@ -83,7 +83,7 @@ interface StateComponent
      *  StateComponent contains no Mortal children then null is returned.
      * @return the earliest Date when a Mortal child will expire.
      */
-    public Date getEarliestChildExpiryDate();
+    Date getEarliestChildExpiryDate();
 
     /**
      * Update a StateTransition based on this StateComponent's children.
@@ -92,7 +92,7 @@ interface StateComponent
      * @param transition the StateTransition object within which we should register children to be deleted.
      * @param forced whether we should simply remove our children, or test whether they are to be deleted
      */
-    public void buildRemovalTransition(StatePath ourPath, StateTransition transition, boolean forced);
+    void buildRemovalTransition(StatePath ourPath, StateTransition transition, boolean forced);
 
 
     /**
@@ -101,7 +101,7 @@ interface StateComponent
      *  buildRemovalTransition(..., transition, true)
      *  for the top-most element in the named subtree.
      */
-    public void buildPurgeTransition(StateTransition transition, StatePath ourPath, StatePath remainingPath);
+    void buildPurgeTransition(StateTransition transition, StatePath ourPath, StatePath remainingPath);
 
     /**
      * Whether this component has expired.

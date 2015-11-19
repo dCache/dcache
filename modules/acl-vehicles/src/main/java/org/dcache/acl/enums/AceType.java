@@ -36,7 +36,7 @@ public enum AceType {
 
     private final char _abbreviation;
 
-    private AceType(int value, char abbreviation) {
+    AceType(int value, char abbreviation) {
         _value = value;
         _abbreviation = abbreviation;
     }

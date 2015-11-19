@@ -11,5 +11,5 @@ import org.dcache.webadmin.view.beans.PoolQueueBean;
  */
 public interface PoolQueuesService {
 
-    public List<PoolQueueBean> getPoolQueues() throws PoolQueuesServiceException;
+    List<PoolQueueBean> getPoolQueues() throws PoolQueuesServiceException;
 }

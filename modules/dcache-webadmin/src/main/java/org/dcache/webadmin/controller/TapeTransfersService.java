@@ -11,5 +11,5 @@ import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
  */
 public interface TapeTransfersService {
 
-    public List<RestoreBean> getRestores() throws TapeTransfersServiceException;
+    List<RestoreBean> getRestores() throws TapeTransfersServiceException;
 }

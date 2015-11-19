@@ -58,7 +58,7 @@ import static org.dcache.util.MathUtils.subWithInfinity;
  */
 public class CellNucleus implements ThreadFactory
 {
-    private final static Logger LOGGER =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(CellNucleus.class);
 
     private static final int PINBOARD_DEFAULT_SIZE = 200;

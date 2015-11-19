@@ -15,9 +15,9 @@ import diskCacheV111.util.VOInfo;
  */
 public interface SpaceManagerAuthorizationPolicy {
 
-    public void checkReleasePermission(Subject subject, Space space)
+    void checkReleasePermission(Subject subject, Space space)
         throws SpaceAuthorizationException;
-    public VOInfo checkReservePermission(Subject subject, LinkGroup linkGroup)
+    VOInfo checkReservePermission(Subject subject, LinkGroup linkGroup)
         throws SpaceAuthorizationException;
 
 }

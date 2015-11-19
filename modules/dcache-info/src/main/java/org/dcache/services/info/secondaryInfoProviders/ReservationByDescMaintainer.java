@@ -63,7 +63,7 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher
         private long _free;
         private long _allocated;
         private long _used;
-        final private Set<String> _ids = new HashSet<>();
+        private final Set<String> _ids = new HashSet<>();
 
         @Override
         public int hashCode()

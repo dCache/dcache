@@ -16,7 +16,7 @@ public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor
      * Obtain some summary statistics about all available pools.
      * @return the aggregated information about the pools.
      */
-    static public SpaceInfo getDetails(StateExhibitor exhibitor)
+    public static SpaceInfo getDetails(StateExhibitor exhibitor)
     {
         LOGGER.trace("Gathering summary information.");
         PoolSummaryVisitor visitor = new PoolSummaryVisitor();

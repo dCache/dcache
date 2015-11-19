@@ -13,9 +13,9 @@ import org.dcache.webadmin.view.util.SelectableWrapper;
  */
 public interface PoolAdminService {
 
-    public List<PoolAdminBean> getPoolGroups() throws PoolAdminServiceException;
+    List<PoolAdminBean> getPoolGroups() throws PoolAdminServiceException;
 
-    public void sendCommand(
+    void sendCommand(
             List<SelectableWrapper<PoolCommandBean>> pools, String command)
             throws PoolAdminServiceException;
 }

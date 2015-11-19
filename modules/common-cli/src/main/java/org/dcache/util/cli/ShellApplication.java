@@ -94,7 +94,7 @@ public abstract class ShellApplication implements Closeable
     }
 
     /** Provide the command name, as typed in by the user. */
-    abstract protected String getCommandName();
+    protected abstract String getCommandName();
 
     /**
      * Execute multiple commands where each command is read as a line from

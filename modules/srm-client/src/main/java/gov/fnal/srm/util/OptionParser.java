@@ -410,7 +410,7 @@ public class OptionParser {
      }
 
      @SuppressWarnings("unchecked")
-     static public <T> T toType(final Object object, final Class<T> type) {
+     public static <T> T toType(final Object object, final Class<T> type) {
          T result = null;
          if (object == null || "null".equalsIgnoreCase(object.toString()) ) {
              // Initialize primitive types:

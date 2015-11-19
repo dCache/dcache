@@ -46,7 +46,7 @@ public enum Who {
 
     private final String _abbreviation;
 
-    private Who(int value, String abbreviation) {
+    Who(int value, String abbreviation) {
         _value = value;
         _abbreviation = abbreviation;
     }

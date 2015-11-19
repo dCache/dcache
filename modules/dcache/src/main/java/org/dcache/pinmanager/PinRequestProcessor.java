@@ -69,27 +69,27 @@ import static org.springframework.transaction.annotation.Isolation.REPEATABLE_RE
 public class PinRequestProcessor
     implements CellMessageReceiver
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(PinRequestProcessor.class);
 
     /**
      * The delay we use after a pin request failed and before retrying
      * the request.
      */
-    private final static long RETRY_DELAY = SECONDS.toMillis(30);
+    private static final long RETRY_DELAY = SECONDS.toMillis(30);
 
     /**
      * The delay we use after transient failures that should be
      * retried immediately. The small delay prevents tight retry
      * loops.
      */
-    private final static long SMALL_DELAY = MILLISECONDS.toMillis(10);
+    private static final long SMALL_DELAY = MILLISECONDS.toMillis(10);
 
     /**
      * Safety margin added to the lifetime of the sticky bit to
      * account for clock drift.
      */
-    private final static long CLOCK_DRIFT_MARGIN = MINUTES.toMillis(30);
+    private static final long CLOCK_DRIFT_MARGIN = MINUTES.toMillis(30);
 
     private ScheduledExecutorService _scheduledExecutor;
     private Executor _executor;

@@ -9,17 +9,17 @@ import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
  */
 public interface DAOFactory {
 
-    public DomainsDAO getDomainsDAO();
+    DomainsDAO getDomainsDAO();
 
-    public PoolsDAO getPoolsDAO();
+    PoolsDAO getPoolsDAO();
 
-    public InfoDAO getInfoDAO();
+    InfoDAO getInfoDAO();
 
-    public LinkGroupsDAO getLinkGroupsDAO();
+    LinkGroupsDAO getLinkGroupsDAO();
 
-    public MoverDAO getMoverDAO();
+    MoverDAO getMoverDAO();
 
-    public LogEntryDAO getLogEntryDAO();
+    LogEntryDAO getLogEntryDAO();
 
-    public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
+    void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }

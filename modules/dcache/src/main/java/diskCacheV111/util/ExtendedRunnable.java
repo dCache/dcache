@@ -6,6 +6,6 @@ package diskCacheV111.util ;
 public interface ExtendedRunnable extends Runnable {
 
 
-       public void runFailed();
+       void runFailed();
 
 }

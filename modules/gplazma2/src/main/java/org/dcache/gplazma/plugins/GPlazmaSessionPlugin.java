@@ -13,7 +13,7 @@ import org.dcache.gplazma.AuthenticationException;
  */
 public interface GPlazmaSessionPlugin extends GPlazmaPlugin
 {
-    public void session(Set<Principal> authorizedPrincipals,
-                        Set<Object> attrib)
+    void session(Set<Principal> authorizedPrincipals,
+                 Set<Object> attrib)
         throws AuthenticationException;
 }

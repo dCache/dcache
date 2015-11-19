@@ -38,7 +38,7 @@ import org.dcache.vehicles.FileAttributes;
   */
 public class FileHoppingManager extends CellAdapter {
 
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(FileHoppingManager.class);
 
    private CellNucleus _nucleus;

@@ -16,13 +16,13 @@ public interface MoverDAO {
     /**
      * @return delivers the active transfers
      */
-    public List<ActiveTransfersBean> getActiveTransfers();
+    List<ActiveTransfersBean> getActiveTransfers();
 
-    public void killMovers(Iterable<ActiveTransfersBean> jobids)
+    void killMovers(Iterable<ActiveTransfersBean> jobids)
             throws DAOException;
 
     /**
      * @return delivers the ongoing restores
      */
-    public Set<RestoreInfo> getRestores();
+    Set<RestoreInfo> getRestores();
 }

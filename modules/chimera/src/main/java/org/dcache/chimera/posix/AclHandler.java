@@ -42,14 +42,14 @@ public interface AclHandler {
      *      in the directory. See the UNIX man page for "flock" for more details.
      *
      */
-    public static final int ACL_READ = 0;
-    public static final int ACL_WRITE = 2;
-    public static final int ACL_DELETE = 3;
-    public static final int ACL_LOOKUP = 4;
-    public static final int ACL_ADMINISTER = 5;
-    public static final int ACL_INSERT = 6;
-    public static final int ACL_LOCK = 7;
-    public static final int ACL_EXECUTE = 8;
+    int ACL_READ = 0;
+    int ACL_WRITE = 2;
+    int ACL_DELETE = 3;
+    int ACL_LOOKUP = 4;
+    int ACL_ADMINISTER = 5;
+    int ACL_INSERT = 6;
+    int ACL_LOCK = 7;
+    int ACL_EXECUTE = 8;
 
-    public boolean isAllowed(Acl acl, User user, int requsetedAcl);
+    boolean isAllowed(Acl acl, User user, int requsetedAcl);
 }

@@ -38,7 +38,7 @@ import java.util.Iterator;
  */
 public interface DirectoryStreamB<T> extends Closeable, Iterable<T> {
 
-    public static interface Filter<T> {
+    interface Filter<T> {
 
         /**
          * Decides if the given directory entry should be accepted or filtered.

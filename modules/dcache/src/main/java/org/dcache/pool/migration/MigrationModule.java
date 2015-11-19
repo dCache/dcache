@@ -112,28 +112,28 @@ public class MigrationModule
     implements CellCommandListener,
                CellMessageReceiver
 {
-    private final static PoolManagerPoolInformation DUMMY_POOL =
+    private static final PoolManagerPoolInformation DUMMY_POOL =
         new PoolManagerPoolInformation("pool", new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE), 0);
 
-    public final static String CONSTANT_TARGET = "target";
-    public final static String CONSTANT_SOURCE = "source";
-    public final static String CONSTANT_TARGETS = "targets";
-    public final static String CONSTANT_QUEUE_FILES = "queue.files";
-    public final static String CONSTANT_QUEUE_BYTES = "queue.bytes";
+    public static final String CONSTANT_TARGET = "target";
+    public static final String CONSTANT_SOURCE = "source";
+    public static final String CONSTANT_TARGETS = "targets";
+    public static final String CONSTANT_QUEUE_FILES = "queue.files";
+    public static final String CONSTANT_QUEUE_BYTES = "queue.bytes";
 
-    public final static int NON_EMPTY_QUEUE = 1;
-    public final static int NO_TARGETS = 0;
+    public static final int NON_EMPTY_QUEUE = 1;
+    public static final int NO_TARGETS = 0;
 
-    private final static Pattern STICKY_PATTERN =
+    private static final Pattern STICKY_PATTERN =
             Pattern.compile("(\\w+)(\\((-?\\d+)\\))?");
 
     private final Map<String,Job> _jobs = new HashMap<>();
     private final Map<Job,String> _commands = new HashMap<>();
     private final MigrationContext _context = new MigrationContext();
 
-    private final static Expression TRUE_EXPRESSION =
+    private static final Expression TRUE_EXPRESSION =
         new Expression(Token.TRUE);
-    private final static Expression FALSE_EXPRESSION =
+    private static final Expression FALSE_EXPRESSION =
         new Expression(Token.FALSE);
 
     static {

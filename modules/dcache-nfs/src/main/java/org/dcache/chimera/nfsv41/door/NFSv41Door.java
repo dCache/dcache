@@ -141,13 +141,13 @@ public class NFSv41Door extends AbstractCellComponent implements
      * will block, we try to block as short as we can. The rule for interactive users:
      * never block longer than 10s.
      */
-    private final static long NFS_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
+    private static final long NFS_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
 
     /**
      * Given that the timeout is pretty short, the retry period has to
      * be rather small too.
      */
-    private final static long NFS_RETRY_PERIOD = 500; // In millis
+    private static final long NFS_RETRY_PERIOD = 500; // In millis
 
     /**
      * Cell communication helper.
@@ -169,8 +169,8 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private Set<String> _versions;
 
-    private final static String V3 = "3";
-    private final static String V41 = "4.1";
+    private static final String V3 = "3";
+    private static final String V41 = "4.1";
 
     /**
      * embedded nfs server

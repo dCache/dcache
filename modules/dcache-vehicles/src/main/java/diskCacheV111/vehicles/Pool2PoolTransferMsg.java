@@ -22,9 +22,9 @@ public class Pool2PoolTransferMsg extends PoolMessage {
     public static final ImmutableSet<FileAttribute> NEEDED_ATTRIBUTES =
             Sets.immutableEnumSet(FileAttribute.PNFSID, FileAttribute.STORAGEINFO, FileAttribute.CHECKSUM, FileAttribute.SIZE);
 
-    public final static int   UNDETERMINED = 0 ;
-    public final static int   PRECIOUS     = 1 ;
-    public final static int   CACHED       = 2 ;
+    public static final int   UNDETERMINED = 0 ;
+    public static final int   PRECIOUS     = 1 ;
+    public static final int   CACHED       = 2 ;
 
     private FileAttributes _fileAttributes;
 

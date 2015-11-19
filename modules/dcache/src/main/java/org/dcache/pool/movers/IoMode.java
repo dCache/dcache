@@ -11,7 +11,7 @@ public enum IoMode {
     READ("r"),
     WRITE("rw");
 
-    private IoMode(String openString) {
+    IoMode(String openString) {
         this.openString = openString;
     }
 

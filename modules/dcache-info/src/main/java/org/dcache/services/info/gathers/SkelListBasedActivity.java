@@ -31,7 +31,7 @@ import org.dcache.services.info.stateInfo.ListVisitor;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract public class SkelListBasedActivity implements Schedulable
+public abstract class SkelListBasedActivity implements Schedulable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SkelListBasedActivity.class);
 

@@ -41,8 +41,8 @@ import org.dcache.vehicles.FileAttributes;
 public class AclAdmin
     implements CellCommandListener
 {
-    final static int ACE_MIN_format2 = 2;
-    final static int ACE_MAX_format2 = 5;
+    static final int ACE_MIN_format2 = 2;
+    static final int ACE_MAX_format2 = 5;
 
     public static final String OPTION_HELP = "h";
 
@@ -64,9 +64,9 @@ public class AclAdmin
       *
       */
 
-     public final static String hh_getfacl = "<pnfsId>|<globalPath> # get ACL";
+     public static final String hh_getfacl = "<pnfsId>|<globalPath> # get ACL";
 
-     public final static String fh_getfacl =
+     public static final String fh_getfacl =
             "getfacl <pnfsId>|<globalPath> \n" +
             "Gets ACL of a resource (a file or directory) \n" +
             "which is defined by its pnfsId or globalPath. \n" +
@@ -110,10 +110,10 @@ public class AclAdmin
     * ace_spec examples: USER:6750:+rlx:fd EVERYONE@:-w USER:3550:+rlwfx:do GROUP:4352:+rlwfx
     *
     */
-    public final static String hh_setfacl =
+    public static final String hh_setfacl =
         "<pnfsId|globalPath>  <subject>:<+|-><access_msk>[:<flags>] [ ... ] # set a new ACL";
 
-    public final static String fh_setfacl =
+    public static final String fh_setfacl =
             "setfacl <ID> <ACE> [<ACE> ...] \n" +
             "where \n"+
             "<ID>  is <pnfsId|globalPath> \n" +

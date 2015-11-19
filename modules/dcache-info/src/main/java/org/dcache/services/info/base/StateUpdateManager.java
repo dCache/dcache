@@ -32,7 +32,7 @@ public interface StateUpdateManager
      * @throws IllegalStateException
      *             if {@link #stop()} has already been called.
      */
-    public void shutdown();
+    void shutdown();
 
     /**
      * Accept a StateUpdate object for processing. The StateUpdate object is
@@ -41,7 +41,7 @@ public interface StateUpdateManager
      * @param pendingUpdate
      *            the StateUpdate that should be processed.
      */
-    public void enqueueUpdate(StateUpdate pendingUpdate);
+    void enqueueUpdate(StateUpdate pendingUpdate);
 
     /**
      * Count the number of pending StateUpdate objects that are currently
@@ -49,5 +49,5 @@ public interface StateUpdateManager
      *
      * @return the number of pending updates.
      */
-    public int countPendingUpdates();
+    int countPendingUpdates();
 }

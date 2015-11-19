@@ -24,7 +24,7 @@ public class ListVisitor extends SkeletonListVisitor
      * @param path the StatePath that is the parent to the required items.
      * @return the Set of all items that have the path as their parent.
      */
-    static public Set<String> getDetails(StateExhibitor exhibitor, StatePath path)
+    public static Set<String> getDetails(StateExhibitor exhibitor, StatePath path)
     {
         LOGGER.trace("Gathering current status for path {}", path);
         ListVisitor visitor = new ListVisitor(path);

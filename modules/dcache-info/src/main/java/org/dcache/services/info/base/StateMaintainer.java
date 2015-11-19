@@ -35,7 +35,7 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
     private ScheduledExecutorService _scheduler;
 
     /** The number of pending requests, queued up in the scheduler */
-    final private AtomicInteger _pendingRequestCount = new AtomicInteger();
+    private final AtomicInteger _pendingRequestCount = new AtomicInteger();
 
     /** Our link to the business logic for update dCache state */
     private volatile StateCaretaker _caretaker;
@@ -214,7 +214,7 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
      * {@link StateCaretaker#getEarliestMetricExpiryDate()} has changed to
      * avoid creating competing tasks.
      */
-    synchronized protected void scheduleMetricExpunge()
+    protected synchronized void scheduleMetricExpunge()
     {
         scheduleMetricExpunge(_caretaker.getEarliestMetricExpiryDate());
     }

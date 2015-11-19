@@ -11,7 +11,7 @@ import org.dcache.webadmin.controller.exceptions.CellAdminServiceException;
  */
 public interface CellAdminService {
 
-    public Map<String, List<String>> getDomainMap()
+    Map<String, List<String>> getDomainMap()
             throws CellAdminServiceException;
 
     /**
@@ -20,6 +20,6 @@ public interface CellAdminService {
      * @param command the command to send to the targeted cell. Available
      * commands depend on the targeted cell
      */
-    public String sendCommand(String target, String command)
+    String sendCommand(String target, String command)
             throws CellAdminServiceException;
 }

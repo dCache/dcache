@@ -19,7 +19,7 @@ public interface Cell {
      *  The Cell should return significant informations about
      *  the current status of the Cell.
      */
-   public String getInfo() ;
+   String getInfo() ;
    /**
      *  messageArrived is called by the kernel to deliver messages
      *  to the Cell. The message itself can be extracted out of the
@@ -27,7 +27,7 @@ public interface Cell {
      *  which is delivered by messageArrived will be a
      *  LastMessageEvent.
      */
-   public void   messageArrived( MessageEvent me ) ;
+   void   messageArrived(MessageEvent me) ;
    /**
      *  prepareRemoval is called by the kernel after a kill
      *  of the cell has been initialized. The KillEvent contains
@@ -39,8 +39,8 @@ public interface Cell {
      *                   initiater.
      *  @see  KillEvent
      */
-   public void   prepareRemoval( KillEvent killEvent ) ;
-   public void   exceptionArrived( ExceptionEvent ce ) ;
+   void   prepareRemoval(KillEvent killEvent) ;
+   void   exceptionArrived(ExceptionEvent ce) ;
 
     CellVersion getCellVersion();
 }

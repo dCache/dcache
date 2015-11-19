@@ -47,12 +47,12 @@ import static io.milton.http.Response.Status.*;
  */
 public class DcacheResponseHandler extends AbstractWrappingResponseHandler
 {
-    private final static Logger log =
+    private static final Logger log =
         LoggerFactory.getLogger(DcacheResponseHandler.class);
 
     private static final String HTML_TEMPLATE_NAME = "errorpage";
 
-    private final static Splitter PATH_SPLITTER =
+    private static final Splitter PATH_SPLITTER =
         Splitter.on('/').omitEmptyStrings();
 
     private final ImmutableMap<Response.Status,String> ERRORS =

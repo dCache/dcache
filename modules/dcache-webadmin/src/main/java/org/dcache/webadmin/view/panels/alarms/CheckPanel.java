@@ -85,7 +85,7 @@ public final class CheckPanel extends Panel {
 
     private final CheckBox checkBox;
 
-    public static abstract class CheckBoxColumn<T, S> extends AbstractColumn<T, S> {
+    public abstract static class CheckBoxColumn<T, S> extends AbstractColumn<T, S> {
         private static final long serialVersionUID = 8433056726333659452L;
 
         private final String uuid

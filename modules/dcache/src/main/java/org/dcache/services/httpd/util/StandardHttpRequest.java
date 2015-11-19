@@ -29,9 +29,9 @@ import java.util.Base64;
  * @author arossi
  */
 public class StandardHttpRequest implements HttpRequest {
-    private final static Splitter PATH_SPLITTER
+    private static final Splitter PATH_SPLITTER
         = Splitter.on('/').omitEmptyStrings();
-    private final static Logger logger
+    private static final Logger logger
         = LoggerFactory.getLogger(StandardHttpRequest.class);
 
     private final OutputStream out;

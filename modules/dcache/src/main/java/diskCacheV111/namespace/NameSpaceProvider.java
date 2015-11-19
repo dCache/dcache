@@ -29,33 +29,33 @@ public interface NameSpaceProvider
      * is inherited from the parent directory. When creating new
      * directories, this UMASK is applied to the inherited mode.
      */
-    public final int UMASK_DIR = 0777;
+    int UMASK_DIR = 0777;
 
     /**
      * When the mode field is not specified in createEntry, the mode
      * is inherited from the parent directory. When creating new
      * regular files, this UMASK is applied to the inherited mode.
      */
-    public final int UMASK_FILE = 0666;
+    int UMASK_FILE = 0666;
 
     /**
      * Special value used to indicate that a default value should be
      * used.
      */
-    public static final int DEFAULT = -1;
+    int DEFAULT = -1;
 
     /**
      * set if there is no old value
      */
-    public static final int SI_EXCLUSIVE = 0;
+    int SI_EXCLUSIVE = 0;
     /**
      * replace old value with new one
      */
-    public static final int SI_OVERWRITE = 1;
+    int SI_OVERWRITE = 1;
     /**
      * append new value to the old one
      */
-    public static final int SI_APPEND = 2;
+    int SI_APPEND = 2;
 
     /**
      * Create a file for a given path and type.

@@ -25,7 +25,7 @@ public class LinkgroupListMsgHandler implements MessageHandler
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkgroupListMsgHandler.class);
     private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
 
-    final private StateUpdateManager _sum;
+    private final StateUpdateManager _sum;
 
     public LinkgroupListMsgHandler(StateUpdateManager sum)
     {

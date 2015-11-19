@@ -40,7 +40,7 @@ public enum AccessAttribute {
 
     private final char _abbreviation;
 
-    private AccessAttribute(int value, char abbreviation) {
+    AccessAttribute(int value, char abbreviation) {
         _value = value;
         _abbreviation = abbreviation;
     }

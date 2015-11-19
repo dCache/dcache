@@ -19,7 +19,7 @@ public class LinkInfo
      * The different types of unit that may be used to select a link. These
      * are dcache, store, protocol and network.
      */
-    public static enum UNIT_TYPE
+    public enum UNIT_TYPE
     {
         DCACHE("dcache"), STORE("store"), PROTOCOL("protocol"), NETWORK("net");
 
@@ -40,7 +40,7 @@ public class LinkInfo
      * The four different types of operation that may be allowed on a link.
      * These are read, write, stage and pool-to-pool destination.
      */
-    public static enum OPERATION
+    public enum OPERATION
     {
         READ("read"), WRITE("write"), CACHE("cache"), P2P("p2p");
 

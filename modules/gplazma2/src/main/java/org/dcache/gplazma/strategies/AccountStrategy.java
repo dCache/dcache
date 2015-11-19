@@ -15,6 +15,6 @@ import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
 public interface AccountStrategy
                  extends GPlazmaStrategy<GPlazmaAccountPlugin> {
 
-    public void account(LoginMonitor monitor,
-            Set<Principal> authorizedPrincipals) throws AuthenticationException;
+    void account(LoginMonitor monitor,
+                 Set<Principal> authorizedPrincipals) throws AuthenticationException;
 }

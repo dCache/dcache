@@ -15,7 +15,7 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public interface LinkGroupsDAO {
 
-    public Collection<LinkGroup> getLinkGroups() throws DAOException;
+    Collection<LinkGroup> getLinkGroups() throws DAOException;
 
-    public Collection<Space> getSpaceReservations() throws DAOException;
+    Collection<Space> getSpaceReservations() throws DAOException;
 }

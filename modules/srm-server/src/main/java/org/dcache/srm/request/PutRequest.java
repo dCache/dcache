@@ -111,7 +111,7 @@ import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
  * @author  timur
  */
 public final class PutRequest extends ContainerRequest<PutFileRequest> {
-    private final static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(PutRequest.class);
 
     // private PutFileRequest fileRequests[];

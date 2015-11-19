@@ -254,11 +254,11 @@ public class NfsTransferService extends AbstractCellComponent
         return addressesToUse;
     }
 
-    public final static String fh_nfs_stats =
+    public static final String fh_nfs_stats =
             "nfs stats [-c] # show nfs requests statstics\n\n" +
             "  Print nfs operation statistics.\n" +
             "    -c clear current statistics values";
-    public final static String hh_nfs_stats = " [-c] # show nfs mover statstics";
+    public static final String hh_nfs_stats = " [-c] # show nfs mover statstics";
     public String ac_nfs_stats(Args args) {
 
         RequestExecutionTimeGauges<String> gauges = _nfsIO.getNFSServer().getStatistics();
@@ -272,7 +272,7 @@ public class NfsTransferService extends AbstractCellComponent
         return sb.toString();
     }
 
-    public final static String hh_nfs_sessions = " # show nfs sessions";
+    public static final String hh_nfs_sessions = " # show nfs sessions";
     public String ac_nfs_sessions(Args args) {
 
        StringBuilder sb = new StringBuilder();

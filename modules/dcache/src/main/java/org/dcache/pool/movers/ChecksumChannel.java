@@ -33,7 +33,7 @@ import static com.google.common.collect.Lists.newArrayList;
  */
 public class ChecksumChannel implements RepositoryChannel
 {
-    private final static Logger _log =
+    private static final Logger _log =
             LoggerFactory.getLogger(ChecksumChannel.class);
 
     /**

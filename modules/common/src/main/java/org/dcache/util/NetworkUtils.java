@@ -342,7 +342,7 @@ public abstract class NetworkUtils {
      * The scope of an address captures the extend of the validity of
      * an internet address.
      */
-    public static enum InetAddressScope
+    public enum InetAddressScope
     {
         LOOPBACK,
         LINK,

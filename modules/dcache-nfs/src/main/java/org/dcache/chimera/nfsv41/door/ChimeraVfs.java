@@ -69,7 +69,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
-    private final static Logger _log = LoggerFactory.getLogger(ChimeraVfs.class);
+    private static final Logger _log = LoggerFactory.getLogger(ChimeraVfs.class);
     private final JdbcFs _fs;
     private final NfsIdMapping _idMapping;
 

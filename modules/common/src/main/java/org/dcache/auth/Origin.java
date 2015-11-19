@@ -35,7 +35,7 @@ public class Origin implements Principal, Serializable
         private final int _value;
         private final char _abbreviation;
 
-        private AuthType(int value, char abbreviation) {
+        AuthType(int value, char abbreviation) {
             _value = value;
             _abbreviation = abbreviation;
         }

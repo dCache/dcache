@@ -16,7 +16,7 @@ import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
  */
 public class SpaceTokenCollector extends Collector {
 
-    private final static Logger _log
+    private static final Logger _log
         = LoggerFactory.getLogger(SpaceTokenCollector.class);
 
     private void collectSpaceTokens() throws CacheException,

@@ -23,7 +23,7 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
     private final ConcurrentMap<Long,UpdateState> states = new ConcurrentHashMap<>();
     private final Executor executor;
 
-    private static enum UpdateState
+    private enum UpdateState
     {
         QUEUED_FORCED, QUEUED_NOT_FORCED, PROCESSING
     }

@@ -6,5 +6,5 @@ package org.dcache.gplazma.loader;
  * represent the plugins discovered as part of some auto-discovery process.
  */
 public interface PluginRepositoryFactory {
-    public PluginRepository newRepository();
+    PluginRepository newRepository();
 }

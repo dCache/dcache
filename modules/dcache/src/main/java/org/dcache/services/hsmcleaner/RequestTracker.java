@@ -36,7 +36,7 @@ import org.dcache.util.Args;
  */
 public class RequestTracker implements CellMessageReceiver
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(RequestTracker.class);
 
     /**
@@ -122,7 +122,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Sets the CellStub for communicating with pools.
      */
-    synchronized public void setPoolStub(CellStub stub)
+    public synchronized void setPoolStub(CellStub stub)
     {
         _poolStub = stub;
     }
@@ -131,7 +131,7 @@ public class RequestTracker implements CellMessageReceiver
      * Set PoolInformationBase from which the request tracker learns
      * about available pools.
      */
-    synchronized public void setPoolInformationBase(PoolInformationBase pools)
+    public synchronized void setPoolInformationBase(PoolInformationBase pools)
     {
         _pools = pools;
     }
@@ -139,7 +139,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Set maximum number of files to include in a single request.
      */
-    synchronized public void setMaxFilesPerRequest(int value)
+    public synchronized void setMaxFilesPerRequest(int value)
     {
         _maxFilesPerRequest = value;
     }
@@ -147,7 +147,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Returns maximum number of files to include in a single request.
      */
-    synchronized public int getMaxFilesPerRequest()
+    public synchronized int getMaxFilesPerRequest()
     {
         return _maxFilesPerRequest;
     }
@@ -155,7 +155,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Set timeout in milliseconds for delete requests send to pools.
      */
-    synchronized public void setTimeout(long timeout)
+    public synchronized void setTimeout(long timeout)
     {
         _timeout = timeout;
     }
@@ -164,7 +164,7 @@ public class RequestTracker implements CellMessageReceiver
      * Returns timeout in milliseconds for delete requests send to
      * pools.
      */
-    synchronized public long getTimeout()
+    public synchronized long getTimeout()
     {
         return _timeout;
     }
@@ -172,7 +172,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Sets the sink to which success to delete a file is reported.
      */
-    synchronized public void setSuccessSink(Consumer<URI> sink)
+    public synchronized void setSuccessSink(Consumer<URI> sink)
     {
         _successSink = sink;
     }
@@ -180,7 +180,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Sets the sink to which failure to delete a file is reported.
      */
-    synchronized public void setFailureSink(Consumer<URI> sink)
+    public synchronized void setFailureSink(Consumer<URI> sink)
     {
         _failureSink = sink;
     }
@@ -193,7 +193,7 @@ public class RequestTracker implements CellMessageReceiver
      *
      * @param location the URI of the file to delete
      */
-    synchronized public void submit(URI location)
+    public synchronized void submit(URI location)
     {
         String hsm = location.getAuthority();
         Set<URI> locations = _locationsToDelete.get(hsm);
@@ -211,7 +211,7 @@ public class RequestTracker implements CellMessageReceiver
      *
      * @param hsm the name of an HSM instance
      */
-    synchronized private void flush(String hsm)
+    private synchronized void flush(String hsm)
     {
         Collection<URI> locations = _locationsToDelete.get(hsm);
         if (locations == null || locations.isEmpty()) {
@@ -335,8 +335,8 @@ public class RequestTracker implements CellMessageReceiver
         flush(hsm);
     }
 
-    public final static String hh_requests_ls = "[hsm] # Lists delete requests";
-    synchronized public String ac_requests_ls_$_0_1(Args args)
+    public static final String hh_requests_ls = "[hsm] # Lists delete requests";
+    public synchronized String ac_requests_ls_$_0_1(Args args)
     {
         StringBuilder sb = new StringBuilder();
         if (args.argc() == 0) {

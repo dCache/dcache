@@ -83,15 +83,15 @@ import org.dcache.util.Glob;
  */
 
 public interface RequestCredentialStorage {
-    public RequestCredential getRequestCredential(Long requestCredentialId);
-    public void saveRequestCredential(RequestCredential requestCredential);
+    RequestCredential getRequestCredential(Long requestCredentialId);
+    void saveRequestCredential(RequestCredential requestCredential);
 
     /**
      * Return the credential with the longest remaining lifetime that
      * matches the given name and fqan exactly.  If role is null then only
      * credentials that have no primary FQAN match.
      */
-    public RequestCredential getRequestCredential(String name, String role);
+    RequestCredential getRequestCredential(String name, String role);
 
     /**
      * Search for the credential with the longest remaining lifetime that matches
@@ -99,14 +99,14 @@ public interface RequestCredentialStorage {
      * no primary FQAN is returned.  If role is specified then only a credential
      * with a matching primary FQAN is returned.
      */
-    public RequestCredential searchRequestCredential(Glob name, Glob role);
+    RequestCredential searchRequestCredential(Glob name, Glob role);
 
     /**
      * Check where there is any stored credential for this user.  If role is
      * non-null then the role must match.  If role is null then any stored
      * credential for this user will match.
      */
-    public boolean hasRequestCredential(String credentialName, String role)
+    boolean hasRequestCredential(String credentialName, String role)
             throws IOException;
 
     /**
@@ -114,6 +114,6 @@ public interface RequestCredentialStorage {
      * role.  If role is null then only the credential name is used as a
      * predicate.  Returns true if one or more credentials were deleted.
      */
-    public boolean deleteRequestCredential(String credentialName, String role)
+    boolean deleteRequestCredential(String credentialName, String role)
             throws IOException;
 }

@@ -46,7 +46,7 @@ import org.dcache.util.Args;
   */
 public class WebPicturesV0 extends CellAdapter implements Runnable {
 
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(WebPicturesV0.class);
 
    private CellNucleus      _nucleus;
@@ -332,7 +332,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
        _cellContext.put( "RestoreQueueHistogram.date" , ( new Date() ).toString() ) ;
 
    }
-   static private class Histogram {
+   private static class Histogram {
       private int [] _displayErray;
       private int [] _displayArray;
       private int    _maxDisplayArray;
@@ -341,7 +341,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       private BinScale _masterBin;
       private BinScale _bin;
    }
-   static private  BinScale [] _binDefinition = {
+   private static BinScale [] _binDefinition = {
       new BinScale(                10 , 10 , "s"  ) ,
       new BinScale(                60 ,  1 , "m"  ) ,
       new BinScale(               120 ,  2 , "m"  ) ,
@@ -385,7 +385,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
       return scanTransferTable( br ) ;
    }
-   static private List<long[]> scanTransferTable( BufferedReader br ) throws IOException {
+   private static List<long[]> scanTransferTable(BufferedReader br ) throws IOException {
 
 
       List<long[]> list = new ArrayList<>() ;
@@ -410,7 +410,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
       }
       return list ;
    }
-   static private Histogram prepareTransferHistogram( List<long[]> list , int binCount , long cut ){
+   private static Histogram prepareTransferHistogram(List<long[]> list , int binCount , long cut ){
 
       Histogram histogram = new Histogram() ;
 
@@ -540,11 +540,11 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
 
    }
-   static private int [] _counterDefinition = {
+   private static int [] _counterDefinition = {
       1 , 2 , 5 , 10 , 20 , 50 , 100 , 200 ,
       500 , 1000 , 2000 , 5000 , 10000
    };
-   static public void paintComponent( Graphics gin , Dimension d , Histogram histogram , String title ){
+   public static void paintComponent(Graphics gin , Dimension d , Histogram histogram , String title ){
 
          Graphics2D g = (Graphics2D) gin ;
          g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,

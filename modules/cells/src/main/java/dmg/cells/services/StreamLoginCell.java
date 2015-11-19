@@ -35,7 +35,7 @@ public class      StreamLoginCell
        extends    CellAdapter
        implements Runnable  {
 
-  private final static Logger _log =
+  private static final Logger _log =
       LoggerFactory.getLogger(StreamLoginCell.class);
 
   private StreamEngine   _engine ;

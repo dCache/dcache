@@ -16,7 +16,7 @@ public enum ChecksumType
 
 
     /** Creates a new instance of Checksum */
-    private ChecksumType(int type, String name, int bits)
+    ChecksumType(int type, String name, int bits)
     {
         this.type = type;
         this.name = name;

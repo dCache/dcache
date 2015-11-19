@@ -6,18 +6,18 @@ import java.util.NoSuchElementException;
 
 public interface TopDownUserRelationable {
 
-    public Enumeration<String> getContainers() ;
-    public void        createContainer( String container )
+    Enumeration<String> getContainers() ;
+    void        createContainer(String container)
         throws DatabaseException ;
-    public Enumeration<String> getElementsOf( String container )
+    Enumeration<String> getElementsOf(String container)
         throws NoSuchElementException ;
-    public boolean     isElementOf( String container , String element )
+    boolean     isElementOf(String container, String element)
         throws NoSuchElementException ;
-    public void        addElement( String container , String element )
+    void        addElement(String container, String element)
         throws NoSuchElementException ;
-    public void     removeElement( String container , String element )
+    void     removeElement(String container, String element)
         throws NoSuchElementException ;
-    public void     removeContainer( String container )
+    void     removeContainer(String container)
         throws NoSuchElementException ,
                DatabaseException ;
 }

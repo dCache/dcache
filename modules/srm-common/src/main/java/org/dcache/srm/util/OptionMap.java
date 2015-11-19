@@ -21,16 +21,16 @@ public class OptionMap<Type> {
 
     // Used to construct template type from the string values available as input argument
     public interface Factory<T> {
-       public T make(String name,String value) throws NonComplientArgument;
+       T make(String name, String value) throws NonComplientArgument;
     }
 
     // ConstrainedFactoryImpl will build only attributed that have been known to this factory instance
     // ConstrainedFactoryImpl will skip all others
     public interface ConstrainedFactory<T> {
-       public T make(String value) throws NonComplientArgument;
+       T make(String value) throws NonComplientArgument;
     }
 
-    static abstract class ConstrainedFactoryImpl<Type> implements Factory<Type>,ConstrainedFactory<Type>{
+    abstract static class ConstrainedFactoryImpl<Type> implements Factory<Type>,ConstrainedFactory<Type>{
        ConstrainedFactoryImpl(String [] mustBeIntAttributes){ this.mustBeIntAttributes = mustBeIntAttributes; }
 
        @Override
@@ -108,7 +108,7 @@ public class OptionMap<Type> {
 
     }
 
-    static public void main(String [] argList){
+    public static void main(String [] argList){
 
         String [] intAttrs = { "attr1", "attr2", "attr3" ,"otherarg" };
         String [] args = { "--attr1=1","--attr2=2", "--attr3=3" , "--otherarg=aaa" };

@@ -32,7 +32,7 @@ import org.dcache.util.Args;
 
 public class WebCollectorV3 extends CellAdapter implements Runnable
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(WebCollectorV3.class);
 
     protected static final String OPTION_REPEATHEADER = "repeatHeader";

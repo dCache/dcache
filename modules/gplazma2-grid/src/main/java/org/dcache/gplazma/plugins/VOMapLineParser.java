@@ -80,7 +80,7 @@ class VOMapLineParser
         }
     }
 
-    private final static class DNFQANStringEntry
+    private static final class DNFQANStringEntry
         implements Map.Entry<DNFQANPredicate, String>
         {
 

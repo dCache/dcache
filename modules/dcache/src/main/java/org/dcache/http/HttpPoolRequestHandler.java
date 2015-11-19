@@ -66,7 +66,7 @@ import static org.dcache.util.StringMarkup.quotedString;
  */
 public class HttpPoolRequestHandler extends HttpRequestHandler
 {
-    private final static Logger _logger =
+    private static final Logger _logger =
         LoggerFactory.getLogger(HttpPoolRequestHandler.class);
 
     private static final String DIGEST = "Digest";

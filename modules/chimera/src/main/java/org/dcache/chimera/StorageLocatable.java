@@ -46,16 +46,16 @@ package org.dcache.chimera;
 
 public interface StorageLocatable {
 
-    public int type();
+    int type();
 
-    public String location();
+    String location();
 
-    public int priority();
+    int priority();
 
-    public long creationTime();
+    long creationTime();
 
-    public long accessTime();
+    long accessTime();
 
-    public boolean isOnline();
+    boolean isOnline();
 }
 

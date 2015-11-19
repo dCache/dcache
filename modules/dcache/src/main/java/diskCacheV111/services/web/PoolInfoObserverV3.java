@@ -26,13 +26,13 @@ import org.dcache.util.Args;
 
 public class PoolInfoObserverV3 extends AbstractCell
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(PoolInfoObserverV3.class);
 
-    private final static String THREAD_NAME = "pool-info-observer";
-    private final static String POOL_MANAGER = "PoolManager";
-    private final static String TOPOLOGY_NAME = "PoolManager";
-    private final static String TOPOLOGY_CONTEXT_KEY = "poolgroup-map.ser";
+    private static final String THREAD_NAME = "pool-info-observer";
+    private static final String POOL_MANAGER = "PoolManager";
+    private static final String TOPOLOGY_NAME = "PoolManager";
+    private static final String TOPOLOGY_CONTEXT_KEY = "poolgroup-map.ser";
 
     @Option(
         name = "refresh-time",

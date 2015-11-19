@@ -29,7 +29,7 @@ public class SkeletonListVisitor implements StateVisitor
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SkeletonListVisitor.class);
 
-    final private StatePath _pathToList;
+    private final StatePath _pathToList;
 
     /** The key of the current branch */
     private String _thisKey;

@@ -28,7 +28,7 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler
     private static final String WILDCARD_ROLE = "*";
     private static final String WILDCARD_VO = "*";
 
-    final private StateUpdateManager _sum;
+    private final StateUpdateManager _sum;
 
     public LinkgroupDetailsMsgHandler(StateUpdateManager sum)
     {

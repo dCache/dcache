@@ -34,10 +34,10 @@ import org.dcache.poolmanager.PoolMonitor;
  */
 public class UnpinProcessor implements Runnable
 {
-    private final static Logger _logger =
+    private static final Logger _logger =
         LoggerFactory.getLogger(UnpinProcessor.class);
 
-    private final static int MAX_RUNNING = 1000;
+    private static final int MAX_RUNNING = 1000;
 
     private final PinDao _dao;
     private final CellStub _poolStub;

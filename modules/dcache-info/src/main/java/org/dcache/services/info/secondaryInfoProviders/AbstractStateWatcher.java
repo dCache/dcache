@@ -19,7 +19,7 @@ import org.dcache.services.info.base.StateWatcher;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract public class AbstractStateWatcher implements StateWatcher
+public abstract class AbstractStateWatcher implements StateWatcher
 {
     private long _counter;
     private final Collection<StatePathPredicate> _predicates = new ArrayList<>();
@@ -39,7 +39,7 @@ abstract public class AbstractStateWatcher implements StateWatcher
      * when called from the constructor.
      * @return an array of Strings, each a StatePathPredicate.
      */
-    abstract protected String[] getPredicates();
+    protected abstract String[] getPredicates();
 
     @Override
     public synchronized void trigger(StateUpdate update, StateExhibitor currentState,

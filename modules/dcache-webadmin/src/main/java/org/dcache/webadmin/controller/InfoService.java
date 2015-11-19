@@ -8,6 +8,6 @@ import org.dcache.webadmin.controller.exceptions.InfoServiceException;
  */
 public interface InfoService {
 
-    public String getXmlForStatepath(String statepath) throws InfoServiceException;
+    String getXmlForStatepath(String statepath) throws InfoServiceException;
 
 }

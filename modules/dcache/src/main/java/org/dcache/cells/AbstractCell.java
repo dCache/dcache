@@ -197,7 +197,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
      * Returns the cell type specified as option 'cellType', or
      * "Generic" if the option was not given.
      */
-    static private String getCellType(Args args)
+    private static String getCellType(Args args)
     {
         String type = args.getOpt("cellType");
         return (type == null) ? "Generic" : type;
@@ -238,7 +238,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
      * @throws InterruptedException if the thread was interrupted
      * @throws ExecutionException if init threw an exception
      */
-    final protected void doInit()
+    protected final void doInit()
         throws InterruptedException, ExecutionException
     {
         try {

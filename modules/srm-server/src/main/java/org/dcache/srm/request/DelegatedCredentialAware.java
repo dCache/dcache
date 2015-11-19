@@ -9,5 +9,5 @@ public interface DelegatedCredentialAware
      * The ID of the delegated credential or null if no such credential
      * is available.
      */
-    public Long getCredentialId();
+    Long getCredentialId();
 }

@@ -117,7 +117,7 @@ import static java.util.Arrays.asList;
   */
 public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnable {
 
-    private final static Logger _log = LoggerFactory.getLogger(PoolStatisticsV0.class);
+    private static final Logger _log = LoggerFactory.getLogger(PoolStatisticsV0.class);
 
     /*
      *   Magic spells to get the infos out of the different cells.
@@ -1456,7 +1456,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         }
     }
 
-    static private class BaseStatisticsHtml {
+    private static class BaseStatisticsHtml {
         private int         _height  = 10;
         private int         _absoluteWidth   = 500;
         private int         _relativeWidth   = 100;

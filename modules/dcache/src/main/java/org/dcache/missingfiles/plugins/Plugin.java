@@ -16,7 +16,7 @@ public interface Plugin
      *  time; for example, if the plugin attempts to fetch the data from
      *  some third-party site.
      */
-    public Future<Result> accept(Subject subject, String requestPath,
-            String internalPath);
+    Future<Result> accept(Subject subject, String requestPath,
+                          String internalPath);
 
 }

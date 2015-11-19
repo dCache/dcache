@@ -102,7 +102,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>, Runnable {
-    private final static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(DatabaseJobStorage.class);
 
     @SuppressWarnings("unchecked")

@@ -137,13 +137,13 @@ package org.dcache.srm;
  */
 public interface ReleaseSpaceCallbacks {
     
-    public void ReleaseSpaceFailed(String reason);
+    void ReleaseSpaceFailed(String reason);
     
-    public void SpaceReleased();
+    void SpaceReleased();
     
-    public void Exception(Exception e);
+    void Exception(Exception e);
     
-    public void Timeout();
+    void Timeout();
     
-    public void Error(String error);
+    void Error(String error);
 }

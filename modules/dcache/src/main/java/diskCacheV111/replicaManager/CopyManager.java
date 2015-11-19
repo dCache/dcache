@@ -39,7 +39,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class CopyManager extends CellAdapter {
 
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(CopyManager.class);
 
    private final Object     _processLock = new Object() ;
@@ -651,12 +651,12 @@ public void messageArrived( CellMessage message ){
 
    private class PoolFileEntry {
 
-       private final static int IDLE     = 0 ;
-       private final static int TRANSFER = 1 ;
-       private final static int STATE    = 2 ;
-       private final static int DONE     = 3 ;
-       private final static int QUERY_1  = 4 ;
-       private final static int QUERY_2  = 5 ;
+       private static final int IDLE     = 0 ;
+       private static final int TRANSFER = 1 ;
+       private static final int STATE    = 2 ;
+       private static final int DONE     = 3 ;
+       private static final int QUERY_1  = 4 ;
+       private static final int QUERY_2  = 5 ;
 
        private long    _size;
        private boolean _isPrecious;

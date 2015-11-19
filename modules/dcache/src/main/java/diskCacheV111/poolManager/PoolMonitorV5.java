@@ -49,7 +49,7 @@ import static org.dcache.namespace.FileAttribute.*;
 public class PoolMonitorV5
     implements Serializable, PoolMonitor
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(PoolMonitorV5.class);
 
     private static final long serialVersionUID = -2400834413958127412L;

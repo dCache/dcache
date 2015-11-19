@@ -34,7 +34,7 @@ public class      TelnetLoginManager
        extends    CellAdapter
        implements Cell, Runnable, TelnetServerAuthentication  {
 
-  private final static Logger _log =
+  private static final Logger _log =
         LoggerFactory.getLogger(TelnetLoginManager.class);
 
   private String       _cellName ;

@@ -12,7 +12,7 @@ import java.util.Date;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract public class StateValue implements StateComponent
+public abstract class StateValue implements StateComponent
 {
     private static final boolean DUMMY_ISEPHEMERAL_VALUE = false;
 

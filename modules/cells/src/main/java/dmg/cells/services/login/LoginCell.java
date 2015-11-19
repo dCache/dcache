@@ -34,7 +34,7 @@ public class      LoginCell
        extends    CellAdapter
        implements Runnable  {
 
-  private final static Logger _log =
+  private static final Logger _log =
       LoggerFactory.getLogger(LoginCell.class);
 
   private StreamEngine   _engine ;
@@ -79,7 +79,7 @@ public class      LoginCell
 
      start() ;
   }
-  private final static Class<?>[][] _signature = {
+  private static final Class<?>[][] _signature = {
      {
        String.class ,
        CellNucleus.class ,

@@ -110,8 +110,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
   * </ul>
   */
 
-abstract public class DCacheCoreControllerV2 extends CellAdapter {
-   private final static Logger _log =
+public abstract class DCacheCoreControllerV2 extends CellAdapter {
+   private static final Logger _log =
        LoggerFactory.getLogger(DCacheCoreControllerV2.class);
     private final Thread messageProcessingThread;
 
@@ -176,7 +176,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         super.cleanUp();
     }
 
-    abstract protected
+    protected abstract
            List<String> getPoolListResilient ()
            throws Exception;
 
@@ -353,7 +353,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      private Hashtable<String,AtomicInteger> _p2pClientCount;
      private Hashtable<String,AtomicInteger> _p2pServerCount;
 
-     synchronized public void reset() {
+     public synchronized void reset() {
        _p2pClientCount     = new Hashtable<>();
        _p2pServerCount     = new Hashtable<>();
      }
@@ -376,7 +376,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        return (serverCount != null) ? serverCount.get() : 0;
      }
 
-     synchronized public void add(String src, String dst) {
+     public synchronized void add(String src, String dst) {
        AtomicInteger clientCount, serverCount;
 
        serverCount =  _p2pServerCount.get( src );
@@ -396,7 +396,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        }
      }
 
-     synchronized public void remove(String src, String dst) {
+     public synchronized void remove(String src, String dst) {
        AtomicInteger clients;
        AtomicInteger servers;
 
@@ -1400,7 +1400,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *    }
      * </pre>
      */
-    abstract public
+   public abstract
         void cacheLocationModified(
           PnfsModifyCacheLocationMessage msg , boolean wasAdded ) ;
 
@@ -1417,7 +1417,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *    }
      * </pre>
      */
-    abstract public
+    public abstract
         void cacheLocationAdded( List<PnfsAddCacheLocationMessage> ml );
 
    /**
@@ -1432,7 +1432,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *    }
      * </pre>
      */
-    abstract public
+   public abstract
         void taskFinished( TaskObserver task );
 
    /**

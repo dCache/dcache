@@ -59,10 +59,10 @@ public class HttpPoolMgrEngineV3 implements
     private static final String PARAMETER_SORT = "sort";
     private static final String PARAMETER_STORE = "store";
     private static final String PARAMETER_TYPE = "type";
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(HttpPoolMgrEngineV3.class);
 
-    private final static long TIMEOUT = 20000;
+    private static final long TIMEOUT = 20000;
 
     private final Thread _restoreCollector;
     private CellStub _poolManager;

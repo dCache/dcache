@@ -216,7 +216,7 @@ public class NFSv4MoverHandler {
     /**
      * A time window in millis during which we accept idle movers.
      */
-    private final static long IDLE_PERIOD = TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME * 5);
+    private static final long IDLE_PERIOD = TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME * 5);
 
     private final ScheduledExecutorService _cleanerExecutor;
     private final long _bootVerifier;

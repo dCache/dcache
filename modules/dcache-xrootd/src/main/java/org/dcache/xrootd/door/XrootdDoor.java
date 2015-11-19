@@ -103,22 +103,22 @@ public class XrootdDoor
     implements CellMessageReceiver,
                CellCommandListener
 {
-    public final static String XROOTD_PROTOCOL_STRING = "Xrootd";
-    public final static int XROOTD_PROTOCOL_MAJOR_VERSION = 2;
-    public final static int XROOTD_PROTOCOL_MINOR_VERSION = 7;
-    public final static String XROOTD_PROTOCOL_VERSION =
+    public static final String XROOTD_PROTOCOL_STRING = "Xrootd";
+    public static final int XROOTD_PROTOCOL_MAJOR_VERSION = 2;
+    public static final int XROOTD_PROTOCOL_MINOR_VERSION = 7;
+    public static final String XROOTD_PROTOCOL_VERSION =
         String.format("%d.%d",
                       XROOTD_PROTOCOL_MAJOR_VERSION,
                       XROOTD_PROTOCOL_MINOR_VERSION);
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(XrootdDoor.class);
 
-    private final static AtomicInteger _handleCounter = new AtomicInteger();
+    private static final AtomicInteger _handleCounter = new AtomicInteger();
 
-    private final static long PING_DELAY = 300000;
+    private static final long PING_DELAY = 300000;
 
-    private final static TransferRetryPolicy RETRY_POLICY =
+    private static final TransferRetryPolicy RETRY_POLICY =
         TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE);
 
     private List<FsPath> _readPaths = Collections.singletonList(new FsPath());
@@ -906,7 +906,7 @@ public class XrootdDoor
      * as a door, we have to emulate LoginManager.  To emulate
      * LoginManager we list ourselves as our child.
      */
-    public final static String hh_get_children = "[-binary]";
+    public static final String hh_get_children = "[-binary]";
     public Object ac_get_children(Args args)
     {
         boolean binary = args.hasOption("binary");
@@ -918,8 +918,8 @@ public class XrootdDoor
         }
     }
 
-    public final static String hh_get_door_info = "[-binary]";
-    public final static String fh_get_door_info =
+    public static final String hh_get_door_info = "[-binary]";
+    public static final String fh_get_door_info =
         "Provides information about the door and current transfers";
     public Object ac_get_door_info(Args args)
     {

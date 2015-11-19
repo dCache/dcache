@@ -102,9 +102,9 @@ public abstract class UserAuthBase implements Serializable {
         }
     }
 
-    abstract public boolean isAnonymous();
+    public abstract boolean isAnonymous();
 
-    abstract public boolean isWeak();
+    public abstract boolean isWeak();
 
     public FQAN getFqan() {
         return fqan;

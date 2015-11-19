@@ -12,7 +12,7 @@ import org.dcache.acl.enums.RsType;
 public class Permission {
 
     // 111110000000111111111 = 1F01FF = 2032127
-    public final static int ALLOW_ALL = 0x001F01FF;
+    public static final int ALLOW_ALL = 0x001F01FF;
 
     /**
      * The defMsk defines the flags which have been set to either “allow” or

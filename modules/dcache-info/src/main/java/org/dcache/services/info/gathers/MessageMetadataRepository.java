@@ -16,7 +16,7 @@ public interface MessageMetadataRepository<ID>
      *            the duration, in seconds, for metrics derived from this
      *            message.
      */
-    public void putMetricTTL(ID messageId, long ttl);
+    void putMetricTTL(ID messageId, long ttl);
 
     /**
      * Look up the recorded TTL against an outgoing message.
@@ -27,7 +27,7 @@ public interface MessageMetadataRepository<ID>
      * @throws IllegalArgumentException
      *             if no TTL was recorded for this messageID
      */
-    public long getMetricTTL(ID messageId);
+    long getMetricTTL(ID messageId);
 
     /**
      * Remove all metadata associated with a message.
@@ -35,7 +35,7 @@ public interface MessageMetadataRepository<ID>
      * @param messageId
      *            the message about which all metadata will be purged.
      */
-    public void remove(ID messageId);
+    void remove(ID messageId);
 
     /**
      * Query whether a TTL was recorded against this message ID.
@@ -45,5 +45,5 @@ public interface MessageMetadataRepository<ID>
      * @returns true if a TTL was recorded against the message ID, false
      *          otherwise.
      */
-    public boolean containsMetricTTL(ID messageId);
+    boolean containsMetricTTL(ID messageId);
 }

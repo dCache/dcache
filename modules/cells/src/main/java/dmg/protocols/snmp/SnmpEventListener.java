@@ -8,5 +8,5 @@ package dmg.protocols.snmp ;
   */
 public interface SnmpEventListener {
 
-  public SnmpRequest snmpEventArrived( SnmpEvent event ) ;
+  SnmpRequest snmpEventArrived(SnmpEvent event) ;
 }

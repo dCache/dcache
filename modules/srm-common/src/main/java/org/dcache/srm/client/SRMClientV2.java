@@ -124,9 +124,9 @@ import static com.google.common.net.InetAddresses.isInetAddress;
 public class SRMClientV2 implements ISRM {
     private static final Logger logger =
         LoggerFactory.getLogger(SRMClientV2.class);
-    private final static String SFN_STRING="?SFN=";
-    private final static String WEB_SERVICE_PATH="srm/managerv2";
-    private final static String GSS_EXPECTED_NAME="host";
+    private static final String SFN_STRING="?SFN=";
+    private static final String WEB_SERVICE_PATH="srm/managerv2";
+    private static final String GSS_EXPECTED_NAME="host";
     private int retries;
     private long retrytimeout;
 

@@ -11,9 +11,9 @@ package org.dcache.srm.scheduler;
  * @author  timur
  */
 public interface JobIdGenerator {
-    public long getNextId();
+    long getNextId();
 
     // true long numbers sequence
-    public long nextLong();
+    long nextLong();
 
 }

@@ -11,48 +11,48 @@ public interface CacheEntry
     /**
      * Get the PnfsId of this entry.
      */
-    public PnfsId getPnfsId();
+    PnfsId getPnfsId();
 
     /**
      * Get the size of the replica.
      */
-    public long getReplicaSize();
+    long getReplicaSize();
 
     /**
      * @return file attributes of this entry
      */
-    public FileAttributes getFileAttributes();
+    FileAttributes getFileAttributes();
 
     /**
      *
      * @return entry state
      */
-    public EntryState getState();
+    EntryState getState();
 
     /**
      *
      * @return entry creation time in milliseconds
      */
-    public long getCreationTime();
+    long getCreationTime();
 
     /**
      *
      * @return entry last access time in milliseconds.
      */
-    public long getLastAccessTime();
+    long getLastAccessTime();
 
     /**
      * @return current link count
      */
-    public int getLinkCount();
+    int getLinkCount();
 
     /**
      * @return true iff entry is sticky.
      */
-    public boolean isSticky();
+    boolean isSticky();
 
     /**
      * @return the sticky records for this entry.
      */
-    public Collection<StickyRecord> getStickyRecords();
+    Collection<StickyRecord> getStickyRecords();
 }

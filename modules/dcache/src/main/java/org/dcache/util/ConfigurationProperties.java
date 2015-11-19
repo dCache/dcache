@@ -105,7 +105,7 @@ public class ConfigurationProperties
     private static final Set<Annotation> OBSOLETE_FORBIDDEN =
         EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(ConfigurationProperties.class);
 
     private final PropertiesBackedReplaceable _replaceable =
@@ -666,11 +666,11 @@ public class ConfigurationProperties
      * not assume that this will happen.
      */
     public interface ProblemConsumer {
-        public void setFilename(String name);
-        public void setLineNumberReader(LineNumberReader reader);
-        public void error(String message);
-        public void warning(String message);
-        public void info(String message);
+        void setFilename(String name);
+        void setLineNumberReader(LineNumberReader reader);
+        void error(String message);
+        void warning(String message);
+        void info(String message);
     }
 
     /**
@@ -755,7 +755,7 @@ public class ConfigurationProperties
      */
     public static class ConfigurationParserAwareReader extends Reader
     {
-        final private BufferedReader _inner;
+        private final BufferedReader _inner;
         private boolean _shouldInjectBlankLine;
         private String _remaining = "";
 

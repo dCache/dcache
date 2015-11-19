@@ -26,7 +26,7 @@ public interface PoolSelectable {
 	    Write Pool preselection on available static information
 	*/
 
-	public void initialWritePoolSelection( PoolSelectionRequest request, List poolQualitylist);
+	void initialWritePoolSelection(PoolSelectionRequest request, List poolQualitylist);
 
 	/**
 	    Write Pool final selection on dynamic informatio
@@ -34,13 +34,13 @@ public interface PoolSelectable {
 
 	*/
 
-	public void finalWritePoolSelection( PoolSelectionRequest request, List poolQualitylist);
+	void finalWritePoolSelection(PoolSelectionRequest request, List poolQualitylist);
 
 	/**
 	    Read Pool preselection on available static information
 	*/
 
-	public void initialReadPoolSelection( PoolSelectionRequest request, List poolQualitylist);
+	void initialReadPoolSelection(PoolSelectionRequest request, List poolQualitylist);
 
 	/**
 	    Read Pool final selection on dynamic informatio
@@ -48,12 +48,12 @@ public interface PoolSelectable {
 
 	*/
 
-	public void finalReadPoolSelection( PoolSelectionRequest request, List poolQualitylist);
+	void finalReadPoolSelection(PoolSelectionRequest request, List poolQualitylist);
 
 
 	// Utility methods
-	public void setParameter(String key, Object value);
-	public Object getParameter(String key);
-	public void printInfo( PrintWriter printWriter);
-	public Map getEnviroment();
+	void setParameter(String key, Object value);
+	Object getParameter(String key);
+	void printInfo(PrintWriter printWriter);
+	Map getEnviroment();
 }

@@ -42,7 +42,7 @@ public class PinManagerCLI
     extends AbstractCellComponent
     implements CellCommandListener
 {
-    private final static AtomicInteger _counter =
+    private static final AtomicInteger _counter =
         new AtomicInteger(0);
 
     private final Map<Integer,BulkJob> _jobs =

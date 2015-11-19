@@ -16,7 +16,7 @@ public interface GPlazmaIdentityPlugin extends GPlazmaPlugin {
      * @return mapped principal
      * @throws NoSuchPrincipalException if mapping does not exists.
      */
-    public Principal map(Principal principal) throws NoSuchPrincipalException;
+    Principal map(Principal principal) throws NoSuchPrincipalException;
 
     /**
      * Reverse mapping. The resulting {@link Set} MUST contain only principals on which <code>map</code>
@@ -25,5 +25,5 @@ public interface GPlazmaIdentityPlugin extends GPlazmaPlugin {
      * @return non empty {@link Set} of equivalent principals.
      * @throws NoSuchPrincipalException if mapping does not exists.
      */
-    public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException;
+    Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException;
 }

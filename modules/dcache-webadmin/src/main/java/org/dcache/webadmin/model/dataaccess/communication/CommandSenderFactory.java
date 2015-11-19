@@ -8,7 +8,7 @@ import org.dcache.cells.CellStub;
  */
 public interface CommandSenderFactory {
 
-    public CommandSender createCommandSender(CellMessageGenerator<?> messageGenerator);
+    CommandSender createCommandSender(CellMessageGenerator<?> messageGenerator);
 
-    public CellStub getCellStub();
+    CellStub getCellStub();
 }

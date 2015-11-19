@@ -27,12 +27,12 @@ import org.dcache.services.info.base.StringStateValue;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
+public abstract class CellMessageHandlerSkel implements CellMessageAnswerable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CellMessageHandlerSkel.class);
 
-    private final static String SIMPLE_DATE_FORMAT = "MMM d, HH:mm:ss z";
-    private final static String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm'Z'";
+    private static final String SIMPLE_DATE_FORMAT = "MMM d, HH:mm:ss z";
+    private static final String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm'Z'";
 
     /**
      * Adds a standard set of metrics that represent some point in time.  We add three metrics that
@@ -82,7 +82,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
      *
      *  We guarantee that msgPayload is never null and is never instanceof Exception.
      */
-    abstract public void process(Object msgPayload, long metricLifetime);
+    public abstract void process(Object msgPayload, long metricLifetime);
 
 
     /**

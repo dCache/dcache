@@ -12,5 +12,5 @@ public interface NamespaceAware
      * The plugin accepts the namespace provider.  This method is called
      * precisely once before any plugin-related methods are called.
      */
-    public void setNamespace(NameSpaceProvider namespace);
+    void setNamespace(NameSpaceProvider namespace);
 }

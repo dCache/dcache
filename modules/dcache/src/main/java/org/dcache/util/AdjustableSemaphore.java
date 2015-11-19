@@ -14,7 +14,7 @@ import static com.google.common.base.Preconditions.*;
  * @author Marshall Pierce <marshall@genius.com>
  * @see http://blog.teamlazerbeez.com/2009/04/20/javas-semaphore-resizing/
  */
-final public class AdjustableSemaphore {
+public final class AdjustableSemaphore {
 
     /**
      * semaphore starts at 0 capacity; must be set by setMaxPermits before use

@@ -51,7 +51,7 @@ public class JDC implements AutoCloseable
 {
     // FIXME this value must be the same as dmg.cells.nucleus.CDC.MDC_SESSION
     // as the mapping JDC --> CDC currently requires this coincidence.
-    public final static String MDC_SESSION = "cells.session";
+    public static final String MDC_SESSION = "cells.session";
 
     private static final String _epoc = createEpocString() + ":";
     private static final AtomicLong _id = new AtomicLong();
@@ -73,7 +73,7 @@ public class JDC implements AutoCloseable
      * <code>MDC.remove</code>. <code>value</code> is allowed to e
      * null.
      */
-    static private void setMdc(String key, String value)
+    private static void setMdc(String key, String value)
     {
         if (value != null) {
             MDC.put(key, value);
@@ -104,7 +104,7 @@ public class JDC implements AutoCloseable
      * Returns this session's identifier.  The value is bound to the current
      * thread.
      */
-    static public String getSession()
+    public static String getSession()
     {
         return MDC.get(MDC_SESSION);
     }
@@ -116,7 +116,7 @@ public class JDC implements AutoCloseable
      *
      * @param id Session identifier.
      */
-    static public void setSession(String id)
+    public static void setSession(String id)
     {
         Deque<String> items = new LinkedList<>();
 
@@ -160,7 +160,7 @@ public class JDC implements AutoCloseable
      * @param request Information identifying the SRM request
      * @return a JDC capturing the previous context
      */
-    static public JDC createSession(String request)
+    public static JDC createSession(String request)
     {
         JDC current = new JDC();
         setSession(_epoc + Long.toString(_id.incrementAndGet()) + ":" + request);
@@ -172,12 +172,12 @@ public class JDC implements AutoCloseable
      * The new session ID is a combination of the existing session ID (if any)
      * and the suffix.  The NDC is updated accordingly.
      */
-    static public void appendToSession(String suffix)
+    public static void appendToSession(String suffix)
     {
         setSession(nullToEmpty(getSession()) + ":" + suffix);
     }
 
-    static private String createEpocString()
+    private static String createEpocString()
     {
         long time = System.currentTimeMillis();
         byte hash1 = (byte)(time ^ (time >>> 8) ^ (time >>> 24) ^ (time >>> 40)

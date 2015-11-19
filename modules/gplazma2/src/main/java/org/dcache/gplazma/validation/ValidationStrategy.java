@@ -13,6 +13,6 @@ import org.dcache.gplazma.LoginReply;
  */
 public interface ValidationStrategy {
 
-    public void validate(LoginReply loginReply)
+    void validate(LoginReply loginReply)
                 throws AuthenticationException;
 }

@@ -82,8 +82,8 @@ public class LogbackShell
         return (level == null) ? "" : level.toString();
     }
 
-    public final static String hh_log_logger_ls = "[-a]";
-    public final static String fh_log_logger_ls =
+    public static final String hh_log_logger_ls = "[-a]";
+    public static final String fh_log_logger_ls =
         "Lists logger instances. Loggers that inherit all properties are\n" +
         "not listed unless the -a option is specified.";
     public String ac_log_logger_ls(Args args)
@@ -110,9 +110,9 @@ public class LogbackShell
         return f.toString();
     }
 
-    public final static String hh_log_logger_set =
+    public static final String hh_log_logger_set =
         "<logger> OFF|ERROR|WARN|INFO|DEBUG|TRACE|ALL";
-    public final static String fh_log_logger_set =
+    public static final String fh_log_logger_set =
         "Sets log level of <logger>. Notice that the preferred method to\n" +
         "adjust log levels in dCache is to manipulate the appender log\n" +
         "levels through the 'log set' and 'log reset' commands.";
@@ -129,9 +129,9 @@ public class LogbackShell
         return "Log level of " + name + " set to " + level;
     }
 
-    public final static String hh_log_logger_reset =
+    public static final String hh_log_logger_reset =
         "<logger>";
-    public final static String fh_log_logger_reset =
+    public static final String fh_log_logger_reset =
         "Resets the log level of <logger>. The effective log level will be\n" +
         "inherited from the parent logger. Notice that the preferred method\n" +
         "to adjust log levels in dCache is to manipulate the appender log\n" +
@@ -148,9 +148,9 @@ public class LogbackShell
         return "Log level of " + name + " was reset";
     }
 
-    public final static String hh_log_attach =
+    public static final String hh_log_attach =
         "<logger> <appender>";
-    public final static String fh_log_attach =
+    public static final String fh_log_attach =
         "Attach <logger> to output module <appender>.";
     public String ac_log_attach_$_2(Args args)
     {
@@ -171,9 +171,9 @@ public class LogbackShell
         return name + " attached to " + appender;
     }
 
-    public final static String hh_log_detach =
+    public static final String hh_log_detach =
         "<logger> <appender>";
-    public final static String fh_log_detach =
+    public static final String fh_log_detach =
         "Detach <logger> from output module <appender>.";
     public String ac_log_detach_$_2(Args args)
     {
@@ -189,9 +189,9 @@ public class LogbackShell
         return name + " detached from " + appender;
     }
 
-    public final static String hh_log_get_pattern =
+    public static final String hh_log_get_pattern =
             "<logger> <appender>";
-    public final static String fh_log_get_pattern =
+    public static final String fh_log_get_pattern =
             "Get encoder pattern for <logger> <appender>.";
     public String ac_log_get_pattern_$_2(Args args)
     {
@@ -227,9 +227,9 @@ public class LogbackShell
         return "pattern of appender " + appenderName + " is " + patternLayoutEncoder.getPattern();
     }
 
-    public final static String hh_log_set_pattern =
+    public static final String hh_log_set_pattern =
         "<logger> <appender> <pattern>";
-    public final static String fh_log_set_pattern =
+    public static final String fh_log_set_pattern =
         "Set encoder pattern to <pattern> for <logger> <appender>.";
     public String ac_log_set_pattern_$_3(Args args)
     {

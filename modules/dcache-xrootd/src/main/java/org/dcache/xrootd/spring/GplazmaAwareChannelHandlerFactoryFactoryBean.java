@@ -26,10 +26,10 @@ import static com.google.common.collect.Iterables.*;
 public class GplazmaAwareChannelHandlerFactoryFactoryBean
     extends ChannelHandlerFactoryFactoryBean
 {
-    private final static ServiceLoader<AuthenticationProvider> _authenticationProviders =
+    private static final ServiceLoader<AuthenticationProvider> _authenticationProviders =
             ServiceLoader.load(AuthenticationProvider.class);
 
-    private final static String GPLAZMA_PREFIX = "gplazma:";
+    private static final String GPLAZMA_PREFIX = "gplazma:";
 
     private LoginStrategy _loginStrategy;
     private LoginStrategy _anonymousLoginStrategy;

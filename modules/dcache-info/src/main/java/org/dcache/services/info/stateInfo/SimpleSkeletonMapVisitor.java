@@ -21,7 +21,7 @@ import org.dcache.services.info.base.StatePath;
  */
 public class SimpleSkeletonMapVisitor extends SkeletonListVisitor
 {
-    final private StatePath _relativePathToMetric;
+    private final StatePath _relativePathToMetric;
 
     private StatePath _pathToMetric;
 

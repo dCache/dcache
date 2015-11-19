@@ -30,7 +30,7 @@ import dmg.util.CommandThrowableException;
 public class       UserSecurityCell
        extends     CellAdapter            {
 
-  private final static Logger _log =
+  private static final Logger _log =
       LoggerFactory.getLogger(UserSecurityCell.class);
 
   private final String       _cellName ;

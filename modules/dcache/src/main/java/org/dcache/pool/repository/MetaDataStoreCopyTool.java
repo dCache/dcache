@@ -12,7 +12,7 @@ import diskCacheV111.util.PnfsId;
 
 public class MetaDataStoreCopyTool
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(MetaDataStoreCopyTool.class);
 
     static MetaDataStore createStore(Class<? extends MetaDataStore> clazz,

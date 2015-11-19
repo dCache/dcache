@@ -26,7 +26,7 @@ public class NoCachedFilesSpaceSweeper
     extends AbstractStateChangeListener
     implements SpaceSweeperPolicy
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(NoCachedFilesSpaceSweeper.class);
 
     private Repository _repository;

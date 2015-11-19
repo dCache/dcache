@@ -7,11 +7,11 @@ import diskCacheV111.util.PnfsId;
 
 public interface PoolFileCheckable extends PoolCheckable  {
 
-    public void setPnfsId(PnfsId pnfsId);
-    public PnfsId getPnfsId();
-    public boolean getHave();
-    public void setHave(boolean have);
-    public boolean getWaiting();
-    public void setWaiting(boolean waiting);
+    void setPnfsId(PnfsId pnfsId);
+    PnfsId getPnfsId();
+    boolean getHave();
+    void setHave(boolean have);
+    boolean getWaiting();
+    void setWaiting(boolean waiting);
 
 }

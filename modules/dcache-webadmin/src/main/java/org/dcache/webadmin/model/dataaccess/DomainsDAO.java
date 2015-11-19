@@ -19,15 +19,15 @@ public interface DomainsDAO {
      * gPlazma, LoginBroker put into the key which is the domain they are in.
      * @return delivers a map<domainname,List<cellname>>
      */
-    public Map<String, List<String>> getDomainsMap();
+    Map<String, List<String>> getDomainsMap();
 
-    public Set<CellStatus> getCellStatuses();
+    Set<CellStatus> getCellStatuses();
 
     /**
      *
      * @param destinations targets for the command
      * @param command command to send
      */
-    public Set<CellResponse> sendCommand(Set<String> destinations, String command)
+    Set<CellResponse> sendCommand(Set<String> destinations, String command)
             throws DAOException;
 }

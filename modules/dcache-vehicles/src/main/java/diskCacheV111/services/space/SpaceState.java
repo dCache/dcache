@@ -91,7 +91,7 @@ public enum SpaceState
     private final int stateId;
     private final boolean isFinal;
 
-    private SpaceState(int stateId, boolean isFinal)
+    SpaceState(int stateId, boolean isFinal)
     {
         this.stateId = stateId;
         this.isFinal = isFinal;

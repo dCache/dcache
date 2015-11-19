@@ -22,65 +22,65 @@ package org.dcache.chimera;
 public class UnixPermission {
 
     private final int _mode;
-    static public final int S_IRUSR = 00400; // owner has read permission
-    static public final int S_IWUSR = 00200; // owner has write permission
-    static public final int S_IXUSR = 00100; // owner has execute permission
-    static public final int S_IRGRP = 00040; // group has read permission
-    static public final int S_IWGRP = 00020; // group has write permission
-    static public final int S_IXGRP = 00010; // group has execute permission
-    static public final int S_IROTH = 00004; // others have read permission
-    static public final int S_IWOTH = 00002; // others have write permission
-    static public final int S_IXOTH = 00001; // others have execute
+    public static final int S_IRUSR = 00400; // owner has read permission
+    public static final int S_IWUSR = 00200; // owner has write permission
+    public static final int S_IXUSR = 00100; // owner has execute permission
+    public static final int S_IRGRP = 00040; // group has read permission
+    public static final int S_IWGRP = 00020; // group has write permission
+    public static final int S_IXGRP = 00010; // group has execute permission
+    public static final int S_IROTH = 00004; // others have read permission
+    public static final int S_IWOTH = 00002; // others have write permission
+    public static final int S_IXOTH = 00001; // others have execute
     // permission
     /**
      * permission mask
      */
-    static public final int S_PERMS = 07777; // permission mask
-    static public final int s_ISTICKY = 01000; // sticky bit
+    public static final int S_PERMS = 07777; // permission mask
+    public static final int s_ISTICKY = 01000; // sticky bit
 
     /**
      * Set UID bit
      */
-    static public final int S_ISUID  = 04000;
+    public static final int S_ISUID  = 04000;
 
     /**
      * Set GID bit
      */
-    static public final int S_ISGID = 02000;
+    public static final int S_ISGID = 02000;
 
     /**
      * Unix domain socket
      */
-    static public final int S_IFSOCK = 0140000;
+    public static final int S_IFSOCK = 0140000;
     /**
      * Symbolic link
      */
-    static public final int S_IFLNK = 0120000;
+    public static final int S_IFLNK = 0120000;
     /**
      * Regular file
      */
-    static public final int S_IFREG = 0100000;
+    public static final int S_IFREG = 0100000;
     /**
      * BLock device
      */
-    static public final int S_IFBLK = 0060000;
+    public static final int S_IFBLK = 0060000;
     /**
      * Directory
      */
-    static public final int S_IFDIR = 0040000;
+    public static final int S_IFDIR = 0040000;
     /**
      * Character device
      */
-    static public final int S_IFCHR = 0020000;
+    public static final int S_IFCHR = 0020000;
     /**
      * Named pipe
      */
-    static public final int S_IFIFO = 0010000;
+    public static final int S_IFIFO = 0010000;
     /**
      * file type mask
      */
-    static public final int S_TYPE = 0770000; // type mask
-    static public final int F_TYPE = 0170000;
+    public static final int S_TYPE = 0770000; // type mask
+    public static final int F_TYPE = 0170000;
 
     public UnixPermission(int mode) {
         _mode = mode;

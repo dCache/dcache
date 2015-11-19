@@ -43,7 +43,7 @@ public class PoolInformationBase implements CellMessageReceiver
     /**
      *
      */
-    synchronized public PoolInformation getPool(String pool)
+    public synchronized PoolInformation getPool(String pool)
     {
         return _pools.get(pool);
     }
@@ -51,7 +51,7 @@ public class PoolInformationBase implements CellMessageReceiver
     /**
      *
      */
-    synchronized public Collection<PoolInformation> getPools()
+    public synchronized Collection<PoolInformation> getPools()
     {
         return _pools.values();
     }
@@ -61,7 +61,7 @@ public class PoolInformationBase implements CellMessageReceiver
      *
      * @param hsm An HSM instance name.
      */
-    synchronized public PoolInformation getPoolWithHSM(String hsm)
+    public synchronized PoolInformation getPoolWithHSM(String hsm)
     {
         Collection<PoolInformation> pools = _hsmToPool.get(hsm);
         if (pools != null) {
@@ -81,7 +81,7 @@ public class PoolInformationBase implements CellMessageReceiver
      *
      * @param name A pool name.
      */
-    synchronized public void remove(String name)
+    public synchronized void remove(String name)
     {
         PoolInformation pool = _pools.remove(name);
         if (pool != null) {
@@ -100,7 +100,7 @@ public class PoolInformationBase implements CellMessageReceiver
      * subscribe to these messages, so the client must implement a
      * mechanism with which these messages arrive here.
      */
-    synchronized public void messageArrived(PoolManagerPoolUpMessage message)
+    public synchronized void messageArrived(PoolManagerPoolUpMessage message)
     {
         String name = message.getPoolName();
 
@@ -121,8 +121,8 @@ public class PoolInformationBase implements CellMessageReceiver
         }
     }
 
-    public final static String hh_pools_ls = "# Lists known pools";
-    synchronized public String ac_pools_ls(Args args)
+    public static final String hh_pools_ls = "# Lists known pools";
+    public synchronized String ac_pools_ls(Args args)
     {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("%-20s %s\n", "Pool", "HSM Instances"));
@@ -134,8 +134,8 @@ public class PoolInformationBase implements CellMessageReceiver
         return sb.toString();
     }
 
-    public final static String hh_pools_attached_to_hsm = "<hsm> # Lists pools attached to HSM <hsm>";
-    synchronized public String ac_pools_attached_to_hsm_$_1(Args args)
+    public static final String hh_pools_attached_to_hsm = "<hsm> # Lists pools attached to HSM <hsm>";
+    public synchronized String ac_pools_attached_to_hsm_$_1(Args args)
     {
         String hsmName = args.argv(0);
         StringBuilder sb = new StringBuilder();
@@ -152,8 +152,8 @@ public class PoolInformationBase implements CellMessageReceiver
         return sb.toString();
     }
 
-    public final static String hh_hsms_attached_to_pool = "<pool> # Lists HSMs attached to pool <pool>";
-    synchronized public String ac_hsms_attached_to_pool_$_1(Args args)
+    public static final String hh_hsms_attached_to_pool = "<pool> # Lists HSMs attached to pool <pool>";
+    public synchronized String ac_hsms_attached_to_pool_$_1(Args args)
     {
         String poolName = args.argv(0);
         StringBuilder sb = new StringBuilder();

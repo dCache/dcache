@@ -12,17 +12,17 @@ package dmg.util ;
   */
 public interface HttpResponseEngine {
 
-    public void queryUrl( HttpRequest request  )
+    void queryUrl(HttpRequest request)
            throws HttpException ;
 
     /**
      * This method is called from the http thread when the engine
      * should start activity.
      */
-    public void startup();
+    void startup();
 
     /**
      * Method called to indicate that the http engine should shutdown
      */
-    public void shutdown();
+    void shutdown();
 }

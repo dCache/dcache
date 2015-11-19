@@ -17,7 +17,7 @@ package diskCacheV111.hsmControl.flush ;
       String  _storageClass;
 
    }
-   static abstract private class EntryComparator<T> implements Comparator<T> {
+   private abstract static class EntryComparator<T> implements Comparator<T> {
        boolean _topHigh;
        int     _sortColumn;
        void setColumn( int column ){
@@ -30,7 +30,7 @@ package diskCacheV111.hsmControl.flush ;
           }
        }
        @Override
-       abstract public int compare( T a , T b ) ;
+       public abstract int compare(T a , T b ) ;
        int compareBoolean( boolean a , boolean b ){
           return a ^ b ? ( a ? 1 : -1 ) : 0 ;
        }

@@ -16,7 +16,7 @@ public class ACLUnix {
 
     public static final int OTHER_INDEX = 2;
 
-    private final static String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
 
     public static final String SEPARATOR = ":";
 

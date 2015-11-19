@@ -137,13 +137,13 @@ package org.dcache.srm;
  */
 public interface ReserveSpaceCallbacks {
     
-    public void ReserveSpaceFailed(String reason);
+    void ReserveSpaceFailed(String reason);
     
-    public void SpaceReserved(String spaceReservationToken,long reservedSpaceSize);
+    void SpaceReserved(String spaceReservationToken, long reservedSpaceSize);
     
-    public void Exception(Exception e);
+    void Exception(Exception e);
     
-    public void Timeout();
+    void Timeout();
     
-    public void Error(String error);
+    void Error(String error);
 }

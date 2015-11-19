@@ -9,8 +9,8 @@ import org.dcache.gplazma.AuthenticationException;
  * Plugin extracting principals from a set of given credentials.
  */
 public interface GPlazmaAuthenticationPlugin extends GPlazmaPlugin {
-    public void authenticate(Set<Object> publicCredentials,
-                             Set<Object> privateCredentials,
-                             Set<Principal> identifiedPrincipals)
+    void authenticate(Set<Object> publicCredentials,
+                      Set<Object> privateCredentials,
+                      Set<Principal> identifiedPrincipals)
                 throws AuthenticationException;
 }

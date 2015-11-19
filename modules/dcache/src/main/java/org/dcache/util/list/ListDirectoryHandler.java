@@ -46,7 +46,7 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 public class ListDirectoryHandler
     implements CellMessageReceiver, DirectoryListSource
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(ListDirectoryHandler.class);
 
     private final PnfsHandler _pnfs;

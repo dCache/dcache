@@ -94,13 +94,13 @@ package org.dcache.srm;
  */
 public interface AdvisoryDeleteCallbacks {
     
-    public void AdvisoryDeleteFailed(String reason);
+    void AdvisoryDeleteFailed(String reason);
     
-    public void AdvisoryDeleteSuccesseded();
+    void AdvisoryDeleteSuccesseded();
     
-    public void Exception(Exception e);
+    void Exception(Exception e);
     
-    public void Timeout();
+    void Timeout();
     
-    public void Error(String error);
+    void Error(String error);
 }

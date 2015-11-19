@@ -21,7 +21,7 @@ import org.dcache.util.Args;
  */
 public class UserMetaDataProviderFnal implements UserMetaDataProvider {
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(UserMetaDataProviderFnal.class);
 
     private final CellAdapter _cell    ;

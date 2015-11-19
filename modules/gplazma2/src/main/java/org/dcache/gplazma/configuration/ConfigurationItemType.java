@@ -21,7 +21,7 @@ public enum  ConfigurationItemType {
     private final String name;
     private final Class <? extends GPlazmaPlugin> type;
 
-    private ConfigurationItemType(String name, Class <? extends GPlazmaPlugin> type) {
+    ConfigurationItemType(String name, Class<? extends GPlazmaPlugin> type) {
         this.name = name;
         this.type = type;
     }

@@ -13,7 +13,7 @@ import org.dcache.util.Args;
 
 public class OptionShell {
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(OptionShell.class);
 
     private Args        _args ;

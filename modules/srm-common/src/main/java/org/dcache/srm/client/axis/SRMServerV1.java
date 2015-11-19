@@ -12,9 +12,9 @@ public interface SRMServerV1 extends javax.xml.rpc.Service {
 /**
  * diskCacheV111.srm.server.SRMServerV1 web service
  */
-    public java.lang.String getISRMAddress();
+java.lang.String getISRMAddress();
 
-    public org.dcache.srm.client.axis.ISRM_PortType getISRM() throws javax.xml.rpc.ServiceException;
+    org.dcache.srm.client.axis.ISRM_PortType getISRM() throws javax.xml.rpc.ServiceException;
 
-    public org.dcache.srm.client.axis.ISRM_PortType getISRM(java.net.URL portAddress) throws javax.xml.rpc.ServiceException;
+    org.dcache.srm.client.axis.ISRM_PortType getISRM(java.net.URL portAddress) throws javax.xml.rpc.ServiceException;
 }

@@ -13,7 +13,7 @@ public abstract class InfoMessage implements Serializable
 {
     private static final SimpleDateFormat __dateFormat = new SimpleDateFormat("MM.dd HH:mm:ss");
 
-    static private AtomicLong COUNTER = new  AtomicLong(0);
+    private static AtomicLong COUNTER = new  AtomicLong(0);
 
     private final String _cellType;
     private final String _messageType;
@@ -39,7 +39,7 @@ public abstract class InfoMessage implements Serializable
 
     public abstract void accept(InfoMessageVisitor visitor);
 
-    protected synchronized static String formatTimestamp(Date timestamp)
+    protected static synchronized String formatTimestamp(Date timestamp)
     {
         return __dateFormat.format(timestamp);
     }

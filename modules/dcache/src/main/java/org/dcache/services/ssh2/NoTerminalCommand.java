@@ -31,7 +31,7 @@ import org.dcache.commons.util.Strings;
 
 public class NoTerminalCommand implements Command, Runnable
 {
-    private final static Logger _logger =
+    private static final Logger _logger =
         LoggerFactory.getLogger(NoTerminalCommand.class);
     private UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;

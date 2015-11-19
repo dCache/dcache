@@ -26,7 +26,7 @@ import org.dcache.xrootd.plugins.ChannelHandlerProvider;
 public class ChannelHandlerFactoryFactoryBean
         implements FactoryBean<List<ChannelHandlerFactory>>, EnvironmentAware
 {
-    private final static ServiceLoader<ChannelHandlerProvider> _channelHandlerProviders =
+    private static final ServiceLoader<ChannelHandlerProvider> _channelHandlerProviders =
             ServiceLoader.load(ChannelHandlerProvider.class);
 
     protected Iterable<String> _plugins;

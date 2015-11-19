@@ -22,7 +22,7 @@ import org.dcache.pinmanager.model.Pin;
 public class UnpinRequestProcessor
     implements CellMessageReceiver
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(UnpinRequestProcessor.class);
 
     private PinDao _dao;

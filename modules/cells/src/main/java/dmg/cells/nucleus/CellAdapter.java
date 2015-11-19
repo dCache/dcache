@@ -73,7 +73,7 @@ import static org.dcache.util.MathUtils.subWithInfinity;
 public class CellAdapter
     implements Cell, CellEventListener, CellEndpoint
 {
-    private final static Logger _log =
+    private static final Logger _log =
             LoggerFactory.getLogger(CellAdapter.class);
 
     private final CellVersion _version = new CellVersion(Version.of(this));

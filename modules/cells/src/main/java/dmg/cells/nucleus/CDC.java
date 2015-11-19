@@ -69,7 +69,7 @@ public class CDC implements AutoCloseable
      * <code>MDC.remove</code>. <code>value</code> is allowed to e
      * null.
      */
-    static private void setMdc(String key, String value)
+    private static void setMdc(String key, String value)
     {
         if (value != null) {
             MDC.put(key, value);
@@ -111,7 +111,7 @@ public class CDC implements AutoCloseable
      * Returns the cell name stored in the MDC of the calling
      * thread.
      */
-    static public String getCellName()
+    public static String getCellName()
     {
         return MDC.get(MDC_CELL);
     }
@@ -120,7 +120,7 @@ public class CDC implements AutoCloseable
      * Returns the domain name stored in the MDC of the calling
      * thread.
      */
-    static public String getDomainName()
+    public static String getDomainName()
     {
         return MDC.get(MDC_DOMAIN);
     }
@@ -129,7 +129,7 @@ public class CDC implements AutoCloseable
      * Returns the session identifier stored in the MDC of the calling
      * thread.
      */
-    static public String getSession()
+    public static String getSession()
     {
         return MDC.get(MDC_SESSION);
     }
@@ -139,7 +139,7 @@ public class CDC implements AutoCloseable
      *
      * @param session Session identifier.
      */
-    static public void setSession(String session)
+    public static void setSession(String session)
     {
         setMdc(MDC_SESSION, session);
     }
@@ -150,7 +150,7 @@ public class CDC implements AutoCloseable
      * inherit this information. The old diagnostic context is
      * captured and returned.
      */
-    static public CDC reset(CellNucleus cell)
+    public static CDC reset(CellNucleus cell)
     {
         return reset(cell.getCellName(), cell.getCellDomainName());
     }
@@ -161,7 +161,7 @@ public class CDC implements AutoCloseable
      * inherit this information. The old diagnostic context is
      * captured and returned.
      */
-    static public CDC reset(String cellName, String domainName)
+    public static CDC reset(String cellName, String domainName)
     {
         CDC cdc = new CDC();
         setMdc(MDC_CELL, cellName);
@@ -175,7 +175,7 @@ public class CDC implements AutoCloseable
      * Returns the message description added to the NDC as part of the
      * message related diagnostic context.
      */
-    static protected String getMessageContext(CellMessage envelope)
+    protected static String getMessageContext(CellMessage envelope)
     {
         Object sessionObject = envelope.getSession();
         String session = (sessionObject == null) ? null : sessionObject.toString();
@@ -202,7 +202,7 @@ public class CDC implements AutoCloseable
      *
      * @see clearMessageContext
      */
-    static public void setMessageContext(CellMessage envelope)
+    public static void setMessageContext(CellMessage envelope)
     {
         Object session = envelope.getSession();
         NDC.push(getMessageContext(envelope));
@@ -217,7 +217,7 @@ public class CDC implements AutoCloseable
      *
      * @see setMessageContext
      */
-    static public void clearMessageContext()
+    public static void clearMessageContext()
     {
         MDC.remove(MDC_SESSION);
         NDC.pop();
@@ -226,7 +226,7 @@ public class CDC implements AutoCloseable
     /**
      * Clears all cells related MDC entries and the NDC.
      */
-    static public void clear()
+    public static void clear()
     {
         MDC.remove(MDC_DOMAIN);
         MDC.remove(MDC_CELL);

@@ -33,7 +33,7 @@ public enum FsInodeType {
 
     private final int _id;
 
-    private FsInodeType(int id) {
+    FsInodeType(int id) {
         _id = id;
     }
 

@@ -27,7 +27,7 @@ import org.dcache.util.Args;
  */
 public class HandlerExample implements HsmFlushSchedulable {
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(HandlerExample.class);
 
      private HsmFlushControlCore _core;

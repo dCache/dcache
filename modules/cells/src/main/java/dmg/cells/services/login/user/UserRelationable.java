@@ -5,8 +5,8 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 public interface UserRelationable extends TopDownUserRelationable {
 
-   public Enumeration<String> getParentsOf( String element )
+   Enumeration<String> getParentsOf(String element)
           throws NoSuchElementException ;
-   public boolean     isParentOf( String element , String container )
+   boolean     isParentOf(String element, String container)
           throws NoSuchElementException ;
 }

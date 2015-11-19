@@ -3,5 +3,5 @@
 package dmg.util ;
 
 public interface KeepAliveListener {
-   public void keepAlive() ;
+   void keepAlive() ;
 }

@@ -24,10 +24,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class PinManager
     implements CellMessageReceiver
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(PinManager.class);
-    private final static long INITIAL_EXPIRATION_DELAY = SECONDS.toMillis(15);
-    private final static long INITIAL_UNPIN_DELAY = SECONDS.toMillis(30);
+    private static final long INITIAL_EXPIRATION_DELAY = SECONDS.toMillis(15);
+    private static final long INITIAL_UNPIN_DELAY = SECONDS.toMillis(30);
 
     private ScheduledExecutorService _executor;
     private PinDao _dao;

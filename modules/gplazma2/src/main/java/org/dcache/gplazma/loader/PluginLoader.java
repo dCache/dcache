@@ -24,7 +24,7 @@ public interface PluginLoader
      * Sets the factory used to generate a plugin.  The PluginFactory will have
      * a default factory.  This method must only be called before init.
      */
-    public void setPluginFactory(PluginFactory factory);
+    void setPluginFactory(PluginFactory factory);
 
 
     /**
@@ -32,7 +32,7 @@ public interface PluginLoader
      * resource. It must be called precisely once and before calling any
      * other method of the PluginLoader.
      */
-    public void init();
+    void init();
 
     /**
      * Obtain a new GPlazmaPlugin object corresponding to the supplied plugin
@@ -53,7 +53,7 @@ public interface PluginLoader
      * @throws PluginLoadingException if the name is unknown or the
      *             corresponding plugin cannot be created.
      */
-    public GPlazmaPlugin newPluginByName(String name)
+    GPlazmaPlugin newPluginByName(String name)
             throws PluginLoadingException;
 
     /**
@@ -76,6 +76,6 @@ public interface PluginLoader
      * @throws PluginLoadingException if the name is unknown or the
      *             corresponding plugin cannot be created.
      */
-    public GPlazmaPlugin newPluginByName(String name, Properties properties)
+    GPlazmaPlugin newPluginByName(String name, Properties properties)
             throws PluginLoadingException;
 }

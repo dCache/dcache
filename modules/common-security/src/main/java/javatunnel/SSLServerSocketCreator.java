@@ -94,7 +94,7 @@ public class SSLServerSocketCreator extends ServerSocketFactory {
     }
 
 
-    static public void main(String[] args) {
+    public static void main(String[] args) {
         try{
             SSLServerSocketCreator sc = new SSLServerSocketCreator(new Args(args));
             ServerSocket ss = sc.createServerSocket(1717);

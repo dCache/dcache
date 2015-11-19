@@ -87,14 +87,14 @@ public class JdbcFs implements FileSystemProvider {
      * the number of pnfs levels. Level zero associated with file real
      * content, which is not our regular case.
      */
-    static private final int LEVELS_NUMBER = 7;
+    private static final int LEVELS_NUMBER = 7;
     private final FsInode _rootInode;
     private final String _wormID;
 
     /**
      * minimal binary handle size which can be processed.
     */
-    private final static int MIN_HANDLE_LEN = 4;
+    private static final int MIN_HANDLE_LEN = 4;
     /**
      * SQL query engine
      */
@@ -113,7 +113,7 @@ public class JdbcFs implements FileSystemProvider {
      * A dummy constant key force bay cache interface. the value doesn't
      * matter - only that it's the same value every time
      */
-    private final Integer DUMMY_KEY = 0;
+    private static final Integer DUMMY_KEY = 0;
     /**
      * Cache value of FsStat
      */
@@ -153,7 +153,7 @@ public class JdbcFs implements FileSystemProvider {
     /**
      * maximal length of an object name in a directory.
      */
-    private final static int MAX_NAME_LEN = 255;
+    private static final int MAX_NAME_LEN = 255;
 
     public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) {
         this(dataSource, txManager, dialect, 0);
@@ -1293,9 +1293,9 @@ public class JdbcFs implements FileSystemProvider {
 	// enforced by the interface
     }
 
-    private final static byte[] FH_V0_BIN = new byte[] {0x30, 0x30, 0x30, 0x30};
-    private final static byte[] FH_V0_REG = new byte[]{0x30, 0x3a};
-    private final static byte[] FH_V0_PFS = new byte[]{0x32, 0x35, 0x35, 0x3a};
+    private static final byte[] FH_V0_BIN = new byte[] {0x30, 0x30, 0x30, 0x30};
+    private static final byte[] FH_V0_REG = new byte[]{0x30, 0x3a};
+    private static final byte[] FH_V0_PFS = new byte[]{0x32, 0x35, 0x35, 0x3a};
 
     private static boolean arrayStartsWith(byte[] a1, byte[] a2) {
         if (a1.length < a2.length) {
@@ -1321,7 +1321,7 @@ public class JdbcFs implements FileSystemProvider {
         }
     }
 
-    private final static char[] HEX = new char[]{
+    private static final char[] HEX = new char[]{
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };

@@ -22,7 +22,7 @@ public class Sticky {
     private final Map<String,StickyRecord> _records = new HashMap<>();
 
 
-    synchronized public boolean isSticky() {
+    public synchronized boolean isSticky() {
         return !_records.isEmpty();
     }
 
@@ -30,7 +30,7 @@ public class Sticky {
         return isSticky();
     }
 
-    synchronized public boolean addRecord(String owner, long expire, boolean overwrite)
+    public synchronized boolean addRecord(String owner, long expire, boolean overwrite)
     {
         if (!removeRecord(owner, overwrite ? -1 : expire)) {
             return false;
@@ -49,7 +49,7 @@ public class Sticky {
      * Returns true if all flags owned by <code>owner</code> have been
      * removed, false otherwise.
      */
-    synchronized private boolean removeRecord(String owner, long time)
+    private synchronized boolean removeRecord(String owner, long time)
     {
         StickyRecord record = _records.get(owner);
         if ((record != null) && (time > -1) && record.isValidAt(time)) {
@@ -60,7 +60,7 @@ public class Sticky {
         return true;
     }
 
-    synchronized public String stringValue() {
+    public synchronized String stringValue() {
 
         StringBuilder sb = new StringBuilder();
 
@@ -75,14 +75,14 @@ public class Sticky {
         return sb.toString();
     }
 
-    synchronized public Collection<StickyRecord> records() {
+    public synchronized Collection<StickyRecord> records() {
         return Collections.unmodifiableCollection(_records.values());
     }
 
     /**
      * Removes expired flags. Returns the list of removed records.
      */
-    synchronized public List<StickyRecord> removeExpired()
+    public synchronized List<StickyRecord> removeExpired()
     {
         List<StickyRecord> removed = new ArrayList();
         long now = System.currentTimeMillis();

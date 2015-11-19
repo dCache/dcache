@@ -25,7 +25,7 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
     private final String NOBODY = "nobody";
     private final int NODOBY_ID = -1;
     private final LoginStrategy _remoteLoginStrategy;
-    private final static Logger _log = LoggerFactory.getLogger(StrategyIdMapper.class);
+    private static final Logger _log = LoggerFactory.getLogger(StrategyIdMapper.class);
     private final String _domain;
     private boolean _fallbackToNumeric = false;
 

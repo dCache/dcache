@@ -41,7 +41,7 @@ public class      DCapDoor
        extends    CellAdapter
        implements Runnable, KeepAliveListener           {
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(DCapDoor.class);
 
     private StreamEngine   _engine;

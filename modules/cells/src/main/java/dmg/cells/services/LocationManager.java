@@ -39,7 +39,7 @@ import org.dcache.util.Args;
 
 public class LocationManager extends CellAdapter {
 
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(LocationManager.class);
 
    /**
@@ -151,11 +151,11 @@ public class LocationManager extends CellAdapter {
         *      -setupmode=rdonly|rw|auto   # write back the setup [def=rw]
         *      -perm=<filename>       # store registry information
         */
-      private final static int SETUP_NONE   = -2 ;
-      private final static int SETUP_ERROR  = -1 ;
-      private final static int SETUP_AUTO   = 0 ;
-      private final static int SETUP_WRITE  = 1 ;
-      private final static int SETUP_RDONLY = 2 ;
+      private static final int SETUP_NONE   = -2 ;
+      private static final int SETUP_ERROR  = -1 ;
+      private static final int SETUP_AUTO   = 0 ;
+      private static final int SETUP_WRITE  = 1 ;
+      private static final int SETUP_RDONLY = 2 ;
       private int _setupMode = SETUP_NONE ;
       private String _setupFileName;
       private File   _setupFile;

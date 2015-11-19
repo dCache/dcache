@@ -64,10 +64,10 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
     /*
      * NIS map file names
      */
-    private final static String NISMAP_GROUP_BY_GID = "system/group.bygid";
-    private final static String NISMAP_PASSWORD_BY_NAME = "system/passwd.byname";
-    private final static String NISMAP_GROUP_BY_NAME = "system/group.byname";
-    private final static String NISMAP_PASSWORD_BY_UID = "system/passwd.byuid";
+    private static final String NISMAP_GROUP_BY_GID = "system/group.bygid";
+    private static final String NISMAP_PASSWORD_BY_NAME = "system/passwd.byname";
+    private static final String NISMAP_GROUP_BY_NAME = "system/group.byname";
+    private static final String NISMAP_PASSWORD_BY_UID = "system/passwd.byuid";
 
     /*
      * dcache config variables

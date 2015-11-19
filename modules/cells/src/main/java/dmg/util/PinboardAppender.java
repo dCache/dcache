@@ -18,7 +18,7 @@ import dmg.cells.nucleus.CellNucleus;
  */
 public class PinboardAppender extends AppenderBase<ILoggingEvent>
 {
-    static private Layout<ILoggingEvent> _layout =
+    private static Layout<ILoggingEvent> _layout =
         new EchoLayout<>();
 
     public void setLayout(Layout<ILoggingEvent> layout)

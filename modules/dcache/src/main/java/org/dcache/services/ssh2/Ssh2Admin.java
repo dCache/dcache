@@ -45,7 +45,7 @@ import static org.dcache.util.Files.checkFile;
  */
 public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 {
-    private final static Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
+    private static final Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private final SshServer _server;
     // UniversalSpringCell injected parameters
     private String _hostKeyPrivate;

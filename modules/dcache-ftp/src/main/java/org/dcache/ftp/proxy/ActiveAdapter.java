@@ -84,13 +84,13 @@ import java.util.LinkedList;
 
 public class ActiveAdapter implements Runnable, ProxyAdapter
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(ActiveAdapter.class);
 
     /* After the transfer is completed we only expect the key for the
      * server socket to be left.
      */
-    private final static int EXPECTED_KEY_SET_SIZE_WHEN_DONE = 1;
+    private static final int EXPECTED_KEY_SET_SIZE_WHEN_DONE = 1;
 
     private ServerSocketChannel _ssc; // The ServerSocketChannel we will
                                         // listen on...
@@ -658,7 +658,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      * Creates a non-blocking socket channel for the specified host name and
      * port and calls the connect() on the new channel before it is returned.
      */
-    static public SocketChannel createSocketChannel(String host, int port) throws IOException {
+    public static SocketChannel createSocketChannel(String host, int port) throws IOException {
         // Create a non-blocking socket channel
         SocketChannel sc = SocketChannel.open();
         sc.configureBlocking(false);

@@ -32,12 +32,12 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
 public class PseudoPoolDga implements Schedulable
 {
     /** Max number standard deviation to allow in delay */
-    static final private int NUM_SD = 4;
+    private static final int NUM_SD = 4;
     /** The safety margin we should ensure for metrics, in seconds */
-    static final private int SAFETY_MARGIN = 2;
-    static final private long BYTES_IN_GIBIBYTE = 1024*1024*1024;
+    private static final int SAFETY_MARGIN = 2;
+    private static final long BYTES_IN_GIBIBYTE = 1024 * 1024 * 1024;
 
-    static final private StatePath DEFAULT_POOLGROUP_MEMBERSHIP = StatePath.parsePath("poolgroups.default.pools");
+    private static final StatePath DEFAULT_POOLGROUP_MEMBERSHIP = StatePath.parsePath("poolgroups.default.pools");
 
     static final double PRECIOUS_ADD_LIKELIHOOD = 0.5;
     /** Fraction of total space to add, on average */

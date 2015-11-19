@@ -26,7 +26,7 @@ import org.dcache.util.Args;
 public class       UserMgrCell
        extends     CellAdapter            {
 
-  private final static Logger _log =
+  private static final Logger _log =
       LoggerFactory.getLogger(UserMgrCell.class);
 
   private String       _cellName ;

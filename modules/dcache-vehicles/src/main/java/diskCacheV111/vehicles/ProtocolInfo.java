@@ -18,8 +18,8 @@ import java.io.Serializable;
   */
 public interface ProtocolInfo extends Serializable {
 
-    public String getProtocol() ;
-    public int    getMinorVersion() ;
-    public int    getMajorVersion() ;
-    public String getVersionString() ;
+    String getProtocol() ;
+    int    getMinorVersion() ;
+    int    getMajorVersion() ;
+    String getVersionString() ;
 }

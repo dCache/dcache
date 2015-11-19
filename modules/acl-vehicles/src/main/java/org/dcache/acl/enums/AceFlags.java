@@ -44,7 +44,7 @@ public enum AceFlags {
 
     private final char _abbreviation;
 
-    private AceFlags(int value, char abbreviation) {
+    AceFlags(int value, char abbreviation) {
         _value = value;
         _abbreviation = abbreviation;
     }

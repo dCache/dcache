@@ -70,15 +70,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 class Companion
 {
-    private final static Logger _log = LoggerFactory.getLogger(Companion.class);
+    private static final Logger _log = LoggerFactory.getLogger(Companion.class);
 
-    private final static long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
-    private final static int BUFFER_SIZE = 65536;
-    private final static String PROTOCOL_INFO_NAME = "Http";
-    private final static int PROTOCOL_INFO_MAJOR_VERSION = 1;
-    private final static int PROTOCOL_INFO_MINOR_VERSION = 1;
+    private static final long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
+    private static final int BUFFER_SIZE = 65536;
+    private static final String PROTOCOL_INFO_NAME = "Http";
+    private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
+    private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
 
-    private final static AtomicInteger _nextId = new AtomicInteger(100);
+    private static final AtomicInteger _nextId = new AtomicInteger(100);
     private static final long CONNECT_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
     private static final long READ_TIMEOUT = TimeUnit.MINUTES.toMillis(10);
 
@@ -190,7 +190,7 @@ class Companion
     /**
      * Returns the session ID identifying the transfer.
      */
-    synchronized public int getId()
+    public synchronized int getId()
     {
         return _id;
     }
@@ -198,12 +198,12 @@ class Companion
     /**
      * Returns the PNFS ID of the file to be transfered.
      */
-    synchronized public PnfsId getPnfsId()
+    public synchronized PnfsId getPnfsId()
     {
         return _fileAttributes.getPnfsId();
     }
 
-    synchronized public long getPingPeriod()
+    public synchronized long getPingPeriod()
     {
         return PING_PERIOD;
     }
@@ -212,13 +212,13 @@ class Companion
      * Cancels the transfer. Returns true unless the transfer is
      * already completed.
      */
-    synchronized public boolean cancel(Object cause)
+    public synchronized boolean cancel(Object cause)
     {
         _fsm.cancel(cause);
         return (_fsm.getState() != CompanionContext.FSM.Done);
     }
 
-    synchronized public String toString()
+    public synchronized String toString()
     {
         return ""
             + _id
@@ -232,7 +232,7 @@ class Companion
      * Delivers a DoorTransferFinishedMessage. Normally send by the
      * source pool.
      */
-    synchronized public void messageArrived(DoorTransferFinishedMessage message)
+    public synchronized void messageArrived(DoorTransferFinishedMessage message)
     {
         _fsm.messageArrived(message);
     }
@@ -240,7 +240,7 @@ class Companion
     /**
      * Message handler for redirect messages from the pools.
      */
-    synchronized public void messageArrived(HttpDoorUrlInfoMessage message)
+    public synchronized void messageArrived(HttpDoorUrlInfoMessage message)
     {
         _fsm.messageArrived(message);
     }
@@ -248,7 +248,7 @@ class Companion
     /**
      * Sets the thread used for the file transfer.
      */
-    synchronized private void setThread(Thread thread)
+    private synchronized void setThread(Thread thread)
     {
         _thread = thread;
     }

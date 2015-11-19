@@ -106,7 +106,7 @@ import static java.util.Arrays.asList;
  * in the srmLs operation.
  */
 public abstract class FileRequest<R extends ContainerRequest> extends Job {
-    private final static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(FileRequest.class);
     //file ContainerRequest is being processed
     // for get and put it means that file turl

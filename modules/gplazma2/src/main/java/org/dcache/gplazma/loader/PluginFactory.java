@@ -18,7 +18,7 @@ public interface PluginFactory
      * @return the new plugin object
      * @throws PluginLoadingException if creation was impossible
      */
-    public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass)
+    <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass)
             throws PluginLoadingException;
 
     /**
@@ -28,6 +28,6 @@ public interface PluginFactory
      * @return the new plugin object
      * @throws PluginLoadingException if creation was impossible
      */
-    public <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass,
-            Properties properties) throws PluginLoadingException;
+    <T extends GPlazmaPlugin> T newPlugin(Class<T> pluginClass,
+                                          Properties properties) throws PluginLoadingException;
 }

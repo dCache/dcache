@@ -8,23 +8,23 @@ public interface ProxyAdapter {
      * Returns any error that occurred transfer, or null if no error
      * occurred. The transfer failed if an error is returned.
      */
-    public abstract String getError();
+    String getError();
 
     /**
      * Returns true if and only if getError() return non-null.
      */
-    public abstract boolean hasError();
+    boolean hasError();
 
     /**
      * Sets the largest block size to be used in mode E. Blocks larger
      * than this are divided into smaller blocks.
      */
-    public abstract void setMaxBlockSize(int size);
+    void setMaxBlockSize(int size);
 
     /**
      * Sets the adapter to use either mode E or mode S.
      */
-    public abstract void setModeE(boolean modeE);
+    void setModeE(boolean modeE);
 
     /**
      * Returns the address that we use to listen for connections from the
@@ -38,7 +38,7 @@ public interface ProxyAdapter {
      * Configures the adapter to transfer data from the client to the
      * pool.
      */
-    public abstract void setDirClientToPool();
+    void setDirClientToPool();
 
     /**
      * Configures the adapter to transfer data from the pool to the
@@ -46,13 +46,13 @@ public interface ProxyAdapter {
      *
      * This direction is not supported in mode E.
      */
-    public abstract void setDirPoolToClient();
+    void setDirPoolToClient();
 
     /**
      * Interrupt the thread driving the adapter and close the server
      * sockets.
      */
-    public abstract void close();
+    void close();
 
     /*
      * The methods below are actually part of Thread API
@@ -62,20 +62,20 @@ public interface ProxyAdapter {
     /**
      * Start the thread driving the adapter
      */
-    public abstract void start();
+    void start();
 
     /**
      * Tests if the thread driving the adapter is alive
      */
-    public abstract boolean isAlive();
+    boolean isAlive();
 
     /**
      *  Waits for the  thread driving the adapter to die.
      */
-    public abstract void join() throws InterruptedException;
+    void join() throws InterruptedException;
 
     /**
      *  Waits a certain time for the thread driving the adapter to die.
      */
-    public abstract void join(long millis) throws InterruptedException;
+    void join(long millis) throws InterruptedException;
 }

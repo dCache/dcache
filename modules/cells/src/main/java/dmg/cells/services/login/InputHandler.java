@@ -9,8 +9,8 @@ public interface InputHandler {
      *
      * @exception  IOException  If an I/O error occurs
      */
-    public abstract void close() throws IOException;
+    void close() throws IOException;
 
-    public abstract String readLine() throws IOException;
+    String readLine() throws IOException;
 
 }

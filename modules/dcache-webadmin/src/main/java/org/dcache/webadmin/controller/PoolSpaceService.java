@@ -13,8 +13,8 @@ import org.dcache.webadmin.view.beans.PoolSpaceBean;
  */
 public interface PoolSpaceService {
 
-    public List<PoolSpaceBean> getPoolBeans() throws PoolSpaceServiceException;
+    List<PoolSpaceBean> getPoolBeans() throws PoolSpaceServiceException;
 
-    public void changePoolMode(List<PoolSpaceBean> pools, PoolV2Mode poolMode,
-            String userName) throws PoolSpaceServiceException;
+    void changePoolMode(List<PoolSpaceBean> pools, PoolV2Mode poolMode,
+                        String userName) throws PoolSpaceServiceException;
 }

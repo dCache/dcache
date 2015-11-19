@@ -38,7 +38,7 @@ public interface HttpRequest {
 
 public class ContextPictureEngine implements HttpResponseEngine, DomainContextAware
 {
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(ContextPictureEngine.class);
 
     private Map<String, Object> context;

@@ -22,28 +22,28 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         this.psuAccess = psuAccess;
     }
 
-    public final static String hh_psu_add_link = "<link> <pool>|<pool group>";
+    public static final String hh_psu_add_link = "<link> <pool>|<pool group>";
 
     public String ac_psu_add_link_$_2(Args args) {
         psuAccess.addLink(args.argv(0), args.argv(1));
         return "";
     }
 
-    public final static String hh_psu_addto_pgroup = "<pool group> <pool>";
+    public static final String hh_psu_addto_pgroup = "<pool group> <pool>";
 
     public String ac_psu_addto_pgroup_$_2(Args args) {
         psuAccess.addToPoolGroup(args.argv(0), args.argv(1));
         return "";
     }
 
-    public final static String hh_psu_addto_linkGroup = "<link group> <link>";
+    public static final String hh_psu_addto_linkGroup = "<link group> <link>";
 
     public String ac_psu_addto_linkGroup_$_2(Args args) {
         psuAccess.addToLinkGroup(args.argv(0), args.argv(1));
         return "";
     }
 
-    public final static String hh_psu_addto_ugroup = "<unit group> <unit>";
+    public static final String hh_psu_addto_ugroup = "<unit group> <unit>";
 
     public String ac_psu_addto_ugroup_$_2(Args args){
         psuAccess.addToUnitGroup(args.argv(0),
@@ -52,14 +52,14 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_clear_im_really_sure = "# don't use this command";
+    public static final String hh_psu_clear_im_really_sure = "# don't use this command";
 
     public String ac_psu_clear_im_really_sure(Args args) {
         psuAccess.clear();
         return "Voila, now everthing is really gone";
     }
 
-    public final static String hh_psu_create_link = "<link> <unit group> [...]";
+    public static final String hh_psu_create_link = "<link> <unit group> [...]";
 
     public String ac_psu_create_link_$_2_99(Args args) {
         String name = args.argv(0);
@@ -68,14 +68,14 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_create_linkGroup = "<group name> [-reset]";
+    public static final String hh_psu_create_linkGroup = "<group name> [-reset]";
 
     public String ac_psu_create_linkGroup_$_1(Args args) {
         psuAccess.createLinkGroup(args.argv(0), args.hasOption("reset"));
         return "";
     }
 
-    public final static String hh_psu_create_pool = "<pool> [-noping] [-disabled]";
+    public static final String hh_psu_create_pool = "<pool> [-noping] [-disabled]";
 
     public String ac_psu_create_pool_$_1(Args args) {
         psuAccess.createPool(args.argv(0),
@@ -83,14 +83,14 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_create_pgroup = "<pool group>";
+    public static final String hh_psu_create_pgroup = "<pool group>";
 
     public String ac_psu_create_pgroup_$_1(Args args) {
         psuAccess.createPoolGroup(args.argv(0));
         return "";
     }
 
-    public final static String hh_psu_create_unit = "-net|-store|-dcache|-protocol <name>";
+    public static final String hh_psu_create_unit = "-net|-store|-dcache|-protocol <name>";
 
     public static final String fh_psu_create_unit =
                                     "NAME\n"+
@@ -135,20 +135,20 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_create_ugroup = "<unit group>";
+    public static final String hh_psu_create_ugroup = "<unit group>";
 
     public String ac_psu_create_ugroup_$_1(Args args) {
         psuAccess.createUnitGroup(args.argv(0));
         return "";
     }
 
-    public final static String hh_psu_dump_setup = "";
+    public static final String hh_psu_dump_setup = "";
 
     public String ac_psu_dump_setup(Args args) {
         return psuAccess.dumpSetup();
     }
 
-    public final static String hh_psu_ls_link = "[-l] [-a] [ <link> [...]]";
+    public static final String hh_psu_ls_link = "[-l] [-a] [ <link> [...]]";
 
     public String ac_psu_ls_link_$_0_99(Args args) {
         boolean more = args.hasOption("a");
@@ -156,7 +156,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return psuAccess.listPoolLinks(more, detail, args.getArguments());
     }
 
-    public final static String hh_psu_ls_linkGroup
+    public static final String hh_psu_ls_linkGroup
                     = "[-l] [<link group1> ... <link groupN>]";
 
     public String ac_psu_ls_linkGroup_$_0_99(Args args) {
@@ -164,13 +164,13 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
                         args.getArguments());
     }
 
-    public final static String hh_psu_ls_netunits = "";
+    public static final String hh_psu_ls_netunits = "";
 
     public String ac_psu_ls_netunits(Args args) {
         return psuAccess.listNetUnits();
     }
 
-    public final static String hh_psu_ls_pgroup = "[-l] [-a] [<pool group> [...]]";
+    public static final String hh_psu_ls_pgroup = "[-l] [-a] [<pool group> [...]]";
 
     public String ac_psu_ls_pgroup_$_0_99(Args args) {
         boolean more = args.hasOption("a");
@@ -178,7 +178,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return psuAccess.listPoolGroups(more, detail, args.getArguments());
     }
 
-    public final static String hh_psu_ls_pool = "[-l] [-a] [<pool glob> [...]]";
+    public static final String hh_psu_ls_pool = "[-l] [-a] [<pool glob> [...]]";
 
     public String ac_psu_ls_pool_$_0_99(Args args) {
         boolean more = args.hasOption("a");
@@ -186,7 +186,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return psuAccess.listPool(more, detail, args.getArguments());
     }
 
-    public final static String hh_psu_ls_ugroup
+    public static final String hh_psu_ls_ugroup
                     = "[-l] [-a] [<unit group> [...]]";
 
     public String ac_psu_ls_ugroup_$_0_99(Args args) {
@@ -195,7 +195,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return psuAccess.listUnitGroups(more, detail, args.getArguments());
     }
 
-    public final static String hh_psu_ls_unit = " [-a] [<unit> [...]]";
+    public static final String hh_psu_ls_unit = " [-a] [<unit> [...]]";
 
     public String ac_psu_ls_unit_$_0_99(Args args) {
         boolean more = args.hasOption("a");
@@ -203,28 +203,28 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return psuAccess.listUnits(more, detail, args.getArguments());
     }
 
-    public final static String hh_psu_match = "[-linkGroup=<link group>] "
-                    + "read|cache|write|p2p <store unit>|* <store unit>|* "
-                    + "<store unit>|* <protocol unit>|* ";
+    public static final String hh_psu_match = "[-linkGroup=<link group>] "
+                                              + "read|cache|write|p2p <store unit>|* <store unit>|* "
+                                              + "<store unit>|* <protocol unit>|* ";
 
     public String ac_psu_match_$_5(Args args) throws Exception {
         return psuAccess.matchLinkGroups(args.getOpt("linkGroup"), args.argv(0),
                         args.argv(1), args.argv(2), args.argv(3), args.argv(4));
     }
 
-    public final static String hh_psu_match2 = "<unit> [...] [-net=<net unit>}";
+    public static final String hh_psu_match2 = "<unit> [...] [-net=<net unit>}";
 
     public String ac_psu_match2_$_1_99(Args args){
         return psuAccess.matchUnits(args.getOpt("net"), args.getArguments());
     }
 
-    public final static String hh_psu_netmatch = "<host address>";
+    public static final String hh_psu_netmatch = "<host address>";
 
     public String ac_psu_netmatch_$_1(Args args) throws UnknownHostException {
         return psuAccess.netMatch(args.argv(0));
     }
 
-    public final static String hh_psu_removefrom_linkGroup
+    public static final String hh_psu_removefrom_linkGroup
                     = "<link group> <link>";
 
     public String ac_psu_removefrom_linkGroup_$_2(Args args) {
@@ -232,14 +232,14 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_removefrom_pgroup = "<pool group> <pool>";
+    public static final String hh_psu_removefrom_pgroup = "<pool group> <pool>";
 
     public String ac_psu_removefrom_pgroup_$_2(Args args) {
         psuAccess.removeFromPoolGroup(args.argv(0), args.argv(1));
         return "";
     }
 
-    public final static String hh_psu_removefrom_ugroup
+    public static final String hh_psu_removefrom_ugroup
                     = "<unit group> <unit> -net";
 
     public String ac_psu_removefrom_ugroup_$_2(Args args) {
@@ -248,42 +248,42 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_remove_link = "<link>";
+    public static final String hh_psu_remove_link = "<link>";
 
     public String ac_psu_remove_link_$_1(Args args) {
         psuAccess.removeLink(args.argv(0));
         return "";
     }
 
-    public final static String hh_psu_remove_linkGroup = "<link group>";
+    public static final String hh_psu_remove_linkGroup = "<link group>";
 
     public String ac_psu_remove_linkGroup_$_1(Args args) {
         psuAccess.removeLinkGroup(args.argv(0));
         return "";
     }
 
-    public final static String hh_psu_remove_pool = "<pool>";
+    public static final String hh_psu_remove_pool = "<pool>";
 
     public String ac_psu_remove_pool_$_1(Args args) {
         psuAccess.removePool(args.argv(0));
         return "";
     }
 
-    public final static String hh_psu_remove_pgroup = "<pool group>";
+    public static final String hh_psu_remove_pgroup = "<pool group>";
 
     public String ac_psu_remove_pgroup_$_1(Args args) {
         psuAccess.removePoolGroup(args.argv(0));
         return "";
     }
 
-    public final static String hh_psu_remove_unit = "<unit> [-net]";
+    public static final String hh_psu_remove_unit = "<unit> [-net]";
 
     public String ac_psu_remove_unit_$_1(Args args) {
         psuAccess.removeUnit(args.argv(0), args.hasOption("net"));
         return "";
     }
 
-    public final static String hh_psu_remove_ugroup = "<unit group>";
+    public static final String hh_psu_remove_ugroup = "<unit group>";
 
     public String ac_psu_remove_ugroup_$_1(Args args) {
         psuAccess.removeUnitGroup(args.argv(0));
@@ -291,14 +291,14 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
     }
 
 
-    public final static String hh_psu_set_active = "<pool>|* [-no]";
+    public static final String hh_psu_set_active = "<pool>|* [-no]";
 
     public String ac_psu_set_active_$_1(Args args) {
         psuAccess.setPoolActive(args.argv(0), !args.hasOption("no"));
         return "";
     }
 
-    public final static String hh_psu_set_allpoolsactive = "on|off";
+    public static final String hh_psu_set_allpoolsactive = "on|off";
 
     public String ac_psu_set_allpoolsactive_$_1(Args args) throws
                     CommandSyntaxException {
@@ -311,19 +311,19 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_set_disabled = "<pool glob>";
+    public static final String hh_psu_set_disabled = "<pool glob>";
 
     public String ac_psu_set_disabled_$_1(Args args) {
         return psuAccess.setPoolDisabled(args.argv(0));
     }
 
-    public final static String hh_psu_set_enabled = "<pool glob>";
+    public static final String hh_psu_set_enabled = "<pool glob>";
 
     public String ac_psu_set_enabled_$_1(Args args) {
         return psuAccess.setPoolEnabled(args.argv(0));
     }
 
-    public final static String hh_psu_set_link
+    public static final String hh_psu_set_link
                     = "<link> [-readpref=<readpref>] [-writepref=<writepref>] "
                     + "[-cachepref=<cachepref>] [-p2ppref=<p2ppref>] "
                     + "[-section=<section>|NONE]";
@@ -337,7 +337,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
     }
 
 
-    public final static String hh_psu_set_linkGroup_custodialAllowed
+    public static final String hh_psu_set_linkGroup_custodialAllowed
                     = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_custodialAllowed_$_2(Args args) {
@@ -346,7 +346,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_set_linkGroup_nearlineAllowed
+    public static final String hh_psu_set_linkGroup_nearlineAllowed
                     = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_nearlineAllowed_$_2(Args args) {
@@ -355,7 +355,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_set_linkGroup_onlineAllowed
+    public static final String hh_psu_set_linkGroup_onlineAllowed
                     = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_onlineAllowed_$_2(Args args) {
@@ -364,7 +364,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_set_linkGroup_outputAllowed
+    public static final String hh_psu_set_linkGroup_outputAllowed
                     = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_outputAllowed_$_2(Args args) {
@@ -373,7 +373,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_set_linkGroup_replicaAllowed
+    public static final String hh_psu_set_linkGroup_replicaAllowed
                     = "<link group> <true|false>";
 
     public String ac_psu_set_linkGroup_replicaAllowed_$_2(Args args) {
@@ -381,20 +381,20 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public final static String hh_psu_set_pool =
+    public static final String hh_psu_set_pool =
                     "<pool glob> enabled|disabled|ping|noping|rdonly|notrdonly";
 
     public String ac_psu_set_pool_$_2(Args args) {
         return psuAccess.setPool(args.argv(0), args.argv(1));
     }
 
-    public final static String hh_psu_set_regex = "on | off";
+    public static final String hh_psu_set_regex = "on | off";
 
     public String ac_psu_set_regex_$_1(Args args) {
         return psuAccess.setRegex(args.argv(0));
     }
 
-    public final static String hh_psu_unlink = "<link> <pool>|<pool group>";
+    public static final String hh_psu_unlink = "<link> <pool>|<pool group>";
 
     public String ac_psu_unlink_$_2(Args args) {
         psuAccess.unlink(args.argv(0), args.argv(1));
@@ -405,7 +405,7 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
      * ***************************** PSUX **********************************
      */
 
-    public final static String hh_psux_ls_link = "[<link>] [-x] [-resolve]";
+    public static final String hh_psux_ls_link = "[<link>] [-x] [-resolve]";
 
     public Object ac_psux_ls_link_$_0_1(Args args) {
         String link = null;
@@ -418,37 +418,37 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return psuAccess.listLinkXml(isX, resolve, link);
     }
 
-    public final static String hh_psux_ls_pgroup = "[<pool group>]";
+    public static final String hh_psux_ls_pgroup = "[<pool group>]";
 
     public Object ac_psux_ls_pgroup_$_0_1(Args args){
         String groupName = args.argc() == 0 ? null : args.argv(0);
         return psuAccess.listPoolGroupXml(groupName);
     }
 
-    public final static String hh_psux_ls_pool = "[<pool>]";
+    public static final String hh_psux_ls_pool = "[<pool>]";
 
     public Object ac_psux_ls_pool_$_0_1(Args args){
         String poolName = args.argc() == 0 ? null : args.argv(0);
         return psuAccess.listPoolXml(poolName);
     }
 
-    public final static String hh_psux_ls_unit = "[<unit>]";
+    public static final String hh_psux_ls_unit = "[<unit>]";
 
     public Object ac_psux_ls_unit_$_0_1(Args args) {
         String unitName = args.argc() == 0 ? null : args.argv(0);
         return psuAccess.listUnitXml(unitName);
     }
 
-    public final static String hh_psux_ls_ugroup = "[<unit group>]";
+    public static final String hh_psux_ls_ugroup = "[<unit group>]";
 
     public Object ac_psux_ls_ugroup_$_0_1(Args args){
         String groupName = args.argc() == 0 ? null : args.argv(0);
         return psuAccess.listUnitGroupXml(groupName);
     }
 
-    public final static String hh_psux_match = "[-linkGroup=<link group>] "
-                    + "read|cache|write <store unit>|* <store unit>|* "
-                    + "<store unit>|* <protocol unit>|* ";
+    public static final String hh_psux_match = "[-linkGroup=<link group>] "
+                                               + "read|cache|write <store unit>|* <store unit>|* "
+                                               + "<store unit>|* <protocol unit>|* ";
 
     public Object ac_psux_match_$_5(Args args) {
         return psuAccess.matchLinkGroupsXml(args.getOpt("linkGroup"),

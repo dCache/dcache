@@ -13,7 +13,7 @@ public enum AccessLatency {
     private static final ImmutableMap<TAccessLatency,AccessLatency> MAP;
     private static final String ERROR_MESSAGE;
 
-    private AccessLatency(TAccessLatency latency) {
+    AccessLatency(TAccessLatency latency) {
         _latency = latency;
     }
 

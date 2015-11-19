@@ -44,26 +44,26 @@ import org.dcache.xdr.XdrTransport;
 public class NfsProxyIo implements ProxyIoAdapter {
 
     // FIXME: for now we will use only a single slot. e.q serialize all requests
-    private final static int SLOT_ID = 0;
-    private final static int MAX_SLOT_ID = 0;
+    private static final int SLOT_ID = 0;
+    private static final int MAX_SLOT_ID = 0;
 
-    private final static int ROOT_UID = 0;
-    private final static int ROOT_GID = 0;
-    private final static int[] ROOT_GIDS = new int[0];
+    private static final int ROOT_UID = 0;
+    private static final int ROOT_GID = 0;
+    private static final int[] ROOT_GIDS = new int[0];
 
-    private final static String IMPL_DOMAIN = "dCache.ORG";
-    private final static String IMPL_NAME = "proxyio-nfs-client";
+    private static final String IMPL_DOMAIN = "dCache.ORG";
+    private static final String IMPL_NAME = "proxyio-nfs-client";
 
     /**
      * How long we wait for an IO request. The typical NFS client will wait
      * 30 sec. We will use a shorter timeout to avoid retry.
      */
-    private final static int IO_TIMEOUT = (int)TimeUnit.SECONDS.toMillis(15);
+    private static final int IO_TIMEOUT = (int)TimeUnit.SECONDS.toMillis(15);
 
     /**
      * Most up-to-date seqid for a given stateid as defined by rfc5661.
      */
-    private final static int SEQ_UP_TO_DATE = 0;
+    private static final int SEQ_UP_TO_DATE = 0;
 
     private clientid4 _clientIdByServer;
     private sequenceid4 _sequenceID;

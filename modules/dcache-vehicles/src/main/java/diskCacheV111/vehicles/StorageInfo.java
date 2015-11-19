@@ -38,10 +38,10 @@ public interface StorageInfo
      * Classic dCache default all files go to tape and can be removed
      * from the pool afterwards.
      */
-    public static final AccessLatency DEFAULT_ACCESS_LATENCY = AccessLatency.NEARLINE;
-    public static final RetentionPolicy DEFAULT_RETENTION_POLICY = RetentionPolicy.CUSTODIAL;
+    AccessLatency DEFAULT_ACCESS_LATENCY = AccessLatency.NEARLINE;
+    RetentionPolicy DEFAULT_RETENTION_POLICY = RetentionPolicy.CUSTODIAL;
 
-    static final long serialVersionUID = 1623022255585848311L;
+    long serialVersionUID = 1623022255585848311L;
     /**
       *   The storage class is a unique string, identifying
       *   this particular storage entity in a HSM independent
@@ -54,35 +54,32 @@ public interface StorageInfo
       *
       */
     @Deprecated
-    public String getStorageClass() ;
+    String getStorageClass() ;
     @Deprecated
-    public void setStorageClass( String newStorageClass);
+    void setStorageClass(String newStorageClass);
 
     @Deprecated
     /**
      * use addLocation(URI newLocation);
-     */
-
-    public void   setBitfileId( String bitfileId ) ;
+     */ void   setBitfileId(String bitfileId) ;
     @Deprecated
     /**
      * use List<URI> locations();
-     */
-    public String getBitfileId() ;
+     */ String getBitfileId() ;
 
     /**
      *
      * @return list of know locations
      * @since 1.8
      */
-    public List<URI> locations();
+    List<URI> locations();
 
     /**
      * add a new location for the file
      * @param newLocation
      * @since 1.8
      */
-    public void addLocation(URI newLocation);
+    void addLocation(URI newLocation);
 
     /**
      *
@@ -90,8 +87,8 @@ public interface StorageInfo
      * have to be stored by PnfsManager
      * @since 1.8
      */
-    public boolean isSetAddLocation();
-    public void isSetAddLocation( boolean isSet );
+    boolean isSetAddLocation();
+    void isSetAddLocation(boolean isSet);
 
 
     /**
@@ -101,42 +98,42 @@ public interface StorageInfo
       * precified.
       */
     @Deprecated
-    public String getCacheClass() ;
+    String getCacheClass() ;
     @Deprecated
-    public void setCacheClass(String newCacheClass);
+    void setCacheClass(String newCacheClass);
     /**
       * Returns the name of the HSM or the HSMInstance.
       */
     @Deprecated
-    public String getHsm() ;
+    String getHsm() ;
     @Deprecated
-    public void setHsm( String newHsm);
+    void setHsm(String newHsm);
     /**
       * Determines whether the file exists somewhere (cache or HSM)
       * or not. Currently isCreatedOnly returns true is the
       * size of the level-0 file is not zero.
       */
-    public boolean isCreatedOnly() ;
-    public void setIsNew(boolean isNew);
+    boolean isCreatedOnly() ;
+    void setIsNew(boolean isNew);
     /**
       *
       * @return true if locations list is not empty or ( legacy case )
       * if value was explicit set by setIsStored(true)
       */
-    public boolean isStored() ;
+    boolean isStored() ;
 
 	/**
 	 * @Deprecated the result will generated depending on content of locations
 	 */
     @Deprecated
-    public void setIsStored( boolean isStored);
+    void setIsStored(boolean isStored);
     /**
       *  The storage info may contain HSM specific key value pairs.
       *  Nobody should rely on the existence of a particular key.
       *  A 'null' is returned if no related key-value pair could be
       *  found.
       */
-    public String  getKey( String key ) ;
+    String  getKey(String key) ;
 
     /**
      * add/set new value for specified key. If value is null,
@@ -145,27 +142,27 @@ public interface StorageInfo
      * @param value
      * @return The previous value associated with key
      */
-    public String setKey( String key , String value ) ;
+    String setKey(String key, String value) ;
     /**
       * Returns a COPY of the internal key,value map.
       */
-    public Map<String, String>     getMap() ;
+    Map<String, String>     getMap() ;
 
 
     /*
      * specify which fields have to be updated
      */
 
-    public boolean isSetHsm();
-    public void isSetHsm( boolean isSet );
+    boolean isSetHsm();
+    void isSetHsm(boolean isSet);
 
-    public boolean isSetStorageClass();
-    public void isSetStorageClass( boolean isSet) ;
+    boolean isSetStorageClass();
+    void isSetStorageClass(boolean isSet) ;
 
-    public boolean isSetBitFileId();
-    public void isSetBitFileId( boolean isSet);
+    boolean isSetBitFileId();
+    void isSetBitFileId(boolean isSet);
 
-    public StorageInfo clone();
+    StorageInfo clone();
 
     @Override
     String toString();

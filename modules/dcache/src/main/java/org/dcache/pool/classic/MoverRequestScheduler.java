@@ -38,7 +38,7 @@ import static java.util.stream.Collectors.joining;
  */
 public class MoverRequestScheduler implements Runnable {
 
-    private final static Logger _log =
+    private static final Logger _log =
             LoggerFactory.getLogger(MoverRequestScheduler.class);
 
     /**

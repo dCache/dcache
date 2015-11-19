@@ -32,7 +32,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public class PutRequestStorage extends DatabaseContainerRequestStorage<PutRequest,PutFileRequest> {
-   private final static Logger logger =
+   private static final Logger logger =
             LoggerFactory.getLogger(PutRequestStorage.class);
 
      public static final String TABLE_NAME ="putrequests";

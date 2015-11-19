@@ -33,7 +33,7 @@ public class      SystemCell
     extends    CellAdapter
     implements Runnable, Thread.UncaughtExceptionHandler
 {
-    private final static Logger _log = LoggerFactory.getLogger(SystemCell.class);
+    private static final Logger _log = LoggerFactory.getLogger(SystemCell.class);
 
     /* Released on OOM to increase the chance that the shutdown succeeds.
      */

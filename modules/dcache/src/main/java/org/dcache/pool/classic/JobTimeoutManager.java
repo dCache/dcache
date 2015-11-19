@@ -90,7 +90,7 @@ public class JobTimeoutManager
     implements Runnable,
                CellCommandListener
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(JobTimeoutManager.class);
 
     private final List<SchedulerEntry> _schedulers

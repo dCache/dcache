@@ -17,6 +17,6 @@ public interface MissingFileStrategy
      * @param dCachePath the path to the missing file within dCache
      * @return recommended behaviour for the door
      */
-    public Action recommendedAction(Subject subject, FsPath dCachePath,
-            FsPath requestPath);
+    Action recommendedAction(Subject subject, FsPath dCachePath,
+                             FsPath requestPath);
 }

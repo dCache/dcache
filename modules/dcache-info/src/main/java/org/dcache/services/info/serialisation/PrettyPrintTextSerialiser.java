@@ -370,7 +370,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
      * chunk and the previous chunk, where the end-item is displayed with a
      * vertical line joining it to the previous end-item.
      */
-    private static abstract class EndOfChunkItem
+    private abstract static class EndOfChunkItem
     {
         private final boolean _hasStalk;
 

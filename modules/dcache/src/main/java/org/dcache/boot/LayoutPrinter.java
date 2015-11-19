@@ -11,5 +11,5 @@ public interface LayoutPrinter {
     /**
      * Provide output from a layout.
      */
-    public void print(PrintStream out);
+    void print(PrintStream out);
 }

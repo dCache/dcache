@@ -23,7 +23,7 @@ import org.dcache.gplazma.configuration.ConfigurationItemControl;
  */
 public interface LoginMonitor
 {
-    public enum Result {
+    enum Result {
         SUCCESS, FAIL
     }
 
@@ -31,67 +31,67 @@ public interface LoginMonitor
      * Feedback about the AUTH Phase
      */
 
-    public void authBegins(Set<Object> publicCredentials,
-            Set<Object> privateCredentials, Set<Principal> principals);
+    void authBegins(Set<Object> publicCredentials,
+                    Set<Object> privateCredentials, Set<Principal> principals);
 
-    public void authPluginBegins(String name, ConfigurationItemControl control,
-            Set<Object> publicCredentials, Set<Object> privateCredentials,
-            Set<Principal> principals);
+    void authPluginBegins(String name, ConfigurationItemControl control,
+                          Set<Object> publicCredentials, Set<Object> privateCredentials,
+                          Set<Principal> principals);
 
-    public void authPluginEnds(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Object> publicCredentials,
-            Set<Object> privateCredentials, Set<Principal> principals);
+    void authPluginEnds(String name, ConfigurationItemControl control,
+                        Result result, String error, Set<Object> publicCredentials,
+                        Set<Object> privateCredentials, Set<Principal> principals);
 
-    public void authEnds(Set<Principal> principals, Result result);
+    void authEnds(Set<Principal> principals, Result result);
 
     /*
      * Feedback about the MAP phase
      */
 
-    public void mapBegins(Set<Principal> principals);
+    void mapBegins(Set<Principal> principals);
 
-    public void mapPluginBegins(String name, ConfigurationItemControl control,
-            Set<Principal> principals);
+    void mapPluginBegins(String name, ConfigurationItemControl control,
+                         Set<Principal> principals);
 
-    public void mapPluginEnds(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Principal> principals);
+    void mapPluginEnds(String name, ConfigurationItemControl control,
+                       Result result, String error, Set<Principal> principals);
 
-    public void mapEnds(Set<Principal> principals, Result result);
+    void mapEnds(Set<Principal> principals, Result result);
 
     /*
      * Feedback about the ACCOUNT phase
      */
 
-    public void accountBegins(Set<Principal> principals);
+    void accountBegins(Set<Principal> principals);
 
-    public void accountPluginBegins(String name,
-            ConfigurationItemControl control, Set<Principal> principals);
+    void accountPluginBegins(String name,
+                             ConfigurationItemControl control, Set<Principal> principals);
 
-    public void accountPluginEnds(String name,
-            ConfigurationItemControl control, Result result, String error,
-            Set<Principal> principals);
+    void accountPluginEnds(String name,
+                           ConfigurationItemControl control, Result result, String error,
+                           Set<Principal> principals);
 
-    public void accountEnds(Set<Principal> principals, Result result);
+    void accountEnds(Set<Principal> principals, Result result);
 
     /*
      * Feedback about the SESSION phase
      */
 
-    public void sessionBegins(Set<Principal> principals);
+    void sessionBegins(Set<Principal> principals);
 
-    public void sessionPluginBegins(String name,
-            ConfigurationItemControl control, Set<Principal> principals,
-            Set<Object> attributes);
+    void sessionPluginBegins(String name,
+                             ConfigurationItemControl control, Set<Principal> principals,
+                             Set<Object> attributes);
 
-    public void sessionPluginEnds(String name, ConfigurationItemControl control,
-            Result result, String error, Set<Principal> principals,
-            Set<Object> attributes);
+    void sessionPluginEnds(String name, ConfigurationItemControl control,
+                           Result result, String error, Set<Principal> principals,
+                           Set<Object> attributes);
 
-    public void sessionEnds(Set<Principal> principals, Set<Object> attributes,
-            Result result);
+    void sessionEnds(Set<Principal> principals, Set<Object> attributes,
+                     Result result);
 
     /*
      * Feedback about final validation step
      */
-    public void validationResult(Result result, String error);
+    void validationResult(Result result, String error);
 }

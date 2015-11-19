@@ -39,7 +39,7 @@ import org.dcache.srm.util.Configuration;
  * @author  timur
  */
 public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<BringOnlineRequest,BringOnlineFileRequest> {
-   private final static Logger logger =
+   private static final Logger logger =
             LoggerFactory.getLogger(BringOnlineRequestStorage.class);
      public static final String TABLE_NAME ="bringonlinerequests";
 

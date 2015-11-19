@@ -1138,9 +1138,9 @@ public class CacheRepositoryV5
          return getCellName();
     }
 
-    public final static String hh_set_max_diskspace =
+    public static final String hh_set_max_diskspace =
         "<bytes>[<unit>]|Infinity # unit = k|m|g|t";
-    public final static String fh_set_max_diskspace =
+    public static final String fh_set_max_diskspace =
         "Sets the maximum disk space to be used by this pool. Overrides\n" +
         "whatever maximum was defined in the configuration file. The value\n" +
         "will be saved to the pool setup file if the save command is\n" +

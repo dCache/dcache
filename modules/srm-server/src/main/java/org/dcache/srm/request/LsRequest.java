@@ -27,7 +27,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 public final class LsRequest extends ContainerRequest<LsFileRequest> {
-    private final static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(LsRequest.class);
 
         private final long offset;         // starting entry number

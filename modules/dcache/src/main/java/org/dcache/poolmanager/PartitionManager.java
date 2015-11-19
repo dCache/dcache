@@ -173,7 +173,7 @@ public class PartitionManager
         return partition;
     }
 
-    public final static String fh_pmx_get_map =
+    public static final String fh_pmx_get_map =
         "Name:\n" +
         "    pmx get map - get partition map\n" +
         "\n" +
@@ -183,7 +183,7 @@ public class PartitionManager
         "Description:\n" +
         "    Internal command to query the internal representation of all\n" +
         "    partitions.\n";
-    public final static String hh_pmx_get_map = "# get partition map";
+    public static final String hh_pmx_get_map = "# get partition map";
     public Object ac_pmx_get_map(Args args)
     {
        return _partitions;
@@ -194,7 +194,7 @@ public class PartitionManager
         return _partitions;
     }
 
-    public final static String fh_pm_set =
+    public static final String fh_pm_set =
         "Name:\n" +
         "    pm set - set partition parameters\n" +
         "\n" +
@@ -222,7 +222,7 @@ public class PartitionManager
         "       -p2p-fortransfer=yes|no|off\n"+
         "       -stage-allowed=yes|no|off\n"+
         "       -stage-oncost=yes|no|off\n";
-    public final static String hh_pm_set =
+    public static final String hh_pm_set =
         "[<partition>] OPTION... # set partition parameters";
     public String ac_pm_set_$_0_1(Args args)
         throws IllegalArgumentException
@@ -231,7 +231,7 @@ public class PartitionManager
         return "";
     }
 
-    public final static String fh_pm_types =
+    public static final String fh_pm_types =
         "Name:\n" +
         "    pm types - list available partition types\n" +
         "\n" +
@@ -246,7 +246,7 @@ public class PartitionManager
         "\n" +
         "    Partition types are pluggable and new partition types can\n" +
         "    be added through a plugin mechanism.";
-    public final static String hh_pm_types =
+    public static final String hh_pm_types =
         "# list available partition types";
     public String ac_pm_types_$_0(Args args)
     {
@@ -260,9 +260,9 @@ public class PartitionManager
         return s.toString();
     }
 
-    public final static String hh_pm_create =
+    public static final String hh_pm_create =
         "[-type=<type>] <partition> # create new partition";
-    public final static String fh_pm_create =
+    public static final String fh_pm_create =
         "Name:\n" +
         "    pm create - create new partition\n" +
         "\n" +
@@ -300,7 +300,7 @@ public class PartitionManager
         return "";
     }
 
-    public final static String fh_pm_destroy =
+    public static final String fh_pm_destroy =
         "Name:\n" +
         "    pm destroy - remove partition\n" +
         "\n" +
@@ -311,7 +311,7 @@ public class PartitionManager
         "    Remove the specified pool manager partition. Links using the\n" +
         "    partition will fall back to the default partition. Any\n" +
         "    parameter values associated with the partition are lost.";
-    public final static String hh_pm_destroy =
+    public static final String hh_pm_destroy =
         "<partition> # remove partition";
     public String ac_pm_destroy_$_1(Args args)
     {
@@ -319,7 +319,7 @@ public class PartitionManager
         return "";
     }
 
-    public final static String fh_pm_ls =
+    public static final String fh_pm_ls =
         "Name:\n" +
         "    pm ls - list partitions\n" +
         "\n" +
@@ -333,7 +333,7 @@ public class PartitionManager
         "    -l  List parameters (default when <partition> is specified).\n" +
         "    -a  List all parameters. The default is not to list inherited\n" +
         "        and default parameters.\n";
-    public final static String hh_pm_ls =
+    public static final String hh_pm_ls =
         "[-l] [-a] [<partition>] # list partitions";
     public String ac_pm_ls_$_0_1(Args args)
         throws IllegalArgumentException

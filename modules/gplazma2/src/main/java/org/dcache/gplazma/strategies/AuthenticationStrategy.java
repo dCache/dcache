@@ -14,8 +14,8 @@ import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 public interface AuthenticationStrategy
                  extends GPlazmaStrategy<GPlazmaAuthenticationPlugin> {
 
-    public void authenticate(LoginMonitor monitor, Set<Object> publicCredential,
-                             Set<Object> privateCredential,
-                             Set<Principal> identifiedPrincipals)
+    void authenticate(LoginMonitor monitor, Set<Object> publicCredential,
+                      Set<Object> privateCredential,
+                      Set<Principal> identifiedPrincipals)
                 throws AuthenticationException;
 }

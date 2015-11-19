@@ -21,7 +21,7 @@ public class RandomPartition extends Partition
 
     static final String TYPE = "random";
 
-    public final static Random random = new Random();
+    public static final Random random = new Random();
 
     public RandomPartition(Map<String,String> inherited)
     {

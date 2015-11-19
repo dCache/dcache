@@ -49,9 +49,9 @@ public class LocationMgrTunnel
      * We use a single shared instance of Tunnels to coordinate route
      * creation between tunnels.
      */
-    private final static Tunnels _tunnels = new Tunnels();
+    private static final Tunnels _tunnels = new Tunnels();
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(LocationMgrTunnel.class);
 
     private final CellNucleus  _nucleus;
@@ -117,13 +117,13 @@ public class LocationMgrTunnel
         _log.debug("Established tunnel to {}", getRemoteDomainName());
     }
 
-    synchronized private void setDown(boolean down)
+    private synchronized void setDown(boolean down)
     {
         _down = down;
         notifyAll();
     }
 
-    synchronized private boolean isDown()
+    private synchronized boolean isDown()
     {
         return _down;
     }

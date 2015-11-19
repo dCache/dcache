@@ -22,7 +22,7 @@ public class Checksum  implements Serializable
     private static final CharMatcher HEXADECIMAL =
             CharMatcher.anyOf(HEX_DIGITS);
 
-    private final static char DELIMITER = ':';
+    private static final char DELIMITER = ':';
 
     private final ChecksumType type;
     private final String value;

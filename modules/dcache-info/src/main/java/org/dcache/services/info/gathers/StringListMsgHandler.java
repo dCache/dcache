@@ -15,7 +15,7 @@ import org.dcache.services.info.base.StateUpdateManager;
  */
 public class StringListMsgHandler extends CellMessageHandlerSkel
 {
-    final private StatePath _path;
+    private final StatePath _path;
 
     /**
      * Create a new generic String-list message handler.

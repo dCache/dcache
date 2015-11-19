@@ -112,7 +112,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * low-latency state with a single request.
  */
 public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest> {
-    private final static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(BringOnlineFileRequest.class);
 
     // the globus url class created from surl_string

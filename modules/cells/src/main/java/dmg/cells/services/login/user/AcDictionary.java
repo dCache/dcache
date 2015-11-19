@@ -4,10 +4,10 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 public interface AcDictionary {
 
-    public Enumeration<String> getPrincipals() ;
-    public boolean getPermission(String prinicalName )
+    Enumeration<String> getPrincipals() ;
+    boolean getPermission(String prinicalName)
            throws NoSuchElementException ;
-    public boolean isResolved() ;
-    public String getInheritance() ;
+    boolean isResolved() ;
+    String getInheritance() ;
 
 }

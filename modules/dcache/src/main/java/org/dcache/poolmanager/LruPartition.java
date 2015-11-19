@@ -30,9 +30,9 @@ public class LruPartition extends Partition
 
     static final String TYPE = "lru";
 
-    private final static AtomicLong _counter = new AtomicLong();
+    private static final AtomicLong _counter = new AtomicLong();
 
-    private final static Random random = new Random();
+    private static final Random random = new Random();
 
     /**
      * Pool name to access order. Making this static will mean that
@@ -41,9 +41,9 @@ public class LruPartition extends Partition
      * meaning that multiple deserialized instances preserve this
      * information.
      */
-    private final static ConcurrentMap<String,Long> _lastWrite =
+    private static final ConcurrentMap<String,Long> _lastWrite =
         Maps.newConcurrentMap();
-    private final static ConcurrentMap<String,Long> _lastRead =
+    private static final ConcurrentMap<String,Long> _lastRead =
         Maps.newConcurrentMap();
 
     public LruPartition(Map<String,String> inherited)

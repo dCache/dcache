@@ -17,7 +17,7 @@ import org.dcache.webadmin.model.dataaccess.util.rrd4j.RrdPoolInfoAgent;
  */
 public class PoolMonitorCollector extends Collector {
 
-    private final static Logger _log
+    private static final Logger _log
         = LoggerFactory.getLogger(PoolMonitorCollector.class);
 
     private boolean plottingEnabled;

@@ -50,7 +50,7 @@ public class Stat {
         BLK_SIZE,
         ACCESS_LATENCY,
         RETENTION_POLICY
-    };
+    }
 
     /**
      * Set of attributes defined in this {@code stat} object.

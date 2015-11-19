@@ -104,7 +104,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @version
  */
 public final class GetFileRequest extends FileRequest<GetRequest> {
-    private final static Logger logger = LoggerFactory.getLogger(GetFileRequest.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetFileRequest.class);
 
     private final URI surl;
     private URI turl;

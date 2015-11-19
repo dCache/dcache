@@ -14,9 +14,9 @@ import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
  */
 public interface PoolSelectionSetupService {
 
-    public List<PartitionsBean> getPartitions() throws PoolSelectionSetupServiceException;
+    List<PartitionsBean> getPartitions() throws PoolSelectionSetupServiceException;
 
-    public List<MatchBean> getMatchForIORequest(IORequest request) throws PoolSelectionSetupServiceException;
+    List<MatchBean> getMatchForIORequest(IORequest request) throws PoolSelectionSetupServiceException;
 
-    public DCacheEntityContainerBean getEntityContainer() throws PoolSelectionSetupServiceException;
+    DCacheEntityContainerBean getEntityContainer() throws PoolSelectionSetupServiceException;
 }

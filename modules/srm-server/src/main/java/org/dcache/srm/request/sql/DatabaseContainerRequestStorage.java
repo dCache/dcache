@@ -24,7 +24,7 @@ import org.dcache.srm.util.Configuration;
 public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest<F>, F extends FileRequest<C>>
         extends DatabaseRequestStorage<C>
 {
-   private final static Logger logger =
+   private static final Logger logger =
             LoggerFactory.getLogger(DatabaseContainerRequestStorage.class);
 
     @SuppressWarnings("unchecked")

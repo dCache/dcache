@@ -45,7 +45,7 @@ public enum StatusCode {
     private static final ImmutableMap<TStatusCode,StatusCode> MAP;
     private static final String ERROR_MESSAGE;
 
-    private StatusCode(TStatusCode status) {
+    StatusCode(TStatusCode status) {
         _status = status;
     }
 

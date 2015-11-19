@@ -7,5 +7,5 @@ import org.dcache.srm.request.RequestCredential;
  */
 public interface CredentialAwareHandler
 {
-    public void setCredential(RequestCredential credential);
+    void setCredential(RequestCredential credential);
 }

@@ -23,7 +23,7 @@ import java.nio.charset.Charset;
 
 public class DummyStreamEngine implements StreamEngine
 {
-    private final static Logger _logger =
+    private static final Logger _logger =
         LoggerFactory.getLogger(DummyStreamEngine.class);
 
     private final Socket _socket;

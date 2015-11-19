@@ -43,38 +43,38 @@ import static org.dcache.namespace.FileAttribute.*;
 public class ConsistentStore
     implements MetaDataStore
 {
-    private final static Logger _log = LoggerFactory.getLogger(ConsistentStore.class);
+    private static final Logger _log = LoggerFactory.getLogger(ConsistentStore.class);
 
-    private final static String RECOVERING_MSG =
+    private static final String RECOVERING_MSG =
         "Recovering %1$s...";
-    private final static String MISSING_MSG =
+    private static final String MISSING_MSG =
         "Recovering: Reconstructing meta data for %1$s.";
-    private final static String PARTIAL_FROM_TAPE_MSG =
+    private static final String PARTIAL_FROM_TAPE_MSG =
         "Recovering: Removed %1$s because it was not fully staged.";
-    private final static String FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS =
+    private static final String FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS =
         "Recovering: Fetched storage info for %1$s from name space.";
-    private final static String FILE_NOT_FOUND_MSG =
+    private static final String FILE_NOT_FOUND_MSG =
         "Recovering: Removed %1$s because name space entry was deleted.";
-    private final static String UPDATE_SIZE_MSG =
+    private static final String UPDATE_SIZE_MSG =
         "Recovering: Setting size of %1$s in name space to %2$d.";
-    private final static String UPDATE_ACCESS_LATENCY_MSG =
+    private static final String UPDATE_ACCESS_LATENCY_MSG =
         "Recovering: Setting access latency of %1$s in name space to %2$s.";
-    private final static String UPDATE_RETENTION_POLICY_MSG =
+    private static final String UPDATE_RETENTION_POLICY_MSG =
         "Recovering: Setting retention policy of %1$s in name space to %2$s.";
-    private final static String UPDATE_CHECKSUM_MSG =
+    private static final String UPDATE_CHECKSUM_MSG =
         "Recovering: Setting checksum of %1$s in name space to %2$s.";
-    private final static String MARKED_MSG =
+    private static final String MARKED_MSG =
         "Recovering: Marked %1$s as %2$s.";
-    private final static String REMOVING_REDUNDANT_META_DATA =
+    private static final String REMOVING_REDUNDANT_META_DATA =
         "Removing redundant meta data for %s.";
 
-    private final static String BAD_MSG =
+    private static final String BAD_MSG =
         "Marked %1$s bad: %2$s.";
-    private final static String BAD_SIZE_MSG =
+    private static final String BAD_SIZE_MSG =
         "File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.";
-    private final static String MISSING_ACCESS_LATENCY =
+    private static final String MISSING_ACCESS_LATENCY =
         "Missing access latency for %1$s.";
-    private final static String MISSING_RETENTION_POLICY =
+    private static final String MISSING_RETENTION_POLICY =
         "Missing retention policy for %1$s.";
 
     private final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =

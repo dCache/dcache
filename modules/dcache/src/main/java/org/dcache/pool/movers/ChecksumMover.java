@@ -17,7 +17,7 @@ public interface ChecksumMover
      * algorithm.
      * @param suggestedAlgorithm a default algorithm
      */
-    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
+    void enableTransferChecksum(ChecksumType suggestedAlgorithm)
             throws NoSuchAlgorithmException;
 
     /**
@@ -26,7 +26,7 @@ public interface ChecksumMover
      *
      * @return a checksum value for the data or null if none is available.
      */
-    public Checksum getActualChecksum();
+    Checksum getActualChecksum();
 
     /**
      * Obtain an expected checksum provided by the remote party. Called after
@@ -34,5 +34,5 @@ public interface ChecksumMover
      *
      * @return an expected checksum value for the data or null if none is available.
      */
-    public Checksum getExpectedChecksum();
+    Checksum getExpectedChecksum();
 }

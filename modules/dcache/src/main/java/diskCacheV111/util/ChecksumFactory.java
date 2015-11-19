@@ -76,11 +76,11 @@ public abstract class ChecksumFactory
 
 class GenericIdChecksumFactory extends ChecksumFactory
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(GenericIdChecksumFactory.class);
 
-    private final static long BYTES_IN_MEBIBYTE = 1024 * 1024;
-    private final static long MILLISECONDS_IN_SECOND = 1000;
+    private static final long BYTES_IN_MEBIBYTE = 1024 * 1024;
+    private static final long MILLISECONDS_IN_SECOND = 1000;
 
     private ChecksumType _type;
 

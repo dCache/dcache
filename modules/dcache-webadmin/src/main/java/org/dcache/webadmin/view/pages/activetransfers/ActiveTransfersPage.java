@@ -191,7 +191,7 @@ public class ActiveTransfersPage extends BasePage
 
     }
 
-    private static enum ColumnComparator implements Comparator<ActiveTransfersBean>
+    private enum ColumnComparator implements Comparator<ActiveTransfersBean>
     {
         DOOR {
             @Override

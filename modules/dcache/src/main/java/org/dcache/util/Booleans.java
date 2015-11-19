@@ -2,8 +2,8 @@ package org.dcache.util;
 
 public class Booleans {
 
-    private final static String[] trueStrings = {"true", "yes", "on", "enable"};
-    private final static String[] falseStrings = {"false", "no", "off", "disable"};
+    private static final String[] trueStrings = {"true", "yes", "on", "enable"};
+    private static final String[] falseStrings = {"false", "no", "off", "disable"};
 
     private Booleans() {
     }

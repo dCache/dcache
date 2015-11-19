@@ -97,8 +97,8 @@ public class PoolManagerV5
     private CellStub _quotaManager;
 
 
-    private final static Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
-    private final static Logger _logPoolMonitor = LoggerFactory.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
+    private static final Logger _logPoolMonitor = LoggerFactory.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
 
     private final ExecutorService _executor = new CDCExecutorServiceDecorator<>(
             Executors.newCachedThreadPool(
@@ -308,13 +308,13 @@ public class PoolManagerV5
         pw.println("  SelectWritePool : "+_counterSelectWritePool ) ;
         pw.println("         Watchdog : "+_watchdog ) ;
     }
-    public final static String hh_set_max_threads = "# OBSOLETE";
+    public static final String hh_set_max_threads = "# OBSOLETE";
     public String ac_set_max_threads_$_1(Args args)
     {
         return "'set max threads' is obsolete";
     }
 
-    public final static String hh_set_timeout_pool = "# OBSOLETE";
+    public static final String hh_set_timeout_pool = "# OBSOLETE";
     public String ac_set_timeout_pool_$_1(Args args)
     {
         return "'set timeout pool' is obsolete";

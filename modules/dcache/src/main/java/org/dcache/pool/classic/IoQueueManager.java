@@ -25,7 +25,7 @@ import static com.google.common.collect.Iterables.concat;
 
 public class IoQueueManager {
 
-    private final static Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
+    private static final Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
 
     public static final String DEFAULT_QUEUE = "regular";
     private final ImmutableList<MoverRequestScheduler> _queues;

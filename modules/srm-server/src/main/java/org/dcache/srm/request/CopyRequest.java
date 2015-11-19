@@ -131,8 +131,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         implements PropertyChangeListener, DelegatedCredentialAware
 {
-    private final static Logger LOG = LoggerFactory.getLogger(CopyRequest.class);
-    private final static String SFN_STRING = "?SFN=";
+    private static final Logger LOG = LoggerFactory.getLogger(CopyRequest.class);
+    private static final String SFN_STRING = "?SFN=";
 
     private final Long credentialId;
     private boolean isSourceSrm;

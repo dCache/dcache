@@ -97,7 +97,7 @@ public class LoginCLI
         return _loginStrategy.reverseMap(principal).toString();
     }
 
-    private final static String PREFIX = "org.dcache.auth.";
+    private static final String PREFIX = "org.dcache.auth.";
     private Principal principalOf(String type, String name) throws Exception {
         Class<? extends Principal> c;
         try {

@@ -211,7 +211,7 @@ public class FsInode {
      *
      * @return new id
      */
-    public final static String generateNewID() {
+    public static final String generateNewID() {
         return InodeId.newID(0);
     }
 
@@ -221,7 +221,7 @@ public class FsInode {
      * @param fsId
      * @return new id
      */
-    public final static String generateNewID(int fsId) {
+    public static final String generateNewID(int fsId) {
         return InodeId.newID(fsId);
     }
 
@@ -370,7 +370,7 @@ public class FsInode {
     /**
      * get inode of root element of the file system
      */
-    static public FsInode getRoot(FileSystemProvider fs) throws ChimeraFsException {
+    public static FsInode getRoot(FileSystemProvider fs) throws ChimeraFsException {
         return fs.path2inode("/");
     }
 

@@ -91,7 +91,7 @@ public class KpwdPlugin
                GPlazmaAccountPlugin,
                GPlazmaSessionPlugin
 {
-    private final static String KPWD = "gplazma.kpwd.file";
+    private static final String KPWD = "gplazma.kpwd.file";
 
     private final File _kpwdFile;
 

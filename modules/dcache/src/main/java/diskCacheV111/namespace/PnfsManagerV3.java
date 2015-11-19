@@ -851,7 +851,7 @@ public class PnfsManagerV3
 
     }
 
-    public final static String fh_show_path_cache =
+    public static final String fh_show_path_cache =
         "Shows cached information about mappings from path prefixes to\n" +
         "name space database IDs. The cache is only populated if the\n" +
         "number of thread groups is larger than 1.";

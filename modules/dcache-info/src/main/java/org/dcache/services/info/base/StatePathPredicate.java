@@ -30,7 +30,7 @@ public class StatePathPredicate extends StatePath
      * @param path the path, as an ordered list of path elements, each element separated by a dot.
      * @return the corresponding StatePath.
      */
-    static public StatePathPredicate parsePath(String path)
+    public static StatePathPredicate parsePath(String path)
     {
         if (path == null) {
             return null;
@@ -47,7 +47,7 @@ public class StatePathPredicate extends StatePath
      * @param pathElement
      * @return true if pathElement matches predicateElement
      */
-    static private boolean elementsMatch(String predicateElement, String pathElement)
+    private static boolean elementsMatch(String predicateElement, String pathElement)
     {
         if (pathElement == null || predicateElement == null) {
             return false;

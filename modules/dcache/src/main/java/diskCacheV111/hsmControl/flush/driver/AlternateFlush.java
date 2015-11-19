@@ -30,7 +30,7 @@ import org.dcache.util.Args;
  */
  public class AlternateFlush implements HsmFlushSchedulable {
 
-     private final static Logger _log =
+     private static final Logger _log =
          LoggerFactory.getLogger(AlternateFlush.class);
 
      private HsmFlushControlCore _core;
@@ -107,7 +107,7 @@ import org.dcache.util.Args;
      private EngineStack _engineStack = new EngineStack() ;
 
      private int _status;
-     private final static int QUERY_ALL_POOLS_IO_MODE = 1 ;
+     private static final int QUERY_ALL_POOLS_IO_MODE = 1 ;
 
      public AlternateFlush( CellAdapter cell , HsmFlushControlCore core ){
          _log.info("AlternateFlush started");

@@ -135,7 +135,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      * parent request. The counter is incremented whenever when one of
      * the file requests changes to one of a set of predefined states.
      */
-    protected transient final AtomicCounter _stateChangeCounter = new AtomicCounter();
+    protected final transient AtomicCounter _stateChangeCounter = new AtomicCounter();
 
 
     /*

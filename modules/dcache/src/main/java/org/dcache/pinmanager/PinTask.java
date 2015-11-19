@@ -17,7 +17,7 @@ import org.dcache.vehicles.FileAttributes;
 
 public class PinTask
 {
-    private final static Logger _log = LoggerFactory.getLogger(PinTask.class);
+    private static final Logger _log = LoggerFactory.getLogger(PinTask.class);
 
     private PinManagerPinMessage _request;
     private MessageReply<PinManagerPinMessage> _reply;

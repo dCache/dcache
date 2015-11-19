@@ -11,5 +11,5 @@ import org.dcache.webadmin.view.beans.PoolGroupBean;
  */
 public interface PoolGroupService {
 
-    public List<PoolGroupBean> getPoolGroups() throws PoolGroupServiceException;
+    List<PoolGroupBean> getPoolGroups() throws PoolGroupServiceException;
 }

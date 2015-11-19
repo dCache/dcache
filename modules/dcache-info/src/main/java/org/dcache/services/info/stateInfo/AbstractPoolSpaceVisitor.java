@@ -35,7 +35,7 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor
     }
 
     /** Called once per pool in dCache state */
-    abstract protected void newPool(String poolName, SpaceInfo space);
+    protected abstract void newPool(String poolName, SpaceInfo space);
 
     @Override
     protected void newListItem(String itemName)

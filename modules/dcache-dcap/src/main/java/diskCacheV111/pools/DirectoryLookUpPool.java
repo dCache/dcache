@@ -51,7 +51,7 @@ import static org.dcache.namespace.FileType.REGULAR;
  */
 public class DirectoryLookUpPool extends AbstractCell
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(DirectoryLookUpPool.class);
 
     private final String _poolName;

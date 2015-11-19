@@ -356,7 +356,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
      * Abstract base class for handlers that apply a value to a field
      * of the command object.
      */
-    private static abstract class FieldHandler implements Handler
+    private abstract static class FieldHandler implements Handler
     {
         protected final Field _field;
 

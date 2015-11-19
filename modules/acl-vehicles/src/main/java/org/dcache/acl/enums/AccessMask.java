@@ -103,7 +103,7 @@ public enum AccessMask {
 
     private final RsType _type;
 
-    private AccessMask(int value, char abbreviation) {
+    AccessMask(int value, char abbreviation) {
         _value = value;
         _abbreviation = abbreviation;
         _type = null;

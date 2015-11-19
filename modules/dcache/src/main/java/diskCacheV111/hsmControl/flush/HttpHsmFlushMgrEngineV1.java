@@ -34,7 +34,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageSender
 {
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(HttpHsmFlushMgrEngineV1.class);
 
    private CellEndpoint _endpoint;

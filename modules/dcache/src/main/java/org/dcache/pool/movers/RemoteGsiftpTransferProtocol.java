@@ -109,12 +109,12 @@ import org.dcache.vehicles.FileAttributes;
 public class RemoteGsiftpTransferProtocol
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(RemoteGsiftpTransferProtocol.class);
     //timeout after 5 minutes if credentials not delegated
-    private final static int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
+    private static final int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
 
-    private final static CellPath PNFS_MANAGER =
+    private static final CellPath PNFS_MANAGER =
         new CellPath("PnfsManager");
     public static final int DEFAULT_PORT = 2811;
 

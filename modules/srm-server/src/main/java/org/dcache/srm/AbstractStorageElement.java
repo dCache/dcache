@@ -108,14 +108,14 @@ public interface AbstractStorageElement {
      * @return Array of strings with protocol names.
      * @throws SRMInternalErrorException in case of error
      */
-    public String[] supportedGetProtocols() throws SRMInternalErrorException;
+    String[] supportedGetProtocols() throws SRMInternalErrorException;
 
     /** Method must be called before any "put" operations. It gives the list of all
      * protocols implemented in the Storage Element for "put" operations
      * @throws SRMInternalErrorException
      * @return Array of strings with protocol names.
      */
-    public String[] supportedPutProtocols()throws SRMInternalErrorException;
+    String[] supportedPutProtocols()throws SRMInternalErrorException;
 
     /** This method has to be called to get the transport URL for file operation.
      * The returned value is passed to the user and user does actual data transfer
@@ -196,16 +196,16 @@ public interface AbstractStorageElement {
      * @param requestToken pin will save request token
      *        so that unpinning by file name and request token can take place
      */
-    public CheckedFuture<Pin, ? extends SRMException> pinFile(SRMUser user,
-                                                              URI surl,
-                                                              String clientHost,
-                                                              long pinLifetime,
-                                                              String requestToken);
+    CheckedFuture<Pin, ? extends SRMException> pinFile(SRMUser user,
+                                                       URI surl,
+                                                       String clientHost,
+                                                       long pinLifetime,
+                                                       String requestToken);
 
     /**
      * Contains the result of a pin operation.
      */
-    public class Pin
+    class Pin
     {
         public final FileMetaData fileMetaData;
         public final String pinId;
@@ -224,7 +224,7 @@ public interface AbstractStorageElement {
      * @return long lifetime left for pin in millis
      */
 
-    public long extendPinLifetime(SRMUser user, String fileId, String pinId, long newPinLifetime)
+    long extendPinLifetime(SRMUser user, String fileId, String pinId, long newPinLifetime)
     throws SRMException ;
 
     /**
@@ -244,13 +244,13 @@ public interface AbstractStorageElement {
      * @return transfer id
      *  an id to the pending tranfer that can be used to cancel the transfer via killRemoteTransfer
      */
-    public String getFromRemoteTURL(
+    String getFromRemoteTURL(
             SRMUser user,
             URI remoteTURL,
             String fileId,
             SRMUser remoteUser,
             Long requestCredentialId,
-            Map<String,String> extraInfo,
+            Map<String, String> extraInfo,
             CopyCallbacks callbacks)
             throws SRMException;
 
@@ -270,20 +270,20 @@ public interface AbstractStorageElement {
      * @return transfer id
      *    an id to the pending tranfer that can be used to cancel the transfer via killRemoteTransfer
      */
-    public String putToRemoteTURL(SRMUser user,
-            URI surl,
-            URI remoteTURL,
-            SRMUser remoteUser,
-            Long requestCredentialId,
-            Map<String,String> extraInfo,
-            CopyCallbacks callbacks)
+    String putToRemoteTURL(SRMUser user,
+                           URI surl,
+                           URI remoteTURL,
+                           SRMUser remoteUser,
+                           Long requestCredentialId,
+                           Map<String, String> extraInfo,
+                           CopyCallbacks callbacks)
             throws SRMException;
 
     /**
      * while the copy is in progress, this method would call the transfer to be canceled
      * this should lead to the invocation of the copyFailed method CopyCallbacks interfaced
      */
-    public void killRemoteTransfer(String transferId);
+    void killRemoteTransfer(String transferId);
 
 
     /**
@@ -294,7 +294,7 @@ public interface AbstractStorageElement {
      * @param fileId File ID as provided by prepareToPut
      * @throws SRMException
      */
-    public void localCopy(SRMUser user, URI fromSurl, String fileId)
+    void localCopy(SRMUser user, URI fromSurl, String fileId)
     throws SRMException;
 
     /**
@@ -302,7 +302,7 @@ public interface AbstractStorageElement {
      * @throws SRMException
      * @return
      */
-    public boolean isLocalTransferUrl(URI url) throws SRMException;
+    boolean isLocalTransferUrl(URI url) throws SRMException;
 
     /**
      * Retrieves the FileMetaData of a file.
@@ -325,7 +325,7 @@ public interface AbstractStorageElement {
      * @throws SRMException for any other error
      */
     @Nonnull
-    public FileMetaData getFileMetaData(SRMUser user,URI surl,boolean read)
+    FileMetaData getFileMetaData(SRMUser user, URI surl, boolean read)
         throws SRMException;
 
     /**
@@ -342,7 +342,7 @@ public interface AbstractStorageElement {
      * @throws SRMException for any other error
      */
     @Nonnull
-    public FileMetaData getFileMetaData(SRMUser user, URI surl, String fileId)
+    FileMetaData getFileMetaData(SRMUser user, URI surl, String fileId)
             throws SRMException;
 
     /**
@@ -351,7 +351,7 @@ public interface AbstractStorageElement {
      * @return
      */
 
-    public void setFileMetaData(SRMUser user,FileMetaData fmd) throws SRMException;
+    void setFileMetaData(SRMUser user, FileMetaData fmd) throws SRMException;
 
     /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the request to have the file in "fast access state"
@@ -360,7 +360,7 @@ public interface AbstractStorageElement {
      * @param pinId Unique id received during pinFile operation (?)
      * @return A promise of an ID of the pin that was released
      */
-    public CheckedFuture<String, ? extends SRMException> unPinFile(
+    CheckedFuture<String, ? extends SRMException> unPinFile(
             SRMUser user, String fileId, String pinId);
 
     /** This method allows to unpin file in the Storage Element,
@@ -370,7 +370,7 @@ public interface AbstractStorageElement {
      * @param requestToken id given to the storage  during pinFile operation
      * @return A promise of an ID of the pin that was released
      */
-    public CheckedFuture<String, ? extends SRMException> unPinFileBySrmRequestId(
+    CheckedFuture<String, ? extends SRMException> unPinFileBySrmRequestId(
             SRMUser user, String fileId, String requestToken);
 
     /** Unpin all pins on this file that user has permission to unpin
@@ -378,7 +378,7 @@ public interface AbstractStorageElement {
      * @param fileId Storage Element internal file ID
      * @return A promise of an ID of the pin that was released
      */
-    public CheckedFuture<String, ? extends SRMException> unPinFile(
+    CheckedFuture<String, ? extends SRMException> unPinFile(
             SRMUser user, String fileId);
 
     /** This method tells SE that the specified file can be removed from the storage.
@@ -388,7 +388,7 @@ public interface AbstractStorageElement {
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to remove file from the storage
      */
-    public void advisoryDelete(SRMUser user, URI surl,AdvisoryDeleteCallbacks callbacks);
+    void advisoryDelete(SRMUser user, URI surl, AdvisoryDeleteCallbacks callbacks);
 
     /**
      *
@@ -397,7 +397,7 @@ public interface AbstractStorageElement {
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to remove file from the storage
      */
-    public void removeFile(SRMUser user, URI surl,RemoveFileCallback callbacks);
+    void removeFile(SRMUser user, URI surl, RemoveFileCallback callbacks);
 
     /**
      * @param user User ID
@@ -410,7 +410,7 @@ public interface AbstractStorageElement {
      * @throws SRMInvalidPathException if {@code dir} is not a directory or does not exist
      * @throws SRMException in case of other errors.
      */
-    public void removeDirectory(SRMUser user, URI surl, boolean recursive)
+    void removeDirectory(SRMUser user, URI surl, boolean recursive)
         throws SRMException;
 
     /**
@@ -419,8 +419,8 @@ public interface AbstractStorageElement {
      * @param surl
      * @throws SRMException
      */
-    public void createDirectory(SRMUser user,
-                                URI surl) throws SRMException;
+    void createDirectory(SRMUser user,
+                         URI surl) throws SRMException;
 
     /**
      *
@@ -433,9 +433,9 @@ public interface AbstractStorageElement {
      * @throws SRMInternalErrorException
      * @throws SRMException
      */
-    public void moveEntry(SRMUser user,
-                          URI from,
-                          URI to) throws SRMException;
+    void moveEntry(SRMUser user,
+                   URI from,
+                   URI to) throws SRMException;
 
     /** This method tells if the specified file can be written
      * @param user User ID
@@ -471,7 +471,7 @@ public interface AbstractStorageElement {
      * @throws SRMException
      * @return
      */
-    public List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException;
+    List<URI> listDirectory(SRMUser user, URI surl, FileMetaData fileMetaData) throws SRMException;
 
     /**
      * Lists directory contents. The contents is provided as a list of
@@ -517,13 +517,13 @@ public interface AbstractStorageElement {
      * @param description
      * @param callbacks
      */
-    public void srmReserveSpace(SRMUser user,
-            long sizeInBytes,
-            long spaceReservationLifetime,
-            String retentionPolicy,
-            String accessLatency,
-            String description,
-            SrmReserveSpaceCallback callbacks);
+    void srmReserveSpace(SRMUser user,
+                         long sizeInBytes,
+                         long spaceReservationLifetime,
+                         String retentionPolicy,
+                         String accessLatency,
+                         String description,
+                         SrmReserveSpaceCallback callbacks);
 
     /**
      *
@@ -532,10 +532,10 @@ public interface AbstractStorageElement {
      * @param sizeInBytes
      * @param callbacks
      */
-    public void srmReleaseSpace(SRMUser user,
-            String spaceToken,
-            Long sizeInBytes,
-            SrmReleaseSpaceCallback callbacks);
+    void srmReleaseSpace(SRMUser user,
+                         String spaceToken,
+                         Long sizeInBytes,
+                         SrmReleaseSpaceCallback callbacks);
 
     /**
      *
@@ -543,7 +543,7 @@ public interface AbstractStorageElement {
      * @throws SRMException
      * @return
      */
-    public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user,String[] spaceTokens)
+    TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user, String[] spaceTokens)
         throws SRMException;
 
     /**
@@ -553,7 +553,7 @@ public interface AbstractStorageElement {
      * @return
      */
     @Nonnull
-    public String[] srmGetSpaceTokens(SRMUser user,String description)
+    String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException;
 
       /**
@@ -564,7 +564,7 @@ public interface AbstractStorageElement {
      *
      */
 
-    public long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime)
+      long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime)
     throws SRMException ;
 
     /**
@@ -574,8 +574,8 @@ public interface AbstractStorageElement {
      * @return long lifetime left in milliseconds
      *   -1 stands for infinite lifetime
      */
-    public long srmExtendSurlLifetime(SRMUser user, URI surl, long newLifetime)
+    long srmExtendSurlLifetime(SRMUser user, URI surl, long newLifetime)
     throws SRMException;
 
-    public String getStorageBackendVersion();
+    String getStorageBackendVersion();
 }

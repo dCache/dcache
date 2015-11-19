@@ -10,7 +10,7 @@ public enum DiskSpaceUnit {
     BYTES(1);
     private final long _numberOfBytes;
 
-    private DiskSpaceUnit(long numberOfBytes) {
+    DiskSpaceUnit(long numberOfBytes) {
         _numberOfBytes = numberOfBytes;
     }
 

@@ -11,7 +11,7 @@ public enum  ConfigurationItemControl {
     OPTIONAL("optional");
 
     private final String name;
-    private ConfigurationItemControl(String name) {
+    ConfigurationItemControl(String name) {
         this.name = name;
     }
 

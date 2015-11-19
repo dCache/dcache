@@ -56,8 +56,8 @@ public class GridftpClient
     private static final Logger logger =
             LoggerFactory.getLogger(GridftpClient.class);
 
-    private final static long DEFAULT_FIRST_BYTE_TIMEOUT=TimeUnit.HOURS.toMillis(1);
-    private final static long DEFAULT_NEXT_BYTE_TIMEOUT=TimeUnit.MINUTES.toMillis(10);
+    private static final long DEFAULT_FIRST_BYTE_TIMEOUT=TimeUnit.HOURS.toMillis(1);
+    private static final long DEFAULT_NEXT_BYTE_TIMEOUT=TimeUnit.MINUTES.toMillis(10);
 
     private long firstByteTimeout=DEFAULT_FIRST_BYTE_TIMEOUT;
     private long nextByteTimeout=DEFAULT_NEXT_BYTE_TIMEOUT;
@@ -980,12 +980,12 @@ public class GridftpClient
          * file postions should be reset to 0 if IDiskDataSourceSink is a wrapper
          * around random access disk file
          */
-        public long getAdler32() throws IOException;
-        public String getCksmValue(String type)
+        long getAdler32() throws IOException;
+        String getCksmValue(String type)
             throws IOException,NoSuchAlgorithmException;
-        public long getLast_transfer_time();
-        public long getTransfered();
-        public long length() throws IOException;
+        long getLast_transfer_time();
+        long getTransfered();
+        long length() throws IOException;
     }
 
     private  class DiskDataSourceSink implements IDiskDataSourceSink {

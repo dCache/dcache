@@ -8,5 +8,5 @@ import org.dcache.webadmin.model.exceptions.DAOException;
  */
 public interface InfoDAO {
 
-    public String getXmlForStatepath(String statepath) throws DAOException;
+    String getXmlForStatepath(String statepath) throws DAOException;
 }

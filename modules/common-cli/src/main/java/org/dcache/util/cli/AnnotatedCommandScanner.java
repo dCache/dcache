@@ -19,7 +19,7 @@ import static java.util.Arrays.asList;
  */
 public class AnnotatedCommandScanner implements CommandScanner
 {
-    private final static TypeToken<Callable<? extends Serializable>> EXPECTED_TYPE =
+    private static final TypeToken<Callable<? extends Serializable>> EXPECTED_TYPE =
             new TypeToken<Callable<? extends Serializable>>() {};
 
     /**

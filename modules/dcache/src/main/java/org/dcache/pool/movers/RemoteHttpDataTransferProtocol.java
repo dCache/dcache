@@ -114,7 +114,7 @@ import static org.dcache.namespace.FileAttribute.CHECKSUM;
 public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         ChecksumMover
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(RemoteHttpDataTransferProtocol.class);
 
     /** Maximum time to wait when establishing a connection. */

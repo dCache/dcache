@@ -343,7 +343,7 @@ public class Subjects
      * @param user UserAuthBase to convert
      * @param primary Whether the groups of user are the primary groups
      */
-    public final static Subject getSubject(UserAuthBase user, boolean primary)
+    public static final Subject getSubject(UserAuthBase user, boolean primary)
     {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
@@ -381,7 +381,7 @@ public class Subjects
      *
      * @param user UserAuthRecord to convert
      */
-    public final static Subject getSubject(UserAuthRecord user)
+    public static final Subject getSubject(UserAuthRecord user)
     {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();

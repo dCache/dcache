@@ -41,7 +41,7 @@ public interface ProxyIoAdapter extends Closeable {
     stateid4 getStateId();
 
     // FIXME: move into generic NFS code
-    public static class ReadResult {
+    class ReadResult {
 
         private final int bytesRead;
         private final boolean isEof;

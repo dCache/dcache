@@ -23,7 +23,7 @@ import org.dcache.pinmanager.model.Pin;
 @Repository
 public class JdoDao implements PinDao
 {
-    private final static Logger _log = LoggerFactory.getLogger(JdoDao.class);
+    private static final Logger _log = LoggerFactory.getLogger(JdoDao.class);
 
     private PersistenceManagerFactory _pmf;
 

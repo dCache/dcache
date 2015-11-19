@@ -44,7 +44,7 @@ import org.dcache.util.Args;
 
 public class ReplicaManagerV2 extends DCacheCoreControllerV2
 {
-  private final static Logger _log =
+  private static final Logger _log =
       LoggerFactory.getLogger(ReplicaManagerV2.class);
 
   private String _jdbcUrl = "jdbc:postgresql://localhost/replicas";
@@ -195,7 +195,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       _updatedPnfsId = new LinkedHashSet<>();
     }
 
-    synchronized public boolean reset() {
+    public synchronized boolean reset() {
       // there were any changes in pool status or pnfsId added / removed
       boolean ret = _bool || (_updatedPnfsId.size() > 0 );
 
@@ -205,11 +205,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       return ret;
     }
 
-    synchronized public boolean booleanValue() { return _bool; }
+    public synchronized boolean booleanValue() { return _bool; }
 
 
     // set flag and wakeup waiting thread
-    synchronized public void wakeup() {
+    public synchronized void wakeup() {
       _bool = true;
       try {
         this.notifyAll();
@@ -219,7 +219,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     }
 
     // wakeup waiting thread, don't set flag for polls of drastic changes
-    synchronized public void sendNotify() {
+    public synchronized void sendNotify() {
       try {
         this.notifyAll();
       }
@@ -227,9 +227,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       }
     }
 
-    final static int _maxPnfsIdHashSize = 16*1024;
+    static final int _maxPnfsIdHashSize = 16 * 1024;
 
-    synchronized public void wakeupByPnfsId() {
+    public synchronized void wakeupByPnfsId() {
       /** @todo
        * rename it all ...
        */
@@ -241,11 +241,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       }
     }
 
-    synchronized public void addPnfsId( PnfsId p ) {
+    public synchronized void addPnfsId(PnfsId p ) {
       _updatedPnfsId.add(p.toString());
     }
 
-    synchronized public boolean hasPnfsId( PnfsId p ) {
+    public synchronized boolean hasPnfsId(PnfsId p ) {
       return _updatedPnfsId.contains( p.toString() );
     }
 

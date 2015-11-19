@@ -25,12 +25,12 @@ import org.dcache.auth.attributes.LoginAttribute;
  */
 public class AnonymousLoginStrategy implements LoginStrategy
 {
-    public final static String USER_ROOT = "root";
-    public final static String USER_NOBODY = "nobody";
-    public final static Pattern USER_PATTERN =
+    public static final String USER_ROOT = "root";
+    public static final String USER_NOBODY = "nobody";
+    public static final Pattern USER_PATTERN =
         Pattern.compile("(\\d+):((\\d+)(,(\\d+))*)");
 
-    private final static Set<LoginAttribute> NO_ATTRIBUTES =
+    private static final Set<LoginAttribute> NO_ATTRIBUTES =
             Collections.emptySet();
 
     private Subject _subject;

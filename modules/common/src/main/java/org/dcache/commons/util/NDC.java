@@ -25,8 +25,8 @@ public class NDC
      * separated list of positions in the NDC string indicating the
      * boundaries.
      */
-    static public final String KEY_NDC = "org.dcache.ndc";
-    static public final String KEY_POSITIONS = "org.dcache.ndc.positions";
+    public static final String KEY_NDC = "org.dcache.ndc";
+    public static final String KEY_POSITIONS = "org.dcache.ndc.positions";
 
     private final String _ndc;
     private final String _positions;
@@ -52,7 +52,7 @@ public class NDC
      * <code>MDC.remove</code>. <code>value</code> is allowed to be
      * null.
      */
-    static private void setMdc(String key, String value)
+    private static void setMdc(String key, String value)
     {
         if (value != null) {
             MDC.put(key, value);
@@ -64,7 +64,7 @@ public class NDC
     /**
      * Clear any nested diagnostic information if any.
      */
-    static public void clear()
+    public static void clear()
     {
         MDC.remove(KEY_NDC);
         MDC.remove(KEY_POSITIONS);
@@ -73,7 +73,7 @@ public class NDC
     /**
      * Returns the nested diagnostic context for the current thread.
      */
-    static public NDC cloneNdc()
+    public static NDC cloneNdc()
     {
         return new NDC(MDC.get(KEY_NDC), MDC.get(KEY_POSITIONS));
     }
@@ -81,7 +81,7 @@ public class NDC
     /**
      * Replace the nested diagnostic context.
      */
-    static public void set(NDC ndc)
+    public static void set(NDC ndc)
     {
         setMdc(KEY_NDC, ndc.getNdc());
         setMdc(KEY_POSITIONS, ndc.getPositions());
@@ -91,7 +91,7 @@ public class NDC
      * Push new diagnostic context information for the current
      * thread.
      */
-    static public void push(String message)
+    public static void push(String message)
     {
         String ndc = MDC.get(KEY_NDC);
         if (ndc == null) {
@@ -108,7 +108,7 @@ public class NDC
      * Clients should call this method before leaving a diagnostic
      * context.
      */
-    static public String pop()
+    public static String pop()
     {
         String top = null;
         String ndc = MDC.get(KEY_NDC);

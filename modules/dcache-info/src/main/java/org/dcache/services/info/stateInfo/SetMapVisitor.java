@@ -57,7 +57,7 @@ public class SetMapVisitor extends SkeletonListVisitor
      * @param pathToSecondList the StatePath, relative to the list item for parent of the item list.
      * @return a mapping between an item and the set of items at a fixed relative path.
      */
-    static public Map<String,Set<String>> getDetails(StateExhibitor exhibitor,
+    public static Map<String,Set<String>> getDetails(StateExhibitor exhibitor,
             StatePath pathToMainList,
             StatePath pathToSecondList) {
         SetMapVisitor visitor = new SetMapVisitor(pathToMainList, pathToSecondList);
@@ -66,10 +66,10 @@ public class SetMapVisitor extends SkeletonListVisitor
     }
 
     /** Record the relative path to the parent object of the secondard list items */
-    final private StatePath _relativePathToList;
+    private final StatePath _relativePathToList;
 
     /** The mapping to return */
-    final private Map<String,Set<String>> _map = new HashMap<>();
+    private final Map<String,Set<String>> _map = new HashMap<>();
 
     /** The (absolute) StatePath to the current list-item's parent */
     private StatePath _pathToSet;

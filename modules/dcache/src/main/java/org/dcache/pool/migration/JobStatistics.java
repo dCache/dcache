@@ -10,38 +10,38 @@ public class JobStatistics
     private long _transferred;
     private long _total;
 
-    synchronized public int getCompleted()
+    public synchronized int getCompleted()
     {
         return _completed;
     }
 
-    synchronized public long getTransferred()
+    public synchronized long getTransferred()
     {
         return _transferred;
     }
 
-    synchronized public int getAttempts()
+    public synchronized int getAttempts()
     {
         return _attempts;
     }
 
-    synchronized public void addCompleted(long bytes)
+    public synchronized void addCompleted(long bytes)
     {
         _completed++;
         _transferred += bytes;
     }
 
-    synchronized public void addAttempt()
+    public synchronized void addAttempt()
     {
         _attempts++;
     }
 
-    synchronized public long getTotal()
+    public synchronized long getTotal()
     {
         return _total;
     }
 
-    synchronized public void addToTotal(long bytes)
+    public synchronized void addToTotal(long bytes)
     {
         _total += bytes;
     }

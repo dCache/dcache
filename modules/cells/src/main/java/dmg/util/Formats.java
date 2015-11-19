@@ -63,9 +63,9 @@ public class Formats {
      return c.substring( lastDot+1 ) ;
 
   }
-  private final static int RP_IDLE   = 0 ;
-  private final static int RP_DOLLAR = 1 ;
-  private final static int RP_OPENED = 2 ;
+  private static final int RP_IDLE   = 0 ;
+  private static final int RP_DOLLAR = 1 ;
+  private static final int RP_OPENED = 2 ;
 
     /**
      * Starting after the opening sequence of a placeholder ('$' followed by '{'), this method

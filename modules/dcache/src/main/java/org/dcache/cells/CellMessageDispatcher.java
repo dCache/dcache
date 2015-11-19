@@ -245,10 +245,10 @@ public class CellMessageDispatcher
     /**
      * Helper class for message dispatching.
      */
-    static abstract class Receiver
+    abstract static class Receiver
     {
-        final protected CellMessageReceiver _object;
-        final protected Method _method;
+        protected final CellMessageReceiver _object;
+        protected final Method _method;
 
         public Receiver(CellMessageReceiver object, Method method)
         {
@@ -256,7 +256,7 @@ public class CellMessageDispatcher
             _method = method;
         }
 
-        abstract public Object deliver(CellMessage envelope, Object message)
+        public abstract Object deliver(CellMessage envelope, Object message)
             throws IllegalAccessException, InvocationTargetException;
 
         public String toString()

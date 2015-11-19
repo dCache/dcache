@@ -13,11 +13,11 @@ public interface MoverProtocol
      * @param allocator Space allocator. May be null for a read-only
      * transfer.
      */
-    public void runIO(FileAttributes fileAttributes,
-                      RepositoryChannel diskFile,
-                      ProtocolInfo protocol,
-                      Allocator    allocator,
-                      IoMode         access)
+    void runIO(FileAttributes fileAttributes,
+               RepositoryChannel diskFile,
+               ProtocolInfo protocol,
+               Allocator allocator,
+               IoMode access)
         throws Exception;
 
     /**
@@ -26,7 +26,7 @@ public interface MoverProtocol
      *
      * @return number of bytes
      */
-    public long getBytesTransferred();
+    long getBytesTransferred();
 
     /**
      * Get time between transfers begin and end. If Mover is sill
@@ -34,12 +34,12 @@ public interface MoverProtocol
      *
      * @return transfer time in milliseconds.
      */
-    public long getTransferTime();
+    long getTransferTime();
 
     /**
      * Get time of last transfer.
      *
      * @return last access time in milliseconds.
      */
-    public long getLastTransferred();
+    long getLastTransferred();
 }

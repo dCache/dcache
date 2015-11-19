@@ -96,7 +96,7 @@ public class XmlParser {
     private enum XML_CHILD_NODE {
         NAME("name"), CLASS("class"), DEFAULT_CONTROL("default-control");
 
-        static private Map<String, XML_CHILD_NODE> LOCAL_NAME_STORE =
+        private static Map<String, XML_CHILD_NODE> LOCAL_NAME_STORE =
                 new HashMap<>();
 
         private String _localName;

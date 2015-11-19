@@ -41,7 +41,7 @@ import org.dcache.util.Args;
 
 public class PAMAuthentificator  extends CellAdapter {
 
-   private final static Logger _log =
+   private static final Logger _log =
        LoggerFactory.getLogger(PAMAuthentificator.class);
 
    private final int request_len  = 5;

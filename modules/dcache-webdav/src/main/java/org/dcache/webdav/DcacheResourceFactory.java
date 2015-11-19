@@ -1128,7 +1128,7 @@ public class DcacheResourceFactory
     /**
      * To emulate LoginManager we list ourselves as our child.
      */
-    public final static String hh_get_children = "[-binary]";
+    public static final String hh_get_children = "[-binary]";
     public Object ac_get_children(Args args)
     {
         boolean binary = args.hasOption("binary");
@@ -1143,7 +1143,7 @@ public class DcacheResourceFactory
     /**
      * Provides information about the door and current transfers.
      */
-    public final static String hh_get_door_info = "[-binary]";
+    public static final String hh_get_door_info = "[-binary]";
     public Object ac_get_door_info(Args args)
     {
         List<IoDoorEntry> transfers = new ArrayList<>();

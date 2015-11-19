@@ -44,9 +44,9 @@ public class FilterShell
         return _context.getLoggerList();
     }
 
-    public final static String hh_log_ls =
+    public static final String hh_log_ls =
         "[-a] [<appender>] [<logger>]";
-    public final static String fh_log_ls =
+    public static final String fh_log_ls =
         "Lists current log thresholds. Inherited thresholds are marked\n" +
         "with an asterix.";
     public String ac_log_ls_$_0_2(Args args)
@@ -96,9 +96,9 @@ public class FilterShell
         }
     }
 
-    public final static String hh_log_set =
+    public static final String hh_log_set =
         "<appender> [<logger>] OFF|ERROR|WARN|INFO|DEBUG|TRACE|ALL";
-    public final static String fh_log_set =
+    public static final String fh_log_set =
         "Sets the log level of <appender>.";
     public String ac_log_set_$_2_3(Args args)
     {
@@ -121,9 +121,9 @@ public class FilterShell
         return "";
     }
 
-    public final static String hh_log_reset =
+    public static final String hh_log_reset =
         "[-a] <appender> [<logger>]";
-    public final static String fh_log_reset =
+    public static final String fh_log_reset =
         "Resets the log level of <appender>. The log level for <appender>\n" +
         "will be inherited from the parent cell.";
     public String ac_log_reset_$_1_2(Args args)

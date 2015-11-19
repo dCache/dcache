@@ -27,8 +27,8 @@ import static com.google.common.collect.Iterables.filter;
 public class MutatorPlugin implements GPlazmaMappingPlugin {
 
     private final ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-    final static String IN_OPTION = "gplazma.mutator.accept";
-    final static String OUT_OPTION = "gplazma.mutator.produce";
+    static final String IN_OPTION = "gplazma.mutator.accept";
+    static final String OUT_OPTION = "gplazma.mutator.produce";
     private final Class<? extends Principal> inPrincipal;
     private final Class<? extends Principal> outPrincipal;
     private Constructor<? extends Principal> outConstructor;

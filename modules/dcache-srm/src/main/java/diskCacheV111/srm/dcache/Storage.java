@@ -241,7 +241,7 @@ public final class Storage
     extends AbstractCellComponent
     implements AbstractStorageElement, CellMessageReceiver
 {
-    private final static Logger _log = LoggerFactory.getLogger(Storage.class);
+    private static final Logger _log = LoggerFactory.getLogger(Storage.class);
 
     private static final String SPACEMANAGER_DISABLED_MESSAGE =
             "space reservation is disabled";
@@ -258,7 +258,7 @@ public final class Storage
     private String[] srmGetNotSupportedProtocols;
     private String[] srmPreferredProtocols;
 
-    private final static String SFN_STRING = "SFN=";
+    private static final String SFN_STRING = "SFN=";
 
     private static final Version VERSION = Version.of(Storage.class);
 
@@ -2037,7 +2037,7 @@ public final class Storage
      */
     private class VerboseListPrinter extends FmdListPrinter
     {
-        private final static int PIPELINE_DEPTH = 40;
+        private static final int PIPELINE_DEPTH = 40;
 
         private final Semaphore _available =
             new Semaphore(PIPELINE_DEPTH);

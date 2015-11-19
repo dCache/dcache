@@ -20,7 +20,7 @@ public enum OpenType {
 
     private final int _value;
 
-    private OpenType(int value) {
+    OpenType(int value) {
         _value = value;
     }
 

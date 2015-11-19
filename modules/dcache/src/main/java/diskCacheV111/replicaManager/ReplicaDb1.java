@@ -9,38 +9,38 @@ import diskCacheV111.util.PnfsId;
 
 public interface ReplicaDb1 extends ReplicaDb {
 
-    static final String DOWN = "down";
-    static final String ONLINE = "online";
-    static final String OFFLINE = "offline";
-    static final String OFFLINE_PREPARE = "offline-prepare";
-    static final String DRAINOFF = "drainoff";
+    String DOWN = "down";
+    String ONLINE = "online";
+    String OFFLINE = "offline";
+    String OFFLINE_PREPARE = "offline-prepare";
+    String DRAINOFF = "drainoff";
 
-    public Iterator<String> getPnfsIds(String poolName) throws SQLException;
-    public Iterator<String> getPools( ) ;
-    public Iterator<String> getPoolsReadable( ) ;
-    public Iterator<String> getPoolsWritable( ) ;
+    Iterator<String> getPnfsIds(String poolName) throws SQLException;
+    Iterator<String> getPools() ;
+    Iterator<String> getPoolsReadable() ;
+    Iterator<String> getPoolsWritable() ;
 
-    public Iterator<Object[]> getRedundant(int maxcnt);
-    public Iterator<Object[]> getDeficient(int mincnt);
-    public Iterator<String> getMissing( );
-    public Iterator<String> getInDrainoffOnly( );
-    public Iterator<String> getInOfflineOnly( );
+    Iterator<Object[]> getRedundant(int maxcnt);
+    Iterator<Object[]> getDeficient(int mincnt);
+    Iterator<String> getMissing();
+    Iterator<String> getInDrainoffOnly();
+    Iterator<String> getInOfflineOnly();
 
 //     public void addPoolStatus(String poolName, String poolStatus); // removed
-    public void removePoolStatus(String poolName);
-    public void setPoolStatus(String poolName, String poolStatus);
-    public String getPoolStatus(String poolName);
+void removePoolStatus(String poolName);
+    void setPoolStatus(String poolName, String poolStatus);
+    String getPoolStatus(String poolName);
 
-    public void addTransaction(PnfsId pnfsId, long timestamp, int count);
-    public void removeTransaction(PnfsId pnfsId);
-    public long getTimestamp(PnfsId pnfsId);
+    void addTransaction(PnfsId pnfsId, long timestamp, int count);
+    void removeTransaction(PnfsId pnfsId);
+    long getTimestamp(PnfsId pnfsId);
 
-    public void removePool( String poolName ) ;
+    void removePool(String poolName) ;
 
-    public void setHeartBeat(String name, String desc);
-    public void removeHeartBeat(String name);
+    void setHeartBeat(String name, String desc);
+    void removeHeartBeat(String name);
 
-    public void clearPool( String poolName ); // clear entries in pools and replicas tables
-    public void clearTransactions();          // clear transactions in action table
+    void clearPool(String poolName); // clear entries in pools and replicas tables
+    void clearTransactions();          // clear transactions in action table
 
 }

@@ -14,7 +14,7 @@ public enum FileStorageType {
     private static final ImmutableMap<TFileStorageType,FileStorageType> MAP;
     private static final String ERROR_MESSAGE;
 
-    private FileStorageType(TFileStorageType type) {
+    FileStorageType(TFileStorageType type) {
         _type = type;
     }
 

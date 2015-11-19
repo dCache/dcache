@@ -23,28 +23,28 @@ public interface HsmFlushControlCore {
       * Implementations of the Pool interface allows the driver to query
       * detailed information of the associated pool.
       */
-    public interface PoolDetails {
+    interface PoolDetails {
        /**
          *  Returns the name of this pool.
          *
          * @return Name of this pool.
          *
          */
-       public String getName() ;
+       String getName() ;
        /**
          *  Provides the PoolCellInfo of this pool.
          *
          * @return PoolCellInfo of the pool.
          *
          */
-       public PoolCellInfo getCellInfo() ;
+       PoolCellInfo getCellInfo() ;
        /**
          *  Returns whether or not this pool is flushing one or more storage classes.
          *
          * @return True if pool is in the process of flushing one or more storage classes.
          *
          */
-       public boolean isActive()  ;
+       boolean isActive()  ;
        /**
          *  Returns a List of FlushInfos, containing files to be flushed,
          *  or in process of being flushed.
@@ -52,12 +52,12 @@ public interface HsmFlushControlCore {
          * @return List of flush infos on this pool.
          *
          */
-       public List<FlushInfoDetails> getFlushInfos() ;
+       List<FlushInfoDetails> getFlushInfos() ;
        /**
          * Returns the I/O mode of this pool. If 'true' the pool has been set 'rdonly'.
          * otherwise read and writes are allowed.
          */
-       public boolean isReadOnly() ;
+       boolean isReadOnly() ;
 
     }
     /**
@@ -65,7 +65,7 @@ public interface HsmFlushControlCore {
       * detailed information of the associated pool. In addition, it allows
       * to store and retrieve a user pointer for convenience.
       */
-    public interface Pool extends PoolDetails {
+    interface Pool extends PoolDetails {
        /**
          *  Provides the internal flush representation of the specified storage class.
          *
@@ -77,7 +77,7 @@ public interface HsmFlushControlCore {
          *         provided storage class doesn't exist.
          *
          */
-       public FlushInfo getFlushInfoByStorageClass( String storageClass ) ;
+       FlushInfo getFlushInfoByStorageClass(String storageClass) ;
        /**
          *  Returns a set of storage classes (string), containing files to be flushed,
          *  or in the process of being flushed.
@@ -85,14 +85,14 @@ public interface HsmFlushControlCore {
          * @return Set of storage class names (strings).
          *
          */
-       public Set<String> getStorageClassNames() ;
+       Set<String> getStorageClassNames() ;
        /**
          *  The queryMode method initiats a i/o mode query for this pool.
          *  The result is returned by the poolIoModeUpdated of the HsmFlushSchedulable class.
          *
          *
          */
-       public void queryMode() ;
+       void queryMode() ;
        /**
          *  Sends the request to change the I/O mode to the specified one.
          *
@@ -100,7 +100,7 @@ public interface HsmFlushControlCore {
          *        be set to read/write.
          *
          */
-       public void setReadOnly( boolean rdOnly ) ;
+       void setReadOnly(boolean rdOnly) ;
        /**
          *  Stores an arbitray object provided by the driver implementation.
          *  The DriverHandle may be any class implementing the empty DriverHandle interface.
@@ -108,7 +108,7 @@ public interface HsmFlushControlCore {
          * @return Set of storage class names (strings).
          *
          */
-       public void setDriverHandle( DriverHandle handle ) ;
+       void setDriverHandle(DriverHandle handle) ;
        /**
          *  Returns the driver handle which had been previously stored by setDriverHandle.
          *  Returns the null pointer if no DriverHandle has been stored.
@@ -117,40 +117,40 @@ public interface HsmFlushControlCore {
          * @param Any object implementing the (empty) DriverHandle interface.
          *
          */
-       public DriverHandle getDriverHandle() ;
+       DriverHandle getDriverHandle() ;
        /**
          * Returns whether or not the I/O mode of this pool is known. If 'true'
          * isReadOnly returns the correct value, otherwise 'isReadOnly' returns
          * an arbitrary value.
          */
-       public boolean isPoolIoModeKnown() ;
+       boolean isPoolIoModeKnown() ;
     }
     /**
       * Implementations of the FlushInfoDetails interface allow the flushDriver to
       * query the flush behaviour of individual StorageClasses
       * of the assigned pool.
       */
-    public interface FlushInfoDetails {
+    interface FlushInfoDetails {
        /**
          * Get the name of the corresponding storage class.
          *
          *  @return Name of the corresponding storage class.
          */
-       public String getName() ;
+       String getName() ;
        /**
          *  Returns true if the StorageClass is currently flushing its precious files
          *  otherwise 'false'.
          *
          * @return Determines whether or not this storage class is currently flushing it's contents.
          */
-       public boolean isFlushing() ;
+       boolean isFlushing() ;
        /**
          *  Provides the StorageClassFlushInfo of this storage class;
          *
          *  @return The StorageClassFlushInfo of this storage class;
          *
          */
-       public StorageClassFlushInfo getStorageClassFlushInfo();
+       StorageClassFlushInfo getStorageClassFlushInfo();
 
     }
     /**
@@ -158,7 +158,7 @@ public interface HsmFlushControlCore {
       * query and influence the flush behaviour of individual StorageClasses
       * of the assigned pool.
       */
-    public interface FlushInfo extends FlushInfoDetails {
+    interface FlushInfo extends FlushInfoDetails {
        /**
          * Initiate a flush of 'n' or all files of a storage class within a pool.
          *
@@ -167,7 +167,7 @@ public interface HsmFlushControlCore {
          *           The result of the flush operation can be monitored by
          *           the various callbacks of the HsmFlushSchedulable interface.
          */
-       public void flush( int count ) throws Exception ;
+       void flush(int count) throws Exception ;
 
     }
     /**
@@ -176,7 +176,7 @@ public interface HsmFlushControlCore {
       *  This interface doesn't contain any methods.
       *
       */
-    public interface DriverHandle {
+    interface DriverHandle {
 
     }
 
@@ -190,7 +190,7 @@ public interface HsmFlushControlCore {
       *
       *  @return Options from the command line of the driver start.
       */
-    public Args getDriverArgs() ;
+    Args getDriverArgs() ;
     /**
       *  Provides the internal pool object of the given name.
       * @param poolName Name of the pool for which the internal
@@ -198,17 +198,17 @@ public interface HsmFlushControlCore {
       * @return Internal pool object of the name given. Returns the null
       *         pointer if no pool exists with the given name.
       */
-    public Pool getPoolByName( String poolName ) ;
+    Pool getPoolByName(String poolName) ;
     /**
       *  Provides the set of pool, this driver is responsible for.
       *
       * @return A set of pool names (String) which should be managed by this driver.
       */
-    public Set<String> getConfiguredPoolNames() ;
+    Set<String> getConfiguredPoolNames() ;
     /**
       *  Provides a list of pool objects, this driver is responsible for.
       *
       * @return A list of 'Pool' objects which  should be managed by this driver.
       */
-    public List<Pool> getConfiguredPools() ;
+    List<Pool> getConfiguredPools() ;
 }

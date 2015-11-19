@@ -25,7 +25,7 @@ import org.dcache.auth.attributes.ReadOnly;
  */
 public class UnionLoginStrategy implements LoginStrategy
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(UnionLoginStrategy.class);
 
     /**

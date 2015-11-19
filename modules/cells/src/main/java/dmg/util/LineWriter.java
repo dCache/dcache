@@ -5,5 +5,5 @@ package dmg.util;
  */
 public interface LineWriter
 {
-    public void writeLine(String line);
+    void writeLine(String line);
 }

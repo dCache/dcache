@@ -9,8 +9,8 @@ public class ControlBufferedReader extends Reader implements InputHandler {
     private final Object  _lock       = new Object() ;
     private boolean _eof;
     private String  _onControlC = "" ;
-    private final static char  CONTROL_C  =  (char)3 ;
-    private final static char  CONTROL_H  =  (char)8 ;
+    private static final char  CONTROL_C  =  (char)3 ;
+    private static final char  CONTROL_H  =  (char)8 ;
     /**
      * Create a buffering character-input stream that uses a default-sized
      * input buffer.

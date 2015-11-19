@@ -14,7 +14,7 @@ public enum OverwriteMode {
     private static final ImmutableMap<TOverwriteMode,OverwriteMode> MAP;
     private static final String ERROR_MESSAGE;
 
-    private OverwriteMode(TOverwriteMode mode) {
+    OverwriteMode(TOverwriteMode mode) {
         _mode = mode;
     }
 

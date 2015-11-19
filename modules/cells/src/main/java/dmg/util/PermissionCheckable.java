@@ -9,8 +9,8 @@ package dmg.util ;
   */
 public interface PermissionCheckable {
 
-   public void checkPermission( Authorizable auth ,
-                                String aclName      ) 
+   void checkPermission(Authorizable auth,
+                        String aclName)
           throws AclException ;
           
 }

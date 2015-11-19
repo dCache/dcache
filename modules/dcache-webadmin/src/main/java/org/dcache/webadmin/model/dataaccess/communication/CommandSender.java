@@ -6,7 +6,7 @@ package org.dcache.webadmin.model.dataaccess.communication;
  */
 public interface CommandSender {
 
-    public void sendAndWait() throws InterruptedException;
+    void sendAndWait() throws InterruptedException;
 
-    public boolean allSuccessful();
+    boolean allSuccessful();
 }

@@ -439,7 +439,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
      * StateWatchers, whether they are enabled and how many times they've
      * been triggered.
      */
-    static private class StateWatcherInfo
+    private static class StateWatcherInfo
     {
         StateWatcher _watcher;
         boolean _isEnabled = true;

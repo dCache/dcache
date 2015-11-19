@@ -53,10 +53,10 @@ import static org.springframework.transaction.annotation.Isolation.REPEATABLE_RE
 public class MovePinRequestProcessor
     implements CellMessageReceiver
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(MovePinRequestProcessor.class);
 
-    private final static long POOL_LIFETIME_MARGIN = MINUTES.toMillis(30);
+    private static final long POOL_LIFETIME_MARGIN = MINUTES.toMillis(30);
 
     private PinDao _dao;
     private CellStub _poolStub;

@@ -22,9 +22,9 @@ public class PoolClassAttraction implements Serializable {
    private String  _poolName ;
    private String  _id;
 
-   public final static PoolClassComparator comparatorForWrite =
+   public static final PoolClassComparator comparatorForWrite =
          new PoolClassComparator(true) ;
-   public final static PoolClassComparator comparatorForRead =
+   public static final PoolClassComparator comparatorForRead =
          new PoolClassComparator(false) ;
 
    private static final long serialVersionUID = 5471965365309761831L;

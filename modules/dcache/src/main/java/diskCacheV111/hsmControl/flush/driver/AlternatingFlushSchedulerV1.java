@@ -36,7 +36,7 @@ import org.dcache.util.Args;
  */
  public class AlternatingFlushSchedulerV1 implements HsmFlushSchedulable {
 
-     private final static Logger _log =
+     private static final Logger _log =
          LoggerFactory.getLogger(AlternatingFlushSchedulerV1.class);
 
      private HsmFlushControlCore _core;

@@ -1447,7 +1447,7 @@ public class Configuration {
 
     public String getServerMode() { return server_mode; }
 
-    synchronized public void setServerMode(String x) {
+    public synchronized void setServerMode(String x) {
         server_mode=x;
     }
 

@@ -24,7 +24,7 @@ public class PageInfoCache {
     private final List<Thread> _threads = new ArrayList<>();
     private final ConcurrentMap<String, Object> _cache =
             new ConcurrentHashMap<>();
-    private final static Logger _log = LoggerFactory.getLogger(PageInfoCache.class);
+    private static final Logger _log = LoggerFactory.getLogger(PageInfoCache.class);
 
     public PageInfoCache(List<Collector> collectors) {
         checkNotNull(collectors);

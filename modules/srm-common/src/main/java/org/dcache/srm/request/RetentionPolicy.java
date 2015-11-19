@@ -14,7 +14,7 @@ public enum RetentionPolicy {
     private static final ImmutableMap<TRetentionPolicy,RetentionPolicy> MAP;
     private static final String ERROR_MESSAGE;
 
-    private RetentionPolicy(TRetentionPolicy policy) {
+    RetentionPolicy(TRetentionPolicy policy) {
         _policy = policy;
     }
 

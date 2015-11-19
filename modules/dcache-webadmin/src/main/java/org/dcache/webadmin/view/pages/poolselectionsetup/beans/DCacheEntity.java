@@ -9,21 +9,21 @@ import java.util.List;
  */
 public interface DCacheEntity extends Serializable {
 
-    public String getSingleEntityViewTitleResource();
+    String getSingleEntityViewTitleResource();
 
-    public String getFirstreferenceDescription();
+    String getFirstreferenceDescription();
 
-    public String getSecondReferenceDescription();
+    String getSecondReferenceDescription();
 
-    public String getName();
+    String getName();
 
-    public void setName(String name);
+    void setName(String name);
 
-    public abstract List<EntityReference> getFirstReferences();
+    List<EntityReference> getFirstReferences();
 
-    public abstract List<EntityReference> getSecondReferences();
+    List<EntityReference> getSecondReferences();
 
-    public EntityType getFirstReferenceType();
+    EntityType getFirstReferenceType();
 
-    public EntityType getSecondReferenceType();
+    EntityType getSecondReferenceType();
 }
