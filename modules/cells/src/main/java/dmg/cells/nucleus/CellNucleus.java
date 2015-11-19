@@ -1002,9 +1002,9 @@ public class CellNucleus implements ThreadFactory
 
     private class DeliverMessageTask implements Runnable
     {
-        private final CellEvent _event;
+        private final MessageEvent _event;
 
-        public DeliverMessageTask(CellEvent event)
+        public DeliverMessageTask(MessageEvent event)
         {
             _event = event;
         }
@@ -1018,14 +1018,13 @@ public class CellNucleus implements ThreadFactory
                     _eventQueueSize.decrementAndGet();
 
                     if (_event instanceof RoutedMessageEvent) {
-                        _cell.messageArrived((RoutedMessageEvent) _event);
-                    } else if (_event instanceof MessageEvent) {
-                        MessageEvent event = (MessageEvent) _event;
-                        CDC.setMessageContext(event.getMessage());
+                        _cell.messageArrived(_event);
+                    } else {
+                        CDC.setMessageContext(_event.getMessage());
                         try {
-                            _cell.messageArrived(event);
+                            _cell.messageArrived(_event);
                         } catch (RuntimeException e) {
-                            CellMessage msg = event.getMessage();
+                            CellMessage msg = _event.getMessage();
                             if (!msg.isReply()) {
                                 msg.revertDirection();
                                 msg.setMessageObject(e);
