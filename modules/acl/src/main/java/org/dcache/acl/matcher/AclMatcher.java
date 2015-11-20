@@ -1,37 +1,52 @@
 package org.dcache.acl.matcher;
 
+import org.dcache.acl.enums.AccessType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.dcache.acl.Permission;
+import org.dcache.acl.enums.AccessMask;
+
 /**
  * Component matches a access request and the access masks defMsk and allowMsk and returns true if
  * access is allowed.
  *
  * @author David Melkumyan, DESY Zeuthen
+ * @author Anupam Ashish, DESY Hamburg
  *
  */
-public abstract class AclMatcher {
+public class AclMatcher {
 
-    protected static final String UNDEFINED = "UNDEFINED";
+    private static final Logger LOG = LoggerFactory.getLogger(AclMatcher.class);
 
-    protected static final String ALLOWED = "ALLOWED";
-
-    protected static final String DENIED = "DENIED";
+    private AclMatcher() {
+    }
 
     /**
-     * @param defMask
-     *            Defined bit mask
-     * @param allowMask
-     *            Allowed bit mask
-     * @param accessMask
+     * @param perm
+     *            Permission which contains defMask and allowMask
+     * @param access
      *            Access bit mask
      * @return
-     *            <ul>
-     *            <li><code>TRUE</code> if accessMask in defMask/allowMask
-     *            <li><code>NULL</code> if no bit from accessMask in defMask
-     *            <li>otherwise <code>FALSE</code>
+     *            <li><code>ACCESS_ALLOWED</code> if access is allowed
+     *            <li><code>ACCESS_DENIED</code> if access is denied
+     *            <li><code>ACCESS_UNDEFINED</code> if there is no access right definition
      */
-    protected static Boolean isAllowed(int defMask, int allowMask, int accessMask) {
-        if ( (accessMask & defMask) == 0 ) {
-            return null;
+    public static AccessType isAllowed(Permission perm, AccessMask access) {
+        int definedMask = perm.getDefMsk();
+        int allowedMask = perm.getAllowMsk();
+        int accessMask = access.getValue();
+
+        AccessType allowed;
+        if ( (accessMask & definedMask) == 0 ) {
+            allowed = AccessType.ACCESS_UNDEFINED;
+        } else if ( (accessMask & allowedMask) == accessMask ) {
+            allowed = AccessType.ACCESS_ALLOWED;
+        } else {
+            allowed = AccessType.ACCESS_DENIED;
         }
-        return (accessMask & allowMask) == accessMask;
+
+        LOG.debug("acccess mask: {} : {}", access, allowed);
+        return allowed;
     }
 }

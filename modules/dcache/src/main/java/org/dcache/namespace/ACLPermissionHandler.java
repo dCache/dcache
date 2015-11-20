@@ -11,14 +11,13 @@ import org.dcache.acl.Owner;
 import org.dcache.acl.Permission;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.acl.mapper.AclMapper;
-import org.dcache.acl.matcher.AclNFSv4Matcher;
+import org.dcache.acl.matcher.AclMatcher;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.acl.enums.AccessMask.*;
 import static org.dcache.acl.enums.AccessType.*;
-import static org.dcache.acl.enums.AccessType.valueOf;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -47,14 +46,14 @@ public class ACLPermissionHandler implements PermissionHandler
     public AccessType canReadFile(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return valueOf(AclNFSv4Matcher.isAllowed(permission, READ_DATA));
+        return AclMatcher.isAllowed(permission, READ_DATA);
     }
 
     @Override
     public AccessType canWriteFile(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return valueOf(AclNFSv4Matcher.isAllowed(permission, WRITE_DATA));
+        return AclMatcher.isAllowed(permission, WRITE_DATA);
     }
 
     @Override
@@ -64,7 +63,7 @@ public class ACLPermissionHandler implements PermissionHandler
             return ACCESS_DENIED;
         }
         Permission permission = getPermission(subject, parentAttr);
-        return valueOf(AclNFSv4Matcher.isAllowed(permission, ADD_SUBDIRECTORY));
+        return AclMatcher.isAllowed(permission, ADD_SUBDIRECTORY);
     }
 
     @Override
@@ -74,7 +73,7 @@ public class ACLPermissionHandler implements PermissionHandler
             return ACCESS_DENIED;
         }
         Permission permission = getPermission(subject, parentAttr);
-        return valueOf(AclNFSv4Matcher.isAllowed(permission, ADD_FILE));
+        return AclMatcher.isAllowed(permission, ADD_FILE);
     }
 
     @Override
@@ -87,15 +86,15 @@ public class ACLPermissionHandler implements PermissionHandler
         }
 
         Permission permissionParent = getPermission(subject, parentAttr);
-        AccessType ofParent =  valueOf(AclNFSv4Matcher.isAllowed(permissionParent,
-                                                            DELETE_CHILD));
+        AccessType ofParent =  AclMatcher.isAllowed(permissionParent,
+                                                            DELETE_CHILD);
         if ( ofParent == ACCESS_ALLOWED ) {
             return ofParent;
         }
 
         Permission permissionChild = getPermission(subject, childAttr);
-        AccessType ofChild =  valueOf(AclNFSv4Matcher.isAllowed(permissionChild,
-                                                            DELETE));
+        AccessType ofChild =  AclMatcher.isAllowed(permissionChild,
+                                                            DELETE);
 
         if (ofChild == ACCESS_ALLOWED) {
             return ofChild;
@@ -121,16 +120,16 @@ public class ACLPermissionHandler implements PermissionHandler
     public AccessType canListDir(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return valueOf(AclNFSv4Matcher.isAllowed(permission,
-                                                            LIST_DIRECTORY));
+        return AclMatcher.isAllowed(permission,
+                                                            LIST_DIRECTORY);
     }
 
     @Override
     public AccessType canLookup(Subject subject, FileAttributes attr)
     {
         Permission permission = getPermission(subject, attr);
-        return valueOf(AclNFSv4Matcher.isAllowed(permission,
-                                                            EXECUTE));
+        return AclMatcher.isAllowed(permission,
+                                                            EXECUTE);
     }
 
     @Override
@@ -146,15 +145,15 @@ public class ACLPermissionHandler implements PermissionHandler
         Permission permission1 = getPermission(subject, parentAttr);
         Permission permission2 = getPermission(subject, newParentAttr);
 
-        Boolean ofSrcParent = AclNFSv4Matcher.isAllowed(permission1, DELETE_CHILD);
-        Boolean ofDestParent = AclNFSv4Matcher.isAllowed(permission2, ADD_FILE);
+        AccessType ofSrcParent = AclMatcher.isAllowed(permission1, DELETE_CHILD);
+        AccessType ofDestParent = AclMatcher.isAllowed(permission2, ADD_FILE);
 
         if (ofDestParent == ofSrcParent) {
-            return valueOf(ofSrcParent);
+            return ofSrcParent;
         }
 
-        if (valueOf(ofSrcParent) == ACCESS_DENIED ||
-                valueOf(ofDestParent) == ACCESS_DENIED) {
+        if (ofSrcParent == ACCESS_DENIED ||
+                ofDestParent == ACCESS_DENIED) {
             return ACCESS_DENIED;
         }
 
@@ -189,10 +188,10 @@ public class ACLPermissionHandler implements PermissionHandler
     private AccessType canGetAttributes(Permission permission, Set<FileAttribute> attributes)
     {
         if (attributes.contains(ACL) ) {
-            return valueOf(AclNFSv4Matcher.isAllowed(permission, READ_ACL));
+            return AclMatcher.isAllowed(permission, READ_ACL);
         }
 
-        return valueOf(AclNFSv4Matcher.isAllowed(permission, READ_ATTRIBUTES));
+        return AclMatcher.isAllowed(permission, READ_ATTRIBUTES);
     }
 
     /**
@@ -203,9 +202,9 @@ public class ACLPermissionHandler implements PermissionHandler
      */
     private AccessType canSetAttributes(Permission permission, Set<FileAttribute> attributes) {
         if (attributes.contains(ACL)) {
-            return valueOf(AclNFSv4Matcher.isAllowed(permission, WRITE_ACL));
+            return AclMatcher.isAllowed(permission, WRITE_ACL);
         }
 
-        return valueOf(AclNFSv4Matcher.isAllowed(permission, WRITE_ATTRIBUTES));
+        return AclMatcher.isAllowed(permission, WRITE_ATTRIBUTES);
     }
 }

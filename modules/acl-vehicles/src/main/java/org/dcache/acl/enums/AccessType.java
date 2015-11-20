@@ -46,18 +46,6 @@ public enum AccessType {
     }
 
     /**
-     * Returns ACCESS_ALLOWED for true, ACCESS_DENIED for false, and
-     * ACCESS_UNDEFINED for null.
-     */
-    public static AccessType valueOf(Boolean value)
-    {
-        if (value == null) {
-            return ACCESS_UNDEFINED;
-        }
-        return value ? ACCESS_ALLOWED : ACCESS_DENIED;
-    }
-
-    /**
      * Returns ACCESS_ALLOWED for true and ACCESS_DENIED for false.
      */
     public static AccessType valueOf(boolean value)
