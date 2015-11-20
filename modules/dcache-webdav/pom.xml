@@ -43,6 +43,11 @@
       <artifactId>cells</artifactId>
       <version>${project.version}</version>
     </dependency>
+      <dependency>
+          <groupId>org.dcache</groupId>
+          <artifactId>dcache-webapi</artifactId>
+          <version>${project.version}</version>
+      </dependency>
     <dependency>
         <groupId>io.milton</groupId>
         <artifactId>milton-server-ce</artifactId>
@@ -71,7 +76,6 @@
         <groupId>org.antlr</groupId>
         <artifactId>ST4</artifactId>
     </dependency>
-
     <dependency>
         <groupId>org.springframework</groupId>
         <artifactId>spring-beans</artifactId>

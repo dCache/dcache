@@ -221,6 +221,48 @@
       <description>List of handlers for HTTP requests</description>
       <property name="handlers">
           <list>
+              <bean class="org.eclipse.jetty.servlet.ServletContextHandler">
+                  <property name="contextPath" value="/api"/>
+                  <property name="servletHandler">
+                      <bean class="org.eclipse.jetty.servlet.ServletHandler">
+                          <property name="servlets">
+                              <list>
+                                  <bean class="org.eclipse.jetty.servlet.ServletHolder">
+                                      <constructor-arg name="name" value="rest"/>
+                                      <constructor-arg name="servlet">
+                                          <bean class="org.glassfish.jersey.servlet.ServletContainer">
+                                              <constructor-arg name="resourceConfig">
+                                                  <bean class="org.glassfish.jersey.server.ResourceConfig">
+                                                      <property name="properties">
+                                                          <map>
+                                                              <entry key="jersey.config.server.provider.packages"
+                                                                     value="org.dcache.webapi"/>
+                                                              <entry key="jersey.config.server.provider.classnames"
+                                                                     value="org.glassfish.jersey.jackson.JacksonFeature"/>
+                                                          </map>
+                                                      </property>
+                                                  </bean>
+                                              </constructor-arg>
+                                          </bean>
+                                      </constructor-arg>
+                                  </bean>
+                              </list>
+                          </property>
+                          <property name="servletMappings">
+                              <list>
+                                  <bean class="org.eclipse.jetty.servlet.ServletMapping">
+                                      <property name="servletName" value="rest"/>
+                                      <property name="pathSpecs">
+                                          <list>
+                                              <value>/v1/*</value>
+                                          </list>
+                                      </property>
+                                  </bean>
+                              </list>
+                          </property>
+                      </bean>
+                  </property>
+              </bean>
               <bean class="org.eclipse.jetty.server.handler.ContextHandler">
                   <property name="contextPath" value="${webdav.static-content.location}"/>
                   <property name="handler">
