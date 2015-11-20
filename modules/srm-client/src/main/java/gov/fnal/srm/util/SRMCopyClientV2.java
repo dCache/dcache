@@ -406,7 +406,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                                     " explanation="+frstatus.getExplanation()
                             );
                             if (!RequestStatusTool.isTransientStateStatus(frstatus)) {
-                                pendingSurlsMap.remove(arrayOfStatuses[i].getSourceSURL().toString());
+                                pendingSurlsMap.remove(arrayOfStatuses[i].getSourceSURL());
                             }
                         }
                     }
