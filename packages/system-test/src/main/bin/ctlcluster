@@ -99,6 +99,7 @@ case "$1" in
 			dcache.net.listen=127.0.0.1
 			dcache.paths.grid-security=\${system-test.home}/etc/grid-security
 			dcache.paths.plugins=\${system-test.home}/plugins
+			dcache.authn.crl-mode=IF_VALID
 			pool.plugins.meta=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
 			hsqldb.path=\${system-test.home}/var/db
 			alarms.db.type=xml
