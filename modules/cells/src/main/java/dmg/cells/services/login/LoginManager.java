@@ -452,8 +452,10 @@ public class LoginManager
     @Override
     public String toString()
     {
-        return "p=" + (_listenThread == null ? "???" : ("" + _listenThread.getListenPort())) +
-                        ";c=" + _loginCellFactory.getName();
+        ListenThread listenThread = _listenThread;
+        LoginCellFactory loginCellFactory = _loginCellFactory;
+        return "p=" + (listenThread == null ? "" : String.valueOf(listenThread.getListenPort())) +
+               ";c=" + (loginCellFactory == null ? "" : loginCellFactory.getName());
     }
 
     @Override
