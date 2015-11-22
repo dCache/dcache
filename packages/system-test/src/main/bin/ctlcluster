@@ -97,10 +97,10 @@ case "$1" in
 			dcache.java.memory.heap=256m
 			dcache.java.memory.direct=32m
 			dcache.net.listen=127.0.0.1
-			dcache.paths.grid-security=${system-test.home}/etc/grid-security
-			dcache.paths.plugins=${system-test.home}/plugins
+			dcache.paths.grid-security=\${system-test.home}/etc/grid-security
+			dcache.paths.plugins=\${system-test.home}/plugins
 			pool.plugins.meta=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
-			hsqldb.path=${system-test.home}/var/db
+			hsqldb.path=\${system-test.home}/var/db
 			alarms.db.type=xml
 			billing.enable.db=true
 
