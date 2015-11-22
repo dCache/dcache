@@ -157,6 +157,7 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
                             .withCrlCheckingMode(crlCheckingMode)
                             .withOcspCheckingMode(ocspCheckingMode)
                             .withNamespaceMode(namespaceMode)
+                            .withLazy(false)
                             .withLoggingContext(new CDC()::restore)
                             .build();
         }
