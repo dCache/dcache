@@ -73,7 +73,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
-import org.dcache.util.Glob;
+import org.dcache.util.SqlGlob;
 
 /**
  * A simple in-memory credential store.
@@ -84,10 +84,10 @@ public class HashtableRequestCredentialStorage
     private final Map<Long, RequestCredential> store = new ConcurrentHashMap<>();
 
     @Override
-    public RequestCredential searchRequestCredential(Glob nameGlob, Glob roleGlob)
+    public RequestCredential searchRequestCredential(SqlGlob nameGlob, SqlGlob roleGlob)
     {
-        Pattern name = nameGlob.toPattern();
-        Pattern role = roleGlob != null ? roleGlob.toPattern() : null;
+        Pattern name = nameGlob.toGlob().toPattern();
+        Pattern role = roleGlob != null ? roleGlob.toGlob().toPattern() : null;
         long bestRemainingLifetime = 0;
         RequestCredential bestCredential = null;
 

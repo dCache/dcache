@@ -34,7 +34,7 @@ import dmg.util.command.Option;
 import org.dcache.auth.FQAN;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.ColumnWriter;
-import org.dcache.util.Glob;
+import org.dcache.util.SqlGlob;
 
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.concat;
@@ -265,7 +265,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         boolean humanReadable;
 
         @Argument(required = false)
-        Glob name;
+        SqlGlob name;
 
         @Override
         public String executeInTransaction() throws DataAccessException
@@ -387,7 +387,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Argument(required = false,
                   usage = "Only show reservations with this token or a description matching this pattern.",
                   valueSpec = "TOKEN|PATTERN")
-        Glob pattern;
+        SqlGlob pattern;
 
         @Override
         public String executeInTransaction() throws DataAccessException
@@ -471,9 +471,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             SpaceManagerDatabase.SpaceCriterion spaces = db.spaces();
             if (owner != null) {
                 FQAN fqan = new FQAN(owner);
-                spaces.whereGroupMatches(new Glob(fqan.getGroup()));
+                spaces.whereGroupMatches(new SqlGlob(fqan.getGroup()));
                 if (fqan.hasRole()) {
-                    spaces.whereRoleMatches(new Glob(fqan.getRole()));
+                    spaces.whereRoleMatches(new SqlGlob(fqan.getRole()));
                 }
             }
             if (linkGroup != null) {
@@ -633,9 +633,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             SpaceManagerDatabase.FileCriterion files = db.files();
             if (owner != null) {
                 FQAN fqan = new FQAN(owner);
-                files.whereGroupMatches(new Glob(fqan.getGroup()));
+                files.whereGroupMatches(new SqlGlob(fqan.getGroup()));
                 if (fqan.hasRole()) {
-                    files.whereRoleMatches(new Glob(fqan.getRole()));
+                    files.whereRoleMatches(new SqlGlob(fqan.getRole()));
                 }
             }
             if (token != null) {

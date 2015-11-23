@@ -29,7 +29,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
 
-import org.dcache.util.Glob;
+import org.dcache.util.SqlGlob;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.joining;
@@ -586,7 +586,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             this.arguments.addAll(asList(arguments));
         }
 
-        protected void whereFieldMatches(String field, Glob pattern)
+        protected void whereFieldMatches(String field, SqlGlob pattern)
         {
             if (pattern.isGlob()) {
                 addClause(field + "LIKE ?", pattern.toSql());
@@ -640,7 +640,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         }
 
         @Override
-        public LinkGroupCriterion whereNameMatches(Glob name)
+        public LinkGroupCriterion whereNameMatches(SqlGlob name)
         {
             whereFieldMatches("name", name);
             return this;
@@ -681,21 +681,21 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         }
 
         @Override
-        public SpaceCriterion whereDescriptionMatches(Glob desc)
+        public SpaceCriterion whereDescriptionMatches(SqlGlob desc)
         {
             whereFieldMatches("description", desc);
             return this;
         }
 
         @Override
-        public SpaceCriterion whereRoleMatches(Glob role)
+        public SpaceCriterion whereRoleMatches(SqlGlob role)
         {
             whereFieldMatches("vorole", role);
             return this;
         }
 
         @Override
-        public SpaceCriterion whereGroupMatches(Glob group)
+        public SpaceCriterion whereGroupMatches(SqlGlob group)
         {
             whereFieldMatches("vogroup", group);
             return this;
@@ -761,14 +761,14 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     private static class FileCriterionImpl extends JdbcCriterion implements FileCriterion
     {
         @Override
-        public FileCriterion whereGroupMatches(Glob group)
+        public FileCriterion whereGroupMatches(SqlGlob group)
         {
             whereFieldMatches("group", group);
             return this;
         }
 
         @Override
-        public FileCriterion whereRoleMatches(Glob role)
+        public FileCriterion whereRoleMatches(SqlGlob role)
         {
             whereFieldMatches("role", role);
             return this;

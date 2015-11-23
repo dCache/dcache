@@ -74,7 +74,7 @@ package org.dcache.srm.request;
 
 import java.io.IOException;
 
-import org.dcache.util.Glob;
+import org.dcache.util.SqlGlob;
 
 
 /**
@@ -99,7 +99,7 @@ public interface RequestCredentialStorage {
      * no primary FQAN is returned.  If role is specified then only a credential
      * with a matching primary FQAN is returned.
      */
-    RequestCredential searchRequestCredential(Glob name, Glob role);
+    RequestCredential searchRequestCredential(SqlGlob name, SqlGlob role);
 
     /**
      * Check where there is any stored credential for this user.  If role is

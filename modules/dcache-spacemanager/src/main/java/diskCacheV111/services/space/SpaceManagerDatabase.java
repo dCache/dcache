@@ -12,7 +12,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
 
-import org.dcache.util.Glob;
+import org.dcache.util.SqlGlob;
 
 @ParametersAreNonnullByDefault
 public interface SpaceManagerDatabase
@@ -120,7 +120,7 @@ public interface SpaceManagerDatabase
 
         LinkGroupCriterion allowsRetentionPolicy(@Nullable RetentionPolicy rp);
 
-        LinkGroupCriterion whereNameMatches(Glob name);
+        LinkGroupCriterion whereNameMatches(SqlGlob name);
 
         LinkGroupCriterion hasAvailable(long sizeInBytes);
     }
@@ -134,11 +134,11 @@ public interface SpaceManagerDatabase
 
         SpaceCriterion whereAccessLatencyIs(AccessLatency al);
 
-        SpaceCriterion whereDescriptionMatches(Glob desc);
+        SpaceCriterion whereDescriptionMatches(SqlGlob desc);
 
-        SpaceCriterion whereRoleMatches(Glob role);
+        SpaceCriterion whereRoleMatches(SqlGlob role);
 
-        SpaceCriterion whereGroupMatches(Glob group);
+        SpaceCriterion whereGroupMatches(SqlGlob group);
 
         SpaceCriterion whereTokenIs(long token);
 
@@ -160,9 +160,9 @@ public interface SpaceManagerDatabase
     /** Selection criterion for file reservations. */
     interface FileCriterion
     {
-        FileCriterion whereGroupMatches(Glob group);
+        FileCriterion whereGroupMatches(SqlGlob group);
 
-        FileCriterion whereRoleMatches(Glob role);
+        FileCriterion whereRoleMatches(SqlGlob role);
 
         FileCriterion whereSpaceTokenIs(Long token);
 

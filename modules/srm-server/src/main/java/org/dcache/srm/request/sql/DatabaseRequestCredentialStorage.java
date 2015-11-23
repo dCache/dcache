@@ -92,7 +92,7 @@ import java.util.List;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Configuration;
-import org.dcache.util.Glob;
+import org.dcache.util.SqlGlob;
 
 import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
@@ -398,7 +398,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
         " WHERE credentialname LIKE ? AND role LIKE ? ORDER BY credentialexpiration DESC";
 
     @Override
-    public RequestCredential searchRequestCredential(Glob nameGlob, Glob roleGlob)
+    public RequestCredential searchRequestCredential(SqlGlob nameGlob, SqlGlob roleGlob)
     {
         String name = nameGlob.toSql();
 

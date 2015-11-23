@@ -34,7 +34,7 @@ import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
-import org.dcache.util.Glob;
+import org.dcache.util.SqlGlob;
 
 import static org.dcache.gridsite.Utilities.assertThat;
 
@@ -140,8 +140,8 @@ public class SrmCredentialStore implements CredentialStore
     @Override
     public X509Credential search(String dn)
     {
-        X509Credential bestWithFqan = search(dn, new Glob("*"));
-        X509Credential bestWithoutFqan = search(dn, (Glob)null);
+        X509Credential bestWithFqan = search(dn, new SqlGlob("*"));
+        X509Credential bestWithoutFqan = search(dn, (SqlGlob)null);
 
         if (bestWithFqan == null) {
             return bestWithoutFqan;
@@ -166,16 +166,16 @@ public class SrmCredentialStore implements CredentialStore
     @Override
     public X509Credential search(String dn, String fqan)
     {
-        return search(dn, fqan != null ? new Glob(fqan) : null);
+        return search(dn, fqan != null ? new SqlGlob(fqan) : null);
     }
 
 
-    private X509Credential search(String dn, Glob fqan)
+    private X509Credential search(String dn, SqlGlob fqan)
     {
         long lifetime = 0;
         RequestCredential credential = null;
 
-        RequestCredential gsiCredential = _store.searchRequestCredential(new Glob(dn), fqan);
+        RequestCredential gsiCredential = _store.searchRequestCredential(new SqlGlob(dn), fqan);
         if (gsiCredential != null) {
             lifetime = gsiCredential.getDelegatedCredentialRemainingLifetime();
             if (lifetime > 0) {
@@ -183,7 +183,7 @@ public class SrmCredentialStore implements CredentialStore
             }
         }
 
-        RequestCredential gridsiteCredential = _store.searchRequestCredential(new Glob("* " + dn), fqan);
+        RequestCredential gridsiteCredential = _store.searchRequestCredential(new SqlGlob("* " + dn), fqan);
         if (gridsiteCredential != null &&
                 gridsiteCredential.getDelegatedCredentialRemainingLifetime() > lifetime) {
             credential = gridsiteCredential;
