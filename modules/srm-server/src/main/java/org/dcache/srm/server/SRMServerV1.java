@@ -10,6 +10,7 @@ import java.rmi.RemoteException;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMUser;
@@ -36,11 +37,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
          log = LoggerFactory.getLogger(this.getClass().getName());
          srm = Axis.getSRM();
          Configuration config = Axis.getConfiguration();
-
-         srmAuth = new SrmAuthorizer(config.getAuthorization(),
+         srmAuth = new SrmAuthorizer(Axis.getSrmAuthorization(),
                 srm.getRequestCredentialStorage(),
                 config.isClientDNSLookup(),
-                config.getVomsValidator());
+                Axis.getVomsAcValidator());
          isClientDNSLookup = config.isClientDNSLookup();
          srmServerCounters = srm.getSrmServerV1Counters();
          srmServerGauges = srm.getSrmServerV1Gauges();

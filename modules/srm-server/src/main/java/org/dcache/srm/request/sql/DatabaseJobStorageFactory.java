@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.springframework.dao.DataAccessException;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,7 +18,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
+import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.CopyFileRequest;
@@ -39,6 +42,9 @@ import org.dcache.srm.scheduler.NoopJobStorage;
 import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.SharedMemoryCacheJobStorage;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.Configuration.DatabaseParameters;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DatabaseJobStorageFactory extends JobStorageFactory
 {
@@ -47,14 +53,13 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
                                // requests are cached before container requests are loaded
     private final Map<Class<? extends Job>, JobStorage<?>> unmodifiableJobStorageMap =
             Collections.unmodifiableMap(jobStorageMap);
-    private final Map<Class<? extends Job>, Configuration.DatabaseParameters> configurations =
+    private final Map<Class<? extends Job>, DatabaseParameters> configurations =
             new HashMap<>();
     private final ExecutorService executor;
     private final ScheduledExecutorService scheduledExecutor;
 
-    private <J extends Job> void add(Configuration.DatabaseParameters config,
-                     Class<J> entityClass,
-                     Class<? extends DatabaseJobStorage<J>> storageClass)
+    private <J extends Job> void add(DatabaseParameters config, Class<J> entityClass,
+                     Supplier<JobStorage<J>> storageFactory)
             throws InstantiationException,
                    IllegalAccessException,
                    IllegalArgumentException,
@@ -64,9 +69,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
     {
         JobStorage<J> js;
         if (config.isDatabaseEnabled()) {
-            js = storageClass
-                    .getConstructor(Configuration.DatabaseParameters.class, ScheduledExecutorService.class)
-                    .newInstance(config, scheduledExecutor);
+            js = storageFactory.get();
             js = new AsynchronousSaveJobStorage<>(js, executor);
             if (config.getStoreCompletedRequestsOnly()) {
                 js = new FinalStateOnlyJobStorageDecorator<>(js);
@@ -78,8 +81,10 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         configurations.put(entityClass, config);
     }
 
-    public DatabaseJobStorageFactory(Configuration config) throws DataAccessException, IOException
+    public DatabaseJobStorageFactory(Configuration config, SRMUserPersistenceManager manager)
+            throws DataAccessException, IOException
     {
+        checkNotNull(manager);
         executor = new ThreadPoolExecutor(
                 config.getJdbcExecutionThreadNum(), config.getJdbcExecutionThreadNum(),
                 0L, TimeUnit.MILLISECONDS,
@@ -90,42 +95,42 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         try {
             add(config.getDatabaseParametersForBringOnline(),
                 BringOnlineFileRequest.class,
-                BringOnlineFileRequestStorage.class);
+                () -> new BringOnlineFileRequestStorage(config.getDatabaseParametersForBringOnline(), scheduledExecutor));
             add(config.getDatabaseParametersForBringOnline(),
                 BringOnlineRequest.class,
-                BringOnlineRequestStorage.class);
+                () -> new BringOnlineRequestStorage(config.getDatabaseParametersForBringOnline(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForCopy(),
                 CopyFileRequest.class,
-                CopyFileRequestStorage.class);
+                () -> new CopyFileRequestStorage(config.getDatabaseParametersForCopy(), scheduledExecutor));
             add(config.getDatabaseParametersForCopy(),
                 CopyRequest.class,
-                CopyRequestStorage.class);
+                () -> new CopyRequestStorage(config.getDatabaseParametersForCopy(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForPut(),
                 PutFileRequest.class,
-                PutFileRequestStorage.class);
+                () -> new PutFileRequestStorage(config.getDatabaseParametersForPut(), scheduledExecutor));
             add(config.getDatabaseParametersForPut(),
                 PutRequest.class,
-                PutRequestStorage.class);
+                () -> new PutRequestStorage(config.getDatabaseParametersForPut(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForGet(),
                 GetFileRequest.class,
-                GetFileRequestStorage.class);
+                () -> new GetFileRequestStorage(config.getDatabaseParametersForGet(), scheduledExecutor));
             add(config.getDatabaseParametersForGet(),
                 GetRequest.class,
-                GetRequestStorage.class);
+                () -> new GetRequestStorage(config.getDatabaseParametersForGet(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForList(),
                 LsFileRequest.class,
-                LsFileRequestStorage.class);
+                () -> new LsFileRequestStorage(config.getDatabaseParametersForList(), scheduledExecutor));
             add(config.getDatabaseParametersForList(),
                 LsRequest.class,
-                LsRequestStorage.class);
+                () -> new LsRequestStorage(config.getDatabaseParametersForList(), scheduledExecutor, manager));
 
             add(config.getDatabaseParametersForReserve(),
                 ReserveSpaceRequest.class,
-                ReserveSpaceRequestStorage.class);
+                () -> new ReserveSpaceRequestStorage(config.getDatabaseParametersForReserve(), scheduledExecutor, manager));
         } catch (InstantiationException e) {
             Throwables.propagateIfPossible(e.getCause(), IOException.class);
             throw new RuntimeException("Request persistence initialization failed: " + e.toString(), e);
@@ -144,7 +149,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
     public void restoreJobsOnSrmStart(SchedulerContainer schedulers)
     {
         for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry : jobStorageMap.entrySet()) {
-            Configuration.DatabaseParameters config = configurations.get(entry.getKey());
+            DatabaseParameters config = configurations.get(entry.getKey());
             Set<? extends Job> jobs = entry.getValue().getActiveJobs();
             schedulers.restoreJobsOnSrmStart(jobs, config.isCleanPendingRequestsOnRestart());
         }

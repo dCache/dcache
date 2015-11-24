@@ -31,11 +31,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class DatabaseRequestStorage<R extends Request> extends DatabaseJobStorage<R> {
     final SRMUserPersistenceManager srmUserPersistenceManager;
     /** Creates a new instance of DatabaseRequestStorage */
-    public DatabaseRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
+    public DatabaseRequestStorage(Configuration.DatabaseParameters configuration,
+            ScheduledExecutorService executor, SRMUserPersistenceManager manager)
             throws DataAccessException
     {
         super(configuration, executor);
-        srmUserPersistenceManager = checkNotNull(configuration.getSrmUserPersistenceManager());
+        srmUserPersistenceManager = checkNotNull(manager);
     }
 
     protected abstract R getRequest(

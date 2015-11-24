@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.LsFileRequest;
 import org.dcache.srm.request.LsRequest;
@@ -133,10 +134,11 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         return stmt;
     }
 
-        public LsRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
-                throws IOException, DataAccessException
+        public LsRequestStorage(Configuration.DatabaseParameters configuration,
+                ScheduledExecutorService executor, SRMUserPersistenceManager manager)
+                throws DataAccessException
         {
-                super(configuration, executor);
+                super(configuration, executor, manager);
         }
 
         @Override

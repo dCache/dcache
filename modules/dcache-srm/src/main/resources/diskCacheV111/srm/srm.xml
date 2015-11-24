@@ -255,7 +255,6 @@
     <property name="versions" value="${srm.version}"/>
     <property name="srmHost" value="${srm.net.host}"/>
     <property name="srmHostsAsArray" value="${srm.net.local-hosts}"/>
-    <property name="vomsValidator" ref="voms-validator"/>
     <property name="caCertificatePath" value="${srm.authn.capath}"/>
     <property name="vomsdir" value="${srm.authn.vomsdir}"/>
     <property name="sizeOfSingleRemoveBatch"
@@ -349,9 +348,6 @@
     <property name="clientTransportByName" value="${srm.client-transport}"/>
     <property name="qosPluginClass" value="${srm.plugins.qos.class}"/>
     <property name="qosConfigFile" value="${srm.plugins.qos.config.file}"/>
-
-    <property name="srmUserPersistenceManager" ref="user-manager"/>
-    <property name="authorization" ref="user-manager"/>
     <property name="dataSource" ref="data-source"/>
     <property name="transactionManager" ref="tx-manager"/>
 
@@ -587,6 +583,7 @@
     <constructor-arg ref="storage"/>
     <property name="schedulers" ref="schedulers"/>
     <property name="requestCredentialStorage" ref="srm-credential-store"/>
+    <property name="srmUserPersistenceManager" ref="user-manager"/>
   </bean>
 
   <bean id="srm-cli" class="org.dcache.srm.SrmCommandLineInterface">
@@ -789,6 +786,8 @@
                                                  value-ref="storage"/>
                                           <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_SRM }"
                                                  value-ref="srm"/>
+                                          <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_AUTHORIZATION }"
+                                                 value-ref="user-manager"/>
                                           <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_STORE }"
                                      value-ref="gridsite-credential-store"/>
                                           <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_DELEGATION_STORE }"

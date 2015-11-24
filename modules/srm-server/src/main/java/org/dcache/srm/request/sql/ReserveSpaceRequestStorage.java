@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.request.ReserveSpaceRequest;
@@ -159,10 +160,11 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     }
 
     /** Creates a new instance of FileRequestStorage */
-    public ReserveSpaceRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
+    public ReserveSpaceRequestStorage(Configuration.DatabaseParameters configuration,
+            ScheduledExecutorService executor, SRMUserPersistenceManager manager)
             throws DataAccessException
     {
-        super(configuration, executor);
+        super(configuration, executor, manager);
     }
 
 

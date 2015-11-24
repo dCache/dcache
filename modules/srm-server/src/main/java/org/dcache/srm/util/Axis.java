@@ -6,6 +6,7 @@ import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
+import org.italiangrid.voms.ac.VOMSACValidator;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
@@ -18,10 +19,11 @@ import java.util.Optional;
 import org.dcache.gsi.ServerGsiEngine;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorization;
 
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLET;
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
-
+import static org.dcache.gridsite.ServletDelegation.ATTRIBUTE_NAME_VOMS_VALIDATOR;
 
 /**
  * Utility class with methods for working with Axis
@@ -31,6 +33,7 @@ public class Axis
     public static final String ATTRIBUTE_NAME_SRM= "org.dcache.srm.srm";
     public static final String ATTRIBUTE_NAME_STORAGE = "org.dcache.srm.storage";
     public static final String ATTRIBUTE_NAME_CONFIG = "org.dcache.srm.config";
+    public static final String ATTRIBUTE_NAME_AUTHORIZATION = "org.dcache.srm.authorization";
 
     /**
      * Obtain an object from the set of attributes in the ServletContext.
@@ -145,5 +148,15 @@ public class Axis
     public static Configuration getConfiguration()
     {
         return getAttribute(ATTRIBUTE_NAME_CONFIG, Configuration.class);
+    }
+
+    public static SRMAuthorization getSrmAuthorization()
+    {
+        return getAttribute(ATTRIBUTE_NAME_AUTHORIZATION, SRMAuthorization.class);
+    }
+
+    public static VOMSACValidator getVomsAcValidator()
+    {
+        return getAttribute(ATTRIBUTE_NAME_VOMS_VALIDATOR, VOMSACValidator.class);
     }
 }

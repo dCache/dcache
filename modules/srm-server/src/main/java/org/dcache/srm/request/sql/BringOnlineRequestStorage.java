@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.Job;
@@ -137,10 +138,11 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
 
 
     /** Creates a new instance of BringOnlineRequestStorage */
-    public BringOnlineRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
-            throws IOException, DataAccessException
+    public BringOnlineRequestStorage(Configuration.DatabaseParameters configuration,
+            ScheduledExecutorService executor, SRMUserPersistenceManager manager)
+            throws DataAccessException
     {
-        super(configuration, executor);
+        super(configuration, executor, manager);
     }
 
     private String getProtocolsTableName()

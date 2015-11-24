@@ -213,9 +213,10 @@ public class SRMServerV2 implements ISRM  {
         srm = Axis.getSRM();
         storage = Axis.getStorage();
         Configuration config = Axis.getConfiguration();
-        srmAuth = new SrmAuthorizer(config.getAuthorization(),
+        srmAuth = new SrmAuthorizer(Axis.getSrmAuthorization(),
                 srm.getRequestCredentialStorage(),
-                config.isClientDNSLookup(), config.getVomsValidator());
+                config.isClientDNSLookup(),
+                Axis.getVomsAcValidator());
         srmServerCounters = srm.getSrmServerV2Counters();
         srmServerGauges = srm.getSrmServerV2Gauges();
         pingExtraInfo = buildExtraInfo(config.getPingExtraInfo());

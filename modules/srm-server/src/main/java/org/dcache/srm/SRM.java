@@ -160,6 +160,7 @@ public class SRM {
     private RrdRequestExecutionTimeGauges<?> rrdAstractStorageElementGauges;
     private SchedulerContainer schedulers;
     private DatabaseJobStorageFactory databaseFactory;
+    private SRMUserPersistenceManager manager;
 
     private static SRM srm;
 
@@ -273,6 +274,12 @@ public class SRM {
         requestCredentialStorage = store;
     }
 
+    @Required
+    public void setSrmUserPersistenceManager(SRMUserPersistenceManager manager)
+    {
+        this.manager = checkNotNull(manager);
+    }
+
     public static final synchronized void setSRM(SRM srm)
     {
         SRM.srm = srm;
@@ -295,7 +302,7 @@ public class SRM {
     {
         checkState(schedulers != null, "Cannot start SRM with no schedulers");
         setSRM(this);
-        databaseFactory = new DatabaseJobStorageFactory(configuration);
+        databaseFactory = new DatabaseJobStorageFactory(configuration, manager);
         try {
             JobStorageFactory.initJobStorageFactory(databaseFactory);
             databaseFactory.init();

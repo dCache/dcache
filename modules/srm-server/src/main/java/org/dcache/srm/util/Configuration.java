@@ -138,7 +138,6 @@ public class Configuration {
      *
      */
     private final Set<String> localSrmHosts=new HashSet<>();
-    private SRMAuthorization authorization;
 
     // scheduler parameters
 
@@ -182,7 +181,6 @@ public class Configuration {
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
     private int sizeOfSingleRemoveBatch = 100;
-    private SRMUserPersistenceManager srmUserPersistenceManager;
     private int maxNumberOfLsEntries = 1000;
     private int maxNumberOfLsLevels = 100;
     private boolean clientDNSLookup=false;
@@ -199,7 +197,6 @@ public class Configuration {
 
     private ImmutableMap<String,String> pingExtraInfo = ImmutableMap.of();
     private String[] versions;
-    private VOMSACValidator vomsValidator;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -438,20 +435,6 @@ public class Configuration {
             localSrmHosts.clear();
             localSrmHosts.addAll(Arrays.asList(hosts));
         }
-    }
-
-    /** Getter for property authorization.
-     * @return Value of property authorization.
-     */
-    public SRMAuthorization getAuthorization() {
-        return authorization;
-    }
-
-    /** Setter for property authorization.
-     * @param authorization New value of property authorization.
-     */
-    public void setAuthorization(SRMAuthorization authorization) {
-        this.authorization = authorization;
     }
 
     private String timeToString(long value)
@@ -926,15 +909,6 @@ public class Configuration {
         this.overwrite_by_default = overwrite_by_default;
     }
 
-
-    public SRMUserPersistenceManager getSrmUserPersistenceManager() {
-        return srmUserPersistenceManager;
-    }
-
-    public void setSrmUserPersistenceManager(SRMUserPersistenceManager srmUserPersistenceManager) {
-        this.srmUserPersistenceManager = srmUserPersistenceManager;
-    }
-
     public long getBringOnlineMaxPollPeriod() {
         return bringOnlineMaxPollPeriod;
     }
@@ -1055,16 +1029,6 @@ public class Configuration {
         return databaseParameters.get(name);
     }
 
-    public void setVomsValidator(VOMSACValidator vomsValidator)
-    {
-        this.vomsValidator = vomsValidator;
-    }
-
-    public VOMSACValidator getVomsValidator()
-    {
-        return vomsValidator;
-    }
-
     public void setCaCertificatePath(String caCertificatePath)
     {
         this.caCertificatePath = caCertificatePath;
@@ -1156,10 +1120,6 @@ public class Configuration {
 
         public void setCleanPendingRequestsOnRestart(boolean value) {
             cleanPendingRequestsOnRestart = value;
-        }
-
-        public SRMUserPersistenceManager getSrmUserPersistenceManager() {
-            return Configuration.this.getSrmUserPersistenceManager();
         }
 
         @Override
