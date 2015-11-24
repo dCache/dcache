@@ -258,8 +258,6 @@ public final class Storage
     private String[] srmGetNotSupportedProtocols;
     private String[] srmPreferredProtocols;
 
-    private static final String SFN_STRING = "SFN=";
-
     private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
@@ -628,7 +626,7 @@ public final class Storage
     {
         try {
             return Futures.makeChecked(PinCompanion.pinFile(asDcacheUser(user).getSubject(),
-                                                            getPath(surl),
+                                                            config.getPath(surl),
                                                             clientHost,
                                                             pinLifetime,
                                                             requestToken,
@@ -713,7 +711,7 @@ public final class Storage
         throws SRMException
     {
         DcacheUser user = asDcacheUser(srmUser);
-        FsPath path = getPath(surl);
+        FsPath path = config.getPath(surl);
         if (!verifyUserPathIsRootSubpath(path, user)) {
             throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]",
                                                               path, user.getRoot()));
@@ -1038,7 +1036,7 @@ public final class Storage
         try {
             DcacheUser user = asDcacheUser(srmUser);
             Subject subject = user.getSubject();
-            FsPath fullPath = getPath(surl);
+            FsPath fullPath = config.getPath(surl);
 
             if (!verifyUserPathIsRootSubpath(fullPath, user)) {
                 return immediateFailedCheckedFuture(new SRMAuthorizationException(
@@ -1134,7 +1132,7 @@ public final class Storage
     {
         try {
             Subject subject = asDcacheUser(user).getSubject();
-            FsPath fullPath = getPath(surl);
+            FsPath fullPath = config.getPath(surl);
             EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
             if (overwrite) {
                 options.add(CreateOption.OVERWRITE_EXISTING);
@@ -1180,7 +1178,7 @@ public final class Storage
     {
         try {
             Subject subject = (user == null) ? Subjects.ROOT : asDcacheUser(user).getSubject();
-            FsPath actualPnfsPath = getPath(surl);
+            FsPath actualPnfsPath = config.getPath(surl);
             PnfsCancelUpload msg =
                     new PnfsCancelUpload(subject, new FsPath(localTransferPath), actualPnfsPath);
             _pnfsStub.sendAndWait(msg);
@@ -1241,7 +1239,7 @@ public final class Storage
     public FileMetaData getFileMetaData(SRMUser user, URI surl, boolean checkReadPermissions)
             throws SRMException
     {
-        return getFileMetaData(asDcacheUser(user), checkReadPermissions, getPath(surl));
+        return getFileMetaData(asDcacheUser(user), checkReadPermissions, config.getPath(surl));
     }
 
     @Nonnull
@@ -1332,7 +1330,7 @@ public final class Storage
     public void localCopy(SRMUser user, URI fromSurl, String localTransferPath)
         throws SRMException
     {
-        FsPath actualFromFilePath = getPath(fromSurl);
+        FsPath actualFromFilePath = config.getPath(fromSurl);
         FsPath actualToFilePath = new FsPath(localTransferPath);
         long id = getNextMessageID();
         _log.debug("localCopy for user " + user +
@@ -1409,7 +1407,7 @@ public final class Storage
 
         try {
             RemoveFileCompanion.removeFile(asDcacheUser(user).getSubject(),
-                                           getPath(surl).toString(),
+                                           config.getPath(surl).toString(),
                                            removeFileCallback,
                                            _pnfsStub,
                                            getCellEndpoint(),
@@ -1427,7 +1425,7 @@ public final class Storage
         _log.trace("Storage.removeFile");
         try {
             RemoveFileCompanion.removeFile(asDcacheUser(user).getSubject(),
-                                           getPath(surl).toString(),
+                                           config.getPath(surl).toString(),
                                            callbacks,
                                            _pnfsStub,
                                            getCellEndpoint(),
@@ -1547,7 +1545,7 @@ public final class Storage
         throws SRMException
     {
         Subject subject = asDcacheUser(user).getSubject();
-        FsPath path = getPath(surl);
+        FsPath path = config.getPath(surl);
 
         if (path.isEmpty()) {
             throw new SRMAuthorizationException("Permission denied");
@@ -1592,7 +1590,7 @@ public final class Storage
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
 
         try {
-            handler.createPnfsDirectory(getPath(surl).toString());
+            handler.createPnfsDirectory(config.getPath(surl).toString());
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotDirCacheException e) {
@@ -1617,8 +1615,8 @@ public final class Storage
     {
         Subject subject = asDcacheUser(user).getSubject();
         PnfsHandler handler = new PnfsHandler(_pnfs, subject);
-        FsPath fromPath = getPath(from);
-        FsPath toPath = getPath(to);
+        FsPath fromPath = config.getPath(from);
+        FsPath toPath = config.getPath(to);
 
         try {
             try {
@@ -1706,7 +1704,7 @@ public final class Storage
                                   CopyCallbacks callbacks)
         throws SRMException
     {
-        FsPath path = getPath(surl);
+        FsPath path = config.getPath(surl);
         _log.debug(" putToRemoteTURL from "+path+" to " +surl);
         return performRemoteTransfer(user,remoteTURL,path,false,
                 extraInfo,
@@ -1917,7 +1915,7 @@ public final class Storage
                                    FileMetaData fileMetaData)
         throws SRMException
     {
-        final FsPath path = getPath(surl);
+        final FsPath path = config.getPath(surl);
         final List<URI> result = new ArrayList<>();
         final String base = addTrailingSlash(surl.toString());
         Subject subject = asDcacheUser(user).getSubject();
@@ -1964,7 +1962,7 @@ public final class Storage
         throws SRMException
     {
         try {
-            FsPath path = getPath(surl);
+            FsPath path = config.getPath(surl);
             Subject subject = asDcacheUser(user).getSubject();
             FmdListPrinter printer =
                 verbose ? new VerboseListPrinter() : new FmdListPrinter();
@@ -2335,7 +2333,7 @@ public final class Storage
     {
         try {
             Subject subject = asDcacheUser(user).getSubject();
-            FsPath path = getPath(surl);
+            FsPath path = config.getPath(surl);
             PnfsHandler handler = new PnfsHandler(_pnfs, subject);
             handler.getFileAttributes(path.toString(),
                                       EnumSet.noneOf(FileAttribute.class),
@@ -2460,55 +2458,6 @@ public final class Storage
             s = s + "/";
         }
         return s;
-    }
-
-    /**
-     * Given a path relative to the root path, this method returns a
-     * full PNFS path.
-     */
-    @Nonnull
-    private FsPath getPath(String path)
-    {
-        return new FsPath(new FsPath(config.getSrm_root()), new FsPath(path));
-    }
-
-    /**
-     * Given a surl, this method returns a full PNFS path.
-     */
-    @Nonnull
-    private FsPath getPath(URI surl)
-        throws SRMInvalidPathException
-    {
-        return getPath(getPathOfSurl(surl));
-    }
-
-    /**
-     * Given a surl, this method returns the path in the surl.
-     */
-    private String getPathOfSurl(URI surl)
-        throws SRMInvalidPathException
-    {
-        String scheme = surl.getScheme();
-        if (scheme != null && !scheme.equalsIgnoreCase("srm")) {
-            throw new SRMInvalidPathException("Invalid scheme: " + scheme);
-        }
-
-        String host = surl.getHost();
-        int port = surl.getPort();
-        if (host != null && !config.getSrmHosts().stream().anyMatch(host::equalsIgnoreCase) ||
-            port != -1 && port != config.getPort()) {
-            throw new SRMInvalidPathException("SURL is not local: " + surl);
-        }
-
-        String path = surl.getPath();
-        String query = surl.getQuery();
-        if (query != null) {
-            int i = query.indexOf(SFN_STRING);
-            if (i != -1) {
-                path = query.substring(i + SFN_STRING.length());
-            }
-        }
-        return path;
     }
 
     private static DcacheUser asDcacheUser(SRMUser user) throws SRMAuthorizationException

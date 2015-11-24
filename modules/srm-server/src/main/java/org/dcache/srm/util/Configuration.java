@@ -71,8 +71,10 @@ import com.google.common.collect.ImmutableMap;
 import org.italiangrid.voms.ac.VOMSACValidator;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -80,11 +82,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.util.FsPath;
+
 import org.dcache.srm.SRMAuthorization;
+import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.client.Transport;
 
 public class Configuration {
+
+    private final static String SFN_STRING = "SFN=";
 
     private static final String INFINITY = "infinity";
 
@@ -1177,5 +1184,35 @@ public class Configuration {
         {
             return Configuration.this.getTransactionManager();
         }
+    }
+
+    /**
+     * Given a surl, this method returns a full PNFS path.
+     */
+    @Nonnull
+    public FsPath getPath(URI surl) throws SRMInvalidPathException
+    {
+        String scheme = surl.getScheme();
+        if (scheme != null && !scheme.equalsIgnoreCase("srm")) {
+            throw new SRMInvalidPathException("Invalid scheme: " + scheme);
+        }
+
+        String host = surl.getHost();
+        int port = surl.getPort();
+        if (host != null && !getSrmHosts().stream().anyMatch(host::equalsIgnoreCase) ||
+                port != -1 && port != getPort()) {
+            throw new SRMInvalidPathException("SURL is not local: " + surl);
+        }
+
+        String path = surl.getPath();
+        String query = surl.getQuery();
+        if (query != null) {
+            int i = query.indexOf(SFN_STRING);
+            if (i != -1) {
+                path = query.substring(i + SFN_STRING.length());
+            }
+        }
+
+        return new FsPath(new FsPath(getSrm_root()), new FsPath(path));
     }
 }
