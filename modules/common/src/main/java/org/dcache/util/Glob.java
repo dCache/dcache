@@ -4,21 +4,24 @@ import com.google.common.base.CharMatcher;
 
 import java.io.Serializable;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
- * A glob is a pattern used for limitted pattern matching. The class
- * supports single character (question mark) and multi character
- * (asterix) wildcards, similar to Unix shell globbing.
+ * A glob is a pattern used for limited pattern matching. The class
+ * supports the following glob patterns:
  *
- * Due to its simplicity, a glob is easy to translate to other pattern
- * matching language.
+ * <ul>
+ * <li><tt>?</tt> Matches any single character.</li>
+ * <li><tt>*</tt> Matches any sequence of zero or more characters.</li>
+ * <li><tt>{a,b,...}</tt> Matches any of the sub-patterns a, b, etc.</li>
+ * </ul>
  *
  * The current implementation does not have an escape symbol.
  */
 public class Glob implements Serializable
 {
     private static final long serialVersionUID = -5052804169005574207L;
-    private static final CharMatcher WILDCARD = CharMatcher.anyOf("*?");
+    private static final CharMatcher WILDCARD = CharMatcher.anyOf("*?{");
 
     private final String _pattern;
 
@@ -67,6 +70,12 @@ public class Glob implements Serializable
                 j = i + 1;
                 break;
 
+            case '{':
+                s.append(Pattern.quote(glob.substring(j, i)));
+                i = parseCurlyBrackets(glob, i, s);
+                j = i + 1;
+                break;
+
             default:
                 break;
             }
@@ -76,8 +85,72 @@ public class Glob implements Serializable
         return Pattern.compile(s.toString());
     }
 
+    private static int parseCurlyBrackets(String glob, int from, StringBuilder out)
+    {
+        assert glob.charAt(from) == '{';
+
+        StringBuilder s = new StringBuilder();
+        int j = from + 1;
+        for (int i = j; i < glob.length(); i++) {
+            switch (glob.charAt(i)) {
+            case '?':
+                s.append(Pattern.quote(glob.substring(j, i)));
+                s.append(".");
+                j = i + 1;
+                break;
+
+            case '*':
+                s.append(Pattern.quote(glob.substring(j, i)));
+                s.append(".*");
+                j = i + 1;
+                break;
+
+            case ',':
+                s.append(Pattern.quote(glob.substring(j, i)));
+                s.append('|');
+                j = i + 1;
+                break;
+
+            case '{':
+                s.append(Pattern.quote(glob.substring(j, i)));
+                i = parseCurlyBrackets(glob, i, s);
+                j = i + 1;
+                break;
+
+            case '}':
+                out.append('(').append(s).append(Pattern.quote(glob.substring(j, i))).append(')');
+                return i;
+
+            default:
+                break;
+            }
+        }
+
+        // Unterminated curly brace
+        out.append(Pattern.quote("{"));
+        return from;
+    }
+
     public static boolean isGlob(String s)
     {
         return WILDCARD.matchesAnyOf(s);
+    }
+
+    /**
+     * Unfolds alternations (brace lists) into a list.
+     */
+    public static Iterable<String> expandGlob(String glob)
+    {
+        return new GlobBraceParser(glob).expandGlob();
+    }
+
+    /**
+     * Similar to {@code expandGlob} but considers the input
+     * string to be a comma separated list. Equivalient to calling
+     * {@code expandGlob("{" + glob + "}")}.
+     */
+    public static Iterable<String> expandList(String glob)
+    {
+        return new GlobBraceParser(glob).expandList();
     }
 }
