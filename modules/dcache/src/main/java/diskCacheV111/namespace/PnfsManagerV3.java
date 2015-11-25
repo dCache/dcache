@@ -1209,7 +1209,7 @@ public class PnfsManagerV3
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Create upload path failed", e);
+            _log.error("Commit upload path failed", e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1222,7 +1222,7 @@ public class PnfsManagerV3
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Create upload path failed", e);
+            _log.error("Cancel upload path failed", e);
             message.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
