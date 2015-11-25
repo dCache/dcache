@@ -54,17 +54,17 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             RepositoryChannel fc = mover.getMoverChannel();
 
             bb.rewind();
-            int bytesReaded = fc.read(bb, offset);
+            int bytesRead = fc.read(bb, offset);
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();
             res.resok4.data = bb;
 
-            if( offset + bytesReaded == fc.size() ) {
+            if( bytesRead == -1 || offset + bytesRead == fc.size() ) {
                 res.resok4.eof = true;
             }
 
-            _log.debug("MOVER: {}@{} readed, {} requested.", bytesReaded, offset, _args.opread.count.value);
+            _log.debug("MOVER: {}@{} read, {} requested.", bytesRead, offset, _args.opread.count.value);
 
         }catch(ChimeraNFSException he) {
             res.status = he.getStatus();
