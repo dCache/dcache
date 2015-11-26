@@ -261,9 +261,6 @@ public class RequestStatus  implements java.io.Serializable {
             return false;
         }
         RequestStatus other = (RequestStatus) obj;
-        if (obj == null) {
-            return false;
-        }
         if (this == obj) {
             return true;
         }

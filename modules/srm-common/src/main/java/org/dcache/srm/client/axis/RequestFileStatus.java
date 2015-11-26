@@ -210,9 +210,6 @@ public class RequestFileStatus  extends org.dcache.srm.client.axis.FileMetaData 
             return false;
         }
         RequestFileStatus other = (RequestFileStatus) obj;
-        if (obj == null) {
-            return false;
-        }
         if (this == obj) {
             return true;
         }

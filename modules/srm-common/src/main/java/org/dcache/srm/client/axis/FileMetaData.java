@@ -261,9 +261,6 @@ public class FileMetaData  implements java.io.Serializable {
             return false;
         }
         FileMetaData other = (FileMetaData) obj;
-        if (obj == null) {
-            return false;
-        }
         if (this == obj) {
             return true;
         }

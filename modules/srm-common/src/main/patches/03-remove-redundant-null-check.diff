@@ -1,0 +1,1260 @@
+--- org/dcache/srm/v2_2/ArrayOfAnyURI.java.orig	2015-11-26 16:51:06.421421760 +0100
++++ org/dcache/srm/v2_2/ArrayOfAnyURI.java	2015-11-26 16:51:17.461719349 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfAnyURI)) return false;
+         ArrayOfAnyURI other = (ArrayOfAnyURI) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfString.java.orig	2015-11-26 16:52:22.987486005 +0100
++++ org/dcache/srm/v2_2/ArrayOfString.java	2015-11-26 16:52:31.703721052 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfString)) return false;
+         ArrayOfString other = (ArrayOfString) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTBringOnlineRequestFileStatus.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/ArrayOfTBringOnlineRequestFileStatus.java	2015-11-26 17:02:31.807827352 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTBringOnlineRequestFileStatus)) return false;
+         ArrayOfTBringOnlineRequestFileStatus other = (ArrayOfTBringOnlineRequestFileStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTCopyFileRequest.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/ArrayOfTCopyFileRequest.java	2015-11-26 17:02:31.811827450 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTCopyFileRequest)) return false;
+         ArrayOfTCopyFileRequest other = (ArrayOfTCopyFileRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTCopyRequestFileStatus.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/ArrayOfTCopyRequestFileStatus.java	2015-11-26 17:02:31.811827450 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTCopyRequestFileStatus)) return false;
+         ArrayOfTCopyRequestFileStatus other = (ArrayOfTCopyRequestFileStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTExtraInfo.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/ArrayOfTExtraInfo.java	2015-11-26 17:02:31.815827562 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTExtraInfo)) return false;
+         ArrayOfTExtraInfo other = (ArrayOfTExtraInfo) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTGetFileRequest.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/ArrayOfTGetFileRequest.java	2015-11-26 17:02:31.819827676 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTGetFileRequest)) return false;
+         ArrayOfTGetFileRequest other = (ArrayOfTGetFileRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTGetRequestFileStatus.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/ArrayOfTGetRequestFileStatus.java	2015-11-26 17:02:31.823827774 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTGetRequestFileStatus)) return false;
+         ArrayOfTGetRequestFileStatus other = (ArrayOfTGetRequestFileStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTGroupPermission.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/ArrayOfTGroupPermission.java	2015-11-26 17:02:31.827827887 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTGroupPermission)) return false;
+         ArrayOfTGroupPermission other = (ArrayOfTGroupPermission) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTMetaDataPathDetail.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/ArrayOfTMetaDataPathDetail.java	2015-11-26 17:02:31.827827887 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTMetaDataPathDetail)) return false;
+         ArrayOfTMetaDataPathDetail other = (ArrayOfTMetaDataPathDetail) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTMetaDataSpace.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/ArrayOfTMetaDataSpace.java	2015-11-26 17:02:31.831827993 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTMetaDataSpace)) return false;
+         ArrayOfTMetaDataSpace other = (ArrayOfTMetaDataSpace) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTPermissionReturn.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/ArrayOfTPermissionReturn.java	2015-11-26 17:02:31.835828102 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTPermissionReturn)) return false;
+         ArrayOfTPermissionReturn other = (ArrayOfTPermissionReturn) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTPutFileRequest.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/ArrayOfTPutFileRequest.java	2015-11-26 17:02:31.839828212 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTPutFileRequest)) return false;
+         ArrayOfTPutFileRequest other = (ArrayOfTPutFileRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTPutRequestFileStatus.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/ArrayOfTPutRequestFileStatus.java	2015-11-26 17:02:31.839828212 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTPutRequestFileStatus)) return false;
+         ArrayOfTPutRequestFileStatus other = (ArrayOfTPutRequestFileStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTRequestSummary.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/ArrayOfTRequestSummary.java	2015-11-26 17:02:31.843828315 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTRequestSummary)) return false;
+         ArrayOfTRequestSummary other = (ArrayOfTRequestSummary) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTRequestTokenReturn.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/ArrayOfTRequestTokenReturn.java	2015-11-26 17:02:31.847828426 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTRequestTokenReturn)) return false;
+         ArrayOfTRequestTokenReturn other = (ArrayOfTRequestTokenReturn) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTSupportedTransferProtocol.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/ArrayOfTSupportedTransferProtocol.java	2015-11-26 17:02:31.847828426 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTSupportedTransferProtocol)) return false;
+         ArrayOfTSupportedTransferProtocol other = (ArrayOfTSupportedTransferProtocol) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTSURLLifetimeReturnStatus.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/ArrayOfTSURLLifetimeReturnStatus.java	2015-11-26 17:02:31.851828528 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTSURLLifetimeReturnStatus)) return false;
+         ArrayOfTSURLLifetimeReturnStatus other = (ArrayOfTSURLLifetimeReturnStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTSURLPermissionReturn.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/ArrayOfTSURLPermissionReturn.java	2015-11-26 17:02:31.855828639 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTSURLPermissionReturn)) return false;
+         ArrayOfTSURLPermissionReturn other = (ArrayOfTSURLPermissionReturn) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTSURLReturnStatus.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/ArrayOfTSURLReturnStatus.java	2015-11-26 17:02:31.855828639 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTSURLReturnStatus)) return false;
+         ArrayOfTSURLReturnStatus other = (ArrayOfTSURLReturnStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfTUserPermission.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/ArrayOfTUserPermission.java	2015-11-26 17:02:31.859828749 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfTUserPermission)) return false;
+         ArrayOfTUserPermission other = (ArrayOfTUserPermission) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/ArrayOfUnsignedLong.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/ArrayOfUnsignedLong.java	2015-11-26 17:02:31.863828853 +0100
+@@ -50,7 +50,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof ArrayOfUnsignedLong)) return false;
+         ArrayOfUnsignedLong other = (ArrayOfUnsignedLong) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmAbortFilesRequest.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/SrmAbortFilesRequest.java	2015-11-26 17:02:31.863828853 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmAbortFilesRequest)) return false;
+         SrmAbortFilesRequest other = (SrmAbortFilesRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmAbortFilesResponse.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmAbortFilesResponse.java	2015-11-26 17:02:31.867828964 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmAbortFilesResponse)) return false;
+         SrmAbortFilesResponse other = (SrmAbortFilesResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmAbortRequestRequest.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmAbortRequestRequest.java	2015-11-26 17:02:31.871829067 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmAbortRequestRequest)) return false;
+         SrmAbortRequestRequest other = (SrmAbortRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmAbortRequestResponse.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/SrmAbortRequestResponse.java	2015-11-26 17:02:31.871829067 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmAbortRequestResponse)) return false;
+         SrmAbortRequestResponse other = (SrmAbortRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmBringOnlineRequest.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmBringOnlineRequest.java	2015-11-26 17:02:31.875829178 +0100
+@@ -282,7 +282,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmBringOnlineRequest)) return false;
+         SrmBringOnlineRequest other = (SrmBringOnlineRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmBringOnlineResponse.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmBringOnlineResponse.java	2015-11-26 17:02:31.879829281 +0100
+@@ -138,7 +138,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmBringOnlineResponse)) return false;
+         SrmBringOnlineResponse other = (SrmBringOnlineResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmChangeSpaceForFilesRequest.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/SrmChangeSpaceForFilesRequest.java	2015-11-26 17:02:31.883829392 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmChangeSpaceForFilesRequest)) return false;
+         SrmChangeSpaceForFilesRequest other = (SrmChangeSpaceForFilesRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmChangeSpaceForFilesResponse.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/SrmChangeSpaceForFilesResponse.java	2015-11-26 17:02:31.883829392 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmChangeSpaceForFilesResponse)) return false;
+         SrmChangeSpaceForFilesResponse other = (SrmChangeSpaceForFilesResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmCheckPermissionRequest.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmCheckPermissionRequest.java	2015-11-26 17:02:31.887829495 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmCheckPermissionRequest)) return false;
+         SrmCheckPermissionRequest other = (SrmCheckPermissionRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmCheckPermissionResponse.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/SrmCheckPermissionResponse.java	2015-11-26 17:02:31.887829495 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmCheckPermissionResponse)) return false;
+         SrmCheckPermissionResponse other = (SrmCheckPermissionResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmCopyRequest.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmCopyRequest.java	2015-11-26 17:02:31.891829606 +0100
+@@ -282,7 +282,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmCopyRequest)) return false;
+         SrmCopyRequest other = (SrmCopyRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmCopyResponse.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmCopyResponse.java	2015-11-26 17:02:31.895829710 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmCopyResponse)) return false;
+         SrmCopyResponse other = (SrmCopyResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmExtendFileLifeTimeInSpaceRequest.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/SrmExtendFileLifeTimeInSpaceRequest.java	2015-11-26 17:02:31.895829710 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmExtendFileLifeTimeInSpaceRequest)) return false;
+         SrmExtendFileLifeTimeInSpaceRequest other = (SrmExtendFileLifeTimeInSpaceRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmExtendFileLifeTimeInSpaceResponse.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/SrmExtendFileLifeTimeInSpaceResponse.java	2015-11-26 17:02:31.899829820 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmExtendFileLifeTimeInSpaceResponse)) return false;
+         SrmExtendFileLifeTimeInSpaceResponse other = (SrmExtendFileLifeTimeInSpaceResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmExtendFileLifeTimeRequest.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmExtendFileLifeTimeRequest.java	2015-11-26 17:02:31.903829931 +0100
+@@ -138,7 +138,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmExtendFileLifeTimeRequest)) return false;
+         SrmExtendFileLifeTimeRequest other = (SrmExtendFileLifeTimeRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmExtendFileLifeTimeResponse.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmExtendFileLifeTimeResponse.java	2015-11-26 17:02:31.903829931 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmExtendFileLifeTimeResponse)) return false;
+         SrmExtendFileLifeTimeResponse other = (SrmExtendFileLifeTimeResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetPermissionRequest.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmGetPermissionRequest.java	2015-11-26 17:02:31.907830035 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetPermissionRequest)) return false;
+         SrmGetPermissionRequest other = (SrmGetPermissionRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetPermissionResponse.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmGetPermissionResponse.java	2015-11-26 17:02:31.907830035 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetPermissionResponse)) return false;
+         SrmGetPermissionResponse other = (SrmGetPermissionResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetRequestSummaryRequest.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmGetRequestSummaryRequest.java	2015-11-26 17:02:31.911830145 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetRequestSummaryRequest)) return false;
+         SrmGetRequestSummaryRequest other = (SrmGetRequestSummaryRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetRequestSummaryResponse.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmGetRequestSummaryResponse.java	2015-11-26 17:02:31.915830249 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetRequestSummaryResponse)) return false;
+         SrmGetRequestSummaryResponse other = (SrmGetRequestSummaryResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetRequestTokensRequest.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/SrmGetRequestTokensRequest.java	2015-11-26 17:02:31.915830249 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetRequestTokensRequest)) return false;
+         SrmGetRequestTokensRequest other = (SrmGetRequestTokensRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetRequestTokensResponse.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmGetRequestTokensResponse.java	2015-11-26 17:02:31.919830360 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetRequestTokensResponse)) return false;
+         SrmGetRequestTokensResponse other = (SrmGetRequestTokensResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetSpaceMetaDataRequest.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmGetSpaceMetaDataRequest.java	2015-11-26 17:02:31.919830360 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetSpaceMetaDataRequest)) return false;
+         SrmGetSpaceMetaDataRequest other = (SrmGetSpaceMetaDataRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetSpaceMetaDataResponse.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmGetSpaceMetaDataResponse.java	2015-11-26 17:02:31.923830463 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetSpaceMetaDataResponse)) return false;
+         SrmGetSpaceMetaDataResponse other = (SrmGetSpaceMetaDataResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetSpaceTokensRequest.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmGetSpaceTokensRequest.java	2015-11-26 17:02:31.923830463 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetSpaceTokensRequest)) return false;
+         SrmGetSpaceTokensRequest other = (SrmGetSpaceTokensRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetSpaceTokensResponse.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/SrmGetSpaceTokensResponse.java	2015-11-26 17:02:31.927830574 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetSpaceTokensResponse)) return false;
+         SrmGetSpaceTokensResponse other = (SrmGetSpaceTokensResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetTransferProtocolsRequest.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmGetTransferProtocolsRequest.java	2015-11-26 17:02:31.927830574 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetTransferProtocolsRequest)) return false;
+         SrmGetTransferProtocolsRequest other = (SrmGetTransferProtocolsRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmGetTransferProtocolsResponse.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmGetTransferProtocolsResponse.java	2015-11-26 17:02:31.931830678 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmGetTransferProtocolsResponse)) return false;
+         SrmGetTransferProtocolsResponse other = (SrmGetTransferProtocolsResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmLsRequest.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmLsRequest.java	2015-11-26 17:02:31.931830678 +0100
+@@ -234,7 +234,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmLsRequest)) return false;
+         SrmLsRequest other = (SrmLsRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmLsResponse.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmLsResponse.java	2015-11-26 17:02:31.935830789 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmLsResponse)) return false;
+         SrmLsResponse other = (SrmLsResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmMkdirRequest.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmMkdirRequest.java	2015-11-26 17:02:31.935830789 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmMkdirRequest)) return false;
+         SrmMkdirRequest other = (SrmMkdirRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmMkdirResponse.java.orig	2015-11-26 17:01:13.073713741 +0100
++++ org/dcache/srm/v2_2/SrmMkdirResponse.java	2015-11-26 17:02:31.939830892 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmMkdirResponse)) return false;
+         SrmMkdirResponse other = (SrmMkdirResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmMvRequest.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmMvRequest.java	2015-11-26 17:02:31.939830892 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmMvRequest)) return false;
+         SrmMvRequest other = (SrmMvRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmMvResponse.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/SrmMvResponse.java	2015-11-26 17:02:31.939830892 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmMvResponse)) return false;
+         SrmMvResponse other = (SrmMvResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPingRequest.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmPingRequest.java	2015-11-26 17:02:31.943831003 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPingRequest)) return false;
+         SrmPingRequest other = (SrmPingRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPingResponse.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmPingResponse.java	2015-11-26 17:02:31.943831003 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPingResponse)) return false;
+         SrmPingResponse other = (SrmPingResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPrepareToGetRequest.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/SrmPrepareToGetRequest.java	2015-11-26 17:02:31.947831107 +0100
+@@ -258,7 +258,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPrepareToGetRequest)) return false;
+         SrmPrepareToGetRequest other = (SrmPrepareToGetRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPrepareToGetResponse.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmPrepareToGetResponse.java	2015-11-26 17:02:31.947831107 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPrepareToGetResponse)) return false;
+         SrmPrepareToGetResponse other = (SrmPrepareToGetResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPrepareToPutRequest.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmPrepareToPutRequest.java	2015-11-26 17:02:31.951831217 +0100
+@@ -306,7 +306,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPrepareToPutRequest)) return false;
+         SrmPrepareToPutRequest other = (SrmPrepareToPutRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPrepareToPutResponse.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmPrepareToPutResponse.java	2015-11-26 17:02:31.951831217 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPrepareToPutResponse)) return false;
+         SrmPrepareToPutResponse other = (SrmPrepareToPutResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPurgeFromSpaceRequest.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/SrmPurgeFromSpaceRequest.java	2015-11-26 17:02:31.955831321 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPurgeFromSpaceRequest)) return false;
+         SrmPurgeFromSpaceRequest other = (SrmPurgeFromSpaceRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPurgeFromSpaceResponse.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmPurgeFromSpaceResponse.java	2015-11-26 17:02:31.955831321 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPurgeFromSpaceResponse)) return false;
+         SrmPurgeFromSpaceResponse other = (SrmPurgeFromSpaceResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPutDoneRequest.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/SrmPutDoneRequest.java	2015-11-26 17:02:31.959831432 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPutDoneRequest)) return false;
+         SrmPutDoneRequest other = (SrmPutDoneRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmPutDoneResponse.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmPutDoneResponse.java	2015-11-26 17:02:31.959831432 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmPutDoneResponse)) return false;
+         SrmPutDoneResponse other = (SrmPutDoneResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmReleaseFilesRequest.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmReleaseFilesRequest.java	2015-11-26 17:02:31.963831535 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmReleaseFilesRequest)) return false;
+         SrmReleaseFilesRequest other = (SrmReleaseFilesRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmReleaseFilesResponse.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/SrmReleaseFilesResponse.java	2015-11-26 17:02:31.963831535 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmReleaseFilesResponse)) return false;
+         SrmReleaseFilesResponse other = (SrmReleaseFilesResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmReleaseSpaceRequest.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmReleaseSpaceRequest.java	2015-11-26 17:02:31.963831535 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmReleaseSpaceRequest)) return false;
+         SrmReleaseSpaceRequest other = (SrmReleaseSpaceRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmReleaseSpaceResponse.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/SrmReleaseSpaceResponse.java	2015-11-26 17:02:31.967831646 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmReleaseSpaceResponse)) return false;
+         SrmReleaseSpaceResponse other = (SrmReleaseSpaceResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmReserveSpaceRequest.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmReserveSpaceRequest.java	2015-11-26 17:02:31.971831757 +0100
+@@ -234,7 +234,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmReserveSpaceRequest)) return false;
+         SrmReserveSpaceRequest other = (SrmReserveSpaceRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmReserveSpaceResponse.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/SrmReserveSpaceResponse.java	2015-11-26 17:02:31.971831757 +0100
+@@ -210,7 +210,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmReserveSpaceResponse)) return false;
+         SrmReserveSpaceResponse other = (SrmReserveSpaceResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmResumeRequestRequest.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmResumeRequestRequest.java	2015-11-26 17:02:31.975831861 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmResumeRequestRequest)) return false;
+         SrmResumeRequestRequest other = (SrmResumeRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmResumeRequestResponse.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/SrmResumeRequestResponse.java	2015-11-26 17:02:31.975831861 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmResumeRequestResponse)) return false;
+         SrmResumeRequestResponse other = (SrmResumeRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmRmdirRequest.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmRmdirRequest.java	2015-11-26 17:02:31.979831968 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmRmdirRequest)) return false;
+         SrmRmdirRequest other = (SrmRmdirRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmRmdirResponse.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmRmdirResponse.java	2015-11-26 17:02:31.979831968 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmRmdirResponse)) return false;
+         SrmRmdirResponse other = (SrmRmdirResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmRmRequest.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmRmRequest.java	2015-11-26 17:02:31.983832079 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmRmRequest)) return false;
+         SrmRmRequest other = (SrmRmRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmRmResponse.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmRmResponse.java	2015-11-26 17:02:31.983832079 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmRmResponse)) return false;
+         SrmRmResponse other = (SrmRmResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmSetPermissionRequest.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/SrmSetPermissionRequest.java	2015-11-26 17:02:31.987832183 +0100
+@@ -210,7 +210,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmSetPermissionRequest)) return false;
+         SrmSetPermissionRequest other = (SrmSetPermissionRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmSetPermissionResponse.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/SrmSetPermissionResponse.java	2015-11-26 17:02:31.987832183 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmSetPermissionResponse)) return false;
+         SrmSetPermissionResponse other = (SrmSetPermissionResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfBringOnlineRequestRequest.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfBringOnlineRequestRequest.java	2015-11-26 17:02:31.991832294 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfBringOnlineRequestRequest)) return false;
+         SrmStatusOfBringOnlineRequestRequest other = (SrmStatusOfBringOnlineRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfBringOnlineRequestResponse.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfBringOnlineRequestResponse.java	2015-11-26 17:02:31.991832294 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfBringOnlineRequestResponse)) return false;
+         SrmStatusOfBringOnlineRequestResponse other = (SrmStatusOfBringOnlineRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfChangeSpaceForFilesRequestRequest.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfChangeSpaceForFilesRequestRequest.java	2015-11-26 17:02:31.991832294 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfChangeSpaceForFilesRequestRequest)) return false;
+         SrmStatusOfChangeSpaceForFilesRequestRequest other = (SrmStatusOfChangeSpaceForFilesRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfChangeSpaceForFilesRequestResponse.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfChangeSpaceForFilesRequestResponse.java	2015-11-26 17:02:31.995832397 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfChangeSpaceForFilesRequestResponse)) return false;
+         SrmStatusOfChangeSpaceForFilesRequestResponse other = (SrmStatusOfChangeSpaceForFilesRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfCopyRequestRequest.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfCopyRequestRequest.java	2015-11-26 17:02:31.995832397 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfCopyRequestRequest)) return false;
+         SrmStatusOfCopyRequestRequest other = (SrmStatusOfCopyRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfCopyRequestResponse.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfCopyRequestResponse.java	2015-11-26 17:02:31.999832508 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfCopyRequestResponse)) return false;
+         SrmStatusOfCopyRequestResponse other = (SrmStatusOfCopyRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfGetRequestRequest.java.orig	2015-11-26 17:01:13.073713741 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfGetRequestRequest.java	2015-11-26 17:02:31.999832508 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfGetRequestRequest)) return false;
+         SrmStatusOfGetRequestRequest other = (SrmStatusOfGetRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfGetRequestResponse.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfGetRequestResponse.java	2015-11-26 17:02:32.003832612 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfGetRequestResponse)) return false;
+         SrmStatusOfGetRequestResponse other = (SrmStatusOfGetRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfLsRequestRequest.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfLsRequestRequest.java	2015-11-26 17:02:32.003832612 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfLsRequestRequest)) return false;
+         SrmStatusOfLsRequestRequest other = (SrmStatusOfLsRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfLsRequestResponse.java.orig	2015-11-26 17:01:13.073713741 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfLsRequestResponse.java	2015-11-26 17:02:32.007832723 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfLsRequestResponse)) return false;
+         SrmStatusOfLsRequestResponse other = (SrmStatusOfLsRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfPutRequestRequest.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfPutRequestRequest.java	2015-11-26 17:02:32.007832723 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfPutRequestRequest)) return false;
+         SrmStatusOfPutRequestRequest other = (SrmStatusOfPutRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfPutRequestResponse.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfPutRequestResponse.java	2015-11-26 17:02:32.007832723 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfPutRequestResponse)) return false;
+         SrmStatusOfPutRequestResponse other = (SrmStatusOfPutRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfReserveSpaceRequestRequest.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfReserveSpaceRequestRequest.java	2015-11-26 17:02:32.011832826 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfReserveSpaceRequestRequest)) return false;
+         SrmStatusOfReserveSpaceRequestRequest other = (SrmStatusOfReserveSpaceRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfReserveSpaceRequestResponse.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfReserveSpaceRequestResponse.java	2015-11-26 17:02:32.011832826 +0100
+@@ -186,7 +186,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfReserveSpaceRequestResponse)) return false;
+         SrmStatusOfReserveSpaceRequestResponse other = (SrmStatusOfReserveSpaceRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfUpdateSpaceRequestRequest.java.orig	2015-11-26 17:01:13.073713741 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfUpdateSpaceRequestRequest.java	2015-11-26 17:02:32.015832937 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfUpdateSpaceRequestRequest)) return false;
+         SrmStatusOfUpdateSpaceRequestRequest other = (SrmStatusOfUpdateSpaceRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmStatusOfUpdateSpaceRequestResponse.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/SrmStatusOfUpdateSpaceRequestResponse.java	2015-11-26 17:02:32.015832937 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmStatusOfUpdateSpaceRequestResponse)) return false;
+         SrmStatusOfUpdateSpaceRequestResponse other = (SrmStatusOfUpdateSpaceRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmSuspendRequestRequest.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/SrmSuspendRequestRequest.java	2015-11-26 17:02:32.019833041 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmSuspendRequestRequest)) return false;
+         SrmSuspendRequestRequest other = (SrmSuspendRequestRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmSuspendRequestResponse.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmSuspendRequestResponse.java	2015-11-26 17:02:32.019833041 +0100
+@@ -42,7 +42,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmSuspendRequestResponse)) return false;
+         SrmSuspendRequestResponse other = (SrmSuspendRequestResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmUpdateSpaceRequest.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/SrmUpdateSpaceRequest.java	2015-11-26 17:02:32.019833041 +0100
+@@ -162,7 +162,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmUpdateSpaceRequest)) return false;
+         SrmUpdateSpaceRequest other = (SrmUpdateSpaceRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/SrmUpdateSpaceResponse.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/SrmUpdateSpaceResponse.java	2015-11-26 17:02:32.023833152 +0100
+@@ -138,7 +138,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof SrmUpdateSpaceResponse)) return false;
+         SrmUpdateSpaceResponse other = (SrmUpdateSpaceResponse) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TBringOnlineRequestFileStatus.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/TBringOnlineRequestFileStatus.java	2015-11-26 17:02:32.023833152 +0100
+@@ -138,7 +138,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TBringOnlineRequestFileStatus)) return false;
+         TBringOnlineRequestFileStatus other = (TBringOnlineRequestFileStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TCopyFileRequest.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/TCopyFileRequest.java	2015-11-26 17:02:32.027833256 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TCopyFileRequest)) return false;
+         TCopyFileRequest other = (TCopyFileRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TCopyRequestFileStatus.java.orig	2015-11-26 17:01:13.073713741 +0100
++++ org/dcache/srm/v2_2/TCopyRequestFileStatus.java	2015-11-26 17:02:32.027833256 +0100
+@@ -162,7 +162,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TCopyRequestFileStatus)) return false;
+         TCopyRequestFileStatus other = (TCopyRequestFileStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TDirOption.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/TDirOption.java	2015-11-26 17:02:32.031833367 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TDirOption)) return false;
+         TDirOption other = (TDirOption) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TExtraInfo.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/TExtraInfo.java	2015-11-26 17:02:32.035833470 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TExtraInfo)) return false;
+         TExtraInfo other = (TExtraInfo) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TGetFileRequest.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/TGetFileRequest.java	2015-11-26 17:02:32.039833581 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TGetFileRequest)) return false;
+         TGetFileRequest other = (TGetFileRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TGetRequestFileStatus.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/TGetRequestFileStatus.java	2015-11-26 17:02:32.039833581 +0100
+@@ -186,7 +186,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TGetRequestFileStatus)) return false;
+         TGetRequestFileStatus other = (TGetRequestFileStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TGroupPermission.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/TGroupPermission.java	2015-11-26 17:02:32.043833685 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TGroupPermission)) return false;
+         TGroupPermission other = (TGroupPermission) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TMetaDataPathDetail.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/TMetaDataPathDetail.java	2015-11-26 17:02:32.043833685 +0100
+@@ -450,7 +450,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TMetaDataPathDetail)) return false;
+         TMetaDataPathDetail other = (TMetaDataPathDetail) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TMetaDataSpace.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/TMetaDataSpace.java	2015-11-26 17:02:32.047833796 +0100
+@@ -234,7 +234,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TMetaDataSpace)) return false;
+         TMetaDataSpace other = (TMetaDataSpace) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TPermissionReturn.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/TPermissionReturn.java	2015-11-26 17:02:32.047833796 +0100
+@@ -186,7 +186,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TPermissionReturn)) return false;
+         TPermissionReturn other = (TPermissionReturn) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TPutFileRequest.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/TPutFileRequest.java	2015-11-26 17:02:32.051833899 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TPutFileRequest)) return false;
+         TPutFileRequest other = (TPutFileRequest) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TPutRequestFileStatus.java.orig	2015-11-26 17:01:13.073713741 +0100
++++ org/dcache/srm/v2_2/TPutRequestFileStatus.java	2015-11-26 17:02:32.051833899 +0100
+@@ -210,7 +210,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TPutRequestFileStatus)) return false;
+         TPutRequestFileStatus other = (TPutRequestFileStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TRequestSummary.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/TRequestSummary.java	2015-11-26 17:02:32.055834011 +0100
+@@ -186,7 +186,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TRequestSummary)) return false;
+         TRequestSummary other = (TRequestSummary) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TRequestTokenReturn.java.orig	2015-11-26 17:01:13.085714062 +0100
++++ org/dcache/srm/v2_2/TRequestTokenReturn.java	2015-11-26 17:02:32.055834011 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TRequestTokenReturn)) return false;
+         TRequestTokenReturn other = (TRequestTokenReturn) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TRetentionPolicyInfo.java.orig	2015-11-26 17:01:13.077713855 +0100
++++ org/dcache/srm/v2_2/TRetentionPolicyInfo.java	2015-11-26 17:02:32.059834114 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TRetentionPolicyInfo)) return false;
+         TRetentionPolicyInfo other = (TRetentionPolicyInfo) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TReturnStatus.java.orig	2015-11-26 17:01:13.081713954 +0100
++++ org/dcache/srm/v2_2/TReturnStatus.java	2015-11-26 17:02:32.059834114 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TReturnStatus)) return false;
+         TReturnStatus other = (TReturnStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TSupportedTransferProtocol.java.orig	2015-11-26 17:01:13.089714178 +0100
++++ org/dcache/srm/v2_2/TSupportedTransferProtocol.java	2015-11-26 17:02:32.063834225 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TSupportedTransferProtocol)) return false;
+         TSupportedTransferProtocol other = (TSupportedTransferProtocol) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TSURLLifetimeReturnStatus.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/TSURLLifetimeReturnStatus.java	2015-11-26 17:02:32.063834225 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TSURLLifetimeReturnStatus)) return false;
+         TSURLLifetimeReturnStatus other = (TSURLLifetimeReturnStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TSURLPermissionReturn.java.orig	2015-11-26 17:01:13.105714607 +0100
++++ org/dcache/srm/v2_2/TSURLPermissionReturn.java	2015-11-26 17:02:32.067834329 +0100
+@@ -90,7 +90,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TSURLPermissionReturn)) return false;
+         TSURLPermissionReturn other = (TSURLPermissionReturn) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TSURLReturnStatus.java.orig	2015-11-26 17:01:13.097714386 +0100
++++ org/dcache/srm/v2_2/TSURLReturnStatus.java	2015-11-26 17:02:32.067834329 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TSURLReturnStatus)) return false;
+         TSURLReturnStatus other = (TSURLReturnStatus) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TTransferParameters.java.orig	2015-11-26 17:01:13.101714493 +0100
++++ org/dcache/srm/v2_2/TTransferParameters.java	2015-11-26 17:02:32.071834440 +0100
+@@ -114,7 +114,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TTransferParameters)) return false;
+         TTransferParameters other = (TTransferParameters) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/srm/v2_2/TUserPermission.java.orig	2015-11-26 17:01:13.093714281 +0100
++++ org/dcache/srm/v2_2/TUserPermission.java	2015-11-26 17:02:32.071834440 +0100
+@@ -66,7 +66,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof TUserPermission)) return false;
+         TUserPermission other = (TUserPermission) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/delegation/gridsite1/DelegationExceptionType.java.orig	2015-11-26 17:03:15.248993978 +0100
++++ org/dcache/delegation/gridsite1/DelegationExceptionType.java	2015-11-26 17:23:42.546071575 +0100
+@@ -44,7 +44,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof DelegationExceptionType)) return false;
+         DelegationExceptionType other = (DelegationExceptionType) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/delegation/gridsite1/NewProxyReq.java.orig	2015-11-26 17:03:15.024987961 +0100
++++ org/dcache/delegation/gridsite1/NewProxyReq.java	2015-11-26 17:23:42.550071691 +0100
+@@ -76,7 +76,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof NewProxyReq)) return false;
+         NewProxyReq other = (NewProxyReq) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
+--- org/dcache/delegation/gridsite2/DelegationException.java.orig	2015-11-26 17:03:15.248993978 +0100
++++ org/dcache/delegation/gridsite2/DelegationException.java	2015-11-26 17:23:51.342309399 +0100
+@@ -44,7 +44,6 @@
+     public synchronized boolean equals(java.lang.Object obj) {
+         if (!(obj instanceof DelegationException)) return false;
+         DelegationException other = (DelegationException) obj;
+-        if (obj == null) return false;
+         if (this == obj) return true;
+         if (__equalsCalc != null) {
+             return (__equalsCalc == obj);
