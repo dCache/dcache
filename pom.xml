@@ -61,7 +61,7 @@
         <target.version>1.8</target.version>
 
         <version.slf4j>1.7.10</version.slf4j>
-        <version.milton>2.6.3.3-dcache-1</version.milton>
+        <version.milton>2.7.0.3</version.milton>
         <version.spring>4.1.5.RELEASE</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
         <version.aspectj>1.8.5</version.aspectj>
