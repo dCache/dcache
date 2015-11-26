@@ -274,7 +274,9 @@ class FsSqlDriver {
 
             decNlink(dbConnection, parent);
 
-            removeInode(dbConnection, inode);
+            if (!removeInode(dbConnection, inode)) {
+                throw new DirNotEmptyHimeraFsException("directory is not empty");
+            }
         }
     }
 
@@ -324,7 +326,10 @@ class FsSqlDriver {
         setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
         removeStorageInfo(dbConnection, inode);
 
-        removeInode(dbConnection, inode);
+        boolean didRemove = removeInode(dbConnection, inode);
+        if (!didRemove && inode.isDirectory()) {
+            throw new DirNotEmptyHimeraFsException("directory is not empty");
+        }
     }
 
     public Stat stat(Connection dbConnection, FsInode inode) throws SQLException {
