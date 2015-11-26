@@ -464,12 +464,20 @@ class FsSqlDriver {
             stMove.setString(2, dest);
             stMove.setString(3, srcDir.toString());
             stMove.setString(4, source);
-            stMove.executeUpdate();
+            int n = stMove.executeUpdate();
+            if (n == 0) {
+                throw new FileNotFoundHimeraFsException(srcInode.toString());
+            } else if (n > 1) {
+                throw new RuntimeException("Possible Chimera corruption.");
+            }
 
             /*
              * if moving a directory, point '..' to the new parent
              */
             Stat stat = stat(dbConnection, srcInode);
+            if (stat == null) {
+                throw new FileNotFoundHimeraFsException(srcInode.toString());
+            }
             if ( (stat.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR) {
                 stParentMove = dbConnection.prepareStatement(sqlSetParent);
                 stParentMove.setString(1, destDir.toString());
