@@ -123,9 +123,9 @@ public class RrdRequestExecutionTimeGauges<T> {
             }
         }
 
-        for(RRDRequestExecutionTimeGauge rrdRequestGauge:rrdgauges.values() ) {
-            logger.debug("updateRrds(): calling rrdRequestGauge.update()");
-            rrdRequestGauge.update();
+        for(RRDRequestExecutionTimeGauge gauge : rrdgauges.values() ) {
+            logger.debug("updateRrds(): calling gauge.update()");
+            gauge.update();
         }
         logger.debug("updateRrds(): calling totalRequestCounter.update()");
         if(gaugesAdded)  {
@@ -138,9 +138,8 @@ public class RrdRequestExecutionTimeGauges<T> {
      * @throws IOException
      */
     public void plotGraphs() throws IOException {
-        for(T key:rrdgauges.keySet()) {
-            RRDRequestExecutionTimeGauge rrdRequestGauge = rrdgauges.get(key);
-            rrdRequestGauge.graph();
+        for(RRDRequestExecutionTimeGauge gauge : rrdgauges.values()) {
+            gauge.graph();
         }
     }
 
@@ -212,9 +211,9 @@ public class RrdRequestExecutionTimeGauges<T> {
         sb.append(" </h1>\n");
         sb.append("  <table> \n");
         sb.append("  <tr> <td> \n");
-        for(T key:rrdgauges.keySet()) {
+        for(RRDRequestExecutionTimeGauge gauge : rrdgauges.values()) {
             sb.append("  <tr> <td> \n");
-            String nextHtml = rrdgauges.get(key).getRrdGraphicsHtmlFileName();
+            String nextHtml = gauge.getRrdGraphicsHtmlFileName();
             sb.append("<a href=\"");
             sb.append(nextHtml);
             sb.append("\">");
