@@ -378,15 +378,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         LoginReply login = _loginStrategy.login(subject);
 
-        Origin origin;
-        if (Subjects.isNobody(login.getSubject())) {
-            origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_WEAK,
-                                _clientAddress);
-        } else {
-            origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
-                                _clientAddress);
-        }
-        login.getSubject().getPrincipals().add(origin);
+        login.getSubject().getPrincipals().add(new Origin(_clientAddress));
 
         _log.info("Login completed for {}", login);
 

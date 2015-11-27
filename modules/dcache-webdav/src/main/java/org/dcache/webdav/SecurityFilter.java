@@ -207,10 +207,7 @@ public class SecurityFilter implements Filter
     {
         String address = request.getRemoteAddr();
         try {
-            Origin origin =
-                new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG,
-                           InetAddress.getByName(address));
-            subject.getPrincipals().add(origin);
+            subject.getPrincipals().add(new Origin(address));
         } catch (UnknownHostException e) {
             _log.warn("Failed to resolve " + address + ": " + e.getMessage());
         }

@@ -173,7 +173,7 @@ public abstract class DcacheUserManager implements SRMUserManager
                 subject.getPublicCredentials().add(login.getSubject().getPublicCredentials());
                 subject.getPrivateCredentials().add(login.getSubject().getPrivateCredentials());
                 subject.getPrincipals().addAll(login.getSubject().getPrincipals());
-                subject.getPrincipals().add(new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, remoteOrigin));
+                subject.getPrincipals().add(new Origin(remoteOrigin));
                 login = new LoginReply(subject, login.getLoginAttributes());
             } catch (UnknownHostException uhex) {
                 LOGGER.info("Could not add the remote-IP {} as an origin principal.", remoteIP);

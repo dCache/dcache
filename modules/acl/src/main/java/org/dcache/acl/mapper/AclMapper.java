@@ -135,17 +135,13 @@ public class AclMapper {
             break;
 
         case ANONYMOUS:
-            if ( origin != null && origin.getAuthType() == Origin.AuthType.ORIGIN_AUTHTYPE_WEAK ) {
-                perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
-            } else if (origin == null) {
+            if (Subjects.isNobody(subject)) {
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
             }
             break;
 
         case AUTHENTICATED:
-            if ( origin != null && origin.getAuthType() == Origin.AuthType.ORIGIN_AUTHTYPE_STRONG ) {
-                perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
-            } else if (origin == null) {
+            if (!Subjects.isNobody(subject)) {
                 perm = new Permission(ace.getAccessMsk(), ace.getType().getValue());
             }
             break;

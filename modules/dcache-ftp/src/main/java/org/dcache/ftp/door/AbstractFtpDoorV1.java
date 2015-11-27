@@ -1130,7 +1130,7 @@ public abstract class AbstractFtpDoorV1
          */
         _parallel = _settings.getDefaultStreamsPerClient();
 
-        _origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, _remoteSocketAddress.getAddress());
+        _origin = new Origin(_remoteSocketAddress.getAddress());
 
         _readRetryPolicy =
             new TransferRetryPolicy(_settings.getMaxRetries(), _settings.getRetryWait() * 1000, Long.MAX_VALUE);

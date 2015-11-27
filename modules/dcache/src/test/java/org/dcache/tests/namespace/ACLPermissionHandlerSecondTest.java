@@ -36,7 +36,7 @@ public class ACLPermissionHandlerSecondTest {
     @BeforeClass
     public static void setUpClass() throws Exception {
         pdp = new ACLPermissionHandler();
-        origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, "127.0.0.1");
+        origin = new Origin("127.0.0.1");
 
         Principal user = new UidPrincipal(UID);
         Principal group = new GidPrincipal(GID, true);

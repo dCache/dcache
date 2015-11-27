@@ -77,7 +77,7 @@ public class LoginAuthenticationHandler
                                       login.getSubject().getPrincipals(),
                                       login.getSubject().getPublicCredentials(),
                                       login.getSubject().getPrivateCredentials());
-        subject.getPrincipals().add(new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, address));
+        subject.getPrincipals().add(new Origin(address));
         return new LoginReply(subject, login.getLoginAttributes());
     }
 
