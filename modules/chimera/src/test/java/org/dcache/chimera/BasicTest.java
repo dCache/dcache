@@ -526,27 +526,30 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test
     public void testRemoveFileById() throws Exception
     {
+        int n = _fs.listDir(_rootInode).length;
         FsInode file = _rootInode.create("foo", 0, 0, 0644);
         _fs.remove(file);
-        assertEquals(2, _fs.listDir(_rootInode).length);
+        assertEquals(n, _fs.listDir(_rootInode).length);
     }
 
     @Test
     public void testRemoveSeveralHardlinksById() throws Exception
     {
+        int n = _fs.listDir(_rootInode).length;
         FsInode file = _rootInode.create("foo", 0, 0, 0644);
         _fs.createHLink(_rootInode, file, "bar");
         _fs.remove(file);
-        assertEquals(2, _fs.listDir(_rootInode).length);
-        assertEquals(2, _rootInode.stat().getNlink());
+        assertEquals(n, _fs.listDir(_rootInode).length);
+        assertEquals(n, _rootInode.stat().getNlink());
     }
 
     @Test
     public void testRemoveDirById() throws Exception
     {
+        int n =_fs.listDir(_rootInode).length;
         FsInode foo = _rootInode.mkdir("foo");
         _fs.remove(foo);
-        assertEquals(2, _fs.listDir(_rootInode).length);
+        assertEquals(n, _fs.listDir(_rootInode).length);
     }
 
     @Test(expected=DirNotEmptyHimeraFsException.class)
@@ -576,16 +579,18 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testRemoveFileByPath() throws Exception {
+        int n = _fs.listDir(_rootInode).length;
         FsInode file = _rootInode.create("foo", 0, 0, 0644);
         _fs.remove("/foo");
-        assertEquals(2, _fs.listDir(_rootInode).length);
+        assertEquals(n, _fs.listDir(_rootInode).length);
     }
 
     @Test
     public void testRemoveDirByPath() throws Exception {
+        int n = _fs.listDir(_rootInode).length;
         FsInode foo = _rootInode.mkdir("foo");
         _fs.remove("/foo");
-        assertEquals(2, _fs.listDir(_rootInode).length);
+        assertEquals(n, _fs.listDir(_rootInode).length);
     }
 
     @Test(expected=DirNotEmptyHimeraFsException.class)

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="1" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not creating lost+found as it already exists (this is not an error)">
+            <sqlCheck expectedResult="0">
+                SELECT count(*) FROM t_inodes WHERE ipnfsid='000000000000000000000000000000000001'
+            </sqlCheck>
+        </preConditions>
+
+        <comment>Create lost+found directory</comment>
+
+        <insert tableName="t_inodes">
+            <column name="ipnfsid" value="000000000000000000000000000000000001"/>
+            <column name="itype" valueNumeric="16384"/>
+            <column name="imode" valueNumeric="700"/>
+            <column name="inlink" valueNumeric="2"/>
+            <column name="iuid" valueNumeric="0"/>
+            <column name="igid" valueNumeric="0"/>
+            <column name="isize" valueNumeric="512"/>
+            <column name="iio" valueNumeric="0"/>
+            <column name="ictime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="iatime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="imtime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="icrtime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="igeneration" valueDate="0"/>
+        </insert>
+        <insert tableName="t_dirs">
+            <column name="iparent" value="000000000000000000000000000000000000"/>
+            <column name="iname"   value="lost+found"/>
+            <column name="ipnfsid" value="000000000000000000000000000000000001"/>
+        </insert>
+
+        <sql>
+            UPDATE t_inodes SET inlink=inlink+1,ictime=now(),imtime=now() WHERE ipnfsid='000000000000000000000000000000000000'
+        </sql>
+
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="2" author="behrmann">
+        <comment>Move lost links to lost+found</comment>
+        <sql>
+            UPDATE t_dirs SET iparent='000000000000000000000000000000000001',iname=ipnfsid WHERE NOT EXISTS (SELECT 1 FROM t_inodes WHERE ipnfsid=iparent);
+            UPDATE t_inodes SET inlink=2+(SELECT count(*) FROM t_dirs WHERE iparent='000000000000000000000000000000000001') WHERE ipnfsid='000000000000000000000000000000000001';
+        </sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="3" author="behrmann">
+        <comment>Add foreign key constraint on t_dirs.iparent to prevent lost links</comment>
+        <addForeignKeyConstraint baseColumnNames="iparent" baseTableName="t_dirs"
+                                 constraintName="t_dirs_iparent_fkey"
+                                 deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid"
+                                 referencedTableName="t_inodes"
+        />
+    </changeSet>
+
+    <changeSet id="4" author="behrmann">
+        <comment>Move unlinked files and directories to lost+found</comment>
+        <sql>
+            UPDATE t_inodes i SET inlink=1 WHERE itype != 16384 AND NOT EXISTS (SELECT 1 FROM t_dirs d WHERE d.ipnfsid=i.ipnfsid);
+            INSERT INTO t_dirs (SELECT '000000000000000000000000000000000001',ipnfsid,ipnfsid FROM t_inodes i WHERE ipnfsid!='000000000000000000000000000000000000' AND NOT EXISTS (SELECT 1 FROM t_dirs d WHERE d.ipnfsid=i.ipnfsid));
+            UPDATE t_inodes SET inlink=2+(SELECT count(*) FROM t_dirs WHERE iparent='000000000000000000000000000000000001') WHERE ipnfsid='000000000000000000000000000000000001';
+        </sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="5" author="behrmann">
+        <comment>Correct link count on directories</comment>
+        <sql>
+            UPDATE t_inodes i SET inlink=2+(SELECT count(*) FROM t_dirs d WHERE d.iparent=i.ipnfsid) WHERE itype=16384 AND inlink!=2+(SELECT count(*) FROM t_dirs d WHERE d.iparent=i.ipnfsid);
+        </sql>
+        <rollback/>
+    </changeSet>
+</databaseChangeLog>

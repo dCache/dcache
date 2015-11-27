@@ -261,7 +261,7 @@ public class PnfsManagerTest
     @Test
     public void testGetFileAttributesNonExist() {
 
-        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId("000000000000000000000000000000000001"), EnumSet.noneOf(FileAttribute.class));
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(FsInode.generateNewID()), EnumSet.noneOf(FileAttribute.class));
         _pnfsManager.getFileAttributes(message);
 
         assertTrue("get storageInfo of non existing file should return FILE_NOT_FOUND", message.getReturnCode() == CacheException.FILE_NOT_FOUND );
@@ -403,7 +403,7 @@ public class PnfsManagerTest
     @Ignore
     public void testAddCacheLocationNonExist() {
 
-        PnfsAddCacheLocationMessage pnfsAddCacheLocationMessage = new PnfsAddCacheLocationMessage(new PnfsId("000000000000000000000000000000000001"), "aPool");
+        PnfsAddCacheLocationMessage pnfsAddCacheLocationMessage = new PnfsAddCacheLocationMessage(new PnfsId(FsInode.generateNewID()), "aPool");
 
         _pnfsManager.addCacheLocation(pnfsAddCacheLocationMessage);
         assertTrue("add cache location of non existing file should return FILE_NOT_FOUND",
@@ -473,7 +473,7 @@ public class PnfsManagerTest
     @Test
     public void testAddChecksumNonExist() {
 
-        PnfsSetChecksumMessage pnfsSetChecksumMessage = new PnfsSetChecksumMessage(new PnfsId("000000000000000000000000000000000001"), 1, "12345678");
+        PnfsSetChecksumMessage pnfsSetChecksumMessage = new PnfsSetChecksumMessage(new PnfsId(FsInode.generateNewID()), 1, "12345678");
         pnfsSetChecksumMessage.setReplyRequired(false);
         _pnfsManager.processPnfsMessage(null, pnfsSetChecksumMessage);
 
@@ -485,7 +485,7 @@ public class PnfsManagerTest
     public void testGetCombinedAttributesNonExist() {
 
         PnfsGetFileAttributes message =
-            new PnfsGetFileAttributes(new PnfsId("000000000000000000000000000000000001"),
+            new PnfsGetFileAttributes(new PnfsId(FsInode.generateNewID()),
                                       EnumSet.noneOf(FileAttribute.class));
         _pnfsManager.getFileAttributes(message);
         assertEquals("Get attributes for non existing file have to return FILE_NOT_FOUND",
