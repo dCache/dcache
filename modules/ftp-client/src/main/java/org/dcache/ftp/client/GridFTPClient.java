@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.Vector;
 
@@ -986,7 +987,7 @@ public class GridFTPClient extends FTPClient
                 if (data[i] == '\r' || data[i] == '\n') {
                     if (pos > 0) {
                         try {
-                            writer.write(new MlsxEntry(new String(buf, 0, pos)));
+                            writer.write(new MlsxEntry(new String(buf, 0, pos, StandardCharsets.UTF_8)));
                         } catch (FTPException ex) {
                             throw new IOException();
                         }

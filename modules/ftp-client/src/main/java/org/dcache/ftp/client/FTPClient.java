@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -525,7 +526,7 @@ public class FTPClient
         // convert it to a vector.
 
         BufferedReader reader =
-                new BufferedReader(new StringReader(received.toString()));
+                new BufferedReader(new StringReader(new String(received.toByteArray(), StandardCharsets.UTF_8)));
 
         Vector fileList = new Vector();
         FileInfo fileInfo = null;
@@ -627,7 +628,7 @@ public class FTPClient
         // convert it to a vector.
 
         BufferedReader reader =
-                new BufferedReader(new StringReader(received.toString()));
+                new BufferedReader(new StringReader(new String(received.toByteArray(), StandardCharsets.UTF_8)));
 
         Vector fileList = new Vector();
         FileInfo fileInfo = null;
@@ -744,7 +745,7 @@ public class FTPClient
         // convert it to a vector.
 
         BufferedReader reader =
-                new BufferedReader(new StringReader(received.toString()));
+                new BufferedReader(new StringReader(new String(received.toByteArray(), StandardCharsets.UTF_8)));
 
         Vector fileList = new Vector();
         MlsxEntry entry = null;
