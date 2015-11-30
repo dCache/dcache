@@ -125,7 +125,14 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
         ChannelPromise promise = ctx.newPromise();
         ctx.executor().execute(() -> {
             try (CDC ignored = cdc.restore()) {
-                super.respond(ctx, response).addListener(new ChannelPromiseNotifier(promise));
+                ctx.writeAndFlush(response)
+                        .addListener(future -> {
+                                         if (!future.isSuccess()) {
+                                             exceptionCaught(ctx, future.cause());
+                                         }
+                                     }
+                        )
+                        .addListener(new ChannelPromiseNotifier(promise));
             }
         });
         return promise;
