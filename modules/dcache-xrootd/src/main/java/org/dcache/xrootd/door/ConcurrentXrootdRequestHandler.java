@@ -19,7 +19,6 @@ package org.dcache.xrootd.door;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -65,7 +64,14 @@ public class ConcurrentXrootdRequestHandler extends AbstractXrootdRequestHandler
         ChannelPromise promise = ctx.newPromise();
         ctx.executor().execute(() -> {
             try (CDC ignored = cdc.restore()) {
-                super.respond(ctx, response).addListener(new ChannelPromiseNotifier(promise));
+                ctx.writeAndFlush(response)
+                        .addListener(future -> {
+                                if (!future.isSuccess()) {
+                                    exceptionCaught(ctx, future.cause());
+                                }
+                            }
+                        )
+                        .addListener(new ChannelPromiseNotifier(promise));
             }
         });
         return promise;
