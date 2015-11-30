@@ -289,8 +289,8 @@ public class PoolManagerV5
                     sendPoolStatusRelay(name, PoolStatusChangedMessage.DOWN,
                                         null, 666, "DEAD");
                     _logPoolMonitor.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DOWN, name),
-                                    "Pool {} declared as DOWN, (no ping in "
-                                    + deathDetectedTimer/1000 +" seconds).");
+                                    "Pool {} declared as DOWN: no ping in "
+                                    + deathDetectedTimer/1000 +" seconds.", name);
                 }
             }
         }
