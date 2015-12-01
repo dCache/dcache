@@ -676,7 +676,7 @@
             <dependency>
                 <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-authz-plugin-alice</artifactId>
-                <version>1.0.3</version>
+                <version>1.0.4</version>
                 <exclusions>
                   <exclusion>
                     <groupId>org.bouncycastle</groupId>
