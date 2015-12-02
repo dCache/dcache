@@ -261,32 +261,4 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
             throw new DuplicateKeyException("Entry already exists");
         }
     }
-
-    @Override
-    void addInodeLocation(FsInode inode, int type, String location)
-    {
-        int n = _jdbc.update("INSERT INTO t_locationinfo (SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS " +
-                             "(SELECT 1 FROM T_LOCATIONINFO WHERE ipnfsid=? AND itype=? AND ilocation=?))",
-                             ps -> {
-                                 Timestamp now = new Timestamp(System.currentTimeMillis());
-                                 ps.setString(1, inode.toString());
-                                 ps.setInt(2, type);
-                                 ps.setString(3, location);
-                                 ps.setInt(4, 10); // default priority
-                                 ps.setTimestamp(5, now);
-                                 ps.setTimestamp(6, now);
-                                 ps.setInt(7, 1); // online
-                                 ps.setString(8, inode.toString());
-                                 ps.setInt(9, type);
-                                 ps.setString(10, location);
-                             });
-        if (n == 0) {
-            /*
-             * no updates as such entry already exists.
-             * To be compatible with others, throw corresponding
-             * DataAccessException
-             */
-            throw new DuplicateKeyException("Entry already exists");
-        }
-    }
 }
