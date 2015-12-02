@@ -24,6 +24,8 @@ import javax.sql.DataSource;
 
 import java.sql.Timestamp;
 
+import org.dcache.chimera.store.InodeStorageInformation;
+
 /**
  * PostgreSQL 9.5 and later specific
  *
@@ -85,5 +87,31 @@ class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
                          ps.setTimestamp(6, now);
                          ps.setInt(7, 1); // online
                      });
+    }
+
+    @Override
+    void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo)
+    {
+        _jdbc.update("INSERT INTO t_storageinfo VALUES (?,?,?,?) " +
+                     "ON CONFLICT ON CONSTRAINT t_storageinfo_pkey DO NOTHING",
+                     ps -> {
+                         ps.setString(1, inode.toString());
+                         ps.setString(2, storageInfo.hsmName());
+                         ps.setString(3, storageInfo.storageGroup());
+                         ps.setString(4, storageInfo.storageSubGroup());
+                     });
+    }
+
+    @Override
+    void setInodeChecksum(FsInode inode, int type, String value)
+    {
+        _jdbc.update("INSERT INTO t_inodes_checksum VALUES (?,?,?) " +
+                     "ON CONFLICT ON CONSTRAINT t_inodes_checksum_pkey DO NOTHING",
+                     ps -> {
+                         ps.setString(1, inode.toString());
+                         ps.setInt(2, type);
+                         ps.setString(3, value);
+                     });
+
     }
 }

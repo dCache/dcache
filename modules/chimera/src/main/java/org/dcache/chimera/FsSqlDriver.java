@@ -806,7 +806,8 @@ class FsSqlDriver {
      */
     void addInodeLocation(FsInode inode, int type, String location) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
-        _jdbc.update("INSERT INTO t_locationinfo VALUES(?,?,?,?,?,?,?)",
+        _jdbc.update("INSERT INTO t_locationinfo (SELECT * FROM (VALUES (?,?,?,?,?,?,?)) v WHERE NOT EXISTS " +
+                     "(SELECT 1 FROM t_locationinfo WHERE ipnfsid=? AND itype=? AND ilocation=?))",
                      ps -> {
                          ps.setString(1, inode.toString());
                          ps.setInt(2, type);
@@ -815,6 +816,9 @@ class FsSqlDriver {
                          ps.setTimestamp(5, now);
                          ps.setTimestamp(6, now);
                          ps.setInt(7, 1); // online
+                         ps.setString(8, inode.toString());
+                         ps.setInt(9, type);
+                         ps.setString(10, location);
                      });
     }
 
@@ -1229,12 +1233,14 @@ class FsSqlDriver {
      * @param storageInfo
      */
     void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo) {
-        _jdbc.update("INSERT INTO t_storageinfo VALUES(?,?,?,?)",
+        _jdbc.update("INSERT INTO t_storageinfo (SELECT * FROM (VALUES (?,?,?,?)) v WHERE NOT EXISTS " +
+                     "(SELECT 1 FROM t_storageinfo WHERE ipnfsid=?))",
                      ps -> {
                          ps.setString(1, inode.toString());
                          ps.setString(2, storageInfo.hsmName());
                          ps.setString(3, storageInfo.storageGroup());
                          ps.setString(4, storageInfo.storageSubGroup());
+                         ps.setString(5, inode.toString());
                      });
     }
 
@@ -1275,11 +1281,13 @@ class FsSqlDriver {
      * @param value
      */
     void setInodeChecksum(FsInode inode, int type, String value) {
-        _jdbc.update("INSERT INTO t_inodes_checksum VALUES(?,?,?)",
+        _jdbc.update("INSERT INTO t_inodes_checksum (SELECT * FROM (VALUES (?,?,?)) v WHERE NOT EXISTS " +
+                     "(SELECT 1 FROM t_inodes_checksum WHERE ipnfsid=?))",
                      ps -> {
                          ps.setString(1, inode.toString());
                          ps.setInt(2, type);
                          ps.setString(3, value);
+                         ps.setString(4, inode.toString());
                      });
     }
 

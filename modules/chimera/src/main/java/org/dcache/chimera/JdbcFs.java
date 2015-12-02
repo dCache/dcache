@@ -1033,7 +1033,6 @@ public class JdbcFs implements FileSystemProvider {
         inTransaction(status -> {
             try {
                 _sqlDriver.addInodeLocation(inode, type, location);
-            } catch (DuplicateKeyException ignored) {
             } catch (ForeignKeyViolationException e) {
                 throw new FileNotFoundHimeraFsException(e);
             }
@@ -1156,7 +1155,6 @@ public class JdbcFs implements FileSystemProvider {
         inTransaction(status -> {
             try {
                 _sqlDriver.setStorageInfo(inode, storageInfo);
-            } catch (DuplicateKeyException ignored) {
             } catch (ForeignKeyViolationException e) {
                 throw new FileNotFoundHimeraFsException(e);
             }
@@ -1177,7 +1175,6 @@ public class JdbcFs implements FileSystemProvider {
         inTransaction(status -> {
             try {
                 _sqlDriver.setInodeChecksum(inode, type, checksum);
-            } catch (DuplicateKeyException ignored) {
             } catch (ForeignKeyViolationException e) {
                 throw new FileNotFoundHimeraFsException(e);
             }
