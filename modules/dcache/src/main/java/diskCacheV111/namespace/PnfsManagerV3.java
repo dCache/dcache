@@ -66,6 +66,7 @@ import diskCacheV111.vehicles.StorageInfos;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellExceptionMessage;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
@@ -75,6 +76,7 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
+
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
@@ -320,9 +322,12 @@ public class PnfsManagerV3
             for (CellMessage envelope : drained) {
                 Message msg = (Message) envelope.getMessageObject();
                 if (msg.getReplyRequired()) {
-                    envelope.setMessageObject(new NoRouteToCellException(envelope, error));
-                    envelope.revertDirection();
-                    sendMessage(envelope);
+                    UOID uoid = envelope.getUOID();
+                    CellExceptionMessage ret =
+                            new CellExceptionMessage(envelope.getSourcePath().revert(),
+                                                     new NoRouteToCellException(envelope, error));
+                    ret.setLastUOID(uoid);
+                    sendMessage(ret);
                 }
             }
             queue.offer(SHUTDOWN_SENTINEL);

@@ -19,14 +19,17 @@ import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellDomainInfo;
+import dmg.cells.nucleus.CellExceptionMessage;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.CellTunnel;
 import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
+import dmg.cells.nucleus.SerializationException;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -128,6 +131,17 @@ public class LocationMgrTunnel
         return _down;
     }
 
+    private void returnToSender(CellMessage msg, NoRouteToCellException e)
+        throws SerializationException
+    {
+        if (!(msg instanceof CellExceptionMessage)) {
+            CellPath retAddr = msg.getSourcePath().revert();
+            CellExceptionMessage ret = new CellExceptionMessage(retAddr, e);
+            ret.setLastUOID(msg.getUOID());
+            _nucleus.sendMessage(ret, true, true);
+        }
+    }
+
     private void receive()
         throws IOException, ClassNotFoundException
     {
@@ -175,10 +189,7 @@ public class LocationMgrTunnel
                 _output.writeObject(msg);
             } catch (IOException e) {
                 _log.warn("Error while sending message: " + e.getMessage());
-                msg.setMessageObject(
-                        new NoRouteToCellException(msg, "Communication failure. Message could not be delivered."));
-                msg.revertDirection();
-                _nucleus.sendMessage(msg, true, true);
+                returnToSender(msg, new NoRouteToCellException(msg, "Communication failure. Message could not be delivered."));
                 kill();
             }
         } else {
