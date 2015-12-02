@@ -18,15 +18,12 @@ package org.dcache.chimera;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.core.CallableStatementCallback;
 
 import javax.sql.DataSource;
 
 import java.io.File;
 import java.sql.CallableStatement;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -260,5 +257,25 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
              */
             throw new DuplicateKeyException("Entry already exists");
         }
+    }
+
+    @Override
+    void addInodeLocation(FsInode inode, int type, String location)
+    {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        _jdbc.update("INSERT INTO t_locationinfo (SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS " +
+                     "(SELECT 1 FROM t_locationinfo WHERE ipnfsid=? AND itype=? AND ilocation=?))",
+                     ps -> {
+                         ps.setString(1, inode.toString());
+                         ps.setInt(2, type);
+                         ps.setString(3, location);
+                         ps.setInt(4, 10); // default priority
+                         ps.setTimestamp(5, now);
+                         ps.setTimestamp(6, now);
+                         ps.setInt(7, 1); // online
+                         ps.setString(8, inode.toString());
+                         ps.setInt(9, type);
+                         ps.setString(10, location);
+                     });
     }
 }
