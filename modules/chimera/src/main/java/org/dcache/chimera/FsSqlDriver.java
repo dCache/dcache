@@ -40,6 +40,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -47,8 +48,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -179,7 +182,59 @@ class FsSqlDriver {
      * @return
      */
     DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(FsInode dir) {
-        return new DirectoryStreamImpl(dir, _jdbc);
+        return new DirectoryStreamB<HimeraDirectoryEntry>()
+        {
+            final DirectoryStreamImpl stream = new DirectoryStreamImpl(dir, _jdbc);
+
+            @Override
+            public Iterator<HimeraDirectoryEntry> iterator()
+            {
+                return new Iterator<HimeraDirectoryEntry>()
+                {
+                    private HimeraDirectoryEntry current = innerNext();
+
+                    @Override
+                    public boolean hasNext()
+                    {
+                        return current != null;
+                    }
+
+                    @Override
+                    public HimeraDirectoryEntry next()
+                    {
+                        if (current == null) {
+                            throw new NoSuchElementException("No more entries");
+                        }
+                        HimeraDirectoryEntry entry = current;
+                        current = innerNext();
+                        return entry;
+                    }
+
+                    protected HimeraDirectoryEntry innerNext()
+                    {
+                        try {
+                            ResultSet rs = stream.next();
+                            if (rs == null) {
+                                return null;
+                            }
+                            Stat stat = toStat(rs);
+                            FsInode inode = new FsInode(dir.getFs(), rs.getString("ipnfsid"), FsInodeType.INODE, 0, stat);
+                            inode.setParent(dir);
+                            return new HimeraDirectoryEntry(rs.getString("iname"), inode, stat);
+                        } catch (SQLException e) {
+                            _log.error("failed to fetch next entry: {}", e.getMessage());
+                            return null;
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public void close() throws IOException
+            {
+                stream.close();
+            }
+        };
     }
 
     /**
@@ -271,53 +326,67 @@ class FsSqlDriver {
     }
 
     public Stat stat(FsInode inode, int level) {
-        String sql;
+        Stat stat;
         if (level == 0) {
-            sql = "SELECT isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime,icrtime,igeneration,iaccess_latency,iretention_policy FROM t_inodes WHERE ipnfsid=?";
+            stat = _jdbc.query(
+                    "SELECT * FROM t_inodes WHERE ipnfsid = ?",
+                    ps -> ps.setString(1, inode.toString()),
+                    rs -> rs.next() ? toStat(rs) : null);
         } else {
-            sql = "SELECT isize,inlink,imode,iuid,igid,iatime,ictime,imtime FROM t_level_" + level + " WHERE ipnfsid=?";
+            stat = _jdbc.query(
+                    "SELECT * FROM t_level_" + level + " WHERE ipnfsid = ?",
+                    ps -> ps.setString(1, inode.toString()),
+                    rs -> rs.next() ? toStatLevel(rs) : null);
         }
+        if (stat != null) {
+            stat.setIno((int) inode.id());
+        }
+        return stat;
+    }
 
-        return _jdbc.query(sql,
-                           ps -> ps.setString(1, inode.toString()),
-                           rs -> {
-                               if (!rs.next()) {
-                                   return null;
-                               }
-                               Stat stat = new Stat();
-                               int inodeType;
+    private Stat toStat(ResultSet rs) throws SQLException
+    {
+        Stat stat = new Stat();
+        int inodeType = rs.getInt("itype");
+        stat.setCrTime(rs.getTimestamp("icrtime").getTime());
+        stat.setGeneration(rs.getLong("igeneration"));
+        int rp = rs.getInt("iretention_policy");
+        if (!rs.wasNull()) {
+            stat.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp));
+        }
+        int al = rs.getInt("iaccess_latency");
+        if (!rs.wasNull()) {
+            stat.setAccessLatency(AccessLatency.getAccessLatency(al));
+        }
+        stat.setSize(rs.getLong("isize"));
+        stat.setATime(rs.getTimestamp("iatime").getTime());
+        stat.setCTime(rs.getTimestamp("ictime").getTime());
+        stat.setMTime(rs.getTimestamp("imtime").getTime());
+        stat.setUid(rs.getInt("iuid"));
+        stat.setGid(rs.getInt("igid"));
+        stat.setMode(rs.getInt("imode") | inodeType);
+        stat.setNlink(rs.getInt("inlink"));
+        stat.setDev(17);
+        stat.setRdev(13);
+        return stat;
+    }
 
-                               if (level == 0) {
-                                   inodeType = rs.getInt("itype");
-                                   stat.setCrTime(rs.getTimestamp("icrtime").getTime());
-                                   stat.setGeneration(rs.getLong("igeneration"));
-                                   int rp = rs.getInt("iretention_policy");
-                                   if (!rs.wasNull()) {
-                                       stat.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp));
-                                   }
-                                   int al = rs.getInt("iaccess_latency");
-                                   if (!rs.wasNull()) {
-                                       stat.setAccessLatency(AccessLatency.getAccessLatency(al));
-                                   }
-                               } else {
-                                   inodeType = UnixPermission.S_IFREG;
-                                   stat.setCrTime(rs.getTimestamp("imtime").getTime());
-                                   stat.setGeneration(0);
-                               }
-
-                               stat.setSize(rs.getLong("isize"));
-                               stat.setATime(rs.getTimestamp("iatime").getTime());
-                               stat.setCTime(rs.getTimestamp("ictime").getTime());
-                               stat.setMTime(rs.getTimestamp("imtime").getTime());
-                               stat.setUid(rs.getInt("iuid"));
-                               stat.setGid(rs.getInt("igid"));
-                               stat.setMode(rs.getInt("imode") | inodeType);
-                               stat.setNlink(rs.getInt("inlink"));
-                               stat.setIno((int) inode.id());
-                               stat.setDev(17);
-                               stat.setRdev(13);
-                               return stat;
-                           });
+    private Stat toStatLevel(ResultSet rs) throws SQLException
+    {
+        Stat stat = new Stat();
+        stat.setCrTime(rs.getTimestamp("imtime").getTime());
+        stat.setGeneration(0);
+        stat.setSize(rs.getLong("isize"));
+        stat.setATime(rs.getTimestamp("iatime").getTime());
+        stat.setCTime(rs.getTimestamp("ictime").getTime());
+        stat.setMTime(rs.getTimestamp("imtime").getTime());
+        stat.setUid(rs.getInt("iuid"));
+        stat.setGid(rs.getInt("igid"));
+        stat.setMode(rs.getInt("imode") | UnixPermission.S_IFREG);
+        stat.setNlink(rs.getInt("inlink"));
+        stat.setDev(17);
+        stat.setRdev(13);
+        return stat;
     }
 
     /**

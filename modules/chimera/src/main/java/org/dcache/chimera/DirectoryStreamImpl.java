@@ -16,8 +16,6 @@
  */
 package org.dcache.chimera;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -28,39 +26,23 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 
-import org.dcache.chimera.posix.Stat;
-
-public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntry>,
-        Iterator<HimeraDirectoryEntry> {
-
-    private static final Logger _log = LoggerFactory.getLogger(DirectoryStreamImpl.class);
-
+public class DirectoryStreamImpl
+{
     private static final String QUERY =
-            "SELECT i.ipnfsid, d.iname, i.isize, i.inlink, i.imode, i.itype, " +
-            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.icrtime, i.igeneration " +
-            "FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.ipnfsid WHERE iparent=? " +
+            "SELECT i.*, d.iname FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.ipnfsid WHERE iparent=? " +
             "UNION ALL " +
-            "SELECT i.ipnfsid, '.', i.isize, i.inlink, i.imode, i.itype, " +
-            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.icrtime, i.igeneration " +
-            "FROM t_inodes i WHERE i.ipnfsid=? " +
+            "SELECT i.*, '.' FROM t_inodes i WHERE i.ipnfsid=? " +
             "UNION ALL " +
-            "SELECT i.ipnfsid, '..', i.isize, i.inlink, i.imode, i.itype, " +
-            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.icrtime, i.igeneration " +
-            "FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.iparent WHERE d.ipnfsid=?";
+            "SELECT i.*, '..' FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.iparent WHERE d.ipnfsid=?";
 
     private final ResultSet _resultSet;
-    private final FsInode _dir;
     private final JdbcTemplate _jdbc;
     private final Connection _connection;
     private final PreparedStatement _statement;
-    private boolean _hasPendingElement;
 
-    DirectoryStreamImpl(FsInode dir, JdbcTemplate jdbc) {
-        _dir = dir;
-        _hasPendingElement = false;
+    DirectoryStreamImpl(FsInode dir, JdbcTemplate jdbc)
+    {
         _jdbc = jdbc;
 
         Connection connection = null;
@@ -84,7 +66,6 @@ public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntr
         _statement = ps;
     }
 
-    @Override
     public void close() throws IOException
     {
         try {
@@ -96,67 +77,8 @@ public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntr
         }
     }
 
-    @Override
-    public Iterator<HimeraDirectoryEntry> iterator() {
-        return this;
-    }
-
-    @Override
-    public boolean hasNext() {
-
-        /*
-         * To be complient with the semantics: calling hasNext() several times
-         * shold not move cursor.
-         *
-         * Cache the result of the last call as long as next() was't called.
-         */
-        if (_hasPendingElement) {
-            return true;
-        }
-        try {
-            boolean hasNext = _resultSet.next();
-            if (hasNext) {
-                _hasPendingElement = true;
-            }
-            return hasNext;
-        } catch (SQLException ex) {
-            _log.error("failed check for next entry: " + ex.getMessage());
-            return false;
-        }
-    }
-
-    @Override
-    public HimeraDirectoryEntry next() {
-
-        try {
-            Stat stat = new Stat();
-            stat.setSize(_resultSet.getLong("isize"));
-            stat.setATime(_resultSet.getTimestamp("iatime").getTime());
-            stat.setCTime(_resultSet.getTimestamp("ictime").getTime());
-            stat.setMTime(_resultSet.getTimestamp("imtime").getTime());
-            stat.setCrTime(_resultSet.getTimestamp("icrtime").getTime());
-            stat.setUid(_resultSet.getInt("iuid"));
-            stat.setGid(_resultSet.getInt("igid"));
-            stat.setMode(_resultSet.getInt("imode") | _resultSet.getInt("itype"));
-            stat.setNlink(_resultSet.getInt("inlink"));
-            stat.setGeneration(_resultSet.getInt("igeneration"));
-            FsInode inode = new FsInode(_dir.getFs(), _resultSet.getString("ipnfsid"));
-            inode.setParent(_dir);
-            stat.setIno((int) inode.id());
-            stat.setDev(17);
-            stat.setRdev(13);
-
-            inode.setStatCache(stat);
-            _hasPendingElement = false;
-            return new HimeraDirectoryEntry(_resultSet.getString("iname"), inode, stat);
-        } catch (SQLException e) {
-            _log.error("failed to fetch next entry: " + e.getMessage());
-            throw new NoSuchElementException("Got SQL exception: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public ResultSet next() throws SQLException
+    {
+        return _resultSet.next() ? _resultSet : null;
     }
 }
