@@ -116,12 +116,6 @@ public class SecurityFilter implements Filter
 
             checkRootPath(request, login);
 
-            /* Add the origin of the request to the subject. This
-             * ought to be processed in the LoginStrategy, but our
-             * LoginStrategies currently do not process the Origin.
-             */
-            addOriginToSubject(servletRequest, subject);
-
             /* Although we don't rely on the authorization tag
              * ourselves, Milton uses it to detect that the request
              * was preauthenticated.

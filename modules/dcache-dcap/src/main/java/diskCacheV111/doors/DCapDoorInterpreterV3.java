@@ -366,25 +366,19 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private LoginReply login(String user)
         throws CacheException
     {
-        /* The client can specify a custom user name to be used.
-         */
-        Subject subject;
+        Subject subject = new Subject();
+        subject.getPublicCredentials().addAll(_authenticatedSubject.getPublicCredentials());
+        subject.getPrivateCredentials().addAll(_authenticatedSubject.getPrivateCredentials());
+        subject.getPrincipals().addAll(_authenticatedSubject.getPrincipals());
+        subject.getPrincipals().add(new Origin(_clientAddress));
+
+        /* The client can specify a custom user name to be used. */
         if (user != null) {
-            subject = new Subject();
-            subject.getPublicCredentials().addAll(_authenticatedSubject.getPublicCredentials());
-            subject.getPrivateCredentials().addAll(_authenticatedSubject.getPrivateCredentials());
-            subject.getPrincipals().addAll(_authenticatedSubject.getPrincipals());
             subject.getPrincipals().add(new LoginNamePrincipal(user));
-        } else {
-            subject = _authenticatedSubject;
         }
 
         LoginReply login = _loginStrategy.login(subject);
-
-        login.getSubject().getPrincipals().add(new Origin(_clientAddress));
-
         _log.info("Login completed for {}", login);
-
         return login;
     }
 

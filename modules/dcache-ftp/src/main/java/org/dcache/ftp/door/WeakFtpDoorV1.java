@@ -54,6 +54,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
     {
         Subject subject = new Subject();
         subject.getPrivateCredentials().add(new PasswordCredential(_user, arg));
+        subject.getPrincipals().add(_origin);
         try {
             login(subject);
             reply("230 User " + _user + " logged in", _subject);

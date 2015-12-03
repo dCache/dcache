@@ -1,5 +1,6 @@
 package org.dcache.auth;
 
+import com.google.common.net.InetAddresses;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import javax.security.auth.Subject;
@@ -479,6 +480,9 @@ public class Subjects
                     break;
                 case "name":
                     principal = new LoginNamePrincipal(value);
+                    break;
+                case "origin":
+                    principal = new Origin(InetAddresses.forString(value));
                     break;
                 default:
                     try {

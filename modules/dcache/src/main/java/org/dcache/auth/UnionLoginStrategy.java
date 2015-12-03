@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -63,6 +64,10 @@ public class UnionLoginStrategy implements LoginStrategy
     @Override
     public LoginReply login(Subject subject) throws CacheException
     {
+        Optional<Principal> origin = subject.getPrincipals().stream()
+                .filter(Origin.class::isInstance)
+                .findFirst();
+
         for (LoginStrategy strategy: _loginStrategies) {
             _log.debug( "Attempting login strategy: {}", strategy.getClass().getName());
 
@@ -95,11 +100,17 @@ public class UnionLoginStrategy implements LoginStrategy
         case READONLY:
             _log.debug( "Allowing read-only access as an anonymous user");
             reply.getLoginAttributes().add(new ReadOnly(true));
+            if (origin.isPresent()) {
+                reply.getSubject().getPrincipals().add(origin.get());
+            }
             break;
 
         case FULL:
             _log.debug( "Allowing full access as an anonymous user");
             reply.getLoginAttributes().add(new ReadOnly(false));
+            if (origin.isPresent()) {
+                reply.getSubject().getPrincipals().add(origin.get());
+            }
             break;
 
         default:

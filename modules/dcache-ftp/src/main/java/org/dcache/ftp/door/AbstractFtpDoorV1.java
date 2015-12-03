@@ -1149,25 +1149,11 @@ public abstract class AbstractFtpDoorV1
     /**
      * Subject is logged in using the current login strategy.
      */
-    protected void login(Subject subject)
-        throws CacheException
+    protected void login(Subject subject) throws CacheException
     {
         LoginReply login = _loginStrategy.login(subject);
 
         Subject mappedSubject = login.getSubject();
-
-        /* The origin ought to be part of the subject sent to the
-         * LoginStrategy, however due to the policy that
-         * LoginStrategies only provide what they recognize, we cannot
-         * rely on the Origin surviving. Hence we add it to the
-         * result. We copy the subject because it could be read-only
-         * resulting in failure to add origin.
-         */
-        mappedSubject = new Subject(false,
-                                    mappedSubject.getPrincipals(),
-                                    mappedSubject.getPublicCredentials(),
-                                    mappedSubject.getPrivateCredentials());
-        mappedSubject.getPrincipals().add(_origin);
 
         boolean isUserReadOnly = false;
         FsPath userRootPath = new FsPath();

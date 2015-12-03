@@ -2,6 +2,7 @@ package org.dcache.services.ssh2;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
+
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.NamedFactory;
@@ -15,10 +16,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
@@ -28,11 +34,11 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import java.util.function.Function;
+
 import org.dcache.auth.*;
 
-import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
+
 import static org.dcache.util.Files.checkFile;
 
 /**
@@ -149,11 +155,14 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         _server.setPublickeyAuthenticator(new AdminPublickeyAuthenticator());
     }
 
-    public boolean kpwdLogin(String userName, String passwd) {
+    public boolean kpwdLogin(String userName, String passwd, InetAddress client) {
         PasswordCredential passCredential = new PasswordCredential(userName,
                 passwd);
         Subject subject = new Subject();
         subject.getPrivateCredentials().add(passCredential);
+        if (client != null) {
+            subject.getPrincipals().add(new Origin(client));
+        }
 
         try {
             _log.debug("LoginStrategy: {}, {}", _loginStrategy.getClass(),
@@ -230,13 +239,23 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         }
     }
 
+    private InetAddress extractClientAddress(ServerSession session)
+    {
+        SocketAddress remote = session.getIoSession().getRemoteAddress();
+        if (remote instanceof InetSocketAddress) {
+            return ((InetSocketAddress) remote).getAddress();
+        } else {
+            return null;
+        }
+    }
+
     private class AdminPasswordAuthenticator implements PasswordAuthenticator {
 
         @Override
         public boolean authenticate(String userName, String password,
                 ServerSession session) {
             _log.debug("Authentication username set to: {}", userName);
-            return kpwdLogin(userName, password);
+            return kpwdLogin(userName, password, extractClientAddress(session));
         }
     }
 

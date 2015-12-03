@@ -56,8 +56,8 @@ public class LoginAuthenticationHandler
         throws XrootdException
     {
         try {
+            subject = addOrigin(subject, ((InetSocketAddress) context.channel().remoteAddress()).getAddress());
             LoginReply reply = _loginStrategy.login(translateSubject(subject));
-            reply = addOrigin(reply, ((InetSocketAddress) context.channel().remoteAddress()).getAddress());
             context.fireUserEventTriggered(new LoginEvent(reply));
             return reply.getSubject();
         } catch (PermissionDeniedCacheException e) {
@@ -71,14 +71,19 @@ public class LoginAuthenticationHandler
         }
     }
 
-    private LoginReply addOrigin(LoginReply login, InetAddress address)
+    private Subject addOrigin(Subject subject, InetAddress address)
     {
-        Subject subject = new Subject(false,
-                                      login.getSubject().getPrincipals(),
-                                      login.getSubject().getPublicCredentials(),
-                                      login.getSubject().getPrivateCredentials());
-        subject.getPrincipals().add(new Origin(address));
-        return new LoginReply(subject, login.getLoginAttributes());
+        Subject newSubject;
+        if (subject == null) {
+            newSubject = new Subject();
+        } else {
+            newSubject = new Subject(false,
+                                      subject.getPrincipals(),
+                                      subject.getPublicCredentials(),
+                                      subject.getPrivateCredentials());
+        }
+        newSubject.getPrincipals().add(new Origin(address));
+        return newSubject;
     }
 
     private Subject translateSubject(Subject subject) throws CertificateException

@@ -26,7 +26,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import javax.security.auth.Subject;
 import javax.sql.DataSource;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateEncodingException;
@@ -166,19 +165,12 @@ public abstract class DcacheUserManager implements SRMUserManager
         try {
             Subject subject = new Subject();
             subject.getPublicCredentials().add(path);
-            LoginReply login = loginStrategy.login(subject);
             try {
-                InetAddress remoteOrigin = InetAddress.getByName(remoteIP);
-                subject = new Subject();
-                subject.getPublicCredentials().add(login.getSubject().getPublicCredentials());
-                subject.getPrivateCredentials().add(login.getSubject().getPrivateCredentials());
-                subject.getPrincipals().addAll(login.getSubject().getPrincipals());
-                subject.getPrincipals().add(new Origin(remoteOrigin));
-                login = new LoginReply(subject, login.getLoginAttributes());
-            } catch (UnknownHostException uhex) {
-                LOGGER.info("Could not add the remote-IP {} as an origin principal.", remoteIP);
+                subject.getPrincipals().add(new Origin(remoteIP));
+            } catch (UnknownHostException e) {
+                LOGGER.info("Could not add origin {}: {}", remoteIP, e.getMessage());
             }
-            return login;
+            return loginStrategy.login(subject);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException(e.getMessage(), e);
         } catch (CacheException e) {
