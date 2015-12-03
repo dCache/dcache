@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -587,6 +588,10 @@ public class NFSv41Door extends AbstractCellComponent implements
             if(!transfer.waitForMover(500)) {
                 throw new DelayException("Mover not stopped");
             }
+        } catch (FileNotFoundCacheException e){
+            // REVISIT: remove when pool will stop sending this exception
+            _log.info("Failed removed while being open mover: {}@{} : {}",
+                    transfer.getMoverId(), transfer.getPool(), e.getMessage());
         } catch (CacheException | InterruptedException e) {
             _log.info("Failed to kill mover: {}@{} : {}",
                     transfer.getMoverId(), transfer.getPool(), e.getMessage());
