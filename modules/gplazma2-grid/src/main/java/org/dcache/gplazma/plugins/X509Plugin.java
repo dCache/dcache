@@ -1,5 +1,8 @@
 package org.dcache.gplazma.plugins;
 
+import com.google.common.net.InetAddresses;
+import eu.emi.security.authn.x509.proxy.ProxyChainInfo;
+import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEREncodable;
@@ -11,19 +14,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.Principal;
 import java.security.cert.CertPath;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.auth.EntityDefinitionPrincipal;
 import org.dcache.auth.LoAPrincipal;
+import org.dcache.auth.Origin;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertPaths;
 
@@ -67,28 +74,48 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     {
         String message = "no X.509 certificate chain";
 
+        Optional<Origin> origin = identifiedPrincipals.stream()
+                .filter(Origin.class::isInstance)
+                .map(Origin.class::cast)
+                .findFirst();
+
         boolean found = false;
         for (Object credential : publicCredentials) {
-            if (isX509CertPath(credential)) {
-                X509Certificate eec = CertPaths.getEndEntityCertificate((CertPath) credential);
+            try {
+                if (isX509CertPath(credential)) {
+                    X509Certificate[] chain = CertPaths.getX509Certificates((CertPath) credential);
 
-                if (eec == null) {
-                    message = "X.509 chain contains no End-Entity Certificate";
-                } else {
+                    if (origin.isPresent()) {
+                        ProxyChainInfo info = new ProxyChainInfo(chain);
+                        InetAddress address = origin.get().getAddress();
+                        if (!info.isHostAllowedAsSource(address.getAddress())) {
+                            message = "forbidden client address: " + InetAddresses.toAddrString(address);
+                            continue;
+                        }
+                    }
+
+                    X509Certificate eec = ProxyUtils.getEndUserCertificate(chain);
+                    if (eec == null) {
+                        message = "X.509 chain contains no End-Entity Certificate";
+                        continue;
+                    }
+
                     identifiedPrincipals.add(new GlobusPrincipal(eec.getSubjectX500Principal()));
 
                     if (isPolicyPrincipalsEnabled) {
-                        listPolicies(eec).stream().
-                                map(PolicyInformation::getInstance).
-                                map(PolicyInformation::getPolicyIdentifier).
-                                map(DERObjectIdentifier::getId).
-                                map(X509Plugin::asPrincipal).
-                                filter(Objects::nonNull).
-                                forEach(identifiedPrincipals::add);
+                        listPolicies(eec).stream()
+                                .map(PolicyInformation::getInstance)
+                                .map(PolicyInformation::getPolicyIdentifier)
+                                .map(DERObjectIdentifier::getId)
+                                .map(X509Plugin::asPrincipal)
+                                .filter(Objects::nonNull)
+                                .forEach(identifiedPrincipals::add);
                     }
 
                     found = true;
                 }
+            } catch (IOException | CertificateException e) {
+                message = "broken certificate: " + e.getMessage();
             }
         }
         checkAuthentication(found, message);
