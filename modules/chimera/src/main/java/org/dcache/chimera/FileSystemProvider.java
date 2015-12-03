@@ -149,7 +149,7 @@ public interface FileSystemProvider extends Closeable {
     List<FsInode> path2inodes(String path, FsInode startFrom)
         throws ChimeraFsException;
 
-    FsInode inodeOf(FsInode parent, String name)
+    FsInode inodeOf(FsInode parent, String name, StatCacheOption stat)
             throws ChimeraFsException;
 
     String inode2path(FsInode inode) throws ChimeraFsException;
@@ -333,4 +333,9 @@ public interface FileSystemProvider extends Closeable {
      * @throws ChimeraFsException
      */
     void unpin(String pnfsid) throws ChimeraFsException;
+
+    enum StatCacheOption
+    {
+        STAT, NO_STAT
+    }
 }

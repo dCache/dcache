@@ -62,6 +62,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.padStart;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static java.util.stream.Collectors.toList;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
 public class Shell extends ShellApplication
 {
@@ -524,7 +525,7 @@ public class Shell extends ShellApplication
                 dst = null;
             }
             FsInode srcDir = lookup(source.getParentFile());
-            FsInode inode = srcDir.inodeOf(source.getName());
+            FsInode inode = srcDir.inodeOf(source.getName(), STAT);
             if (dst != null && dst.isDirectory()) {
                 fs.rename(inode, srcDir, source.getName(), lookup(destination), source.getName());
             } else {

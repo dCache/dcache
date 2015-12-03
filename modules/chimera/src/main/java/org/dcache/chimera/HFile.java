@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
+
 public class HFile extends File {
 
     private static final long serialVersionUID = 6304886860060999115L;
@@ -45,7 +47,7 @@ public class HFile extends File {
         _parent = parent.getInode();
         _fs = parent.getInode().getFs();
         try {
-            _inode = _fs.inodeOf(parent.getInode(), name);
+            _inode = _fs.inodeOf(parent.getInode(), name, NO_STAT);
         } catch (Exception e) {
             // FIXME: actually only is valid exception FileNotFoundHimeraFsException
             _isNew = true;

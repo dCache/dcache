@@ -22,6 +22,7 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -871,8 +872,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         _fs.rename(dir02, dir01, "dir02", dir13, "dir14");
 
-        FsInode newInode = _fs.inodeOf(dir13, "dir14");
-        assertEquals("Invalid parent", dir13, newInode.inodeOf(".."));
+        FsInode newInode = _fs.inodeOf(dir13, "dir14", NO_STAT);
+        assertEquals("Invalid parent", dir13, newInode.inodeOf("..", NO_STAT));
     }
 
     @Test(expected = NotDirChimeraException.class)
@@ -1033,7 +1034,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test(expected = FileNotFoundHimeraFsException.class)
     public void testGetParentOnRoot() throws Exception {
         String id = _rootInode.toString();
-        _rootInode.inodeOf(".(parent)(" + id + ")");
+        _rootInode.inodeOf(".(parent)(" + id + ")", NO_STAT);
     }
 
     @Test

@@ -24,6 +24,8 @@ import java.util.Map;
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+
 /**
  * inode representation
  */
@@ -341,8 +343,8 @@ public class FsInode {
     /**
      * get inode of file in the current directory with name 'name'
      */
-    public FsInode inodeOf(String name) throws ChimeraFsException {
-        return _fs.inodeOf(this, name);
+    public FsInode inodeOf(String name, FileSystemProvider.StatCacheOption stat) throws ChimeraFsException {
+        return _fs.inodeOf(this, name, stat);
     }
 
     /**
@@ -429,7 +431,7 @@ public class FsInode {
             throw new IOHimeraFsException("Not a directory");
         }
 
-        _fs.remove(this, name, inodeOf(name));
+        _fs.remove(this, name, inodeOf(name, STAT));
         _stat = null;
     }
 

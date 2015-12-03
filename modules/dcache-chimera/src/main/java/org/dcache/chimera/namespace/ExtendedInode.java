@@ -135,9 +135,9 @@ public class ExtendedInode extends FsInode
     }
 
     @Override
-    public ExtendedInode inodeOf(String name) throws ChimeraFsException
+    public ExtendedInode inodeOf(String name, FileSystemProvider.StatCacheOption stat) throws ChimeraFsException
     {
-        return new ExtendedInode(this, super.inodeOf(name));
+        return new ExtendedInode(this, super.inodeOf(name, stat));
     }
 
     @Override

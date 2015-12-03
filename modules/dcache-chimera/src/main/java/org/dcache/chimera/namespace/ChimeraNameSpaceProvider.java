@@ -78,6 +78,7 @@ import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
 public class ChimeraNameSpaceProvider
     implements NameSpaceProvider, CellInfoProvider
@@ -419,7 +420,7 @@ public class ChimeraNameSpaceProvider
             ExtendedInode parent = new ExtendedInode(_fs, pathToInode(subject, parentPath));
             String name = filePath.getName();
 
-            ExtendedInode inode = parent.inodeOf(name);
+            ExtendedInode inode = parent.inodeOf(name, STAT);
             checkAllowed(allowed, inode);
 
             if (!Subjects.isRoot(subject) && !canDelete(subject, parent, inode)) {
@@ -453,7 +454,7 @@ public class ChimeraNameSpaceProvider
 
             ExtendedInode parent = new ExtendedInode(_fs, pathToInode(subject, parentPath));
             String name = filePath.getName();
-            ExtendedInode inode = parent.inodeOf(name);
+            ExtendedInode inode = parent.inodeOf(name, STAT);
 
             if (!inode.toString().equals(pnfsId.getId())) {
                 throw new FileNotFoundCacheException("PNFSID does not correspond to provided file.");
@@ -517,7 +518,7 @@ public class ChimeraNameSpaceProvider
                     _permissionHandler.canLookup(subject, sourceDirAttributes) != ACCESS_ALLOWED) {
                     throw new PermissionDeniedCacheException("Access denied: " + sourcePath);
                 }
-                inode = sourceDir.inodeOf(source.getName());
+                inode = sourceDir.inodeOf(source.getName(), STAT);
             }
 
             /* Permission checks.
@@ -532,7 +533,7 @@ public class ChimeraNameSpaceProvider
                 }
 
                 try {
-                    FsInode destInode = destDir.inodeOf(dest.getName());
+                    FsInode destInode = destDir.inodeOf(dest.getName(), STAT);
                     if (!overwrite) {
                         throw new FileExistsCacheException("File exists:" + destinationPath);
                     }
@@ -1172,7 +1173,7 @@ public class ChimeraNameSpaceProvider
             /* File must not exist unless overwrite is enabled.
              */
             try {
-                ExtendedInode inodeOfPath = parentOfPath.inodeOf(path.getName());
+                ExtendedInode inodeOfPath = parentOfPath.inodeOf(path.getName(), STAT);
                 if (!options.contains(CreateOption.OVERWRITE_EXISTING) ||
                         (inodeOfPath.statCache().getMode() & UnixPermission.S_TYPE) != UnixPermission.S_IFREG) {
                     throw new FileExistsCacheException("File exists: " + path);
@@ -1295,8 +1296,8 @@ public class ChimeraNameSpaceProvider
             FsInode inodeOfFile;
             try {
                 uploadDirInode = _fs.path2inode(temporaryDir.getParent().toString());
-                temporaryDirInode = uploadDirInode.inodeOf(temporaryDir.getName());
-                inodeOfFile = temporaryDirInode.inodeOf(temporaryPath.getName());
+                temporaryDirInode = uploadDirInode.inodeOf(temporaryDir.getName(), STAT);
+                inodeOfFile = temporaryDirInode.inodeOf(temporaryPath.getName(), STAT);
             } catch (FileNotFoundHimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryPath, e);
             }
@@ -1313,7 +1314,7 @@ public class ChimeraNameSpaceProvider
             /* File must not exist unless overwrite is enabled.
              */
             try {
-                FsInode inodeOfExistingFile = finalDirInode.inodeOf(finalPath.getName());
+                FsInode inodeOfExistingFile = finalDirInode.inodeOf(finalPath.getName(), STAT);
                 if (!options.contains(CreateOption.OVERWRITE_EXISTING)) {
                     throw new FileExistsCacheException("File exists: " + finalPath);
                 }
@@ -1366,7 +1367,7 @@ public class ChimeraNameSpaceProvider
             /* Delete temporary upload directory and any files in it.
              */
             String name = temporaryPath.getParent().getName();
-            removeRecursively(uploadDirInode, name, uploadDirInode.inodeOf(name));
+            removeRecursively(uploadDirInode, name, uploadDirInode.inodeOf(name, STAT));
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }

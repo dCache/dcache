@@ -69,6 +69,8 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
 import static java.util.stream.Collectors.toList;
+import static org.dcache.chimera.FileSystemProvider.*;
+import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
 /**
  * SQL driver
@@ -453,7 +455,7 @@ class FsSqlDriver {
      * @param name
      * @return null if path is not found
      */
-    FsInode inodeOf(FsInode parent, String name) {
+    FsInode inodeOf(FsInode parent, String name, StatCacheOption stat) {
         switch (name) {
         case ".":
             return parent.isDirectory() ? parent : null;
@@ -464,12 +466,24 @@ class FsSqlDriver {
             FsInode dir = parent.getParent();
             return (dir == null) ? parent : dir;
         default:
-            return _jdbc.query("SELECT ipnfsid FROM t_dirs WHERE iname=? AND iparent=?",
-                               ps -> {
-                                   ps.setString(1, name);
-                                   ps.setString(2, parent.toString());
-                               },
-                               rs -> rs.next() ? new FsInode(parent.getFs(), rs.getString("ipnfsid")) : null);
+            if (stat == STAT) {
+                return _jdbc.query(
+                        "SELECT c.* FROM t_dirs d JOIN t_inodes c ON d.ipnfsid = c.ipnfsid " +
+                        "WHERE d.iparent = ? AND d.iname = ?",
+                        ps -> {
+                            ps.setString(1, parent.toString());
+                            ps.setString(2, name);
+                        },
+                        rs -> rs.next() ? new FsInode(parent.getFs(), rs.getString("ipnfsid"),
+                                                      FsInodeType.INODE, 0, toStat(rs)) : null);
+            } else {
+                return _jdbc.query("SELECT ipnfsid FROM t_dirs WHERE iname=? AND iparent=?",
+                                   ps -> {
+                                       ps.setString(1, name);
+                                       ps.setString(2, parent.toString());
+                                   },
+                                   rs -> rs.next() ? new FsInode(parent.getFs(), rs.getString("ipnfsid")) : null);
+            }
         }
     }
 
@@ -699,23 +713,6 @@ class FsSqlDriver {
                 "SELECT iparent FROM t_dirs WHERE ipnfsid=?",
                 ps -> ps.setString(1, inode.toString()),
                 rs -> rs.next() ? new FsInode(inode.getFs(), rs.getString("iparent")) : null);
-    }
-
-    /**
-     *
-     * return the the name of the inode in parent
-     *
-     * @param parent
-     * @param inode
-     * @return
-     */
-    String getNameOf(FsInode parent, FsInode inode) {
-        return _jdbc.query("SELECT iname FROM t_dirs WHERE ipnfsid=? AND iparent=?",
-                           ps -> {
-                               ps.setString(1, inode.toString());
-                               ps.setString(2, parent.toString());
-                           },
-                           rs -> rs.next() ? rs.getString("iname") : null);
     }
 
     boolean setInodeAttributes(FsInode inode, int level, Stat stat) {
@@ -1397,8 +1394,8 @@ class FsSqlDriver {
      * @param path
      * @return inode or null if path does not exist.
      */
-    FsInode path2inode(FsInode root, String path) {
-
+    FsInode path2inode(FsInode root, String path) throws ChimeraFsException
+    {
         File pathFile = new File(path);
         List<String> pathElemts = new ArrayList<>();
 
@@ -1421,7 +1418,7 @@ class FsSqlDriver {
          */
         for (int i = pathElemts.size(); i > 0; i--) {
             String f = pathElemts.get(i - 1);
-            inode = inodeOf(parentInode, f);
+            inode = inodeOf(parentInode, f, STAT);
 
             if (inode == null) {
                 /*
@@ -1433,7 +1430,7 @@ class FsSqlDriver {
             /*
              * if is a link, then resolve it
              */
-            Stat s = stat(inode);
+            Stat s = inode.statCache();
             if (UnixPermission.getType(s.getMode()) == UnixPermission.S_IFLNK) {
                 byte[] b = new byte[(int) s.getSize()];
                 int n = read(inode, 0, 0, b, 0, b.length);
@@ -1457,7 +1454,8 @@ class FsSqlDriver {
      * @param path
      * @return inode or null if path does not exist.
      */
-    List<FsInode> path2inodes(FsInode root, String path) {
+    List<FsInode> path2inodes(FsInode root, String path) throws ChimeraFsException
+    {
         File pathFile = new File(path);
         List<String> pathElements = new ArrayList<>();
 
@@ -1480,7 +1478,7 @@ class FsSqlDriver {
         /* Path elements are in reverse order.
          */
         for (String f: Lists.reverse(pathElements)) {
-            inode = inodeOf(parentInode, f);
+            inode = inodeOf(parentInode, f, STAT);
 
             if (inode == null) {
                 return Collections.emptyList();
@@ -1490,8 +1488,7 @@ class FsSqlDriver {
 
             /* If inode is a link then resolve it.
              */
-            Stat s = stat(inode);
-            inode.setStatCache(s);
+            Stat s = inode.statCache();
             if (UnixPermission.getType(s.getMode()) == UnixPermission.S_IFLNK) {
                 byte[] b = new byte[(int) s.getSize()];
                 int n = read(inode, 0, 0, b, 0, b.length);
