@@ -913,16 +913,15 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
+            /* Update the t_inodes row first (the Stat object) to acquire a FOR UPDATE / FOR NO KEY UPDATE
+             * first. If the inserts into secondary table referring t_inodes would be done first, the
+             * referential integrity check would obtain a FOR SHARE / FOR KEY SHARE on the t_inodes row which
+             * latter would have to be upgraded (potentially leading to deadlocks if that's not possible).
+             */
             Stat stat = new Stat();
-
             for (FileAttribute attribute : attr.getDefinedAttributes()) {
-
                 switch (attribute) {
-
                     case LOCATIONS:
-                        for (String location: attr.getLocations()) {
-                            _fs.addInodeLocation(inode, StorageGenericLocation.DISK, location);
-                        }
                         break;
                     case SIZE:
                         stat.setSize(attr.getSize());
@@ -949,16 +948,6 @@ public class ChimeraNameSpaceProvider
                         stat.setGid(attr.getGroup());
                         break;
                     case CHECKSUM:
-                        for (Checksum sum: attr.getChecksums()) {
-                            ChecksumType type = sum.getType();
-                            String value = sum.getValue();
-                            Optional<Checksum> existingSum = Checksum.forType(_fs.getInodeChecksums(inode),type);
-                            if (!existingSum.isPresent()) {
-                                _fs.setInodeChecksum(inode, type.getType(), value);
-                            } else if (!existingSum.get().equals(sum)) {
-                                throw new FileCorruptedCacheException(existingSum.asSet(), Collections.singleton(new Checksum(type, value)));
-                            }
-                        }
                         break;
                     case ACCESS_LATENCY:
                         stat.setAccessLatency(attr.getAccessLatency());
@@ -967,16 +956,8 @@ public class ChimeraNameSpaceProvider
                         stat.setRetentionPolicy(attr.getRetentionPolicy());
                         break;
                     case FLAGS:
-                        FsInode level2 = new FsInode(_fs, pnfsId.toString(), 2);
-                        ChimeraCacheInfo cacheInfo = new ChimeraCacheInfo(level2);
-                        for (Map.Entry<String,String> flag: attr.getFlags().entrySet()) {
-                            cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
-                        }
-                        cacheInfo.writeCacheInfo(level2);
                         break;
                     case ACL:
-                        ACL acl = attr.getAcl();
-                        _fs.setACL(inode, acl.getList());
                         break;
                     case STORAGEINFO:
                         _extractor.setStorageInfo(inode, attr.getStorageInfo());
@@ -985,13 +966,44 @@ public class ChimeraNameSpaceProvider
                         throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
                 }
             }
-
             if (stat.isDefinedAny()) {
                 inode.setStat(stat);
             }
 
-            return getFileAttributes(inode, acquire);
+            if (attr.isDefined(FileAttribute.LOCATIONS)) {
+                for (String location : attr.getLocations()) {
+                    _fs.addInodeLocation(inode, StorageGenericLocation.DISK, location);
+                }
+            }
 
+            if (attr.isDefined(FileAttribute.CHECKSUM)) {
+                for (Checksum sum: attr.getChecksums()) {
+                    ChecksumType type = sum.getType();
+                    String value = sum.getValue();
+                    Optional<Checksum> existingSum = Checksum.forType(_fs.getInodeChecksums(inode),type);
+                    if (!existingSum.isPresent()) {
+                        _fs.setInodeChecksum(inode, type.getType(), value);
+                    } else if (!existingSum.get().equals(sum)) {
+                        throw new FileCorruptedCacheException(existingSum.asSet(), Collections.singleton(new Checksum(type, value)));
+                    }
+                }
+            }
+
+            if (attr.isDefined(FileAttribute.FLAGS)) {
+                FsInode level2 = new FsInode(_fs, pnfsId.toString(), 2);
+                ChimeraCacheInfo cacheInfo = new ChimeraCacheInfo(level2);
+                for (Map.Entry<String,String> flag: attr.getFlags().entrySet()) {
+                    cacheInfo.getFlags().put(flag.getKey(), flag.getValue());
+                }
+                cacheInfo.writeCacheInfo(level2);
+            }
+
+            if (attr.isDefined(FileAttribute.ACL)) {
+                ACL acl = attr.getAcl();
+                _fs.setACL(inode, acl.getList());
+            }
+
+            return getFileAttributes(inode, acquire);
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         } catch (IOException e) {
