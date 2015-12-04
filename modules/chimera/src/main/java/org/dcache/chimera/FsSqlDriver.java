@@ -347,7 +347,6 @@ class FsSqlDriver {
     private Stat toStat(ResultSet rs) throws SQLException
     {
         Stat stat = new Stat();
-        int inodeType = rs.getInt("itype");
         stat.setCrTime(rs.getTimestamp("icrtime").getTime());
         stat.setGeneration(rs.getLong("igeneration"));
         int rp = rs.getInt("iretention_policy");
@@ -364,7 +363,7 @@ class FsSqlDriver {
         stat.setMTime(rs.getTimestamp("imtime").getTime());
         stat.setUid(rs.getInt("iuid"));
         stat.setGid(rs.getInt("igid"));
-        stat.setMode(rs.getInt("imode") | inodeType);
+        stat.setMode(rs.getInt("imode") | rs.getInt("itype"));
         stat.setNlink(rs.getInt("inlink"));
         stat.setDev(17);
         stat.setRdev(13);

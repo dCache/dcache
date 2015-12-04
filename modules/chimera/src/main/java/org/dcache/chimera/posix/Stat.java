@@ -375,7 +375,7 @@ public class Stat {
      * @param other to get values from.
      */
     public void update(Stat other) {
-	for (Stat.StatAttributes attr : other.getDefinedAttributeses()) {
+        for (Stat.StatAttributes attr : other.getDefinedAttributeses()) {
 	    switch (attr) {
 		case DEV:
 		    this.setDev(other.getDev());
@@ -384,7 +384,7 @@ public class Stat {
 		    this.setIno(other.getIno());
 		    break;
 		case MODE:
-		    this.setMode(other.getMode());
+		    this.setMode(other.getMode() & UnixPermission.S_PERMS | getMode() & ~UnixPermission.S_PERMS);
 		    break;
 		case NLINK:
 		    this.setNlink(other.getNlink());
