@@ -76,8 +76,8 @@ public class JdbcFs implements FileSystemProvider {
      * the number of pnfs levels. Level zero associated with file real
      * content, which is not our regular case.
      */
-    static private final int LEVELS_NUMBER = 7;
-    private final FsInode _rootInode;
+    private static final int LEVELS_NUMBER = 7;
+    private final RootInode _rootInode;
     private final String _wormID;
 
     /**
@@ -153,7 +153,7 @@ public class JdbcFs implements FileSystemProvider {
         // try to get database dialect specific query engine
         _sqlDriver = FsSqlDriver.getDriverInstance(dialect);
 
-        _rootInode = new FsInode(this, "000000000000000000000000000000000000");
+        _rootInode = new RootInode(this);
 
         String wormID = null;
         try {
@@ -821,7 +821,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public FsInode path2inode(String path) throws ChimeraFsException {
-        return path2inode(path, _rootInode);
+        return path2inode(path, new RootInode(this));
     }
 
     @Override
@@ -859,7 +859,7 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public List<FsInode> path2inodes(String path) throws ChimeraFsException
     {
-        return path2inodes(path, _rootInode);
+        return path2inodes(path, new RootInode(this));
     }
 
     @Override
@@ -1129,7 +1129,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public String inode2path(FsInode inode) throws ChimeraFsException {
-        return inode2path(inode, _rootInode, true);
+        return inode2path(inode, new RootInode(this), true);
     }
 
     /**
@@ -2378,9 +2378,9 @@ public class JdbcFs implements FileSystemProvider {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("DB        : ").append(_dbConnectionsPool.toString()).append("\n");
+        sb.append("DB        : ").append(_dbConnectionsPool).append("\n");
         sb.append("DB Engine : ").append(databaseProductName).append(" ").append(databaseProductVersion).append("\n");
-        sb.append("rootID    : ").append(_rootInode.toString()).append("\n");
+        sb.append("rootID    : ").append(_rootInode).append("\n");
         sb.append("wormID    : ").append(_wormID).append("\n");
         sb.append("FsId      : ").append(_fsId).append("\n");
         return sb.toString();
@@ -2672,5 +2672,37 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void unpin(String pnfsid) throws ChimeraFsException {
        throw new ChimeraFsException(NOT_IMPL);
+    }
+
+    private static class RootInode extends FsInode
+    {
+        public RootInode(FileSystemProvider fs)
+        {
+            super(fs, "000000000000000000000000000000000000");
+        }
+
+        @Override
+        public boolean exists() throws ChimeraFsException
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isDirectory()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isLink()
+        {
+            return false;
+        }
+
+        @Override
+        public FsInode getParent()
+        {
+            return null;
+        }
     }
 }
