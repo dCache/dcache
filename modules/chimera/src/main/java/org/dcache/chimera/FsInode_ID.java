@@ -20,18 +20,16 @@ import org.dcache.chimera.posix.Stat;
 
 public class FsInode_ID extends FsInode {
 
-    public FsInode_ID(FileSystemProvider fs, String id) {
-        super(fs, id, FsInodeType.ID);
+    public FsInode_ID(FileSystemProvider fs, long ino) {
+        super(fs, ino, FsInodeType.ID);
     }
 
     @Override
     public Stat stat() throws ChimeraFsException {
 
-        Stat ret;
+        Stat ret = new Stat(super.stat());
 
-        ret = super.stat();
-
-        ret.setSize(_id.length() + 1);
+        ret.setSize(ret.getId().length() + 1);
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
 
         return ret;
@@ -43,9 +41,9 @@ public class FsInode_ID extends FsInode {
     }
 
     @Override
-    public int read(long pos, byte[] data, int offset, int len) {
-
-        byte b[] = (_id + "\n").getBytes();
+    public int read(long pos, byte[] data, int offset, int len) throws ChimeraFsException
+    {
+        byte b[] = (statCache().getId() + "\n").getBytes();
 
         /*
          * are we still inside ?

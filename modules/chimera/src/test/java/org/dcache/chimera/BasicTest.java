@@ -35,11 +35,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
         final int level = 1;
         FsInode inode = _rootInode.create("testLevelRemoveOnDelete", 0, 0, 0644);
         _fs.createFileLevel(inode, level);
-        FsInode levelInode = new FsInode(_fs, inode.toString(), level);
+        FsInode levelInode = new FsInode(_fs, inode.ino(), level);
         assertTrue(levelInode.exists());
 
         _fs.remove(_rootInode, "testLevelRemoveOnDelete", inode);
-        levelInode = new FsInode(_fs, inode.toString(), level);
+        levelInode = new FsInode(_fs, inode.ino(), level);
         assertFalse(levelInode.exists());
     }
 
@@ -61,6 +61,19 @@ public class BasicTest extends ChimeraTestCaseHelper {
                 _rootInode.stat().getNlink(), stat.getNlink() + 1);
         assertTrue("mkdir have to update parent's mtime", _rootInode.stat().getMTime() > stat.getMTime());
         assertEquals("new dir should have link count equal to two", newDir.stat().getNlink(), 2);
+        assertTrue("change count is not updated", stat.getGeneration() != _rootInode.stat().getGeneration());
+    }
+
+    @Test
+    public void testMkDirByPath() throws Exception {
+
+        Stat stat = _rootInode.stat();
+        FsInode newDir = _fs.mkdir("/junit");
+
+        assertEquals("mkdir has to increase parent's nlink count by one",
+                stat.getNlink() + 1, _rootInode.stat().getNlink());
+        assertTrue("mkdir has to update parent's mtime", _rootInode.stat().getMTime() > stat.getMTime());
+        assertEquals("new dir should have link count equal to two", 2, newDir.stat().getNlink());
         assertTrue("change count is not updated", stat.getGeneration() != _rootInode.stat().getGeneration());
     }
 
@@ -217,7 +230,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test(expected = FileNotFoundHimeraFsException.class)
     public void testCreateInNonExistingDir() throws Exception {
-        FsInode missingDir = new FsInode(_fs);
+        FsInode missingDir = new FsInode(_fs, Long.MAX_VALUE);
         _fs.createFile(missingDir, "aFile");
     }
 
@@ -567,7 +580,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test(expected=FileNotFoundHimeraFsException.class)
     public void testRemoveNonexistgById() throws Exception {
-        FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
         _fs.remove(inode);
     }
 
@@ -608,7 +621,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testAddLocationForNonexistong() throws Exception {
-        FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
         try {
             _fs.addInodeLocation(inode, StorageGenericLocation.DISK, "/dev/null");
             fail("was able to add cache location for non existing file");
@@ -630,7 +643,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test(expected = FileNotFoundHimeraFsException.class)
     public void testSetSizeNotExist() throws Exception {
 
-        FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
 	Stat stat = new Stat();
 	stat.setSize(1);
 
@@ -640,7 +653,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test(expected = FileNotFoundHimeraFsException.class)
     public void testChowneNotExist() throws Exception {
 
-        FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
 	Stat stat = new Stat();
 	stat.setUid(3750);
         _fs.setInodeAttributes(inode, 0, stat);
@@ -648,7 +661,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testUpdateLevelNotExist() throws Exception {
-        FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
         try {
             byte[] data = "bla".getBytes();
             _fs.write(inode, 1, 0, data, 0, data.length);
@@ -660,7 +673,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testUpdateChecksumNotExist() throws Exception {
-        FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+        FsInode inode = new FsInode(_fs, Long.MAX_VALUE);
         try {
             _fs.setInodeChecksum(inode, 1, "asum");
             fail("was able to update checksum of non existing file");
@@ -918,7 +931,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode inode1 = base.create("testCreateFile1", 0, 0, 0644);
         FsInode inode2 = base.create("testCreateFile2", 0, 0, 0644);
 
-        FsInode level1of1 = new FsInode(_fs, inode1.toString(), 1);
+        FsInode level1of1 = new FsInode(_fs, inode1.ino(), 1);
 
         byte[] data = "hello".getBytes();
         level1of1.write(0, data, 0, data.length);
@@ -951,7 +964,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         final String tagName = "myTag";
         FsInode base = _rootInode.mkdir("junit");
         _fs.createTag(base, tagName);
-        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.ino(), tagName);
 	Stat stat = new Stat();
 	stat.setUid(1);
         tagInode.setStat(stat);
@@ -965,7 +978,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         final String tagName = "myTag";
         FsInode base = _rootInode.mkdir("junit");
         _fs.createTag(base, tagName);
-        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.ino(), tagName);
 	Stat stat = new Stat();
 	stat.setGid(1);
         tagInode.setStat(stat);
@@ -979,7 +992,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         final String tagName = "myTag";
         FsInode base = _rootInode.mkdir("junit");
         _fs.createTag(base, tagName);
-        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.ino(), tagName);
 	Stat stat = new Stat();
 	stat.setMode(0007);
         tagInode.setStat(stat);
@@ -996,7 +1009,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         FsInode base = _rootInode.mkdir("junit");
         _fs.createTag(base, tagName);
-        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.ino(), tagName);
 
         tagInode.write(0, data1, 0, data1.length);
         Stat statBefore = tagInode.stat();
@@ -1013,7 +1026,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         FsInode base = _rootInode.mkdir("junit");
         _fs.createTag(base, tagName);
-        FsInode tagInode = new FsInode_TAG(_fs, base.toString(), tagName);
+        FsInode tagInode = new FsInode_TAG(_fs, base.ino(), tagName);
 
         Stat stat = tagInode.stat();
         Stat baseStat = base.stat();
@@ -1024,21 +1037,9 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals(baseStat, base.stat());
     }
 
-    @Test
-    public void testBackwardCompatibility() throws Exception {
-
-        byte[] oldId = "0:TAG:0000DA875B38D9E0461F9ADFEA7C7422A956:somelongtagname".getBytes(Charsets.UTF_8);
-        final FsInode inodeWithOldId = _fs.inodeFromBytes(oldId);
-        byte[] newId = inodeWithOldId.getIdentifier();
-        final FsInode inodeWithNewId = _fs.inodeFromBytes(newId);
-
-        assertTrue(newId.length < oldId.length);
-        assertEquals(inodeWithOldId, inodeWithNewId);
-    }
-
     @Test(expected = FileNotFoundHimeraFsException.class)
     public void testGetParentOnRoot() throws Exception {
-        String id = _rootInode.toString();
+        String id = _rootInode.statCache().getId();
         _rootInode.inodeOf(".(parent)(" + id + ")", NO_STAT);
     }
 
@@ -1116,7 +1117,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test
     public void testPathofUnicodePath() throws ChimeraFsException {
         FsInode file = _rootInode.create("JC385 - 1300C 12h 15X - \uc624\uc5fc.jpg", 0, 0, 0644);
-        FsInode_PATHOF pathof = new FsInode_PATHOF(_fs, file._id);
+        FsInode_PATHOF pathof = new FsInode_PATHOF(_fs, file.ino());
         byte[] buffer = new byte[64];
         int len = pathof.read(0, buffer, 0, 64);
         assertThat(len, is(equalTo(36)));
@@ -1125,7 +1126,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test
     public void testPathofOnPartOfUnicodePath() throws ChimeraFsException {
         FsInode file = _rootInode.create("JC385 - 1300C 12h 15X - \uc624\uc5fc.jpg", 0, 0, 0644);
-        FsInode_PATHOF pathof = new FsInode_PATHOF(_fs, file._id);
+        FsInode_PATHOF pathof = new FsInode_PATHOF(_fs, file.ino());
         byte[] buffer = new byte[12];
         int len = pathof.read(23, buffer, 0, 8);
         assertThat(len, is(8));
@@ -1135,7 +1136,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test
     public void testNameofUnicodePath() throws ChimeraFsException {
         FsInode file = _rootInode.create("JC385 - 1300C 12h 15X - \uc624\uc5fc.jpg", 0, 0, 0644);
-        FsInode_NAMEOF nameof = new FsInode_NAMEOF(_fs, file._id);
+        FsInode_NAMEOF nameof = new FsInode_NAMEOF(_fs, file.ino());
         byte[] buffer = new byte[64];
         int len = nameof.read(0, buffer, 0, 64);
         assertThat(len, is(35));
@@ -1144,7 +1145,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test
     public void testNameofOnPartOfUnicodePath() throws ChimeraFsException {
         FsInode file = _rootInode.create("JC385 - 1300C 12h 15X - \uc624\uc5fc.jpg", 0, 0, 0644);
-        FsInode_NAMEOF nameof = new FsInode_NAMEOF(_fs, file._id);
+        FsInode_NAMEOF nameof = new FsInode_NAMEOF(_fs, file.ino());
         byte[] buffer = new byte[12];
         int len = nameof.read(23, buffer, 0, 8);
         assertThat(len, is(8));

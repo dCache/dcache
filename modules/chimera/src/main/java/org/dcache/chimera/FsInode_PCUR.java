@@ -23,8 +23,8 @@ package org.dcache.chimera;
  */
 public class FsInode_PCUR extends FsInode_PGET {
 
-    public FsInode_PCUR(FileSystemProvider fs, String id) {
-        super(fs, id, FsInodeType.PCUR);
+    public FsInode_PCUR(FileSystemProvider fs, long ino) {
+        super(fs, ino, FsInodeType.PCUR);
     }
 
     protected String value() throws ChimeraFsException {

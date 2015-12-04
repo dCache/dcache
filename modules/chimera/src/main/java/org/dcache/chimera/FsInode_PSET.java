@@ -32,8 +32,8 @@ public class FsInode_PSET extends FsInode {
 
     private final String[] _args;
 
-    public FsInode_PSET(FileSystemProvider fs, String id, String[] args) {
-        super(fs, id, FsInodeType.PSET);
+    public FsInode_PSET(FileSystemProvider fs, long ino, String[] args) {
+        super(fs, ino, FsInodeType.PSET);
         _args = args.clone();
     }
 
@@ -143,9 +143,9 @@ public class FsInode_PSET extends FsInode {
         lifetime = unit.toMillis(lifetime);
 
         if (lifetime == 0) {
-            _fs.unpin(_id);
+            _fs.unpin(new FsInode(_fs, ino()));
         } else {
-            _fs.pin(_id, lifetime);
+            _fs.pin(new FsInode(_fs, ino()), lifetime);
         }
     }
 }

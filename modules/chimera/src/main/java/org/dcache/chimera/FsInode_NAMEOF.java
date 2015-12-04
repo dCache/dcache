@@ -25,8 +25,8 @@ public class FsInode_NAMEOF extends FsInode {
 
     byte[] _name;
 
-    public FsInode_NAMEOF(FileSystemProvider fs, String id) {
-        super(fs, id, FsInodeType.NAMEOF);
+    public FsInode_NAMEOF(FileSystemProvider fs, long ino) {
+        super(fs, ino, FsInodeType.NAMEOF);
     }
 
     @Override

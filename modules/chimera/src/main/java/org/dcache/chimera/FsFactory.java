@@ -27,7 +27,7 @@ import org.dcache.db.AlarmEnabledDataSource;
 
 public class FsFactory
 {
-    public static FileSystemProvider createFileSystem(String url, String user, String password, String dialect)
+    public static FileSystemProvider createFileSystem(String url, String user, String password, String dialect) throws ChimeraFsException
     {
         AlarmEnabledDataSource dataSource = new AlarmEnabledDataSource(url, FsFactory.class.getSimpleName(), getDataSource(url, user, password));
         PlatformTransactionManager txManager =  new DataSourceTransactionManager(dataSource);

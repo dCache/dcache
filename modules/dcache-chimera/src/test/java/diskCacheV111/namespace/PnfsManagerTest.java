@@ -182,7 +182,7 @@ public class PnfsManagerTest
          * while we have a backdoor, let check what really happened
          */
 
-        Stat stat = _fs.stat(new FsInode(_fs, pnfsCreateDirectoryMessage.getPnfsId().toString()));
+        Stat stat = _fs.id2inode(pnfsCreateDirectoryMessage.getPnfsId().toString(), FileSystemProvider.StatCacheOption.STAT).statCache();
         assertEquals("new mode do not equal to specified one", (stat.getMode() & 0777), 0750);
     }
 
@@ -348,7 +348,7 @@ public class PnfsManagerTest
     public void testGetStorageInfoNoTags() throws ChimeraFsException {
 
         FsInode rootInode = _fs.path2inode("/pnfs");
-        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(rootInode.toString()), SOME_ATTRIBUTES);
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(rootInode.statCache().getId()), SOME_ATTRIBUTES);
         _pnfsManager.getFileAttributes(message);
 
         // I don't know yet what is expected reply, but not NPE !
@@ -498,7 +498,7 @@ public class PnfsManagerTest
         FsInode dir = _fs.mkdir("/notags");
         FsInode inode = _fs.createFile(dir, "afile");
         PnfsGetFileAttributes message =
-            new PnfsGetFileAttributes(new PnfsId(inode.toString()), SOME_ATTRIBUTES);
+            new PnfsGetFileAttributes(new PnfsId(inode.statCache().getId()), SOME_ATTRIBUTES);
         _pnfsManager.getFileAttributes(message);
 
         assertEquals("failed to get storageInfo for a directory without tags", 0, message
@@ -517,7 +517,7 @@ public class PnfsManagerTest
         attr.setMode(mode);
 
         PnfsSetFileAttributes pnfsSetFileAttributes =
-                new PnfsSetFileAttributes(new PnfsId(inode.toString()), attr);
+                new PnfsSetFileAttributes(new PnfsId(inode.statCache().getId()), attr);
         _pnfsManager.setFileAttributes(pnfsSetFileAttributes);
 
         Stat new_stat = _fs.stat(inode);
@@ -535,7 +535,7 @@ public class PnfsManagerTest
         _fs.setInodeAttributes(inode, 0, stat);
 
         PnfsGetFileAttributes pnfsGetFileAttributes
-                = new PnfsGetFileAttributes(new PnfsId(inode.toString()),
+                = new PnfsGetFileAttributes(new PnfsId(inode.statCache().getId()),
                 EnumSet.of(FileAttribute.CHANGE_TIME, FileAttribute.CREATION_TIME));
         _pnfsManager.getFileAttributes(pnfsGetFileAttributes);
 

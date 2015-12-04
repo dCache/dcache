@@ -415,8 +415,9 @@ public class NFSv41Door extends AbstractCellComponent implements
             throws IOException {
 
         FsInode inode = _fileFileSystemProvider.inodeFromBytes(nfsInode.getFileId());
+        PnfsId pnfsId = new PnfsId(inode.getId());
         Transfer.initSession(_isWellKnown, false);
-        NDC.push(inode.toString());
+        NDC.push(pnfsId.toString());
         NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {
             deviceid4 deviceid;
@@ -434,7 +435,6 @@ public class NFSv41Door extends AbstractCellComponent implements
             } else {
 
                 final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
-                final PnfsId pnfsId = new PnfsId(inode.toString());
                 final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
                             new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
                             nfsInode.toNfsHandle()

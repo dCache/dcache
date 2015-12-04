@@ -21,6 +21,7 @@ package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -260,7 +261,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public Stat getattr(Inode inode) throws IOException {
         FsInode fsInode = toFsInode(inode);
         try {
-            return  fromChimeraStat(fsInode.stat(), fsInode.id());
+            return  fromChimeraStat(fsInode.stat(), fsInode.ino());
         } catch (FileNotFoundHimeraFsException e) {
             throw new NoEntException("Path Do not exist.");
         }
@@ -326,7 +327,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         stat.setGid(pStat.getGid());
         stat.setUid(pStat.getUid());
         stat.setDev(pStat.getDev());
-        stat.setIno(pStat.getIno());
+        stat.setIno(Longs.hashCode(pStat.getIno()));
         stat.setMode(pStat.getMode());
         stat.setNlink(pStat.getNlink());
         stat.setRdev(pStat.getRdev());
@@ -357,9 +358,6 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         }
         if (stat.isDefined(Stat.StatAttribute.DEV)) {
             pStat.setDev(stat.getDev());
-        }
-        if (stat.isDefined(Stat.StatAttribute.INO)) {
-            pStat.setIno(stat.getIno());
         }
         if (stat.isDefined(Stat.StatAttribute.MODE)) {
             pStat.setMode(stat.getMode());
@@ -422,7 +420,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
         @Override
         public DirectoryEntry apply(HimeraDirectoryEntry e) {
-            return new DirectoryEntry(e.getName(), toInode(e.getInode()), fromChimeraStat(e.getStat(), e.getInode().id()));
+            return new DirectoryEntry(e.getName(), toInode(e.getInode()), fromChimeraStat(e.getStat(), e.getInode().ino()));
         }
     }
 

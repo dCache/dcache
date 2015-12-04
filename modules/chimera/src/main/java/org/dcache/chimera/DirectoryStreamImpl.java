@@ -30,11 +30,11 @@ import java.sql.SQLException;
 public class DirectoryStreamImpl
 {
     private static final String QUERY =
-            "SELECT i.*, d.iname FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.ipnfsid WHERE iparent=? " +
+            "SELECT i.*, d.iname FROM t_inodes i JOIN t_dirs d ON i.inumber = d.ichild WHERE d.iparent=? " +
             "UNION ALL " +
-            "SELECT i.*, '.' FROM t_inodes i WHERE i.ipnfsid=? " +
+            "SELECT i.*, '.' FROM t_inodes i WHERE i.inumber=? " +
             "UNION ALL " +
-            "SELECT i.*, '..' FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.iparent WHERE d.ipnfsid=?";
+            "SELECT i.*, '..' FROM t_inodes i JOIN t_dirs d ON i.inumber = d.iparent WHERE d.ichild=?";
 
     private final ResultSet _resultSet;
     private final JdbcTemplate _jdbc;
@@ -52,9 +52,9 @@ public class DirectoryStreamImpl
             connection = DataSourceUtils.getConnection(_jdbc.getDataSource());
             ps = connection.prepareStatement(QUERY);
             ps.setFetchSize(50);
-            ps.setString(1, dir.toString());
-            ps.setString(2, dir.toString());
-            ps.setString(3, dir.toString());
+            ps.setLong(1, dir.ino());
+            ps.setLong(2, dir.ino());
+            ps.setLong(3, dir.ino());
             rs = ps.executeQuery();
         } catch (SQLException ex) {
             JdbcUtils.closeStatement(ps);

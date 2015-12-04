@@ -20,8 +20,8 @@ import org.dcache.chimera.posix.Stat;
 
 public class FsInode_TAGS extends FsInode {
 
-    public FsInode_TAGS(FileSystemProvider fs, String id) {
-        super(fs, id, FsInodeType.TAGS);
+    public FsInode_TAGS(FileSystemProvider fs, long ino) {
+        super(fs, ino, FsInodeType.TAGS);
     }
 
     @Override

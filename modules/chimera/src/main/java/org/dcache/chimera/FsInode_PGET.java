@@ -27,8 +27,8 @@ import org.dcache.chimera.posix.Stat;
 public abstract class FsInode_PGET extends FsInode {
     protected static final String NEWLINE = "\n\r";
 
-    protected FsInode_PGET(FileSystemProvider fs, String id, FsInodeType type) {
-        super(fs, id, type);
+    protected FsInode_PGET(FileSystemProvider fs, long ino, FsInodeType type) {
+        super(fs, ino, type);
     }
 
     @Override

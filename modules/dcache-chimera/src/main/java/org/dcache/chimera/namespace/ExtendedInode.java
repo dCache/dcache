@@ -29,10 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.RetentionPolicy;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
@@ -43,6 +41,7 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
+import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
@@ -60,22 +59,21 @@ public class ExtendedInode extends FsInode
     private ImmutableList<Checksum> checksums;
     private ImmutableList<StorageLocatable> locations;
     private ImmutableMap<String, String> flags;
-    private Optional<AccessLatency> al;
-    private Optional<RetentionPolicy> rp;
     private ACL acl;
     private HashMap<Integer, ExtendedInode> levels;
     private InodeStorageInformation storageInfo;
     private Optional<ExtendedInode> parent;
 
-    public ExtendedInode(ExtendedInode parent, FsInode inode)
+    private ExtendedInode(ExtendedInode parent, FsInode inode)
     {
         this(parent.getFs(), inode);
         this.parent = Optional.of(parent);
     }
 
-    public ExtendedInode(FileSystemProvider fs, PnfsId id)
+    public ExtendedInode(FileSystemProvider fs, PnfsId id, FileSystemProvider.StatCacheOption option)
+            throws ChimeraFsException
     {
-        this(fs, id.toIdString());
+        this(fs, fs.id2inode(id.getId(), option));
     }
 
     public ExtendedInode(FileSystemProvider fs, FsInode inode)
@@ -83,30 +81,24 @@ public class ExtendedInode extends FsInode
         super(fs, inode);
     }
 
-    public ExtendedInode(FileSystemProvider fs, String id, FsInodeType type)
+    public ExtendedInode(FileSystemProvider fs, long id, FsInodeType type)
     {
         super(fs, id, type);
     }
 
-    public ExtendedInode(FileSystemProvider fs, String id)
+    public ExtendedInode(FileSystemProvider fs, long id)
     {
         super(fs, id);
     }
 
-    public ExtendedInode(FileSystemProvider fs, String id, int level)
+    public ExtendedInode(FileSystemProvider fs, long id, int level)
     {
         super(fs, id, level);
     }
 
-    public ExtendedInode(FileSystemProvider fs, String id, FsInodeType type,
-                         int level)
+    public ExtendedInode(FileSystemProvider fs, long id, FsInodeType type, int level)
     {
         super(fs, id, type, level);
-    }
-
-    public ExtendedInode(FileSystemProvider fs)
-    {
-        super(fs);
     }
 
     @Override
@@ -148,6 +140,11 @@ public class ExtendedInode extends FsInode
             parent = Optional.fromNullable(actualParent != null ? new ExtendedInode(getFs(), actualParent) : null);
         }
         return parent.get();
+    }
+
+    public PnfsId getPnfsId() throws ChimeraFsException
+    {
+        return new PnfsId(getId());
     }
 
     public ImmutableMap<String,byte[]> getTags() throws ChimeraFsException
@@ -224,7 +221,7 @@ public class ExtendedInode extends FsInode
         }
         ExtendedInode inode = levels.get(level);
         if (inode == null) {
-            inode = new ExtendedInode(_fs, toString(), level);
+            inode = new ExtendedInode(_fs, ino(), level);
             levels.put(level, inode);
         }
         return inode;
