@@ -1195,6 +1195,9 @@ public class Transfer implements Comparable<Transfer>
                             case CacheException.NO_POOL_ONLINE:
                                 _log.warn(t.getMessage());
                                 break;
+                            case CacheException.PERMISSION_DENIED:
+                                _log.info("request rejected due to permission settings: {}", t.getMessage());
+                                return immediateFailedFuture(t);
                             default:
                                 _log.error(t.getMessage());
                                 break;
