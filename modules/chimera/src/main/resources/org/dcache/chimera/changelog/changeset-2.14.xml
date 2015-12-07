@@ -184,6 +184,132 @@
         </rollback>
     </changeSet>
 
+    <changeSet author="tigran" id="24" dbms="postgresql">
+
+	<createProcedure>
+	  DROP TRIGGER IF EXISTS tgr_enstore_location ON t_level_4;
+
+	  CREATE OR REPLACE FUNCTION f_enstorelevel2locationinfo() RETURNS TRIGGER
+	  AS $$
+	  DECLARE
+	    l_entries text[];
+            location text;
+	    file_data varchar;
+	  BEGIN
+	    IF (TG_OP = 'INSERT') THEN
+              location := f_enstore2uri(encode(NEW.ifiledata,'escape'));
+	      IF location IS NULL THEN
+	        -- encp only creates empty layer 4 file
+	        -- so NEW.ifiledata is null
+	        INSERT INTO t_locationinfo VALUES (NEW.ipnfsid,0,'enstore:',10,NOW(),NOW(),1);
+	        INSERT INTO t_storageinfo
+		   VALUES (NEW.ipnfsid,'enstore','enstore','enstore');
+	      ELSE
+                l_entries = string_to_array(encode(NEW.ifiledata,'escape'), E'\n');
+	        INSERT INTO t_locationinfo VALUES (NEW.ipnfsid,0,location,10,NOW(),NOW(),1);
+	        INSERT INTO t_storageinfo
+		   VALUES (NEW.ipnfsid,'enstore','enstore',l_entries[4]);
+              END IF;
+	       --
+               -- we assume all files coming through level4 to be CUSTODIAL-NEARLINE
+	       --
+               -- the block below is needed for files written directly by encp
+               --
+	      BEGIN
+                UPDATE t_inodes SET iaccesslatency = 0, iretentionpolicy = 0 WHERE ipnfsid = NEW.ipnfsid;
+	      END;
+	    ELSEIF (TG_OP = 'UPDATE')  THEN
+	      file_data := encode(NEW.ifiledata, 'escape');
+              IF ( file_data = E'\n') THEN
+	        UPDATE t_locationinfo SET ilocation = file_data
+                  WHERE ipnfsid = NEW.ipnfsid and itype=0;
+              ELSE
+	        location := f_enstore2uri(file_data);
+                IF location IS NOT NULL THEN
+	          UPDATE t_locationinfo
+		    SET ilocation = f_enstore2uri(file_data)
+                    WHERE ipnfsid = NEW.ipnfsid and itype=0;
+                  l_entries = string_to_array(file_data, E'\n');
+	          UPDATE t_storageinfo SET istoragesubgroup=l_entries[4]
+	            WHERE  ipnfsid = NEW.ipnfsid;
+                END IF;
+              END IF;
+            END IF;
+            RETURN NEW;
+          END;
+	  $$
+	  LANGUAGE plpgsql;
+	  CREATE TRIGGER tgr_enstore_location BEFORE INSERT OR UPDATE ON t_level_4
+	    FOR EACH ROW EXECUTE PROCEDURE f_enstorelevel2locationinfo();
+        </createProcedure>
+
+        <rollback>
+            <createProcedure>
+              DROP TRIGGER IF EXISTS tgr_enstore_location ON t_level_4;
+
+              CREATE OR REPLACE FUNCTION f_enstorelevel2locationinfo() RETURNS TRIGGER
+              AS $$
+              DECLARE
+                l_entries text[];
+                location text;
+                file_data varchar;
+              BEGIN
+                IF (TG_OP = 'INSERT') THEN
+                  location := f_enstore2uri(encode(NEW.ifiledata,'escape'));
+                  IF location IS NULL THEN
+                    -- encp only creates empty layer 4 file
+                    -- so NEW.ifiledata is null
+                    INSERT INTO t_locationinfo VALUES (NEW.ipnfsid,0,'enstore:',10,NOW(),NOW(),1);
+                    INSERT INTO t_storageinfo
+                       VALUES (NEW.ipnfsid,'enstore','enstore','enstore');
+                  ELSE
+                    l_entries = string_to_array(encode(NEW.ifiledata,'escape'), E'\n');
+                    INSERT INTO t_locationinfo VALUES (NEW.ipnfsid,0,location,10,NOW(),NOW(),1);
+                    INSERT INTO t_storageinfo
+                       VALUES (NEW.ipnfsid,'enstore','enstore',l_entries[4]);
+                  END IF;
+                   --
+                   -- we assume all files coming through level4 to be CUSTODIAL-NEARLINE
+                   --
+                   -- the block below is needed for files written directly by encp
+                   --
+                  BEGIN
+                    INSERT INTO t_access_latency VALUES (NEW.ipnfsid, 0);
+                    EXCEPTION WHEN unique_violation THEN
+                      RAISE NOTICE 't_access_latency already exists %',NEW.ipnfsid;
+                  END;
+                  BEGIN
+                    INSERT INTO t_retention_policy VALUES (NEW.ipnfsid, 0);
+                    EXCEPTION WHEN unique_violation THEN
+                      RAISE NOTICE 't_retention_policy  exists %',NEW.ipnfsid;
+                  END;
+                ELSEIF (TG_OP = 'UPDATE')  THEN
+                  file_data := encode(NEW.ifiledata, 'escape');
+                  IF ( file_data = E'\n') THEN
+                    UPDATE t_locationinfo SET ilocation = file_data
+                      WHERE ipnfsid = NEW.ipnfsid and itype=0;
+                  ELSE
+                    location := f_enstore2uri(file_data);
+                    IF location IS NOT NULL THEN
+                      UPDATE t_locationinfo
+                        SET ilocation = f_enstore2uri(file_data)
+                        WHERE ipnfsid = NEW.ipnfsid and itype=0;
+                      l_entries = string_to_array(file_data, E'\n');
+                      UPDATE t_storageinfo SET istoragesubgroup=l_entries[4]
+                        WHERE  ipnfsid = NEW.ipnfsid;
+                    END IF;
+                  END IF;
+                END IF;
+                RETURN NEW;
+              END;
+              $$
+              LANGUAGE plpgsql;
+              CREATE TRIGGER tgr_enstore_location BEFORE INSERT OR UPDATE ON t_level_4
+                FOR EACH ROW EXECUTE PROCEDURE f_enstorelevel2locationinfo();
+            </createProcedure>
+        </rollback>
+    </changeSet>
+
     <changeSet author="behrmann" id="4">
         <sql>
             DELETE FROM t_dirs WHERE iname IN ('.', '..')
