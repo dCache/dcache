@@ -44,7 +44,7 @@ public class DomainConfigurationTest
         "b=2\n" +
         "c=5\n";
 
-    private final static SystemCell system = new SystemCell(DOMAIN_NAME);
+    private final static SystemCell system = SystemCell.create(DOMAIN_NAME, null);
 
     static {
         try {

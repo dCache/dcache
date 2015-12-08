@@ -9,6 +9,7 @@
         <include within="org.eclipse.jetty.server.HttpConnection"/>
         <include within="org.apache.axis.description.JavaServiceDesc"/>
         <include within="org.dcache.ftp.door.*"/>
+        <include within="org.apache.zookeeper.ClientCnxn$SendThread"/>
     </weaver>
 
     <aspects>
@@ -17,5 +18,6 @@
         <aspect name="org.dcache.util.aspects.PerInstanceAnnotationTransactionAspect"/>
         <aspect name="org.dcache.util.aspects.LogSSLHandshakeExceptionAspect"/>
         <aspect name="org.dcache.util.aspects.ReturnUsefulExceptionMessagesAspect"/>
+        <aspect name="org.dcache.util.aspects.ZooKeeperConnectionExceptionAspect"/>
     </aspects>
 </aspectj>

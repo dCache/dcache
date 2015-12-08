@@ -27,6 +27,10 @@
         <artifactId>logback-core</artifactId>
     </dependency>
     <dependency>
+        <groupId>org.apache.curator</groupId>
+        <artifactId>curator-recipes</artifactId>
+    </dependency>
+    <dependency>
         <groupId>jline</groupId>
         <artifactId>jline</artifactId>
     </dependency>

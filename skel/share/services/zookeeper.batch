@@ -1,0 +1,35 @@
+# ZooKeeper is a distributed coordination service used by dCache. This service embeds a single
+# node ZooKeeper inside dCache.
+#
+# IMPORTANT: Embedding ZooKeeper inside dCache is NOT recommended. It is fine for test instances
+# and to experiment, but any serious procuction dCache instance should use a ZooKeeper instance
+# running independently of dCache - this is true even if only a standalone (single node) ZooKeeper
+# is used.
+#
+
+check -strong zookeeper.cell.name
+check -strong zookeeper.cell.export
+check -strong zookeeper.net.listen
+check -strong zookeeper.net.port
+check -strong zookeeper.data-dir
+check -strong zookeeper.data-log-dir
+check -strong zookeeper.tick-time
+check -strong zookeeper.tick-time.unit
+check zookeeper.min-session-timeout
+check -strong zookeeper.min-session-timeout.unit
+check zookeeper.max-session-timeout
+check -strong zookeeper.max-session-timeout.unit
+check -strong zookeeper.max-client-connections
+
+create org.dcache.zookeeper.service.ZooKeeperCell ${zookeeper.cell.name} \
+          "-data-log-dir=\"${zookeeper.data-log-dir}\" \
+           -data-dir=\"${zookeeper.data-dir}\" \
+           -tick-time=${zookeeper.tick-time} \
+           -tick-time-unit=${zookeeper.tick-time.unit} \
+           -min-session-timeout=${zookeeper.min-session-timeout} \
+           -min-session-timeout-unit=${zookeeper.min-session-timeout.unit} \
+           -max-session-timeout=${zookeeper.max-session-timeout} \
+           -max-session-timeout-unit=${zookeeper.max-session-timeout.unit} \
+           -max-client-connections=${zookeeper.max-client-connections} \
+           -listen=${zookeeper.net.listen} \
+           -port=${zookeeper.net.port}"

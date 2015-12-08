@@ -24,6 +24,15 @@ public class Properties
     public static final String PROPERTY_DOMAIN_PRELOAD = "dcache.domain.preload";
     public static final String PROPERTY_LOG_CONFIG = "dcache.log.configuration";
 
+    public static final String PROPERTY_ZOOKEPER_CONNECTION = "dcache.zookeeper.connection";
+    public static final String PROPERTY_ZOOKEPER_RETRIES = "dcache.zookeeper.max-retries";
+    public static final String PROPERTY_ZOOKEPER_SLEEP = "dcache.zookeeper.initial-retry-delay";
+    public static final String PROPERTY_ZOOKEPER_SLEEP_UNIT = "dcache.zookeeper.initial-retry-delay.unit";
+    public static final String PROPERTY_ZOOKEPER_CONNECTION_TIMEOUT = "dcache.zookeeper.connection-timeout";
+    public static final String PROPERTY_ZOOKEPER_CONNECTION_TIMEOUT_UNIT = "dcache.zookeeper.connection-timeout.unit";
+    public static final String PROPERTY_ZOOKEPER_SESSION_TIMEOUT = "dcache.zookeeper.session-timeout";
+    public static final String PROPERTY_ZOOKEPER_SESSION_TIMEOUT_UNIT = "dcache.zookeeper.session-timeout.unit";
+
     public static final String PROPERTY_DOMAINS = "dcache.domains";
     public static final String PROPERTY_PLUGIN_PATH = "dcache.paths.plugins";
     public static final String PROPERTY_DEFAULTS_PATH = "dcache.paths.defaults";

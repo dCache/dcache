@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -36,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import dmg.cells.zookeeper.CellCuratorFramework;
 import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholdSet;
 import dmg.util.logback.RootFilterThresholds;
@@ -99,51 +101,35 @@ public class CellNucleus implements ThreadFactory
     private FilterThresholdSet _loggingThresholds;
     private final Queue<Runnable> _deferredTasks = Queues.synchronizedQueue(new ArrayDeque<>());
     private volatile long _lastQueueTime;
+    private final CellCuratorFramework _curatorFramework;
 
     public CellNucleus(Cell cell, String name, String type, Executor executor)
     {
         setPinboard(new Pinboard(PINBOARD_DEFAULT_SIZE));
 
-        if (__cellGlue == null) {
-            //
-            // the cell gluon hasn't yet been created
-            // (we insist in creating a SystemCell first.)
-            //
-            if (cell instanceof SystemCell) {
-                __cellGlue = new CellGlue(name);
-                _cellName    = "System";
-                _cellType    = "System";
-                __cellGlue.setSystemNucleus(this);
+        //
+        // the cell gluon hasn't yet been created
+        // (we insist in creating a SystemCell first.)
+        //
+        if (cell instanceof SystemCell) {
+            __cellGlue.setSystemNucleus(this);
+        }
+
+        String cellName = name.replace('@', '+');
+
+        if (cellName.isEmpty()) {
+            cellName = "*";
+        }
+        if (cellName.charAt(cellName.length() - 1) == '*') {
+            if (cellName.length() == 1) {
+                cellName = "$-" + getUnique();
             } else {
-                throw new
-                    IllegalArgumentException("System must be first Cell");
-            }
-
-        } else {
-            //
-            // we don't accept more then one System.cells
-            //
-            if (cell instanceof SystemCell) {
-                throw new IllegalArgumentException("System already exists");
-            } else {
-                String cellName = name.replace('@', '+');
-
-                if (cellName.isEmpty()) {
-                    cellName = "*";
-                }
-                if (cellName.charAt(cellName.length() - 1) == '*') {
-                    if (cellName.length() == 1) {
-                        cellName = "$-" + getUnique();
-                    } else {
-                        cellName = cellName.substring(0, cellName.length() - 1) + "-" + getUnique();
-                    }
-                }
-
-                _cellName = cellName;
-                _cellType    = type;
-
+                cellName = cellName.substring(0, cellName.length() - 1) + "-" + getUnique();
             }
         }
+
+        _cellName = cellName;
+        _cellType    = type;
 
         _cell = cell;
         _cellClass = _cell.getClass().getName();
@@ -161,6 +147,11 @@ public class CellNucleus implements ThreadFactory
         _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(), _cellName + "-threads");
 
         _messageExecutor = (executor == null) ? new BoundedCachedExecutor(this, 1) : new BoundedExecutor(executor, 1);
+
+        CuratorFramework curatorFramework = __cellGlue.getCuratorFramework();
+        _curatorFramework = (curatorFramework != null)
+                            ? new CellCuratorFramework(curatorFramework, _messageExecutor)
+                            : null;
 
         _timeoutTask = new TimerTask() {
             @Override
@@ -198,8 +189,10 @@ public class CellNucleus implements ThreadFactory
         return nucleus;
     }
 
-    void setSystemNucleus(CellNucleus nucleus) {
-        __cellGlue.setSystemNucleus(nucleus);
+    public static void initCellGlue(String cellDomainName, CuratorFramework curatorFramework)
+    {
+        checkState(__cellGlue == null);
+        __cellGlue = new CellGlue(cellDomainName, curatorFramework);
     }
 
     boolean isSystemNucleus() {
@@ -998,6 +991,12 @@ public class CellNucleus implements ThreadFactory
     CellRoute [] getRoutingList() { return __cellGlue.getRoutingList(); }
     //
     List<CellTunnelInfo> getCellTunnelInfos() { return __cellGlue.getCellTunnelInfos(); }
+
+    public CuratorFramework getCuratorFramework()
+    {
+        return _curatorFramework;
+    }
+
     //
 
     private class CallbackTask implements Runnable

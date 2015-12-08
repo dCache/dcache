@@ -4,6 +4,7 @@ import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -338,6 +339,20 @@ public class CellAdapter
      * @return the name of this domain.
      */
     public String getCellDomainName() { return _nucleus.getCellDomainName(); }
+
+    /**
+     * Returns a Apache Curator instance for this cell. The Curator maintains
+     * the CDC of the caller and any callbacks without an explicit executor are
+     * delivered on the cell message executor.
+     *
+     * Note that killing a cell does not remove ephemeral nodes created by the
+     * cell. Such nodes are bound to the lifetime of the domain and thus a cell
+     * should remove such nodes when it is killed.
+     */
+    public CuratorFramework getCuratorFramework()
+    {
+        return _nucleus.getCuratorFramework();
+    }
     /**
      * marks this cell to be exportable. This call triggers an
      * CellExported event to be delivered to all CellEventListeners.

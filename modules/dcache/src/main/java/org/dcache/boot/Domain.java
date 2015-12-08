@@ -5,6 +5,11 @@ import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.google.common.base.Strings;
+import com.google.common.primitives.Ints;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -22,6 +27,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellShell;
@@ -122,7 +128,7 @@ public class Domain
 
         String domainName = getName();
         CDC.reset(SYSTEM_CELL_NAME, domainName);
-        SystemCell systemCell = new SystemCell(domainName);
+        SystemCell systemCell = SystemCell.create(domainName, createCuratorFramework());
         systemCell.start().get();
         _log.info("Starting {}", domainName);
 
@@ -134,6 +140,29 @@ public class Domain
         if (_services.isEmpty()) {
             _log.warn("No services found. Domain appears to be empty.");
         }
+    }
+
+    protected CuratorFramework createCuratorFramework()
+    {
+        int maxRetries = Integer.parseInt(_properties.getValue(PROPERTY_ZOOKEPER_RETRIES));
+        String zookeeperConnectionString = _properties.getValue(PROPERTY_ZOOKEPER_CONNECTION);
+        int baseSleepTimeMs =
+                getTime(PROPERTY_ZOOKEPER_SLEEP, PROPERTY_ZOOKEPER_SLEEP_UNIT);
+        int connectionTimeoutMs =
+                getTime(PROPERTY_ZOOKEPER_CONNECTION_TIMEOUT, PROPERTY_ZOOKEPER_CONNECTION_TIMEOUT_UNIT);
+        int sessionTimeoutMs =
+                getTime(PROPERTY_ZOOKEPER_SESSION_TIMEOUT, PROPERTY_ZOOKEPER_SESSION_TIMEOUT_UNIT);
+        RetryPolicy retryPolicy = new ExponentialBackoffRetry(baseSleepTimeMs, maxRetries);
+        return CuratorFrameworkFactory.newClient(zookeeperConnectionString,
+                                                 sessionTimeoutMs, connectionTimeoutMs,
+                                                 retryPolicy);
+    }
+
+    private int getTime(String baseProperty, String unitProperty)
+    {
+        TimeUnit timeUnit = TimeUnit.valueOf(_properties.getValue(unitProperty));
+        int duration = Integer.parseInt(_properties.getValue(baseProperty));
+        return Ints.checkedCast(timeUnit.toMillis(duration));
     }
 
     private Resource getLogConfiguration()

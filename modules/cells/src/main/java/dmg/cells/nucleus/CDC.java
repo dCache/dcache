@@ -104,6 +104,26 @@ public class CDC implements AutoCloseable
     }
 
     /**
+     * Execute the given runnable within the context of this CDC.
+     */
+    public void execute(Runnable r)
+    {
+        String session = MDC.get(MDC_SESSION);
+        String cell = MDC.get(MDC_CELL);
+        String domain = MDC.get(MDC_DOMAIN);
+        NDC ndc = NDC.cloneNdc();
+        try {
+            apply();
+            r.run();
+        } finally {
+            setMdc(MDC_DOMAIN, domain);
+            setMdc(MDC_CELL, cell);
+            setMdc(MDC_SESSION, session);
+            NDC.set(ndc);
+        }
+    }
+
+    /**
      * Returns the cell name stored in the MDC of the calling
      * thread.
      */

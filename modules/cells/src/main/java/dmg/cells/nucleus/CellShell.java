@@ -6,9 +6,47 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.SortedSet;
+import java.util.Stack;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
+import java.util.Vector;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.network.PingMessage;
-
 import dmg.util.BufferedLineWriter;
 import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
@@ -30,48 +68,6 @@ import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.util.Args;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
-import java.io.Reader;
-import java.io.Serializable;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.SortedSet;
-import java.util.Stack;
-import java.util.StringTokenizer;
-import java.util.TreeSet;
-import java.util.Vector;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 /**
   *
@@ -2139,6 +2135,32 @@ public class CellShell extends CommandInterpreter
         public String call()
         {
             return "obsolete";
+        }
+    }
+
+    @Command(name = "zk ls", hint = "list zookeeper node")
+    public class ZooKeeperList implements Callable<String>
+    {
+        @Argument(required = false)
+        String path = "/";
+
+        @Override
+        public String call() throws Exception
+        {
+            return String.join("\n", _nucleus.getCuratorFramework().getChildren().forPath(path));
+        }
+    }
+
+    @Command(name = "zk get", hint = "get zookeeper node data")
+    public class ZooKeeperGet implements Callable<String>
+    {
+        @Argument
+        String path;
+
+        @Override
+        public String call() throws Exception
+        {
+            return new String(_nucleus.getCuratorFramework().getData().forPath(path), StandardCharsets.UTF_8);
         }
     }
 

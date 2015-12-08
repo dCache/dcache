@@ -3,6 +3,7 @@ package dmg.cells.nucleus;
 import com.google.common.collect.Maps;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
+import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import dmg.util.TimebasedCounter;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @author Patrick Fuhrmann
@@ -51,8 +54,9 @@ class CellGlue
     private final Executor _killerExecutor;
     private final ThreadPoolExecutor _emergencyKillerExecutor;
     private final CellAddressCore _domainAddress;
+    private final CuratorFramework _curatorFramework;
 
-    CellGlue(String cellDomainName)
+    CellGlue(String cellDomainName, CuratorFramework curatorFramework)
     {
         String cellDomainNameLocal = cellDomainName;
 
@@ -66,6 +70,7 @@ class CellGlue
                     System.currentTimeMillis();
         }
         _cellDomainName = cellDomainNameLocal;
+        _curatorFramework = curatorFramework;
         _domainAddress = new CellAddressCore("*", _cellDomainName);
         _masterThreadGroup = new ThreadGroup("Master-Thread-Group");
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
@@ -94,6 +99,7 @@ class CellGlue
 
     void setSystemNucleus(CellNucleus nucleus)
     {
+        checkState(_systemNucleus == null);
         _systemNucleus = nucleus;
     }
 
@@ -516,5 +522,10 @@ class CellGlue
     public String toString()
     {
         return _cellDomainName;
+    }
+
+    public CuratorFramework getCuratorFramework()
+    {
+        return _curatorFramework;
     }
 }

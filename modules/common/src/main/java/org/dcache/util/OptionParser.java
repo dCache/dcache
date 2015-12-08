@@ -251,9 +251,13 @@ public class OptionParser
                             try {
                                 value = toType(s, field.getType());
                                 field.set(obj, value);
+                            } catch (NumberFormatException e) {
+                                throw new IllegalArgumentException(
+                                        "Invalid value for option " + option.name() + ": " + e.toString(), e);
                             } catch (ClassCastException e) {
-                                throw new IllegalArgumentException("Cannot convert '" + s + "' to " + field.getType(),
-                                                                   e);
+                                throw new IllegalArgumentException(
+                                        "Invalid value for option " + option.name() + ": Cannot convert '" +
+                                        s + "' to " + field.getType() + ".", e);
                             }
                         } else {
                             value = field.get(obj);

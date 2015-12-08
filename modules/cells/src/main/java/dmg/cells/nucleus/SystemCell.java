@@ -1,6 +1,7 @@
 package dmg.cells.nucleus ;
 
 import com.google.common.base.Throwables;
+import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,9 +63,15 @@ public class      SystemCell
       }
    }
 
-    public SystemCell(String cellDomainName)
+    public static SystemCell create(String cellDomainName, CuratorFramework curatorFramework)
     {
-        super(cellDomainName, "");
+        CellNucleus.initCellGlue(cellDomainName, curatorFramework);
+        return new SystemCell();
+    }
+
+    protected SystemCell()
+    {
+        super("System", "System", "");
         _nucleus = getNucleus();
         _cellShell = new CellShell(getNucleus());
     }
@@ -72,6 +79,13 @@ public class      SystemCell
     @Override
     protected void startUp()
     {
+        /**
+         * We start the curator here to get the right context for the curator threads.
+         */
+        CuratorFramework curatorFramework = _nucleus.getCuratorFramework();
+        if (curatorFramework != null) {
+            curatorFramework.start();
+        }
         _cellShell.addCommandListener(this);
         _cellShell.addCommandListener(new LogbackShell());
         _cellShell.addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
