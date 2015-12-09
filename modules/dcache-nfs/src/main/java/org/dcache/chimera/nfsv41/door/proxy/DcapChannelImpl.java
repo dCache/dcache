@@ -31,7 +31,7 @@ public class DcapChannelImpl implements ProxyIoAdapter {
     private static final int SEEK_SET = 0;
 
     private final SocketChannel _channel;
-    private final long _size;
+    private long _size;
     private final int _sessionId;
 
     public DcapChannelImpl(InetSocketAddress addr, int session, byte[] challange, long size) throws IOException {
@@ -72,11 +72,15 @@ public class DcapChannelImpl implements ProxyIoAdapter {
 
         writeFully(_channel, command);
         getAck();
-        return sendData(src);
+        int n = sendData(src);
+        if (n > 0 && (position + n > _size)) {
+            _size = position + n;
+        }
+        return n;
     }
 
     @Override
-    public long size() {
+    public synchronized long size() {
         return _size;
     }
 
