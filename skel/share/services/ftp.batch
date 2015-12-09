@@ -65,7 +65,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -listen=${ftp.net.listen} \
    -prot=raw \
    -export=${ftp.cell.export} \
-   -subscribe=${ftp.cell.subscribe} \
+   -subscribe=${ftp.cell.subscribe} \
    -root=\"${ftp.root}\" \
    -upload=\"${ftp.authz.upload-directory}\" \
    -clientDataPortRange=${ftp.net.port-range} \
