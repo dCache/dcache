@@ -220,6 +220,7 @@ class FsSqlDriver {
                             Stat stat = toStat(rs);
                             FsInode inode = new FsInode(dir.getFs(), rs.getString("ipnfsid"), FsInodeType.INODE, 0, stat);
                             inode.setParent(dir);
+                            stat.setIno((int)inode.id());
                             return new HimeraDirectoryEntry(rs.getString("iname"), inode, stat);
                         } catch (SQLException e) {
                             _log.error("failed to fetch next entry: {}", e.getMessage());
