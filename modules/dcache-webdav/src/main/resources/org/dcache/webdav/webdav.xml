@@ -150,11 +150,6 @@
       <property name="rootPath" value="${webdav.root}"/>
   </bean>
 
-
-  <bean id="logging-filter" class="org.dcache.webdav.LoggingFilter">
-      <description>Logs all requests</description>
-  </bean>
-
   <bean id="dispatch-filter"
         class="org.dcache.webdav.DcacheStandardFilter">
      <description>Dispatches HTTP requests to handlers</description>
@@ -204,7 +199,6 @@
         <description>Milton WebDAV library</description>
         <property name="filters">
             <list>
-                <ref bean="logging-filter"/>
                 <ref bean="security-filter"/>
                 <ref bean="3rd-party-copy-filter"/>
             </list>
@@ -254,13 +248,24 @@
                       </bean>
                   </property>
               </bean>
-              <bean class="org.dcache.webdav.MiltonHandler">
-                  <property name="httpManager" ref="http-manager"/>
+              <bean class="org.dcache.webdav.LoggingHandler">
+                  <property name="handler" ref="webdavhandlers"/>
               </bean>
-              <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
           </list>
       </property>
   </bean>
+
+    <bean id="webdavhandlers" class="org.eclipse.jetty.server.handler.HandlerList">
+        <description>List of handlers for HTTP requests</description>
+        <property name="handlers">
+            <list>
+                <bean class="org.dcache.webdav.MiltonHandler">
+                    <property name="httpManager" ref="http-manager"/>
+                </bean>
+                <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+            </list>
+        </property>
+    </bean>
 
 
   <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
