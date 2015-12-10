@@ -116,15 +116,6 @@
      <property name="poolManagerStub" ref="pool-manager-stub"/>
   </bean>
 
-  <bean id="security-filter" class="org.dcache.webdav.SecurityFilter">
-      <description>Handles authorization for the WebDAV door</description>
-      <property name="loginStrategy" ref="login-strategy"/>
-      <property name="readOnly" value="${webdav.authz.readonly}"/>
-      <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
-      <property name="rootPath" value="${webdav.root}"/>
-      <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
-  </bean>
-
   <bean id="credential-service-client" class="org.dcache.webdav.transfer.CredentialServiceClient">
       <description>Client for credential service</description>
       <property name="topicStub" ref="credential-service-stub"/>
@@ -199,7 +190,6 @@
         <description>Milton WebDAV library</description>
         <property name="filters">
             <list>
-                <ref bean="security-filter"/>
                 <ref bean="3rd-party-copy-filter"/>
             </list>
         </property>
@@ -291,11 +281,21 @@
                   </property>
               </bean>
               <bean class="org.dcache.webdav.LoggingHandler">
-                  <property name="handler" ref="webdavhandlers"/>
+                  <property name="handler" ref="authhandler"/>
               </bean>
           </list>
       </property>
   </bean>
+
+    <bean id="authhandler" class="org.dcache.webdav.AuthenticationHandler">
+        <description>List of handlers for HTTP requests</description>
+        <property name="handler" ref="webdavhandlers"/>
+        <property name="loginStrategy" ref="login-strategy"/>
+        <property name="readOnly" value="${webdav.authz.readonly}"/>
+        <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
+        <property name="rootPath" value="${webdav.root}"/>
+        <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
+    </bean>
 
     <bean id="webdavhandlers" class="org.eclipse.jetty.server.handler.HandlerList">
         <description>List of handlers for HTTP requests</description>

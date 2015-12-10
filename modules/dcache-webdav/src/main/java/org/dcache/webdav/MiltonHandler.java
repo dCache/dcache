@@ -1,12 +1,15 @@
 package org.dcache.webdav;
 
+import io.milton.http.Auth;
 import io.milton.http.HttpManager;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
+import org.dcache.auth.Subjects;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 
+import javax.security.auth.Subject;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessController;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
@@ -62,8 +66,16 @@ public class MiltonHandler
                 response.sendError(501, "Not implemented");
                 break;
             default:
+                Subject subject = Subject.getSubject(AccessController.getContext());
                 ServletRequest req = new DcacheServletRequest(request, context);
                 ServletResponse resp = new DcacheServletResponse(response);
+
+                /* Although we don't rely on the authorization tag
+                 * ourselves, Milton uses it to detect that the request
+                 * was preauthenticated.
+                 */
+                req.setAuthorization(new Auth(Subjects.getUserName(subject), subject));
+
                 baseRequest.setHandled(true);
                 _httpManager.process(req, resp);
             }

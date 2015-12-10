@@ -20,7 +20,7 @@ import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 
 import static org.dcache.webdav.DcacheResourceFactory.TRANSACTION_ATTRIBUTE;
-import static org.dcache.webdav.SecurityFilter.DCACHE_SUBJECT_ATTRIBUTE;
+import static org.dcache.webdav.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
 
 
 public class LoggingHandler extends HandlerWrapper {
@@ -48,9 +48,8 @@ public class LoggingHandler extends HandlerWrapper {
             log.add("response.code", statusCode);
             log.add("response.reason", getReason(response));
             log.add("location", response.getHeader("Location"));
-            HttpServletRequest r = request;
-            InetAddress addr = InetAddresses.forString(r.getRemoteAddr());
-            log.add("socket.remote", new InetSocketAddress(addr, r.getRemotePort()));
+            InetAddress addr = InetAddresses.forString(request.getRemoteAddr());
+            log.add("socket.remote", new InetSocketAddress(addr, request.getRemotePort()));
             log.add("user-agent", request.getHeader("User-Agent"));
 
             log.add("user.dn", getCertificateName(request));
