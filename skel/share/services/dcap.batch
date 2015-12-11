@@ -84,7 +84,7 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -listen=${dcap.net.listen} \
              -export=${dcap.cell.export} \
              -lookupPool=${dcap.cell.name.dir} \
-             -subscribe=${dcap.cell.subscribe} \
+             -subscribe=${dcap.cell.subscribe} \
              -acceptErrorWait=60000 \
              -keepAlive=300 \
              -poolRetry=2700 \
