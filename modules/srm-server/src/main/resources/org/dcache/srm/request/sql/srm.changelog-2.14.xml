@@ -1141,4 +1141,41 @@
             <column name="requestid"/>
         </createIndex>
     </changeSet>
+
+    <changeSet id="13" author="behrmann">
+        <comment>Drop states 1,4,5, and 13 in request history</comment>
+
+        <sql>
+            UPDATE bringonlinerequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE bringonlinerequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+            UPDATE bringonlinefilerequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE bringonlinefilerequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+
+            UPDATE copyrequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE copyrequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+            UPDATE copyfilerequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE copyfilerequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+
+            UPDATE getrequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE getrequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+            UPDATE getfilerequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE getfilerequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+
+            UPDATE lsrequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE lsrequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+            UPDATE lsfilerequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE lsfilerequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+
+            UPDATE putrequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE putrequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+            UPDATE putfilerequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE putfilerequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+
+            UPDATE reservespacerequestshistory SET stateid=2 WHERE stateid=4;
+            UPDATE reservespacerequestshistory SET stateid=3 WHERE stateid IN (1,5,13);
+        </sql>
+
+        <rollback/>
+    </changeSet>
+
 </databaseChangeLog>
