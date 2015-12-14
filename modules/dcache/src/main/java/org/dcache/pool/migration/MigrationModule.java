@@ -344,11 +344,14 @@ public class MigrationModule
                 usage="Only copy replicas in the given state.")
         String state;
 
-        @Option(name="sticky", metaVar="owner", separator=",",
+        @Option(name="sticky", valueSpec="[-]owner", separator=",",
                 category="Filter options",
                 usage = "Only copy sticky replicas. Can optionally be limited to " +
                         "the list of owners. A sticky flag for each owner must be " +
-                        "present for the replica to be selected.")
+                        "present for the replica to be selected. Presence of an " +
+                        "owner may be negated by prefixing it with a minus sign; in " +
+                        "that case the filter matches a file that does not have a " +
+                        "sticky flag with the given owner.")
         String[] sticky;
 
         @Option(name="storage", metaVar="class",
@@ -732,7 +735,11 @@ public class MigrationModule
                     filters.add(new StickyFilter());
                 } else {
                     for (String owner: sticky) {
-                        filters.add(new StickyOwnerFilter(owner));
+                        if (owner.startsWith("-")) {
+                            filters.add(new NotStickyOwnerFilter(owner.substring(1)));
+                        } else {
+                            filters.add(new StickyOwnerFilter(owner));
+                        }
                     }
                 }
             }
