@@ -394,8 +394,12 @@ public class RoutingManager
                     domains.put(getCellDomainName(), new ArrayList<>(_localExports));
                     /* Add the domains without wellknown cells too. */
                     _domainHash.keySet().stream()
-                            .filter(domain -> !domains.containsKey(domain))
-                            .forEach(domain -> domains.put(domain, new ArrayList<>()));
+                            .forEach(domain -> domains.computeIfAbsent(domain, d -> new ArrayList<>()));
+                    _domainHash.values().stream()
+                            .flatMap(Collection::stream)
+                            .map(CellPath::getDestinationAddress)
+                            .filter(address -> address.getCellName().equals("*"))
+                            .forEach(address -> domains.computeIfAbsent(address.getCellDomainName(), d -> new ArrayList<>()));
                 }
                 msg.revertDirection();
                 msg.setMessageObject(new GetAllDomainsReply(domains));
