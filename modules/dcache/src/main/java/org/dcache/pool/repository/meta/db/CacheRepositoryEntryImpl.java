@@ -273,6 +273,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         builder.addAll(filter(_sticky, r -> !r.owner().equals(owner)));
         builder.add(new StickyRecord(owner, expire));
         setStickyRecords(builder.build());
+        storeState();
         return true;
     }
 
