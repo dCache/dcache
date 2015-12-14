@@ -14,10 +14,6 @@
  */
 package org.globus.gsi.gssapi.jaas;
 
-import eu.emi.security.authn.x509.impl.OpensslNameUtils;
-
-import javax.security.auth.x500.X500Principal;
-
 /**
  * A Globus DN principal. The Globus DN is in the form: "/CN=foo/O=bar".
  */
@@ -25,11 +21,6 @@ public class GlobusPrincipal
         extends SimplePrincipal
 {
     private static final long serialVersionUID = 302803142179565960L;
-
-    public GlobusPrincipal(X500Principal principal)
-    {
-        this(OpensslNameUtils.convertFromRfc2253(principal.getName(), true));
-    }
 
     public GlobusPrincipal(String globusDn)
     {

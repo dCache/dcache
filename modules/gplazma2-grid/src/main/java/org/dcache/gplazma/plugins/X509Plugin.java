@@ -1,6 +1,7 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.net.InetAddresses;
+import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 import eu.emi.security.authn.x509.proxy.ProxyChainInfo;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -100,7 +101,8 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                         continue;
                     }
 
-                    identifiedPrincipals.add(new GlobusPrincipal(eec.getSubjectX500Principal()));
+                    identifiedPrincipals.add(new GlobusPrincipal(
+                            OpensslNameUtils.convertFromRfc2253(eec.getSubjectX500Principal().getName(), true)));
 
                     if (isPolicyPrincipalsEnabled) {
                         listPolicies(eec).stream()
