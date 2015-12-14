@@ -320,6 +320,7 @@ public abstract class Job  {
         case INPROGRESS:
             return newState == State.CANCELED
                     || newState == State.FAILED
+                    || newState == State.QUEUED
                     || newState == State.RQUEUED
                     || newState == State.READY
                     || newState == State.DONE;
