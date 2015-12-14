@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEREncodable;
@@ -31,7 +32,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static eu.emi.security.authn.x509.helpers.CertificateHelpers.getExtensionBytes;
 import static org.dcache.auth.EntityDefinition.*;
 import static org.dcache.auth.LoA.*;
-import static org.dcache.gplazma.util.CertPaths.*;
+import static org.dcache.gplazma.util.CertPaths.isX509CertPath;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
@@ -75,7 +76,8 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                 if (eec == null) {
                     message = "X.509 chain contains no End-Entity Certificate";
                 } else {
-                    identifiedPrincipals.add(new GlobusPrincipal(eec.getSubjectX500Principal()));
+                    identifiedPrincipals.add(new GlobusPrincipal(
+                            OpensslNameUtils.convertFromRfc2253(eec.getSubjectX500Principal().getName(), true)));
 
                     if (isPolicyPrincipalsEnabled) {
                         listPolicies(eec).stream().
