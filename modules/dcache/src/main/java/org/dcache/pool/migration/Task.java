@@ -35,6 +35,7 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.ReflectionUtils;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 
@@ -145,6 +146,15 @@ public class Task
     public boolean isEager()
     {
         return _parameters.isEager;
+    }
+
+    /**
+     * Meta only jobs only upgrade existing replicas - they never copy replicas. If
+     * no or not enough existing replicas exist, the task fails permanently.
+     */
+    public boolean isMetaOnly()
+    {
+        return _parameters.isMetaOnly;
     }
 
     /**
@@ -261,6 +271,8 @@ public class Task
     /** FSM Action */
     synchronized void initiateCopy()
     {
+        checkState(!isMetaOnly());
+
         try {
             initiateCopy(selectPool());
         } catch (NoSuchElementException e) {
@@ -288,7 +300,8 @@ public class Task
                                                     _targetStickyRecords,
                                                     _parameters.computeChecksumOnUpdate,
                                                     _parameters.forceSourceMode,
-                                                    _parameters.maintainAtime ? _atime : null);
+                                                    _parameters.maintainAtime ? _atime : null,
+                                                    _parameters.isMetaOnly);
         CellStub.addCallback(_parameters.pool.send(_target, copyReplicaMessage),
                              new Callback<>("copy_"), _parameters.executor);
     }
