@@ -65,6 +65,12 @@ public class TaskParameters
     public final boolean isEager;
 
     /**
+     * Wether the job will only copy meta data to existing replicas or create
+     * new replicas.
+     */
+    public final boolean isMetaOnly;
+
+    /**
      * Whether to verify the checksum when reusing existing target replicas.
      */
     public final boolean computeChecksumOnUpdate;
@@ -85,11 +91,10 @@ public class TaskParameters
      */
     public final int replicas;
 
-    public TaskParameters(CellStub pool, CellStub pnfs, CellStub pinManager,
-                          ScheduledExecutorService executor,
+    public TaskParameters(CellStub pool, CellStub pnfs, CellStub pinManager, ScheduledExecutorService executor,
                           PoolSelectionStrategy selectionStrategy, RefreshablePoolList poolList, boolean isEager,
-                          boolean computeChecksumOnUpdate, boolean forceSourceMode, boolean maintainAtime,
-                          int replicas)
+                          boolean isMetaOnly, boolean computeChecksumOnUpdate, boolean forceSourceMode,
+                          boolean maintainAtime, int replicas)
     {
         this.pool = pool;
         this.pnfs = pnfs;
@@ -98,6 +103,7 @@ public class TaskParameters
         this.selectionStrategy = selectionStrategy;
         this.poolList = poolList;
         this.isEager = isEager;
+        this.isMetaOnly = isMetaOnly;
         this.computeChecksumOnUpdate = computeChecksumOnUpdate;
         this.forceSourceMode = forceSourceMode;
         this.maintainAtime = maintainAtime;

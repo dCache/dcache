@@ -113,7 +113,7 @@ public class Job
 
         _taskParameters = new TaskParameters(context.getPoolStub(), context.getPnfsStub(), context.getPinManagerStub(),
                                              context.getExecutor(), definition.selectionStrategy,
-                                             definition.poolList, definition.isEager,
+                                             definition.poolList, definition.isEager, definition.isMetaOnly,
                                              definition.computeChecksumOnUpdate, definition.forceSourceMode,
                                              definition.maintainAtime, definition.replicas);
 

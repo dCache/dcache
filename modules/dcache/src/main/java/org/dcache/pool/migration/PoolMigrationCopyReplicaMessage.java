@@ -27,6 +27,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     private final boolean _computeChecksumOnUpdate;
     private final boolean _forceSourceMode;
     private final Long _atime;
+    private final boolean _isMetaOnly;
 
     public PoolMigrationCopyReplicaMessage(UUID uuid, String pool,
                                            FileAttributes fileAttributes,
@@ -34,7 +35,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
                                            List<StickyRecord> stickyRecords,
                                            boolean computeChecksumOnUpdate,
                                            boolean forceSourceMode,
-                                           Long atime)
+                                           Long atime, boolean isMetaOnly)
     {
         super(uuid, pool, fileAttributes.getPnfsId());
         _fileAttributes = checkNotNull(fileAttributes);
@@ -43,6 +44,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
         _computeChecksumOnUpdate = computeChecksumOnUpdate;
         _forceSourceMode = forceSourceMode;
         _atime = atime;
+        _isMetaOnly = isMetaOnly;
     }
 
     public EntryState getState()
@@ -68,6 +70,11 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     public boolean isForceSourceMode()
     {
         return _forceSourceMode;
+    }
+
+    public boolean isMetaOnly()
+    {
+        return _isMetaOnly;
     }
 
     /**

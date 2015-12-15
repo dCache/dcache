@@ -507,6 +507,13 @@ public class MigrationModule
                 usage = "Determines the interpretation of the target names.")
         String target = "pool";
 
+        @Option(name="meta-only",
+                category="Target options",
+                usage="Only transfers meta data to an existing target replica. If a given file " +
+                      "does not have any other replicas on any of the target pools, the file " +
+                      "is skipped.")
+        boolean metaOnly;
+
         @Option(name="pause-when", metaVar="expr",
                 category="Lifetime options",
                 usage = "Pauses the job when the expression becomes true. The job " +
@@ -828,6 +835,7 @@ public class MigrationModule
                             refresh * 1000,
                             permanent,
                             eager,
+                            metaOnly,
                             replicas,
                             mustMovePins,
                             verify,
