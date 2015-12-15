@@ -124,9 +124,12 @@ public class RepositoryInterpreter
 
             long cnt = 0;
             for (PnfsId id : _repository) {
-                if (matches(id)) {
-                    _repository.setSticky(id, owner, expire, true);
-                    cnt++;
+                try {
+                    if (matches(id)) {
+                        _repository.setSticky(id, owner, expire, true);
+                        cnt++;
+                    }
+                } catch (FileNotInCacheException ignored) {
                 }
             }
 
