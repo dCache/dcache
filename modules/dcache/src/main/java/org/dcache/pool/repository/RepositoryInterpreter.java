@@ -1,5 +1,6 @@
 package org.dcache.pool.repository;
 
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,20 +8,27 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.util.Formats;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.joining;
 
 public class RepositoryInterpreter
     implements CellCommandListener
@@ -38,37 +46,102 @@ public class RepositoryInterpreter
         _repository.addListener(_statiStatisticsListener);
     }
 
-    public static final String hh_rep_set_sticky =
-        "[-o=<owner>] [-l=<lifetime in ms>] <pnfsid> on|off";
-    public String ac_rep_set_sticky_$_2(Args args)
-        throws CacheException, InterruptedException
+    @Command(name = "rep set sticky", hint = "change sticky flags",
+            description = "Changes the sticky flags on one or more replicas. Sticky flags prevent sweeper " +
+                          "from garbage collecting files. A sticky flag has an owner (a name) and an expiration " +
+                          "date. The expiration date may be infinite, in which case the sticky flag never expires. " +
+                          "Each replica can have zero or more sticky flags.\n\n" +
+                          "The command may set or clear a sticky flag of a specific replica or for a set of " +
+                          "replicas matches the given filter cafeterias.")
+    public class SetStickyCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        String state = args.argv(1);
+        @Argument(index = -2, required = false,
+                usage = "Only change the replica with the given ID.")
+        PnfsId pnfsId;
+
+        @Argument(index = -1, valueSpec = "on|off",
+                usage = "Whether to set or clear the sticky flag.")
+        String state;
+
+        @Option(name = "o", metaVar = "name", category = "Sticky properties",
+                usage = "The owner is a name for the flag. A replica can only have one sticky flag per owner.")
         String owner = "system";
-        if (args.hasOption("o")) {
-            owner = args.getOpt("o");
+
+        @Option(name = "l", metaVar = "millis", category = "Sticky properties",
+                usage = "The lifetime in milliseconds from now. Once the lifetime expires, the sticky flag is " +
+                        "removed. If no other sticky flags are left and the replica is marked as a cache, sweeper " +
+                        "may garbage collect it. A sticky flag with a lifetime of -1 never expires.")
+        Long lifetime;
+
+        @Option(name = "al", category = "Filter options", values={"online", "nearline"},
+                usage = "Only change replicas with the given access latency.")
+        AccessLatency al;
+
+        @Option(name = "rp", category = "Filter options", values={"custodial", "replica", "output"},
+                usage = "Only change replicas with the given retention policy.")
+        RetentionPolicy rp;
+
+        @Option(name = "storage", metaVar = "class", category = "Filter options",
+                usage = "Only change replicas with the given storage class.")
+        String storage;
+
+        @Option(name = "cache", metaVar = "class", category = "Filter options",
+                usage ="Only change replicas with the given cache class. If set to the empty string, the condition " +
+                       "will match any replica that does not have a cache class.")
+        String cache;
+
+        @Option(name = "all", category = "Filter options",
+                usage = "Allow using the command without any filter options and without a PNFS ID. This is a safe " +
+                        "guard against accidentally changing all replicas.")
+        boolean all;
+
+        @Override
+        public String call() throws Exception
+        {
+            long expire;
+            switch (state) {
+            case "on":
+                expire = (lifetime != null) ? Math.max(0, System.currentTimeMillis() + lifetime) : -1;
+                break;
+            case "off":
+                expire = 0;
+                break;
+            default:
+                return "Invalid sticky state : " + state;
+            }
+
+            if (pnfsId != null) {
+                if (!matches(pnfsId)) {
+                    return "Replica does not match filter conditions.";
+                }
+                _repository.setSticky(pnfsId, owner, expire, true);
+                return _repository.getEntry(pnfsId).getStickyRecords().stream().map(Object::toString).collect(joining("\n"));
+            }
+
+            if (al == null && rp == null && storage == null && cache == null && !all) {
+                return "Use -all to change sticky flag for all replicas.";
+            }
+
+            long cnt = 0;
+            for (PnfsId id : _repository) {
+                if (matches(id)) {
+                    _repository.setSticky(id, owner, expire, true);
+                    cnt++;
+                }
+            }
+
+            return cnt + " replicas updated.";
         }
 
-        long expire = -1;
-        if (args.hasOption("l")) {
-            long argValue = Long.parseLong(args.getOpt("l"));
-            checkArgument(argValue > 0, "the -l option must be a positive integer.");
-            expire = System.currentTimeMillis() + argValue;
+        protected boolean matches(PnfsId id) throws CacheException, InterruptedException
+        {
+            CacheEntry entry = _repository.getEntry(id);
+            FileAttributes attributes = entry.getFileAttributes();
+            return (al == null || attributes.isDefined(FileAttribute.ACCESS_LATENCY) && attributes.getAccessLatency().equals(al)) &&
+                   (rp == null || attributes.isDefined(FileAttribute.RETENTION_POLICY) && attributes.getRetentionPolicy().equals(rp)) &&
+                   (storage == null || attributes.isDefined(FileAttribute.STORAGECLASS) && Objects.equals(attributes.getStorageClass(), storage)) &&
+                   (cache == null || attributes.isDefined(FileAttribute.CACHECLASS) && Objects.equals(attributes.getCacheClass(), Strings.emptyToNull(cache)));
         }
-
-        switch (state) {
-        case "on":
-            _repository.setSticky(pnfsId, owner, expire, true);
-            break;
-        case "off":
-            _repository.setSticky(pnfsId, owner, 0, true);
-            break;
-        default:
-            throw new
-                    IllegalArgumentException("invalid sticky state : " + state);
-        }
-        return "";
     }
 
     public static final String hh_rep_sticky_ls = "<pnfsid>";
@@ -77,11 +150,7 @@ public class RepositoryInterpreter
     {
         PnfsId pnfsId  = new PnfsId(args.argv(0));
         CacheEntry entry = _repository.getEntry(pnfsId);
-        StringBuilder sb = new StringBuilder();
-        for(StickyRecord record: entry.getStickyRecords()) {
-            sb.append(record).append('\n');
-        }
-        return sb.toString();
+        return entry.getStickyRecords().stream().map(Object::toString).collect(joining("\n"));
     }
 
     public static final String fh_rep_ls =
