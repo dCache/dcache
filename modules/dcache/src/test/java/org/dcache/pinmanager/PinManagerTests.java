@@ -58,6 +58,7 @@ import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.util.Args;
+import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.pinmanager.model.Pin.State.PINNED;
@@ -103,6 +104,8 @@ public class PinManagerTests
         attributes.setSize(0L);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.<Checksum>emptySet());
+        attributes.setFlags(Collections.<String, String>emptyMap());
         return attributes;
     }
 
