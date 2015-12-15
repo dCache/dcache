@@ -68,6 +68,7 @@ public class CanlContextFactory extends SslContextFactory
     private OCSPCheckingMode ocspCheckingMode = OCSPCheckingMode.IF_AVAILABLE;
     private long certificateAuthorityUpdateInterval = 600000;
     private long credentialUpdateInterval = 60000;
+    private long validationCacheLifetime = 300000;
 
     private KeyPairCache keyPairCache;
 
@@ -183,6 +184,16 @@ public class CanlContextFactory extends SslContextFactory
         this.keyPairCache = keyPairCache;
     }
 
+    public long getValidationCacheLifetime()
+    {
+        return validationCacheLifetime;
+    }
+
+    public void setValidationCacheLifetime(long validationCacheLifetime)
+    {
+        this.validationCacheLifetime = validationCacheLifetime;
+    }
+
     @Override
     protected void doStart() throws Exception
     {
@@ -268,6 +279,7 @@ public class CanlContextFactory extends SslContextFactory
                         .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval)
                         .withLazy(false)
                         .withLoggingContext(new CDC()::restore)
+                        .withValidationCacheLifetime(validationCacheLifetime)
                         .build()
                         .getTrustManagers();
             }
