@@ -104,6 +104,10 @@ public class PinManagerTests
         attributes.setSize(0L);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.emptySet());
+        attributes.setCacheClass(null);
+        attributes.setHsm("osm");
+        attributes.setFlags(Collections.emptyMap());
         return attributes;
     }
 

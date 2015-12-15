@@ -138,6 +138,7 @@ public class HsmRestoreTest {
         attributes.setSize(5);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.emptySet());
         fileAttributesMessage.setFileAttributes(attributes);
         _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -215,6 +216,7 @@ public class HsmRestoreTest {
         attributes.setSize(5);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.emptySet());
         fileAttributesMessage.setFileAttributes(attributes);
         _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -315,6 +317,7 @@ public class HsmRestoreTest {
         attributes.setSize(5);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.emptySet());
         fileAttributesMessage.setFileAttributes(attributes);
         _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -414,6 +417,7 @@ public class HsmRestoreTest {
         attributes.setSize(5);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.emptySet());
         fileAttributesMessage.setFileAttributes(attributes);
         _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
