@@ -80,12 +80,15 @@ public class NoTerminalCommand implements Command, Runnable
     public void run() {
         try {
             repl();
+        } catch (IOException e) {
+            _logger.warn(e.getMessage());
         } finally {
             _exitCallback.onExit(0);
         }
     }
 
-    private void repl() {
+    private void repl() throws IOException
+    {
         Ansi.setEnabled(false);
         while (true) {
             Object error = null;
@@ -145,6 +148,8 @@ public class NoTerminalCommand implements Command, Runnable
                 }
             } catch (InterruptedException e) {
                 error = null;
+            } catch (IOException e) {
+                throw e;
             } catch (Exception e) {
                 error = e.getMessage();
                 if (error == null) {

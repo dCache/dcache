@@ -32,7 +32,6 @@ import dmg.util.CommandThrowableException;
 import dmg.util.command.HelpFormat;
 
 import org.dcache.commons.util.Strings;
-import org.dcache.util.Args;
 
 import static org.fusesource.jansi.Ansi.Color.CYAN;
 import static org.fusesource.jansi.Ansi.Color.RED;
@@ -234,6 +233,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
 
                 if (!s.isEmpty()) {
                     _console.println(s);
+                    _console.flush();
                 }
             }
         }
