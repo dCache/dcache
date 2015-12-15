@@ -107,19 +107,19 @@ public class RepositoryInterpreter
                 expire = 0;
                 break;
             default:
-                return "Invalid sticky state : " + state;
+                throw new IllegalArgumentException("Invalid sticky state : " + state);
             }
 
             if (pnfsId != null) {
                 if (!matches(pnfsId)) {
-                    return "Replica does not match filter conditions.";
+                    throw new IllegalArgumentException("Replica does not match filter conditions.");
                 }
                 _repository.setSticky(pnfsId, owner, expire, true);
                 return _repository.getEntry(pnfsId).getStickyRecords().stream().map(Object::toString).collect(joining("\n"));
             }
 
             if (al == null && rp == null && storage == null && cache == null && !all) {
-                return "Use -all to change sticky flag for all replicas.";
+                throw new IllegalArgumentException("Use -all to change sticky flag for all replicas.");
             }
 
             long cnt = 0;
