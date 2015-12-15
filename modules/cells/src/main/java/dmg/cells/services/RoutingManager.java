@@ -242,7 +242,7 @@ public class RoutingManager
                         .filter(p -> !p.contains(_domainAddress))    // Avoid routing loops
                         .collect(toSet());                           // No duplicate routes
 
-        boolean changed = false;
+        boolean changed = !_domainHash.containsKey(domain);
         if (oldPaths == null) {
             _log.info("Adding domain {}", domain);
             for (CellPath path : newPaths) {
