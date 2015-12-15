@@ -49,8 +49,14 @@ Entry
                 {
                 }
         query_success
+                [ !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
+                }
+        query_success
+                Failed
+                {
+                        failPermanently(FILE_NOT_IN_REPOSITORY, "File skipped because it has no existing replicas");
                 }
 }
 
@@ -68,7 +74,7 @@ Entry
                 {
                 }
         copy_timeout
-                [ ctxt.isEager() ]
+                [ ctxt.isEager() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
                 }
@@ -84,7 +90,7 @@ Entry
                         updateExistingReplica();
                 }
         copy_noroute
-                [ ctxt.isEager() ]
+                [ ctxt.isEager() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
                 }
@@ -106,8 +112,14 @@ Entry
                         updateExistingReplica();
                 }
         copy_failure(rc: Integer, cause: Object)
+                [ !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
+                }
+        copy_failure(rc: Integer, cause: Object)
+                Failed
+                {
+                        fail(rc, String.format("Transfer to %s failed (%s)", ctxt.getTarget(), cause));
                 }
         copy_success
                 Copying
@@ -237,8 +249,14 @@ WaitingForCopyReplicaReply
                 {
                 }
         copy_success
+                [ !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
+                }
+        copy_success
+                Failed
+                {
+                        failPermanently(FILE_NOT_IN_REPOSITORY, "File skipped because it does not have enough existing replicas");
                 }
         copy_nopools
                 Failed
@@ -312,9 +330,15 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ ctxt.needsMoreReplicas() ]
+                [ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() ]
+                Failed
+                {
+                        failPermanently(FILE_NOT_IN_REPOSITORY, "File skipped because it does not have enough existing replicas");
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ ctxt.getMustMovePins() ]
@@ -382,9 +406,15 @@ Entry
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ ctxt.needsMoreReplicas() ]
+                [ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() ]
+                Failed
+                {
+                        failPermanently(FILE_NOT_IN_REPOSITORY, "File skipped because it does not have enough existing replicas");
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ ctxt.getMustMovePins() ]
@@ -468,9 +498,15 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ ctxt.needsMoreReplicas() ]
+                [ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() ]
+                Failed
+                {
+                        failPermanently(FILE_NOT_IN_REPOSITORY, "File skipped because it does not have enough existing replicas");
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ ctxt.getMustMovePins() ]
@@ -530,9 +566,15 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ ctxt.needsMoreReplicas() ]
+                [ ctxt.needsMoreReplicas() && !ctxt.isMetaOnly() ]
                 InitiatingCopy
                 {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() ]
+                Failed
+                {
+                        failPermanently(FILE_NOT_IN_REPOSITORY, "File skipped because it does not have enough existing replicas");
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ ctxt.getMustMovePins() ]
