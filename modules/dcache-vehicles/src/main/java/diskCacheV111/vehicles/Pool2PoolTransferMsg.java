@@ -14,13 +14,14 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.*;
 
 
 public class Pool2PoolTransferMsg extends PoolMessage {
 
     public static final ImmutableSet<FileAttribute> NEEDED_ATTRIBUTES =
-            Sets.immutableEnumSet(FileAttribute.PNFSID, FileAttribute.STORAGEINFO, FileAttribute.CHECKSUM, FileAttribute.SIZE);
+            Sets.immutableEnumSet(PNFSID, STORAGEINFO, CHECKSUM, SIZE, ACCESS_LATENCY, RETENTION_POLICY,
+                                  STORAGECLASS, CACHECLASS, HSM, FLAGS);
 
     public static final int   UNDETERMINED = 0 ;
     public static final int   PRECIOUS     = 1 ;
