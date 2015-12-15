@@ -48,6 +48,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import org.dcache.util.CachingCertificateValidator;
+
 import static eu.emi.security.authn.x509.ValidationErrorCategory.*;
 import static eu.emi.security.authn.x509.ValidationErrorCategory.CRL;
 import static eu.emi.security.authn.x509.ValidationErrorCategory.OCSP;
@@ -110,7 +112,9 @@ public class CanlContextFactory implements SslContextFactory
         private Path certificatePath = FileSystems.getDefault().getPath("/etc/grid-security/hostcert.pem");
         private long credentialUpdateInterval = 1;
         private TimeUnit credentialUpdateIntervalUnit = TimeUnit.MINUTES;
-        private Supplier<AutoCloseable> contextSupplier = () -> () -> {};
+        private Supplier<AutoCloseable> contextSupplier = () -> () -> {
+        };
+        private long validationCacheLifetime = 300000;
 
         private Builder()
         {
@@ -188,6 +192,18 @@ public class CanlContextFactory implements SslContextFactory
             return this;
         }
 
+        public Builder withValidationCacheLifetime(long millis)
+        {
+            this.validationCacheLifetime = millis;
+            return this;
+        }
+
+        public Builder withValidationCacheLifetime(long duration, TimeUnit unit)
+        {
+            this.validationCacheLifetime = unit.toMillis(duration);
+            return this;
+        }
+
         public CanlContextFactory build()
         {
             OCSPParametes ocspParameters = new OCSPParametes(ocspCheckingMode);
@@ -195,9 +211,11 @@ public class CanlContextFactory implements SslContextFactory
                     new ValidatorParams(new RevocationParameters(crlCheckingMode, ocspParameters),
                                         ProxySupport.ALLOW);
             X509CertChainValidator v =
-                    new OpensslCertChainValidator(certificateAuthorityPath.toString(), true, namespaceMode,
-                                                  certificateAuthorityUpdateInterval,
-                                                  validatorParams, lazyMode);
+                    new CachingCertificateValidator(
+                            new OpensslCertChainValidator(certificateAuthorityPath.toString(), true, namespaceMode,
+                                                          certificateAuthorityUpdateInterval,
+                                                          validatorParams, lazyMode),
+                            validationCacheLifetime);
             v.addUpdateListener((location, type, level, cause) -> {
                 try (AutoCloseable ignored = contextSupplier.get()) {
                     switch (level) {
