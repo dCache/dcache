@@ -1,5 +1,6 @@
 package org.dcache.pool.migration;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Range;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
@@ -353,8 +354,14 @@ public class MigrationModule
 
         @Option(name="storage", metaVar="class",
                 category="Filter options",
-                usage="Only copy replicas with the given access latency.")
+                usage="Only copy replicas with the given storage class.")
         String storage;
+
+        @Option(name="cache", metaVar="class",
+                category="Filter options",
+                usage="Only copy replicas with the given cache class. An empty string will match any " +
+                      "replica without a cache class.")
+        String cache;
 
         @Option(name="concurrency",
                 category="Transfer options",
@@ -711,6 +718,10 @@ public class MigrationModule
 
             if (storage != null) {
                 filters.add(new StorageClassFilter(storage));
+            }
+
+            if (cache != null) {
+                filters.add(new CacheClassFilter(Strings.emptyToNull(cache)));
             }
 
             if (pnfsid != null) {
