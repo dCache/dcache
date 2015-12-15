@@ -66,6 +66,12 @@ public class JobDefinition
     public final boolean isEager;
 
     /**
+     * Wether the job will only copy meta data to existing replicas or create
+     * new replicas.
+     */
+    public final boolean isMetaOnly;
+
+    /**
      * Whether to move pins to the target pool after successful migration.
      */
     public final boolean mustMovePins;
@@ -111,6 +117,7 @@ public class JobDefinition
                          long refreshPeriod,
                          boolean isPermanent,
                          boolean isEager,
+                         boolean isMetaOnly,
                          int replicas,
                          boolean mustMovePins,
                          boolean computeChecksumOnUpdate,
@@ -129,6 +136,7 @@ public class JobDefinition
         this.refreshPeriod = refreshPeriod;
         this.isPermanent = isPermanent;
         this.isEager = isEager;
+        this.isMetaOnly = isMetaOnly;
         this.replicas = replicas;
         this.mustMovePins = mustMovePins;
         this.computeChecksumOnUpdate = computeChecksumOnUpdate;

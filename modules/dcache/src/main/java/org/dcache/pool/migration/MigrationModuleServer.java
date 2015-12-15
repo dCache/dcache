@@ -177,6 +177,7 @@ public class MigrationModuleServer
         private final boolean _computeChecksumOnUpdate;
         private final boolean _forceSourceMode;
         private final Long _atime;
+        private final boolean _isMetaOnly;
         private Integer _companion;
         private Future<?> _updateTask;
 
@@ -191,6 +192,7 @@ public class MigrationModuleServer
             _computeChecksumOnUpdate = message.getComputeChecksumOnUpdate();
             _forceSourceMode = message.isForceSourceMode();
             _atime = message.getAtime();
+            _isMetaOnly = message.isMetaOnly();
 
             if (_targetState != PRECIOUS && _targetState != CACHED) {
                 throw new IllegalArgumentException("State must be either CACHED or PRECIOUS");
@@ -218,6 +220,9 @@ public class MigrationModuleServer
         {
             EntryState state = _repository.getState(_pnfsId);
             if (state == EntryState.NEW) {
+                if (_isMetaOnly) {
+                    throw new CacheException(CacheException.FILE_NOT_IN_REPOSITORY, "Pool does not contain " + _pnfsId);
+                }
                 _companion = _p2p.newCompanion(_pool, _fileAttributes,
                                                _targetState, _stickyRecords,
                                                this, _forceSourceMode,
