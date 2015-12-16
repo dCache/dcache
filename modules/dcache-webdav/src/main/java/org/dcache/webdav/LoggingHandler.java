@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 
 import static org.dcache.webdav.DcacheResourceFactory.TRANSACTION_ATTRIBUTE;
@@ -49,6 +50,7 @@ public class LoggingHandler extends HandlerWrapper {
             log.add("location", response.getHeader("Location"));
             HttpServletRequest r = request;
             InetAddress addr = InetAddresses.forString(r.getRemoteAddr());
+            log.add("socket.remote", new InetSocketAddress(addr, r.getRemotePort()));
             log.add("user-agent", request.getHeader("User-Agent"));
 
             log.add("user.dn", getCertificateName(request));
