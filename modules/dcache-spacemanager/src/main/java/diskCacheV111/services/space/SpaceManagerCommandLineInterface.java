@@ -567,7 +567,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Argument(required = false,
                   usage = "Only show files with this PNFSID or path.",
                   valueSpec = "PNFSID|PATH")
-        Glob pattern;
+        String file;
 
         @Override
         public String executeInTransaction() throws DataAccessException, CacheException
@@ -585,14 +585,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             }
 
             Iterable<File> files;
-            if (pattern != null) {
-                PnfsId pnfsId = pnfs.getPnfsIdByPath(pattern.toString());
+            if (file != null) {
+                PnfsId pnfsId = PnfsId.isValid(file) ? new PnfsId(file) : pnfs.getPnfsIdByPath(file);
                 files = db.get(filesWhereOptionsMatch().wherePnfsIdIs(pnfsId), limit);
-                try {
-                    List<File> moreFiles = db.get(filesWhereOptionsMatch().wherePnfsIdIs(new PnfsId(pattern.toString())), limit);
-                    files = concat(moreFiles, files);
-                } catch (IllegalArgumentException ignored) {
-                }
             } else {
                 files = db.get(filesWhereOptionsMatch(), limit);
             }
@@ -648,7 +643,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             }
             if (states != null && states.length > 0) {
                 files.whereStateIsIn(states);
-            } else if (!all && pattern == null) {
+            } else if (!all && file == null) {
                 files.whereStateIsIn(FileState.TRANSFERRING);
             }
             return files;
