@@ -276,7 +276,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         if (_state == EntryState.REMOVED) {
             throw new CacheException("Entry in removed state");
         }
-        if (!overwrite && any(_sticky, r -> r.owner().equals(owner) && r.isValidAt(expire))) {
+        if (any(_sticky, r -> r.owner().equals(owner) && (r.expire() == expire || !overwrite && r.isValidAt(expire)))) {
             return false;
         }
         ImmutableList.Builder<StickyRecord> builder = ImmutableList.builder();
