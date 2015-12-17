@@ -3,6 +3,7 @@ package org.dcache.auth;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import com.google.common.cache.CacheStats;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
@@ -10,6 +11,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import javax.security.auth.Subject;
 
+import java.io.PrintWriter;
 import java.security.Principal;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -19,14 +21,16 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 
 import org.dcache.util.Args;
 
 /**
  * Caching implementation of {@link LoginStrategy}.
  */
-public class CachingLoginStrategy implements LoginStrategy, CellCommandListener {
-
+public class CachingLoginStrategy implements LoginStrategy, CellCommandListener, CellInfoProvider
+{
     private final LoginStrategy _inner;
 
     private final LoadingCache<Principal,CheckedFuture<Principal, CacheException>> _forwardCache;
@@ -53,18 +57,21 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener 
                 .expireAfterWrite(timeout, unit)
                 .maximumSize(size)
                 .softValues()
+                .recordStats()
                 .build( new ForwardFetcher());
 
         _reverseCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(timeout, unit)
                 .maximumSize(size)
                 .softValues()
+                .recordStats()
                 .build( new ReverseFetcher());
 
         _loginCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(timeout, unit)
                 .maximumSize(size)
                 .softValues()
+                .recordStats()
                 .build( new LoginFetcher());
 
         _time = timeout;
@@ -212,5 +219,19 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener 
             }
         }
         return sb.toString();
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.append("gPlazma login cache: ").println(_loginCache.stats());
+        pw.append("gPlazma map cache: ").println(_forwardCache.stats());
+        pw.append("gPlazma reverse map cache: ").println(_reverseCache.stats());
+    }
+
+    @Override
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 }

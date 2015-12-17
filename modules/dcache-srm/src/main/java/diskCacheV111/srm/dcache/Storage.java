@@ -96,6 +96,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
 
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
@@ -250,6 +251,7 @@ public final class Storage
     private static final LoadingCache<InetAddress,String> GET_HOST_BY_ADDR_CACHE =
             CacheBuilder.newBuilder()
                     .expireAfterWrite(10, MINUTES)
+                    .recordStats()
                     .build(new GetHostByAddressCacheLoader());
 
     /* these are the  protocols
@@ -305,6 +307,7 @@ public final class Storage
                     .maximumSize(1000)
                     .expireAfterWrite(10, MINUTES)
                     .refreshAfterWrite(30, SECONDS)
+                    .recordStats()
                     .build(
                             new CacheLoader<String, Optional<Space>>()
                             {
@@ -351,6 +354,7 @@ public final class Storage
                     .maximumSize(1000)
                     .expireAfterWrite(30, SECONDS)
                     .refreshAfterWrite(10, SECONDS)
+                    .recordStats()
                     .build(new CacheLoader<GetSpaceTokensKey, long[]>()
                     {
                         @Override
@@ -548,6 +552,14 @@ public final class Storage
     public boolean isVerificationRequired()
     {
         return _isVerificationRequired;
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.append("Custom reverse DNS lookup cache: ").println(GET_HOST_BY_ADDR_CACHE.stats());
+        pw.append("Space token by owner cache: ").println(spaceTokens.stats());
+        pw.append("Space by token cache: ").println(spaces.stats());
     }
 
     public void messageArrived(final TransferManagerMessage msg)
