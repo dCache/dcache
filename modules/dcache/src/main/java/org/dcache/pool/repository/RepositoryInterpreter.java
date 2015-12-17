@@ -115,7 +115,8 @@ public class RepositoryInterpreter
                     throw new IllegalArgumentException("Replica does not match filter conditions.");
                 }
                 _repository.setSticky(pnfsId, owner, expire, true);
-                return _repository.getEntry(pnfsId).getStickyRecords().stream().map(Object::toString).collect(joining("\n"));
+                return _repository.getEntry(pnfsId).getStickyRecords().stream()
+                        .filter(StickyRecord::isValid).map(Object::toString).collect(joining("\n"));
             }
 
             if (al == null && rp == null && storage == null && cache == null && !all) {
@@ -153,7 +154,8 @@ public class RepositoryInterpreter
     {
         PnfsId pnfsId  = new PnfsId(args.argv(0));
         CacheEntry entry = _repository.getEntry(pnfsId);
-        return entry.getStickyRecords().stream().map(Object::toString).collect(joining("\n"));
+        return entry.getStickyRecords().stream()
+                .filter(StickyRecord::isValid).map(Object::toString).collect(joining("\n"));
     }
 
     public static final String fh_rep_ls =
