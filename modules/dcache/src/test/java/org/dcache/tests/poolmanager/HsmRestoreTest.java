@@ -42,6 +42,7 @@ import org.dcache.poolmanager.PartitionManager;
 import org.dcache.tests.cells.MockCellEndpoint;
 import org.dcache.tests.cells.MockCellEndpoint.MessageAction;
 import org.dcache.util.Args;
+import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
@@ -136,6 +137,7 @@ public class HsmRestoreTest {
         attributes.setSize(5);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.<Checksum>emptySet());
         fileAttributesMessage.setFileAttributes(attributes);
         _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -213,6 +215,7 @@ public class HsmRestoreTest {
         attributes.setSize(5);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.<Checksum>emptySet());
         fileAttributesMessage.setFileAttributes(attributes);
         _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -313,6 +316,7 @@ public class HsmRestoreTest {
         attributes.setSize(5);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.<Checksum>emptySet());
         fileAttributesMessage.setFileAttributes(attributes);
         _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
@@ -412,6 +416,7 @@ public class HsmRestoreTest {
         attributes.setSize(5);
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
+        attributes.setChecksums(Collections.<Checksum>emptySet());
         fileAttributesMessage.setFileAttributes(attributes);
         _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
