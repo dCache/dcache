@@ -202,12 +202,6 @@ public abstract class Request extends Job {
     @Nullable
     private String description;
 
-    public void addDebugHistoryEvent(String description) {
-        if(getJobStorage().isJdbcLogRequestHistoryInDBEnabled()) {
-            addHistoryEvent( description);
-        }
-    }
-
     /**
      * gets request id as int
      * @return

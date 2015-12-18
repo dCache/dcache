@@ -151,12 +151,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         dbInit();
     }
 
-    @Override
-    public boolean isJdbcLogRequestHistoryInDBEnabled()
-    {
-        return logHistory;
-    }
-
     public static final String createFileRequestTablePrefix =
             "ID "+         longType+" NOT NULL PRIMARY KEY"+
                     ","+
@@ -442,10 +436,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public void saveJob(final Job job, boolean force) throws DataAccessException
     {
-        if (!force && !logHistory) {
-            return;
-        }
-
         final List<Job.JobHistory> history = getJobHistoriesToSave(job);
         transactionTemplate.execute(status -> jdbcTemplate.execute((Connection con) -> {
             int rowCount = updateJob(con, job);
