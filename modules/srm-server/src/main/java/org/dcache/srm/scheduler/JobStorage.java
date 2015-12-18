@@ -101,8 +101,6 @@ public interface JobStorage<J extends Job> {
     void saveJob(J job, boolean force)
             throws DataAccessException;
 
-    boolean isJdbcLogRequestHistoryInDBEnabled();
-
     Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException;
     Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException;
     Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException;

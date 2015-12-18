@@ -124,12 +124,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         this.transactionTemplate = new TransactionTemplate(configuration.getTransactionManager());
     }
 
-    @Override
-    public boolean isJdbcLogRequestHistoryInDBEnabled()
-    {
-        return logHistory;
-    }
-
     //this should always reflect the number of field definde in the
     // prefix above
     public abstract String getTableName();
@@ -283,10 +277,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public void saveJob(final Job job, boolean force) throws DataAccessException
     {
-        if (!force && !logHistory) {
-            return;
-        }
-
         final List<Job.JobHistory> history = getJobHistoriesToSave(job);
         transactionTemplate.execute(status -> jdbcTemplate.execute((Connection con) -> {
             int rowCount = updateJob(con, job);

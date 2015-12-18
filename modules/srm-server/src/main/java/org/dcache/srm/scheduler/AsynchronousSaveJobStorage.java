@@ -66,10 +66,6 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
 
     public void saveJob(final J job, final boolean force)
     {
-        if (!force && !isJdbcLogRequestHistoryInDBEnabled()) {
-            return;
-        }
-
         UpdateState existingState;
         if (force) {
             existingState = states.put(job.getId(), UpdateState.QUEUED_FORCED);
@@ -122,12 +118,6 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
                 }
             }
         }
-    }
-
-    @Override
-    public boolean isJdbcLogRequestHistoryInDBEnabled()
-    {
-        return storage.isJdbcLogRequestHistoryInDBEnabled();
     }
 
     @Override
