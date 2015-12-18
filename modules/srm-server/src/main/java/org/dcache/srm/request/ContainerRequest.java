@@ -292,143 +292,139 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     }
 
     public final RequestStatus getRequestStatus() {
-        // we used to synchronize on this container request here, but
-        // it does not make sence as the file requests are being processed
-        // by multiple threads,  and synchronizing here can cause a deadlock
-        // once all field access is made sycnhronized and file request need to
-        // access container request fields
-        // we can rely on the fact that
-        // once file request reach their final state, this state does not change
-        // so the combined logic
-        updateRetryDeltaTime();
-        RequestStatus rs = new RequestStatus();
-        rs.requestId = getRequestNum();
-        rs.errorMessage = getLastJobChange().getDescription();
-        int len = getNumOfFileRequest();
-        rs.fileStatuses = new RequestFileStatus[len];
-        boolean haveFailedRequests = false;
-        boolean havePendingRequests = false;
-        boolean haveRunningRequests = false;
-        boolean haveReadyRequests = false;
-        boolean haveDoneRequests = false;
-        String fr_error="";
-        for(int i = 0; i< len; ++i) {
-            R fr = fileRequests.get(i);
-            fr.tryToReady();
-            RequestFileStatus rfs = fr.getRequestFileStatus();
-            if(rfs == null){
-                haveFailedRequests = true;
-                fr_error += "RequestFileStatus is null : fr.errorMessage= [ "+fr.getErrorMessage()+"]\n";
-                continue;
+        wlock();
+        try {
+            // we used to synchronize on this container request here, but
+            // it does not make sence as the file requests are being processed
+            // by multiple threads,  and synchronizing here can cause a deadlock
+            // once all field access is made sycnhronized and file request need to
+            // access container request fields
+            // we can rely on the fact that
+            // once file request reach their final state, this state does not change
+            // so the combined logic
+            updateRetryDeltaTime();
+            RequestStatus rs = new RequestStatus();
+            rs.requestId = getRequestNum();
+            rs.errorMessage = getLastJobChange().getDescription();
+            int len = getNumOfFileRequest();
+            rs.fileStatuses = new RequestFileStatus[len];
+            boolean haveFailedRequests = false;
+            boolean havePendingRequests = false;
+            boolean haveRunningRequests = false;
+            boolean haveReadyRequests = false;
+            boolean haveDoneRequests = false;
+            String fr_error = "";
+            for (int i = 0; i < len; ++i) {
+                R fr = fileRequests.get(i);
+                fr.tryToReady();
+                RequestFileStatus rfs = fr.getRequestFileStatus();
+                if (rfs == null) {
+                    haveFailedRequests = true;
+                    fr_error += "RequestFileStatus is null : fr.errorMessage= [ " + fr.getErrorMessage() + "]\n";
+                    continue;
+                }
+                rs.fileStatuses[i] = rfs;
+                String state = rfs.state;
+                switch (state) {
+                case "Pending":
+                    havePendingRequests = true;
+                    break;
+                case "Running":
+                    haveRunningRequests = true;
+                    break;
+                case "Ready":
+                    haveReadyRequests = true;
+                    break;
+                case "Done":
+                    haveDoneRequests = true;
+                    break;
+                case "Failed":
+                    haveFailedRequests = true;
+                    fr_error += "RequestFileStatus#" + rfs.fileId + " failed with error:[ " + fr
+                            .getErrorMessage() + "]\n";
+                    break;
+                default:
+                    logger.error("File Request state is unknown!!! state  == " + state);
+                    logger.error("fr is " + fr);
+                    break;
+                }
             }
-            rs.fileStatuses[i] = rfs;
-            String state = rfs.state;
-            switch (state) {
-            case "Pending":
-                havePendingRequests = true;
-                break;
-            case "Running":
-                haveRunningRequests = true;
-                break;
-            case "Ready":
-                haveReadyRequests = true;
-                break;
-            case "Done":
-                haveDoneRequests = true;
-                break;
-            case "Failed":
-                haveFailedRequests = true;
-                fr_error += "RequestFileStatus#" + rfs.fileId + " failed with error:[ " + fr
-                        .getErrorMessage() + "]\n";
-                break;
-            default:
-                logger.error("File Request state is unknown!!! state  == " + state);
-                logger.error("fr is " + fr);
-                break;
+
+            if (haveFailedRequests) {
+                rs.errorMessage += "\n" + fr_error;
             }
-        }
 
-        if(haveFailedRequests){
-            rs.errorMessage += "\n"+fr_error;
-        }
-
-        switch (getState()) {
-        case DONE:
-            rs.state = "Done";
-            break;
-
-        case CANCELED:
-        case FAILED:
-            rs.state = "Failed";
-            break;
-
-        default:
-            if (havePendingRequests) {
-                rs.state = "Pending";
-            } else if (haveRunningRequests || haveReadyRequests) {
-                rs.state = "Active";
-            } else if(haveFailedRequests) {
-                // no running, no ready and  no pending  requests
-                // there are only failed requests
-                // we can fail this request
-
-                // REVISIT: the above logic seems flawed: this branch is reached
-                //          if there are multiple file requests, some in state
-                //          Done and others in state Failed.  The behaviour may
-                //          be correct, but should be checked.
-
-                rs.state = "Failed";
-                try
-                {
-                    setState(State.FAILED, "File requests have failed.");
-                    stopUpdating();
-                }
-                catch(IllegalStateTransition ist)
-                {
-                    logger.error("Illegal State Transition : " +ist.getMessage());
-                }
-            } else if (haveDoneRequests) {
-                // all requests are done
-                try
-                {
-                    setState(State.DONE, "All file requests succeeded.");
-                    stopUpdating();
-                }
-                catch(IllegalStateTransition ist)
-                {
-                    logger.error("Illegal State Transition : " +ist.getMessage());
-                }
+            switch (getState()) {
+            case DONE:
                 rs.state = "Done";
-            } else {
-                // we should never be here, but we have this block
-                // in case request is restored with no files in it
+                break;
 
-                logger.error("request state is unknown or no files in request!!!");
-                stopUpdating();
-                try
-                {
-                    setState(State.FAILED, "Request state is unknown or no files in request!!!");
-                }
-                catch(IllegalStateTransition ist)
-                {
-                    logger.error("Illegal State Transition : " +ist.getMessage());
-                }
+            case CANCELED:
+            case FAILED:
                 rs.state = "Failed";
+                break;
+
+            default:
+                if (havePendingRequests) {
+                    rs.state = "Pending";
+                } else if (haveRunningRequests || haveReadyRequests) {
+                    rs.state = "Active";
+                } else if (haveFailedRequests) {
+                    // no running, no ready and  no pending  requests
+                    // there are only failed requests
+                    // we can fail this request
+
+                    // REVISIT: the above logic seems flawed: this branch is reached
+                    //          if there are multiple file requests, some in state
+                    //          Done and others in state Failed.  The behaviour may
+                    //          be correct, but should be checked.
+
+                    rs.state = "Failed";
+                    try {
+                        setState(State.FAILED, "File requests have failed.");
+                        stopUpdating();
+                    } catch (IllegalStateTransition ist) {
+                        logger.error("Illegal State Transition : " + ist.getMessage());
+                    }
+                } else if (haveDoneRequests) {
+                    // all requests are done
+                    try {
+                        setState(State.DONE, "All file requests succeeded.");
+                        stopUpdating();
+                    } catch (IllegalStateTransition ist) {
+                        logger.error("Illegal State Transition : " + ist.getMessage());
+                    }
+                    rs.state = "Done";
+                } else {
+                    // we should never be here, but we have this block
+                    // in case request is restored with no files in it
+
+                    logger.error("request state is unknown or no files in request!!!");
+                    stopUpdating();
+                    try {
+                        setState(State.FAILED, "Request state is unknown or no files in request!!!");
+                    } catch (IllegalStateTransition ist) {
+                        logger.error("Illegal State Transition : " + ist.getMessage());
+                    }
+                    rs.state = "Failed";
+                }
             }
-        }
 
-        // the following it the hack to make FTS happy
-        //FTS expects the errorMessage to be "" if the state is not Failed
-        if(!rs.state.equals("Failed")) {
-            rs.errorMessage="";
-        }
+            // the following it the hack to make FTS happy
+            //FTS expects the errorMessage to be "" if the state is not Failed
+            if (!rs.state.equals("Failed")) {
+                rs.errorMessage = "";
+            }
 
-        rs.type = getMethod();
-        rs.retryDeltaTime = retryDeltaTime;
-        rs.submitTime = new Date(getCreationTime());
-        rs.finishTime = new Date(getCreationTime() +getLifetime() );
-        rs.startTime = new Date(System.currentTimeMillis()+retryDeltaTime*1000);
-        return rs;
+            rs.type = getMethod();
+            rs.retryDeltaTime = retryDeltaTime;
+            rs.submitTime = new Date(getCreationTime());
+            rs.finishTime = new Date(getCreationTime() + getLifetime());
+            rs.startTime = new Date(System.currentTimeMillis() + retryDeltaTime * 1000);
+            return rs;
+        } finally {
+            wunlock();
+        }
     }
 
     public TReturnStatus getTReturnStatus()  {
