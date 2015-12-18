@@ -12,10 +12,10 @@ import org.dcache.srm.request.Job;
  *
  * @author timur
  */
-public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStorage<J> {
+public class ForceOnlyJobStorageDecorator<J extends Job> implements JobStorage<J> {
 
     private final JobStorage<J> jobStorage;
-    public FinalStateOnlyJobStorageDecorator(JobStorage<J> jobStorage ) {
+    public ForceOnlyJobStorageDecorator(JobStorage<J> jobStorage ) {
         this.jobStorage = jobStorage;
     }
 
@@ -47,7 +47,7 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
 
     @Override
     public void saveJob(J job, boolean force) throws DataAccessException {
-        if (force || job.getState().isFinal()) {
+        if (force) {
             jobStorage.saveJob(job, force);
         }
     }
@@ -82,9 +82,4 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
         return jobStorage.getActiveJobs();
     }
 
-    @Override
-    public boolean isJdbcLogRequestHistoryInDBEnabled()
-    {
-        return jobStorage.isJdbcLogRequestHistoryInDBEnabled();
-    }
 }

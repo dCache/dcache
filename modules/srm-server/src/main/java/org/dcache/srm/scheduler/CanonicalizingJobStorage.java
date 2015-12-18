@@ -107,12 +107,6 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public boolean isJdbcLogRequestHistoryInDBEnabled()
-    {
-        return storage.isJdbcLogRequestHistoryInDBEnabled();
-    }
-
-    @Override
     public Set<Long> getLatestCompletedJobIds(int maxNum) throws DataAccessException
     {
         return storage.getLatestCompletedJobIds(maxNum);
