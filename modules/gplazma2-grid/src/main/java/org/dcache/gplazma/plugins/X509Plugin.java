@@ -86,7 +86,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                 if (isX509CertPath(credential)) {
                     X509Certificate[] chain = CertPaths.getX509Certificates((CertPath) credential);
 
-                    if (origin.isPresent()) {
+                    if (origin.isPresent() && ProxyUtils.isProxy(chain)) {
                         ProxyChainInfo info = new ProxyChainInfo(chain);
                         InetAddress address = origin.get().getAddress();
                         if (!info.isHostAllowedAsSource(address.getAddress())) {
