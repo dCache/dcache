@@ -215,7 +215,6 @@ public class HttpClientSender extends BasicHandler
         if (clientProperties.getDefaultSoTimeout() > 0) {
             socketOptions.setSoTimeout(clientProperties.getDefaultSoTimeout());
         }
-        socketOptions.setTcpNoDelay(true);
         cm.setDefaultSocketConfig(socketOptions.build());
         return cm;
     }
