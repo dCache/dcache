@@ -266,7 +266,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
 
             entity.writeTo(Channels.newOutputStream(to));
         } catch (IOException e) {
-            throw new ThirdPartyTransferFailedCacheException(e.getMessage(), e);
+            throw new ThirdPartyTransferFailedCacheException(e.toString(), e);
         }
 
         if (_remoteSuppliedChecksum != null) {
@@ -363,9 +363,9 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
                             " " + status.getReasonPhrase());
                 }
             } catch (IOException e) {
-                _log.error("problem connecting: {}", e.getMessage());
+                _log.error("problem connecting: {}", e.toString());
                 throw new ThirdPartyTransferFailedCacheException("failed to " +
-                        "connect to server: " + e.getMessage(), e);
+                        "connect to server: " + e.toString(), e);
             }
         }
 
@@ -450,7 +450,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
                     return;
                 } catch (IOException e) {
                     throw new ThirdPartyTransferFailedCacheException("failed to " +
-                            "connect to server: " + e.getMessage(), e);
+                            "connect to server: " + e.toString(), e);
                 }
             }
         } catch (InterruptedException e) {
@@ -560,9 +560,12 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
                         "server rejected DELETE: " + status.getStatusCode() +
                         " " + status.getReasonPhrase());
             }
-        } catch (CacheException | IOException e) {
+        } catch (CacheException e) {
             throw new ThirdPartyTransferFailedCacheException("delete of " +
                     "remote file (triggered by " + why + ") failed: " + e.getMessage());
+        } catch (IOException e) {
+            throw new ThirdPartyTransferFailedCacheException("delete of " +
+                    "remote file (triggered by " + why + ") failed: " + e.toString());
         }
     }
 
