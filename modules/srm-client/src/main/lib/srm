@@ -139,6 +139,18 @@ if [ -n "$SRM_CONFIG" -a  "$SRM_CONFIG" != "NONE" -a -f "$SRM_CONFIG" ]; then
     SRMCP_OPTIONS="-conf=$SRM_CONFIG $SRMCP_OPTIONS"
 fi
 
+for arg in "$@"; do
+  case "$arg" in
+      -delegate|-delegate=true)
+          # CBC protection works around the TLS 1.0 BEAST attack; it does this by splitting the first
+          # payload into a 1 byte and a n-1 byte chunk. This breaks GSI delegation for JGlobus as
+          # JGlobus expects the certificate as a single TLS frame.
+          OPTIONS="-Djsse.enableCBCProtection=false ${OPTIONS}"
+          break
+          ;;
+  esac
+done
+
 cmd="$java_location $OPTIONS gov.fnal.srm.util.SRMDispatcher $SRMCP_OPTIONS $args"
 if [ "$DEBUG" = "true" ]; then
     echo "CLASSPATH: $SRM_CP"
