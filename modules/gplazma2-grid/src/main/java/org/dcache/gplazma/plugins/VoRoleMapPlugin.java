@@ -67,10 +67,8 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
         return false;
     }
 
-    private boolean addMappingFor(FQAN fqan,
-                                  GlobusPrincipal globusPrincipal,
-                                  boolean isPrimary,
-                                  Set<Principal> principals)
+    private boolean addMappingFor(GlobusPrincipal globusPrincipal, FQANPrincipal fqanPrincipal,
+                                  FQAN fqan, boolean isPrimary, Set<Principal> principals)
     {
         String dn = globusPrincipal.getName();
         List<String> names =
@@ -81,7 +79,7 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
 
         String name = names.get(0);
         principals.add(new GroupNamePrincipal(name, isPrimary));
-        _log.info("VOMS authorization successful for user with DN: {} and FQAN: {} for user name: {}.", dn, fqan, name);
+        _log.info("VOMS authorization successful for user with DN: {} and FQAN: {} for user name: {}.", dn, fqanPrincipal, name);
         return true;
     }
 
@@ -103,7 +101,7 @@ public class VoRoleMapPlugin implements GPlazmaMappingPlugin
             FQAN fqan = fqanPrincipal.getFqan();
             do {
                 for (GlobusPrincipal globusPrincipal: globusPrincipals) {
-                    if (addMappingFor(fqan, globusPrincipal, isPrimary, principals)) {
+                    if (addMappingFor(globusPrincipal, fqanPrincipal, fqan, isPrimary, principals)) {
                         authorized = true;
                         found = true;
                         hasPrimary |= isPrimary;
