@@ -110,16 +110,40 @@ public class ServerGsiEngine extends InterceptingSSLEngine
     }
 
     @Override
+    public boolean isInboundDone()
+    {
+        return (isUsingLegacyClose && isOutboundClosed) || super.isInboundDone();
+    }
+
+    @Override
     public boolean isOutboundDone()
     {
         return (isUsingLegacyClose && isOutboundClosed) || super.isOutboundDone();
     }
 
     @Override
+    public SSLEngineResult.HandshakeStatus getHandshakeStatus()
+    {
+        if (isUsingLegacyClose && isOutboundClosed) {
+            return SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
+        }
+        return super.getHandshakeStatus();
+    }
+
+    @Override
+    public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length) throws SSLException
+    {
+        if (isUsingLegacyClose && isOutboundClosed) {
+            return new SSLEngineResult(SSLEngineResult.Status.CLOSED, SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, 0,0);
+        }
+        return super.unwrap(src, dsts, offset, length);
+    }
+
+    @Override
     public SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst) throws SSLException
     {
-        if (isOutboundDone()) {
-            return new SSLEngineResult(SSLEngineResult.Status.CLOSED, SSLEngineResult.HandshakeStatus.FINISHED, 0,0);
+        if (isUsingLegacyClose && isOutboundClosed) {
+            return new SSLEngineResult(SSLEngineResult.Status.CLOSED, SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, 0,0);
         }
         return super.wrap(srcs, offset, length, dst);
     }
