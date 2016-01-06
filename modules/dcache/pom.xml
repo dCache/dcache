@@ -109,10 +109,6 @@
         <artifactId>jdo-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.persistence</groupId>
-      <artifactId>javax.persistence</artifactId>
-    </dependency>
-    <dependency>
         <groupId>com.github.parboiled1</groupId>
         <artifactId>grappa</artifactId>
     </dependency>
