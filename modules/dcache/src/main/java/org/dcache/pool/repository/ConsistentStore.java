@@ -1,5 +1,6 @@
 package org.dcache.pool.repository;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,8 +121,14 @@ public class ConsistentStore
     @Override
     public synchronized Collection<PnfsId> list() throws CacheException
     {
+        Stopwatch watch = Stopwatch.createStarted();
         Collection<PnfsId> files = _fileStore.list();
+        _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+
+        watch.reset().start();
         Collection<PnfsId> records = _metaDataStore.list();
+        _log.info("Indexed {} entries in {} in {}.", records.size(), _metaDataStore, watch);
+
         records.removeAll(new HashSet<>(files));
         for (PnfsId id: records) {
             _log.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
