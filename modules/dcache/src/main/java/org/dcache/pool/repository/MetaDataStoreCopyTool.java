@@ -43,12 +43,12 @@ public class MetaDataStoreCopyTool
         MetaDataStore toStore =
             createStore(Class.forName(args[2]).asSubclass(MetaDataStore.class), fileStore, poolDir);
 
-        if (!toStore.list().isEmpty()) {
+        if (!toStore.index().isEmpty()) {
             System.err.println("ERROR: Target store is not empty");
             System.exit(1);
         }
 
-        Collection<PnfsId> ids = fromStore.list();
+        Collection<PnfsId> ids = fromStore.index();
         int size = ids.size();
         int count = 1;
         for (PnfsId id: ids) {

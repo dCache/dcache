@@ -343,7 +343,7 @@ public class CacheRepositoryV5
                 _state = State.LOADING;
             }
 
-            List<PnfsId> ids = new ArrayList<>(_store.list());
+            List<PnfsId> ids = new ArrayList<>(_store.index());
             _log.info("Found {} data files", ids.size());
 
             /* On some file systems (e.g. GPFS) stat'ing files in
@@ -426,7 +426,7 @@ public class CacheRepositoryV5
     {
         assertOpen();
         try {
-            return Collections.unmodifiableCollection(_store.list()).iterator();
+            return Collections.unmodifiableCollection(_store.index()).iterator();
         } catch (DiskErrorCacheException | RuntimeException e) {
             fail(FaultAction.DEAD, "Internal repository error", e);
             throw Throwables.propagate(e);
@@ -776,7 +776,7 @@ public class CacheRepositoryV5
         State state = _state;
         pw.println("State : " + state);
         try {
-            pw.println("Files : " + (state == State.OPEN || state == State.LOADING || state == State.INITIALIZED ?_store.list().size() : ""));
+            pw.println("Files : " + (state == State.OPEN || state == State.LOADING || state == State.INITIALIZED ? _store.index().size() : ""));
         } catch (CacheException e) {
             pw.println("Files : " + e.getMessage());
         }

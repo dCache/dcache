@@ -2,6 +2,7 @@ package org.dcache.pool.repository;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -44,7 +45,7 @@ public class MetaDataCache
     {
         _inner = inner;
 
-        Collection<PnfsId> list = inner.list();
+        Collection<PnfsId> list = inner.index();
         _entries = new ConcurrentHashMap<>(
                 (int)(list.size() / LOAD_FACTOR + 1), LOAD_FACTOR);
         for (PnfsId id: list) {
@@ -190,9 +191,9 @@ public class MetaDataCache
     }
 
     @Override
-    public Collection<PnfsId> list()
+    public Set<PnfsId> index()
     {
-        return Collections.unmodifiableCollection(_entries.keySet());
+        return Collections.unmodifiableSet(_entries.keySet());
     }
 
     @Override
