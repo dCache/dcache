@@ -17,6 +17,7 @@
  */
 package org.dcache.ftp.client.extended;
 
+import com.google.common.io.BaseEncoding;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.net.ssl.HostnameVerifier;
@@ -32,7 +33,6 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 
 import org.dcache.dss.DssContext;
 import org.dcache.dss.DssContextFactory;
@@ -101,9 +101,9 @@ public class GridFTPControlChannel extends FTPControlChannel
             byte[] inToken = new byte[0];
             do {
                 byte[] outToken = context.init(inToken);
-                reply = inner.exchange(new Command("ADAT", Base64.getEncoder().encodeToString(outToken != null ? outToken : new byte[0])));
+                reply = inner.exchange(new Command("ADAT", BaseEncoding.base64().encode(outToken != null ? outToken : new byte[0])));
                 if (reply.getMessage().startsWith("ADAT=")) {
-                    inToken = Base64.getDecoder().decode(reply.getMessage().substring(5));
+                    inToken = BaseEncoding.base64().decode(reply.getMessage().substring(5));
                 } else {
                     inToken = new byte[0];
                 }
@@ -198,7 +198,7 @@ public class GridFTPControlChannel extends FTPControlChannel
             throw ServerException.embedUnexpectedReplyCodeException(
                     new UnexpectedReplyCodeException(reply), "Expected 632 or 633 reply.");
         }
-        byte[] token = Base64.getDecoder().decode(reply.getMessage());
+        byte[] token = BaseEncoding.base64().decode(reply.getMessage());
         lastReply = new Reply(new BufferedReader(new StringReader(new String(context.unwrap(token)))));
         return lastReply;
     }
@@ -214,6 +214,6 @@ public class GridFTPControlChannel extends FTPControlChannel
     {
         byte[] bytes = cmd.toString().getBytes(StandardCharsets.US_ASCII);
         byte[] token = context.wrap(bytes, 0, bytes.length);
-        inner.write(new Command("ENC", Base64.getEncoder().encodeToString(token)));
+        inner.write(new Command("ENC", BaseEncoding.base64().encode(token)));
     }
 }

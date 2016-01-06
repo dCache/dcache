@@ -17,11 +17,12 @@
  */
 package javatunnel.token;
 
+import com.google.common.io.BaseEncoding;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Base64;
 
 public class Base64TokenReader implements TokenReader
 {
@@ -42,7 +43,7 @@ public class Base64TokenReader implements TokenReader
         if (!s.startsWith("enc ")) {
             throw new IOException("Invalid framing; expected enc command.");
         }
-        return Base64.getDecoder().decode(s.substring(4));
+        return BaseEncoding.base64().decode(s.substring(4));
     }
 
     @Override

@@ -17,6 +17,7 @@
  */
 package org.dcache.ssl;
 
+import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
@@ -24,7 +25,10 @@ import eu.emi.security.authn.x509.OCSPCheckingMode;
 import eu.emi.security.authn.x509.OCSPParametes;
 import eu.emi.security.authn.x509.ProxySupport;
 import eu.emi.security.authn.x509.RevocationParameters;
+import eu.emi.security.authn.x509.StoreUpdateListener;
+import eu.emi.security.authn.x509.ValidationError;
 import eu.emi.security.authn.x509.ValidationErrorCategory;
+import eu.emi.security.authn.x509.ValidationErrorListener;
 import eu.emi.security.authn.x509.X509CertChainValidator;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
@@ -46,7 +50,6 @@ import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import org.dcache.util.CachingCertificateValidator;
 
@@ -69,6 +72,14 @@ public class CanlContextFactory implements SslContextFactory
 
     private final SecureRandom secureRandom = new SecureRandom();
     private final TrustManager[] trustManagers;
+
+    private static final AutoCloseable NOOP = new AutoCloseable()
+    {
+        @Override
+        public void close() throws Exception
+        {
+        }
+    };
 
     protected CanlContextFactory(TrustManager... trustManagers)
     {
@@ -112,7 +123,13 @@ public class CanlContextFactory implements SslContextFactory
         private Path certificatePath = FileSystems.getDefault().getPath("/etc/grid-security/hostcert.pem");
         private long credentialUpdateInterval = 1;
         private TimeUnit credentialUpdateIntervalUnit = TimeUnit.MINUTES;
-        private Supplier<AutoCloseable> contextSupplier = () -> () -> {
+        private Supplier<AutoCloseable> loggingContextSupplier = new Supplier<AutoCloseable>()
+        {
+            @Override
+            public AutoCloseable get()
+            {
+                return NOOP;
+            }
         };
         private long validationCacheLifetime = 300000;
 
@@ -188,7 +205,7 @@ public class CanlContextFactory implements SslContextFactory
 
         public Builder withLoggingContext(Supplier<AutoCloseable> contextSupplier)
         {
-            this.contextSupplier = contextSupplier;
+            this.loggingContextSupplier = contextSupplier;
             return this;
         }
 
@@ -216,47 +233,65 @@ public class CanlContextFactory implements SslContextFactory
                                                           certificateAuthorityUpdateInterval,
                                                           validatorParams, lazyMode),
                             validationCacheLifetime);
-            v.addUpdateListener((location, type, level, cause) -> {
-                try (AutoCloseable ignored = contextSupplier.get()) {
-                    switch (level) {
-                    case ERROR:
-                        if (cause != null) {
-                            LOGGER.error("Error loading {} from {}: {}", type, location, cause.getMessage());
-                        } else {
-                            LOGGER.error("Error loading {} from {}.", type, location);
+            v.addUpdateListener(new StoreUpdateListener()
+            {
+                @Override
+                public void loadingNotification(String location, String type, Severity level, Exception cause)
+                {
+                    try (AutoCloseable ignored = loggingContextSupplier.get()) {
+                        switch (level) {
+                        case ERROR:
+                            if (cause != null) {
+                                LOGGER.error("Error loading {} from {}: {}", type, location, cause.getMessage());
+                            } else {
+                                LOGGER.error("Error loading {} from {}.", type, location);
+                            }
+                            break;
+                        case WARNING:
+                            if (cause != null) {
+                                LOGGER.warn("Problem loading {} from {}: {}", type, location, cause.getMessage());
+                            } else {
+                                LOGGER.warn("Problem loading {} from {}.", type, location);
+                            }
+                            break;
+                        case NOTIFICATION:
+                            LOGGER.debug("Reloaded {} from {}.", type, location);
+                            break;
                         }
-                        break;
-                    case WARNING:
-                        if (cause != null) {
-                            LOGGER.warn("Problem loading {} from {}: {}", type, location, cause.getMessage());
-                        } else {
-                            LOGGER.warn("Problem loading {} from {}.", type, location);
-                        }
-                        break;
-                    case NOTIFICATION:
-                        LOGGER.debug("Reloaded {} from {}.", type, location);
-                        break;
+                    } catch (Exception e) {
+                        Throwables.propagate(e);
                     }
-                } catch (Exception e) {
-                    Throwables.propagate(e);
                 }
             });
-            v.addValidationListener(error -> {
-                if (VALIDATION_ERRORS_TO_LOG.contains(error.getErrorCategory())) {
-                    X509Certificate[] chain = error.getChain();
-                    String subject = (chain != null && chain.length > 0) ? chain[0].getSubjectX500Principal().getName() : "";
-                    LOGGER.warn("The peer's certificate with DN {} was rejected: {}", subject, error);
+            v.addValidationListener(new ValidationErrorListener()
+            {
+                @Override
+                public boolean onValidationError(ValidationError error)
+                {
+                    if (VALIDATION_ERRORS_TO_LOG.contains(error.getErrorCategory())) {
+                        X509Certificate[] chain = error.getChain();
+                        String subject = (chain != null && chain.length > 0) ? chain[0].getSubjectX500Principal().getName() : "";
+                        LOGGER.warn("The peer's certificate with DN {} was rejected: {}", subject, error);
+                    }
+                    return false;
                 }
-                return false;
             });
             return new CanlContextFactory(new SSLTrustManager(v));
         }
 
         public Callable<SSLContext> buildWithCaching()
         {
-            CanlContextFactory factory = build();
+            final CanlContextFactory factory = build();
             Callable<SSLContext> newContext =
-                    () -> factory.getContext(new PEMCredential(keyPath.toString(), certificatePath.toString(), null));
+                    new Callable<SSLContext>()
+                    {
+                        @Override
+                        public SSLContext call() throws Exception
+                        {
+                            return factory.getContext(
+                                    new PEMCredential(keyPath.toString(), certificatePath.toString(), null));
+                        }
+                    };
             return  memoizeWithExpiration(memoizeFromFiles(newContext, keyPath, certificatePath),
                                           credentialUpdateInterval, credentialUpdateIntervalUnit);
         }

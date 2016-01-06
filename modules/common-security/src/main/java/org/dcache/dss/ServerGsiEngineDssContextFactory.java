@@ -34,7 +34,6 @@ import java.security.cert.CertificateFactory;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import org.dcache.gsi.KeyPairCache;
 import org.dcache.gsi.ServerGsiEngine;
@@ -42,6 +41,12 @@ import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
+
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.toArray;
+import static java.util.Arrays.asList;
 
 public class ServerGsiEngineDssContextFactory implements DssContextFactory
 {
@@ -111,12 +116,10 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory
             SSLEngine delegate = factory.call().createSSLEngine(remoteSocketAddress.getHostString(),
                                                                  remoteSocketAddress.getPort());
             SSLParameters sslParameters = delegate.getSSLParameters();
-            sslParameters.setCipherSuites(Stream.of(sslParameters.getCipherSuites())
-                                                  .filter(cipher -> !bannedCiphers.contains(cipher))
-                                                  .toArray(String[]::new));
-            sslParameters.setProtocols(Stream.of(sslParameters.getProtocols())
-                                               .filter(protocol -> !bannedProtocols.contains(protocol))
-                                               .toArray(String[]::new));
+            String[] cipherSuites = toArray(filter(asList(sslParameters.getCipherSuites()), not(in(bannedCiphers))), String.class);
+            String[] protocols = toArray(filter(asList(sslParameters.getProtocols()), not(in(bannedProtocols))), String.class);
+            sslParameters.setCipherSuites(cipherSuites);
+            sslParameters.setProtocols(protocols);
             sslParameters.setWantClientAuth(true);
             sslParameters.setNeedClientAuth(true);
             delegate.setSSLParameters(sslParameters);

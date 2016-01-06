@@ -17,10 +17,11 @@
  */
 package javatunnel.token;
 
+import com.google.common.io.BaseEncoding;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.Base64;
 
 public class Base64TokenWriter implements TokenWriter
 {
@@ -34,7 +35,7 @@ public class Base64TokenWriter implements TokenWriter
     @Override
     public void write(byte[] token) throws IOException
     {
-        out.write("enc " + Base64.getEncoder().encodeToString(token) + "\n");
+        out.write("enc " + BaseEncoding.base64().encode(token) + "\n");
         out.flush();
     }
 

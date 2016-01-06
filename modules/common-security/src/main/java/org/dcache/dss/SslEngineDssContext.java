@@ -26,10 +26,12 @@ import javax.security.auth.Subject;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.Principal;
 import java.security.cert.CertPath;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.Collections;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Arrays.asList;
@@ -268,7 +270,7 @@ public class SslEngineDssContext implements DssContext
         try {
             Certificate[] chain = engine.getSession().getPeerCertificates();
             CertPath certPath = cf.generateCertPath(asList(chain));
-            return new Subject(false, emptySet(), singleton(certPath), emptySet());
+            return new Subject(false, Collections.<Principal>emptySet(), singleton(certPath), emptySet());
         } catch (SSLPeerUnverifiedException e) {
             throw new IOException("Failed to establish identity of SSL peer: " + e.getMessage(), e);
         } catch (CertificateException e) {
