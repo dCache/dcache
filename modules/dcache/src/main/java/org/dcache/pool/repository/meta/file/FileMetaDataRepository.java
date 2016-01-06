@@ -64,7 +64,7 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public Collection<PnfsId> list()
+    public Set<PnfsId> index()
     {
         String[] files = _metadir.list();
         Set<PnfsId> ids = new HashSet<>(files.length);

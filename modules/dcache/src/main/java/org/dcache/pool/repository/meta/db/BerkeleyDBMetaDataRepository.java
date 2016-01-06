@@ -13,8 +13,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -104,17 +104,10 @@ public class BerkeleyDBMetaDataRepository
     }
 
     @Override
-    public Collection<PnfsId> list() throws CacheException
+    public Set<PnfsId> index() throws CacheException
     {
         try {
-            Set<PnfsId> ids = new HashSet<>();
-            for (Object id : _views.getStorageInfoMap().keySet()) {
-                ids.add(new PnfsId((String) id));
-            }
-            for (Object id : _views.getStateMap().keySet()) {
-                ids.add(new PnfsId((String) id));
-            }
-            return ids;
+            return _views.collectKeys(Collectors.mapping(PnfsId::new, Collectors.toSet()));
         } catch (EnvironmentFailureException e) {
             if (!isValid()) {
                 throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);

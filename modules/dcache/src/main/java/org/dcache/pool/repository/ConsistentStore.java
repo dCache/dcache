@@ -8,11 +8,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -119,17 +118,17 @@ public class ConsistentStore
      * redundant meta data entries in the process.
      */
     @Override
-    public synchronized Collection<PnfsId> list() throws CacheException
+    public synchronized Set<PnfsId> index() throws CacheException
     {
         Stopwatch watch = Stopwatch.createStarted();
-        Collection<PnfsId> files = _fileStore.list();
+        Set<PnfsId> files = _fileStore.index();
         _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
 
         watch.reset().start();
-        Collection<PnfsId> records = _metaDataStore.list();
+        Set<PnfsId> records = _metaDataStore.index();
         _log.info("Indexed {} entries in {} in {}.", records.size(), _metaDataStore, watch);
 
-        records.removeAll(new HashSet<>(files));
+        records.removeAll(files);
         for (PnfsId id: records) {
             _log.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
             _metaDataStore.remove(id);

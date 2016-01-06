@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
@@ -243,8 +244,8 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
     @Override
-    public Collection<PnfsId> list() {
-        return Collections.unmodifiableCollection(_entryList.keySet());
+    public Set<PnfsId> index() {
+        return Collections.unmodifiableSet(_entryList.keySet());
     }
 
     @Override
