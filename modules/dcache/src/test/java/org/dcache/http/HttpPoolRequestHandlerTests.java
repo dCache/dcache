@@ -686,14 +686,14 @@ public class HttpPoolRequestHandlerTests
             String name = entry.getKey();
             List<String> values = Lists.newArrayList(entry.getValue());
 
-            given(request.getHeaders(name)).willReturn(values);
+            given(request.headers().getAll(name)).willReturn(values);
             given(headers.getAll(name)).willReturn(values);
             given(headers.contains(name)).willReturn(Boolean.TRUE);
 
             String lastValue = values.isEmpty() ? null :
                     values.get(values.size()-1);
 
-            given(request.getHeader(name)).willReturn(lastValue);
+            given(request.headers().get(name)).willReturn(lastValue);
             given(headers.get(name)).willReturn(lastValue);
         }
 
@@ -707,7 +707,7 @@ public class HttpPoolRequestHandlerTests
             }
         });
 
-        given(request.getHeaderNames()).willReturn(headersSource.keySet());
+        given(request.headers().names()).willReturn(headersSource.keySet());
         given(request.getProtocolVersion()).
                 willReturn(info.getProtocolVersion());
         given(request.getUri()).willReturn(info.getUri());
@@ -811,12 +811,12 @@ public class HttpPoolRequestHandlerTests
 
             HttpResponse response = (HttpResponse) o;
 
-            if(!response.containsHeader(_name)) {
+            if(!response.headers().contains(_name)) {
                 return false;
             }
 
             if(_value != null) {
-                List<String> values = response.getHeaders(_name);
+                List<String> values = response.headers().getAll(_name);
                 return values.contains(_value);
             } else {
                 return true;
