@@ -30,6 +30,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -80,7 +81,14 @@ public class KeyPairCache
                                     Integer keySize, KeyPair previous)
                             {
                                 ListenableFutureTask<KeyPair> task =
-                                        ListenableFutureTask.create(() -> generate(keySize));
+                                        ListenableFutureTask.create(new Callable<KeyPair>()
+                                        {
+                                            @Override
+                                            public KeyPair call() throws Exception
+                                            {
+                                                return generate(keySize);
+                                            }
+                                        });
                                 _executor.execute(task);
                                 return task;
                             }

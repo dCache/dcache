@@ -17,6 +17,9 @@
  */
 package org.dcache.dss;
 
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Supplier;
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -27,10 +30,36 @@ import org.ietf.jgss.Oid;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Optional;
 
 public class KerberosDssContextFactory implements DssContextFactory
 {
+    private final Function<GSSName, GSSContext> createInitialContext =
+            new Function<GSSName, GSSContext>()
+            {
+                @Override
+                public GSSContext apply(GSSName name)
+                {
+                    try {
+                        return manager.createContext(name, krb5Mechanism, credential, GSSContext.DEFAULT_LIFETIME);
+                    } catch (GSSException e) {
+                        throw new WrappedGssException(e);
+                    }
+                }
+            };
+    private final Supplier<GSSContext> createAcceptingContext =
+            new Supplier<GSSContext>()
+            {
+                @Override
+                public GSSContext get()
+                {
+                    try {
+                        return manager.createContext(credential);
+                    } catch (GSSException e) {
+                        throw new WrappedGssException(e);
+                    }
+                }
+            };
+
     private final Oid krb5Mechanism;
     private final GSSManager manager;
     private final GSSCredential credential;
@@ -46,7 +75,14 @@ public class KerberosDssContextFactory implements DssContextFactory
                                                   GSSCredential.DEFAULT_LIFETIME,
                                                   krb5Mechanism,
                                                   GSSCredential.ACCEPT_ONLY);
-            peer = peerName.map(this::createName);
+            peer = peerName.transform(new Function<String, GSSName>()
+            {
+                @Override
+                public GSSName apply(String name)
+                {
+                    return KerberosDssContextFactory.this.createName(name);
+                }
+            });
         } catch (WrappedGssException e) {
             throw e.getCause();
         }
@@ -54,7 +90,7 @@ public class KerberosDssContextFactory implements DssContextFactory
 
     public KerberosDssContextFactory(String principal) throws GSSException
     {
-        this(principal, Optional.empty());
+        this(principal, Optional.<String>absent());
     }
 
     public KerberosDssContextFactory(String principal, String peerName) throws GSSException
@@ -67,7 +103,7 @@ public class KerberosDssContextFactory implements DssContextFactory
             throws IOException
     {
         try {
-            GSSContext context = peer.map(this::createInitiatingContext).orElseGet(this::createAcceptingContext);
+            GSSContext context = peer.transform(createInitialContext).or(createAcceptingContext);
             ChannelBinding cb = new ChannelBinding(remoteSocketAddress.getAddress(), localSocketAddress.getAddress(), null);
             context.setChannelBinding(cb);
             return new KerberosDssContext(context);
@@ -83,24 +119,6 @@ public class KerberosDssContextFactory implements DssContextFactory
     {
         try {
             return manager.createName(name, null);
-        } catch (GSSException e) {
-            throw new WrappedGssException(e);
-        }
-    }
-
-    private GSSContext createAcceptingContext()
-    {
-        try {
-            return manager.createContext(credential);
-        } catch (GSSException e) {
-            throw new WrappedGssException(e);
-        }
-    }
-
-    private GSSContext createInitiatingContext(GSSName name)
-    {
-        try {
-            return manager.createContext(name, krb5Mechanism, credential, GSSContext.DEFAULT_LIFETIME);
         } catch (GSSException e) {
             throw new WrappedGssException(e);
         }

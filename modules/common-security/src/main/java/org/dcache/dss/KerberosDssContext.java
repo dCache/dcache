@@ -23,7 +23,6 @@ import org.ietf.jgss.GSSException;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
-import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
 
@@ -36,7 +35,7 @@ public class KerberosDssContext extends GssDssContext
 
     protected Subject createSubject() throws GSSException
     {
-        Set<Principal> principals = Collections.singleton(new KerberosPrincipal(context.getSrcName().toString()));
+        Set<KerberosPrincipal> principals = Collections.singleton(new KerberosPrincipal(context.getSrcName().toString()));
         return new Subject(false, principals, Collections.emptySet(), Collections.emptySet());
     }
 }
