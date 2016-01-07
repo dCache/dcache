@@ -13,6 +13,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.channels.AsynchronousCloseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -166,7 +167,7 @@ public class LocationMgrTunnel
             } finally {
                 _tunnels.remove(this);
             }
-        } catch (EOFException | InterruptedException e) {
+        } catch (AsynchronousCloseException | EOFException | InterruptedException e) {
         } catch (ClassNotFoundException e) {
             _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (IOException e) {
