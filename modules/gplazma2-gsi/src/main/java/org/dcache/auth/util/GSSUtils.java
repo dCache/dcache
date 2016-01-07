@@ -202,7 +202,7 @@ public class GSSUtils {
              * reload the store, we reset the MDC to avoid that messages logged
              * by the refresh thread have the wrong context.
              */
-            Map<?, ?> map = MDC.getCopyOfContextMap();
+            Map<String,String> map = MDC.getCopyOfContextMap();
             try {
                 MDC.clear();
 
