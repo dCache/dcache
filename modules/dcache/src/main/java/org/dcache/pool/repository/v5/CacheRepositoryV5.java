@@ -346,12 +346,6 @@ public class CacheRepositoryV5
             List<PnfsId> ids = new ArrayList<>(_store.index());
             _log.info("Found {} data files", ids.size());
 
-            /* On some file systems (e.g. GPFS) stat'ing files in
-             * lexicographic order seems to trigger the pre-fetch
-             * mechanism of the file system.
-             */
-            Collections.sort(ids);
-
             /* Collect all entries.
              */
             _log.info("Checking meta data for {} files", ids.size());
