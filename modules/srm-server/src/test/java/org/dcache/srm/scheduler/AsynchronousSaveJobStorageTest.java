@@ -29,37 +29,16 @@ public class AsynchronousSaveJobStorageTest
     }
 
     @Test
-    public void whenRequestHistoryLoggingIsDisabledAndSavingWithForceThenActualSaveIsWithForce() throws Exception
+    public void whenSavingWithForceThenActualSaveIsWithForce() throws Exception
     {
-        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(false);
         asyncStorage.saveJob(job, true);
         runTasks();
         verify(storage).saveJob(job, true);
     }
 
     @Test
-    public void whenRequestHistoryLoggingIsEnabledAndSavingWithForceThenActualSaveIsWithForce() throws Exception
+    public void whenSavingWithoutForceThenActualSaveIsWithoutForce() throws Exception
     {
-        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(true);
-        asyncStorage.saveJob(job, true);
-        runTasks();
-        verify(storage).saveJob(job, true);
-    }
-
-    @Test
-    public void whenRequestHistoryLoggingIsEnabledAndSavingWithoutForceThenActualSaveIsWithoutForce() throws Exception
-    {
-        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(true);
-        asyncStorage.saveJob(job, false);
-        runTasks();
-        verify(storage).saveJob(job, false);
-    }
-
-    @Test
-    public void whenSavingTwiceWithoutForceThenActualSaveIsOnceWithoutForce() throws Exception
-    {
-        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(true);
-        asyncStorage.saveJob(job, false);
         asyncStorage.saveJob(job, false);
         runTasks();
         verify(storage).saveJob(job, false);
@@ -68,7 +47,6 @@ public class AsynchronousSaveJobStorageTest
     @Test
     public void whenSavingTwiceWithForceThenActualSaveIsOnceWithForce() throws Exception
     {
-        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(true);
         asyncStorage.saveJob(job, true);
         asyncStorage.saveJob(job, true);
         runTasks();
@@ -78,7 +56,6 @@ public class AsynchronousSaveJobStorageTest
     @Test
     public void whenSavingTwiceWithAndWithoutForceThenActualSaveIsOnceWithForce() throws Exception
     {
-        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(true);
         asyncStorage.saveJob(job, true);
         asyncStorage.saveJob(job, false);
         runTasks();
@@ -88,7 +65,6 @@ public class AsynchronousSaveJobStorageTest
     @Test
     public void whenSavingTwiceWithoutAndWithForceThenActualSaveIsOnceWithForce() throws Exception
     {
-        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(true);
         asyncStorage.saveJob(job, false);
         asyncStorage.saveJob(job, true);
         runTasks();
@@ -100,7 +76,6 @@ public class AsynchronousSaveJobStorageTest
     {
         Executor executor = mock(Executor.class);
         asyncStorage = new AsynchronousSaveJobStorage<>(storage, executor);
-        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(true);
         doThrow(RejectedExecutionException.class).when(executor).execute(any(Runnable.class));
         asyncStorage.saveJob(job, true);
         verify(storage).saveJob(job, true);
