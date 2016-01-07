@@ -32,7 +32,7 @@ import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.scheduler.AsynchronousSaveJobStorage;
 import org.dcache.srm.scheduler.CanonicalizingJobStorage;
-import org.dcache.srm.scheduler.FinalStateOnlyJobStorageDecorator;
+import org.dcache.srm.scheduler.ForceOnlyJobStorageDecorator;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.NoopJobStorage;
@@ -69,7 +69,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
                     .newInstance(config, scheduledExecutor);
             js = new AsynchronousSaveJobStorage<>(js, executor);
             if (config.getStoreCompletedRequestsOnly()) {
-                js = new FinalStateOnlyJobStorageDecorator<>(js);
+                js = new ForceOnlyJobStorageDecorator<>(js);
             }
         } else {
             js = new NoopJobStorage<>();

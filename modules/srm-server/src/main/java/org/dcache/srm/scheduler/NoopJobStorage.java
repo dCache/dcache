@@ -74,9 +74,4 @@ public class NoopJobStorage<J extends Job> implements JobStorage<J> {
         return Collections.emptySet();
     }
 
-    @Override
-    public boolean isJdbcLogRequestHistoryInDBEnabled()
-    {
-        return false;
-    }
 }

@@ -124,12 +124,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         this.transactionTemplate = new TransactionTemplate(configuration.getTransactionManager());
     }
 
-    @Override
-    public boolean isJdbcLogRequestHistoryInDBEnabled()
-    {
-        return logHistory;
-    }
-
     //this should always reflect the number of field definde in the
     // prefix above
     public abstract String getTableName();
@@ -209,44 +203,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         return job;
     }
 
-    private int updateJob(Connection connection, Job job) throws SQLException
-    {
-        PreparedStatement updateStatement = null;
-        try {
-            job.rlock();
-            try {
-                updateStatement = getUpdateStatement(connection, job);
-            } finally {
-                job.runlock();
-            }
-            return updateStatement.executeUpdate();
-        } finally {
-            SqlHelper.tryToClose(updateStatement);
-        }
-    }
-
-    private void createJob(Connection connection, Job job) throws SQLException
-    {
-        PreparedStatement createStatement = null;
-        PreparedStatement batchCreateStatement = null;
-        try {
-            job.rlock();
-            try {
-                createStatement = getCreateStatement(connection, job);
-                batchCreateStatement = getBatchCreateStatement(connection, job);
-            } finally {
-                job.runlock();
-            }
-            createStatement.executeUpdate();
-            if (batchCreateStatement != null) {
-                batchCreateStatement.executeBatch();
-            }
-        } finally {
-            SqlHelper.tryToClose(createStatement);
-            SqlHelper.tryToClose(batchCreateStatement);
-        }
-    }
-
     private void saveHistory(Connection connection, Job job,
                              List<Job.JobHistory> history) throws SQLException
     {
@@ -283,22 +239,41 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public void saveJob(final Job job, boolean force) throws DataAccessException
     {
-        if (!force && !logHistory) {
-            return;
-        }
+        List<Job.JobHistory> savedHistory =
+                transactionTemplate.execute(status -> jdbcTemplate.execute((Connection con) -> {
+                    List<Job.JobHistory> history;
+                    PreparedStatement updateStatement = null;
+                    PreparedStatement createStatement = null;
+                    PreparedStatement batchCreateStatement = null;
+                    try {
+                        job.rlock();
+                        try {
+                            history = getJobHistoriesToSave(job);
+                            updateStatement = getUpdateStatement(con, job);
+                            createStatement = getCreateStatement(con, job);
+                            batchCreateStatement = getBatchCreateStatement(con, job);
+                        } finally {
+                            job.runlock();
+                        }
 
-        final List<Job.JobHistory> history = getJobHistoriesToSave(job);
-        transactionTemplate.execute(status -> jdbcTemplate.execute((Connection con) -> {
-            int rowCount = updateJob(con, job);
-            if (rowCount == 0) {
-                createJob(con, job);
-            }
-            if (!history.isEmpty()) {
-                saveHistory(con, job, history);
-            }
-            return null;
-        }));
-        markHistoryAsSaved(history);
+                        int rowCount = updateStatement.executeUpdate();
+                        if (rowCount == 0) {
+                            createStatement.executeUpdate();
+                            if (batchCreateStatement != null) {
+                                batchCreateStatement.executeBatch();
+                            }
+                        }
+                        if (!history.isEmpty()) {
+                            saveHistory(con, job, history);
+                        }
+                    } finally {
+                        SqlHelper.tryToClose(createStatement);
+                        SqlHelper.tryToClose(batchCreateStatement);
+                        SqlHelper.tryToClose(updateStatement);
+                    }
+                    return history;
+                }));
+        markHistoryAsSaved(savedHistory);
     }
 
     protected PreparedStatement getBatchCreateStatement(Connection connection, Job job)

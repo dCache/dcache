@@ -5,7 +5,6 @@ import org.springframework.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -121,12 +120,6 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
         storage.saveJob(job, force);
         sharedMemoryCache.update(job);
         updateExpirationSet(job);
-    }
-
-    @Override
-    public boolean isJdbcLogRequestHistoryInDBEnabled()
-    {
-        return storage.isJdbcLogRequestHistoryInDBEnabled();
     }
 
     @Override
