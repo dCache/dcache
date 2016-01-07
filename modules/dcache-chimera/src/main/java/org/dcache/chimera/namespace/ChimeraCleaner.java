@@ -2,13 +2,14 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -30,7 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -385,7 +385,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
             _log.info("runDelete(): Now processing pool {}", pool);
             if (!_poolsBlackList.containsKey(pool)) {
-                cleanPoolComplete(pool);
+                try {
+                    cleanPoolComplete(pool);
+                } catch (CacheException e) {
+                    _log.warn("Failed to remove files from {}: {}", pool, e.getMessage());
+                }
             }
         }
     }
@@ -400,10 +404,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      */
 
     private void sendRemoveToPoolCleaner(String poolName, List<String> removeList)
-            throws InterruptedException
+            throws InterruptedException, CacheException
     {
-        _log.debug("sendRemoveToPoolCleaner: poolName={}", poolName);
-        _log.debug("sendRemoveToPoolCleaner: removeList={}", removeList);
+        _log.trace("sendRemoveToPoolCleaner: poolName={} removeList={}", poolName, removeList);
 
         try {
             PoolRemoveFilesMessage msg =
@@ -421,8 +424,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 throw CacheExceptionFactory.exceptionOf(msg);
             }
         } catch (CacheException e) {
-            _log.warn("Failed to remove files from {}: {}", poolName, e.getMessage());
             _poolsBlackList.put(poolName, System.currentTimeMillis());
+            throw e;
         }
     }
 
@@ -431,22 +434,13 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         _log.warn(e.getMessage());
     }
 
-    public void messageArrived(PoolManagerPoolUpMessage poolUpMessage) {
-
+    public void messageArrived(PoolManagerPoolUpMessage poolUpMessage)
+    {
         String poolName = poolUpMessage.getPoolName();
-
-        /*
-         * Keep track of pools statuses:
-         *     remove pool from the black list in case of new status is enabled.
-         *     put a pool into black list if new status is disabled.
-         */
-
-        if ( poolUpMessage.getPoolMode().isEnabled() ) {
+        if (poolUpMessage.getPoolMode().isEnabled() ) {
             _poolsBlackList.remove(poolName);
-        }
-
-        if ( poolUpMessage.getPoolMode().isDisabled() ) {
-            _poolsBlackList.putIfAbsent(poolName, System.currentTimeMillis());
+        } else {
+            _poolsBlackList.put(poolName, System.currentTimeMillis());
         }
     }
 
@@ -484,24 +478,30 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      *
      * @param poolName name of the pool
      */
-    void cleanPoolComplete(final String poolName)
+    void cleanPoolComplete(final String poolName) throws InterruptedException, CacheException
     {
         _log.trace("CleanPoolComplete(): poolname={}", poolName);
 
-        List<String> files = new ArrayList<>(_processAtOnce);
-        _db.query("SELECT ipnfsid FROM t_locationinfo_trash WHERE ilocation=? AND itype=1 ORDER BY iatime",
-                  rs -> {
-                      try {
-                          files.add(rs.getString("ipnfsid"));
-                          if (files.size() >= _processAtOnce || rs.isLast()) {
-                              sendRemoveToPoolCleaner(poolName, files);
-                              files.clear();
+        try {
+            List<String> files = new ArrayList<>(_processAtOnce);
+            _db.query("SELECT ipnfsid FROM t_locationinfo_trash WHERE ilocation=? AND itype=1 ORDER BY iatime",
+                      rs -> {
+                          try {
+                              files.add(rs.getString("ipnfsid"));
+                              if (files.size() >= _processAtOnce || rs.isLast()) {
+                                  sendRemoveToPoolCleaner(poolName, files);
+                                  files.clear();
+                              }
+                          } catch (InterruptedException | CacheException e) {
+                              throw new UncheckedExecutionException(e);
                           }
-                      } catch (InterruptedException e) {
-                          throw new TransientDataAccessResourceException("Cleaner was interrupted", e);
-                      }
-                  },
-                  poolName);
+                      },
+                      poolName);
+        } catch (UncheckedExecutionException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), InterruptedException.class);
+            Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
+            throw Throwables.propagate(e.getCause());
+        }
     }
 
     /**
@@ -573,25 +573,31 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     public static final String hh_clean_file =
         "<pnfsID> # clean this file (file will be deleted from DISK)";
-    public String ac_clean_file_$_1(Args args)
+    public String ac_clean_file_$_1(Args args) throws InterruptedException, CacheException
     {
-        String pnfsid = args.argv(0);
-        List<String> removeFile = Collections.singletonList(pnfsid);
-        _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=1 ORDER BY iatime",
-                  rs -> {
-                      try {
-                          String pool = rs.getString("ilocation");
-                          sendRemoveToPoolCleaner(pool, removeFile);
-                      } catch (InterruptedException e) {
-                          throw new TransientDataAccessResourceException("Cleaner was interrupted", e);
-                      }
-                  },
-                  pnfsid);
+        try {
+            String pnfsid = args.argv(0);
+            List<String> removeFile = Collections.singletonList(pnfsid);
+            _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=1 ORDER BY iatime",
+                      rs -> {
+                          try {
+                              String pool = rs.getString("ilocation");
+                              sendRemoveToPoolCleaner(pool, removeFile);
+                          } catch (CacheException | InterruptedException e) {
+                              throw new UncheckedExecutionException(e);
+                          }
+                      },
+                      pnfsid);
+        } catch (UncheckedExecutionException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), InterruptedException.class);
+            Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
+            throw Throwables.propagate(e.getCause());
+        }
         return "";
     }
 
     public static final String hh_clean_pool = "<poolName> # clean this pool ";
-    public String ac_clean_pool_$_1(Args args)
+    public String ac_clean_pool_$_1(Args args) throws CacheException, InterruptedException
     {
         String poolName = args.argv(0);
         if (_poolsBlackList.containsKey(poolName)) {
