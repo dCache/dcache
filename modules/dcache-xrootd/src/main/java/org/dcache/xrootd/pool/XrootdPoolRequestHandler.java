@@ -54,6 +54,7 @@ import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.AuthenticationRequest;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
+import org.dcache.xrootd.protocol.messages.EndSessionRequest;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
 import org.dcache.xrootd.protocol.messages.MkDirRequest;
@@ -610,6 +611,12 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         default:
             return unsupported(ctx, msg);
         }
+    }
+
+    @Override
+    protected Object doOnEndSession(ChannelHandlerContext ctx, EndSessionRequest request) throws XrootdException
+    {
+        return withOk(request);
     }
 
     /**
