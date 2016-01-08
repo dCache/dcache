@@ -166,9 +166,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 if (descriptor.isPersistOnSuccessfulClose()) {
                     descriptor.getChannel().release(new FileCorruptedCacheException(
                             "File was opened with Persist On Successful Close and not closed."));
-                } else {
+                } else if (descriptor.getChannel().getIoMode() == IoMode.WRITE) {
                     descriptor.getChannel().release(new CacheException(
                             "Client disconnected without closing file."));
+                } else {
+                    descriptor.getChannel().release();
                 }
             }
         }
