@@ -17,6 +17,7 @@
  */
 package org.dcache.xrootd.pool;
 
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -34,7 +35,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -232,14 +235,14 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         try {
             UUID uuid = getUuid(msg.getOpaque());
             if (uuid == null) {
-                _log.warn("Request contains no UUID: {}", msg);
+                _log.info("Request to open {} contains no UUID.", msg.getPath());
                 throw new XrootdException(kXR_NotAuthorized, "Request lacks the " + UUID_PREFIX + " property.");
             }
 
             NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel file = _server.openFile(uuid, false);
             if (file == null) {
-                _log.warn("No mover found for {}", msg);
-                throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX + " is no longer valid.");
+                _log.info("No mover found for {} with UUID {}.", msg.getPath(), uuid);
+                return redirectToDoor(ctx, msg, () -> { throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX + " is no longer valid."); });
             }
 
             try {
@@ -361,8 +364,20 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     private <R extends XrootdRequest> XrootdResponse<R> redirectToDoor(ChannelHandlerContext ctx, R msg)
         throws XrootdException
     {
+        return redirectToDoor(ctx, msg, () -> unsupported(ctx, msg));
+    }
+
+    private <R extends XrootdRequest> XrootdResponse<R> redirectToDoor(ChannelHandlerContext ctx, R msg, Callable<XrootdResponse<R>> onError)
+        throws XrootdException
+    {
         if (_redirectingDoor == null) {
-            return unsupported(ctx, msg);
+            try {
+                return onError.call();
+            } catch (XrootdException e) {
+                throw e;
+            } catch (Exception e) {
+                throw Throwables.propagate(e);
+            }
         } else {
             return new RedirectResponse<>(msg,
                                           _redirectingDoor.getHostName(),
