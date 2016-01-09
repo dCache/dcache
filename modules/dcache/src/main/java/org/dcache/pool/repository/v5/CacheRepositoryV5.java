@@ -70,7 +70,7 @@ import static org.dcache.pool.repository.EntryState.*;
 /**
  * Implementation of Repository interface.
  *
- * The class is thread-safe.
+ * The class is thread-safe after initialization.
  *
  * Allows openEntry, getEntry, getState and setSticky to be called
  * before the load method finishes. Other methods of the Repository
@@ -224,7 +224,7 @@ public class CacheRepositoryV5
      * The executor is used for periodic background checks and sticky
      * flag expiration.
      */
-    public synchronized void setExecutor(ScheduledExecutorService executor)
+    public void setExecutor(ScheduledExecutorService executor)
     {
         assertUninitialized();
         _executor = executor;
@@ -233,13 +233,13 @@ public class CacheRepositoryV5
     /**
      * Sets the handler for talking to the PNFS manager.
      */
-    public synchronized void setPnfsHandler(PnfsHandler pnfs)
+    public void setPnfsHandler(PnfsHandler pnfs)
     {
         assertUninitialized();
         _pnfs = pnfs;
     }
 
-    public synchronized boolean getVolatile()
+    public boolean getVolatile()
     {
         return _volatile;
     }
@@ -249,7 +249,7 @@ public class CacheRepositoryV5
      * ClearCacheLocation messages are flagged to trigger deletion of
      * the namespace entry when the last known replica is deleted.
      */
-    public synchronized void setVolatile(boolean value)
+    public void setVolatile(boolean value)
     {
         assertUninitialized();
         _volatile = value;
@@ -258,7 +258,7 @@ public class CacheRepositoryV5
     /**
      * The account keeps track of available space.
      */
-    public synchronized void setAccount(Account account)
+    public void setAccount(Account account)
     {
         assertUninitialized();
         _account = account;
@@ -267,25 +267,25 @@ public class CacheRepositoryV5
     /**
      * The allocator implements an allocation policy.
      */
-    public synchronized void setAllocator(Allocator allocator)
+    public void setAllocator(Allocator allocator)
     {
         assertUninitialized();
         _allocator = allocator;
     }
 
-    public synchronized void setMetaDataStore(MetaDataStore store)
+    public void setMetaDataStore(MetaDataStore store)
     {
         assertUninitialized();
         _store = store;
     }
 
-    public synchronized void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
+    public void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
     {
         assertUninitialized();
         _sweeper = sweeper;
     }
 
-    public synchronized void setMaxDiskSpaceString(String size)
+    public void setMaxDiskSpaceString(String size)
     {
         setMaxDiskSpace(UnitInteger.parseUnitLong(size));
     }
@@ -301,7 +301,7 @@ public class CacheRepositoryV5
         }
     }
 
-    public synchronized State getState()
+    public State getState()
     {
         return _state;
     }
@@ -310,11 +310,11 @@ public class CacheRepositoryV5
     public void init()
             throws IllegalStateException, CacheException
     {
-        synchronized (this) {
-            assert _pnfs != null : "Pnfs handler must be set";
-            assert _account != null : "Account must be set";
-            assert _allocator != null : "Account must be set";
+        assert _pnfs != null : "Pnfs handler must be set";
+        assert _account != null : "Account must be set";
+        assert _allocator != null : "Account must be set";
 
+        synchronized (this) {
             if (_state != State.UNINITIALIZED) {
                 throw new IllegalStateException("Can only initialize repository once.");
             }
