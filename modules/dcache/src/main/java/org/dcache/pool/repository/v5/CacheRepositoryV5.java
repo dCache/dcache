@@ -21,6 +21,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -86,6 +88,7 @@ public class CacheRepositoryV5
      * The following order must be observed when synchronizing:
      *
      *  - this
+     *  - _stateLock
      *  - entries (only one)
      *  - _account
      *
@@ -127,7 +130,7 @@ public class CacheRepositoryV5
     /**
      * Meta data about files in the pool.
      */
-    private MetaDataStore _store;
+    private volatile MetaDataStore _store;
 
     /**
      * Current state of the repository.
@@ -143,6 +146,16 @@ public class CacheRepositoryV5
     }
 
     private volatile State _state = State.UNINITIALIZED;
+
+    /**
+     * Lock for the _state field.
+     *
+     * The _state field itself is volatile and may be accessed without locking
+     * by threads that are only interested in the current state, however updates
+     * to _state must obtain a write lock and threads that want to block state
+     * changes in a critical region must obtain a read lock.
+     */
+    private final ReadWriteLock _stateLock = new ReentrantReadWriteLock();
 
     /**
      * Initialization progress between 0 and 1.
@@ -314,24 +327,28 @@ public class CacheRepositoryV5
         assert _account != null : "Account must be set";
         assert _allocator != null : "Account must be set";
 
-        synchronized (this) {
+        _stateLock.writeLock().lock();
+        try {
             if (_state != State.UNINITIALIZED) {
                 throw new IllegalStateException("Can only initialize repository once.");
             }
-
             _state = State.INITIALIZING;
+        } finally {
+            _stateLock.writeLock().unlock();
         }
 
-        /* Instantiating the cache causes the listing to be
-         * generated to prepopulate the cache. That may take some
-         * time. Therefore we do this outside the synchronization.
+        /* Instantiating the cache causes the listing to be generated to
+         * populate the cache. This may take some time and therefore we
+         * do this outside the synchronization.
          */
-        _log.warn("Reading inventory from " + _store);
-        MetaDataCache cache = new MetaDataCache(_store);
+        _log.warn("Reading inventory from {}", _store);
+        _store = new MetaDataCache(_store);
 
-        synchronized (this) {
-            _store = cache;
+        _stateLock.writeLock().lock();
+        try {
             _state = State.INITIALIZED;
+        } finally {
+            _stateLock.writeLock().unlock();
         }
     }
 
@@ -341,11 +358,14 @@ public class CacheRepositoryV5
                InterruptedException
     {
         try {
-            synchronized (this) {
+            _stateLock.writeLock().lock();
+            try {
                 if (_state != State.INITIALIZED) {
                     throw new IllegalStateException("Can only load repository after initialization and only once.");
                 }
                 _state = State.LOADING;
+            } finally {
+                _stateLock.writeLock().unlock();
             }
 
             List<PnfsId> ids = new ArrayList<>(_store.index());
@@ -389,7 +409,12 @@ public class CacheRepositoryV5
              * repository is loading. We synchronize to ensure a clean
              * switch from the LOADING state to the OPEN state.
              */
-            synchronized (this) {
+            _stateLock.writeLock().lock();
+            try {
+                if (_state != State.LOADING) {
+                    throw new IllegalStateException("Repository was closed during loading.");
+                }
+
                 /* Register with event listeners in LRU order. The
                  * sweeper relies on the LRU order.
                  */
@@ -406,6 +431,8 @@ public class CacheRepositoryV5
                           usedDataSpace, _account.getFree());
 
                 _state = State.OPEN;
+            } finally {
+                _stateLock.writeLock().unlock();
             }
 
             /* Register sticky timeouts.
@@ -419,10 +446,13 @@ public class CacheRepositoryV5
                 }
             }
         } finally {
-            synchronized (this) {
+            _stateLock.writeLock().lock();
+            try {
                 if (_state != State.OPEN) {
                     _state = State.FAILED;
                 }
+            } finally {
+                _stateLock.writeLock().unlock();
             }
         }
 
@@ -537,7 +567,8 @@ public class CacheRepositoryV5
             }
 
             if (!flags.contains(OpenFlags.NOATIME)) {
-                synchronized (this) {
+                _stateLock.readLock().lock();
+                try {
                     /* Don't notify listeners until we are done
                      * loading; at the end of the load method
                      * listeners are informed about all entries.
@@ -550,6 +581,8 @@ public class CacheRepositoryV5
                             accessTimeChanged(oldEntry, newEntry);
                         }
                     }
+                } finally {
+                    _stateLock.readLock().unlock();
                 }
             }
 
@@ -630,10 +663,14 @@ public class CacheRepositoryV5
             throw e;
         }
 
-        /* We synchronize on 'this' because setSticky below is
-         * synchronized; and 'this' has to be locked before entry.
+        /* We acquire the state lock to avoid conflicts with the
+         * load method; at the end of load method expiration tasks are
+         * scheduled. For that reason this method does not generate
+         * sticky changed notification and does not schedule
+         * expiration tasks if the repository is not OPEN.
          */
-        synchronized (this) {
+        _stateLock.readLock().lock();
+        try {
             synchronized (entry) {
                 switch (entry.getState()) {
                 case NEW:
@@ -650,8 +687,23 @@ public class CacheRepositoryV5
                     break;
                 }
 
-                setSticky(entry, owner, expire, overwrite);
+                try {
+                    CacheEntry oldEntry = new CacheEntryImpl(entry);
+                    if (entry.setSticky(owner, expire, overwrite) && _state == State.OPEN) {
+                        CacheEntryImpl newEntry = new CacheEntryImpl(entry);
+                        stickyChanged(oldEntry, newEntry, new StickyRecord(owner, expire));
+                        scheduleExpirationTask(entry);
+                    }
+                } catch (CacheException e) {
+                    fail(FaultAction.READONLY, "Internal repository error", e);
+                    throw new RuntimeException("Internal repository error", e);
+                } catch (RuntimeException e) {
+                    fail(FaultAction.DEAD, "Internal repository error", e);
+                    throw e;
+                }
             }
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
@@ -823,11 +875,16 @@ public class CacheRepositoryV5
         pw.println("    Runtime configured   : " + UnitInteger.toUnitString(_runtimeMaxSize));
     }
 
-    public synchronized void shutdown()
+    public void shutdown()
     {
-        _stateChangeListeners.stop();
-        _state = State.CLOSED;
-        _store.close();
+        _stateLock.writeLock().lock();
+        try {
+            _stateChangeListeners.stop();
+            _state = State.CLOSED;
+            _store.close();
+        } finally {
+            _stateLock.writeLock().unlock();
+        }
     }
 
     // Operations on MetaDataRecord ///////////////////////////////////////
@@ -942,16 +999,17 @@ public class CacheRepositoryV5
     /**
      * Package local method for changing sticky records of an entry.
      */
-    synchronized void setSticky(MetaDataRecord entry, String owner,
+    void setSticky(MetaDataRecord entry, String owner,
                    long expire, boolean overwrite)
         throws IllegalArgumentException
     {
-        /* This method is synchronized to avoid conflicts with the
+        /* We acquire the state lock to avoid conflicts with the
          * load method; at the end of load method expiration tasks are
          * scheduled. For that reason this method does not generate
          * sticky changed notification and does not schedule
          * expiration tasks if the repository is not OPEN.
          */
+        _stateLock.readLock().lock();
         try {
             synchronized (entry) {
                 CacheEntry oldEntry = new CacheEntryImpl(entry);
@@ -967,6 +1025,8 @@ public class CacheRepositoryV5
         } catch (RuntimeException e) {
             fail(FaultAction.DEAD, "Internal repository error", e);
             throw e;
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
