@@ -5,6 +5,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 
@@ -51,14 +52,20 @@ import org.dcache.gplazma.monitor.LoginResult.SetDiff;
 import org.dcache.gplazma.util.CertPaths;
 
 import static java.util.concurrent.TimeUnit.*;
-import org.bouncycastle.asn1.x500.X500Name;
+
 import org.bouncycastle.asn1.x509.AttributeCertificate;
-import org.bouncycastle.asn1.x509.V2Form;
+import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.italiangrid.voms.VOMSAttribute;
+
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
 import static org.dcache.utils.Bytes.toHexString;
+
 import org.italiangrid.voms.asn1.VOMSACUtils;
+
+
 
 /**
  * This class takes a LoginResult and provides an ASCII-art description
@@ -71,6 +78,9 @@ public class LoginResultPrinter
 
     private static final String ATTRIBUTE_CERTIFICATE_OID =
             "1.3.6.1.4.1.8005.100.100.5";
+
+    private static final String VOMS_CERTIFICATES_OID =
+            "1.3.6.1.4.1.8005.100.100.10";
 
     private static final ImmutableMap<String, String> OID_TO_NAME =
             new ImmutableMap.Builder<String, String>()
@@ -93,6 +103,14 @@ public class LoginResultPrinter
                     .put("1.3.6.1.5.5.7.3.8", "time stamp")
                     .put("1.3.6.1.5.5.7.3.9", "OCSP signing")
                     .put("1.3.6.1.4.1.311.10.3.4", "Microsoft EPS")
+
+                    // Certificate extensions
+                    .put("1.3.6.1.4.1.8005.100.100.4", "VOMS FQANs")
+                    .put(ATTRIBUTE_CERTIFICATE_OID, "VOMS AC")
+                    .put(VOMS_CERTIFICATES_OID, "VOMS certificates")
+                    .put("1.3.6.1.4.1.8005.100.100.11", "VOMS generic attributes")
+                    .put("2.5.29.35", "Authority key identifier")
+                    .put("2.5.29.56", "No revocation info")
                     .build();
 
     private static final ImmutableList<String> BASIC_KEY_USAGE_LABELS =
@@ -472,23 +490,35 @@ public class LoginResultPrinter
     }
 
 
-    private X500Name getX500Name(AttributeCertificate certificate) {
-        return X500Name.getInstance(
-                ((V2Form) certificate.getAcinfo().getIssuer().getIssuer())
-                        .getIssuerName().getNames()[0].getName());
-    }
-
     private String attributeCertificateInfoFor(AttributeCertificate certificate)
     {
-        StringBuilder sb = new StringBuilder();
+        VOMSAttribute attribute = VOMSACUtils.deserializeVOMSAttributes(certificate);
 
-        sb.append(getX500Name(certificate)).append('\n');
+        StringBuilder sb = new StringBuilder();
+        sb.append(attribute.getIssuer().getName(X500Principal.RFC2253)).append('\n');
         sb.append("  +--Validity: ").append(validityStatementFor(certificate)).append('\n');
+
+        X509Extensions extensions = certificate.getAcinfo().getExtensions();
+        if (extensions != null) {
+            ASN1ObjectIdentifier[] ids = extensions.getExtensionOIDs();
+            if (ids != null && ids.length != 0) {
+                sb.append("  +--Extensions:\n");
+                sb.append("  |    |\n");
+                int index = 1;
+                for (ASN1ObjectIdentifier id : ids) {
+                    boolean isLast = index == ids.length;
+                    X509Extension e = extensions.getExtension(id);
+                    String padding = isLast ? "  |       " : "  |    |  ";
+                    sb.append(extensionInfoFor(id, e, attribute, padding));
+                    index++;
+                }
+            }
+        }
 
         String oid = certificate.getSignatureAlgorithm().getAlgorithm().getId();
         sb.append("  +--Algorithm: ").append(nameForOid(oid)).append('\n');
 
-        String fqanInfo = fqanInfoFor(certificate);
+        String fqanInfo = fqanInfoFor(attribute);
         if(!fqanInfo.isEmpty()) {
             sb.append("  +--FQANs: ").append(fqanInfo).append('\n');
         }
@@ -496,9 +526,47 @@ public class LoginResultPrinter
         return sb.toString();
     }
 
-    private static String fqanInfoFor(AttributeCertificate certificate)
+    private static StringBuilder extensionInfoFor(ASN1ObjectIdentifier id,
+            X509Extension extension, VOMSAttribute attribute, String padding)
     {
-        List<String> fqans = VOMSACUtils.deserializeVOMSAttributes(certificate).getFQANs();
+        StringBuilder sb = new StringBuilder();
+        if (VOMS_CERTIFICATES_OID.equals(id.toString())) {
+            X509Certificate[] chain = attribute.getAACertificates();
+            if (chain == null) {
+                sb.append("  |    +--Issuer chain: missing\n");
+            } else {
+                switch (chain.length) {
+                case 0:
+                    sb.append("  |    +--Issuer chain: empty\n");
+                    break;
+                case 1:
+                    String singleDn = chain[0].getIssuerX500Principal().getName(X500Principal.RFC2253);
+                    sb.append("  |    +--Issuer: ").append(singleDn).append('\n');
+                    break;
+                default:
+                    sb.append("  |    +--Issuer chain:\n");
+                    sb.append(padding).append("   |\n");
+
+                    for (X509Certificate certificate : chain) {
+                        String thisDn = certificate.getIssuerX500Principal().getName(X500Principal.RFC2253);
+                        sb.append(padding).append("   +--").append(thisDn).append('\n');
+                    }
+                }
+            }
+        } else {
+            sb.append("  |    +--").append(nameForOid(id.toString()));
+            if (extension.isCritical()) {
+                sb.append(" [CRITICAL]");
+            }
+            sb.append('\n');
+        }
+
+        return sb;
+    }
+
+    private static String fqanInfoFor(VOMSAttribute attribute)
+    {
+        List<String> fqans = attribute.getFQANs();
 
         if(fqans.size() > 0) {
             StringBuilder sb = new StringBuilder();
