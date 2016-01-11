@@ -103,11 +103,19 @@
     <constructor-arg value="${pool.path}"/>
   </bean>
 
-  <bean id="meta-store" class="${pool.plugins.meta}"
-        destroy-method="close">
-    <description>Store for pool meta data</description>
-    <constructor-arg ref="file-store"/>
-    <constructor-arg value="${pool.path}"/>
+  <bean id="meta-store" class="org.dcache.pool.repository.ConsistentStore">
+      <constructor-arg ref="csm"/>
+      <constructor-arg ref="pnfs"/>
+      <constructor-arg ref="file-store"/>
+      <constructor-arg>
+          <bean class="${pool.plugins.meta}">
+              <description>Store for pool meta data</description>
+              <constructor-arg ref="file-store"/>
+              <constructor-arg value="${pool.path}"/>
+          </bean>
+      </constructor-arg>
+      <constructor-arg ref="replica-state-policy"/>
+      <property name="poolName" value="${pool.name}"/>
   </bean>
 
   <bean id="sweeper" class="${pool.plugins.sweeper}"
@@ -129,16 +137,7 @@
     <property name="volatile"
               value="#{ '${pool.lfs}' == 'volatile' or '${pool.lfs}' == 'transient' }"/>
     <property name="maxDiskSpaceString" value="${pool.size}"/>
-    <property name="metaDataStore">
-      <bean class="org.dcache.pool.repository.ConsistentStore">
-        <constructor-arg ref="csm"/>
-        <constructor-arg ref="pnfs"/>
-        <constructor-arg ref="file-store"/>
-        <constructor-arg ref="meta-store"/>
-        <constructor-arg ref="replica-state-policy"/>
-        <property name="poolName" value="${pool.name}"/>
-       </bean>
-    </property>
+    <property name="metaDataStore" ref="meta-store"/>
   </bean>
 
   <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
