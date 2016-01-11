@@ -692,7 +692,7 @@ public class CacheRepositoryV5
                     CacheEntry oldEntry = new CacheEntryImpl(entry);
                     if (entry.setSticky(owner, expire, overwrite) && _state == State.OPEN) {
                         CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-                        stickyChanged(oldEntry, newEntry, new StickyRecord(owner, expire));
+                        stickyChanged(oldEntry, newEntry);
                         scheduleExpirationTask(entry);
                     }
                 } catch (CacheException e) {
@@ -940,10 +940,10 @@ public class CacheRepositoryV5
      * record.
      */
     @GuardedBy("getMetaDataRecord(newEntry.getPnfsid())")
-    protected void stickyChanged(CacheEntry oldEntry, CacheEntry newEntry, StickyRecord record)
+    protected void stickyChanged(CacheEntry oldEntry, CacheEntry newEntry)
     {
         updateRemovable(newEntry);
-        StickyChangeEvent event = new StickyChangeEvent(oldEntry, newEntry, record);
+        StickyChangeEvent event = new StickyChangeEvent(oldEntry, newEntry);
         _stateChangeListeners.stickyChanged(event);
     }
 
@@ -1016,7 +1016,7 @@ public class CacheRepositoryV5
                 CacheEntry oldEntry = new CacheEntryImpl(entry);
                 if (entry.setSticky(owner, expire, overwrite) && _state == State.OPEN) {
                     CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-                    stickyChanged(oldEntry, newEntry, new StickyRecord(owner, expire));
+                    stickyChanged(oldEntry, newEntry);
                     scheduleExpirationTask(entry);
                 }
             }
@@ -1113,9 +1113,9 @@ public class CacheRepositoryV5
         synchronized (entry) {
             CacheEntry oldEntry = new CacheEntryImpl(entry);
             Collection<StickyRecord> removed = entry.removeExpiredStickyFlags();
-            for (StickyRecord record: removed) {
+            if (!removed.isEmpty()) {
                 CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-                stickyChanged(oldEntry, newEntry, record);
+                stickyChanged(oldEntry, newEntry);
             }
             scheduleExpirationTask(entry);
         }
