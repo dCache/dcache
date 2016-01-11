@@ -4,13 +4,11 @@ import com.sleepycat.bind.serial.StoredClassCatalog;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.DiskOrderedCursor;
+import com.sleepycat.je.DiskOrderedCursorConfig;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
-import com.sleepycat.je.ExceptionEvent;
-import com.sleepycat.je.ExceptionListener;
-import com.sleepycat.je.RunRecoveryException;
-import com.sleepycat.je.config.EnvironmentParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,5 +111,12 @@ public class MetaDataRepositoryDatabase
     public final Database getStateDatabase()
     {
         return stateDatabase;
+    }
+
+    public DiskOrderedCursor openKeyCursor()
+    {
+        DiskOrderedCursorConfig config = new DiskOrderedCursorConfig();
+        config.setKeysOnly(true);
+        return env.openDiskOrderedCursor(new Database[]{storageInfoDatabase, stateDatabase}, config);
     }
 }

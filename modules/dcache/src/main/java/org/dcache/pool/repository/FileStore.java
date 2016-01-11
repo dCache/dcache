@@ -1,7 +1,7 @@
 package org.dcache.pool.repository;
 
 import java.io.File;
-import java.util.List;
+import java.util.Set;
 
 import diskCacheV111.util.PnfsId;
 
@@ -17,9 +17,9 @@ public interface FileStore
     public File get(PnfsId id);
 
     /**
-     * Returns a list of PNFS ids of available data files.
+     * Returns the PNFS-IDs of available data files.
      */
-    public List<PnfsId> list();
+    Set<PnfsId> index();
 
     /**
      * Provides the amount of free space on the file system containing

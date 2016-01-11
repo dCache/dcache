@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import diskCacheV111.util.PnfsId;
 
@@ -47,10 +49,10 @@ public class FlatFileStore implements FileStore
     }
 
     @Override
-    public List<PnfsId> list()
+    public Set<PnfsId> index()
     {
         String[] files = _dataDir.list();
-        List<PnfsId> ids = new ArrayList<>(files.length);
+        Set<PnfsId> ids = new HashSet<>(files.length);
 
         for (String name : files) {
             try {

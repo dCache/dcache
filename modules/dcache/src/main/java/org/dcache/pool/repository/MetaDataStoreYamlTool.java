@@ -43,7 +43,7 @@ public class MetaDataStoreYamlTool
 
         PrintWriter out = new PrintWriter(System.out);
         PrintWriter error = new PrintWriter(System.err);
-        for (PnfsId id: metaStore.list()) {
+        for (PnfsId id: metaStore.index()) {
             try {
                 MetaDataRecord record = metaStore.get(id);
                 FileAttributes attributes = record.getFileAttributes();

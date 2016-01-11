@@ -16,8 +16,10 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
@@ -104,10 +106,10 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
 
 
     @Override
-    public List<PnfsId> list() {
+    public Set<PnfsId> index() {
 
 
-        List<PnfsId> entries = new ArrayList<>();
+        Set<PnfsId> entries = new HashSet<>();
 
 
         try {

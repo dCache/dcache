@@ -145,6 +145,11 @@ public class CacheRepositoryV5
     private volatile State _state = State.UNINITIALIZED;
 
     /**
+     * Initialization progress between 0 and 1.
+     */
+    private float _initializationProgress;
+
+    /**
      * Shared repository account object for tracking space.
      */
     private Account _account;
@@ -343,8 +348,7 @@ public class CacheRepositoryV5
                 _state = State.LOADING;
             }
 
-            List<PnfsId> ids = new ArrayList<>(_store.list());
-            _log.info("Found {} data files", ids.size());
+            List<PnfsId> ids = new ArrayList<>(_store.index());
 
             /* On some file systems (e.g. GPFS) stat'ing files in
              * lexicographic order seems to trigger the pre-fetch
@@ -354,8 +358,10 @@ public class CacheRepositoryV5
 
             /* Collect all entries.
              */
-            _log.info("Checking meta data for {} files", ids.size());
+            int fileCount = ids.size();
+            _log.info("Checking meta data for {} files", fileCount);
             long usedDataSpace = 0L;
+            int cnt = 0;
             List<MetaDataRecord> entries = new ArrayList<>();
             for (PnfsId id: ids) {
                 MetaDataRecord entry = readMetaDataRecord(id);
@@ -364,6 +370,8 @@ public class CacheRepositoryV5
                     _log.debug("{} {}", id, entry.getState());
                     entries.add(entry);
                 }
+                _initializationProgress = ((float) cnt) / fileCount;
+                cnt++;
             }
 
             /* Allocate space.
@@ -426,7 +434,7 @@ public class CacheRepositoryV5
     {
         assertOpen();
         try {
-            return Collections.unmodifiableCollection(_store.list()).iterator();
+            return Collections.unmodifiableCollection(_store.index()).iterator();
         } catch (DiskErrorCacheException | RuntimeException e) {
             fail(FaultAction.DEAD, "Internal repository error", e);
             throw Throwables.propagate(e);
@@ -774,9 +782,13 @@ public class CacheRepositoryV5
     public void getInfo(PrintWriter pw)
     {
         State state = _state;
-        pw.println("State : " + state);
+        pw.append("State : ").append(state.toString());
+        if (state == State.LOADING) {
+            pw.append(" (").append(String.valueOf((int) (_initializationProgress * 100))).append("% done)");
+        }
+        pw.println();
         try {
-            pw.println("Files : " + (state == State.OPEN || state == State.LOADING || state == State.INITIALIZED ?_store.list().size() : ""));
+            pw.println("Files : " + (state == State.OPEN || state == State.LOADING || state == State.INITIALIZED ? _store.index().size() : ""));
         } catch (CacheException e) {
             pw.println("Files : " + e.getMessage());
         }
