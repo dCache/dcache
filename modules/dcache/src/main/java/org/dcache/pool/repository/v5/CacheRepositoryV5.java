@@ -827,6 +827,7 @@ public class CacheRepositoryV5
     {
         _stateChangeListeners.stop();
         _state = State.CLOSED;
+        _store.close();
     }
 
     // Operations on MetaDataRecord ///////////////////////////////////////
