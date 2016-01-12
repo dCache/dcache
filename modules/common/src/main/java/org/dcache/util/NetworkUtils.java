@@ -384,21 +384,39 @@ public abstract class NetworkUtils {
         {
             try {
                 return Lists.newArrayList(
-                        concat(transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
-                                         new Function<NetworkInterface, Iterator<InetAddress>>()
-                                         {
-                                             @Override
-                                             public Iterator<InetAddress> apply(NetworkInterface i)
-                                             {
-                                                 try {
-                                                     if (i.isUp()) {
-                                                         return forEnumeration(i.getInetAddresses());
-                                                     }
-                                                 } catch (SocketException ignored) {
-                                                 }
-                                                 return Collections.emptyIterator();
-                                             }
-                                         })));
+
+                        /*
+                         * Get IP addresses from all interfaces. As InetAddress objects returned by
+                         * etworkInterface contain interface names, deerialization of them will
+                         * trigger interface re-discovery. Re-create InetAddress objects with address
+                         * information only.
+                         */
+                        transform(
+                                concat(transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
+                                        new Function<NetworkInterface, Iterator<InetAddress>>() {
+                                    @Override
+                                    public Iterator<InetAddress> apply(NetworkInterface i) {
+                                        try {
+                                            if (i.isUp()) {
+                                                return forEnumeration(i.getInetAddresses());
+                                            }
+                                        } catch (SocketException ignored) {
+                                        }
+                                        return Collections.emptyIterator();
+                                    }
+                                })),
+                                new Function<InetAddress, InetAddress>() {
+                                    @Override
+                                    public InetAddress apply(InetAddress input) {
+                                        try {
+                                            return InetAddress.getByAddress(input.getAddress());
+                                        }catch(UnknownHostException e) {
+                                            // must never happen
+                                            throw new RuntimeException("Failed to create new instance of InetAddress", e);
+                                        }
+                                    }
+                            })
+                );
             } catch (SocketException e) {
                 logger.error("Failed to resolve local network addresses: {}", e.toString());
                 return Collections.emptyList();
