@@ -3,6 +3,8 @@ package org.dcache.pool.migration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +20,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
@@ -98,7 +102,9 @@ public class Job
     private final TaskParameters _taskParameters;
     private final String _pinPrefix;
 
-    private State _state;
+    private final Lock _lock = new ReentrantLock(true);
+
+    private volatile State _state;
     private int _concurrency;
 
     public Job(MigrationContext context, JobDefinition definition)
@@ -147,84 +153,104 @@ public class Job
             }));
     }
 
-    public synchronized JobDefinition getDefinition()
+    public JobDefinition getDefinition()
     {
         return _definition;
     }
 
-    public synchronized int getConcurrency()
+    public int getConcurrency()
     {
-        return _concurrency;
+        _lock.lock();
+        try {
+            return _concurrency;
+        } finally {
+            _lock.unlock();
+        }
     }
 
-    public synchronized void setConcurrency(int concurrency)
+    public void setConcurrency(int concurrency)
     {
-        _concurrency = concurrency;
-        schedule();
+        _lock.lock();
+        try {
+            _concurrency = concurrency;
+            schedule();
+        } finally {
+            _lock.unlock();
+        }
     }
 
-    public synchronized void addError(Error error)
+    public void addError(Error error)
     {
-        while (!_errors.offer(error)) {
-            _errors.poll();
+        _lock.lock();
+        try {
+            while (!_errors.offer(error)) {
+                _errors.poll();
+            }
+        } finally {
+            _lock.unlock();
         }
     }
 
     /** Adds status information about the job to <code>pw</code>. */
-    public synchronized void getInfo(PrintWriter pw)
+    public void getInfo(PrintWriter pw)
     {
-        long total = _statistics.getTotal();
-        long completed = _statistics.getTransferred();
-        pw.println("State      : " + _state);
-        pw.println("Queued     : " + _queued.size());
-        pw.println("Attempts   : " + _statistics.getAttempts());
-        pw.println("Targets    : " + _definition.poolList);
+        _lock.lock();
+        try {
+            long total = _statistics.getTotal();
+            long completed = _statistics.getTransferred();
+            pw.println("State      : " + _state);
+            pw.println("Queued     : " + _queued.size());
+            pw.println("Attempts   : " + _statistics.getAttempts());
+            pw.println("Targets    : " + _definition.poolList);
 
-        if (total > 0) {
-            switch (getState()) {
-            case RUNNING:
-            case SUSPENDED:
-            case CANCELLING:
-            case STOPPING:
-            case SLEEPING:
-            case PAUSED:
-                pw.println("Completed  : "
-                           + _statistics.getCompleted() + " files; "
-                           + _statistics.getTransferred() + " bytes; "
-                           + (100 * completed / total) + "%");
-                pw.println("Total      : " + total + " bytes");
-                break;
+            if (total > 0) {
+                switch (getState()) {
+                case RUNNING:
+                case SUSPENDED:
+                case CANCELLING:
+                case STOPPING:
+                case SLEEPING:
+                case PAUSED:
+                    pw.println("Completed  : "
+                               + _statistics.getCompleted() + " files; "
+                               + _statistics.getTransferred() + " bytes; "
+                               + (100 * completed / total) + "%");
+                    pw.println("Total      : " + total + " bytes");
+                    break;
 
-            case INITIALIZING:
-            case FINISHED:
-                pw.println("Completed  : "
-                           + _statistics.getCompleted() + " files; "
-                           + _statistics.getTransferred() + " bytes");
-                pw.println("Total      : " + total + " bytes");
-                break;
+                case INITIALIZING:
+                case FINISHED:
+                    pw.println("Completed  : "
+                               + _statistics.getCompleted() + " files; "
+                               + _statistics.getTransferred() + " bytes");
+                    pw.println("Total      : " + total + " bytes");
+                    break;
 
-            case CANCELLED:
-            case FAILED:
-                pw.println("Completed  : "
-                           + _statistics.getCompleted() + " files; "
-                           + _statistics.getTransferred() + " bytes");
-                break;
+                case CANCELLED:
+                case FAILED:
+                    pw.println("Completed  : "
+                               + _statistics.getCompleted() + " files; "
+                               + _statistics.getTransferred() + " bytes");
+                    break;
+                }
             }
-        }
 
-        pw.println("Concurrency: " + _concurrency);
-        pw.println("Running tasks:");
-        List<Task> tasks = new ArrayList<>(_running.values());
-        Collections.sort(tasks, (t1, t2) -> Long.compare(t1.getId(), t2.getId()));
-        for (Task task: tasks) {
-            task.getInfo(pw);
-        }
-
-        if (!_errors.isEmpty()) {
-            pw.println("Most recent errors:");
-            for (Error error: _errors) {
-                pw.println(error);
+            pw.println("Concurrency: " + _concurrency);
+            pw.println("Running tasks:");
+            List<Task> tasks = new ArrayList<>(_running.values());
+            Collections.sort(tasks, (t1, t2) -> Long.compare(t1.getId(), t2.getId()));
+            for (Task task : tasks) {
+                task.getInfo(pw);
             }
+
+            if (!_errors.isEmpty()) {
+                pw.println("Most recent errors:");
+                for (Error error : _errors) {
+                    pw.println(error);
+                }
+            }
+        } finally {
+            _lock.unlock();
         }
     }
 
@@ -252,11 +278,14 @@ public class Job
 
             for (PnfsId pnfsId: files) {
                 try {
-                    synchronized (this) {
+                    _lock.lock();
+                    try {
                         CacheEntry entry = repository.getEntry(pnfsId);
                         if (accept(entry)) {
                             add(entry);
                         }
+                    } finally {
+                        _lock.unlock();
                     }
                 } catch (FileNotInCacheException e) {
                     // File was removed before we got to it - not a
@@ -275,22 +304,27 @@ public class Job
     /**
      * Cancels a job. All running tasks are cancelled.
      */
-    public synchronized void cancel(boolean force)
+    public void cancel(boolean force)
     {
-        if (_state != State.RUNNING && _state != State.SUSPENDED &&
-            _state != State.CANCELLING && _state != State.STOPPING &&
-            _state != State.SLEEPING && _state != State.PAUSED) {
-            throw new IllegalStateException("The job cannot be cancelled in its present state");
-        }
-        if (_running.isEmpty()) {
-            setState(State.CANCELLED);
-        } else {
-            setState(State.CANCELLING);
-            if (force) {
-                for (Task task: _running.values()) {
-                    task.cancel();
+        _lock.lock();
+        try {
+            if (_state != State.RUNNING && _state != State.SUSPENDED &&
+                _state != State.CANCELLING && _state != State.STOPPING &&
+                _state != State.SLEEPING && _state != State.PAUSED) {
+                throw new IllegalStateException("The job cannot be cancelled in its present state");
+            }
+            if (_running.isEmpty()) {
+                setState(State.CANCELLED);
+            } else {
+                setState(State.CANCELLING);
+                if (force) {
+                    for (Task task: _running.values()) {
+                        task.cancel();
+                    }
                 }
             }
+        } finally {
+            _lock.unlock();
         }
     }
 
@@ -298,7 +332,8 @@ public class Job
      * Similar to cancel(false), but the job will eventually end up in
      * FINISHED rather than CANCELLED.
      */
-    private synchronized void stop()
+    @GuardedBy("_lock")
+    private void stop()
     {
         if (_state != State.RUNNING && _state != State.SUSPENDED &&
             _state != State.STOPPING && _state != State.SLEEPING &&
@@ -317,7 +352,8 @@ public class Job
      * periodically reevaluate the pause predicate and automatically
      * resume the job when the predicate evaluates to false.
      */
-    private synchronized void pause()
+    @GuardedBy("_lock")
+    private void pause()
     {
         if (_state != State.RUNNING && _state != State.SUSPENDED &&
             _state != State.SLEEPING && _state != State.PAUSED) {
@@ -329,28 +365,38 @@ public class Job
     /**
      * Suspends a job. No new tasks are scheduled.
      */
-    public synchronized void suspend()
+    public void suspend()
     {
-        if (_state != State.RUNNING && _state != State.SUSPENDED &&
-            _state != State.SLEEPING && _state != State.PAUSED) {
-            throw new IllegalStateException("Cannot suspend a job that does not run");
+        _lock.lock();
+        try {
+            if (_state != State.RUNNING && _state != State.SUSPENDED &&
+                _state != State.SLEEPING && _state != State.PAUSED) {
+                throw new IllegalStateException("Cannot suspend a job that does not run");
+            }
+            setState(State.SUSPENDED);
+        } finally {
+            _lock.unlock();
         }
-        setState(State.SUSPENDED);
     }
 
     /**
      * Resumes a previously suspended task.
      */
-    public synchronized void resume()
+    public void resume()
     {
-        if (_state != State.SUSPENDED) {
-            throw new IllegalStateException("Cannot resume a job that does not run");
+        _lock.lock();
+        try {
+            if (_state != State.SUSPENDED) {
+                throw new IllegalStateException("Cannot resume a job that does not run");
+            }
+            setState(State.RUNNING);
+        } finally {
+            _lock.unlock();
         }
-        setState(State.RUNNING);
     }
 
     /** Returns the current state of the job. */
-    public synchronized State getState()
+    public State getState()
     {
         return _state;
     }
@@ -362,63 +408,74 @@ public class Job
      *
      * @see schedule
      */
-    private synchronized void setState(State state)
+    private void setState(State state)
     {
-        if (_state != state) {
-            _state = state;
-            switch (_state) {
-            case RUNNING:
-                schedule();
-                break;
+        _lock.lock();
+        try {
+            if (_state != state) {
+                _state = state;
+                switch (_state) {
+                case RUNNING:
+                    schedule();
+                    break;
 
-            case SLEEPING:
-                _context.getExecutor().schedule(new FireAndForgetTask(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            synchronized (Job.this) {
-                                if (getState() == State.SLEEPING) {
-                                    setState(State.RUNNING);
-                                }
-                            }
-                        }
-                    }), 10, TimeUnit.SECONDS);
-                break;
-
-            case PAUSED:
-                _context.getExecutor().schedule(new FireAndForgetTask(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            synchronized (Job.this) {
-                                if (getState() == State.PAUSED) {
-                                    Expression stopWhen = _definition.stopWhen;
-                                    if (stopWhen != null && evaluateLifetimePredicate(stopWhen)) {
-                                        stop();
-                                    }
-                                    Expression pauseWhen = _definition.pauseWhen;
-                                    if (!evaluateLifetimePredicate(pauseWhen)) {
+                case SLEEPING:
+                    _context.getExecutor().schedule(new FireAndForgetTask(new Runnable() {
+                            @Override
+                            public void run()
+                            {
+                                _lock.lock();
+                                try {
+                                    if (getState() == State.SLEEPING) {
                                         setState(State.RUNNING);
                                     }
+                                } finally {
+                                    _lock.unlock();
                                 }
                             }
-                        }
-                    }), 10, TimeUnit.SECONDS);
-                break;
+                        }), 10, TimeUnit.SECONDS);
+                    break;
 
-            case FINISHED:
-            case CANCELLED:
-            case FAILED:
-                _queued.clear();
-                _sizes.clear();
-                _context.getRepository().removeListener(this);
-                _refreshTask.cancel(false);
+                case PAUSED:
+                    _context.getExecutor().schedule(new FireAndForgetTask(new Runnable() {
+                            @Override
+                            public void run()
+                            {
+                                _lock.lock();
+                                try {
+                                    if (getState() == State.PAUSED) {
+                                        Expression stopWhen = _definition.stopWhen;
+                                        if (stopWhen != null && evaluateLifetimePredicate(stopWhen)) {
+                                            stop();
+                                        }
+                                        Expression pauseWhen = _definition.pauseWhen;
+                                        if (!evaluateLifetimePredicate(pauseWhen)) {
+                                            setState(State.RUNNING);
+                                        }
+                                    }
+                                } finally {
+                                    _lock.unlock();
+                                }
+                            }
+                        }), 10, TimeUnit.SECONDS);
+                    break;
 
-                for (Map.Entry<PoolMigrationJobCancelMessage,DelayedReply> entry: _cancelRequests.entrySet()) {
-                    entry.getValue().reply(entry.getKey());
+                case FINISHED:
+                case CANCELLED:
+                case FAILED:
+                    _queued.clear();
+                    _sizes.clear();
+                    _context.getRepository().removeListener(this);
+                    _refreshTask.cancel(false);
+
+                    for (Map.Entry<PoolMigrationJobCancelMessage,DelayedReply> entry: _cancelRequests.entrySet()) {
+                        entry.getValue().reply(entry.getKey());
+                    }
+                    break;
                 }
-                break;
             }
+        } finally {
+            _lock.unlock();
         }
     }
 
@@ -430,7 +487,8 @@ public class Job
      *
      * @see setState
      */
-    private synchronized void schedule()
+    @GuardedBy("_lock")
+    private void schedule()
     {
         if (_state == State.CANCELLING && _running.isEmpty()) {
             setState(State.CANCELLED);
@@ -562,7 +620,8 @@ public class Job
     }
 
     /** Adds a new task to the job. */
-    private synchronized void add(CacheEntry entry)
+    @GuardedBy("_lock")
+    private void add(CacheEntry entry)
     {
         PnfsId pnfsId = entry.getPnfsId();
         if (!_queued.contains(pnfsId) && !_running.containsKey(pnfsId)) {
@@ -575,7 +634,8 @@ public class Job
     }
 
     /** Removes a task from the job. */
-    private synchronized void remove(PnfsId pnfsId)
+    @GuardedBy("_lock")
+    private void remove(PnfsId pnfsId)
     {
         Task task = _running.get(pnfsId);
         if (task != null) {
@@ -591,20 +651,33 @@ public class Job
     {
         PnfsId pnfsId = event.getPnfsId();
         if (event.getNewState() == EntryState.REMOVED) {
-            remove(pnfsId);
+            _lock.lock();
+            try {
+                remove(pnfsId);
+            } finally {
+                _lock.unlock();
+            }
         } else {
             // We don't call entryChanged because during repository
             // initialization stateChanged is called and we want to
             // add the file to the job even if the state didn't change.
             CacheEntry entry = event.getNewEntry();
             if (!accept(entry)) {
-                synchronized (this) {
+                _lock.lock();
+                try {
                     if (!_running.containsKey(pnfsId)) {
                         remove(pnfsId);
                     }
+                } finally {
+                    _lock.unlock();
                 }
             } else if (_definition.isPermanent) {
-                add(entry);
+                _lock.lock();
+                try {
+                    add(entry);
+                } finally {
+                    _lock.unlock();
+                }
             }
         }
     }
@@ -626,91 +699,127 @@ public class Job
         PnfsId pnfsId = event.getPnfsId();
         CacheEntry entry = event.getNewEntry();
         if (!accept(entry)) {
-            synchronized (this) {
+            _lock.lock();
+            try {
                 if (!_running.containsKey(pnfsId)) {
                     remove(pnfsId);
                 }
+            } finally {
+                _lock.unlock();
             }
         } else if (_definition.isPermanent && !accept(event.getOldEntry())) {
-            add(entry);
+            _lock.lock();
+            try {
+                add(entry);
+            } finally {
+                _lock.unlock();
+            }
         }
     }
 
     /** Callback from task: Task is dead, remove it. */
     @Override
-    public synchronized void taskCancelled(Task task)
+    public void taskCancelled(Task task)
     {
-        PnfsId pnfsId = task.getPnfsId();
-        _running.remove(pnfsId);
-        _sizes.remove(pnfsId);
-        _context.unlock(pnfsId);
-        schedule();
+        _lock.lock();
+        try {
+            PnfsId pnfsId = task.getPnfsId();
+            _running.remove(pnfsId);
+            _sizes.remove(pnfsId);
+            _context.unlock(pnfsId);
+            schedule();
+        } finally {
+            _lock.unlock();
+        }
     }
 
     /** Callback from task: Task failed, reschedule it. */
     @Override
-    public synchronized void taskFailed(Task task, int rc, String msg)
+    public void taskFailed(Task task, int rc, String msg)
     {
-        PnfsId pnfsId = task.getPnfsId();
-        if (task == _running.remove(pnfsId)) {
-            _queued.add(pnfsId);
-            _context.unlock(pnfsId);
-        }
+        _lock.lock();
+        try {
+            PnfsId pnfsId = task.getPnfsId();
+            if (task == _running.remove(pnfsId)) {
+                _queued.add(pnfsId);
+                _context.unlock(pnfsId);
+            }
 
-        if (_state == State.RUNNING) {
-            setState(State.SLEEPING);
-        } else {
-            schedule();
-        }
+            if (_state == State.RUNNING) {
+                setState(State.SLEEPING);
+            } else {
+                schedule();
+            }
 
-        addError(new Error(task.getId(), pnfsId, msg));
+            addError(new Error(task.getId(), pnfsId, msg));
+        } finally {
+            _lock.unlock();
+        }
     }
 
     /** Callback from task: Task failed permanently, remove it. */
     @Override
-    public synchronized void taskFailedPermanently(Task task, int rc, String msg)
+    public void taskFailedPermanently(Task task, int rc, String msg)
     {
-        PnfsId pnfsId = task.getPnfsId();
-        _running.remove(pnfsId);
-        _sizes.remove(pnfsId);
-        _context.unlock(pnfsId);
-        schedule();
+        _lock.lock();
+        try {
+            PnfsId pnfsId = task.getPnfsId();
+            _running.remove(pnfsId);
+            _sizes.remove(pnfsId);
+            _context.unlock(pnfsId);
+            schedule();
 
-        addError(new Error(task.getId(), pnfsId, msg));
+            addError(new Error(task.getId(), pnfsId, msg));
+        } finally {
+            _lock.unlock();
+        }
     }
 
     /** Callback from task: Task is done, remove it. */
     @Override
-    public synchronized void taskCompleted(Task task)
+    public void taskCompleted(Task task)
     {
-        PnfsId pnfsId = task.getPnfsId();
-        applySourceMode(pnfsId);
-        _running.remove(pnfsId);
-        _context.unlock(pnfsId);
-        _statistics.addCompleted(_sizes.remove(pnfsId));
-        schedule();
+        _lock.lock();
+        try {
+            PnfsId pnfsId = task.getPnfsId();
+            applySourceMode(pnfsId);
+            _running.remove(pnfsId);
+            _context.unlock(pnfsId);
+            _statistics.addCompleted(_sizes.remove(pnfsId));
+            schedule();
+        } finally {
+            _lock.unlock();
+        }
     }
 
-    public synchronized Object messageArrived(PoolMigrationJobCancelMessage message)
+    public Object messageArrived(PoolMigrationJobCancelMessage message)
     {
-        if (_state == State.FINISHED || _state == State.FAILED || _state == State.CANCELLED) {
+        State state = _state;
+        if (state == State.FINISHED || state == State.FAILED || state == State.CANCELLED) {
             message.setSucceeded();
             return message;
         } else {
             DelayedReply reply = new DelayedReply();
-            _cancelRequests.put(message, reply);
-            cancel(message.isForced());
+            _lock.lock();
+            try {
+                _cancelRequests.put(message, reply);
+                cancel(message.isForced());
+            } finally {
+                _lock.unlock();
+            }
             return reply;
         }
     }
 
     /** Message handler. Delegates to proper task .*/
-    public void
-        messageArrived(PoolMigrationCopyFinishedMessage message)
+    public void messageArrived(PoolMigrationCopyFinishedMessage message)
     {
         Task task;
-        synchronized (this) {
+        _lock.lock();
+        try {
             task = _running.get(message.getPnfsId());
+        } finally {
+            _lock.unlock();
         }
         if (task != null) {
             task.messageArrived(message);
@@ -747,7 +856,7 @@ public class Job
      * Returns true if and only if <code>record</code> is owned by the
      * pin manager.
      */
-    private synchronized boolean isPin(StickyRecord record)
+    private boolean isPin(StickyRecord record)
     {
         return record.owner().startsWith(_pinPrefix);
     }
@@ -756,7 +865,7 @@ public class Job
      * Returns true if and only if the given entry has any sticky
      * records owned by the pin manager.
      */
-    private synchronized boolean isPinned(CacheEntry entry)
+    private boolean isPinned(CacheEntry entry)
     {
         for (StickyRecord record: entry.getStickyRecords()) {
             if (isPin(record)) {
@@ -767,7 +876,8 @@ public class Job
     }
 
     /** Apply source mode update to replica. */
-    private synchronized void applySourceMode(PnfsId pnfsId)
+    @GuardedBy("_lock")
+    private void applySourceMode(PnfsId pnfsId)
     {
         try {
             CacheEntryMode mode = _definition.sourceMode;
