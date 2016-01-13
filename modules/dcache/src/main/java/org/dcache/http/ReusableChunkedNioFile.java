@@ -1,7 +1,6 @@
 package org.dcache.http;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.stream.ChunkedInput;
 
@@ -99,21 +98,27 @@ public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf>
         int length = (int) Math.min(_chunkSize, _endOffset - offset);
 
         ByteBuf chunk = ctx.alloc().ioBuffer(length);
-        ByteBuffer buffer = chunk.nioBuffer(0, length);
+        boolean release = true;
+        try {
+            ByteBuffer buffer = chunk.nioBuffer(0, length);
 
-        while (buffer.hasRemaining()) {
-            /* use position independent thread safe call */
-            int bytes = _channel.read(buffer, offset);
-            if (bytes < 0) {
-                break;
+            while (buffer.hasRemaining()) {
+                /* use position independent thread safe call */
+                int bytes = _channel.read(buffer, offset);
+                if (bytes < 0) {
+                    break;
+                }
+                offset += bytes;
             }
-            offset += bytes;
+            chunk.writerIndex(buffer.position());
+            _offset = offset;
+            release = false;
+            return chunk;
+        } finally {
+            if (release) {
+                chunk.release();
+            }
         }
-        chunk.writerIndex(buffer.position());
-
-        _offset = offset;
-
-        return chunk;
     }
 
     /**
