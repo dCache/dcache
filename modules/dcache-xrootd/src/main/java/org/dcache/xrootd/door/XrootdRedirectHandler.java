@@ -182,17 +182,11 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             (InetSocketAddress) channel.getLocalAddress();
         InetSocketAddress remoteAddress =
             (InetSocketAddress) channel.getRemoteAddress();
-        int options = req.getOptions();
 
-        FilePerm neededPerm;
+        FilePerm neededPerm = req.getRequiredPermission();
 
-        if (req.isNew() || req.isReadWrite()) {
-            if (_isReadOnly) {
-                throw new XrootdException(kXR_NotAuthorized, "Read-only access");
-            }
-            neededPerm = FilePerm.WRITE;
-        } else {
-            neededPerm = FilePerm.READ;
+        if (neededPerm == FilePerm.WRITE && _isReadOnly) {
+            throw new XrootdException(kXR_NotAuthorized, "Read-only access");
         }
 
         _log.info("Opening {} for {}", req.getPath(), neededPerm.xmlText());
@@ -209,8 +203,8 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
 
             XrootdTransfer transfer;
             if (neededPerm == FilePerm.WRITE) {
-                boolean createDir = (options & kXR_mkpath) == kXR_mkpath;
-                boolean overwrite = (options & kXR_delete) == kXR_delete;
+                boolean createDir = req.isMkPath();
+                boolean overwrite = req.isDelete();
 
                 transfer =
                     _door.write(remoteAddress, createFullPath(req.getPath()), uuid,
