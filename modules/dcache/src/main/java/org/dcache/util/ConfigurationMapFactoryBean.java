@@ -42,7 +42,7 @@ public class ConfigurationMapFactoryBean implements EnvironmentAware,
     }
 
     @PostConstruct
-    private void buildMap()
+    public void buildMap()
     {
         ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
 
@@ -71,7 +71,7 @@ public class ConfigurationMapFactoryBean implements EnvironmentAware,
     }
 
     @Override
-    public ImmutableMap<String, String> getObject() throws Exception
+    public ImmutableMap<String, String> getObject()
     {
         return _object;
     }
