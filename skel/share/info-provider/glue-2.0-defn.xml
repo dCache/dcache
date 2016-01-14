@@ -433,6 +433,8 @@
                     path="d:protocol/d:metric[@name='version']"/>
             </attr>
 
+            <attr name="GLUE2EntityOtherInfo">dCache.root=<lookup path="../../d:protocol/d:metric[@name='root']">/</lookup></attr>
+
             <attr name="GLUE2EndpointServiceForeignKey">
               <parent-rdn rdn="GLUE2ServiceID" use="value"/>
             </attr>
