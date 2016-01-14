@@ -14,6 +14,7 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.util.CertificateFactories;
 import org.dcache.util.NetLoggerBuilder;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
@@ -52,12 +53,9 @@ public class AuthenticationHandler extends HandlerWrapper {
     private LoginStrategy _loginStrategy;
     private FsPath _rootPath = new FsPath();
 
-    private CertificateFactory _cf;
+    private CertificateFactory _cf = CertificateFactories.newX509CertificateFactory();
     private FsPath _uploadPath;
 
-    public void setCertificateFactory(CertificateFactory _cf) {
-        this._cf = _cf;
-    }
 
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
