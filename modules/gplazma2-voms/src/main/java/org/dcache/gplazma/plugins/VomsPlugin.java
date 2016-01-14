@@ -5,6 +5,7 @@ import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
 import org.italiangrid.voms.ac.VOMSValidationResult;
+import org.italiangrid.voms.error.VOMSValidationErrorMessage;
 import org.italiangrid.voms.store.VOMSTrustStore;
 import org.italiangrid.voms.store.VOMSTrustStores;
 import org.italiangrid.voms.util.CertificateValidatorBuilder;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -97,7 +99,8 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
                         byte[] rawId = new byte[3]; // a Base64 char represents 6 bits; 4 chars represent 3 bytes.
                         random.nextBytes(rawId);
                         String id = Base64.getEncoder().withoutPadding().encodeToString(rawId);
-                        LOG.warn("Validation failure {}: {}", id, result.getValidationErrors());
+                        String message = buildErrorMessage(result.getValidationErrors());
+                        LOG.warn("Validation failure {}: {}", id, message);
                         if (ids == null) {
                             ids = id;
                         } else {
@@ -115,5 +118,13 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin
         }
         checkAuthentication(hasX509, "no X509 certificate chain");
         checkAuthentication(hasFQANs, "no FQANs");
+    }
+
+
+    private String buildErrorMessage(List<VOMSValidationErrorMessage> errors)
+    {
+        return errors.isEmpty() ? "(unknown)" : errors.stream().
+                map(VOMSValidationErrorMessage::toString).
+                collect(Collectors.joining(", ", "[", "]"));
     }
 }
