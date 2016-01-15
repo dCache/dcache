@@ -577,7 +577,7 @@ public class DcacheResourceFactory
             return null;
         }
 
-        FsPath requestPath = getRequestPath(path);
+        FsPath requestPath = new FsPath(getRequestPath());
         boolean haveRetried = false;
         Subject subject = getSubject();
 
@@ -844,20 +844,29 @@ public class DcacheResourceFactory
         }
     }
 
+    private String getRequestPath()
+    {
+        Request request = HttpManager.request();
+        return URI.create(request.getAbsoluteUrl()).getPath();
+    }
+
+    private String getRemoteAddr()
+    {
+        return HttpManager.request().getRemoteAddr();
+    }
+
     /**
      * Performs a directory listing, writing an HTML view to an output
      * stream.
-     * @throws URISyntaxException
      */
     public void list(FsPath path, Writer out)
-        throws InterruptedException, CacheException, IOException, URISyntaxException
+        throws InterruptedException, CacheException, IOException
     {
         if (!_isAnonymousListingAllowed && Subjects.isNobody(getSubject())) {
             throw new PermissionDeniedCacheException("Access denied");
         }
 
-        Request request = HttpManager.request();
-        String requestPath = new URI(request.getAbsoluteUrl()).getPath();
+        String requestPath = getRequestPath();
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
         final ST t = _listingGroup.getInstanceOf(HTML_TEMPLATE_NAME);
@@ -895,7 +904,7 @@ public class DcacheResourceFactory
                          * file's size before uploading.
                          */
                         boolean isUploading = !attr.isDefined(SIZE);
-                        FileLocality locality = _poolMonitor.getFileLocality(attr, request.getRemoteAddr());
+                        FileLocality locality = _poolMonitor.getFileLocality(attr, getRemoteAddr());
                         t.addAggr("files.{name,isDirectory,mtime,size,isUploading,locality}",
                                   name,
                                   attr.getFileType() == DIR,
@@ -1082,16 +1091,6 @@ public class DcacheResourceFactory
     {
         return new FsPath(_rootPath, new FsPath(path));
     }
-
-    /**
-     * Convert a path within dCache's namespace into the corresponding
-     * path for a request.  This is the inverse of getFullPath.
-     */
-    private FsPath getRequestPath(FsPath internalPath)
-    {
-        return _rootPath.relativize(internalPath);
-    }
-
 
     /**
      * Returns true if access to path is allowed through the WebDAV

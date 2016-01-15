@@ -129,8 +129,6 @@ public class DcacheDirectoryResource
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("This should not happen as UTF-8 " +
                     "is a required encoding for JVM", e);
-        } catch (URISyntaxException e) {
-            throw new WebDavException("Badly formed URI: " + e.getMessage(), this);
         }
     }
 
