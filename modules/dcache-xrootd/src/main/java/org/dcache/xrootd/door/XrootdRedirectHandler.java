@@ -135,6 +135,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx, OpenRequest req)
         throws XrootdException
     {
+        /* We ought to process this asynchronously to not block the calling thread during
+         * staging or queuing. We should also switch to an asynchronous reply model if
+         * the request is nearline or is queued on a pool. The naive approach to always
+         * use an asynchronous reply model doesn't work because the xrootd 3.x client
+         * introduces an artificial 1 second delay when processing such a response.
+         */
+
         Channel channel = ctx.channel();
         InetSocketAddress localAddress = (InetSocketAddress) channel.localAddress();
         InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
@@ -161,7 +168,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
         /* Interact with core dCache to open the requested file.
          */
-        respond(ctx, new AwaitAsyncResponse<>(req, Integer.MAX_VALUE));
         try {
             XrootdTransfer transfer;
             if (neededPerm == FilePerm.WRITE) {
@@ -185,31 +191,30 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             /* xrootd developers say that IPv6 addresses must always be URI quoted.
              * The spec doesn't require this, but clients depend on it.
              */
-            return new AsyncResponse<>(new RedirectResponse<>(
-                    req, InetAddresses.toUriString(address.getAddress()), address.getPort(), opaque, ""));
+            return new RedirectResponse<>(
+                    req, InetAddresses.toUriString(address.getAddress()), address.getPort(), opaque, "");
         } catch (FileNotFoundCacheException e) {
-            return new AsyncResponse<>(withError(req, kXR_NotFound, "No such file"));
+            return withError(req, kXR_NotFound, "No such file");
         } catch (FileExistsCacheException e) {
-            return new AsyncResponse<>(withError(req, kXR_Unsupported, "File already exists"));
+            return withError(req, kXR_Unsupported, "File already exists");
         } catch (TimeoutCacheException e) {
-            return new AsyncResponse<>(withError(req, kXR_ServerError, "Internal timeout"));
+            return withError(req, kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
-            return new AsyncResponse<>(withError(req, kXR_NotAuthorized, e.getMessage()));
+            return withError(req, kXR_NotAuthorized, e.getMessage());
         } catch (FileIsNewCacheException e) {
-            return new AsyncResponse<>(withError(req, kXR_FileLocked, "File is locked by upload"));
+            return withError(req, kXR_FileLocked, "File is locked by upload");
         } catch (NotFileCacheException e) {
-            return new AsyncResponse<>(withError(req, kXR_NotFile, "Not a file"));
+            return withError(req, kXR_NotFile, "Not a file");
         } catch (CacheException e) {
-            return new AsyncResponse<>(
-                    withError(req, kXR_ServerError,
-                              String.format("Failed to open file (%s [%d])", e.getMessage(), e.getRc())));
+            return withError(req, kXR_ServerError,
+                             String.format("Failed to open file (%s [%d])", e.getMessage(), e.getRc()));
         } catch (InterruptedException e) {
             /* Interrupt may be caused by cell shutdown or client
              * disconnect.  If the client disconnected, then the error
              * message will never reach the client, so saying that the
              * server shut down is okay.
              */
-            return new AsyncResponse<>(withError(req, kXR_ServerError, "Server shutdown"));
+            return withError(req, kXR_ServerError, "Server shutdown");
         }
     }
 
