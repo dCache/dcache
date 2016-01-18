@@ -468,8 +468,4 @@ public class ConsistentStore
         _pnfsHandler.clearCacheLocation(id);
     }
 
-    public MetaDataStore getStore()
-    {
-        return _metaDataStore;
-    }
 }
