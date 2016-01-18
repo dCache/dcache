@@ -90,13 +90,39 @@ import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
  */
 public class RemoteTransferHandler implements CellMessageReceiver
 {
+
+    /**
+     * The different directions that the data will travel.
+     */
+    public enum Direction
+    {
+        /** Request to pull data from remote site. */
+        PULL("Source"),
+
+        /** Request to push data to some remote site. */
+        PUSH("Destination");
+
+        private final String header;
+
+        Direction(String header)
+        {
+            this.header = header;
+        }
+
+        public String getHeaderName()
+        {
+            return header;
+        }
+    }
+
+
     /**
      * The different transport schemes supported.
      */
     public enum TransferType {
-        GSIFTP(2811, GRIDSITE, EnumSet.noneOf(CredentialSource.class)),
-        HTTP(80,     NONE,     EnumSet.noneOf(CredentialSource.class)),
-        HTTPS(443,   GRIDSITE, EnumSet.of(NONE));
+        GSIFTP("gsiftp", 2811, GRIDSITE, EnumSet.noneOf(CredentialSource.class)),
+        HTTP(    "http",   80,     NONE, EnumSet.noneOf(CredentialSource.class)),
+        HTTPS(  "https",  443, GRIDSITE, EnumSet.of(NONE));
 
         private static final ImmutableMap<String,TransferType> BY_SCHEME =
             ImmutableMap.of("gsiftp", GSIFTP, "http", HTTP, "https", HTTPS);
@@ -104,14 +130,16 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private final int _defaultPort;
         private final CredentialSource _defaultCredentialSource;
         private final EnumSet<CredentialSource> _supported;
+        private final String _scheme;
 
-        TransferType(int port, CredentialSource defaultSource,
+        TransferType(String scheme, int port, CredentialSource defaultSource,
                 EnumSet<CredentialSource> additionalSources)
         {
             _defaultPort = port;
             _defaultCredentialSource = defaultSource;
             _supported = EnumSet.copyOf(additionalSources);
             _supported.add(defaultSource);
+            _scheme = scheme;
         }
 
         public int getDefaultPort()
@@ -127,6 +155,11 @@ public class RemoteTransferHandler implements CellMessageReceiver
         public boolean isSupported(CredentialSource source)
         {
             return _supported.contains(source);
+        }
+
+        public String getScheme()
+        {
+            return _scheme;
         }
 
         public static TransferType fromScheme(String scheme)
@@ -188,13 +221,15 @@ public class RemoteTransferHandler implements CellMessageReceiver
     }
 
     public void acceptRequest(OutputStream out, Map<String,String> requestHeaders,
-            Subject subject, FsPath path, URI destination, X509Credential credential)
+            Subject subject, FsPath path, URI remote, X509Credential credential,
+            Direction direction)
             throws ErrorResponseException, InterruptedException
     {
         EnumSet<TransferFlag> flags = EnumSet.noneOf(TransferFlag.class);
         flags = addVerificationFlag(flags, requestHeaders);
         ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
-        RemoteTransfer transfer = new RemoteTransfer(out, subject, path, destination, credential, flags, transferHeaders);
+        RemoteTransfer transfer = new RemoteTransfer(out, subject, path, remote,
+                credential, flags, transferHeaders, direction);
 
         long id;
 
@@ -302,6 +337,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private final PrintWriter _out;
         private final EnumSet<TransferFlag> _flags;
         private final ImmutableMap<String,String> _transferHeaders;
+        private final Direction _direction;
         private String _problem;
         private long _id;
         private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
@@ -310,7 +346,8 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
         public RemoteTransfer(OutputStream out, Subject subject, FsPath path,
                 URI destination, @Nullable X509Credential credential,
-                EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders)
+                EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders,
+                Direction direction)
                 throws ErrorResponseException
         {
             _subject = subject;
@@ -327,12 +364,14 @@ public class RemoteTransferHandler implements CellMessageReceiver
             _out = new PrintWriter(out);
             _flags = flags;
             _transferHeaders = transferHeaders;
+            _direction = direction;
         }
 
         private long start() throws ErrorResponseException, InterruptedException
         {
+            boolean isStore = _direction == Direction.PULL;
             RemoteTransferManagerMessage message =
-                    new RemoteTransferManagerMessage(_destination, _path, false,
+                    new RemoteTransferManagerMessage(_destination, _path, isStore,
                             DUMMY_LONG, buildProtocolInfo());
 
             message.setSubject(_subject);
@@ -509,9 +548,9 @@ public class RemoteTransferHandler implements CellMessageReceiver
             case TransferManagerHandler.RECEIVED_PNFS_INFO_STATE:
                 return "recieved file metadata";
             case TransferManagerHandler.WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE:
-                return "creating empty local file";
+                return "creating namespace entry";
             case TransferManagerHandler.RECEIVED_PNFS_ENTRY_CREATION_INFO_STATE:
-                return "empty local file created";
+                return "namespace entry created";
             case TransferManagerHandler.WAITING_FOR_POOL_INFO_STATE:
                 return "selecting pool";
             case TransferManagerHandler.RECEIVED_POOL_INFO_STATE:
@@ -539,7 +578,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
             case TransferManagerHandler.UNKNOWN_ID:
                 return "unknown transfer";
             default:
-                return "unknown state";
+                return "unknown state: " + state;
             }
         }
     }

@@ -4,11 +4,13 @@ import com.google.common.collect.ImmutableMap;
 import io.milton.config.HttpManagerBuilder;
 import io.milton.http.Auth;
 import io.milton.http.AuthenticationService;
+import io.milton.http.HandlerHelper;
 import io.milton.http.HttpManager;
 import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import io.milton.http.http11.DefaultHttp11ResponseHandler;
 import io.milton.http.webdav.DefaultWebDavResponseHandler;
+import io.milton.http.webdav.PropFindXmlGenerator;
 import io.milton.http.webdav.WebDavResponseHandler;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
@@ -46,6 +48,41 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
         dcacheResponseHandler.setBuffering(getBuffering());
 
         return buildHttpManager();
+    }
+
+    /* The following hack allows injection of custom objects part way through init */
+    @Override
+    protected void buildResourceTypeHelper() {
+        super.buildResourceTypeHelper();
+
+        if (handlerHelper == null) {
+            handlerHelper = new HandlerHelper(authenticationService);
+            showLog("handlerHelper", handlerHelper);
+        }
+
+        if (propFindXmlGenerator == null) {
+            propFindXmlGenerator = new PropFindXmlGenerator(valueWriters);
+            showLog("propFindXmlGenerator", propFindXmlGenerator);
+        }
+
+        if (http11ResponseHandler == null) {
+            DefaultHttp11ResponseHandler rh = createDefaultHttp11ResponseHandler(authenticationService);
+            rh.setCacheControlHelper(cacheControlHelper);
+            rh.setBuffering(buffering);
+            http11ResponseHandler = rh;
+            showLog("http11ResponseHandler", http11ResponseHandler);
+        }
+
+        if (webdavResponseHandler == null) {
+            webdavResponseHandler = new DefaultWebDavResponseHandler(http11ResponseHandler, resourceTypeHelper, propFindXmlGenerator);
+        }
+        outerWebdavResponseHandler = webdavResponseHandler;
+
+        if (resourceHandlerHelper == null) {
+            resourceHandlerHelper = new DcacheResourceHandlerHelper(handlerHelper,
+                    urlAdapter, outerWebdavResponseHandler, authenticationService);
+            showLog("resourceHandlerHelper", resourceHandlerHelper);
+        }
     }
 
     @Override
