@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -342,7 +341,50 @@ public class CacheRepositoryV5
          * do this outside the synchronization.
          */
         _log.warn("Reading inventory from {}", _store);
-        _store = new MetaDataCache(_store);
+        _store = new MetaDataCache(_store, new StateChangeListener()
+        {
+            @Override
+            public void stateChanged(StateChangeEvent event)
+            {
+                long size = event.getNewEntry().getReplicaSize();
+                if (event.getOldState() == NEW) {
+                    /* Usually space has to be allocated before writing the
+                     * data to disk, however during pool startup we are notified
+                     * about "new" files that already consume space, so we
+                     * adjust the allocation here.
+                     */
+                    if (size > 0) {
+                        _account.growTotalAndUsed(size);
+                    }
+                    scheduleExpirationTask(event.getNewEntry());
+                }
+
+                updateRemovable(event.getNewEntry());
+
+                if (event.getOldState() != PRECIOUS && event.getNewState() == PRECIOUS) {
+                    _account.adjustPrecious(size);
+                } else if (event.getOldState() == PRECIOUS && event.getNewState() != PRECIOUS) {
+                    _account.adjustPrecious(-event.getOldEntry().getReplicaSize());
+                }
+
+                _stateChangeListeners.stateChanged(event);
+            }
+
+            @Override
+            public void accessTimeChanged(EntryChangeEvent event)
+            {
+                updateRemovable(event.getNewEntry());
+                _stateChangeListeners.accessTimeChanged(event);
+            }
+
+            @Override
+            public void stickyChanged(StickyChangeEvent event)
+            {
+                updateRemovable(event.getNewEntry());
+                _stateChangeListeners.stickyChanged(event);
+                scheduleExpirationTask(event.getNewEntry());
+            }
+        });
 
         _stateLock.writeLock().lock();
         try {
@@ -368,76 +410,31 @@ public class CacheRepositoryV5
                 _stateLock.writeLock().unlock();
             }
 
-            List<PnfsId> ids = new ArrayList<>(_store.index());
+            Collection<PnfsId> ids = _store.index();
 
-            /* Collect all entries.
-             */
             int fileCount = ids.size();
             _log.info("Checking meta data for {} files", fileCount);
-            long usedDataSpace = 0L;
             int cnt = 0;
-            List<MetaDataRecord> entries = new ArrayList<>();
             for (PnfsId id: ids) {
                 MetaDataRecord entry = readMetaDataRecord(id);
                 if (entry != null)  {
-                    usedDataSpace += entry.getSize();
-                    _log.debug("{} {}", id, entry.getState());
-                    entries.add(entry);
+                    EntryState state = entry.getState();
+                    _log.debug("{} {}", id, state);
                 }
                 _initializationProgress = ((float) cnt) / fileCount;
                 cnt++;
             }
 
-            /* Allocate space.
-             */
-            _log.info("Pool contains {} bytes of data", usedDataSpace);
-            Account account = _account;
-            synchronized (account) {
-                account.setTotal(usedDataSpace);
-                account.allocateNow(usedDataSpace);
-            }
-
             updateAccountSize();
 
-            /* State change notifications are suppressed while the
-             * repository is loading. We synchronize to ensure a clean
-             * switch from the LOADING state to the OPEN state.
-             */
             _stateLock.writeLock().lock();
             try {
                 if (_state != State.LOADING) {
                     throw new IllegalStateException("Repository was closed during loading.");
                 }
-
-                /* Register with event listeners in LRU order. The
-                 * sweeper relies on the LRU order.
-                 */
-                _log.info("Registering files in sweeper");
-                for (MetaDataRecord entry: entries) {
-                    synchronized (entry) {
-                        CacheEntry cacheEntry = new CacheEntryImpl(entry);
-                        stateChanged(cacheEntry, cacheEntry, NEW, entry.getState());
-                    }
-                }
-
-                _log.info("Inventory contains {} files; total size is {}; used space is {}; free space is {}.",
-                          entries.size(), _account.getTotal(),
-                          usedDataSpace, _account.getFree());
-
                 _state = State.OPEN;
             } finally {
                 _stateLock.writeLock().unlock();
-            }
-
-            /* Register sticky timeouts.
-             */
-            _log.info("Registering sticky bits");
-            for (MetaDataRecord entry: entries) {
-                synchronized (entry) {
-                    if (entry.isSticky()) {
-                        scheduleExpirationTask(entry);
-                    }
-                }
             }
         } finally {
             _stateLock.writeLock().lock();
@@ -561,23 +558,7 @@ public class CacheRepositoryV5
             }
 
             if (!flags.contains(OpenFlags.NOATIME)) {
-                _stateLock.readLock().lock();
-                try {
-                    /* Don't notify listeners until we are done
-                     * loading; at the end of the load method
-                     * listeners are informed about all entries.
-                     */
-                    synchronized (entry) {
-                        CacheEntry oldEntry = new CacheEntryImpl(entry);
-                        entry.touch();
-                        if (_state == State.OPEN) {
-                            CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-                            accessTimeChanged(oldEntry, newEntry);
-                        }
-                    }
-                } finally {
-                    _stateLock.readLock().unlock();
-                }
+                entry.touch();
             }
 
             return handle;
@@ -657,13 +638,6 @@ public class CacheRepositoryV5
             throw e;
         }
 
-        /* We acquire the state lock to avoid conflicts with the
-         * load method; at the end of load method expiration tasks are
-         * scheduled. For that reason this method does not generate
-         * sticky changed notification and does not schedule
-         * expiration tasks if the repository is not OPEN.
-         */
-        _stateLock.readLock().lock();
         try {
             synchronized (entry) {
                 switch (entry.getState()) {
@@ -681,23 +655,14 @@ public class CacheRepositoryV5
                     break;
                 }
 
-                try {
-                    CacheEntry oldEntry = new CacheEntryImpl(entry);
-                    if (entry.setSticky(owner, expire, overwrite) && _state == State.OPEN) {
-                        CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-                        stickyChanged(oldEntry, newEntry);
-                        scheduleExpirationTask(entry);
-                    }
-                } catch (CacheException e) {
-                    fail(FaultAction.READONLY, "Internal repository error", e);
-                    throw new RuntimeException("Internal repository error", e);
-                } catch (RuntimeException e) {
-                    fail(FaultAction.DEAD, "Internal repository error", e);
-                    throw e;
-                }
+                entry.setSticky(owner, expire, overwrite);
             }
-        } finally {
-            _stateLock.readLock().unlock();
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
+        } catch (RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw e;
         }
     }
 
@@ -899,48 +864,6 @@ public class CacheRepositoryV5
     }
 
     /**
-     * Asynchronously notify listeners about a state change.
-     */
-    @GuardedBy("getMetaDataRecord(newEntry.getPnfsid())")
-    protected void stateChanged(CacheEntry oldEntry, CacheEntry newEntry,
-                                EntryState oldState, EntryState newState)
-    {
-        updateRemovable(newEntry);
-        StateChangeEvent event =
-            new StateChangeEvent(oldEntry, newEntry, oldState, newState);
-        _stateChangeListeners.stateChanged(event);
-
-        if (oldState != PRECIOUS && newState == PRECIOUS) {
-            _account.adjustPrecious(newEntry.getReplicaSize());
-        } else if (oldState == PRECIOUS && newState != PRECIOUS) {
-            _account.adjustPrecious(-newEntry.getReplicaSize());
-        }
-    }
-
-    /**
-     * Asynchronously notify listeners about an access time change.
-     */
-    @GuardedBy("getMetaDataRecord(newEntry.getPnfsid())")
-    protected void accessTimeChanged(CacheEntry oldEntry, CacheEntry newEntry)
-    {
-        updateRemovable(newEntry);
-        EntryChangeEvent event = new EntryChangeEvent(oldEntry, newEntry);
-        _stateChangeListeners.accessTimeChanged(event);
-    }
-
-    /**
-     * Asynchronously notify listeners about a change of a sticky
-     * record.
-     */
-    @GuardedBy("getMetaDataRecord(newEntry.getPnfsid())")
-    protected void stickyChanged(CacheEntry oldEntry, CacheEntry newEntry)
-    {
-        updateRemovable(newEntry);
-        StickyChangeEvent event = new StickyChangeEvent(oldEntry, newEntry);
-        _stateChangeListeners.stickyChanged(event);
-    }
-
-    /**
      * Package local method for setting the state of an entry.
      *
      * @param entry a repository entry
@@ -955,15 +878,7 @@ public class CacheRepositoryV5
                     return;
                 }
 
-                CacheEntry oldEntry = new CacheEntryImpl(entry);
-
                 entry.setState(state);
-
-                CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-
-                if (!(oldState == NEW && state == REMOVED)) {
-                    stateChanged(oldEntry, newEntry, oldState, state);
-                }
 
                 if (state == REMOVED) {
                     if (oldState != NEW) {
@@ -997,30 +912,14 @@ public class CacheRepositoryV5
                    long expire, boolean overwrite)
         throws IllegalArgumentException
     {
-        /* We acquire the state lock to avoid conflicts with the
-         * load method; at the end of load method expiration tasks are
-         * scheduled. For that reason this method does not generate
-         * sticky changed notification and does not schedule
-         * expiration tasks if the repository is not OPEN.
-         */
-        _stateLock.readLock().lock();
         try {
-            synchronized (entry) {
-                CacheEntry oldEntry = new CacheEntryImpl(entry);
-                if (entry.setSticky(owner, expire, overwrite) && _state == State.OPEN) {
-                    CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-                    stickyChanged(oldEntry, newEntry);
-                    scheduleExpirationTask(entry);
-                }
-            }
+            entry.setSticky(owner, expire, overwrite);
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
         } catch (RuntimeException e) {
             fail(FaultAction.DEAD, "Internal repository error", e);
             throw e;
-        } finally {
-            _stateLock.readLock().unlock();
         }
     }
 
@@ -1099,54 +998,37 @@ public class CacheRepositoryV5
     }
 
     /**
-     * Removes all expired sticky flags of entry.
-     */
-    private void removeExpiredStickyFlags(MetaDataRecord entry) throws CacheException
-    {
-        synchronized (entry) {
-            CacheEntry oldEntry = new CacheEntryImpl(entry);
-            Collection<StickyRecord> removed = entry.removeExpiredStickyFlags();
-            if (!removed.isEmpty()) {
-                CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-                stickyChanged(oldEntry, newEntry);
-            }
-            scheduleExpirationTask(entry);
-        }
-    }
-
-    /**
      * Schedules an expiration task for a sticky entry.
      */
-    private void scheduleExpirationTask(MetaDataRecord entry)
+    @GuardedBy("entry")
+    private void scheduleExpirationTask(CacheEntry entry)
     {
-        synchronized (entry) {
-            /* Cancel previous task.
-             */
-            PnfsId pnfsId = entry.getPnfsId();
-            ScheduledFuture<?> future = _tasks.remove(pnfsId);
-            if (future != null) {
-                future.cancel(false);
-            }
+        /* Cancel previous task.
+         */
+        PnfsId pnfsId = entry.getPnfsId();
+        ScheduledFuture<?> future = _tasks.remove(pnfsId);
+        if (future != null) {
+            future.cancel(false);
+        }
 
-            /* Find next sticky flag to expire.
-             */
-            long expire = Long.MAX_VALUE;
-            for (StickyRecord record: entry.stickyRecords()) {
-                if (record.expire() > -1) {
-                    expire = Math.min(expire, record.expire());
-                }
+        /* Find next sticky flag to expire.
+         */
+        long expire = Long.MAX_VALUE;
+        for (StickyRecord record: entry.getStickyRecords()) {
+            if (record.expire() > -1) {
+                expire = Math.min(expire, record.expire());
             }
+        }
 
-            /* Schedule a new task. Notice that we schedule an expiration
-             * task even if expire is in the past. This guarantees that we
-             * also remove records that already have expired.
-             */
-            if (expire != Long.MAX_VALUE) {
-                ExpirationTask task = new ExpirationTask(entry);
-                future = _executor.schedule(task, expire - System.currentTimeMillis()
-                                            + EXPIRATION_CLOCKSHIFT_EXTRA_TIME, TimeUnit.MILLISECONDS);
-                _tasks.put(pnfsId, future);
-            }
+        /* Schedule a new task. Notice that we schedule an expiration
+         * task even if expire is in the past. This guarantees that we
+         * also remove records that already have expired.
+         */
+        if (expire != Long.MAX_VALUE) {
+            ExpirationTask task = new ExpirationTask(entry.getPnfsId());
+            future = _executor.schedule(task, expire - System.currentTimeMillis()
+                                        + EXPIRATION_CLOCKSHIFT_EXTRA_TIME, TimeUnit.MILLISECONDS);
+            _tasks.put(pnfsId, future);
         }
     }
 
@@ -1177,21 +1059,35 @@ public class CacheRepositoryV5
      */
     class ExpirationTask implements Runnable
     {
-        private final MetaDataRecord _entry;
+        private final PnfsId _id;
 
-        public ExpirationTask(MetaDataRecord entry)
+        public ExpirationTask(PnfsId id)
         {
-            _entry = entry;
+            _id = id;
         }
 
         @Override
         public void run()
         {
             try {
-                _tasks.remove(_entry.getPnfsId());
-                removeExpiredStickyFlags(_entry);
+                _tasks.remove(_id);
+                MetaDataRecord entry = _store.get(_id);
+                if (entry != null) {
+                    Collection<StickyRecord> removed = entry.removeExpiredStickyFlags();
+                    if (removed.isEmpty()) {
+                        /* If for some reason we didn't expire anything, we reschedule
+                         * the expiration to be on the safe side (could be a timing
+                         * issue).
+                         */
+                        synchronized (entry) {
+                            scheduleExpirationTask(new CacheEntryImpl(entry));
+                        }
+                    }
+                }
             } catch (CacheException | RuntimeException e) {
                 fail(FaultAction.DEAD, "Internal repository error", e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }

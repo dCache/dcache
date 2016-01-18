@@ -134,6 +134,31 @@ public class Account
         }
     }
 
+    public synchronized void growTotalAndUsed(long delta)
+    {
+        if (delta < 0) {
+            throw new IllegalArgumentException("Argument must be non-negative.");
+        }
+        long used = _used + delta;
+        long total = _total + delta;
+        if (used < 0) {
+            throw new IllegalArgumentException("Negative used space is not allowed.");
+        }
+        if (total < 0) {
+            throw new IllegalArgumentException("Negative total space is not allowed.");
+        }
+        if (_removable > total) {
+            throw new IllegalArgumentException("Removable space would exceed repository size.");
+        }
+        if (_precious > total) {
+            throw new IllegalArgumentException("Precious space would exceed repository size.");
+        }
+
+        _total = total;
+        _used = used;
+        notifyAll();
+    }
+
     public synchronized void adjustRemovable(long delta)
     {
         long removable = _removable + delta;
@@ -164,6 +189,4 @@ public class Account
     {
         return new SpaceRecord(_total, getFree(), _precious, _removable, 0);
     }
-
-
 }

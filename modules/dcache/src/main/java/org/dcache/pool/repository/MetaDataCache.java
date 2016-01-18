@@ -1,5 +1,6 @@
 package org.dcache.pool.repository;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -9,7 +10,12 @@ import java.util.concurrent.ConcurrentMap;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.pool.repository.v5.CacheEntryImpl;
+import org.dcache.vehicles.FileAttributes;
+
 import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.pool.repository.EntryState.NEW;
+import static org.dcache.pool.repository.EntryState.REMOVED;
 
 /**
  * Cache of MetaDataRecords.
@@ -22,6 +28,11 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * The cache guarantees that it always returns the same MetaDataRecord
  * instance for a given entry.
+ *
+ * The cache submits state change events to a StateChangeListener. The
+ * listener is called from the thread making the modification and with
+ * the MetaDataRecord locked. Care must be taken in the listener to
+ * not cause deadlocks or slow down the store.
  */
 public class MetaDataCache
     implements MetaDataStore
@@ -33,17 +44,19 @@ public class MetaDataCache
     private final ConcurrentMap<PnfsId,Monitor> _entries;
 
     private final MetaDataStore _inner;
+    private final StateChangeListener _stateChangeListener;
 
     private volatile boolean _isClosed;
 
     /**
      * Constructs a new cache.
      *
-     * The operation may be slow as the list method of inner is called.
+     * The operation may be slow as the list method of {@code inner} is called.
      */
-    public MetaDataCache(MetaDataStore inner) throws CacheException
+    public MetaDataCache(MetaDataStore inner, StateChangeListener stateChangeListener) throws CacheException
     {
         _inner = inner;
+        _stateChangeListener = stateChangeListener;
 
         Collection<PnfsId> list = inner.index();
         _entries = new ConcurrentHashMap<>(
@@ -55,7 +68,8 @@ public class MetaDataCache
 
     /**
      * Encapsulates operations on meta data records, ensuring sequential
-     * access to any particular record.
+     * access to any particular record. The class delegates operations to
+     * both the store and to the decorated MetaDataRecord.
      *
      * Correctness follows by observing that
      *
@@ -78,7 +92,7 @@ public class MetaDataCache
      * The point from which the condition in item 1 is true is marked by
      * assertions in the code.
      */
-    private class Monitor
+    private class Monitor implements MetaDataRecord
     {
         private final PnfsId _id;
         private MetaDataRecord _record;
@@ -99,9 +113,13 @@ public class MetaDataCache
                 _record = _inner.get(_id);
                 if (_record == null) {
                     _entries.remove(_id, this);
+                    return null;
                 }
+                CacheEntry entry = new CacheEntryImpl(_record);
+                _stateChangeListener.stateChanged(
+                        new StateChangeEvent(entry, entry, NEW, _record.getState()));
             }
-            return _record;
+            return this;
         }
 
         private synchronized MetaDataRecord create()
@@ -122,7 +140,7 @@ public class MetaDataCache
                     _entries.remove(_id);
                 }
             }
-            return _record;
+            return (_record == null) ? null : this;
         }
 
         private synchronized MetaDataRecord create(MetaDataRecord entry)
@@ -143,7 +161,7 @@ public class MetaDataCache
                     _entries.remove(_id);
                 }
             }
-            return _record;
+            return (_record == null) ? null : this;
         }
 
         private synchronized void remove() throws CacheException
@@ -158,6 +176,143 @@ public class MetaDataCache
         private synchronized void close()
         {
             _entries.remove(_id, this);
+        }
+
+        @Override
+        public PnfsId getPnfsId()
+        {
+            return _id;
+        }
+
+        @Override
+        public void setSize(long size)
+        {
+            _record.setSize(size);
+        }
+
+        @Override
+        public long getSize()
+        {
+            return _record.getSize();
+        }
+
+        @Override
+        public void setFileAttributes(FileAttributes attributes) throws CacheException
+        {
+            _record.setFileAttributes(attributes);
+        }
+
+        @Override
+        public FileAttributes getFileAttributes() throws CacheException
+        {
+            return _record.getFileAttributes();
+        }
+
+        @Override
+        public synchronized void setState(EntryState state) throws CacheException
+        {
+            if (_record.getState() == NEW && state == REMOVED) {
+                _record.setState(state);
+            } else {
+                CacheEntry oldEntry = new CacheEntryImpl(_record);
+                _record.setState(state);
+                CacheEntry newEntry = new CacheEntryImpl(_record);
+                _stateChangeListener.stateChanged(
+                        new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
+            }
+        }
+
+        @Override
+        public EntryState getState()
+        {
+            return _record.getState();
+        }
+
+        @Override
+        public File getDataFile()
+        {
+            return _record.getDataFile();
+        }
+
+        @Override
+        public long getCreationTime()
+        {
+            return _record.getCreationTime();
+        }
+
+        @Override
+        public long getLastAccessTime()
+        {
+            return _record.getLastAccessTime();
+        }
+
+        @Override
+        public void setLastAccessTime(long time) throws CacheException
+        {
+            _record.setLastAccessTime(time);
+        }
+
+        @Override
+        public synchronized void touch() throws CacheException
+        {
+            CacheEntry oldEntry = new CacheEntryImpl(_record);
+            _record.touch();
+            CacheEntryImpl newEntry = new CacheEntryImpl(_record);
+            _stateChangeListener.accessTimeChanged(new EntryChangeEvent(oldEntry, newEntry));
+        }
+
+        @Override
+        public void decrementLinkCount()
+        {
+            _record.decrementLinkCount();
+        }
+
+        @Override
+        public void incrementLinkCount()
+        {
+            _record.incrementLinkCount();
+        }
+
+        @Override
+        public int getLinkCount()
+        {
+            return _record.getLinkCount();
+        }
+
+        @Override
+        public boolean isSticky()
+        {
+            return _record.isSticky();
+        }
+
+        @Override
+        public synchronized Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
+        {
+            CacheEntry oldEntry = new CacheEntryImpl(_record);
+            Collection<StickyRecord> removed = _record.removeExpiredStickyFlags();
+            if (!removed.isEmpty()) {
+                CacheEntryImpl newEntry = new CacheEntryImpl(_record);
+                _stateChangeListener.stickyChanged(new StickyChangeEvent(oldEntry, newEntry));
+            }
+            return removed;
+        }
+
+        @Override
+        public synchronized boolean setSticky(String owner, long validTill, boolean overwrite) throws CacheException
+        {
+            CacheEntry oldEntry = new CacheEntryImpl(_record);
+            boolean changed = _record.setSticky(owner, validTill, overwrite);
+            if (changed) {
+                CacheEntryImpl newEntry = new CacheEntryImpl(_record);
+                _stateChangeListener.stickyChanged(new StickyChangeEvent(oldEntry, newEntry));
+            }
+            return changed;
+        }
+
+        @Override
+        public Collection<StickyRecord> stickyRecords()
+        {
+            return _record.stickyRecords();
         }
     }
 
