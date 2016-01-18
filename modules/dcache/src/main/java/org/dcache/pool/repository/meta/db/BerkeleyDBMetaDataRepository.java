@@ -2,13 +2,11 @@ package org.dcache.pool.repository.meta.db;
 
 import com.sleepycat.collections.StoredMap;
 import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.EnvironmentConfig;
+
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.PostConstruct;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,8 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -25,13 +21,10 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
-import dmg.cells.nucleus.EnvironmentAware;
-
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
-import org.dcache.util.ConfigurationMapFactoryBean;
 
 /**
  * BerkeleyDB based MetaDataRepository implementation.
@@ -44,7 +37,7 @@ import org.dcache.util.ConfigurationMapFactoryBean;
  * SoftReference.
  */
 public class BerkeleyDBMetaDataRepository
-    implements MetaDataStore, EnvironmentAware
+    implements MetaDataStore
 {
     private static Logger _log =
         LoggerFactory.getLogger(BerkeleyDBMetaDataRepository.class);
@@ -55,27 +48,21 @@ public class BerkeleyDBMetaDataRepository
      * The file store for which we hold the meta data.
      */
     private final FileStore _fileStore;
-    private final boolean _readOnly;
 
     /**
      * The BerkeleyDB database to use.
      */
-    private MetaDataRepositoryDatabase _database;
+    private final MetaDataRepositoryDatabase _database;
 
     /**
      * The BerkeleyDB database to use.
      */
-    private MetaDataRepositoryViews _views;
+    private final MetaDataRepositoryViews _views;
 
     /**
      * Directory containing the database.
      */
     private final File _dir;
-
-    /**
-     * Berkeley DB configuration properties.
-     */
-    private final Properties _properties = new Properties();
 
     /**
      * Opens a BerkeleyDB based meta data repository. If the database
@@ -92,10 +79,9 @@ public class BerkeleyDBMetaDataRepository
     public BerkeleyDBMetaDataRepository(FileStore fileStore,
                                         File directory,
                                         boolean readOnly)
-            throws FileNotFoundException, DatabaseException
+            throws FileNotFoundException, DatabaseException, CacheException
     {
         _fileStore = fileStore;
-        _readOnly = readOnly;
         _dir = new File(directory, DIRECTORY_NAME);
 
         if (!_dir.exists()) {
@@ -105,30 +91,15 @@ public class BerkeleyDBMetaDataRepository
         } else if (!_dir.isDirectory()) {
             throw new FileNotFoundException("No such directory: " + _dir);
         }
-    }
 
-    @Override
-    public void setEnvironment(Map<String, Object> environment)
-    {
-        ConfigurationMapFactoryBean factory = new ConfigurationMapFactoryBean();
-        factory.setEnvironment(environment);
-        factory.setPrefix("pool.plugins.meta.db");
-        factory.buildMap();
-        _properties.clear();
-        _properties.putAll(factory.getObject());
-    }
-
-    @PostConstruct
-    public void init() throws CacheException
-    {
         try {
-            _database = new MetaDataRepositoryDatabase(_properties, _dir, _readOnly);
+            _database = new MetaDataRepositoryDatabase(_dir, readOnly);
             _views = new MetaDataRepositoryViews(_database);
         } catch (EnvironmentFailureException e) {
             throw new CacheException(CacheException.PANIC, "Failed to open Berkeley DB database. When upgrading to " +
-                                                           "dCache 2.6, it may be necessary to run the /usr/sbin/dcache-pool-meta-preupgrade utility " +
-                                                           "before starting the pool. If that does not resolve the problem, you should contact " +
-                                                           "support@dcache.org", e);
+                    "dCache 2.6, it may be necessary to run the /usr/sbin/dcache-pool-meta-preupgrade utility " +
+                    "before starting the pool. If that does not resolve the problem, you should contact " +
+                    "support@dcache.org", e);
         }
     }
 
@@ -311,15 +282,5 @@ public class BerkeleyDBMetaDataRepository
     public boolean isValid()
     {
         return _database.getEnvironment().isValid();
-    }
-
-    public EnvironmentConfig getConfig()
-    {
-        return _database.getEnvironment().getConfig();
-    }
-
-    public File getPath()
-    {
-        return _dir;
     }
 }
