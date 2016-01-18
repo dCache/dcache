@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * MetaDataRepositoryDatabase encapsulates the initialisation of
@@ -38,13 +38,17 @@ public class MetaDataRepositoryDatabase
     private boolean _failed;
     private boolean _closed;
 
-    public MetaDataRepositoryDatabase(Properties properties, File homeDirectory, boolean readonly)
+    public MetaDataRepositoryDatabase(File homeDirectory, boolean readonly)
         throws DatabaseException
     {
-        EnvironmentConfig envConfig = new EnvironmentConfig(properties);
+        EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setTransactional(true);
         envConfig.setAllowCreate(true);
         envConfig.setReadOnly(readonly);
+        envConfig.setConfigParam(EnvironmentConfig.MAX_MEMORY_PERCENT, "20");
+        envConfig.setConfigParam(EnvironmentConfig.STATS_COLLECT, "false");
+        envConfig.setConfigParam(EnvironmentConfig.LOCK_N_LOCK_TABLES, "5");
+        envConfig.setLockTimeout(60, TimeUnit.SECONDS);
 
         env = new Environment(homeDirectory, envConfig);
 
