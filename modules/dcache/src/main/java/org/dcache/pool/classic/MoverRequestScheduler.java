@@ -228,7 +228,7 @@ public class MoverRequestScheduler implements Runnable {
      * @param id
      * @throws NoSuchElementException
      */
-    public synchronized void cancel(int id) throws NoSuchElementException {
+    public void cancel(int id) throws NoSuchElementException {
         PrioritizedRequest wrapper;
         wrapper = _jobs.get(id);
         if (wrapper == null) {
@@ -240,36 +240,33 @@ public class MoverRequestScheduler implements Runnable {
     private void cancel(final PrioritizedRequest request)
     {
         try (CDC ignored = request.getCdc().restore()) {
-            if (_queue.remove(request)) {
-                /* The request was still in the queue. Post processing is still applied to close
-             * the transfer and to notify billing and door.
-             */
-                request.kill();
+            boolean wasQueued = _queue.remove(request);
+            request.kill();
+            if (wasQueued) {
+                /*
+                 * The request was still in the queue. Post processing is still applied to close
+                 * the transfer and to notify billing and door.
+                 */
                 request.getMover().close(
-                        new CompletionHandler<Void, Void>()
-                        {
-                            @Override
-                            public void completed(Void result, Void attachment)
-                            {
-                                release();
-                            }
+                        new CompletionHandler<Void, Void>() {
+                    @Override
+                    public void completed(Void result, Void attachment) {
+                        release();
+                    }
 
-                            @Override
-                            public void failed(Throwable exc, Void attachment)
-                            {
-                                release();
-                            }
+                    @Override
+                    public void failed(Throwable exc, Void attachment) {
+                        release();
+                    }
 
-                            private void release()
-                            {
-                                request.done();
-                                _jobs.remove(request.getId());
-                            }
+                    private void release() {
+                        request.done();
+                        _jobs.remove(request.getId());
+                    }
 
-                        });
-            } else {
-                request.kill();
+                });
             }
+            request.kill();
         }
     }
 
