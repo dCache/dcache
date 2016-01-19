@@ -95,6 +95,7 @@ class Companion
     private final CellStub _pnfs;
     private final CellStub _pool;
     private final boolean _forceSourceMode;
+    private final PnfsId _pnfsId;
 
     /** State machine driving the transfer. */
     private final CompanionContext _fsm;
@@ -174,6 +175,8 @@ class Companion
             throw new IllegalArgumentException("PNFSID is required, got " + _fileAttributes.getDefinedAttributes());
         }
 
+        _pnfsId = _fileAttributes.getPnfsId();
+
         _callback = callback;
         _forceSourceMode = forceSourceMode;
         _atime = atime;
@@ -190,7 +193,7 @@ class Companion
     /**
      * Returns the session ID identifying the transfer.
      */
-    public synchronized int getId()
+    public int getId()
     {
         return _id;
     }
@@ -198,12 +201,12 @@ class Companion
     /**
      * Returns the PNFS ID of the file to be transfered.
      */
-    public synchronized PnfsId getPnfsId()
+    public PnfsId getPnfsId()
     {
-        return _fileAttributes.getPnfsId();
+        return _pnfsId;
     }
 
-    public synchronized long getPingPeriod()
+    public long getPingPeriod()
     {
         return PING_PERIOD;
     }
@@ -218,14 +221,16 @@ class Companion
         return (_fsm.getState() != CompanionContext.FSM.Done);
     }
 
-    public synchronized String toString()
+    public String toString()
     {
+        // Unsynchronized access to the fsm state means we may show an old value, but it
+        // avoids blocking in toString().
         return ""
-            + _id
-            + " "
-            + getPnfsId()
-            + " "
-            + _fsm.getState();
+               + _id
+               + " "
+               + _pnfsId
+               + " "
+               + _fsm.getState();
     }
 
     /**
@@ -397,9 +402,9 @@ class Companion
     }
 
     /** Asynchronously retrieves the file attributes. */
-    synchronized void fetchFileAttributes()
+    void fetchFileAttributes()
     {
-        CellStub.addCallback(_pnfs.send(new PnfsGetFileAttributes(getPnfsId(), Pool2PoolTransferMsg.NEEDED_ATTRIBUTES)),
+        CellStub.addCallback(_pnfs.send(new PnfsGetFileAttributes(_pnfsId, Pool2PoolTransferMsg.NEEDED_ATTRIBUTES)),
                              new Callback<PnfsGetFileAttributes>()
                              {
                                  @Override
@@ -457,7 +462,7 @@ class Companion
                                  new InetSocketAddress(_address, 0),
                                  _destinationPoolCellname,
                                  _destinationPoolCellDomainName,
-                                 "/" +  getPnfsId(),
+                                 "/" + _pnfsId,
                                  null);
         protocolInfo.setSessionId(_id);
 
@@ -540,9 +545,9 @@ class Companion
     /**
      * Starts a thread that transfers the file from the source pool.
      */
-    synchronized void beginTransfer(final String uri)
+    void beginTransfer(final String uri)
     {
-        new Thread("P2P Transfer - " + getPnfsId() + " " + _sourcePoolName) {
+        new Thread("P2P Transfer - " + _pnfsId + " " + _sourcePoolName) {
             @Override
             public void run()
             {
@@ -563,13 +568,13 @@ class Companion
 
         if (_error != null) {
             if (_error instanceof RuntimeException || _error instanceof Error) {
-                _log.error(String.format("P2P for %s failed: %s", getPnfsId(), _error),
+                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error),
                            (Throwable) _error);
             } else {
-                _log.error(String.format("P2P for %s failed: %s", getPnfsId(), _error));
+                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error));
             }
         } else {
-            _log.info(String.format("P2P for %s completed", getPnfsId()));
+            _log.info(String.format("P2P for %s completed", _pnfsId));
         }
 
         if (_callback != null) {
@@ -588,7 +593,7 @@ class Companion
                         } else {
                             t = new CacheException(error.toString());
                         }
-                        _callback.cacheFileAvailable(getPnfsId(), t);
+                        _callback.cacheFileAvailable(_pnfsId, t);
                     }
                 }));
         }
