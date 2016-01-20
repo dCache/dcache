@@ -1,11 +1,16 @@
 package org.dcache.auth;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.UnmodifiableIterator;
 import com.google.common.net.InetAddresses;
 
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Principal;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * An object of type Origin contains information about the origin of a
@@ -26,14 +31,21 @@ public class Origin implements Principal, Serializable
     /**
      * Request origin Internet address.
      */
-    private InetAddress _address;
+    private final InetAddress _address;
+
+    /**
+     * The client chain: contains _address as the first item.  If null,
+     * equivalent to a single item.
+     */
+    private final ImmutableList<InetAddress> _clientChain;
 
     /**
      * @param address
      *            Request origin Internet address.
      */
     public Origin(InetAddress address) {
-        _address = address;
+        _address = checkNotNull(address);
+        _clientChain = ImmutableList.of(address);
     }
 
     /**
@@ -46,15 +58,27 @@ public class Origin implements Principal, Serializable
      * @throws UnknownHostException
      */
     public Origin(String host) throws UnknownHostException {
-        _address = InetAddress.getByName(host);
+        _address = InetAddress.getByName(checkNotNull(host));
+        _clientChain = ImmutableList.of(_address);
+    }
+
+    /**
+     * The list of client addresses.  The first address is that of the client
+     * making direct connection with dCache.  The n+1 address is that of the
+     * client making direct connection to the service with the n address.
+     */
+    public Origin(ImmutableList<InetAddress> addresses) {
+        checkArgument(!addresses.isEmpty(), "Empty client chain");
+        _address = addresses.get(0);
+        _clientChain = addresses;
     }
 
     public InetAddress getAddress() {
         return _address;
     }
 
-    public void setAddress(InetAddress address) {
-        _address = address;
+    public ImmutableList<InetAddress> getClientChain() {
+        return _clientChain == null ? ImmutableList.<InetAddress>of(_address) : _clientChain;
     }
 
     @Override
@@ -74,13 +98,25 @@ public class Origin implements Principal, Serializable
         }
 
         Origin other = (Origin) o;
-        return other._address.equals(_address);
+        return getClientChain().equals(other.getClientChain());
     }
 
     @Override
     public String getName()
     {
-        return InetAddresses.toAddrString(_address);
+        if (_clientChain == null || _clientChain.size() == 1) {
+            return InetAddresses.toAddrString(_address);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        UnmodifiableIterator<InetAddress> i = _clientChain.iterator();
+        for (;;) {
+            sb.append(InetAddresses.toAddrString(i.next()));
+            if (!i.hasNext()) {
+                return sb.toString();
+            }
+            sb.append(',');
+        }
     }
 
     @Override

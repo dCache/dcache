@@ -1,9 +1,14 @@
 package org.dcache.webdav;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.net.InetAddresses;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
+
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
@@ -16,6 +21,7 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.NetLoggerBuilder;
+
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.slf4j.Logger;
@@ -25,8 +31,10 @@ import javax.security.auth.Subject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -36,7 +44,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
+import java.util.List;
 
+import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Lists.reverse;
 import static java.util.Arrays.asList;
 
 public class AuthenticationHandler extends HandlerWrapper {
@@ -46,6 +58,8 @@ public class AuthenticationHandler extends HandlerWrapper {
             "javax.servlet.request.X509Certificate";
     public static final String DCACHE_SUBJECT_ATTRIBUTE =
             "org.dcache.subject";
+
+    private static final InetAddress UNKNOWN_ADDRESS = InetAddresses.forString("0.0.0.0");
 
     private String _realm;
     private boolean _isReadOnly;
@@ -170,13 +184,42 @@ public class AuthenticationHandler extends HandlerWrapper {
         }
     }
 
-    private void addOriginToSubject(HttpServletRequest request, Subject subject) {
+    private void addXForwardForAddresses(ImmutableList.Builder<InetAddress> addresses,
+            HttpServletRequest request)
+    {
+        String xff = nullToEmpty(request.getHeader("X-Forwarded-For"));
+        List<String> ids = newArrayList(Splitter.on(',').trimResults().omitEmptyStrings().split(xff));
+        reverse(ids).stream().
+                map(id -> {
+                        try {
+                            return InetAddresses.forString(id);
+                        } catch (IllegalArgumentException e) {
+                            LOG.warn("Fail to parse \"{}\" in X-Forwarded-For " +
+                                    "header \"{}\": {}", id, xff, e.getMessage());
+                            return UNKNOWN_ADDRESS;
+                        }
+                    }).
+                forEach(addresses::add);
+    }
+
+    private void addOriginToSubject(HttpServletRequest request, Subject subject)
+    {
+        ImmutableList.Builder<InetAddress> addresses = ImmutableList.builder();
+
         String address = request.getRemoteAddr();
         try {
-            subject.getPrincipals().add(new Origin(address));
+            addresses.add(InetAddress.getByName(address));
         } catch (UnknownHostException e) {
             LOG.warn("Failed to resolve " + address + ": " + e.getMessage());
+            return;
         }
+
+        // REVISIT: although RFC 7239 specifies a more powerful format, it
+        // is currently not widely used; whereas X-Forward-For header, while not
+        // standardised is the de facto standard and widely supported.
+        addXForwardForAddresses(addresses, request);
+
+        subject.getPrincipals().add(new Origin(addresses.build()));
     }
 
 

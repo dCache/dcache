@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
@@ -1169,9 +1170,10 @@ public class DcacheResourceFactory
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);
-        transfer.setClientAddress(new InetSocketAddress(Subjects
-                .getOrigin(subject).getAddress(),
-                PROTOCOL_INFO_UNKNOWN_PORT));
+        List<InetSocketAddress> addresses = Subjects.getOrigin(subject).getClientChain().stream().
+                map(a -> {return new InetSocketAddress(a, PROTOCOL_INFO_UNKNOWN_PORT);}).
+                collect(Collectors.toList());
+        transfer.setClientAddresses(addresses);
         transfer.setOverwriteAllowed(_isOverwriteAllowed);
     }
 

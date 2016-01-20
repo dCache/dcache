@@ -1,5 +1,7 @@
 package org.dcache.util;
 
+import static com.google.common.base.Preconditions.*;
+
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
@@ -17,14 +19,18 @@ import org.slf4j.MDC;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.CacheException;
@@ -65,8 +71,6 @@ import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.*;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.MathUtils.addWithInfinity;
@@ -110,7 +114,7 @@ public class Transfer implements Comparable<Transfer>
     private FileAttributes _fileAttributes = new FileAttributes();
     private ProtocolInfo _protocolInfo;
     private boolean _isWrite;
-    private InetSocketAddress _clientAddress;
+    private List<InetSocketAddress> _clientAddresses;
 
     private long _allocated;
 
@@ -551,12 +555,40 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized void setClientAddress(InetSocketAddress address)
     {
-        _clientAddress = address;
+        _clientAddresses = Collections.singletonList(address);
     }
 
+    /**
+     * The client address(es) that initiated the request.  If the
+     * protocol does not support reporting relayed requests then this is
+     * a single entry.  If the protocol allows reporting of client
+     * addresses then the list-order represents the clients that initiated
+     * this request, starting with the client on the TCP connection.
+     */
+    public synchronized void setClientAddresses(List<InetSocketAddress> addresses)
+    {
+        checkArgument(!addresses.isEmpty(), "empty address list is not allowed");
+        _clientAddresses = addresses;
+    }
+
+    /**
+     * Report the address of the client that connected to dCache when
+     * initiated this transfer.
+     */
     public synchronized InetSocketAddress getClientAddress()
     {
-        return _clientAddress;
+        return _clientAddresses == null ? null : _clientAddresses.get(0);
+    }
+
+    /**
+     * Report all relays and the client that initiated this transfer.
+     * The last item is the client that initiated the transfer; any addresses
+     * earlier in the list represent relay clients.  The first item is the
+     * client that directly connected to dCache.
+     */
+    public synchronized List<InetSocketAddress> getClientAddresses()
+    {
+        return _clientAddresses;
     }
 
     public boolean waitForMover(long timeout, TimeUnit unit)
@@ -602,7 +634,7 @@ public class Transfer implements Comparable<Transfer>
                                _poolName,
                                _status,
                                _startedAt,
-                               _clientAddress.getHostString());
+                               _clientAddresses.get(0).getHostString());
     }
 
     /**
@@ -1112,7 +1144,12 @@ public class Transfer implements Comparable<Transfer>
         msg.setTransferPath(getTransferPath());
         msg.setTransactionDuration(System.currentTimeMillis() - _startedAt);
         msg.setTransaction(getTransaction());
-        msg.setClient(_clientAddress.getAddress().getHostAddress());
+        String chain = _clientAddresses.stream().
+                map(InetSocketAddress::getAddress).
+                map(InetAddress::getHostAddress).
+                collect(Collectors.joining(","));
+        msg.setClientChain(chain);
+        msg.setClient(_clientAddresses.get(0).getAddress().getHostAddress());
         msg.setPnfsId(getPnfsId());
         if (_fileAttributes.isDefined(SIZE)) {
             msg.setFileSize(_fileAttributes.getSize());

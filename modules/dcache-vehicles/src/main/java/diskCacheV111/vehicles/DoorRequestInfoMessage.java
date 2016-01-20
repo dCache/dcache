@@ -8,6 +8,7 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 {
     private long _transactionTime;
     private String _client = "unknown";
+    private String _clientChain = "unknown";
 
     private static final long serialVersionUID = 2469895982145157834L;
     private String _transferPath;
@@ -46,6 +47,16 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     public void setClient(String client)
     {
         _client = client;
+    }
+
+    public void setClientChain(String chain)
+    {
+        _clientChain = chain;
+    }
+
+    public String getClientChain()
+    {
+        return _clientChain;
     }
 
     public String getOwner()

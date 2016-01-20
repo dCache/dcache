@@ -63,6 +63,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         template.add("gid", message.getGid());
         template.add("owner", message.getOwner());
         template.add("client", message.getClient());
+        template.add("clientChain", message.getClientChain());
         template.add("transferPath", message.getTransferPath());
     }
 
