@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
@@ -35,6 +36,7 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.*;
 
 public class P2PClient
     extends AbstractCellComponent
@@ -323,7 +325,7 @@ public class P2PClient
     public class PpSetPnfsTimeoutCommand implements Callable<String>
     {
         @Override
-        public synchronized String call()
+        public String call()
         {
             return "This command is obsolete.";
         }
@@ -342,11 +344,13 @@ public class P2PClient
         int maxActiveAllowed;
 
         @Override
-        public synchronized String call() throws IllegalArgumentException
+        public String call() throws IllegalArgumentException
         {
-            checkArgument(maxActiveAllowed > 0, "This value must be a positive integer.");
-            _maxActive = maxActiveAllowed;
-            return "";
+            synchronized (P2PClient.this) {
+                checkArgument(maxActiveAllowed > 0, "This value must be a positive integer.");
+                _maxActive = maxActiveAllowed;
+                return "";
+            }
         }
     }
 
@@ -379,12 +383,14 @@ public class P2PClient
         String address;
 
         @Override
-        public synchronized String call() throws UnknownHostException
+        public String call() throws UnknownHostException
         {
-            if (address != null) {
-                _interface =  address.equals("*") ? null : InetAddress.getByName(address);
+            synchronized (P2PClient.this) {
+                if (address != null) {
+                    _interface = address.equals("*") ? null : InetAddress.getByName(address);
+                }
+                return "PP interface is " + getInterface();
             }
-            return "PP interface is " + getInterface();
         }
     }
 
@@ -404,7 +410,7 @@ public class P2PClient
         String pool;
 
         @Override
-        public synchronized String call() throws
+        public String call() throws
                 IOException, CacheException, InterruptedException
         {
             FileAttributes fileAttributes = new FileAttributes();
@@ -430,7 +436,7 @@ public class P2PClient
         int id;
 
         @Override
-        public synchronized String call() throws IllegalArgumentException
+        public String call() throws IllegalArgumentException
         {
             if (!cancel(id)) {
                 throw new IllegalArgumentException("Session ID not found: " + id);
@@ -448,14 +454,11 @@ public class P2PClient
     public class PpLsCommand implements Callable<String>
     {
         @Override
-        public synchronized String call()
+        public String call()
         {
-            StringBuilder sb = new StringBuilder();
-
-            for (Companion c : _companions.values()) {
-                sb.append(c.toString()).append("\n");
+            synchronized (P2PClient.this) {
+                return _companions.values().stream().map(Object::toString).collect(joining("\n"));
             }
-            return sb.toString();
         }
     }
 }
