@@ -55,6 +55,8 @@ public class ExceptionUtils {
                 return new NoSpcException(e.getMessage(), e);
             case TIMEOUT:
                 return new DelayException(e.getMessage(), e);
+            case FILE_IN_CACHE:
+                return new NfsIoException(e.getMessage(), e);
             default:
                 return buildNfsException(defaultException, e);
         }
