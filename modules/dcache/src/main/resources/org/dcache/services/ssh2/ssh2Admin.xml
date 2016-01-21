@@ -60,6 +60,7 @@
 
     <bean id="shell-factory" class="org.dcache.services.ssh2.ShellFactory">
         <property name="historyFile" value="${admin.paths.history}"/>
+        <property name="historySize" value="${admin.history.size}"/>
         <property name="useColor" value="${admin.enable.colors}"/>
         <property name="pnfsManager" ref="pnfsmanager"/>
         <property name="poolManager" ref="poolmanager"/>
@@ -78,6 +79,7 @@
 
     <bean id="legacy-factory" class="org.dcache.services.ssh2.LegacySubsystemFactory">
         <property name="historyFile" value="${admin.paths.history}"/>
+        <property name="historySize" value="${admin.history.size}"/>
         <property name="useColor" value="${admin.enable.colors}"/>
         <property name="prompt" value="${admin.prompt}"/>
     </bean>

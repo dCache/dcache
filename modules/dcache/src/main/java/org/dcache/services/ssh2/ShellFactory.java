@@ -18,6 +18,7 @@ public class ShellFactory implements Factory<Command>, CellMessageSender
 {
     private CellEndpoint _endpoint;
     private File _historyFile;
+    private int _historySize;
     private boolean _useColor;
     private CellStub _pnfsManager;
     private CellStub _poolManager;
@@ -29,6 +30,11 @@ public class ShellFactory implements Factory<Command>, CellMessageSender
     public void setHistoryFile(File historyFile)
     {
         _historyFile = historyFile;
+    }
+
+    @Required
+    public void setHistorySize(int size) {
+        _historySize = size;
     }
 
     @Required
@@ -76,7 +82,7 @@ public class ShellFactory implements Factory<Command>, CellMessageSender
     @Override
     public Command create()
     {
-        return new ShellCommand(_historyFile, _useColor, createShell());
+        return new ShellCommand(_historyFile, _historySize, _useColor, createShell());
     }
 
     private UserAdminShell createShell()

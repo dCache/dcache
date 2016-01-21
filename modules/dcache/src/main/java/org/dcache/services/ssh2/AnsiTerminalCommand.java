@@ -54,7 +54,6 @@ public class AnsiTerminalCommand implements Command, Runnable {
 
     private static final Logger _logger =
         LoggerFactory.getLogger(AnsiTerminalCommand.class);
-    private static final int HISTORY_SIZE = 50;
     private UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;
     private InputStream _in;
@@ -68,14 +67,14 @@ public class AnsiTerminalCommand implements Command, Runnable {
     private PipedInputStream _pipedIn;
     private Thread _pipeThread;
 
-    public AnsiTerminalCommand(File historyFile, boolean useColor, UserAdminShell shell)
+    public AnsiTerminalCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell)
     {
         _useColors = useColor;
         _userAdminShell = shell;
         if (historyFile != null && (!historyFile.exists() || historyFile.isFile())) {
             try {
                 _history  = new FileHistory(historyFile);
-                _history.setMaxSize(HISTORY_SIZE);
+                _history.setMaxSize(historySize);
             } catch (IOException e) {
                 _logger.warn("History creation failed: " + e.getMessage());
             }

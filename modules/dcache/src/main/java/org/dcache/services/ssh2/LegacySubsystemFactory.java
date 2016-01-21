@@ -14,6 +14,7 @@ public class LegacySubsystemFactory implements NamedFactory<Command>, CellMessag
     private CellEndpoint _endpoint;
 
     private File _historyFile;
+    private int _historySize;
     private boolean _useColor;
     private String _prompt;
 
@@ -27,6 +28,11 @@ public class LegacySubsystemFactory implements NamedFactory<Command>, CellMessag
     public void setHistoryFile(File historyFile)
     {
         _historyFile = historyFile;
+    }
+
+    @Required
+    public void setHistorySize(int historySize) {
+        _historySize = historySize;
     }
 
     @Required
@@ -49,6 +55,6 @@ public class LegacySubsystemFactory implements NamedFactory<Command>, CellMessag
     @Override
     public Command create()
     {
-        return new LegacyAdminShellCommand(_endpoint, _historyFile, _prompt, _useColor);
+        return new LegacyAdminShellCommand(_endpoint, _historyFile, _historySize, _prompt, _useColor);
     }
 }

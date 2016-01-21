@@ -43,7 +43,6 @@ public class LegacyAdminShellCommand implements Command, Runnable
 {
     private static final Logger _logger =
         LoggerFactory.getLogger(LegacyAdminShellCommand.class);
-    private static final int HISTORY_SIZE = 50;
     private LegacyAdminShell _shell;
     private InputStream _in;
     private ExitCallback _exitCallback;
@@ -55,7 +54,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
     private final CellEndpoint _endpoint;
     private String _prompt;
 
-    public LegacyAdminShellCommand(CellEndpoint endpoint, File historyFile, String prompt, boolean useColor)
+    public LegacyAdminShellCommand(CellEndpoint endpoint, File historyFile, int historySize, String prompt, boolean useColor)
     {
         _useColors = useColor;
         _endpoint = endpoint;
@@ -63,7 +62,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
         if (historyFile != null && (!historyFile.exists() || historyFile.isFile())) {
             try {
                 _history  = new FileHistory(historyFile);
-                _history.setMaxSize(HISTORY_SIZE);
+                _history.setMaxSize(historySize);
             } catch (IOException e) {
                 _logger.warn("History creation failed: " + e.getMessage());
             }

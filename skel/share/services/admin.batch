@@ -2,6 +2,7 @@
 
 check -strong admin.cell.name
 check admin.cell.subscribe
+check -strong admin.history.size
 check -strong admin.net.port
 check -strong admin.paths.dsa-host-key.private
 check -strong admin.paths.dsa-host-key.public

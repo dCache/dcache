@@ -31,6 +31,7 @@ import diskCacheV111.admin.UserAdminShell;
 public class ShellCommand implements Command
 {
     private final File historyFile;
+    private final int historySize;
     private final boolean useColor;
     private final UserAdminShell shell;
     private InputStream in;
@@ -40,9 +41,10 @@ public class ShellCommand implements Command
 
     private Command delegate;
 
-    public ShellCommand(File historyFile, boolean useColor, UserAdminShell shell)
+    public ShellCommand(File historyFile, int historySize, boolean useColor, UserAdminShell shell)
     {
         this.historyFile = historyFile;
+        this.historySize = historySize;
         this.useColor = useColor;
         this.shell = shell;
     }
@@ -75,7 +77,7 @@ public class ShellCommand implements Command
     public void start(Environment env) throws IOException
     {
         if (env.getEnv().get(Environment.ENV_TERM) != null) {
-            delegate = new AnsiTerminalCommand(historyFile, useColor, shell);
+            delegate = new AnsiTerminalCommand(historyFile, historySize, useColor, shell);
         } else {
             delegate = new NoTerminalCommand(shell);
         }
