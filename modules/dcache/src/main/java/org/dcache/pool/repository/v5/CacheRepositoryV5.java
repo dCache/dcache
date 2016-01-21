@@ -346,28 +346,43 @@ public class CacheRepositoryV5
             @Override
             public void stateChanged(StateChangeEvent event)
             {
-                long size = event.getNewEntry().getReplicaSize();
-                if (event.getOldState() == NEW) {
-                    /* Usually space has to be allocated before writing the
-                     * data to disk, however during pool startup we are notified
-                     * about "new" files that already consume space, so we
-                     * adjust the allocation here.
-                     */
-                    if (size > 0) {
-                        _account.growTotalAndUsed(size);
+                if (event.getOldState() != NEW || event.getNewState() != REMOVED) {
+                    if (event.getOldState() == NEW) {
+                        long size = event.getNewEntry().getReplicaSize();
+                        /* Usually space has to be allocated before writing the
+                         * data to disk, however during pool startup we are notified
+                         * about "new" files that already consume space, so we
+                         * adjust the allocation here.
+                         */
+                        if (size > 0) {
+                            _account.growTotalAndUsed(size);
+                        }
+                        scheduleExpirationTask(event.getNewEntry());
                     }
-                    scheduleExpirationTask(event.getNewEntry());
+
+                    updateRemovable(event.getNewEntry());
+
+                    if (event.getOldState() != PRECIOUS && event.getNewState() == PRECIOUS) {
+                        _account.adjustPrecious(event.getNewEntry().getReplicaSize());
+                    } else if (event.getOldState() == PRECIOUS && event.getNewState() != PRECIOUS) {
+                        _account.adjustPrecious(-event.getOldEntry().getReplicaSize());
+                    }
+
+                    _stateChangeListeners.stateChanged(event);
                 }
+                if (event.getNewState() == REMOVED) {
+                    PnfsId id = event.getPnfsId();
+                    if (event.getOldState() != NEW) {
+                        _log.info("remove entry for: {}", id);
+                    }
 
-                updateRemovable(event.getNewEntry());
+                    _pnfs.clearCacheLocation(id, _volatile);
 
-                if (event.getOldState() != PRECIOUS && event.getNewState() == PRECIOUS) {
-                    _account.adjustPrecious(size);
-                } else if (event.getOldState() == PRECIOUS && event.getNewState() != PRECIOUS) {
-                    _account.adjustPrecious(-event.getOldEntry().getReplicaSize());
+                    ScheduledFuture<?> oldTask = _tasks.remove(id);
+                    if (oldTask != null) {
+                        oldTask.cancel(false);
+                    }
                 }
-
-                _stateChangeListeners.stateChanged(event);
             }
 
             @Override
@@ -505,7 +520,7 @@ public class CacheRepositoryV5
             MetaDataRecord entry = _store.create(id);
             synchronized (entry) {
                 entry.setFileAttributes(fileAttributes);
-                setState(entry, transferState);
+                entry.setState(transferState);
 
                 return new WriteHandleImpl(
                         this, _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords, flags);
@@ -568,7 +583,8 @@ public class CacheRepositoryV5
              */
             try {
                 MetaDataRecord entry = _store.create(id);
-                setState(entry, REMOVED);
+                entry.setState(REMOVED);
+                destroyWhenRemovedAndUnused(entry);
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
             } catch (DiskErrorCacheException | RuntimeException f) {
@@ -624,7 +640,8 @@ public class CacheRepositoryV5
              */
             try {
                 entry = _store.create(id);
-                setState(entry, REMOVED);
+                entry.setState(REMOVED);
+                destroyWhenRemovedAndUnused(entry);
             } catch (DuplicateEntryException concurrentCreation) {
                 setSticky(id, owner, expire, overwrite);
                 return;
@@ -714,7 +731,8 @@ public class CacheRepositoryV5
                     case CACHED:
                     case PRECIOUS:
                     case BROKEN:
-                        setState(entry, state);
+                        entry.setState(state);
+                        destroyWhenRemovedAndUnused(entry);
                         return;
                     default:
                         break;
@@ -872,30 +890,7 @@ public class CacheRepositoryV5
     void setState(MetaDataRecord entry, EntryState state)
     {
         try {
-            synchronized (entry) {
-                EntryState oldState = entry.getState();
-                if (oldState == state) {
-                    return;
-                }
-
-                entry.setState(state);
-
-                if (state == REMOVED) {
-                    if (oldState != NEW) {
-                        _log.info("remove entry for: {}", entry.getPnfsId());
-                    }
-
-                    PnfsId id = entry.getPnfsId();
-                    _pnfs.clearCacheLocation(id, _volatile);
-
-                    ScheduledFuture<?> oldTask = _tasks.remove(id);
-                    if (oldTask != null) {
-                        oldTask.cancel(false);
-                    }
-
-                    destroyWhenRemovedAndUnused(entry);
-                }
-            }
+            entry.setState(state);
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
@@ -979,7 +974,7 @@ public class CacheRepositoryV5
                 if (entry.getLinkCount() == 0 && state == EntryState.REMOVED) {
                     /* Setting the entry to DESTROYED ensures that we only deallocate it once.
                      */
-                    setState(entry, DESTROYED);
+                    entry.setState(DESTROYED);
                     _store.remove(id);
 
                     /* It is essential to free after we removed the file: This is the opposite

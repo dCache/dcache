@@ -315,6 +315,7 @@ class WriteHandleImpl implements ReplicaDescriptor
             _repository.setSticky(_entry, record.owner(), record.expire(), false);
         }
         _repository.setState(_entry, _targetState);
+        _repository.destroyWhenRemovedAndUnused(_entry);
     }
 
     private void verifyFileSize(long length) throws CacheException
@@ -411,6 +412,7 @@ class WriteHandleImpl implements ReplicaDescriptor
 
         if (_targetState == EntryState.REMOVED) {
             _repository.setState(_entry, EntryState.REMOVED);
+            _repository.destroyWhenRemovedAndUnused(_entry);
         } else {
             PnfsId id = _entry.getPnfsId();
             String pool = _repository.getPoolName();

@@ -14,6 +14,7 @@ import org.dcache.pool.repository.v5.CacheEntryImpl;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.pool.repository.EntryState.DESTROYED;
 import static org.dcache.pool.repository.EntryState.NEW;
 import static org.dcache.pool.repository.EntryState.REMOVED;
 
@@ -211,14 +212,17 @@ public class MetaDataCache
         @Override
         public synchronized void setState(EntryState state) throws CacheException
         {
-            if (_record.getState() == NEW && state == REMOVED) {
-                _record.setState(state);
-            } else {
+            if (_record.getState() != state) {
                 CacheEntry oldEntry = new CacheEntryImpl(_record);
                 _record.setState(state);
-                CacheEntry newEntry = new CacheEntryImpl(_record);
-                _stateChangeListener.stateChanged(
-                        new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
+                if (state == DESTROYED) {
+                    _stateChangeListener.stateChanged(
+                            new StateChangeEvent(oldEntry, oldEntry, oldEntry.getState(), DESTROYED));
+                } else {
+                    CacheEntry newEntry = new CacheEntryImpl(_record);
+                    _stateChangeListener.stateChanged(
+                            new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
+                }
             }
         }
 
