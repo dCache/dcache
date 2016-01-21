@@ -251,14 +251,18 @@ public class AuthzDbPlugin
     {
         Principal principal =
             find(authorizedPrincipals, instanceOf(UserNamePrincipal.class), null);
-        if (principal != null) {
-            Collection<UserAuthzInformation> mappings =
-                _map.getValuesForPredicatesMatching(principal.getName());
-            for (UserAuthzInformation mapping: mappings) {
-                attrib.add(new HomeDirectory(mapping.getHome()));
-                attrib.add(new RootDirectory(mapping.getRoot()));
-                attrib.add(new ReadOnly(mapping.isReadOnly()));
-            }
+
+        checkAuthentication(principal != null, "no username principal");
+
+        Collection<UserAuthzInformation> mappings
+                = _map.getValuesForPredicatesMatching(principal.getName());
+
+        checkAuthentication(!mappings.isEmpty(), "no mapping found for " + principal);
+
+        for (UserAuthzInformation mapping : mappings) {
+            attrib.add(new HomeDirectory(mapping.getHome()));
+            attrib.add(new RootDirectory(mapping.getRoot()));
+            attrib.add(new ReadOnly(mapping.isReadOnly()));
         }
     }
 }
