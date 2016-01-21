@@ -1209,13 +1209,15 @@ public final class SpaceManagerService
                 }
             } catch (InterruptedException ignored) {
             } catch (Exception e) {
-                /* Put the request at the end of the queue to (a) avoid starving other requests, (b) avoid
-                 * retrying the same operation over and over in a tight loop.
-                 */
+                long delay = (long) (Math.random() * next());
+                LOGGER.info("Request processing failed ({}) and will sleep for {} ms.", e.toString(), delay);
                 try {
                     Thread.sleep(next());
                 } catch (InterruptedException ignored) {
                 }
+                /* Put the request at the end of the queue to (a) avoid starving other requests, (b) avoid
+                 * retrying the same operation over and over in a tight loop.
+                 */
                 executor.execute(this);
             }
         }
