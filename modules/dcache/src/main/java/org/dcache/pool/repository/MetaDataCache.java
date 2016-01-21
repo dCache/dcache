@@ -16,7 +16,6 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.pool.repository.EntryState.DESTROYED;
 import static org.dcache.pool.repository.EntryState.NEW;
-import static org.dcache.pool.repository.EntryState.REMOVED;
 
 /**
  * Cache of MetaDataRecords.
@@ -169,8 +168,12 @@ public class MetaDataCache
         {
             if (_entries.get(_id) == this) {
                 assert _entries.get(_id) == this;
+                CacheEntry entry = new CacheEntryImpl(_record);
+                _record.setState(DESTROYED);
                 _inner.remove(_id);
                 _entries.remove(_id);
+                _stateChangeListener.stateChanged(
+                        new StateChangeEvent(entry, entry, entry.getState(), DESTROYED));
             }
         }
 
@@ -215,14 +218,9 @@ public class MetaDataCache
             if (_record.getState() != state) {
                 CacheEntry oldEntry = new CacheEntryImpl(_record);
                 _record.setState(state);
-                if (state == DESTROYED) {
-                    _stateChangeListener.stateChanged(
-                            new StateChangeEvent(oldEntry, oldEntry, oldEntry.getState(), DESTROYED));
-                } else {
-                    CacheEntry newEntry = new CacheEntryImpl(_record);
-                    _stateChangeListener.stateChanged(
-                            new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
-                }
+                CacheEntry newEntry = new CacheEntryImpl(_record);
+                _stateChangeListener.stateChanged(
+                        new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
             }
         }
 

@@ -370,8 +370,9 @@ public class CacheRepositoryV5
 
                     _stateChangeListeners.stateChanged(event);
                 }
-                if (event.getNewState() == REMOVED) {
-                    PnfsId id = event.getPnfsId();
+                PnfsId id = event.getPnfsId();
+                switch (event.getNewState()) {
+                case REMOVED:
                     if (event.getOldState() != NEW) {
                         _log.info("remove entry for: {}", id);
                     }
@@ -382,6 +383,15 @@ public class CacheRepositoryV5
                     if (oldTask != null) {
                         oldTask.cancel(false);
                     }
+                    break;
+                case DESTROYED:
+                    /* It is essential to free after we removed the file: This is the opposite
+                     * of what happens during allocation, in which we allocate before writing
+                     * to disk. We rely on never having anything on disk that we haven't accounted
+                     * for in the Account object.
+                     */
+                    _account.free(event.getOldEntry().getReplicaSize());
+                    break;
                 }
             }
 
@@ -969,20 +979,8 @@ public class CacheRepositoryV5
     {
         try {
             synchronized (entry) {
-                EntryState state = entry.getState();
-                PnfsId id = entry.getPnfsId();
-                if (entry.getLinkCount() == 0 && state == EntryState.REMOVED) {
-                    /* Setting the entry to DESTROYED ensures that we only deallocate it once.
-                     */
-                    entry.setState(DESTROYED);
-                    _store.remove(id);
-
-                    /* It is essential to free after we removed the file: This is the opposite
-                     * of what happens during allocation, in which we allocate before writing
-                     * to disk. We rely on never having anything on disk that we haven't accounted
-                     * for in the Account object.
-                     */
-                    _account.free(entry.getSize());
+                if (entry.getLinkCount() == 0 && entry.getState() == EntryState.REMOVED) {
+                    _store.remove(entry.getPnfsId());
                 }
             }
         } catch (DiskErrorCacheException | RuntimeException e) {
