@@ -1188,25 +1188,28 @@ public final class SpaceManagerService
         public void run()
         {
             try {
-                if (envelope.getLocalAge() > envelope.getAdjustedTtl()) {
-                    LOGGER.warn(
-                            "Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
-                            envelope.getMessageObject().getClass().getSimpleName(), envelope.getLocalAge(),
-                            envelope.getAdjustedTtl());
-                } else {
-                    process();
-                }
-            } catch (InterruptedException ignored) {
-                notifyShutdown(envelope);
-            } catch (Exception e) {
-                /* Put the request at the end of the queue to (a) avoid starving other requests, (b) avoid
-                 * retrying the same operation over and over in a tight loop.
-                 */
                 try {
-                    Thread.sleep(next());
-                } catch (InterruptedException ignored) {
+                    if (envelope.getLocalAge() > envelope.getAdjustedTtl()) {
+                        LOGGER.warn(
+                                "Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
+                                envelope.getMessageObject().getClass().getSimpleName(), envelope.getLocalAge(),
+                                envelope.getAdjustedTtl());
+                    } else {
+                        process();
+                    }
+                } catch (InterruptedException e) {
+                    throw e;
+                } catch (Exception e) {
+                    long delay = (long) (Math.random() * next());
+                    LOGGER.info("Request processing failed ({}) and will sleep for {} ms.", e.toString(), delay);
+                    Thread.sleep(delay);
+                    /* Put the request at the end of the queue to (a) avoid starving other requests, (b) avoid
+                     * retrying the same operation over and over in a tight loop.
+                     */
+                    executor.execute(this);
                 }
-                executor.execute(this);
+            } catch (InterruptedException e) {
+                notifyShutdown(envelope);
             }
         }
     }
