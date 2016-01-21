@@ -1,5 +1,7 @@
 package org.dcache.chimera.nfsv41.door.proxy;
 
+import com.google.common.base.Throwables;
+import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,12 +36,13 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
     }
 
     @Override
-    public void process(CompoundContext context, nfs_resop4 result) {
+    public void process(CompoundContext context, nfs_resop4 result) throws ChimeraNFSException {
         final READ4res res = result.opread;
 
+        Inode inode = context.currentInode();
         NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
+        NDC.push(BaseEncoding.base16().upperCase().encode(inode.getFileId()));
         try {
-            Inode inode = context.currentInode();
             if (!context.getFs().hasIOLayout(inode)) {
                 /*
                  * if we have a special file, then fall back to regular read operation
@@ -92,9 +95,9 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 
             _log.debug("MOVER: {}@{} readed, {} requested.", readResult.isEof(), offset, _args.opread.count.value);
 
-        }catch(ChimeraNFSException he) {
-            res.status = he.getStatus();
-            _log.debug(he.getMessage());
+        } catch (ChimeraNFSException e) {
+            // NFS server will handle them
+            throw e;
         }catch(IOException ioe) {
             _log.error("DSREAD: ", ioe);
             proxyIoFactory.shutdownAdapter(_args.opread.stateid);
@@ -103,6 +106,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
             _log.error("DSREAD: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
         } finally {
+            NDC.pop();
             NDC.pop();
         }
     }
