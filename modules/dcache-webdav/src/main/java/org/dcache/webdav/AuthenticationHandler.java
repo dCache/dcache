@@ -114,10 +114,10 @@ public class AuthenticationHandler extends HandlerWrapper {
                     throw Throwables.propagate(problem);
                 }
             } catch (RedirectException e) {
-                LOG.warn("{} for path {} to url:{}", e.getMessage(), baseRequest.getServletPath(), e.getUrl());
+                LOG.warn("{} for path {} to url:{}", e.getMessage(), request.getPathInfo(), e.getUrl());
                 response.sendRedirect(e.getUrl());
             } catch (PermissionDeniedCacheException e) {
-                LOG.warn("{} for path {} and user {}", e.getMessage(), baseRequest.getServletPath(),
+                LOG.warn("{} for path {} and user {}", e.getMessage(), request.getPathInfo(),
                         NetLoggerBuilder.describeSubject(subject));
                 if (Subjects.isNobody(subject)) {
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
@@ -151,7 +151,7 @@ public class AuthenticationHandler extends HandlerWrapper {
             }
         }
 
-        String path = request.getServletPath();
+        String path = request.getPathInfo();
         FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
         if (!fullPath.startsWith(userRoot) &&
                 (_uploadPath == null || !fullPath.startsWith(_uploadPath))) {
