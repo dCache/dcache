@@ -168,7 +168,7 @@ public class DcacheResourceFactory
     private CellStub _billingStub;
     private PnfsHandler _pnfs;
     private String _ioQueue;
-    private FsPath _rootPath = new FsPath();
+    private PathMapper _pathMapper;
     private List<FsPath> _allowedPaths =
         Collections.singletonList(new FsPath());
     private InetAddress _internalAddress;
@@ -317,21 +317,12 @@ public class DcacheResourceFactory
     }
 
     /**
-     * Returns the root path.
+     * Provide the mapping between request path and dCache internal path.
      */
-    public String getRootPath()
+    @Required
+    public void setPathMapper(PathMapper mapper)
     {
-        return _rootPath.toString();
-    }
-
-    /**
-     * Sets the root path of the WebDAV server. This path forms the
-     * root of the WebDAV share. All WebDAV access will be relative to
-     * this path.
-     */
-    public void setRootPath(String path)
-    {
-        _rootPath = new FsPath(path);
+        _pathMapper = mapper;
     }
 
     /**
@@ -552,18 +543,20 @@ public class DcacheResourceFactory
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("Root path    : " + getRootPath());
         pw.println("Allowed paths: " + getAllowedPaths());
         pw.println("IO queue     : " + getIoQueue());
     }
 
     @Override
-    public Resource getResource(String host, String path)
+    public Resource getResource(String host, String requestPath)
     {
         if (_log.isDebugEnabled()) {
             _log.debug("Resolving " + HttpManager.request().getAbsoluteUrl());
         }
-         return getResource(getFullPath(path));
+
+        FsPath dCachePath = _pathMapper.asDcachePath(ServletRequest.getRequest(),
+                requestPath);
+        return getResource(dCachePath);
     }
 
     /**
@@ -1081,15 +1074,6 @@ public class DcacheResourceFactory
             String pool = message.getPoolName();
             _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool, message.getMoverId()));
         }
-    }
-
-    /**
-     * Given a path relative to the root path, this method returns a
-     * full PNFS path.
-     */
-    private FsPath getFullPath(String path)
-    {
-        return new FsPath(_rootPath, new FsPath(path));
     }
 
     /**

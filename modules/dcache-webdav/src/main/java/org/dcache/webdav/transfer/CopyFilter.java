@@ -53,6 +53,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.webdav.PathMapper;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -140,18 +141,13 @@ public class CopyFilter implements Filter
 
     private PnfsHandler _pnfs;
     private CredentialServiceClient _credentialService;
-    private FsPath _rootPath;
+    private PathMapper _pathMapper;
     private RemoteTransferHandler _remoteTransfers;
 
     @Required
-    public void setRootPath(String path)
+    public void setPathMapper(PathMapper mapper)
     {
-        _rootPath = new FsPath(path);
-    }
-
-    private FsPath getFullPath(String path)
-    {
-        return new FsPath(_rootPath, new FsPath(path));
+        _pathMapper = mapper;
     }
 
     @Required
@@ -237,7 +233,8 @@ public class CopyFilter implements Filter
                     "Destination is missing a path");
         }
 
-        FsPath path = getFullPath(request.getAbsolutePath());
+        FsPath path = _pathMapper.asDcachePath(ServletRequest.getRequest(),
+                request.getAbsolutePath());
         checkPath(path);
 
         CredentialSource source = getCredentialSource(request, type);

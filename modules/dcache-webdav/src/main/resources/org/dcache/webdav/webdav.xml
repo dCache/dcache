@@ -98,6 +98,10 @@
       <constructor-arg value="2"/>
   </bean>
 
+  <bean id="path-mapper" class="org.dcache.webdav.PathMapper">
+      <description>Mapping between request paths and dCache paths</description>
+      <property name="rootPath" value="${webdav.root}"/>
+  </bean>
 
   <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
       <description>Processes login requests</description>
@@ -138,7 +142,7 @@
       <property name="credentialServiceClient" ref="credential-service-client"/>
       <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
-      <property name="rootPath" value="${webdav.root}"/>
+      <property name="pathMapper" ref="path-mapper"/>
   </bean>
 
   <bean id="dispatch-filter"
@@ -166,7 +170,7 @@
       <property name="missingFileStrategy" ref="missing-file-strategy"/>
       <property name="listHandler" ref="list-handler"/>
       <property name="executor" ref="scheduled-thread-pool"/>
-      <property name="rootPath" value="${webdav.root}"/>
+      <property name="pathMapper" ref="path-mapper"/>
       <property name="allowedPaths" value="${webdav.authz.allowed-paths}"/>
       <property name="anonymousListing" value="${webdav.authz.anonymous-listing}"/>
       <property name="ioQueue" value="${webdav.mover.queue}"/>
@@ -293,7 +297,7 @@
         <property name="loginStrategy" ref="login-strategy"/>
         <property name="readOnly" value="${webdav.authz.readonly}"/>
         <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
-        <property name="rootPath" value="${webdav.root}"/>
+        <property name="pathMapper" ref="path-mapper"/>
         <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
     </bean>
 

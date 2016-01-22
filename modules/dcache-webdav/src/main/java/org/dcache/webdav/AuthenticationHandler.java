@@ -26,6 +26,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletException;
@@ -49,6 +50,7 @@ import java.util.List;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.reverse;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 
 public class AuthenticationHandler extends HandlerWrapper {
@@ -65,7 +67,7 @@ public class AuthenticationHandler extends HandlerWrapper {
     private boolean _isReadOnly;
     private boolean _isBasicAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
-    private FsPath _rootPath = new FsPath();
+    private PathMapper _pathMapper;
 
     private CertificateFactory _cf = CertificateFactories.newX509CertificateFactory();
     private FsPath _uploadPath;
@@ -152,7 +154,7 @@ public class AuthenticationHandler extends HandlerWrapper {
         }
 
         String path = request.getPathInfo();
-        FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
+        FsPath fullPath = _pathMapper.asDcachePath(request, path);
         if (!fullPath.startsWith(userRoot) &&
                 (_uploadPath == null || !fullPath.startsWith(_uploadPath))) {
             if (!path.equals("/")) {
@@ -162,7 +164,7 @@ public class AuthenticationHandler extends HandlerWrapper {
 
             try {
                 FsPath redirectFullPath = new FsPath(userRoot, userHome);
-                String redirectPath = _rootPath.relativize(redirectFullPath).toString();
+                String redirectPath = _pathMapper.asRequestPath(request, redirectFullPath);
                 URI uri = new URI(request.getRequestURL().toString());
                 URI redirect = new URI(uri.getScheme(), uri.getAuthority(), redirectPath, null, null);
                 throw new RedirectException(null, redirect.toString());
@@ -325,12 +327,9 @@ public class AuthenticationHandler extends HandlerWrapper {
         _loginStrategy = loginStrategy;
     }
 
-    public void setRootPath(String path) {
-        _rootPath = new FsPath(path);
-    }
-
-    public String getRootPath() {
-        return _rootPath.toString();
+    @Required
+    public void setPathMapper(PathMapper mapper) {
+        _pathMapper = checkNotNull(mapper);
     }
 
     public void setUploadPath(File uploadPath) {
