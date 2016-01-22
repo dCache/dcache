@@ -64,6 +64,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.pool.repository.EntryState.*;
@@ -71,8 +72,6 @@ import static org.dcache.pool.repository.EntryState.*;
 
 /**
  * Implementation of Repository interface.
- *
- * The class is thread-safe after initialization.
  *
  * Allows openEntry, getEntry, getState and setSticky to be called
  * before the load method finishes. Other methods of the Repository
@@ -125,12 +124,14 @@ public class CacheRepositoryV5
         Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     /** Executor for periodic tasks. */
+    @GuardedBy("_stateLock")
     private ScheduledExecutorService _executor;
 
     /**
      * Meta data about files in the pool.
      */
-    private volatile MetaDataStore _store;
+    @GuardedBy("_stateLock")
+    private MetaDataStore _store;
 
     /**
      * Current state of the repository.
@@ -145,61 +146,67 @@ public class CacheRepositoryV5
         CLOSED
     }
 
-    private volatile State _state = State.UNINITIALIZED;
+    @GuardedBy("_stateLock")
+    private State _state = State.UNINITIALIZED;
 
     /**
-     * Lock for the _state field.
-     *
-     * The _state field itself is volatile and may be accessed without locking
-     * by threads that are only interested in the current state, however updates
-     * to _state must obtain a write lock and threads that want to block state
-     * changes in a critical region must obtain a read lock.
+     * Lock for the field changes.
      */
     private final ReadWriteLock _stateLock = new ReentrantReadWriteLock();
 
     /**
      * Initialization progress between 0 and 1.
      */
-    private float _initializationProgress;
+    private volatile float _initializationProgress;
 
     /**
      * Shared repository account object for tracking space.
      */
+    @GuardedBy("_stateLock")
     private Account _account;
 
     /**
      * Allocator used for when allocating space for new entries.
      */
+    @GuardedBy("_stateLock")
     private Allocator _allocator;
 
     /**
      * Policy defining which files may be garbage collected.
      */
+    @GuardedBy("_stateLock")
     private SpaceSweeperPolicy _sweeper;
 
+    @GuardedBy("_stateLock")
     private PnfsHandler _pnfs;
+
+    @GuardedBy("_stateLock")
     private boolean _volatile;
 
     /**
      * Pool size configured through the 'max disk space' command.
      */
+    @GuardedBy("_stateLock")
     private long _runtimeMaxSize = Long.MAX_VALUE;
 
     /**
      * Pool size configured in the configuration files.
      */
+    @GuardedBy("_stateLock")
     private long _staticMaxSize = Long.MAX_VALUE;
 
     /**
      * Pool size gap to report to pool manager.
      */
+    @GuardedBy("_stateLock")
     private Optional<Long> _gap = Optional.empty();
 
     /**
      * Throws an IllegalStateException if the repository has been
      * initialized.
      */
-    private void assertUninitialized()
+    @GuardedBy("_stateLock")
+    private void checkUninitialized()
     {
         if (_state != State.UNINITIALIZED) {
             throw new IllegalStateException("Operation not allowed after initialization");
@@ -209,7 +216,8 @@ public class CacheRepositoryV5
     /**
      * Throws an IllegalStateException if the repository is not open.
      */
-    private void assertOpen()
+    @GuardedBy("_stateLock")
+    private void checkOpen()
     {
         State state = _state;
         if (state != State.OPEN) {
@@ -221,7 +229,8 @@ public class CacheRepositoryV5
      * Throws an IllegalStateException if the repository is not in
      * either INITIALIZED, LOADING or OPEN.
      */
-    private void assertInitialized()
+    @GuardedBy("_stateLock")
+    private void checkInitialized()
     {
         State state = _state;
         if (state != State.INITIALIZED && state != State.LOADING && state != State.OPEN) {
@@ -235,8 +244,13 @@ public class CacheRepositoryV5
      */
     public void setExecutor(ScheduledExecutorService executor)
     {
-        assertUninitialized();
-        _executor = executor;
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _executor = executor;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     /**
@@ -244,13 +258,23 @@ public class CacheRepositoryV5
      */
     public void setPnfsHandler(PnfsHandler pnfs)
     {
-        assertUninitialized();
-        _pnfs = pnfs;
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _pnfs = pnfs;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     public boolean getVolatile()
     {
-        return _volatile;
+        _stateLock.readLock().lock();
+        try {
+            return _volatile;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     /**
@@ -260,8 +284,13 @@ public class CacheRepositoryV5
      */
     public void setVolatile(boolean value)
     {
-        assertUninitialized();
-        _volatile = value;
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _volatile = value;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     /**
@@ -269,8 +298,13 @@ public class CacheRepositoryV5
      */
     public void setAccount(Account account)
     {
-        assertUninitialized();
-        _account = account;
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _account = account;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     /**
@@ -278,20 +312,35 @@ public class CacheRepositoryV5
      */
     public void setAllocator(Allocator allocator)
     {
-        assertUninitialized();
-        _allocator = allocator;
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _allocator = allocator;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     public void setMetaDataStore(MetaDataStore store)
     {
-        assertUninitialized();
-        _store = store;
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _store = store;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     public void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
     {
-        assertUninitialized();
-        _sweeper = sweeper;
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _sweeper = sweeper;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     public void setMaxDiskSpaceString(String size)
@@ -299,127 +348,151 @@ public class CacheRepositoryV5
         setMaxDiskSpace(UnitInteger.parseUnitLong(size));
     }
 
-    public synchronized void setMaxDiskSpace(long size)
+    public void setMaxDiskSpace(long size)
     {
         if (size < 0) {
             throw new IllegalArgumentException("Negative value is not allowed");
         }
-        _staticMaxSize = size;
-        if (_state == State.OPEN) {
-            updateAccountSize();
+        _stateLock.writeLock().lock();
+        try {
+            _staticMaxSize = size;
+            if (_state == State.OPEN) {
+                updateAccountSize();
+            }
+        } finally {
+            _stateLock.writeLock().unlock();
         }
     }
 
     public State getState()
     {
-        return _state;
+        _stateLock.readLock().lock();
+        try {
+            return _state;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     @Override
     public void init()
             throws IllegalStateException, CacheException
     {
-        assert _pnfs != null : "Pnfs handler must be set";
-        assert _account != null : "Account must be set";
-        assert _allocator != null : "Account must be set";
+        checkState(_pnfs != null, "Pnfs handler must be set.");
+        checkState(_account != null, "Account must be set.");
+        checkState(_allocator != null, "Allocator must be set.");
 
-        _stateLock.writeLock().lock();
-        try {
-            if (_state != State.UNINITIALIZED) {
-                throw new IllegalStateException("Can only initialize repository once.");
-            }
-            _state = State.INITIALIZING;
-        } finally {
-            _stateLock.writeLock().unlock();
+        if (!compareAndSetState(State.UNINITIALIZED, State.INITIALIZING)) {
+            throw new IllegalStateException("Can only initialize uninitialized repository.");
         }
-
-        /* Instantiating the cache causes the listing to be generated to
-         * populate the cache. This may take some time and therefore we
-         * do this outside the synchronization.
-         */
-        LOGGER.warn("Reading inventory from {}", _store);
-        _store = new MetaDataCache(_store, new StateChangeListener()
-        {
-            @Override
-            public void stateChanged(StateChangeEvent event)
+        try {
+            /* Instantiating the cache causes the listing to be generated to
+             * populate the cache. This may take some time and therefore we
+             * do this outside the synchronization.
+             */
+            LOGGER.warn("Reading inventory from {}.", _store);
+            MetaDataCache store = new MetaDataCache(_store, new StateChangeListener()
             {
-                if (event.getOldState() != NEW || event.getNewState() != REMOVED) {
-                    if (event.getOldState() == NEW) {
-                        long size = event.getNewEntry().getReplicaSize();
-                        /* Usually space has to be allocated before writing the
-                         * data to disk, however during pool startup we are notified
-                         * about "new" files that already consume space, so we
-                         * adjust the allocation here.
-                         */
-                        if (size > 0) {
-                            _account.growTotalAndUsed(size);
+                @Override
+                public void stateChanged(StateChangeEvent event)
+                {
+                    if (event.getOldState() != NEW || event.getNewState() != REMOVED) {
+                        if (event.getOldState() == NEW) {
+                            long size = event.getNewEntry().getReplicaSize();
+                            /* Usually space has to be allocated before writing the
+                             * data to disk, however during pool startup we are notified
+                             * about "new" files that already consume space, so we
+                             * adjust the allocation here.
+                             */
+                            if (size > 0) {
+                                _account.growTotalAndUsed(size);
+                            }
+                            scheduleExpirationTask(event.getNewEntry());
                         }
-                        scheduleExpirationTask(event.getNewEntry());
-                    }
 
+                        updateRemovable(event.getNewEntry());
+
+                        if (event.getOldState() != PRECIOUS && event.getNewState() == PRECIOUS) {
+                            _account.adjustPrecious(event.getNewEntry().getReplicaSize());
+                        } else if (event.getOldState() == PRECIOUS && event.getNewState() != PRECIOUS) {
+                            _account.adjustPrecious(-event.getOldEntry().getReplicaSize());
+                        }
+
+                        _stateChangeListeners.stateChanged(event);
+                    }
+                    PnfsId id = event.getPnfsId();
+                    switch (event.getNewState()) {
+                    case REMOVED:
+                        if (event.getOldState() != NEW) {
+                            LOGGER.info("remove entry for: {}", id);
+                        }
+
+                        _pnfs.clearCacheLocation(id, _volatile);
+
+                        ScheduledFuture<?> oldTask = _tasks.remove(id);
+                        if (oldTask != null) {
+                            oldTask.cancel(false);
+                        }
+                        break;
+                    case DESTROYED:
+                        /* It is essential to free after we removed the file: This is the opposite
+                         * of what happens during allocation, in which we allocate before writing
+                         * to disk. We rely on never having anything on disk that we haven't accounted
+                         * for in the Account object.
+                         */
+                        _account.free(event.getOldEntry().getReplicaSize());
+                        break;
+                    }
+                }
+
+                @Override
+                public void accessTimeChanged(EntryChangeEvent event)
+                {
                     updateRemovable(event.getNewEntry());
-
-                    if (event.getOldState() != PRECIOUS && event.getNewState() == PRECIOUS) {
-                        _account.adjustPrecious(event.getNewEntry().getReplicaSize());
-                    } else if (event.getOldState() == PRECIOUS && event.getNewState() != PRECIOUS) {
-                        _account.adjustPrecious(-event.getOldEntry().getReplicaSize());
-                    }
-
-                    _stateChangeListeners.stateChanged(event);
+                    _stateChangeListeners.accessTimeChanged(event);
                 }
-                PnfsId id = event.getPnfsId();
-                switch (event.getNewState()) {
-                case REMOVED:
-                    if (event.getOldState() != NEW) {
-                        LOGGER.info("remove entry for: {}", id);
-                    }
 
-                    _pnfs.clearCacheLocation(id, _volatile);
-
-                    ScheduledFuture<?> oldTask = _tasks.remove(id);
-                    if (oldTask != null) {
-                        oldTask.cancel(false);
-                    }
-                    break;
-                case DESTROYED:
-                    /* It is essential to free after we removed the file: This is the opposite
-                     * of what happens during allocation, in which we allocate before writing
-                     * to disk. We rely on never having anything on disk that we haven't accounted
-                     * for in the Account object.
-                     */
-                    _account.free(event.getOldEntry().getReplicaSize());
-                    break;
+                @Override
+                public void stickyChanged(StickyChangeEvent event)
+                {
+                    updateRemovable(event.getNewEntry());
+                    _stateChangeListeners.stickyChanged(event);
+                    scheduleExpirationTask(event.getNewEntry());
                 }
-            }
-
-            @Override
-            public void accessTimeChanged(EntryChangeEvent event)
+            }, new FaultListener()
             {
-                updateRemovable(event.getNewEntry());
-                _stateChangeListeners.accessTimeChanged(event);
-            }
-
-            @Override
-            public void stickyChanged(StickyChangeEvent event)
-            {
-                updateRemovable(event.getNewEntry());
-                _stateChangeListeners.stickyChanged(event);
-                scheduleExpirationTask(event.getNewEntry());
-            }
-        }, new FaultListener()
-        {
-            @Override
-            public void faultOccurred(FaultEvent event)
-            {
-                for (FaultListener listener : _faultListeners) {
-                    listener.faultOccurred(event);
+                @Override
+                public void faultOccurred(FaultEvent event)
+                {
+                    for (FaultListener listener : _faultListeners) {
+                        listener.faultOccurred(event);
+                    }
                 }
-            }
-        });
+            });
 
+            _stateLock.writeLock().lock();
+            try {
+                _store = store;
+                if (!compareAndSetState(State.INITIALIZING, State.INITIALIZED)) {
+                    throw new IllegalStateException("Repository was closed during initialization.");
+                }
+            } finally {
+                _stateLock.writeLock().unlock();
+            }
+        } finally {
+            compareAndSetState(State.INITIALIZING, State.FAILED);
+        }
+    }
+
+    private boolean compareAndSetState(State expected, State state)
+    {
         _stateLock.writeLock().lock();
         try {
-            _state = State.INITIALIZED;
+            if (_state != expected) {
+                return false;
+            }
+            _state = state;
+            return true;
         } finally {
             _stateLock.writeLock().unlock();
         }
@@ -430,21 +503,14 @@ public class CacheRepositoryV5
         throws CacheException, IllegalStateException,
                InterruptedException
     {
+        if (!compareAndSetState(State.INITIALIZED, State.LOADING)) {
+            throw new IllegalStateException("Can only load repository after initialization and only once.");
+        }
         try {
-            _stateLock.writeLock().lock();
-            try {
-                if (_state != State.INITIALIZED) {
-                    throw new IllegalStateException("Can only load repository after initialization and only once.");
-                }
-                _state = State.LOADING;
-            } finally {
-                _stateLock.writeLock().unlock();
-            }
-
             Collection<PnfsId> ids = _store.index();
 
             int fileCount = ids.size();
-            LOGGER.info("Checking meta data for {} files", fileCount);
+            LOGGER.info("Checking meta data for {} files.", fileCount);
             int cnt = 0;
             for (PnfsId id: ids) {
                 MetaDataRecord entry = readMetaDataRecord(id);
@@ -454,41 +520,42 @@ public class CacheRepositoryV5
                 }
                 _initializationProgress = ((float) cnt) / fileCount;
                 cnt++;
-            }
 
-            updateAccountSize();
-
-            _stateLock.writeLock().lock();
-            try {
+                // Lazily check if repository was closed
                 if (_state != State.LOADING) {
                     throw new IllegalStateException("Repository was closed during loading.");
                 }
-                _state = State.OPEN;
+            }
+
+            _stateLock.writeLock().lock();
+            try {
+                updateAccountSize();
+                if (!compareAndSetState(State.LOADING, State.OPEN)) {
+                    throw new IllegalStateException("Repository was closed during loading.");
+                }
             } finally {
                 _stateLock.writeLock().unlock();
             }
         } finally {
-            _stateLock.writeLock().lock();
-            try {
-                if (_state != State.OPEN) {
-                    _state = State.FAILED;
-                }
-            } finally {
-                _stateLock.writeLock().unlock();
-            }
+            compareAndSetState(State.LOADING, State.FAILED);
         }
 
-        LOGGER.info("Done generating inventory");
+        LOGGER.info("Done generating inventory.");
     }
 
     @Override
     public Iterator<PnfsId> iterator()
     {
-        assertOpen();
+        _stateLock.readLock().lock();
         try {
-            return Collections.unmodifiableCollection(_store.index()).iterator();
-        } catch (CacheException e) {
-            throw Throwables.propagate(e);
+            checkOpen();
+            try {
+                return Collections.unmodifiableCollection(_store.index()).iterator();
+            } catch (CacheException e) {
+                throw Throwables.propagate(e);
+            }
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
@@ -507,8 +574,9 @@ public class CacheRepositoryV5
             throw new IllegalArgumentException("List of sticky records must not be null");
         }
         PnfsId id = fileAttributes.getPnfsId();
+        _stateLock.readLock().lock();
         try {
-            assertOpen();
+            checkOpen();
 
             switch (transferState) {
             case FROM_CLIENT:
@@ -547,6 +615,8 @@ public class CacheRepositoryV5
              */
             _pnfs.notify(new PnfsAddCacheLocationMessage(id, getPoolName()));
             throw new FileInCacheException("Entry already exists: " + id);
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
@@ -554,9 +624,9 @@ public class CacheRepositoryV5
     public ReplicaDescriptor openEntry(PnfsId id, Set<OpenFlags> flags)
         throws CacheException, InterruptedException
     {
-        assertInitialized();
-
+        _stateLock.readLock().lock();
         try {
+            checkInitialized();
             ReplicaDescriptor handle;
 
             MetaDataRecord entry = getMetaDataRecord(id);
@@ -597,6 +667,8 @@ public class CacheRepositoryV5
                 e.addSuppressed(f);
             }
             throw e;
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
@@ -604,14 +676,19 @@ public class CacheRepositoryV5
     public CacheEntry getEntry(PnfsId id)
         throws CacheException, InterruptedException
     {
-        assertInitialized();
+        _stateLock.readLock().lock();
+        try {
+            checkInitialized();
 
-        MetaDataRecord entry = getMetaDataRecord(id);
-        synchronized (entry) {
-            if (entry.getState() == NEW) {
-                throw new FileNotInCacheException("File is incomplete");
+            MetaDataRecord entry = getMetaDataRecord(id);
+            synchronized (entry) {
+                if (entry.getState() == NEW) {
+                    throw new FileNotInCacheException("File is incomplete");
+                }
+                return new CacheEntryImpl(entry);
             }
-            return new CacheEntryImpl(entry);
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
@@ -626,59 +703,69 @@ public class CacheRepositoryV5
         checkNotNull(owner);
         checkArgument(expire >= -1, "Expiration time must be -1 or non-negative");
 
-        assertInitialized();
-
-        MetaDataRecord entry;
+        _stateLock.readLock().lock();
         try {
-            entry = getMetaDataRecord(id);
-        } catch (FileNotInCacheException e) {
-            /* Attempts to set a sticky bit on a missing file may
-             * indicate a stale registration in the name space.
-             */
+            checkInitialized();
+
+            MetaDataRecord entry;
             try {
-                entry = _store.create(id);
-                entry.setState(REMOVED);
-            } catch (DuplicateEntryException concurrentCreation) {
-                setSticky(id, owner, expire, overwrite);
-                return;
-            } catch (CacheException | RuntimeException f) {
-                e.addSuppressed(f);
-            }
-            throw e;
-        }
-
-        synchronized (entry) {
-            switch (entry.getState()) {
-            case NEW:
-            case FROM_CLIENT:
-            case FROM_STORE:
-            case FROM_POOL:
-                throw new FileNotInCacheException("File is incomplete");
-            case REMOVED:
-            case DESTROYED:
-                throw new FileNotInCacheException("File has been removed");
-            case BROKEN:
-            case PRECIOUS:
-            case CACHED:
-                break;
+                entry = getMetaDataRecord(id);
+            } catch (FileNotInCacheException e) {
+                /* Attempts to set a sticky bit on a missing file may
+                 * indicate a stale registration in the name space.
+                 */
+                try {
+                    entry = _store.create(id);
+                    entry.setState(REMOVED);
+                } catch (DuplicateEntryException concurrentCreation) {
+                    setSticky(id, owner, expire, overwrite);
+                    return;
+                } catch (CacheException | RuntimeException f) {
+                    e.addSuppressed(f);
+                }
+                throw e;
             }
 
-            entry.setSticky(owner, expire, overwrite);
+            synchronized (entry) {
+                switch (entry.getState()) {
+                case NEW:
+                case FROM_CLIENT:
+                case FROM_STORE:
+                case FROM_POOL:
+                    throw new FileNotInCacheException("File is incomplete");
+                case REMOVED:
+                case DESTROYED:
+                    throw new FileNotInCacheException("File has been removed");
+                case BROKEN:
+                case PRECIOUS:
+                case CACHED:
+                    break;
+                }
+
+                entry.setSticky(owner, expire, overwrite);
+            }
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
     @Override
     public SpaceRecord getSpaceRecord()
     {
-        SpaceRecord space = _account.getSpaceRecord();
-        long lru = (System.currentTimeMillis() - _sweeper.getLru()) / 1000L;
-        long gap = _gap.orElse(Math.min(space.getTotalSpace() / 4, DEFAULT_GAP));
-        return new SpaceRecord(space.getTotalSpace(),
-                               space.getFreeSpace(),
-                               space.getPreciousSpace(),
-                               space.getRemovableSpace(),
-                               lru,
-                               gap);
+        _stateLock.readLock().lock();
+        try {
+            SpaceRecord space = _account.getSpaceRecord();
+            long lru = (System.currentTimeMillis() - _sweeper.getLru()) / 1000L;
+            long gap = _gap.orElse(Math.min(space.getTotalSpace() / 4, DEFAULT_GAP));
+            return new SpaceRecord(space.getTotalSpace(),
+                                   space.getFreeSpace(),
+                                   space.getPreciousSpace(),
+                                   space.getRemovableSpace(),
+                                   lru,
+                                   gap);
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     @Override
@@ -690,49 +777,54 @@ public class CacheRepositoryV5
             throw new IllegalArgumentException("id is null");
         }
 
-        assertOpen();
-
+        _stateLock.readLock().lock();
         try {
-            MetaDataRecord entry = getMetaDataRecord(id);
-            synchronized (entry) {
-                EntryState source = entry.getState();
-                switch (source) {
-                case NEW:
-                case REMOVED:
-                case DESTROYED:
-                    if (state == EntryState.REMOVED) {
-                        /* File doesn't exist or is already
-                         * deleted. That's all we care about.
-                         */
-                        return;
-                    }
-                    break;
-                case PRECIOUS:
-                case CACHED:
-                case BROKEN:
-                    switch (state) {
+            checkOpen();
+
+            try {
+                MetaDataRecord entry = getMetaDataRecord(id);
+                synchronized (entry) {
+                    EntryState source = entry.getState();
+                    switch (source) {
+                    case NEW:
                     case REMOVED:
-                    case CACHED:
+                    case DESTROYED:
+                        if (state == EntryState.REMOVED) {
+                            /* File doesn't exist or is already
+                             * deleted. That's all we care about.
+                             */
+                            return;
+                        }
+                        break;
                     case PRECIOUS:
+                    case CACHED:
                     case BROKEN:
-                        entry.setState(state);
-                        return;
+                        switch (state) {
+                        case REMOVED:
+                        case CACHED:
+                        case PRECIOUS:
+                        case BROKEN:
+                            entry.setState(state);
+                            return;
+                        default:
+                            break;
+                        }
                     default:
                         break;
                     }
-                default:
-                    break;
+                    throw new IllegalTransitionException(id, source, state);
                 }
-                throw new IllegalTransitionException(id, source, state);
+            } catch (FileNotInCacheException e) {
+                /* File disappeared before we could change the
+                 * state. That's okay if we wanted to remove it, otherwise
+                 * not.
+                 */
+                if (state != REMOVED) {
+                    throw new IllegalTransitionException(id, NEW, state);
+                }
             }
-        } catch (FileNotInCacheException e) {
-            /* File disappeared before we could change the
-             * state. That's okay if we wanted to remove it, otherwise
-             * not.
-             */
-            if (state != REMOVED) {
-                throw new IllegalTransitionException(id, NEW, state);
-            }
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
@@ -776,57 +868,69 @@ public class CacheRepositoryV5
     public EntryState getState(PnfsId id)
         throws CacheException, InterruptedException
     {
-        assertInitialized();
+        _stateLock.readLock().lock();
         try {
-            return getMetaDataRecord(id).getState();
-        } catch (FileNotInCacheException e) {
-            return NEW;
+            checkInitialized();
+            try {
+                return getMetaDataRecord(id).getState();
+            } catch (FileNotInCacheException e) {
+                return NEW;
+            }
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
     @Override
     public void getInfo(PrintWriter pw)
     {
-        State state = _state;
-        pw.append("State : ").append(state.toString());
-        if (state == State.LOADING) {
-            pw.append(" (").append(String.valueOf((int) (_initializationProgress * 100))).append("% done)");
-        }
-        pw.println();
+        _stateLock.readLock().lock();
         try {
-            pw.println("Files : " + (state == State.OPEN || state == State.LOADING || state == State.INITIALIZED ? _store.index().size() : ""));
-        } catch (CacheException e) {
-            pw.println("Files : " + e.getMessage());
+            State state = _state;
+            pw.append("State : ").append(state.toString());
+            if (state == State.LOADING) {
+                pw.append(" (").append(String.valueOf((int) (_initializationProgress * 100))).append("% done)");
+            }
+            pw.println();
+            try {
+                if (state == State.OPEN || state == State.LOADING || state == State.INITIALIZED) {
+                    pw.println("Files : " + _store.index().size());
+                }
+            } catch (CacheException e) {
+                pw.println("Files : " + e.getMessage());
+            }
+
+            SpaceRecord space = getSpaceRecord();
+            long total = space.getTotalSpace();
+            long used = total - space.getFreeSpace();
+            long precious = space.getPreciousSpace();
+            long fsFree = _store.getFreeSpace();
+            long fsTotal = _store.getTotalSpace();
+            long gap = space.getGap();
+
+            pw.println("Disk space");
+            pw.println("    Total    : " + UnitInteger.toUnitString(total));
+            pw.println("    Used     : " + used + "    ["
+                       + (((float) used) / ((float) total)) + "]");
+            pw.println("    Free     : " + (total - used) + "    Gap : " + gap);
+            pw.println("    Precious : " + precious + "    ["
+                       + (((float) precious) / ((float) total)) + "]");
+            pw.println("    Removable: "
+                       + space.getRemovableSpace()
+                       + "    ["
+                       + (((float) space.getRemovableSpace()) / ((float) total))
+                       + "]");
+            pw.println("File system");
+            pw.println("    Size : " + fsTotal);
+            pw.println("    Free : " + fsFree +
+                       "    [" + (((float) fsFree) / fsTotal) + "]");
+            pw.println("Limits for maximum disk space");
+            pw.println("    File system          : " + (fsFree + used));
+            pw.println("    Statically configured: " + UnitInteger.toUnitString(_staticMaxSize));
+            pw.println("    Runtime configured   : " + UnitInteger.toUnitString(_runtimeMaxSize));
+        } finally {
+            _stateLock.readLock().unlock();
         }
-
-        SpaceRecord space = getSpaceRecord();
-        long total = space.getTotalSpace();
-        long used = total - space.getFreeSpace();
-        long precious = space.getPreciousSpace();
-        long fsFree = _store.getFreeSpace();
-        long fsTotal = _store.getTotalSpace();
-        long gap = space.getGap();
-
-        pw.println("Disk space");
-        pw.println("    Total    : " + UnitInteger.toUnitString(total));
-        pw.println("    Used     : " + used + "    ["
-                   + (((float) used) / ((float) total)) + "]");
-        pw.println("    Free     : " + (total - used) + "    Gap : " + gap);
-        pw.println("    Precious : " + precious + "    ["
-                   + (((float) precious) / ((float) total)) + "]");
-        pw.println("    Removable: "
-                   + space.getRemovableSpace()
-                   + "    ["
-                   + (((float) space.getRemovableSpace()) / ((float) total))
-                   + "]");
-        pw.println("File system");
-        pw.println("    Size : " + fsTotal);
-        pw.println("    Free : " + fsFree +
-                   "    [" + (((float) fsFree) / fsTotal) + "]");
-        pw.println("Limits for maximum disk space");
-        pw.println("    File system          : " + (fsFree + used));
-        pw.println("    Statically configured: " + UnitInteger.toUnitString(_staticMaxSize));
-        pw.println("    Runtime configured   : " + UnitInteger.toUnitString(_runtimeMaxSize));
     }
 
     public void shutdown()
@@ -841,21 +945,19 @@ public class CacheRepositoryV5
         }
     }
 
-    // Operations on MetaDataRecord ///////////////////////////////////////
-
     @GuardedBy("getMetaDataRecord(entry.getPnfsid())")
     protected void updateRemovable(CacheEntry entry)
     {
-            PnfsId id = entry.getPnfsId();
-            if (_sweeper.isRemovable(entry)) {
-                if (_removable.add(id)) {
-                    _account.adjustRemovable(entry.getReplicaSize());
-                }
-            } else {
-                if (_removable.remove(id)) {
-                    _account.adjustRemovable(-entry.getReplicaSize());
-                }
+        PnfsId id = entry.getPnfsId();
+        if (_sweeper.isRemovable(entry)) {
+            if (_removable.add(id)) {
+                _account.adjustRemovable(entry.getReplicaSize());
             }
+        } else {
+            if (_removable.remove(id)) {
+                _account.adjustRemovable(-entry.getReplicaSize());
+            }
+        }
     }
 
     /**
@@ -1010,15 +1112,20 @@ public class CacheRepositoryV5
         "executed. If inf is specified, then the pool will return to the\n" +
         "size configured in the configuration file, or no maximum if such a\n" +
         "size is not defined.";
-    public synchronized String ac_set_max_diskspace_$_1(Args args)
+    public String ac_set_max_diskspace_$_1(Args args)
     {
         long size = UnitInteger.parseUnitLong(args.argv(0));
         if (size < 0) {
             throw new IllegalArgumentException("Negative value is not allowed");
         }
-        _runtimeMaxSize = size;
-        if (_state == State.OPEN) {
-            updateAccountSize();
+        _stateLock.writeLock().lock();
+        try {
+            _runtimeMaxSize = size;
+            if (_state == State.OPEN) {
+                updateAccountSize();
+            }
+        } finally {
+            _stateLock.writeLock().unlock();
         }
         return "";
     }
@@ -1027,38 +1134,65 @@ public class CacheRepositoryV5
     public String ac_set_gap_$_1(Args args)
     {
         long gap = UnitInteger.parseUnitLong(args.argv(0));
-        _gap = Optional.of(gap);
+        _stateLock.writeLock().lock();
+        try {
+            _gap = Optional.of(gap);
+        } finally {
+            _stateLock.writeLock().unlock();
+        }
         return "Gap set to " + gap;
     }
 
     @Override
-    public synchronized void printSetup(PrintWriter pw)
+    public void printSetup(PrintWriter pw)
     {
-        if (_runtimeMaxSize < Long.MAX_VALUE) {
-            pw.println("set max diskspace " + _runtimeMaxSize);
+        long runtimeMaxSize;
+        Optional<Long> gap;
+
+        _stateLock.readLock().lock();
+        try {
+            runtimeMaxSize = _runtimeMaxSize;
+            gap = _gap;
+        } finally {
+            _stateLock.readLock().unlock();
         }
-        if (_gap.isPresent()) {
-            pw.println("set gap " + _gap.get());
+
+        if (runtimeMaxSize < Long.MAX_VALUE) {
+            pw.println("set max diskspace " + runtimeMaxSize);
+        }
+        if (gap.isPresent()) {
+            pw.println("set gap " + gap.get());
         }
     }
 
-    private synchronized long getConfiguredMaxSize()
+    private long getConfiguredMaxSize()
     {
-        if (_runtimeMaxSize < Long.MAX_VALUE) {
-            return _runtimeMaxSize;
-        } else {
-            return _staticMaxSize;
+        _stateLock.readLock().lock();
+        try {
+            return (_runtimeMaxSize < Long.MAX_VALUE) ? _runtimeMaxSize : _staticMaxSize;
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
     private long getFileSystemMaxSize()
     {
-        return _store.getFreeSpace() + _account.getUsed();
+        _stateLock.readLock().lock();
+        try {
+            return _store.getFreeSpace() + _account.getUsed();
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     private boolean isTotalSpaceReported()
     {
-        return _store.getTotalSpace() > 0;
+        _stateLock.readLock().lock();
+        try {
+            return _store.getTotalSpace() > 0;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
     }
 
     /**
@@ -1074,7 +1208,8 @@ public class CacheRepositoryV5
      * periodic health check will adjust the pool size when a more
      * accurate limit can be determined.
      */
-    private synchronized void updateAccountSize()
+    @GuardedBy("_stateLock")
+    private void updateAccountSize()
     {
         Account account = _account;
         synchronized (account) {
