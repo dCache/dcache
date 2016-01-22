@@ -265,7 +265,10 @@ class Companion
             try {
                 handle = createReplicaEntry();
             } catch (FileInCacheException e) {
-                _fsm.createEntryFailed();
+                _fsm.fileExists();
+                return;
+            } catch (CacheException e) {
+                _fsm.createEntryFailed(e.getRc(), e.getMessage());
                 return;
             }
             setThread(Thread.currentThread());
@@ -325,7 +328,7 @@ class Companion
     }
 
     private ReplicaDescriptor createReplicaEntry()
-        throws FileInCacheException
+        throws CacheException
     {
         return _repository.createEntry(
                 _fileAttributes,

@@ -207,10 +207,15 @@ Entry
 
 Default
 {
-        createEntryFailed
+        fileExists
                 Failed
                 {
                         setError("Replica already exists");
+                }
+        createEntryFailed(rc: Integer, cause: Object)
+                Failed
+                {
+                        setError("Replica creation failed (" + cause + " [" + rc + "])");
                 }
         cancel(error: Object)
                 Failed

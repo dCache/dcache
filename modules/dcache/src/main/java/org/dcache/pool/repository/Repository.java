@@ -63,8 +63,7 @@ public interface Repository
      * moved to the target state, unless the handle is cancelled
      * first.
      *
-     * @param id the PNFS ID of the new entry
-     * @param info the storage info of the new entry
+     * @param fileAttributes the file attributes of the new entry
      * @param transferState the transfer state
      * @param targetState the target state
      * @param sticky sticky record to apply to entry; can be null
@@ -72,13 +71,14 @@ public interface Repository
      * @return A write handle for the entry.
      * @throws FileInCacheException if an entry with the same ID
      * already exists.
+     * @throws CacheException in case of other errors
      */
     ReplicaDescriptor createEntry(FileAttributes fileAttributes,
                                   EntryState transferState,
                                   EntryState targetState,
                                   List<StickyRecord> sticky,
                                   Set<OpenFlags> flags)
-        throws FileInCacheException;
+        throws CacheException;
 
     /**
      * Opens an entry for reading.

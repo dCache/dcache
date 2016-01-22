@@ -209,153 +209,288 @@ public class MetaDataCache
         @Override
         public void setSize(long size)
         {
-            _record.setSize(size);
+            try {
+                _record.setSize(size);
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public long getSize()
         {
-            return _record.getSize();
+            try {
+                return _record.getSize();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public void setFileAttributes(FileAttributes attributes) throws CacheException
         {
-            _record.setFileAttributes(attributes);
+            try {
+                _record.setFileAttributes(attributes);
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public FileAttributes getFileAttributes() throws CacheException
         {
-            return _record.getFileAttributes();
+            try {
+                return _record.getFileAttributes();
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public synchronized void setState(EntryState state) throws CacheException
         {
-            if (_record.getState() != state) {
-                CacheEntry oldEntry = new CacheEntryImpl(_record);
-                _record.setState(state);
-                CacheEntry newEntry = new CacheEntryImpl(_record);
-                _stateChangeListener.stateChanged(
-                        new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
-                destroyIfRemoved();
+            try {
+                if (_record.getState() != state) {
+                    CacheEntry oldEntry = new CacheEntryImpl(_record);
+                    _record.setState(state);
+                    CacheEntry newEntry = new CacheEntryImpl(_record);
+                    _stateChangeListener.stateChanged(
+                            new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
+                    destroyIfRemoved();
+                }
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
             }
         }
 
         @Override
         public EntryState getState()
         {
-            return _record.getState();
+            try {
+                return _record.getState();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public File getDataFile()
         {
-            return _record.getDataFile();
+            try {
+                return _record.getDataFile();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public long getCreationTime()
         {
-            return _record.getCreationTime();
+            try {
+                return _record.getCreationTime();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public long getLastAccessTime()
         {
-            return _record.getLastAccessTime();
+            try {
+                return _record.getLastAccessTime();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public void setLastAccessTime(long time) throws CacheException
         {
-            _record.setLastAccessTime(time);
+            try {
+                _record.setLastAccessTime(time);
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public synchronized void touch() throws CacheException
         {
-            CacheEntry oldEntry = new CacheEntryImpl(_record);
-            _record.touch();
-            CacheEntryImpl newEntry = new CacheEntryImpl(_record);
-            _stateChangeListener.accessTimeChanged(new EntryChangeEvent(oldEntry, newEntry));
+            try {
+                CacheEntry oldEntry = new CacheEntryImpl(_record);
+                _record.touch();
+                CacheEntryImpl newEntry = new CacheEntryImpl(_record);
+                _stateChangeListener.accessTimeChanged(new EntryChangeEvent(oldEntry, newEntry));
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public synchronized void decrementLinkCount()
         {
-            _record.decrementLinkCount();
-            destroyIfRemoved();
+            try {
+                _record.decrementLinkCount();
+                destroyIfRemoved();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+            }
         }
 
         @Override
         public void incrementLinkCount()
         {
-            _record.incrementLinkCount();
+            try {
+                _record.incrementLinkCount();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public int getLinkCount()
         {
-            return _record.getLinkCount();
+            try {
+                return _record.getLinkCount();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public boolean isSticky()
         {
-            return _record.isSticky();
+            try {
+                return _record.isSticky();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
 
         @Override
         public synchronized Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
         {
-            CacheEntry oldEntry = new CacheEntryImpl(_record);
-            Collection<StickyRecord> removed = _record.removeExpiredStickyFlags();
-            if (!removed.isEmpty()) {
-                CacheEntryImpl newEntry = new CacheEntryImpl(_record);
-                _stateChangeListener.stickyChanged(new StickyChangeEvent(oldEntry, newEntry));
+            try {
+                CacheEntry oldEntry = new CacheEntryImpl(_record);
+                Collection<StickyRecord> removed = _record.removeExpiredStickyFlags();
+                if (!removed.isEmpty()) {
+                    CacheEntryImpl newEntry = new CacheEntryImpl(_record);
+                    _stateChangeListener.stickyChanged(new StickyChangeEvent(oldEntry, newEntry));
+                }
+                return removed;
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
             }
-            return removed;
         }
 
         @Override
         public synchronized boolean setSticky(String owner, long validTill, boolean overwrite) throws CacheException
         {
-            CacheEntry oldEntry = new CacheEntryImpl(_record);
-            boolean changed = _record.setSticky(owner, validTill, overwrite);
-            if (changed) {
-                CacheEntryImpl newEntry = new CacheEntryImpl(_record);
-                _stateChangeListener.stickyChanged(new StickyChangeEvent(oldEntry, newEntry));
+            try {
+                CacheEntry oldEntry = new CacheEntryImpl(_record);
+                boolean changed = _record.setSticky(owner, validTill, overwrite);
+                if (changed) {
+                    CacheEntryImpl newEntry = new CacheEntryImpl(_record);
+                    _stateChangeListener.stickyChanged(new StickyChangeEvent(oldEntry, newEntry));
+                }
+                return changed;
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } catch (RuntimeException | DiskErrorCacheException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
             }
-            return changed;
         }
 
         @Override
         public Collection<StickyRecord> stickyRecords()
         {
-            return _record.stickyRecords();
+            try {
+                return _record.stickyRecords();
+            } catch (RuntimeException e) {
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                throw e;
+            }
         }
     }
 
     public MetaDataRecord get(PnfsId id)
             throws CacheException, InterruptedException
     {
-        Monitor monitor = _entries.get(id);
-        return (monitor != null) ? monitor.get() : null;
+        try {
+            Monitor monitor = _entries.get(id);
+            return (monitor != null) ? monitor.get() : null;
+        } catch (RuntimeException | DiskErrorCacheException e) {
+            _faultListener.faultOccurred(
+                    new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+            throw e;
+        }
     }
 
     @Override
     public MetaDataRecord create(PnfsId id) throws CacheException
     {
-        return new Monitor(id).create();
+        try {
+            return new Monitor(id).create();
+        } catch (RuntimeException | DiskErrorCacheException e) {
+            _faultListener.faultOccurred(
+                    new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+            throw e;
+        }
     }
 
     @Override
     public MetaDataRecord create(MetaDataRecord entry)
             throws CacheException
     {
-        return new Monitor(entry.getPnfsId()).create(entry);
+        try {
+            return new Monitor(entry.getPnfsId()).create(entry);
+        } catch (RuntimeException | DiskErrorCacheException e) {
+            _faultListener.faultOccurred(
+                    new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+            throw e;
+        }
     }
 
     @Override

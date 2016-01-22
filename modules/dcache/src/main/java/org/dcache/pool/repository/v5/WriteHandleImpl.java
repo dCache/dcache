@@ -92,7 +92,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                     FileAttributes fileAttributes,
                     EntryState targetState,
                     List<StickyRecord> stickyRecords,
-                    Set<Repository.OpenFlags> flags) throws DiskErrorCacheException
+                    Set<Repository.OpenFlags> flags) throws IOException
     {
         _repository = checkNotNull(repository);
         _allocator = checkNotNull(allocator);
@@ -110,12 +110,8 @@ class WriteHandleImpl implements ReplicaDescriptor
 
         if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
             File file = _entry.getDataFile();
-            try {
-                if (!file.createNewFile()) {
-                    throw new DiskErrorCacheException("File exists when it should not: " + file);
-                }
-            } catch (IOException e) {
-                throw new DiskErrorCacheException("Failed to create file: " + file, e);
+            if (!file.createNewFile()) {
+                throw new IOException("File exists when it should not: " + file);
             }
         }
     }

@@ -671,7 +671,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         protected StageRequestImpl createRequest(NearlineStorage storage,
                                                  FileAttributes file)
-                throws FileInCacheException
+                throws CacheException
         {
             return new StageRequestImpl(storage, file);
         }
@@ -954,7 +954,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         private final StorageInfoMessage infoMsg;
         private final ReplicaDescriptor descriptor;
 
-        public StageRequestImpl(NearlineStorage storage, FileAttributes fileAttributes) throws FileInCacheException
+        public StageRequestImpl(NearlineStorage storage, FileAttributes fileAttributes) throws CacheException
         {
             super(storage);
             PnfsId pnfsId = fileAttributes.getPnfsId();

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Collections;
@@ -490,11 +491,7 @@ public class CacheRepositoryV5
         assertOpen();
         try {
             return Collections.unmodifiableCollection(_store.index()).iterator();
-        } catch (DiskErrorCacheException | RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw Throwables.propagate(e);
         } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
             throw Throwables.propagate(e);
         }
     }
@@ -505,7 +502,7 @@ public class CacheRepositoryV5
                                    EntryState targetState,
                                    List<StickyRecord> stickyRecords,
                                    Set<OpenFlags> flags)
-        throws FileInCacheException
+        throws CacheException
     {
         if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO))) {
             throw new IllegalArgumentException("PNFSID and STORAGEINFO are required, only got " + fileAttributes.getDefinedAttributes());
@@ -541,8 +538,12 @@ public class CacheRepositoryV5
                 entry.setFileAttributes(fileAttributes);
                 entry.setState(transferState);
 
-                return new WriteHandleImpl(
-                        this, _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords, flags);
+                try {
+                    return new WriteHandleImpl(
+                            this, _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords, flags);
+                } catch (IOException e) {
+                    throw new DiskErrorCacheException("Failed to create file: " + entry.getDataFile(), e);
+                }
             }
         } catch (DuplicateEntryException e) {
             /* Somebody got the idea that we don't have the file, so we make
@@ -550,15 +551,6 @@ public class CacheRepositoryV5
              */
             _pnfs.notify(new PnfsAddCacheLocationMessage(id, getPoolName()));
             throw new FileInCacheException("Entry already exists: " + id);
-        } catch (RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw e;
-        } catch (DiskErrorCacheException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw new RuntimeException("Internal repository error", e);
-        } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
-            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -605,13 +597,10 @@ public class CacheRepositoryV5
                 entry.setState(REMOVED);
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
-            } catch (DiskErrorCacheException | RuntimeException f) {
-                fail(FaultAction.DEAD, "Internal repository error", f);
+            } catch (CacheException | RuntimeException f) {
+                fail(FaultAction.READONLY, "Internal repository error", f);
                 e.addSuppressed(f);
             }
-            throw e;
-        } catch (DiskErrorCacheException | RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
             throw e;
         }
     }
@@ -622,17 +611,12 @@ public class CacheRepositoryV5
     {
         assertInitialized();
 
-        try {
-            MetaDataRecord entry = getMetaDataRecord(id);
-            synchronized (entry) {
-                if (entry.getState() == NEW) {
-                    throw new FileNotInCacheException("File is incomplete");
-                }
-                return new CacheEntryImpl(entry);
+        MetaDataRecord entry = getMetaDataRecord(id);
+        synchronized (entry) {
+            if (entry.getState() == NEW) {
+                throw new FileNotInCacheException("File is incomplete");
             }
-        } catch (RuntimeException | DiskErrorCacheException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw e;
+            return new CacheEntryImpl(entry);
         }
     }
 
@@ -662,41 +646,30 @@ public class CacheRepositoryV5
             } catch (DuplicateEntryException concurrentCreation) {
                 setSticky(id, owner, expire, overwrite);
                 return;
-            } catch (DiskErrorCacheException | RuntimeException f) {
-                fail(FaultAction.DEAD, "Internal repository error", f);
+            } catch (CacheException | RuntimeException f) {
+                fail(FaultAction.READONLY, "Internal repository error", f);
                 e.addSuppressed(f);
             }
             throw e;
-        } catch (DiskErrorCacheException | RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw e;
         }
 
-        try {
-            synchronized (entry) {
-                switch (entry.getState()) {
-                case NEW:
-                case FROM_CLIENT:
-                case FROM_STORE:
-                case FROM_POOL:
-                    throw new FileNotInCacheException("File is incomplete");
-                case REMOVED:
-                case DESTROYED:
-                    throw new FileNotInCacheException("File has been removed");
-                case BROKEN:
-                case PRECIOUS:
-                case CACHED:
-                    break;
-                }
-
-                entry.setSticky(owner, expire, overwrite);
+        synchronized (entry) {
+            switch (entry.getState()) {
+            case NEW:
+            case FROM_CLIENT:
+            case FROM_STORE:
+            case FROM_POOL:
+                throw new FileNotInCacheException("File is incomplete");
+            case REMOVED:
+            case DESTROYED:
+                throw new FileNotInCacheException("File has been removed");
+            case BROKEN:
+            case PRECIOUS:
+            case CACHED:
+                break;
             }
-        } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
-            throw new RuntimeException("Internal repository error", e);
-        } catch (RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw e;
+
+            entry.setSticky(owner, expire, overwrite);
         }
     }
 
@@ -766,9 +739,6 @@ public class CacheRepositoryV5
             if (state != REMOVED) {
                 throw new IllegalTransitionException(id, NEW, state);
             }
-        } catch (RuntimeException | DiskErrorCacheException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw e;
         }
     }
 
@@ -817,9 +787,6 @@ public class CacheRepositoryV5
             return getMetaDataRecord(id).getState();
         } catch (FileNotInCacheException e) {
             return NEW;
-        } catch (DiskErrorCacheException | RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw e;
         }
     }
 
@@ -908,11 +875,7 @@ public class CacheRepositoryV5
         try {
             entry.setState(state);
         } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
-        } catch (RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw e;
         }
     }
 
@@ -926,11 +889,7 @@ public class CacheRepositoryV5
         try {
             entry.setSticky(owner, expire, overwrite);
         } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
-        } catch (RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-            throw e;
         }
     }
 
@@ -1063,8 +1022,15 @@ public class CacheRepositoryV5
                         }
                     }
                 }
-            } catch (CacheException | RuntimeException e) {
-                fail(FaultAction.DEAD, "Internal repository error", e);
+            } catch (DiskErrorCacheException ignored) {
+                // MetaDataCache will already have disabled the pool if this happens
+            } catch (CacheException e) {
+                // This ought to be a transient error, so reschedule
+                _log.warn("Failed to clear sticky flags for {}: {}", _id, e.getMessage());
+                ScheduledFuture<?> future =
+                        _executor.schedule(this, EXPIRATION_CLOCKSHIFT_EXTRA_TIME,
+                                           TimeUnit.MILLISECONDS);
+                _tasks.put(_id, future);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
