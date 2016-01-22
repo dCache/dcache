@@ -94,7 +94,7 @@ public class CacheRepositoryV5
      *
      */
 
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(CacheRepositoryV5.class);
 
     /**
@@ -194,10 +194,6 @@ public class CacheRepositoryV5
      * Pool size gap to report to pool manager.
      */
     private Optional<Long> _gap = Optional.empty();
-
-    public CacheRepositoryV5()
-    {
-    }
 
     /**
      * Throws an IllegalStateException if the repository has been
@@ -341,7 +337,7 @@ public class CacheRepositoryV5
          * populate the cache. This may take some time and therefore we
          * do this outside the synchronization.
          */
-        _log.warn("Reading inventory from {}", _store);
+        LOGGER.warn("Reading inventory from {}", _store);
         _store = new MetaDataCache(_store, new StateChangeListener()
         {
             @Override
@@ -375,7 +371,7 @@ public class CacheRepositoryV5
                 switch (event.getNewState()) {
                 case REMOVED:
                     if (event.getOldState() != NEW) {
-                        _log.info("remove entry for: {}", id);
+                        LOGGER.info("remove entry for: {}", id);
                     }
 
                     _pnfs.clearCacheLocation(id, _volatile);
@@ -448,13 +444,13 @@ public class CacheRepositoryV5
             Collection<PnfsId> ids = _store.index();
 
             int fileCount = ids.size();
-            _log.info("Checking meta data for {} files", fileCount);
+            LOGGER.info("Checking meta data for {} files", fileCount);
             int cnt = 0;
             for (PnfsId id: ids) {
                 MetaDataRecord entry = readMetaDataRecord(id);
                 if (entry != null)  {
                     EntryState state = entry.getState();
-                    _log.debug("{} {}", id, state);
+                    LOGGER.debug("{} {}", id, state);
                 }
                 _initializationProgress = ((float) cnt) / fileCount;
                 cnt++;
@@ -482,7 +478,7 @@ public class CacheRepositoryV5
             }
         }
 
-        _log.info("Done generating inventory");
+        LOGGER.info("Done generating inventory");
     }
 
     @Override
@@ -531,7 +527,7 @@ public class CacheRepositoryV5
                 throw new IllegalArgumentException("Invalid target state");
             }
 
-            _log.info("Creating new entry for {}", id);
+            LOGGER.info("Creating new entry for {}", id);
 
             MetaDataRecord entry = _store.create(id);
             synchronized (entry) {
@@ -939,26 +935,16 @@ public class CacheRepositoryV5
         }
     }
 
-    // Callbacks for fault notification ////////////////////////////////////
-
-    /**
-     * Reports a fault to all fault listeners.
-     */
-    void fail(FaultAction action, String message, Throwable cause)
-    {
-        FaultEvent event =
-            new FaultEvent("repository", action, message, cause);
-        for (FaultListener listener : _faultListeners) {
-            listener.faultOccurred(event);
-        }
-    }
-
     /**
      * Reports a fault to all fault listeners.
      */
     void fail(FaultAction action, String message)
     {
-        fail(action, message, null);
+        FaultEvent event =
+            new FaultEvent("repository", action, message, null);
+        for (FaultListener listener : _faultListeners) {
+            listener.faultOccurred(event);
+        }
     }
 
     /**
@@ -995,7 +981,7 @@ public class CacheRepositoryV5
                 // MetaDataCache will already have disabled the pool if this happens
             } catch (CacheException e) {
                 // This ought to be a transient error, so reschedule
-                _log.warn("Failed to clear sticky flags for {}: {}", _id, e.getMessage());
+                LOGGER.warn("Failed to clear sticky flags for {}: {}", _id, e.getMessage());
                 ScheduledFuture<?> future =
                         _executor.schedule(this, EXPIRATION_CLOCKSHIFT_EXTRA_TIME,
                                            TimeUnit.MILLISECONDS);
@@ -1098,26 +1084,26 @@ public class CacheRepositoryV5
             long used = account.getUsed();
 
             if (!isTotalSpaceReported()) {
-                _log.warn("Java reported the file system size as 0. This typically happens on Solaris with a 32-bit JVM. Please use a 64-bit JVM.");
+                LOGGER.warn("Java reported the file system size as 0. This typically happens on Solaris with a 32-bit JVM. Please use a 64-bit JVM.");
                 if (!hasConfiguredMaxSize) {
                     throw new IllegalStateException("Failed to determine file system size. A pool size must be configured.");
                 }
             }
 
             if (hasConfiguredMaxSize && fileSystemMaxSize < configuredMaxSize) {
-                _log.warn("Configured pool size ({}) is larger than what is available on disk ({})", configuredMaxSize,
-                          fileSystemMaxSize);
+                LOGGER.warn("Configured pool size ({}) is larger than what is available on disk ({})", configuredMaxSize,
+                            fileSystemMaxSize);
             }
 
             if (configuredMaxSize < used) {
-                _log.warn("Configured pool size ({}) is smaller than what is used already ({})", configuredMaxSize,
-                          used);
+                LOGGER.warn("Configured pool size ({}) is smaller than what is used already ({})", configuredMaxSize,
+                            used);
             }
 
             long newSize =
                 Math.max(used, Math.min(configuredMaxSize, fileSystemMaxSize));
             if (newSize != account.getTotal()) {
-                _log.info("Adjusting pool size to {}", newSize);
+                LOGGER.info("Adjusting pool size to {}", newSize);
                 account.setTotal(newSize);
             }
         }
