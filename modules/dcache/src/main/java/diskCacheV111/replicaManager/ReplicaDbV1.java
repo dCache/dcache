@@ -13,13 +13,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.CellAdapter;
+import java.util.Collections;
 
 import static org.dcache.commons.util.SqlHelper.tryToClose;
 
@@ -142,15 +143,16 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                                                                     // table
                 String pnfsId = info.getPnfsId().toString();
                 int bitmask = info.getBitMask();
-                boolean notRemovable = info.isPrecious() ||
-                                (info.isCached() && info.isSticky());
                 boolean countable =
-                        notRemovable &&
+                        info.isPrecious() &&
+//                        info.isCached() &&
                         !info.isReceivingFromClient() &&
                         !info.isReceivingFromStore() &&
+//                        info.isSendingToStore() &&
                         !info.isBad() &&
                         !info.isRemoved() &&
                         !info.isDestroyed();
+//                        info.isSticky();
 
                 try {
                     pstmt.setString(1, pnfsId);
