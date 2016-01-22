@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -30,7 +29,6 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.*;
-import java.util.Collections;
 import static java.util.Collections.singleton;
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -50,7 +48,8 @@ class WriteHandleImpl implements ReplicaDescriptor
      */
     private static final long HOLD_TIME = 5 * 60 * 1000; // 5 minutes
 
-    private final CacheRepositoryV5 _repository;
+    /** Name of local pool. */
+    private final String _poolName;
 
     /** Space allocation is delegated to this allocator. */
     private final Allocator _allocator;
@@ -85,7 +84,7 @@ class WriteHandleImpl implements ReplicaDescriptor
     /** Last access time of new replica. */
     private Long _atime;
 
-    WriteHandleImpl(CacheRepositoryV5 repository,
+    WriteHandleImpl(String poolName,
                     Allocator allocator,
                     PnfsHandler pnfs,
                     MetaDataRecord entry,
@@ -94,7 +93,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                     List<StickyRecord> stickyRecords,
                     Set<Repository.OpenFlags> flags) throws IOException
     {
-        _repository = checkNotNull(repository);
+        _poolName = checkNotNull(poolName);
         _allocator = checkNotNull(allocator);
         _pnfs = checkNotNull(pnfs);
         _entry = checkNotNull(entry);
@@ -287,12 +286,12 @@ class WriteHandleImpl implements ReplicaDescriptor
                 attributesToUpdate.setSize(_fileAttributes.getSize());
             }
         }
-        attributesToUpdate.setLocations(singleton(_repository.getPoolName()));
+        attributesToUpdate.setLocations(singleton(_poolName));
 
         _pnfs.setFileAttributes(_entry.getPnfsId(), attributesToUpdate);
     }
 
-    private void setToTargetState()
+    private void setToTargetState() throws CacheException
     {
         /* In several situations, dCache requests a CACHED file
          * without having any sticky flags on it. Such files are
@@ -302,15 +301,15 @@ class WriteHandleImpl implements ReplicaDescriptor
          */
         if (_targetState == EntryState.CACHED && _stickyRecords.isEmpty()) {
             long now = System.currentTimeMillis();
-            _repository.setSticky(_entry, "self", now + HOLD_TIME, false);
+            _entry.setSticky("self", now + HOLD_TIME, false);
         }
 
         /* Move entry to target state.
          */
         for (StickyRecord record: _stickyRecords) {
-            _repository.setSticky(_entry, record.owner(), record.expire(), false);
+            _entry.setSticky(record.owner(), record.expire(), false);
         }
-        _repository.setState(_entry, _targetState);
+        _entry.setState(_targetState);
     }
 
     private void verifyFileSize(long length) throws CacheException
@@ -393,7 +392,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                  * failures in PNFS, and at the very least our cache location should
                  * be registered.
                  */
-                _pnfs.addCacheLocation(_entry.getPnfsId(), _repository.getPoolName());
+                _pnfs.addCacheLocation(_entry.getPnfsId(), _poolName);
                 registerFileAttributesInNameSpace();
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
@@ -406,17 +405,24 @@ class WriteHandleImpl implements ReplicaDescriptor
         }
 
         if (_targetState == EntryState.REMOVED) {
-            _repository.setState(_entry, EntryState.REMOVED);
+            try {
+                _entry.setState(EntryState.REMOVED);
+            } catch (CacheException e) {
+                _log.warn("Failed to remove replica: {}", e.getMessage());
+            }
         } else {
             PnfsId id = _entry.getPnfsId();
-            String pool = _repository.getPoolName();
             _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                                    id.toString(),
-                                                   pool),
+                                                   _poolName),
                       "Marking pool entry {} on {} as BROKEN",
                       _entry.getPnfsId(),
-                      _repository.getPoolName());
-            _repository.setState(_entry, EntryState.BROKEN);
+                      _poolName);
+            try {
+                _entry.setState(EntryState.BROKEN);
+            } catch (CacheException e) {
+                _log.warn("Failed to mark replica as broken: {}", e.getMessage());
+            }
         }
     }
 

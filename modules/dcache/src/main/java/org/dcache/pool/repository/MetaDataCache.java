@@ -270,9 +270,9 @@ public class MetaDataCache
                             new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
                     destroyIfRemoved();
                 }
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | IllegalStateException e) {
                 throw e;
-            } catch (RuntimeException | DiskErrorCacheException e) {
+            } catch (RuntimeException | CacheException e) {
                 _faultListener.faultOccurred(
                         new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
                 throw e;

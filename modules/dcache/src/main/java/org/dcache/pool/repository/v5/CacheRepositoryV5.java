@@ -540,7 +540,7 @@ public class CacheRepositoryV5
 
                 try {
                     return new WriteHandleImpl(
-                            this, _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords, flags);
+                            getPoolName(), _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords, flags);
                 } catch (IOException e) {
                     throw new DiskErrorCacheException("Failed to create file: " + entry.getDataFile(), e);
                 }
@@ -580,7 +580,7 @@ public class CacheRepositoryV5
                 case CACHED:
                     break;
                 }
-                handle = new ReadHandleImpl(this, _pnfs, entry);
+                handle = new ReadHandleImpl(_pnfs, entry);
             }
 
             if (!flags.contains(OpenFlags.NOATIME)) {
@@ -598,7 +598,6 @@ public class CacheRepositoryV5
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
             } catch (CacheException | RuntimeException f) {
-                fail(FaultAction.READONLY, "Internal repository error", f);
                 e.addSuppressed(f);
             }
             throw e;
@@ -647,7 +646,6 @@ public class CacheRepositoryV5
                 setSticky(id, owner, expire, overwrite);
                 return;
             } catch (CacheException | RuntimeException f) {
-                fail(FaultAction.READONLY, "Internal repository error", f);
                 e.addSuppressed(f);
             }
             throw e;
@@ -862,35 +860,6 @@ public class CacheRepositoryV5
                     _account.adjustRemovable(-entry.getReplicaSize());
                 }
             }
-    }
-
-    /**
-     * Package local method for setting the state of an entry.
-     *
-     * @param entry a repository entry
-     * @param state an entry state
-     */
-    void setState(MetaDataRecord entry, EntryState state)
-    {
-        try {
-            entry.setState(state);
-        } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error", e);
-        }
-    }
-
-    /**
-     * Package local method for changing sticky records of an entry.
-     */
-    void setSticky(MetaDataRecord entry, String owner,
-                   long expire, boolean overwrite)
-        throws IllegalArgumentException
-    {
-        try {
-            entry.setSticky(owner, expire, overwrite);
-        } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error", e);
-        }
     }
 
     /**

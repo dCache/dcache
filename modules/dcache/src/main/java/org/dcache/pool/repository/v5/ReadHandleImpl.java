@@ -5,7 +5,6 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.namespace.FileAttribute;
@@ -19,17 +18,13 @@ import static com.google.common.collect.Iterables.unmodifiableIterable;
 
 class ReadHandleImpl implements ReplicaDescriptor
 {
-    private final CacheRepositoryV5 _repository;
     private final PnfsHandler _pnfs;
     private final MetaDataRecord _entry;
     private FileAttributes _fileAttributes;
     private boolean _open;
 
-    ReadHandleImpl(CacheRepositoryV5 repository,
-                   PnfsHandler pnfs,
-                   MetaDataRecord entry) throws CacheException
+    ReadHandleImpl(PnfsHandler pnfs, MetaDataRecord entry) throws CacheException
     {
-        _repository = checkNotNull(repository);
         _pnfs = checkNotNull(pnfs);
         _entry = checkNotNull(entry);
         _fileAttributes = _entry.getFileAttributes();
