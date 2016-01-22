@@ -50,7 +50,6 @@ class ReadHandleImpl implements ReplicaDescriptor
         }
         _entry.decrementLinkCount();
         _open = false;
-        _repository.destroyWhenRemovedAndUnused(_entry);
     }
 
 

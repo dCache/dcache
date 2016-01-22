@@ -409,6 +409,15 @@ public class CacheRepositoryV5
                 _stateChangeListeners.stickyChanged(event);
                 scheduleExpirationTask(event.getNewEntry());
             }
+        }, new FaultListener()
+        {
+            @Override
+            public void faultOccurred(FaultEvent event)
+            {
+                for (FaultListener listener : _faultListeners) {
+                    listener.faultOccurred(event);
+                }
+            }
         });
 
         _stateLock.writeLock().lock();
@@ -594,7 +603,6 @@ public class CacheRepositoryV5
             try {
                 MetaDataRecord entry = _store.create(id);
                 entry.setState(REMOVED);
-                destroyWhenRemovedAndUnused(entry);
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
             } catch (DiskErrorCacheException | RuntimeException f) {
@@ -651,7 +659,6 @@ public class CacheRepositoryV5
             try {
                 entry = _store.create(id);
                 entry.setState(REMOVED);
-                destroyWhenRemovedAndUnused(entry);
             } catch (DuplicateEntryException concurrentCreation) {
                 setSticky(id, owner, expire, overwrite);
                 return;
@@ -742,7 +749,6 @@ public class CacheRepositoryV5
                     case PRECIOUS:
                     case BROKEN:
                         entry.setState(state);
-                        destroyWhenRemovedAndUnused(entry);
                         return;
                     default:
                         break;
@@ -968,26 +974,6 @@ public class CacheRepositoryV5
         }
 
         throw new InterruptedException();
-    }
-
-    /**
-     * Removes an entry from the in-memory cache and erases the data
-     * file if it is REMOVED and the link count is zero. Package local
-     * method since it is called by the handles.
-     */
-    void destroyWhenRemovedAndUnused(MetaDataRecord entry)
-    {
-        try {
-            synchronized (entry) {
-                if (entry.getLinkCount() == 0 && entry.getState() == EntryState.REMOVED) {
-                    _store.remove(entry.getPnfsId());
-                }
-            }
-        } catch (DiskErrorCacheException | RuntimeException e) {
-            fail(FaultAction.DEAD, "Internal repository error", e);
-        } catch (CacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
-        }
     }
 
     /**

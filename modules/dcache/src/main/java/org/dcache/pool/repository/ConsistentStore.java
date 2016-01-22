@@ -412,8 +412,7 @@ public class ConsistentStore
     {
         File f = _fileStore.get(id);
         if (!f.delete() && f.exists()) {
-            _log.error("Failed to delete {}", f);
-            throw new RuntimeException("Failed to delete " + id + " on " + _poolName);
+            throw new DiskErrorCacheException("Failed to delete " + id + " on " + _poolName);
         }
         _metaDataStore.remove(id);
     }

@@ -1,5 +1,7 @@
 package org.dcache.pool.repository;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
@@ -8,8 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.pool.FaultAction;
+import org.dcache.pool.FaultEvent;
+import org.dcache.pool.FaultListener;
 import org.dcache.pool.repository.v5.CacheEntryImpl;
 import org.dcache.vehicles.FileAttributes;
 
@@ -45,6 +51,7 @@ public class MetaDataCache
 
     private final MetaDataStore _inner;
     private final StateChangeListener _stateChangeListener;
+    private final FaultListener _faultListener;
 
     private volatile boolean _isClosed;
 
@@ -53,10 +60,12 @@ public class MetaDataCache
      *
      * The operation may be slow as the list method of {@code inner} is called.
      */
-    public MetaDataCache(MetaDataStore inner, StateChangeListener stateChangeListener) throws CacheException
+    public MetaDataCache(MetaDataStore inner, StateChangeListener stateChangeListener, FaultListener faultListener)
+            throws CacheException
     {
         _inner = inner;
         _stateChangeListener = stateChangeListener;
+        _faultListener = faultListener;
 
         Collection<PnfsId> list = inner.index();
         _entries = new ConcurrentHashMap<>(
@@ -164,16 +173,25 @@ public class MetaDataCache
             return (_record == null) ? null : this;
         }
 
-        private synchronized void remove() throws CacheException
+        @GuardedBy("this")
+        private void destroyIfRemoved()
         {
-            if (_entries.get(_id) == this) {
+            if (_record.getLinkCount() == 0 && _record.getState() == EntryState.REMOVED) {
                 assert _entries.get(_id) == this;
-                CacheEntry entry = new CacheEntryImpl(_record);
-                _record.setState(DESTROYED);
-                _inner.remove(_id);
-                _entries.remove(_id);
-                _stateChangeListener.stateChanged(
-                        new StateChangeEvent(entry, entry, entry.getState(), DESTROYED));
+                try {
+                    CacheEntry entry = new CacheEntryImpl(_record);
+                    _record.setState(DESTROYED);
+                    _inner.remove(_id);
+                    _entries.remove(_id);
+                    _stateChangeListener.stateChanged(
+                            new StateChangeEvent(entry, entry, entry.getState(), DESTROYED));
+                } catch (DiskErrorCacheException | RuntimeException e) {
+                    _faultListener.faultOccurred(
+                            new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
+                } catch (CacheException e) {
+                    _faultListener.faultOccurred(
+                            new FaultEvent("repository", FaultAction.READONLY, "Internal repository error", e));
+                }
             }
         }
 
@@ -221,6 +239,7 @@ public class MetaDataCache
                 CacheEntry newEntry = new CacheEntryImpl(_record);
                 _stateChangeListener.stateChanged(
                         new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(), newEntry.getState()));
+                destroyIfRemoved();
             }
         }
 
@@ -264,9 +283,10 @@ public class MetaDataCache
         }
 
         @Override
-        public void decrementLinkCount()
+        public synchronized void decrementLinkCount()
         {
             _record.decrementLinkCount();
+            destroyIfRemoved();
         }
 
         @Override
@@ -341,10 +361,7 @@ public class MetaDataCache
     @Override
     public void remove(PnfsId id) throws CacheException
     {
-        Monitor monitor = _entries.get(id);
-        if (monitor != null) {
-            monitor.remove();
-        }
+        throw new UnsupportedOperationException("Call setState(REMOVED) instead.");
     }
 
     @Override
