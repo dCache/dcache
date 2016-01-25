@@ -535,7 +535,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         Exception exception = null;
 
         try {
-            checkContentHeader(request.headers().names(), asList(CONTENT_LENGTH));
+            checkContentHeader(request.getHeaderNames(), asList(CONTENT_LENGTH));
 
             file = open(request, true);
 
@@ -608,7 +608,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 write(_writeChannel, chunk.getContent());
                 if (chunk.isLast()) {
                     if (chunk instanceof HttpChunkTrailer) {
-                        checkContentHeader(((HttpChunkTrailer) chunk).trailingHeaders().names(),
+                        checkContentHeader(((HttpChunkTrailer) chunk).getHeaderNames(),
                                 asList(CONTENT_LENGTH));
                     }
                     future = sendPutResponse(context, _writeChannel);
