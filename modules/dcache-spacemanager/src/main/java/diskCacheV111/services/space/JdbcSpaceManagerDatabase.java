@@ -533,7 +533,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         if (space.getState() == SpaceState.RELEASED) {
             throw new SpaceReleasedException("space with id=" + reservationId + " was released");
         }
-        if (space.getAvailableSpaceInBytes() <= 0 || space.getAvailableSpaceInBytes() < sizeInBytes) {
+        if (space.getAvailableSpaceInBytes() < sizeInBytes) {
             throw new NoFreeSpaceException("space with id=" + reservationId + " does not have enough space");
         }
 
