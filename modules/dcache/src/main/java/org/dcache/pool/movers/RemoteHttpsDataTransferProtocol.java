@@ -63,10 +63,16 @@ public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProto
     public CloseableHttpClient createHttpClient() throws CacheException
     {
         try {
-            KeyAndCertCredential credential = new KeyAndCertCredential(privateKey, chain);
+            KeyManager[] keyManagers;
+            if (privateKey != null & chain != null) {
+                KeyAndCertCredential credential = new KeyAndCertCredential(privateKey, chain);
+                keyManagers = new KeyManager[]{credential.getKeyManager()};
+            } else {
+                keyManagers = new KeyManager[0];
+            }
             SSLContext context = SSLContext.getInstance("TLS");
             context.init(
-                    new KeyManager[]{credential.getKeyManager()},
+                    keyManagers,
                     new TrustManager[]{trustManager},
                     secureRandom);
             return HttpClients.custom().setUserAgent(USER_AGENT).setSSLContext(context).build();
