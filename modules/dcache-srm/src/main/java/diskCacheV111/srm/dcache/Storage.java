@@ -1042,7 +1042,7 @@ public final class Storage
                         return immediateFailedCheckedFuture(new SRMSpaceLifetimeExpiredException(
                                 "Space reservation associated with the space token " + spaceToken + " is expired."));
                     }
-                    if (size != null && space.getAvailableSpaceInBytes() < size) {
+                    if (space.getAvailableSpaceInBytes() <= 0 || size != null && space.getAvailableSpaceInBytes() < size) {
                         return immediateFailedCheckedFuture(new SRMExceedAllocationException(
                                 "Space associated with the space token " + spaceToken + " is not enough to hold SURL."));
                     }
