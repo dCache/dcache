@@ -228,12 +228,17 @@ public class UniversalSpringCell
          */
         createContext();
 
+        try {
         /* Cell threading is configurable through arguments to
          * UniversalSpringCell. The executors have to be created as
          * beans in the Spring file, however the names of the beans
          * are provided as cell arguments.
          */
-        setupCellExecutors(args.getOpt("messageExecutor"));
+            setupCellExecutors(args.getOpt("messageExecutor"));
+        } catch (IllegalStateException e) {
+            LOGGER.debug("Aborting cell initialization due to illegal state exception while setting executors.");
+            return;
+        }
 
         /* This is a NOP except if somebody subclassed
          * UniversalSpringCell.
