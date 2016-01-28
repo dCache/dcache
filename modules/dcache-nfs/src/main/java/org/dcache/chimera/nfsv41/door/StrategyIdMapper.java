@@ -10,15 +10,20 @@ import java.security.Principal;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.nfs.v4.NfsIdMapping;
 import org.dcache.xdr.RpcLoginService;
+import org.dcache.xdr.XdrTransport;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
 
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
@@ -141,15 +146,19 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
     }
 
     @Override
-    public Subject login(Principal principal) {
-        Subject in = new Subject();
-        in.getPrincipals().add(principal);
-        in.setReadOnly();
+    public Subject login(XdrTransport xt, GSSContext gssc) {
 
         try {
+
+            KerberosPrincipal principal = new KerberosPrincipal(gssc.getSrcName().toString());
+            Subject in = new Subject();
+            in.getPrincipals().add(principal);
+            in.getPrincipals().add(new Origin(xt.getRemoteSocketAddress().getAddress()));
+            in.setReadOnly();
+
             return _remoteLoginStrategy.login(in).getSubject();
-        }catch(CacheException e) {
-            _log.debug("Failed to login for : {} : {}", principal.getName(), e.toString());
+        }catch(GSSException | CacheException e) {
+            _log.debug("Failed to login for : {} : {}", gssc, e.toString());
         }
         return Subjects.NOBODY;
     }

@@ -102,7 +102,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         // we assume only one segment as dcache doesn't support striping
         nfsv4_1_file_layout4 fileLayoutSegment = LayoutgetStub.decodeLayoutId(layout.getLayoutSegments()[0].lo_content.loc_body);
         deviceid4 dsId = fileLayoutSegment.nfl_deviceid;
-        device_addr4 deviceAddr = deviceManager.getDeviceInfo(context, dsId);
+        device_addr4 deviceAddr = deviceManager.getDeviceInfo(context, dsId, layouttype4.LAYOUT4_NFSV4_1_FILES);
         nfsv4_1_file_layout_ds_addr4 nfs4DeviceAddr = GetDeviceListStub.decodeFileDevice(deviceAddr.da_addr_body);
 
         Stopwatch connectStopwatch = Stopwatch.createStarted();

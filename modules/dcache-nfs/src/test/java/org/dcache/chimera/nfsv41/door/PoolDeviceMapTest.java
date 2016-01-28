@@ -2,8 +2,7 @@ package org.dcache.chimera.nfsv41.door;
 
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import org.dcache.nfs.v4.RoundRobinStripingPattern;
-import org.dcache.nfs.v4.StripingPattern;
+import org.dcache.nfs.v4.NfsV41FileLayoutDriver;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.junit.Assert;
 import org.junit.Before;
@@ -12,20 +11,13 @@ import org.junit.Test;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
-/**
- *
- * @author tigran
- */
 public class PoolDeviceMapTest {
-
-    private final StripingPattern<InetSocketAddress[]> _stripingPattern
-            = new RoundRobinStripingPattern<>();
 
     private PoolDeviceMap _poolDeviceMap;
 
     @Before
     public void setUp() {
-        _poolDeviceMap = new PoolDeviceMap(_stripingPattern);
+        _poolDeviceMap = new PoolDeviceMap(new NfsV41FileLayoutDriver());
     }
 
     @Test

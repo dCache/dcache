@@ -9,8 +9,6 @@ import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.security.Principal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +58,6 @@ import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.OncRpcSvcBuilder;
-import org.dcache.xdr.RpcDispatchable;
 import org.dcache.xdr.RpcLoginService;
 import org.dcache.xdr.gss.GssSessionManager;
 import org.dcache.xdr.OncRpcException;
@@ -230,18 +227,16 @@ public class NFSv4MoverHandler {
                 .withMaxPort(portRange.getUpper())
                 .withTCP()
                 .withoutAutoPublish()
+                .withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS)
                 .withSameThreadIoStrategy();
 
         if (withGss) {
-            RpcLoginService rpcLoginService = principal -> Subjects.NOBODY;
+            RpcLoginService rpcLoginService = (t, gss) -> Subjects.NOBODY;
             GssSessionManager gss = new GssSessionManager(rpcLoginService);
             oncRpcSvcBuilder.withGssSessionManager(gss);
         }
 
-        final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<>();
-        programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
         _rpcService = oncRpcSvcBuilder.build();
-        _rpcService.setPrograms(programs);
         _rpcService.start();
         _door = door;
         _bootVerifier = bootVerifier;

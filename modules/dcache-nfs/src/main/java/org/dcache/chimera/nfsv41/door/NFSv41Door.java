@@ -84,7 +84,6 @@ import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
-import org.dcache.nfs.v4.RoundRobinStripingPattern;
 import org.dcache.nfs.v4.StateDisposeListener;
 import org.dcache.nfs.v4.StripingPattern;
 import org.dcache.nfs.v4.xdr.device_addr4;
@@ -98,6 +97,10 @@ import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.nfs.v4.xdr.stateid4;
+import org.dcache.nfs.v4.LayoutDriver;
+import org.dcache.nfs.v4.NfsV41FileLayoutDriver;
+import org.dcache.nfs.v4.xdr.length4;
+import org.dcache.nfs.v4.xdr.offset4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
@@ -127,15 +130,20 @@ public class NFSv41Door extends AbstractCellComponent implements
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
 
     /**
+     * Layout type specific driver.
+     */
+    private final LayoutDriver _layoutDriver = new NfsV41FileLayoutDriver();
+
+    /**
      * Array if layout types supported by the door. For now, dCache supports only
      * NFS4.1 file layout type.
      */
-    private static final int[] SUPPORTED_LAYOUT_TYPES = new int[]{layouttype4.LAYOUT4_NFSV4_1_FILES};
+    private final int[] SUPPORTED_LAYOUT_TYPES = new int[]{_layoutDriver.getLayoutType()};
 
     /**
      * A mapping between pool name, nfs device id and pool's ip addresses.
      */
-    private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap(new RoundRobinStripingPattern<>());
+    private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap(_layoutDriver);
 
     /*
      * reserved device for IO through MDS (for pnfs dot files)
@@ -270,26 +278,25 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         _isWellKnown = getArgs().getBooleanOption("export");
 
+        _vfs = new VfsCache(new ChimeraVfs(_fileFileSystemProvider, _idMapper), _vfsCacheConfig);
+        MountServer ms = new MountServer(_exportFile, _vfs);
+
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
                 .withPort(_port)
                 .withTCP()
                 .withAutoPublish()
-                .withWorkerThreadIoStrategy();
+                .withWorkerThreadIoStrategy()
+                .withRpcService(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
+
         if (_enableRpcsecGss) {
             oncRpcSvcBuilder.withGssSessionManager(new GssSessionManager(_idMapper));
         }
-        _rpcService = oncRpcSvcBuilder.build();
-
-        _vfs = new VfsCache(new ChimeraVfs(_fileFileSystemProvider, _idMapper), _vfsCacheConfig);
-
-        MountServer ms = new MountServer(_exportFile, _vfs);
-        _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
 
         for (String version : _versions) {
             switch (version) {
                 case V3:
                     NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _vfs);
-                    _rpcService.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+                    oncRpcSvcBuilder.withRpcService(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
                     _loginBrokerPublisher.setTags(Collections.emptyList());
                     break;
                 case V41:
@@ -297,7 +304,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _proxyIoFactory = new NfsProxyIoFactory(_dm);
                     _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
                             _dm, _vfs, _exportFile);
-                    _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
+                    oncRpcSvcBuilder.withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     updateLbPaths();
                     break;
                 default:
@@ -305,6 +312,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             }
         }
 
+        _rpcService = oncRpcSvcBuilder.build();
         _rpcService.start();
 
     }
@@ -396,11 +404,10 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
 
     @Override
-    public device_addr4 getDeviceInfo(CompoundContext context, deviceid4 deviceId) {
+    public device_addr4 getDeviceInfo(CompoundContext context, deviceid4 deviceId, int layoutType) throws ChimeraNFSException {
         /* in case of MDS access we return the same interface which client already connected to */
         if (deviceId.equals(MDS_ID)) {
-            return deviceAddrOf( new RoundRobinStripingPattern<>(),
-                    new InetSocketAddress[] { context.getRpcCall().getTransport().getLocalSocketAddress() } );
+            return _layoutDriver.getDeviceAddress(context.getRpcCall().getTransport().getLocalSocketAddress());
         }
 
         PoolDS ds = _poolDeviceMap.getByDeviceId(deviceId);
@@ -430,8 +437,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {
 
-            if (layoutType != layouttype4.LAYOUT4_NFSV4_1_FILES) {
-                _log.warn("unsupported layout type ({}) requests from");
+            if (layoutType != _layoutDriver.getLayoutType()) {
+                _log.warn("unsupported layout type ({}) request", layoutType);
                 throw new LayoutUnavailableException("Unsuported layout type: " + layoutType);
             }
 
@@ -506,8 +513,11 @@ public class NFSv41Door extends AbstractCellComponent implements
             nfs_fh4 fh = new nfs_fh4(nfsInode.toNfsHandle());
 
             //  -1 is special value, which means entire file
-            layout4 layout = Layout.getLayoutSegment(deviceid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh, ioMode,
-                    0, nfs4_prot.NFS4_UINT64_MAX);
+            layout4 layout = new layout4();
+            layout.lo_iomode = ioMode;
+            layout.lo_offset = new offset4(0);
+            layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
+            layout.lo_content = _layoutDriver.getLayoutContent(deviceid, stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh);
 
             /*
              * on on error client will issue layout return.
@@ -793,20 +803,15 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final device_addr4 _deviceAddr;
         private final long _verifier;
 
-        public PoolDS(deviceid4 deviceId, StripingPattern<InetSocketAddress[]> stripingPattern,
-                InetSocketAddress[] ip, long verifier) {
+        public PoolDS(deviceid4 deviceId, device_addr4 deviceAddr, InetSocketAddress[] ip, long verifier) {
             _deviceId = deviceId;
             _socketAddress = ip;
-            _deviceAddr = deviceAddrOf(stripingPattern, ip);
+            _deviceAddr = deviceAddr;
             _verifier = verifier;
         }
 
         public deviceid4 getDeviceId() {
             return _deviceId;
-        }
-
-        public InetSocketAddress[] getInetSocketAddress() {
-            return _socketAddress;
         }
 
         public device_addr4 getDeviceAddr() {
@@ -916,61 +921,6 @@ public class NFSv41Door extends AbstractCellComponent implements
             doorInfo.setIoDoorEntries(entries.toArray(new IoDoorEntry[0]));
             return isBinary ? doorInfo : doorInfo.toString();
         }
-    }
-
-    /**
-     * Create a multipath based NFSv4.1 file layout address.
-     *
-     * @param stripingPattern of the device
-     * @param deviceAddress
-     * @return device address
-     */
-    public static device_addr4 deviceAddrOf(StripingPattern<InetSocketAddress[]> stripingPattern,
-            InetSocketAddress[]... deviceAddress) {
-
-        nfsv4_1_file_layout_ds_addr4 file_type = new nfsv4_1_file_layout_ds_addr4();
-
-        file_type.nflda_multipath_ds_list = new multipath_list4[deviceAddress.length];
-
-        for (int i = 0; i < deviceAddress.length; i++) {
-            file_type.nflda_multipath_ds_list[i] = toMultipath(deviceAddress[i]);
-        }
-
-        file_type.nflda_stripe_indices = stripingPattern.getPattern(deviceAddress);
-
-        XdrBuffer xdr = new XdrBuffer(128);
-        try {
-            xdr.beginEncoding();
-            file_type.xdrEncode(xdr);
-            xdr.endEncoding();
-        } catch (OncRpcException e) {
-            /* forced by interface, should never happen. */
-            throw new RuntimeException("Unexpected OncRpcException:", e);
-        } catch (IOException e) {
-            /* forced by interface, should never happen. */
-            throw new RuntimeException("Unexpected IOException:", e);
-        }
-
-        Buffer body = xdr.asBuffer();
-        byte[] retBytes = new byte[body.remaining()];
-        body.get(retBytes);
-
-        device_addr4 addr = new device_addr4();
-        addr.da_layout_type = layouttype4.LAYOUT4_NFSV4_1_FILES;
-        addr.da_addr_body = retBytes;
-
-        return addr;
-
-    }
-
-    private static multipath_list4 toMultipath(InetSocketAddress[] addresses)
-    {
-        multipath_list4 multipath = new multipath_list4();
-        multipath.value = new netaddr4[addresses.length];
-        for(int i = 0; i < addresses.length; i++) {
-            multipath.value[i] = new netaddr4(addresses[i]);
-        }
-        return multipath;
     }
 
     @Command(name="stats", hint = "Show nfs requests statstics.")
