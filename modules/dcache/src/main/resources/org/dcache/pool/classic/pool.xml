@@ -107,7 +107,6 @@
   <bean id="meta-store" class="org.dcache.pool.repository.ConsistentStore">
       <constructor-arg ref="csm"/>
       <constructor-arg ref="pnfs"/>
-      <constructor-arg ref="file-store"/>
       <constructor-arg>
           <bean class="${pool.plugins.meta}">
               <description>Store for pool meta data</description>

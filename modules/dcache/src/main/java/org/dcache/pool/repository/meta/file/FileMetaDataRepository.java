@@ -1,5 +1,6 @@
 package org.dcache.pool.repository.meta.file;
 
+import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,8 @@ public class FileMetaDataRepository
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private static final String DIRECTORY_NAME = "control";
+    private static final String REMOVING_REDUNDANT_META_DATA =
+            "Removing redundant meta data for %s.";
 
     private FileStore _fileStore;
     private File _metadir;
@@ -64,21 +67,29 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public Set<PnfsId> index()
+    public Set<PnfsId> index() throws CacheException
     {
-        String[] files = _metadir.list();
-        Set<PnfsId> ids = new HashSet<>(files.length);
-        for (String name: files) {
+        Stopwatch watch = Stopwatch.createStarted();
+        Set<PnfsId> files = _fileStore.index();
+        _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+
+        watch.reset().start();
+        String[] metaFiles = _metadir.list();
+        _log.info("Indexed {} entries in {} in {}.", metaFiles.length, this, watch);
+
+        for (String name: metaFiles) {
             try {
-                if (name.startsWith("SI-")) {
-                    name = name.substring(3);
+                PnfsId id = name.startsWith("SI-") ? new PnfsId(name.substring(3)) : new PnfsId(name);
+                if (!files.contains(id)) {
+                    Files.deleteIfExists(_metadir.toPath().resolve(name));
                 }
-                ids.add(new PnfsId(name));
-            } catch (IllegalArgumentException e) {
-                // data file contains foreign key
+            } catch (IllegalArgumentException ignored) {
+            } catch (IOException e) {
+                throw new DiskErrorCacheException(
+                        "Failed to remove " + name + ": " + e.getMessage(), e);
             }
         }
-        return ids;
+        return files;
     }
 
     @Override
@@ -90,22 +101,17 @@ public class FileMetaDataRepository
             File siFile = new File(_metadir, "SI-" + id.toString());
             File dataFile = _fileStore.get(id);
 
-            /* We call get() to check whether the entry exists and is
-             * intact.
-             */
-            if (get(id) != null) {
+            if (dataFile.exists()) {
                 throw new DuplicateEntryException(id);
             }
 
             /* In case of left over or corrupted files, we delete them
              * before creating a new entry.
              */
-            if (controlFile.exists()) {
-                controlFile.delete();
-            }
+            controlFile.delete();
+            siFile.delete();
 
-            return
-                new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
+            return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
         } catch (IOException e) {
             throw new RepositoryException(
                     "Failed to create new entry " + id + ": " + e.getMessage(), e);
@@ -113,28 +119,14 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public MetaDataRecord create(MetaDataRecord entry)
-        throws DuplicateEntryException, CacheException
+    public MetaDataRecord copy(MetaDataRecord entry)
+        throws CacheException
     {
         PnfsId id = entry.getPnfsId();
         try {
             File controlFile = new File(_metadir, id.toString());
             File siFile = new File(_metadir, "SI-" + id.toString());
             File dataFile = _fileStore.get(id);
-
-            /* We call get() to check whether the entry exists and is
-             * intact.
-             */
-            if (get(id) != null) {
-                throw new DuplicateEntryException(id);
-            }
-
-            /* In case of left over or corrupted files, we delete them
-             * before creating a new entry.
-             */
-            if (controlFile.exists()) {
-                controlFile.delete();
-            }
 
             return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile, entry);
         } catch (IOException e) {
@@ -147,19 +139,18 @@ public class FileMetaDataRepository
     public MetaDataRecord get(PnfsId id)
         throws CacheException
     {
+        File dataFile = _fileStore.get(id);
+        if (!dataFile.isFile()) {
+            return null;
+        }
         try {
             File siFile = new File(_metadir, "SI-"+id.toString());
-            if (siFile.exists()) {
-                File controlFile = new File(_metadir, id.toString());
-                File dataFile = _fileStore.get(id);
-
-                return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
-            }
+            File controlFile = new File(_metadir, id.toString());
+            return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
                     "Failed to read meta data for " + id + ": " + e.getMessage(), e);
         }
-        return null;
     }
 
     @Override
@@ -167,6 +158,11 @@ public class FileMetaDataRepository
             throws CacheException
     {
         try {
+            File f = _fileStore.get(id);
+            if (!f.delete() && f.exists()) {
+                throw new DiskErrorCacheException("Failed to delete " + id);
+            }
+
             File controlFile = new File(_metadir, id.toString());
             File siFile = new File(_metadir, "SI-"+id.toString());
 
@@ -181,6 +177,9 @@ public class FileMetaDataRepository
     @Override
     public synchronized boolean isOk()
     {
+        if (!_fileStore.isOk()) {
+            return false;
+        }
         File tmp = new File(_metadir, ".repository_is_ok");
         try {
             tmp.delete();
@@ -192,10 +191,10 @@ public class FileMetaDataRepository
             }
 
             return true;
-	} catch (IOException e) {
+        } catch (IOException e) {
             _log.error("Failed to touch " + tmp + ": " + e.getMessage(), e);
             return false;
-	}
+        }
     }
 
     /** NOP */
@@ -210,7 +209,7 @@ public class FileMetaDataRepository
     @Override
     public String toString()
     {
-        return _metadir.toString();
+        return String.format("[data=%s;meta=%s]", _fileStore, _metadir);
     }
 
     /**

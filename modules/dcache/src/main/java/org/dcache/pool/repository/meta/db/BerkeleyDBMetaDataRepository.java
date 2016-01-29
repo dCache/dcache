@@ -1,5 +1,6 @@
 package org.dcache.pool.repository.meta.db;
 
+import com.google.common.base.Stopwatch;
 import com.sleepycat.collections.StoredMap;
 import com.sleepycat.je.DatabaseException;
 
@@ -50,6 +51,9 @@ public class BerkeleyDBMetaDataRepository
         LoggerFactory.getLogger(BerkeleyDBMetaDataRepository.class);
 
     private static final String DIRECTORY_NAME = "meta";
+
+    private static final String REMOVING_REDUNDANT_META_DATA =
+            "Removing redundant meta data for %s.";
 
     /**
      * The file store for which we hold the meta data.
@@ -136,7 +140,22 @@ public class BerkeleyDBMetaDataRepository
     public Set<PnfsId> index() throws CacheException
     {
         try {
-            return _views.collectKeys(Collectors.mapping(PnfsId::new, Collectors.toSet()));
+            Stopwatch watch = Stopwatch.createStarted();
+            Set<PnfsId> files = _fileStore.index();
+            _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+
+            watch.reset().start();
+            Set<String> records = _views.collectKeys(Collectors.toSet());
+            _log.info("Indexed {} entries in {} in {}.", records.size(), this, watch);
+
+            for (String id: records) {
+                if (!files.contains(new PnfsId(id))) {
+                    _log.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
+                    _views.getStorageInfoMap().remove(id);
+                    _views.getStateMap().remove(id);
+                }
+            }
+            return files;
         } catch (EnvironmentFailureException e) {
             if (!isValid()) {
                 throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
@@ -151,6 +170,11 @@ public class BerkeleyDBMetaDataRepository
     public MetaDataRecord get(PnfsId id) throws CacheException
     {
         try {
+            File file = _fileStore.get(id);
+            if (!file.isFile()) {
+                return null;
+            }
+
             return CacheRepositoryEntryImpl.load(this, id);
         } catch (EnvironmentFailureException e) {
             if (!isValid()) {
@@ -169,36 +193,29 @@ public class BerkeleyDBMetaDataRepository
     public MetaDataRecord create(PnfsId id)
             throws CacheException
     {
-        /* CacheRepositoryEntryImpl.load silently drops incomplete
-         * entries. To conform to the contract of the MetaDataStore
-         * interface, we need to check whether both records are
-         * present in the database.
-         */
-        if (get(id) != null) {
+        File dataFile = _fileStore.get(id);
+        if (dataFile.exists()) {
             throw new DuplicateEntryException(id);
         }
+        _views.getStorageInfoMap().remove(id.toString());
+        _views.getStateMap().remove(id.toString());
         return new CacheRepositoryEntryImpl(this, id);
     }
 
     @Override
-    public MetaDataRecord create(MetaDataRecord entry)
-        throws DuplicateEntryException, CacheException
+    public MetaDataRecord copy(MetaDataRecord entry)
+        throws CacheException
     {
-        /* CacheRepositoryEntryImpl.load silently drops incomplete
-         * entries. To conform to the contract of the MetaDataStore
-         * interface, we need to check whether both records are
-         * present in the database.
-         */
-        PnfsId id = entry.getPnfsId();
-        if (get(id) != null) {
-            throw new DuplicateEntryException(id);
-        }
         return new CacheRepositoryEntryImpl(this, entry);
     }
 
     @Override
     public void remove(PnfsId id) throws CacheException
     {
+        File f = _fileStore.get(id);
+        if (!f.delete() && f.exists()) {
+            throw new DiskErrorCacheException("Failed to delete " + id);
+        }
         try {
             _views.getStorageInfoMap().remove(id.toString());
             _views.getStateMap().remove(id.toString());
@@ -215,6 +232,10 @@ public class BerkeleyDBMetaDataRepository
     @Override
     public synchronized boolean isOk()
     {
+        if (!_fileStore.isOk()) {
+            return false;
+        }
+
         File tmp = new File(_dir, ".repository_is_ok");
         try {
             Files.deleteIfExists(tmp.toPath());
@@ -278,7 +299,7 @@ public class BerkeleyDBMetaDataRepository
     @Override
     public String toString()
     {
-        return _dir.toString();
+        return String.format("[data=%s;meta=%s]", _fileStore, _dir);
     }
 
     /**

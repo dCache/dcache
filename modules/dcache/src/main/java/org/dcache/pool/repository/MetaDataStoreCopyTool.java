@@ -53,7 +53,7 @@ public class MetaDataStoreCopyTool
         int count = 1;
         for (PnfsId id: ids) {
             _log.info("Copying {} ({} of {})", id, count, size);
-            toStore.create(fromStore.get(id));
+            toStore.copy(fromStore.get(id));
             count++;
         }
     }

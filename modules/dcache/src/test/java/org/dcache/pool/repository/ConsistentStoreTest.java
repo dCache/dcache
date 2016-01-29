@@ -8,7 +8,6 @@ import org.mockito.Mockito;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -18,7 +17,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
@@ -26,7 +24,6 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
 import org.dcache.tests.repository.MetaDataRepositoryHelper;
 import org.dcache.tests.repository.RepositoryHealerTestChimeraHelper;
-import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.pool.repository.EntryState.*;
@@ -52,7 +49,7 @@ public class ConsistentStoreTest
         _fileStore = new RepositoryHealerTestChimeraHelper();
         _metaDataStore = new MetaDataRepositoryHelper(_fileStore);
         _consistentStore =
-            new ConsistentStore(_pnfs, null, _fileStore, _metaDataStore,
+            new ConsistentStore(_pnfs, null, _metaDataStore,
                                 new ALRPReplicaStatePolicy());
         _consistentStore.setPoolName(POOL);
     }
@@ -189,9 +186,6 @@ public class ConsistentStoreTest
         assertThat(_metaDataStore.get(PNFSID), is(nullValue()));
         assertThat(_fileStore.get(PNFSID).exists(), is(false));
 
-        // and the location is cleared
-        verify(_pnfs).clearCacheLocation(PNFSID);
-
         // and the name space entry is not touched
         verify(_pnfs, never())
             .setFileAttributes(eq(PNFSID), Mockito.any(FileAttributes.class));
@@ -220,9 +214,6 @@ public class ConsistentStoreTest
         // and the replica is deleted
         assertThat(_metaDataStore.get(PNFSID), is(nullValue()));
         assertThat(_fileStore.get(PNFSID).exists(), is(false));
-
-        // and the location is cleared
-        verify(_pnfs).clearCacheLocation(PNFSID);
 
         // and the name space entry is not touched
         verify(_pnfs, never())
@@ -270,7 +261,7 @@ public class ConsistentStoreTest
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica meta data indicates the file was
-        // being restored from tape and has is supposed to have a
+        // being restored from tape and is supposed to have a
         // different file size,
         FileAttributes info = createFileAttributes(PNFSID, 20);
         givenMetaDataStoreHas(FROM_STORE, info);

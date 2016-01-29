@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
@@ -55,6 +56,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
             _lastAccess = getDataFile().lastModified();
             _size = getDataFile().length();
             _state = EntryState.NEW;
+            _fileAttributes = new FileAttributes();
         }
 
         @Override
@@ -231,7 +233,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
     @Override
-    public MetaDataRecord create(MetaDataRecord entry) throws DuplicateEntryException, CacheException {
+    public MetaDataRecord copy(MetaDataRecord entry) throws DuplicateEntryException, CacheException {
 
         _entryList.put(entry.getPnfsId(), entry);
 
@@ -240,7 +242,10 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
     @Override
     public MetaDataRecord get(PnfsId id) {
-        return _entryList.get(id);
+        if (!_repository.get(id).exists()) {
+            return null;
+        }
+        return _entryList.containsKey(id) ? _entryList.get(id) : new CacheRepositoryEntryImpl(_repository, id);
     }
 
     @Override
@@ -255,6 +260,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
     @Override
     public void remove(PnfsId id) {
+        _repository.get(id).delete();
         _entryList.remove(id);
     }
 

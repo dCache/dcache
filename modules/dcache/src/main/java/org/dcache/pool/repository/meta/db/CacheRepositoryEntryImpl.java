@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
@@ -322,8 +323,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
     }
 
-    static CacheRepositoryEntryImpl load(BerkeleyDBMetaDataRepository repository,
-                                         PnfsId pnfsId)
+    static CacheRepositoryEntryImpl load(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId)
     {
         try {
             String id = pnfsId.toString();
@@ -331,7 +331,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             if (state != null) {
                 return new CacheRepositoryEntryImpl(repository, pnfsId, state);
             }
-            _log.debug("No entry found for {}", id);
         } catch (ClassCastException e) {
             _log.warn(e.toString());
         } catch (RuntimeExceptionWrapper e) {
@@ -343,10 +342,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
                 !(e.getCause() instanceof ClassCastException)) {
                 throw e;
             }
-
             _log.warn(e.toString());
         }
 
-        return null;
+        return new CacheRepositoryEntryImpl(repository, pnfsId);
     }
 }

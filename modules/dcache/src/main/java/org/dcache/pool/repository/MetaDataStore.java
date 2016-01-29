@@ -45,16 +45,11 @@ public interface MetaDataStore
         throws DuplicateEntryException, CacheException;
 
     /**
-     * Creates a new entry from an existing entry. The new entry will
-     * have the same PNFS id and the same field values as the existing
-     * entry.
+     * Copies the state from an entry belonging to a different store to this store.
+     * The new entry will have the same PNFS ID and the same field values as the
+     * existing entry.
      *
-     * No entry with the same PNFS id must exist in the store prior to
-     * this call. This implies that the existing entry must be from
-     * another store.
-     *
-     * Typically used by the entry healer to import old entries into a
-     * new store.
+     * Existing meta data for this PNFS ID will be overwritten.
      *
      * Limitations:
      * <ul>
@@ -67,10 +62,9 @@ public interface MetaDataStore
      *
      * @param entry Cache entry from which to create the new entry
      * @return The new entry
-     * @throws DuplicateEntryException if entry already exists
      * @throws CacheException if reading from <i>entry</i> fails
      */
-    MetaDataRecord create(MetaDataRecord entry)
+    MetaDataRecord copy(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException;
 
     /**

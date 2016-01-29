@@ -161,7 +161,7 @@ public class MetaDataCache
             assert _entries.get(_id) == this;
             try {
                 checkState(!_isClosed);
-                _record = _inner.create(entry);
+                _record = _inner.copy(entry);
             } catch (DuplicateEntryException e) {
                 _inner.remove(_id);
                 _record = _inner.create(_id);
@@ -481,7 +481,7 @@ public class MetaDataCache
     }
 
     @Override
-    public MetaDataRecord create(MetaDataRecord entry)
+    public MetaDataRecord copy(MetaDataRecord entry)
             throws CacheException
     {
         try {

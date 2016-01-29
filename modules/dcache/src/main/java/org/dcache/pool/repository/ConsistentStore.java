@@ -1,11 +1,9 @@
 package org.dcache.pool.repository;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
@@ -47,8 +45,6 @@ public class ConsistentStore
 
     private static final String RECOVERING_MSG =
         "Recovering %1$s...";
-    private static final String MISSING_MSG =
-        "Recovering: Reconstructing meta data for %1$s.";
     private static final String PARTIAL_FROM_TAPE_MSG =
         "Recovering: Removed %1$s because it was not fully staged.";
     private static final String FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS =
@@ -65,9 +61,6 @@ public class ConsistentStore
         "Recovering: Setting checksum of %1$s in name space to %2$s.";
     private static final String MARKED_MSG =
         "Recovering: Marked %1$s as %2$s.";
-    private static final String REMOVING_REDUNDANT_META_DATA =
-        "Removing redundant meta data for %s.";
-
     private static final String BAD_MSG =
         "Marked %1$s bad: %2$s.";
     private static final String BAD_SIZE_MSG =
@@ -82,20 +75,17 @@ public class ConsistentStore
 
     private final PnfsHandler _pnfsHandler;
     private final MetaDataStore _metaDataStore;
-    private final FileStore _fileStore;
     private final ChecksumModule _checksumModule;
     private final ReplicaStatePolicy _replicaStatePolicy;
     private String _poolName;
 
     public ConsistentStore(PnfsHandler pnfsHandler,
                            ChecksumModule checksumModule,
-                           FileStore fileStore,
                            MetaDataStore metaDataStore,
                            ReplicaStatePolicy replicaStatePolicy)
     {
         _pnfsHandler = pnfsHandler;
         _checksumModule = checksumModule;
-        _fileStore = fileStore;
         _metaDataStore = metaDataStore;
         _replicaStatePolicy = replicaStatePolicy;
     }
@@ -120,20 +110,7 @@ public class ConsistentStore
     @Override
     public synchronized Set<PnfsId> index() throws CacheException
     {
-        Stopwatch watch = Stopwatch.createStarted();
-        Set<PnfsId> files = _fileStore.index();
-        _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
-
-        watch.reset().start();
-        Set<PnfsId> records = _metaDataStore.index();
-        _log.info("Indexed {} entries in {} in {}.", records.size(), _metaDataStore, watch);
-
-        records.removeAll(files);
-        for (PnfsId id: records) {
-            _log.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
-            _metaDataStore.remove(id);
-        }
-        return files;
+        return _metaDataStore.index();
     }
 
     /**
@@ -145,32 +122,22 @@ public class ConsistentStore
     public MetaDataRecord get(PnfsId id)
         throws IllegalArgumentException, CacheException, InterruptedException
     {
-        File file = _fileStore.get(id);
-        if (!file.isFile()) {
-            return null;
-        }
-
         MetaDataRecord entry = _metaDataStore.get(id);
-
-        if (isBroken(entry)) {
+        if (entry != null && isBroken(entry)) {
             _log.warn(String.format(RECOVERING_MSG, id));
-
-            if (entry == null) {
-                entry = _metaDataStore.create(id);
-                _log.warn(String.format(MISSING_MSG, id));
-            }
 
             try {
                 /* It is safe to remove FROM_STORE files: We have a
                  * copy on HSM anyway. Files in REMOVED or DESTROYED
-                 * where about to be deleted, so we can finish the
+                 * were about to be deleted, so we can finish the
                  * job.
                  */
                 switch (entry.getState()) {
                 case FROM_STORE:
                 case REMOVED:
                 case DESTROYED:
-                    delete(id, file);
+                    _metaDataStore.remove(id);
+                    _pnfsHandler.clearCacheLocation(id);
                     _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
                     return null;
                 }
@@ -181,7 +148,7 @@ public class ConsistentStore
             } catch (CacheException e) {
                 switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:
-                    delete(id, file);
+                    _metaDataStore.remove(id);
                     _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
                     return null;
 
@@ -210,154 +177,142 @@ public class ConsistentStore
 
     private boolean isBroken(MetaDataRecord entry) throws CacheException
     {
-        boolean isBroken = true;
-        if (entry != null) {
-            FileAttributes attributes = entry.getFileAttributes();
-            EntryState state = entry.getState();
-            if (attributes.isDefined(FileAttribute.SIZE)
-                    && attributes.getSize() == entry.getSize()
-                    && (state == EntryState.CACHED || state == EntryState.PRECIOUS)) {
-                isBroken = false;
-            }
-        }
-        return isBroken;
+        FileAttributes attributes = entry.getFileAttributes();
+        EntryState state = entry.getState();
+        return !attributes.isDefined(FileAttribute.SIZE) ||
+               attributes.getSize() != entry.getSize() ||
+               state != EntryState.CACHED && state != EntryState.PRECIOUS;
     }
 
     private MetaDataRecord rebuildEntry(MetaDataRecord entry)
             throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException
     {
+           PnfsId id = entry.getPnfsId();
 
-               PnfsId id = entry.getPnfsId();
+           EntryState state = entry.getState();
 
-               EntryState state = entry.getState();
-               if (state == EntryState.BROKEN) {
-                   /* We replay file registration for BROKEN files.
-                    */
-                   state = EntryState.FROM_CLIENT;
-               }
+           _log.warn(String.format(FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
+           FileAttributes attributesInNameSpace = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
 
-               _log.warn(String.format(FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
-               FileAttributes attributesInNameSpace = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
+            /* If the intended file size is known, then compare it
+             * to the actual file size on disk. Fail in case of a
+             * mismatch. Notice we do this before the checksum check,
+             * as it is a lot cheaper than the checksum check and we
+             * may thus safe some time for incomplete files.
+             */
+            long length = entry.getDataFile().length();
+            if (attributesInNameSpace.isDefined(FileAttribute.SIZE) && attributesInNameSpace.getSize() != length) {
+                String message = String.format(BAD_SIZE_MSG,
+                                               id,
+                                               attributesInNameSpace.getSize(),
+                                               length);
+                _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
+                                                        id.toString(),
+                                                        _poolName),
+                                                        message);
+                throw new CacheException(message);
+            }
 
-                /* If the intended file size is known, then compare it
-                 * to the actual file size on disk. Fail in case of a
-                 * mismatch. Notice we do this before the checksum check,
-                 * as it is a lot cheaper than the checksum check and we
-                 * may thus safe some time for incomplete files.
-                 */
-                long length = entry.getDataFile().length();
-                if (attributesInNameSpace.isDefined(FileAttribute.SIZE) && attributesInNameSpace.getSize() != length) {
-                    String message = String.format(BAD_SIZE_MSG,
-                                                   id,
-                                                   attributesInNameSpace.getSize(),
-                                                   length);
-                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
-                                                            id.toString(),
-                                                            _poolName),
-                                                            message);
-                    throw new CacheException(message);
+            /* Verify checksum. Will fail if there is a mismatch.
+             */
+            Iterable<Checksum> expectedChecksums = attributesInNameSpace.getChecksumsIfPresent().or(Collections.emptySet());
+            Iterable<Checksum> actualChecksums;
+            if (_checksumModule != null &&
+                    (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_WRITE) ||
+                            _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER) ||
+                            _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_RESTORE))) {
+                actualChecksums = _checksumModule.verifyChecksum(entry.getDataFile(), expectedChecksums);
+            } else {
+                actualChecksums = Collections.emptySet();
+            }
+
+            /* We always register the file location.
+             */
+            FileAttributes attributesToUpdate = new FileAttributes();
+            attributesToUpdate.setLocations(Collections.singleton(_poolName));
+
+
+            /* If file size was not registered in the name space, we now replay the registration just as it would happen
+             * in WriteHandleImpl. This includes initializing access latency, retention policy, and checksums.
+             */
+            if (state == EntryState.FROM_CLIENT || state == EntryState.BROKEN || state == EntryState.NEW) {
+                if (attributesInNameSpace.isUndefined(ACCESS_LATENCY)) {
+                    /* Access latency must have been injected by space manager, so we hope we still
+                     * got it stored on the pool.
+                     */
+                    FileAttributes attributesOnPool = entry.getFileAttributes();
+                    if (attributesOnPool.isUndefined(ACCESS_LATENCY)) {
+                        String message = String.format(MISSING_ACCESS_LATENCY, id);
+                        _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
+                                                                _poolName), message);
+                        throw new CacheException(message);
+                    }
+
+                    AccessLatency accessLatency = attributesOnPool.getAccessLatency();
+                    attributesToUpdate.setAccessLatency(accessLatency);
+                    attributesInNameSpace.setAccessLatency(accessLatency);
+
+                    _log.warn(String.format(UPDATE_ACCESS_LATENCY_MSG, id, accessLatency));
+                }
+                if (attributesInNameSpace.isUndefined(RETENTION_POLICY)) {
+                    /* Retention policy must have been injected by space manager, so we hope we still
+                     * got it stored on the pool.
+                     */
+                    FileAttributes attributesOnPool = entry.getFileAttributes();
+                    if (attributesOnPool.isUndefined(RETENTION_POLICY)) {
+                        String message = String.format(MISSING_RETENTION_POLICY, id);
+                        _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
+                                                                _poolName), message);
+                        throw new CacheException(message);
+                    }
+
+                    RetentionPolicy retentionPolicy = attributesOnPool.getRetentionPolicy();
+                    attributesToUpdate.setRetentionPolicy(retentionPolicy);
+                    attributesInNameSpace.setRetentionPolicy(retentionPolicy);
+
+                    _log.warn(String.format(UPDATE_RETENTION_POLICY_MSG, id, retentionPolicy));
+                }
+                if (attributesInNameSpace.isUndefined(SIZE)) {
+                    attributesToUpdate.setSize(length);
+                    attributesInNameSpace.setSize(length);
+
+                    _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
+                }
+                if (!isEmpty(actualChecksums)) {
+                    attributesToUpdate.setChecksums(Sets.newHashSet(actualChecksums));
+                    attributesInNameSpace.setChecksums(
+                            Sets.newHashSet(concat(expectedChecksums, actualChecksums)));
+                    _log.warn(String.format(UPDATE_CHECKSUM_MSG, id, actualChecksums));
+                }
+            }
+
+            /* Update file size, location, checksum, access_latency and
+             * retention_policy within namespace.
+             */
+            _pnfsHandler.setFileAttributes(id, attributesToUpdate);
+
+            /* Update the pool meta data.
+             */
+            entry.setFileAttributes(attributesInNameSpace);
+
+            /* If not already precious or cached, we move the entry to
+             * the target state of a newly uploaded file.
+             */
+            if (state != EntryState.CACHED && state != EntryState.PRECIOUS) {
+                EntryState targetState =
+                    _replicaStatePolicy.getTargetState(attributesInNameSpace);
+                List<StickyRecord> stickyRecords =
+                    _replicaStatePolicy.getStickyRecords(attributesInNameSpace);
+
+                for (StickyRecord record: stickyRecords) {
+                    entry.setSticky(record.owner(), record.expire(), false);
                 }
 
-                /* Verify checksum. Will fail if there is a mismatch.
-                 */
-                Iterable<Checksum> expectedChecksums = attributesInNameSpace.getChecksumsIfPresent().or(Collections.emptySet());
-                Iterable<Checksum> actualChecksums;
-                if (_checksumModule != null &&
-                        (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_WRITE) ||
-                                _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER) ||
-                                _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_RESTORE))) {
-                    actualChecksums = _checksumModule.verifyChecksum(entry.getDataFile(), expectedChecksums);
-                } else {
-                    actualChecksums = Collections.emptySet();
-                }
+                entry.setState(targetState);
+                _log.warn(String.format(MARKED_MSG, id, targetState));
+            }
 
-                /* We always register the file location.
-                 */
-                FileAttributes attributesToUpdate = new FileAttributes();
-                attributesToUpdate.setLocations(Collections.singleton(_poolName));
-
-
-                /* If file size was not registered in the name space, we now replay the registration just as it would happen
-                 * in WriteHandleImpl. This includes initializing access latency, retention policy, and checksums.
-                 */
-                if (state == EntryState.FROM_CLIENT) {
-                    if (attributesInNameSpace.isUndefined(ACCESS_LATENCY)) {
-                        /* Access latency must have been injected by space manager, so we hope we still
-                         * got it stored on the pool.
-                         */
-                        FileAttributes attributesOnPool = entry.getFileAttributes();
-                        if (attributesOnPool.isUndefined(ACCESS_LATENCY)) {
-                            String message = String.format(MISSING_ACCESS_LATENCY, id);
-                            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
-                                                                    _poolName), message);
-                            throw new CacheException(message);
-                        }
-
-                        AccessLatency accessLatency = attributesOnPool.getAccessLatency();
-                        attributesToUpdate.setAccessLatency(accessLatency);
-                        attributesInNameSpace.setAccessLatency(accessLatency);
-
-                        _log.warn(String.format(UPDATE_ACCESS_LATENCY_MSG, id, accessLatency));
-                    }
-                    if (attributesInNameSpace.isUndefined(RETENTION_POLICY)) {
-                        /* Retention policy must have been injected by space manager, so we hope we still
-                         * got it stored on the pool.
-                         */
-                        FileAttributes attributesOnPool = entry.getFileAttributes();
-                        if (attributesOnPool.isUndefined(RETENTION_POLICY)) {
-                            String message = String.format(MISSING_RETENTION_POLICY, id);
-                            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
-                                                                    _poolName), message);
-                            throw new CacheException(message);
-                        }
-
-                        RetentionPolicy retentionPolicy = attributesOnPool.getRetentionPolicy();
-                        attributesToUpdate.setRetentionPolicy(retentionPolicy);
-                        attributesInNameSpace.setRetentionPolicy(retentionPolicy);
-
-                        _log.warn(String.format(UPDATE_RETENTION_POLICY_MSG, id, retentionPolicy));
-                    }
-                    if (attributesInNameSpace.isUndefined(SIZE)) {
-                        attributesToUpdate.setSize(length);
-                        attributesInNameSpace.setSize(length);
-
-                        _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
-                    }
-                    if (!isEmpty(actualChecksums)) {
-                        attributesToUpdate.setChecksums(Sets.newHashSet(actualChecksums));
-                        attributesInNameSpace.setChecksums(
-                                Sets.newHashSet(concat(expectedChecksums, actualChecksums)));
-                        _log.warn(String.format(UPDATE_CHECKSUM_MSG, id, actualChecksums));
-                    }
-                }
-
-                /* Update file size, location, checksum, access_latency and
-                 * retention_policy within namespace.
-                 */
-                _pnfsHandler.setFileAttributes(id, attributesToUpdate);
-
-                /* Update the pool meta data.
-                 */
-                entry.setFileAttributes(attributesInNameSpace);
-
-                /* If not already precious or cached, we move the entry to
-                 * the target state of a newly uploaded file.
-                 */
-                if (state != EntryState.CACHED && state != EntryState.PRECIOUS) {
-                    EntryState targetState =
-                        _replicaStatePolicy.getTargetState(attributesInNameSpace);
-                    List<StickyRecord> stickyRecords =
-                        _replicaStatePolicy.getStickyRecords(attributesInNameSpace);
-
-                    for (StickyRecord record: stickyRecords) {
-                        entry.setSticky(record.owner(), record.expire(), false);
-                    }
-
-                    entry.setState(targetState);
-                    _log.warn(String.format(MARKED_MSG, id, targetState));
-                }
-
-                return entry;
+            return entry;
     }
 
     /**
@@ -369,39 +324,17 @@ public class ConsistentStore
     public MetaDataRecord create(PnfsId id)
         throws DuplicateEntryException, CacheException
     {
-        /* Fail if file already exists.
-         */
-        File dataFile = _fileStore.get(id);
-        if (dataFile.exists()) {
-            throw new DuplicateEntryException(id);
-        }
-
-        /* Create meta data record. Recreate if it already exists.
-         */
-        MetaDataRecord entry;
-        try {
-            entry = _metaDataStore.create(id);
-        } catch (DuplicateEntryException e) {
-            _log.warn("Deleting orphaned meta data entry for " + id);
-            _metaDataStore.remove(id);
-            try {
-                entry = _metaDataStore.create(id);
-            } catch (DuplicateEntryException f) {
-                throw new DiskErrorCacheException("Unexpected repository error", e);
-            }
-        }
-
-        return entry;
+        return _metaDataStore.create(id);
     }
 
     /**
      * Calls through to the wrapped meta data store.
      */
     @Override
-    public MetaDataRecord create(MetaDataRecord entry)
+    public MetaDataRecord copy(MetaDataRecord entry)
         throws DuplicateEntryException, CacheException
     {
-        return _metaDataStore.create(entry);
+        return _metaDataStore.copy(entry);
     }
 
     /**
@@ -410,10 +343,6 @@ public class ConsistentStore
     @Override
     public void remove(PnfsId id) throws CacheException
     {
-        File f = _fileStore.get(id);
-        if (!f.delete() && f.exists()) {
-            throw new DiskErrorCacheException("Failed to delete " + id + " on " + _poolName);
-        }
         _metaDataStore.remove(id);
     }
 
@@ -423,7 +352,7 @@ public class ConsistentStore
     @Override
     public boolean isOk()
     {
-        return _fileStore.isOk() && _metaDataStore.isOk();
+        return _metaDataStore.isOk();
     }
 
     @Override
@@ -435,7 +364,7 @@ public class ConsistentStore
     @Override
     public String toString()
     {
-        return String.format("[data=%s;meta=%s]", _fileStore, _metaDataStore);
+        return _metaDataStore.toString();
     }
 
     /**
@@ -456,15 +385,6 @@ public class ConsistentStore
     public long getTotalSpace()
     {
         return _metaDataStore.getTotalSpace();
-    }
-
-    private void delete(PnfsId id, File file) throws CacheException
-    {
-        _metaDataStore.remove(id);
-        if (!file.delete() && file.exists()) {
-            _log.error("Failed to delete {}" , file);
-        }
-        _pnfsHandler.clearCacheLocation(id);
     }
 
     public MetaDataStore getStore()
