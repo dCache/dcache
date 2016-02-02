@@ -284,6 +284,7 @@
                       </bean>
                   </property>
               </bean>
+              <bean class="org.dcache.webdav.owncloud.OwnCloudHandler"/>
               <bean class="org.dcache.webdav.LoggingHandler">
                   <property name="handler" ref="authhandler"/>
               </bean>
