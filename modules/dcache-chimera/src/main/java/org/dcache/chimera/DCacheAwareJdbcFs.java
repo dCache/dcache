@@ -73,6 +73,8 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -137,7 +139,11 @@ public class DCacheAwareJdbcFs extends JdbcFs {
         PinManagerPinMessage message
             = new PinManagerPinMessage(attributes, protocolInfo, null, lifetime);
 
-        pinManagerStub.notify(message);
+        try {
+            pinManagerStub.notify(message);
+        } catch (NoRouteToCellException t) {
+            throw new ChimeraFsException("pin", t);
+        }
     }
 
     /**
@@ -149,7 +155,11 @@ public class DCacheAwareJdbcFs extends JdbcFs {
         PinManagerUnpinMessage message
             = new PinManagerUnpinMessage(new PnfsId(pnfsid));
 
-        pinManagerStub.notify(message);
+        try {
+            pinManagerStub.notify(message);
+        } catch (NoRouteToCellException t) {
+            throw new ChimeraFsException("unpin", t);
+        }
     }
 
     /**
