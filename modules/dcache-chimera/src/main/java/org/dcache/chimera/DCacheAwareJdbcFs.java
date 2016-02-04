@@ -137,11 +137,7 @@ public class DCacheAwareJdbcFs extends JdbcFs {
         PinManagerPinMessage message
             = new PinManagerPinMessage(attributes, protocolInfo, null, lifetime);
 
-        try {
-            pinManagerStub.sendAndWait(message);
-        } catch (CacheException | InterruptedException t) {
-            throw new ChimeraFsException("pin", t);
-        }
+        pinManagerStub.notify(message);
     }
 
     /**
@@ -153,11 +149,7 @@ public class DCacheAwareJdbcFs extends JdbcFs {
         PinManagerUnpinMessage message
             = new PinManagerUnpinMessage(new PnfsId(pnfsid));
 
-        try {
-            pinManagerStub.sendAndWait(message);
-        } catch (CacheException | InterruptedException t) {
-            throw new ChimeraFsException("unpin", t);
-        }
+        pinManagerStub.notify(message);
     }
 
     /**
