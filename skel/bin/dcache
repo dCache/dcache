@@ -843,7 +843,7 @@ case "$1" in
                     for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
-                                printf "%s: \n" "$cell@$domain"
+                                printf "-- %s: \n" "$cell@$domain"
                                 liquibase "$domain" "$cell" updateSQL
                             fi
                         fi
