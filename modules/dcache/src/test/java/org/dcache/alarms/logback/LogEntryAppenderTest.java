@@ -138,7 +138,7 @@ public class LogEntryAppenderTest {
         /*
          * Bypass the executor and run synchronously in this test.
          */
-        LogEntryHandler handler = new LogEntryHandler(1) {
+        LogEntryHandler handler = new LogEntryHandler(1, Integer.MAX_VALUE) {
             public void handle(ILoggingEvent eventObject) {
                 if (eventObject.getLevel().levelInt < Level.ERROR.levelInt) {
                     return;

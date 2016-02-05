@@ -79,8 +79,8 @@ import org.slf4j.Marker;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.dcache.alarms.AlarmMarkerFactory;
@@ -88,6 +88,7 @@ import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.alarms.dao.LogEntryDAO;
+import org.dcache.util.BoundedCachedExecutor;
 
 /**
  * For server-side interception of log messages. Will store them to the LogEntry
@@ -208,15 +209,15 @@ public class LogEntryHandler {
     /**
      * Concurrent handling.
      */
-    private ExecutorService executor;
+    private AbstractExecutorService executor;
 
     /**
      * State.
      */
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-    public LogEntryHandler(int workers) {
-        executor = Executors.newFixedThreadPool(workers);
+    public LogEntryHandler(int workers, int maxQueued) {
+        executor = new BoundedCachedExecutor(workers, maxQueued);
     }
 
     public void setConverter(LoggingEventConverter converter) {
@@ -360,11 +361,18 @@ public class LogEntryHandler {
 
 
     public void handle(ILoggingEvent eventObject) {
-        LOGGER.debug("calling handler with {}.", eventObject.getFormattedMessage());
+        LOGGER.trace("calling handler with {}.", eventObject.getFormattedMessage());
         if (eventObject.getLevel().levelInt < rootLevel.levelInt) {
             return;
         }
-        executor.execute(new LogEntryTask(eventObject));
+
+        try {
+            executor.execute(new LogEntryTask(eventObject));
+        } catch (RejectedExecutionException e) {
+            LOGGER.info("{}, discarded: {}.",
+                            e.getMessage(),
+                            eventObject.getFormattedMessage());
+        }
     }
 
     private void setType(ILoggingEvent eventObject) {
