@@ -38,9 +38,6 @@
         <constructor-arg>
             <value>${alarms.limits.workers}</value>
         </constructor-arg>
-        <constructor-arg>
-            <value>${alarms.limits.queue-size}</value>
-        </constructor-arg>
         <property name="rootLevel" value="${alarms.log.root-level}"/>
         <property name="priorityMap" ref="priorityMap"/>
         <property name="converter" ref="logEventConverter"/>
