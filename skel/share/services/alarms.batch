@@ -34,6 +34,7 @@ check alarms.history.min-index
 check alarms.history.max-index
 check alarms.enable.cleaner
 check alarms.limits.workers
+check alarms.limits.queue-size
 
 define env checkAlarmCleanerProperites end
      check -strong alarms.cleaner.timeout
