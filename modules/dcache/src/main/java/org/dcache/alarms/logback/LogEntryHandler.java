@@ -377,12 +377,7 @@ public class LogEntryHandler implements RejectedExecutionHandler {
         if (eventObject.getLevel().levelInt < rootLevel.levelInt) {
             return;
         }
-
-        try {
-            executor.execute(new LogEntryTask(eventObject));
-        } catch (RejectedExecutionException e) {
-
-        }
+        executor.execute(new LogEntryTask(eventObject));
     }
 
     private void setType(ILoggingEvent eventObject) {
