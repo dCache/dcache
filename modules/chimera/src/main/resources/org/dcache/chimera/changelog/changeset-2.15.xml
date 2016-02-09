@@ -85,12 +85,12 @@
         <createProcedure>
             CREATE OR REPLACE FUNCTION f_create_inode(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS bigint AS $$
             DECLARE
-                inumber bigint;
+                newid bigint;
             BEGIN
-                INSERT INTO t_inodes VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0) RETURNING inumber INTO inumber;
-                INSERT INTO t_dirs VALUES (parent, name, inumber);
+                INSERT INTO t_inodes VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0) RETURNING inumber INTO newid;
+                INSERT INTO t_dirs VALUES (parent, newid, name);
                 UPDATE t_inodes SET inlink=inlink+1,imtime=now,ictime=now,igeneration=igeneration+1 WHERE inumber = parent;
-                RETURN inumber;
+                RETURN newid;
             END;
             $$ LANGUAGE plpgsql;
         </createProcedure>
