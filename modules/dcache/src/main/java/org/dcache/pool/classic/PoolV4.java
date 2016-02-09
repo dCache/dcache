@@ -706,44 +706,9 @@ public class PoolV4
     //
     //
 
-    private boolean isDuplicateIoRequest(CellPath pathFromSource, PoolIoFileMessage message)
+    public Mover<?> createMover(CellMessage envelop, PoolIoFileMessage message) throws CacheException
     {
-        if (_dupRequest == DUP_REQ_NONE) {
-            // we don't care
-            return false;
-        }
-
-        if ((message instanceof PoolAcceptFileMessage) || message.isPool2Pool()) {
-            // duplicate write and p2p requests are ignored
-            return false;
-        }
-
-        long id = message.getId();
-        String door = pathFromSource.getSourceAddress().toString();
-        JobInfo job = _ioQueue.findJob(door, id);
-        if (job != null) {
-            switch (_dupRequest) {
-                case DUP_REQ_NONE:
-                    throw new RuntimeException("must not reach");
-                case DUP_REQ_IGNORE:
-                    _log.info("Dup Request : ignoring <" + door + ":" + id + ">");
-                    return true;
-                case DUP_REQ_REFRESH:
-                    long jobId = job.getJobId();
-                    _log.info("Dup Request : refreshing <" + door + ":"
-                            + id + "> old = " + jobId);
-                    _ioQueue.cancel((int) jobId);
-                    break;
-                default:
-                    throw new RuntimeException("Dup Request : PANIC (code corrupted) <"
-                            + door + ":" + id + ">");
-            }
-        }
-        return false;
-    }
-
-    private Mover<?> createMover(CellPath source, PoolIoFileMessage message) throws CacheException
-    {
+        CellPath source = envelop.getSourcePath().revert();
         FileAttributes attributes = message.getFileAttributes();
         PnfsId pnfsId = attributes.getPnfsId();
         ProtocolInfo pi = message.getProtocolInfo();
@@ -783,32 +748,24 @@ public class PoolV4
         }
     }
 
-    private int queueIoRequest(PoolIoFileMessage message, Mover<?> mover)
+    private int queueIoRequest(CellMessage envelope, PoolIoFileMessage message) throws CacheException
     {
         String queueName = message.getIoQueueName();
+        String doorUniqueId = envelope.getSourceAddress().toString() + message.getId();
 
         if (message instanceof PoolAcceptFileMessage) {
-            return _ioQueue.add(queueName, mover, IoPriority.HIGH);
+            return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> { return this.createMover(envelope, message); }, IoPriority.HIGH);
         } else if (message.isPool2Pool()) {
-            return _ioQueue.add(P2P_QUEUE_NAME, mover, IoPriority.HIGH);
+            return _ioQueue.getOrCreateMover(P2P_QUEUE_NAME, doorUniqueId, () -> { return this.createMover(envelope, message); }, IoPriority.HIGH);
         } else {
-            return _ioQueue.add(queueName, mover, IoPriority.REGULAR);
+            return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> { return this.createMover(envelope, message); }, IoPriority.REGULAR);
         }
     }
 
     private void ioFile(CellMessage envelope, PoolIoFileMessage message)
     {
         try {
-            if (isDuplicateIoRequest(envelope.getSourcePath(), message)) {
-                return;
-            }
-            Mover<?> mover = createMover(envelope.getSourcePath().revert(), message);
-            try {
-                message.setMoverId(queueIoRequest(message, mover));
-            } catch (Throwable t) {
-                mover.close(new NopCompletionHandler<>());
-                throw Throwables.propagate(t);
-            }
+            message.setMoverId(queueIoRequest(envelope, message));
             message.setSucceeded();
         } catch (CacheException e) {
             _log.error(e.getMessage());

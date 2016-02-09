@@ -17,10 +17,12 @@ import diskCacheV111.vehicles.JobInfo;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import org.dcache.pool.movers.Mover;
+import diskCacheV111.vehicles.PoolIoFileMessage;
 import org.dcache.util.IoPriority;
 
 import static java.util.Arrays.asList;
+import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.CellMessage;
 import static com.google.common.collect.Iterables.concat;
 
 public class IoQueueManager {
@@ -85,9 +87,9 @@ public class IoQueueManager {
         return _queues.get(pos);
     }
 
-    public int add(String queueName, Mover<?> transfer, IoPriority priority)
+    public int getOrCreateMover(String queueName, String doorUniqueId, MoverSupplier moverSupplier, IoPriority priority) throws CacheException
     {
-        return getQueueByNameOrDefault(queueName).add(transfer, priority);
+        return getQueueByNameOrDefault(queueName).getOrCreateMover(moverSupplier, doorUniqueId, priority);
     }
 
     public void cancel(int jobId) throws NoSuchElementException {
