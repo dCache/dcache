@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -30,6 +31,8 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.util.ConfigurationMapFactoryBean;
+
+import static java.util.Arrays.asList;
 
 /**
  * BerkeleyDB based MetaDataRepository implementation.
@@ -134,9 +137,15 @@ public class BerkeleyDBMetaDataRepository
     }
 
     @Override
-    public Set<PnfsId> index() throws CacheException
+    public Set<PnfsId> index(IndexOption... options) throws CacheException
     {
         try {
+            List<IndexOption> indexOptions = asList(options);
+
+            if (indexOptions.contains(IndexOption.META_ONLY)) {
+                return _views.collectKeys(Collectors.mapping(PnfsId::new, Collectors.toSet()));
+            }
+
             Stopwatch watch = Stopwatch.createStarted();
             Set<PnfsId> files = _fileStore.index();
             _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
@@ -145,13 +154,16 @@ public class BerkeleyDBMetaDataRepository
             Set<String> records = _views.collectKeys(Collectors.toSet());
             _log.info("Indexed {} entries in {} in {}.", records.size(), this, watch);
 
-            for (String id: records) {
-                if (!files.contains(new PnfsId(id))) {
-                    _log.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
-                    _views.getStorageInfoMap().remove(id);
-                    _views.getStateMap().remove(id);
+            if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
+                for (String id : records) {
+                    if (!files.contains(new PnfsId(id))) {
+                        _log.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
+                        _views.getStorageInfoMap().remove(id);
+                        _views.getStateMap().remove(id);
+                    }
                 }
             }
+
             return files;
         } catch (EnvironmentFailureException e) {
             if (!isValid()) {

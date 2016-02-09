@@ -113,9 +113,9 @@ public class ConsistentStore
      * redundant meta data entries in the process.
      */
     @Override
-    public synchronized Set<PnfsId> index() throws CacheException
+    public Set<PnfsId> index(IndexOption... options) throws CacheException
     {
-        return _metaDataStore.index();
+        return _metaDataStore.index(options);
     }
 
     /**

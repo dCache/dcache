@@ -15,12 +15,20 @@ import diskCacheV111.util.PnfsId;
  */
 public interface MetaDataStore
 {
+    enum IndexOption
+    {
+        META_ONLY, ALLOW_REPAIR
+    }
+
     void init() throws CacheException;
 
     /**
      * Returns a collection of PNFS ids of available entries.
+     *
+     * If called with ALLOW_REPAIR, no concurrent access should be
+     * made on any methods of this interface.
      */
-    Set<PnfsId> index() throws CacheException;
+    Set<PnfsId> index(IndexOption... options) throws CacheException;
 
     /**
      * Retrieves an existing entry previously created with

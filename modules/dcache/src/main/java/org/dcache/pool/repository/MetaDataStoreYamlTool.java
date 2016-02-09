@@ -45,7 +45,7 @@ public class MetaDataStoreYamlTool
 
         PrintWriter out = new PrintWriter(System.out);
         PrintWriter error = new PrintWriter(System.err);
-        for (PnfsId id: metaStore.index()) {
+        for (PnfsId id: metaStore.index(MetaDataStore.IndexOption.META_ONLY)) {
             try {
                 MetaDataRecord record = metaStore.get(id);
                 if (record == null) {

@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
@@ -254,7 +253,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
     @Override
-    public Set<PnfsId> index() {
+    public Set<PnfsId> index(IndexOption... options) {
         return Collections.unmodifiableSet(_entryList.keySet());
     }
 

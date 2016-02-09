@@ -8,8 +8,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -21,6 +21,10 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.v3.RepositoryException;
+
+import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  *
@@ -72,8 +76,18 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public Set<PnfsId> index() throws CacheException
+    public Set<PnfsId> index(IndexOption... options) throws CacheException
     {
+        List<IndexOption> indexOptions = asList(options);
+
+        if (indexOptions.contains(IndexOption.META_ONLY)) {
+            return asList(_metadir.list()).stream()
+                    .map(name -> name.startsWith("SI-") ? name.substring(3) : name)
+                    .filter(PnfsId::isValid)
+                    .map(PnfsId::new)
+                    .collect(toSet());
+        }
+
         Stopwatch watch = Stopwatch.createStarted();
         Set<PnfsId> files = _fileStore.index();
         _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
@@ -82,16 +96,18 @@ public class FileMetaDataRepository
         String[] metaFiles = _metadir.list();
         _log.info("Indexed {} entries in {} in {}.", metaFiles.length, this, watch);
 
-        for (String name: metaFiles) {
-            try {
-                PnfsId id = name.startsWith("SI-") ? new PnfsId(name.substring(3)) : new PnfsId(name);
-                if (!files.contains(id)) {
-                    Files.deleteIfExists(_metadir.toPath().resolve(name));
+        if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
+            for (String name : metaFiles) {
+                try {
+                    String s = name.startsWith("SI-") ? name.substring(3) : name;
+                    if (PnfsId.isValid(s) && !files.contains(new PnfsId(s))) {
+                        Files.deleteIfExists(_metadir.toPath().resolve(name));
+                    }
+                } catch (IllegalArgumentException ignored) {
+                } catch (IOException e) {
+                    throw new DiskErrorCacheException(
+                            "Failed to remove " + name + ": " + e.getMessage(), e);
                 }
-            } catch (IllegalArgumentException ignored) {
-            } catch (IOException e) {
-                throw new DiskErrorCacheException(
-                        "Failed to remove " + name + ": " + e.getMessage(), e);
             }
         }
         return files;

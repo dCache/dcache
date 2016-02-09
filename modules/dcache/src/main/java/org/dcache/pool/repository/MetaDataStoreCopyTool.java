@@ -45,12 +45,12 @@ public class MetaDataStoreCopyTool
         fromStore.init();
         toStore.init();
 
-        if (!toStore.index().isEmpty()) {
+        if (!toStore.index(MetaDataStore.IndexOption.META_ONLY).isEmpty()) {
             System.err.println("ERROR: Target store is not empty");
             System.exit(1);
         }
 
-        Collection<PnfsId> ids = fromStore.index();
+        Collection<PnfsId> ids = fromStore.index(MetaDataStore.IndexOption.META_ONLY);
         int size = ids.size();
         int count = 1;
         for (PnfsId id: ids) {

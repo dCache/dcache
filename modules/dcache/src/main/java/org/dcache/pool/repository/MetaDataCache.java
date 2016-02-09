@@ -496,13 +496,13 @@ public class MetaDataCache
     @Override
     public void init() throws CacheException
     {
-        for (PnfsId id: _inner.index()) {
+        for (PnfsId id: _inner.index(IndexOption.ALLOW_REPAIR)) {
             _entries.put(id, new Monitor(id));
         }
     }
 
     @Override
-    public Set<PnfsId> index()
+    public Set<PnfsId> index(IndexOption... options)
     {
         return Collections.unmodifiableSet(_entries.keySet());
     }
