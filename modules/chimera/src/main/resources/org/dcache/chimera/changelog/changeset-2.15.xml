@@ -390,7 +390,7 @@
                             child := id;
                         END IF;
                     ELSE
-                        SELECT d.ichild, c.itype INTO child, type FROM t_dirs d JOIN t_inodes c ON d.ichild = c.inumber WHERE d.iparent = id AND dir.iname = elements[i];
+                        SELECT d.ichild, c.itype INTO child, type FROM t_dirs d JOIN t_inodes c ON d.ichild = c.inumber WHERE d.iparent = id AND d.iname = elements[i];
                         IF type = 40960 THEN
                             SELECT encode(ifiledata,'escape') INTO link FROM t_inodes_data WHERE inumber = child;
                             IF link LIKE '/%' THEN
