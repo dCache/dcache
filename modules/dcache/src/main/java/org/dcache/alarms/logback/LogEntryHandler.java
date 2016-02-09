@@ -79,8 +79,12 @@ import org.slf4j.Marker;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.dcache.alarms.AlarmMarkerFactory;
@@ -97,7 +101,7 @@ import org.dcache.alarms.dao.LogEntryDAO;
  *
  * @author arossi
  */
-public class LogEntryHandler {
+public class LogEntryHandler implements RejectedExecutionHandler {
     private static final Logger LOGGER
         = LoggerFactory.getLogger(LogEntryHandler.class);
 
@@ -208,15 +212,24 @@ public class LogEntryHandler {
     /**
      * Concurrent handling.
      */
-    private ExecutorService executor;
+    private AbstractExecutorService executor;
 
     /**
      * State.
      */
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-    public LogEntryHandler(int workers) {
-        executor = Executors.newFixedThreadPool(workers);
+    public LogEntryHandler(int workers, int maxQueued) {
+        executor = new ThreadPoolExecutor(1, workers, 0L, TimeUnit.MILLISECONDS,
+                                          new LinkedBlockingQueue<>(maxQueued),
+                                          this);
+    }
+
+    @Override
+    public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
+        LogEntryTask task = (LogEntryTask)runnable;
+        LOGGER.info("Rejected task execution; discarded: {}.",
+                    task.event.getFormattedMessage());
     }
 
     public void setConverter(LoggingEventConverter converter) {
@@ -360,7 +373,7 @@ public class LogEntryHandler {
 
 
     public void handle(ILoggingEvent eventObject) {
-        LOGGER.debug("calling handler with {}.", eventObject.getFormattedMessage());
+        LOGGER.trace("calling handler with {}.", eventObject.getFormattedMessage());
         if (eventObject.getLevel().levelInt < rootLevel.levelInt) {
             return;
         }
