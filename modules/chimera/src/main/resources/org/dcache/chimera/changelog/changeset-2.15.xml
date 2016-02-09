@@ -420,7 +420,6 @@
                 inodes   t_inodes[];
                 parent   t_inodes;
                 link     varchar;
-                inode    record;
             BEGIN
                 -- Find the inode of the root
                 SELECT * INTO inode FROM t_inodes WHERE inumber = root;
