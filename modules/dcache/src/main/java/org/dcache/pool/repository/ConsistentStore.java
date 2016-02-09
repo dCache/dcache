@@ -103,6 +103,11 @@ public class ConsistentStore
         return _poolName;
     }
 
+    @Override
+    public void init() throws CacheException
+    {
+    }
+
     /**
      * Returns a collection of IDs of entries in the store. Removes
      * redundant meta data entries in the process.

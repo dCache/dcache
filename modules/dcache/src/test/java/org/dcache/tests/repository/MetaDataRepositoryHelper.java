@@ -249,6 +249,11 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
     @Override
+    public void init() throws CacheException
+    {
+    }
+
+    @Override
     public Set<PnfsId> index() {
         return Collections.unmodifiableSet(_entryList.keySet());
     }

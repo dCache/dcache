@@ -470,6 +470,8 @@ public class CacheRepositoryV5
                 }
             });
 
+            store.init();
+
             _stateLock.writeLock().lock();
             try {
                 _store = store;

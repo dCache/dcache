@@ -43,8 +43,6 @@ import static org.dcache.pool.repository.EntryState.NEW;
 public class MetaDataCache
     implements MetaDataStore
 {
-    private static final float LOAD_FACTOR = 0.75f;
-
     /** Map of cached MetaDataRecords.
      */
     private final ConcurrentMap<PnfsId,Monitor> _entries;
@@ -57,8 +55,6 @@ public class MetaDataCache
 
     /**
      * Constructs a new cache.
-     *
-     * The operation may be slow as the list method of {@code inner} is called.
      */
     public MetaDataCache(MetaDataStore inner, StateChangeListener stateChangeListener, FaultListener faultListener)
             throws CacheException
@@ -67,12 +63,7 @@ public class MetaDataCache
         _stateChangeListener = stateChangeListener;
         _faultListener = faultListener;
 
-        Collection<PnfsId> list = inner.index();
-        _entries = new ConcurrentHashMap<>(
-                (int)(list.size() / LOAD_FACTOR + 1), LOAD_FACTOR);
-        for (PnfsId id: list) {
-            _entries.put(id, new Monitor(id));
-        }
+        _entries = new ConcurrentHashMap<>();
     }
 
     /**
@@ -497,6 +488,17 @@ public class MetaDataCache
     public void remove(PnfsId id) throws CacheException
     {
         throw new UnsupportedOperationException("Call setState(REMOVED) instead.");
+    }
+
+    /**
+     * The operation may be slow as the {@code index} method of {@code inner} is called.
+     */
+    @Override
+    public void init() throws CacheException
+    {
+        for (PnfsId id: _inner.index()) {
+            _entries.put(id, new Monitor(id));
+        }
     }
 
     @Override

@@ -67,6 +67,11 @@ public class FileMetaDataRepository
     }
 
     @Override
+    public void init() throws CacheException
+    {
+    }
+
+    @Override
     public Set<PnfsId> index() throws CacheException
     {
         Stopwatch watch = Stopwatch.createStarted();

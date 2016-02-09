@@ -41,6 +41,7 @@ public class MetaDataStoreYamlTool
         FileStore fileStore = new FlatFileStore(poolDir);
         MetaDataStore metaStore =
             createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir);
+        metaStore.init();
 
         PrintWriter out = new PrintWriter(System.out);
         PrintWriter error = new PrintWriter(System.err);

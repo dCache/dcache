@@ -3,14 +3,11 @@ package org.dcache.pool.repository.meta.db;
 import com.google.common.base.Stopwatch;
 import com.sleepycat.collections.StoredMap;
 import com.sleepycat.je.DatabaseException;
-
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.PostConstruct;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -122,7 +119,7 @@ public class BerkeleyDBMetaDataRepository
         _properties.putAll(factory.getObject());
     }
 
-    @PostConstruct
+    @Override
     public void init() throws CacheException
     {
         try {

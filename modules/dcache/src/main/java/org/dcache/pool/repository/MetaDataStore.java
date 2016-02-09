@@ -15,6 +15,8 @@ import diskCacheV111.util.PnfsId;
  */
 public interface MetaDataStore
 {
+    void init() throws CacheException;
+
     /**
      * Returns a collection of PNFS ids of available entries.
      */
