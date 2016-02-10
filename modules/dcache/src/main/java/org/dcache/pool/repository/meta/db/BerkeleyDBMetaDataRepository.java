@@ -152,7 +152,7 @@ public class BerkeleyDBMetaDataRepository
 
             watch.reset().start();
             Set<String> records = _views.collectKeys(Collectors.toSet());
-            _log.info("Indexed {} entries in {} in {}.", records.size(), this, watch);
+            _log.info("Indexed {} entries in {} in {}.", records.size(), _dir, watch);
 
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
                 for (String id : records) {

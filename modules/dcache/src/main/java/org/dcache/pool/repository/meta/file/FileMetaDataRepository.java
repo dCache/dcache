@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -22,7 +21,6 @@ import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.v3.RepositoryException;
 
-import static java.util.Arrays.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
 
@@ -94,7 +92,7 @@ public class FileMetaDataRepository
 
         watch.reset().start();
         String[] metaFiles = _metadir.list();
-        _log.info("Indexed {} entries in {} in {}.", metaFiles.length, this, watch);
+        _log.info("Indexed {} entries in {} in {}.", metaFiles.length, _metadir, watch);
 
         if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
             for (String name : metaFiles) {
