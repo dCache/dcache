@@ -438,30 +438,24 @@ public class PoolV4
         _transferServices = transferServices;
     }
 
-    /**
-     * Initialize remaining pieces.
-     *
-     * We cannot do these things in the constructor as they rely on
-     * various properties being set first.
-     */
     public void init()
     {
+        assertNotRunning("Cannot initialize several times");
         checkState(!_isVolatile || !_hasTapeBackend, "Volatile pool cannot have a tape backend");
+        _running = true;
     }
 
     @Override
     public void afterStart()
     {
-        assertNotRunning("Cannot initialize several times");
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Awaiting initialization");
         _pingThread.start();
-        _running = true;
         new Thread() {
             @Override
             public void run() {
                 try {
                     _repository.init();
-                    disablePool(PoolV2Mode.DISABLED_RDONLY, 1, "Initializing");
+                    disablePool(PoolV2Mode.DISABLED_RDONLY, 1, "Loading...");
                     _repository.load();
                     enablePool();
                     _flushingThread.start();

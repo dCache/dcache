@@ -67,7 +67,6 @@ class CheckHealthTask implements Runnable
     {
         switch (_repository.getState()) {
         case UNINITIALIZED:
-        case INITIALIZING:
         case INITIALIZED:
         case LOADING:
         case FAILED:

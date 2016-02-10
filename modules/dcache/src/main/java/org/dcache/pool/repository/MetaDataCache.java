@@ -57,12 +57,10 @@ public class MetaDataCache
      * Constructs a new cache.
      */
     public MetaDataCache(MetaDataStore inner, StateChangeListener stateChangeListener, FaultListener faultListener)
-            throws CacheException
     {
         _inner = inner;
         _stateChangeListener = stateChangeListener;
         _faultListener = faultListener;
-
         _entries = new ConcurrentHashMap<>();
     }
 

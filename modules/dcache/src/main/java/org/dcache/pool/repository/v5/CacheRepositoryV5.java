@@ -138,7 +138,6 @@ public class CacheRepositoryV5
      */
     enum State {
         UNINITIALIZED,
-        INITIALIZING,
         INITIALIZED,
         LOADING,
         OPEN,
@@ -326,72 +325,7 @@ public class CacheRepositoryV5
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
-            _store = store;
-        } finally {
-            _stateLock.readLock().unlock();
-        }
-    }
-
-    public void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
-    {
-        _stateLock.readLock().lock();
-        try {
-            checkUninitialized();
-            _sweeper = sweeper;
-        } finally {
-            _stateLock.readLock().unlock();
-        }
-    }
-
-    public void setMaxDiskSpaceString(String size)
-    {
-        setMaxDiskSpace(UnitInteger.parseUnitLong(size));
-    }
-
-    public void setMaxDiskSpace(long size)
-    {
-        if (size < 0) {
-            throw new IllegalArgumentException("Negative value is not allowed");
-        }
-        _stateLock.writeLock().lock();
-        try {
-            _staticMaxSize = size;
-            if (_state == State.OPEN) {
-                updateAccountSize();
-            }
-        } finally {
-            _stateLock.writeLock().unlock();
-        }
-    }
-
-    public State getState()
-    {
-        _stateLock.readLock().lock();
-        try {
-            return _state;
-        } finally {
-            _stateLock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public void init()
-            throws IllegalStateException, CacheException
-    {
-        checkState(_pnfs != null, "Pnfs handler must be set.");
-        checkState(_account != null, "Account must be set.");
-        checkState(_allocator != null, "Allocator must be set.");
-
-        if (!compareAndSetState(State.UNINITIALIZED, State.INITIALIZING)) {
-            throw new IllegalStateException("Can only initialize uninitialized repository.");
-        }
-        try {
-            /* Instantiating the cache causes the listing to be generated to
-             * populate the cache. This may take some time and therefore we
-             * do this outside the synchronization.
-             */
-            LOGGER.warn("Reading inventory from {}.", _store);
-            MetaDataCache store = new MetaDataCache(_store, new StateChangeListener()
+            _store = new MetaDataCache(store, new StateChangeListener()
             {
                 @Override
                 public void stateChanged(StateChangeEvent event)
@@ -469,20 +403,63 @@ public class CacheRepositoryV5
                     }
                 }
             });
+        } finally {
+            _stateLock.readLock().unlock();
+        }
+    }
 
-            store.init();
+    public void setSpaceSweeperPolicy(SpaceSweeperPolicy sweeper)
+    {
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _sweeper = sweeper;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
+    }
 
-            _stateLock.writeLock().lock();
-            try {
-                _store = store;
-                if (!compareAndSetState(State.INITIALIZING, State.INITIALIZED)) {
-                    throw new IllegalStateException("Repository was closed during initialization.");
-                }
-            } finally {
-                _stateLock.writeLock().unlock();
+    public void setMaxDiskSpaceString(String size)
+    {
+        setMaxDiskSpace(UnitInteger.parseUnitLong(size));
+    }
+
+    public void setMaxDiskSpace(long size)
+    {
+        if (size < 0) {
+            throw new IllegalArgumentException("Negative value is not allowed");
+        }
+        _stateLock.writeLock().lock();
+        try {
+            _staticMaxSize = size;
+            if (_state == State.OPEN) {
+                updateAccountSize();
             }
         } finally {
-            compareAndSetState(State.INITIALIZING, State.FAILED);
+            _stateLock.writeLock().unlock();
+        }
+    }
+
+    public State getState()
+    {
+        _stateLock.readLock().lock();
+        try {
+            return _state;
+        } finally {
+            _stateLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public void init()
+            throws IllegalStateException, CacheException
+    {
+        checkState(_pnfs != null, "Pnfs handler must be set.");
+        checkState(_account != null, "Account must be set.");
+        checkState(_allocator != null, "Allocator must be set.");
+
+        if (!compareAndSetState(State.UNINITIALIZED, State.INITIALIZED)) {
+            throw new IllegalStateException("Can only initialize uninitialized repository.");
         }
     }
 
@@ -509,6 +486,9 @@ public class CacheRepositoryV5
             throw new IllegalStateException("Can only load repository after initialization and only once.");
         }
         try {
+            LOGGER.warn("Reading inventory from {}.", _store);
+            _store.init();
+
             Collection<PnfsId> ids = _store.index();
 
             int fileCount = ids.size();
