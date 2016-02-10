@@ -1,9 +1,10 @@
 package diskCacheV111.poolManager;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +15,6 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -27,7 +26,6 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -37,7 +35,6 @@ import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.toList;
 
 public class PoolSelectionUnitV2
                 implements Serializable,
@@ -214,6 +211,23 @@ public class PoolSelectionUnitV2
                             break;
                         }
                         pw.append(" ").println(unit.getName());
+
+                        if (unit instanceof StorageUnit) {
+                            StorageUnit sunit = (StorageUnit)unit;
+                            int required = sunit.getRequiredCopies();
+                            if (required > 1) {
+                                pw.append("psu set storage unit ")
+                                                .append(sunit.getName())
+                                                .append(" -required=")
+                                                .append(String.valueOf(required));
+                                List<String> tags = sunit.getOnlyOneCopyPer();
+                                if (!tags.isEmpty()) {
+                                    pw.append(" -onlyOneCopyPer=")
+                                                    .append(Joiner.on(",").join(tags));
+                                }
+                                pw.println();
+                            }
+                        }
                     });
             pw.println();
             _uGroups.values().stream().sorted(comparing(UGroup::getName)).forEachOrdered(
@@ -241,7 +255,11 @@ public class PoolSelectionUnitV2
             pw.println();
             _pGroups.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
                     group -> {
-                        pw.append("psu create pgroup ").println(group.getName());
+                        pw.append("psu create pgroup ").append(group.getName());
+                        if (group.isResilient()) {
+                            pw.append(" -resilient");
+                        }
+                        pw.println();
                         group._poolList.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
                                 pool -> pw
                                         .append("psu addto pgroup ")
@@ -797,6 +815,21 @@ public class PoolSelectionUnitV2
     }
 
     @Override
+    public StorageUnit getStorageUnit(String storageClass) {
+        _psuReadLock.lock();
+        try {
+            Unit unit = _units.get(storageClass);
+            if (unit != null && unit.getType() == STORE) {
+                return (StorageUnit)unit;
+            }
+        } finally {
+            _psuReadLock.unlock();
+        }
+
+        return null;
+    }
+
+    @Override
     public String getNetIdentifier(String address) throws UnknownHostException {
 
         _psuReadLock.lock();
@@ -977,14 +1010,14 @@ public class PoolSelectionUnitV2
     // the create's
     //
 
-    public void createPoolGroup(String name) {
+    public void createPoolGroup(String name, boolean isResilient) {
         _psuWriteLock.lock();
         try {
             if (_pGroups.get(name) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
             }
 
-            PGroup group = new PGroup(name);
+            PGroup group = new PGroup(name, isResilient);
 
             _pGroups.put(group.getName(), group);
         } finally {
@@ -1138,7 +1171,7 @@ public class PoolSelectionUnitV2
                 _netHandler.add(net);
                 unit = net;
             } else if (isStore) {
-                unit = new Unit(name, STORE);
+                unit = new StorageUnit(name);
             } else if (isDcache) {
                 unit = new Unit(name, DCACHE);
             } else if (isProtocol) {
@@ -1172,6 +1205,42 @@ public class PoolSelectionUnitV2
 
             LinkGroup newGroup = new LinkGroup(groupName);
             _linkGroups.put(groupName, newGroup);
+        } finally {
+            _psuWriteLock.unlock();
+        }
+    }
+
+    public void setStorageUnit(String storageUnitKey,
+                               Integer required,
+                               String[] onlyOneCopyPer) {
+        _psuWriteLock.lock();
+
+        try {
+            Unit unit = _units.get(storageUnitKey);
+
+            if (unit == null) {
+                throw new IllegalArgumentException("Not found : " + storageUnitKey);
+            }
+
+            if (unit.getType() != STORE) {
+                throw new IllegalStateException("unit named "
+                                + storageUnitKey + " is not of type STORE");
+            }
+
+            StorageUnit sUnit = (StorageUnit)unit;
+
+            if (required != null) {
+                sUnit.setRequiredCopies(required);
+            }
+
+            if (onlyOneCopyPer != null) {
+                Preconditions.checkArgument(sUnit.getRequiredCopies() >= 1,
+                                "required must be >= 1 in "
+                                                + "order to set partition tags, "
+						+ "is currently set to %s.",
+                                sUnit.getRequiredCopies());
+                sUnit.setOnlyOneCopyPer(onlyOneCopyPer);
+            }
         } finally {
             _psuWriteLock.unlock();
         }
@@ -1225,10 +1294,11 @@ public class PoolSelectionUnitV2
                                     + groupName);
                 }
 
-                Object[] result = new Object[3];
+                Object[] result = new Object[4];
                 result[0] = groupName;
                 result[1] = group._poolList.keySet().toArray();
                 result[2] = group._linkList.keySet().toArray();
+                result[3] = group.isResilient();
                 xlsResult = result;
             }
         } finally {
@@ -1262,13 +1332,18 @@ public class PoolSelectionUnitV2
                                     + unitName);
                 }
 
-                Object[] result = new Object[3];
+                Object[] result = new Object[5];
                 result[0] = unitName;
                 result[1] = unit.getType() == STORE ? "Store"
                                 : unit.getType() == PROTOCOL ? "Protocol"
                                 : unit.getType() == DCACHE ? "dCache"
                                 : unit.getType() == NET ? "Net" : "Unknown";
                 result[2] = unit._uGroupList.keySet().toArray();
+                if ("Store".equals(result[1])) {
+                    StorageUnit sunit = (StorageUnit)unit;
+                    result[3] = sunit.getRequiredCopies();
+                    result[4] = sunit.getOnlyOneCopyPer();
+                }
                 xlsResult = result;
             }
         } finally {
@@ -1477,7 +1552,9 @@ public class PoolSelectionUnitV2
                 PGroup group = i.next();
                 sb.append(group.getName()).append("\n");
                 if (detail) {
-                    sb.append(" linkList :\n");
+                    sb.append(" resilient = ").append(group.isResilient())
+                                    .append("\n")
+                                    .append(" linkList :\n");
                     group._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
                             link -> sb.append("   ").append(link.toString()).append("\n"));
                     sb.append(" poolList :\n");
@@ -1609,8 +1686,12 @@ public class PoolSelectionUnitV2
                             sb.append(unit.toString()).append("\n");
                             if (more) {
                                 sb.append(" uGroupList :\n");
-                                unit._uGroupList.values().stream().sorted(comparing(UGroup::getName)).forEachOrdered(
-                                        group -> sb.append("   ").append(group.toString()).append("\n"));
+                                unit._uGroupList.values().stream().sorted(
+                                                comparing(UGroup::getName)).forEachOrdered(
+                                                group -> sb.append(
+                                                                "   ").append(
+                                                                group.toString()).append(
+                                                                "\n"));
                             }
                         } else {
                             sb.append(unit.getName()).append("\n");
@@ -2055,9 +2136,9 @@ public class PoolSelectionUnitV2
             PoolCore core = _pools.get(poolName);
             if (core == null) {
                 core = _pGroups.get(poolName);
-            }
-            if (core == null) {
-                throw new IllegalArgumentException("Not found : " + poolName);
+                if (core == null) {
+                    throw new IllegalArgumentException("Not found : " + poolName);
+                }
             }
 
             core._linkList.put(link.getName(), link);
@@ -2189,14 +2270,14 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName) {
+    public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String poolName) {
         _psuReadLock.lock();
         try {
-            Pool pool = _pools.get(PoolName);
+            Pool pool = _pools.get(poolName);
             if (pool != null) {
                 return new ArrayList<>(pool._pGroupList.values());
             } else {
-                throw new NoSuchElementException(PoolName);
+                throw new NoSuchElementException(poolName);
             }
         } finally {
             _psuReadLock.unlock();
