@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Collection;
 
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.gsi.KeyPairCache;
@@ -46,21 +46,22 @@ public class BouncyCastleCredentialDelegationFactory implements CredentialDelega
     }
 
     @Override
-    public CredentialDelegation newDelegation(DelegationIdentity id,
-            Collection<X509Certificate> certificates) throws DelegationException
+    public CredentialDelegation newDelegation(DelegationIdentity id, CertPath path) throws DelegationException
     {
-        X509Certificate first = certificates.iterator().next();
+        X509Certificate[] certificates = path.getCertificates().stream().toArray(X509Certificate[]::new);
+        if (certificates.length == 0) {
+            throw new DelegationException("Certificate path is empty.");
+        }
 
-        int bits =
-            ((RSAPublicKey)first.getPublicKey()).getModulus().bitLength();
+        X509Certificate first = certificates[0];
+        int bits = ((RSAPublicKey)first.getPublicKey()).getModulus().bitLength();
 
         KeyPair keypair;
         try {
             keypair = _keypairs.getKeyPair(bits);
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
-            LOG.error("Failed to create key-pair for request: {}",
-                    e.getMessage());
-            throw new DelegationException("Internal error: cannot create key-pair");
+            LOG.error("Failed to create key-pair for request: {}", e.getMessage());
+            throw new DelegationException("Internal error: cannot create key-pair.");
         }
 
         return new BouncyCastleCredentialDelegation(keypair, id, certificates);

@@ -89,7 +89,7 @@ public class ShellCommand implements Command
     }
 
     @Override
-    public void destroy()
+    public void destroy() throws Exception
     {
         if (delegate != null) {
             delegate.destroy();

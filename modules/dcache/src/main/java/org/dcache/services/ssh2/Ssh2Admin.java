@@ -1,12 +1,13 @@
 package org.dcache.services.ssh2;
 
-import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
+import org.apache.sshd.common.keyprovider.AbstractFileKeyPairProvider;
+import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
-import org.apache.sshd.server.PasswordAuthenticator;
-import org.apache.sshd.server.PublickeyAuthenticator;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.password.PasswordAuthenticator;
+import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,6 @@ import java.net.SocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -40,8 +40,9 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.UnionLoginStrategy;
 import org.dcache.util.Files;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * This class starts the ssh server. It is however not started in the
@@ -56,7 +57,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private static final Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private final SshServer _server;
     // UniversalSpringCell injected parameters
-    private String[] _hostKeys;
+    private List<File> _hostKeys;
     private File _authorizedKeyList;
     private String _host;
     private int _port;
@@ -103,7 +104,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     public void setHostKeys(String[] keys) {
-        _hostKeys = keys;
+        _hostKeys = Stream.of(keys).map(File::new).collect(toList());
     }
 
     public File getAuthorizedKeyList() {
@@ -155,17 +156,18 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     public void beforeStop() {
         try {
             _server.stop();
-        } catch (InterruptedException e) {
-            _log.warn("Server was interupted during shutdown!");
+        } catch (IOException e) {
+            _log.warn("SSH failure during shutdown: " + e.getMessage());
         }
     }
 
     private void configureKeyFiles() {
         try {
-            for (String key : _hostKeys) {
+            for (File key : _hostKeys) {
                 Files.checkFile(key);
             }
-            FileKeyPairProvider fKeyPairProvider = new FileKeyPairProvider(_hostKeys);
+            AbstractFileKeyPairProvider fKeyPairProvider = SecurityUtils.createFileKeyPairProvider();
+            fKeyPairProvider.setFiles(_hostKeys);
             _server.setKeyPairProvider(fKeyPairProvider);
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage(), e);

@@ -69,7 +69,7 @@
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.3.8.v20160314</version.jetty>
         <version.wicket>7.3.0</version.wicket>
-        <version.xrootd4j>3.0.5</version.xrootd4j>
+        <version.xrootd4j>3.1.1</version.xrootd4j>
         <version.jersey>2.22.2</version.jersey>
         <version.dcache-view>1.0.0</version.dcache-view>
         <version.dcache>${project.version}</version.dcache>
@@ -99,8 +99,8 @@
 
                1.43     bcprov-jdk16    JDK v1.6; used by JGlobus-1.8.x
          -->
-        <bouncycastle.bcprov>bcprov-jdk16</bouncycastle.bcprov>
-        <bouncycastle.version>1.46</bouncycastle.version>
+        <bouncycastle.bcprov>bcprov-jdk15on</bouncycastle.bcprov>
+        <bouncycastle.version>1.50</bouncycastle.version>
         <datanucleus-core.version>4.1.8</datanucleus-core.version>
         <datanucleus.plugin.version>4.0.2</datanucleus.plugin.version>
     </properties>
@@ -204,22 +204,22 @@
             <dependency>
                 <groupId>eu.eu-emi.security</groupId>
                 <artifactId>canl</artifactId>
-                <version>1.3.3</version>
+                <version>2.1.2</version>
             </dependency>
             <dependency>
                 <groupId>org.italiangrid</groupId>
                 <artifactId>voms-api-java</artifactId>
-                <version>3.0.5</version>
+                <version>3.1.0</version>
             </dependency>
             <dependency>
                 <groupId>org.glite.authz</groupId>
                 <artifactId>pep-common</artifactId>
-                <version>2.3.0</version>
+                <version>2.3.1</version>
             </dependency>
             <dependency>
                 <groupId>org.glite.authz</groupId>
                 <artifactId>pep-java</artifactId>
-                <version>2.2.0</version>
+                <version>2.3.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-httpclient</groupId>
@@ -481,13 +481,7 @@
             <dependency>
                 <groupId>org.apache.sshd</groupId>
                 <artifactId>sshd-core</artifactId>
-                <!-- Version 0.9.0 contains a bug that prevents upgrade (see
-                     https://issues.apache.org/jira/browse/SSHD-258?jql=project%20%3D%20SSHD%20AND%20issuetype%20%3D%20Bug%20AND%20text%20~%20%220.9.0%22).
-
-                     Version 0.10.0 and beyond require a version of BouncyCastle newer
-                     than what works with JGlobus.
-                  -->
-                <version>0.8.0</version>
+                <version>1.2.0</version>
             </dependency>
             <dependency>
                 <!-- Newer versions have two problems. A performance regression causes it to block on non-responding network
@@ -660,13 +654,7 @@
             <dependency>
                 <groupId>org.dcache</groupId>
                 <artifactId>xrootd4j-authz-plugin-alice</artifactId>
-                <version>1.0.4</version>
-                <exclusions>
-                  <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk16</artifactId>
-                  </exclusion>
-                </exclusions>
+                <version>1.1.0</version>
             </dependency>
 
             <dependency>

@@ -8,7 +8,11 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-
+import org.bouncycastle.asn1.x509.AttributeCertificate;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.asn1.VOMSACUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.security.rsa.RSAPublicKeyImpl;
@@ -52,18 +56,10 @@ import org.dcache.gplazma.monitor.LoginResult.SetDiff;
 import org.dcache.gplazma.util.CertPaths;
 
 import static java.util.concurrent.TimeUnit.*;
-
-import org.bouncycastle.asn1.x509.AttributeCertificate;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.italiangrid.voms.VOMSAttribute;
-
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
 import static org.dcache.util.Bytes.toHexString;
-
-import org.italiangrid.voms.asn1.VOMSACUtils;
 
 
 
@@ -498,7 +494,7 @@ public class LoginResultPrinter
         sb.append(attribute.getIssuer().getName(X500Principal.RFC2253)).append('\n');
         sb.append("  +--Validity: ").append(validityStatementFor(certificate)).append('\n');
 
-        X509Extensions extensions = certificate.getAcinfo().getExtensions();
+        Extensions extensions = certificate.getAcinfo().getExtensions();
         if (extensions != null) {
             ASN1ObjectIdentifier[] ids = extensions.getExtensionOIDs();
             if (ids != null && ids.length != 0) {
@@ -507,7 +503,7 @@ public class LoginResultPrinter
                 int index = 1;
                 for (ASN1ObjectIdentifier id : ids) {
                     boolean isLast = index == ids.length;
-                    X509Extension e = extensions.getExtension(id);
+                    Extension e = extensions.getExtension(id);
                     String padding = isLast ? "  |       " : "  |    |  ";
                     sb.append(extensionInfoFor(id, e, attribute, padding));
                     index++;
@@ -527,7 +523,7 @@ public class LoginResultPrinter
     }
 
     private static StringBuilder extensionInfoFor(ASN1ObjectIdentifier id,
-            X509Extension extension, VOMSAttribute attribute, String padding)
+            Extension extension, VOMSAttribute attribute, String padding)
     {
         StringBuilder sb = new StringBuilder();
         if (VOMS_CERTIFICATES_OID.equals(id.toString())) {
