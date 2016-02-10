@@ -24,8 +24,8 @@ import org.apache.http.HttpHost;
 import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
 import org.apache.http.protocol.HttpContext;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.asn1.pkcs.CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -93,7 +93,8 @@ public class GsiConnectionSocketFactory implements LayeredConnectionSocketFactor
                 try {
                     // read csr
                     ASN1InputStream dIn = new ASN1InputStream(socket.getInputStream());
-                    PKCS10CertificationRequest csr = new PKCS10CertificationRequest((ASN1Sequence) dIn.readObject());
+                    PKCS10CertificationRequest csr =
+                            new PKCS10CertificationRequest(CertificationRequest.getInstance(dIn.readObject()));
 
                     // generate proxy
                     ProxyRequestOptions options = new ProxyRequestOptions(credential.getCertificateChain(), csr);

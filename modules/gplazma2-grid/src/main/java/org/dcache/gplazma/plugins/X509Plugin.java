@@ -4,9 +4,9 @@ import com.google.common.net.InetAddresses;
 import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 import eu.emi.security.authn.x509.proxy.ProxyChainInfo;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEREncodable;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.PolicyInformation;
@@ -124,7 +124,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     }
 
 
-    private List<DEREncodable> listPolicies(X509Certificate eec)
+    private List<ASN1Encodable> listPolicies(X509Certificate eec)
             throws AuthenticationException
     {
         byte[] encoded;
@@ -140,10 +140,10 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             return Collections.emptyList();
         }
 
-        Enumeration<DEREncodable> policySource = ASN1Sequence.getInstance(encoded).getObjects();
-        List<DEREncodable> policies = new ArrayList();
+        Enumeration<ASN1Encodable> policySource = ASN1Sequence.getInstance(encoded).getObjects();
+        List<ASN1Encodable> policies = new ArrayList<>();
         while (policySource.hasMoreElements()) {
-            DEREncodable policy = policySource.nextElement();
+            ASN1Encodable policy = policySource.nextElement();
             if (!policy.equals(ANY_POLICY)) {
                 policies.add(policy);
             }

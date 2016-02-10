@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Required;
 import javax.security.auth.Subject;
 
 import java.security.cert.CertPath;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Map;
@@ -105,8 +106,7 @@ public class DelegationService implements CellMessageReceiver
                    id);
 
         CertPath path = getFirst(subject.getPublicCredentials(CertPath.class), null);
-        CredentialDelegation delegation =
-                factory.newDelegation(id, (Collection<X509Certificate>) path.getCertificates());
+        CredentialDelegation delegation = factory.newDelegation(id, path);
 
         delegations.add(delegation);
 
@@ -131,8 +131,7 @@ public class DelegationService implements CellMessageReceiver
         assertThat(credentials.has(id), "no delegated credential", id);
 
         CertPath certPath = getFirst(request.getSubject().getPublicCredentials(CertPath.class), null);
-        CredentialDelegation delegation =
-                factory.newDelegation(id, (Collection<X509Certificate>) certPath.getCertificates());
+        CredentialDelegation delegation = factory.newDelegation(id, certPath);
 
         delegations.add(delegation);
 

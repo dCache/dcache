@@ -148,7 +148,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine
         return super.wrap(srcs, offset, length, dst);
     }
 
-    private ByteBuffer getCertRequest() throws SSLPeerUnverifiedException, GeneralSecurityException
+    private ByteBuffer getCertRequest() throws IOException, GeneralSecurityException
     {
         X509Certificate[] chain = CertificateUtils.convertToX509Chain(getSession().getPeerCertificates());
         int bits = ((RSAPublicKey) chain[0].getPublicKey()).getModulus().bitLength();
@@ -211,7 +211,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine
             if (buffer.get(0) == DELEGATION_CHAR) {
                 try {
                     sendThenReceive(getCertRequest(), new GotDelegatedCredentials());
-                } catch (GeneralSecurityException e) {
+                } catch (IOException | GeneralSecurityException e) {
                     throw new SSLException("GSI delegation failed: " + e.toString(), e);
                 }
             }

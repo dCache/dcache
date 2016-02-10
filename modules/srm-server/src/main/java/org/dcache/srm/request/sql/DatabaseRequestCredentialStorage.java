@@ -258,8 +258,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
            if (credential != null) {
                CredentialsUtils.saveProxyCredentials(credentialFileName, credential);
            }
-       } catch(IOException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException |
-               NoSuchProviderException | CertificateException e) {
+       } catch (IOException e) {
            logger.error(e.toString());
        }
    }
