@@ -125,7 +125,7 @@ public class MetaDataCache
         private synchronized MetaDataRecord create()
                 throws CacheException
         {
-            if (_entries.putIfAbsent(_id, this) != null) {
+            if (_entries.get(_id) != this || _record != null) {
                 throw new DuplicateEntryException(_id);
             }
             assert _entries.get(_id) == this;
@@ -133,20 +133,18 @@ public class MetaDataCache
                 checkState(!_isClosed);
                 _record = _inner.create(_id);
             } catch (DuplicateEntryException e) {
-                _inner.remove(_id);
-                _record = _inner.create(_id);
-            } finally {
-                if (_record == null) {
-                    _entries.remove(_id);
-                }
+                throw e;
+            } catch (RuntimeException | CacheException e) {
+                _entries.remove(_id);
+                throw e;
             }
-            return (_record == null) ? null : this;
+            return this;
         }
 
         private synchronized MetaDataRecord create(MetaDataRecord entry)
                 throws CacheException
         {
-            if (_entries.putIfAbsent(_id, this) != null) {
+            if (_entries.get(_id) != this || _record != null) {
                 throw new DuplicateEntryException(_id);
             }
             assert _entries.get(_id) == this;
@@ -154,14 +152,12 @@ public class MetaDataCache
                 checkState(!_isClosed);
                 _record = _inner.copy(entry);
             } catch (DuplicateEntryException e) {
-                _inner.remove(_id);
-                _record = _inner.create(_id);
-            } finally {
-                if (_record == null) {
-                    _entries.remove(_id);
-                }
+                throw e;
+            } catch (RuntimeException | CacheException e) {
+                _entries.remove(_id);
+                throw e;
             }
-            return (_record == null) ? null : this;
+            return this;
         }
 
         @GuardedBy("this")
@@ -450,8 +446,7 @@ public class MetaDataCache
             throws CacheException, InterruptedException
     {
         try {
-            Monitor monitor = _entries.get(id);
-            return (monitor != null) ? monitor.get() : null;
+            return _entries.computeIfAbsent(id, Monitor::new).get();
         } catch (RuntimeException | DiskErrorCacheException e) {
             _faultListener.faultOccurred(
                     new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
@@ -463,7 +458,7 @@ public class MetaDataCache
     public MetaDataRecord create(PnfsId id) throws CacheException
     {
         try {
-            return new Monitor(id).create();
+            return _entries.computeIfAbsent(id, Monitor::new).create();
         } catch (RuntimeException | DiskErrorCacheException e) {
             _faultListener.faultOccurred(
                     new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
@@ -476,7 +471,7 @@ public class MetaDataCache
             throws CacheException
     {
         try {
-            return new Monitor(entry.getPnfsId()).create(entry);
+            return _entries.computeIfAbsent(entry.getPnfsId(), Monitor::new).create(entry);
         } catch (RuntimeException | DiskErrorCacheException e) {
             _faultListener.faultOccurred(
                     new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
