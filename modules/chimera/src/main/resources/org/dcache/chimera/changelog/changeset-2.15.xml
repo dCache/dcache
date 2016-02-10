@@ -518,7 +518,7 @@
             BEGIN
                 LOOP
                     SELECT * INTO entry FROM t_dirs WHERE ichild = inumber;
-                    IF FOUND AND entry.iparent != inode
+                    IF FOUND AND entry.iparent != inumber
                     THEN
                         path := '/' || entry.iname || path;
                         inumber := entry.iparent;
