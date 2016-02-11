@@ -31,7 +31,7 @@ public interface PoolSelectionUnitAccess extends CellSetupProvider {
 
     void createPool(String name, boolean isNoPing, boolean isDisabled);
 
-    void createPoolGroup(String name, boolean isResilient);
+    void createPoolGroup(String name);
 
     void createUnit(String name, boolean isNet, boolean isStore,
                     boolean isDcache, boolean isProtocol);
@@ -115,10 +115,6 @@ public interface PoolSelectionUnitAccess extends CellSetupProvider {
                     String replica);
 
     String setRegex(String onOff);
-
-    void setStorageUnit(String storageUnitKey,
-                        Integer required,
-                        String[] onlyOneCopyPer);
 
     void unlink(String linkName, String poolName);
 }

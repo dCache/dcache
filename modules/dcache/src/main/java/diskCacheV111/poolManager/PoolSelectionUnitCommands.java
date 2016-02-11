@@ -1,15 +1,9 @@
 package diskCacheV111.poolManager;
 
-import com.google.common.base.Preconditions;
-
 import java.net.UnknownHostException;
-import java.util.concurrent.Callable;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.CommandSyntaxException;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
 import org.dcache.util.Args;
 
 /**
@@ -89,10 +83,10 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
         return "";
     }
 
-    public static final String hh_psu_create_pgroup = "<pool group> [-resilient]";
+    public static final String hh_psu_create_pgroup = "<pool group>";
 
     public String ac_psu_create_pgroup_$_1(Args args) {
-        psuAccess.createPoolGroup(args.argv(0), args.hasOption("resilient"));
+        psuAccess.createPoolGroup(args.argv(0));
         return "";
     }
 
@@ -401,43 +395,6 @@ public class PoolSelectionUnitCommands implements CellCommandListener {
     }
 
     public static final String hh_psu_unlink = "<link> <pool>|<pool group>";
-
-    @Command(name = "psu set storage unit",
-             hint = "define resilience requirements for a storage unit",
-             description = "Sets the required number of copies and/or "
-                             + "the partitioning of replicas by pool tags.")
-    class StorageUnitCommand implements Callable<String> {
-        @Option(name="required",
-                        usage="Set the number of copies required. "
-                                        + "Must be an integer >= 1.  A storage "
-                                        + "unit has required set to 1 by default.  "
-                                        + "Not specifying this attribute means "
-                                        + "the current value is retained.")
-        Integer required;
-
-        @Option(name="onlyOneCopyPer",
-                        separator = ",",
-                        usage="A comma-delimited list of pool tag names used to "
-                                        + "partition copies across pools "
-                                        + "(interpreted as an 'and'-clause). "
-                                        + "A storage unit has an empty list by default.  "
-                                        + "Not specifying this attribute means "
-                                        + "the current value is retained; specifying "
-                                        + "an empty string restores default behavior.")
-        String[] onlyOneCopyPer;
-
-        @Argument(usage="Name of the storage unit.")
-        String name;
-
-        @Override
-        public String call() throws Exception {
-            Preconditions.checkArgument(required == null || required >= 1,
-                            "required must be >= 1, was set to %s.",
-                            required);
-            psuAccess.setStorageUnit(name, required, onlyOneCopyPer);
-            return "";
-        }
-    }
 
     public String ac_psu_unlink_$_2(Args args) {
         psuAccess.unlink(args.argv(0), args.argv(1));

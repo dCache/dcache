@@ -32,14 +32,14 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel
     public void process(Object msgPayload, long metricLifetime)
     {
         if (!msgPayload.getClass().isArray()) {
-            LOGGER.error("Unit info, unexpected received non-array payload");
+            LOGGER.error("unexpected received non-array payload");
             return;
         }
 
         Object array[] = (Object []) msgPayload;
 
-        if (array.length > 5 || array.length < 3) {
-            LOGGER.error("Unit info, unexpected array size: {}", array.length);
+        if (array.length != 3) {
+            LOGGER.error("Unexpected array size: {}", array.length);
             return;
         }
 
@@ -47,11 +47,8 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel
          * array[0] = name
          * array[1] = type
          * array[2] = list of unitgroups.
-         *
-         * for storage,
-         *    array[3] = required (number of copies)
-         *    array[4] = list of tags for partitioning copies
          */
+
         String unitName = array[0].toString();
         String unitType = array[1].toString();
 
@@ -63,19 +60,6 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel
                 new StringStateValue(unitType, metricLifetime));
 
         addItems(update, thisUnitPath.newChild("unitgroups"), (Object []) array [2], metricLifetime);
-
-        if ("store".equals(unitType)) {
-            if (array.length == 5) {
-                if (array[3] != null) {
-                    addItems(update, thisUnitPath.newChild("required"),
-                             (Object[]) array[3], metricLifetime);
-                }
-                if (array[4] != null) {
-                    addItems(update, thisUnitPath.newChild("oneCopyPer"),
-                             (Object[]) array[4], metricLifetime);
-                }
-            }
-        }
 
         applyUpdates(update);
     }
