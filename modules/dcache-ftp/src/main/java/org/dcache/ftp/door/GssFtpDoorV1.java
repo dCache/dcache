@@ -62,24 +62,42 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Help("AUTH <SP> <arg> - Initiate secure context negotiation.")
-    public void ftp_auth(String arg)
+    public void ftp_auth(String arg) throws FTPCommandException
     {
         LOGGER.info("GssFtpDoorV1::secure_reply: going to authorize using {}", gssFlavor);
         if (!arg.equals("GSSAPI")) {
-            reply("504 Authenticating method not supported");
-            return;
+            /* From RFC 2228 Section 3. New FTP Commands, AUTH:
+             *
+             *    If the server does not understand the named security
+             *    mechanism, it should respond with reply code 504.
+             */
+            throw new FTPCommandException(504, "Authenticating method not supported");
         }
         if (context != null && context.isEstablished()) {
-            reply("234 Already authenticated");
-            return;
+            /* From RFC 2228 Section 3. New FTP Commands, AUTH:
+             *
+             *     Some servers will allow the AUTH command to be reissued in
+             *     order to establish new authentication.  [...]
+             *
+             * That dCache does not allow re-authentication is allowed by the
+             * RFC, but the RFC does not mention which return code is to be used
+             * when rejecting the command. "534 Request denied for policy
+             * reasons" seems the best fit.
+             */
+            throw new FTPCommandException(534, "Already authenticated");
         }
 
         try {
             context = dssContextFactory.create(_remoteSocketAddress, _localSocketAddress);
         } catch (IOException e) {
-            LOGGER.error(e.toString());
-            reply("500 Error: " + e.toString());
-            return;
+            LOGGER.error("Unable to initialise service context: {}", e.toString());
+            /* From RFC 2228 Section 3. New FTP Commands, AUTH:
+             *
+             *     If the server is not able to accept the named security
+             *     mechanism, such as if a required resource is unavailable, it
+             *     should respond with reply code 431.
+             */
+            throw new FTPCommandException(431, "Internal error");
         }
         reply("334 ADAT must follow");
     }
