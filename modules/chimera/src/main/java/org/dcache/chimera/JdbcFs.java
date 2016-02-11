@@ -1375,6 +1375,7 @@ public class JdbcFs implements FileSystemProvider {
         ByteBuffer b = ByteBuffer.wrap(handle);
         int fsid = b.get();
         int type = b.get();
+        int len = b.get(); // eat the file id size.
         long ino = b.getLong();
         int opaqueLen = b.get();
         if (opaqueLen > b.remaining()) {

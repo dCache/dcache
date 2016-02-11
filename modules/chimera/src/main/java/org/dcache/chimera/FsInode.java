@@ -150,6 +150,7 @@ public class FsInode {
         ByteBuffer b = ByteBuffer.allocate(128);
         b.put((byte) _fs.getFsId())
                 .put((byte) _type.getType())
+                .put((byte)Long.BYTES) // set the file id size to be compatible with old format
                 .putLong(_ino);
 
         b.put((byte) opaque.length);
