@@ -927,11 +927,15 @@ public class LocationManager extends CellAdapter {
          }
 
          _lmHandler = new LocationManagerHandler(clientPort, address, port);
-         _lmHandler.start() ;
+      }
 
-         if( !args.hasOption("noboot") ){
-           _whatToDo = _nucleus.newThread(this,"WhatToDo");
-           _whatToDo.start() ;
+      public void start()
+      {
+         _lmHandler.start();
+
+         if (!_args.hasOption("noboot")) {
+            _whatToDo = _nucleus.newThread(this,"WhatToDo");
+            _whatToDo.start();
          }
       }
 
@@ -1240,6 +1244,10 @@ public class LocationManager extends CellAdapter {
     {
         if (_server != null) {
             _server.start();
+        }
+
+        if (_client != null) {
+            _client.start();
         }
     }
 
