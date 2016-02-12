@@ -27,18 +27,8 @@
             <artifactId>voms-api-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>eu.emi</groupId>
-            <artifactId>trustmanager</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>eu.emi</groupId>
-            <artifactId>trustmanager-axis</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.opensciencegrid</groupId>
-            <artifactId>privilege</artifactId>
+            <groupId>eu.eu-emi.security</groupId>
+            <artifactId>canl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.opensciencegrid</groupId>
@@ -49,12 +39,19 @@
             <artifactId>opensaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jglobus</groupId>
-            <artifactId>ssl-proxies</artifactId>
+            <groupId>org.dcache</groupId>
+            <artifactId>gplazma2</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.jglobus</groupId>
-            <artifactId>gss</artifactId>
+            <groupId>org.dcache</groupId>
+            <artifactId>srm-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dcache</groupId>
+            <artifactId>dcache-common</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.dcache</groupId>

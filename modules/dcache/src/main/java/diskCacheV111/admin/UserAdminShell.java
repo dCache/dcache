@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
@@ -764,7 +765,8 @@ public class UserAdminShell
             /* Expand wildcards.
              */
             Map<Boolean, List<String>> expandable =
-                    Arrays.stream(destination.split(",")).collect(partitioningBy(UserAdminShell::isExpandable));
+                    StreamSupport.stream(Glob.expandList(destination).spliterator(), false)
+                            .collect(partitioningBy(UserAdminShell::isExpandable));
             Iterable<String> destinations = concat(expandable.get(false), expandCellPatterns(expandable.get(true)));
 
             return sendToMany(destinations, command);

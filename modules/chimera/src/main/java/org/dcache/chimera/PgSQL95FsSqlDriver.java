@@ -42,7 +42,8 @@ class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
      *  this is a utility class which is issues SQL queries on database
      *
      */
-    protected PgSQL95FsSqlDriver(DataSource dataSource) {
+    protected PgSQL95FsSqlDriver(DataSource dataSource) throws ChimeraFsException
+    {
         super(dataSource);
         _log.info("Running PostgreSQL >= 9.5 specific Driver");
     }
@@ -50,11 +51,11 @@ class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
 
     @Override
     void createEntryInParent(FsInode parent, String name, FsInode inode) {
-        int n = _jdbc.update("INSERT INTO t_dirs VALUES(?,?,?) ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING",
+        int n = _jdbc.update("INSERT INTO t_dirs (iparent, iname, ichild) VALUES(?,?,?) ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING",
                              ps -> {
-                                 ps.setString(1, parent.toString());
+                                 ps.setLong(1, parent.ino());
                                  ps.setString(2, name);
-                                 ps.setString(3, inode.toString());
+                                 ps.setLong(3, inode.ino());
                              });
         if (n == 0) {
             /*
@@ -75,11 +76,11 @@ class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
       * @param location
       */
     void addInodeLocation(FsInode inode, int type, String location) {
-        _jdbc.update("INSERT INTO t_locationinfo VALUES(?,?,?,?,?,?,?) " +
+        _jdbc.update("INSERT INTO t_locationinfo (inumber,itype,ilocation,ipriority,ictime,iatime,istate) VALUES(?,?,?,?,?,?,?) " +
                      "ON CONFLICT ON CONSTRAINT t_locationinfo_pkey DO NOTHING",
                      ps -> {
                          Timestamp now = new Timestamp(System.currentTimeMillis());
-                         ps.setString(1, inode.toString());
+                         ps.setLong(1, inode.ino());
                          ps.setInt(2, type);
                          ps.setString(3, location);
                          ps.setInt(4, 10); // default priority
@@ -90,12 +91,11 @@ class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
     }
 
     @Override
-    void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo)
-    {
+    void setStorageInfo(FsInode inode, InodeStorageInformation storageInfo) {
         _jdbc.update("INSERT INTO t_storageinfo VALUES (?,?,?,?) " +
                      "ON CONFLICT ON CONSTRAINT t_storageinfo_pkey DO NOTHING",
                      ps -> {
-                         ps.setString(1, inode.toString());
+                         ps.setLong(1, inode.ino());
                          ps.setString(2, storageInfo.hsmName());
                          ps.setString(3, storageInfo.storageGroup());
                          ps.setString(4, storageInfo.storageSubGroup());
@@ -103,15 +103,13 @@ class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
     }
 
     @Override
-    void setInodeChecksum(FsInode inode, int type, String value)
-    {
-        _jdbc.update("INSERT INTO t_inodes_checksum VALUES (?,?,?) " +
+    void setInodeChecksum(FsInode inode, int type, String value) {
+        _jdbc.update("INSERT INTO t_inodes_checksum (inumber,itype,isum) VALUES (?,?,?) " +
                      "ON CONFLICT ON CONSTRAINT t_inodes_checksum_pkey DO NOTHING",
                      ps -> {
-                         ps.setString(1, inode.toString());
+                         ps.setLong(1, inode.ino());
                          ps.setInt(2, type);
                          ps.setString(3, value);
                      });
-
     }
 }

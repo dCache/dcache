@@ -30,8 +30,8 @@ import org.dcache.util.Checksum;
 public class FsInode_PCRC extends FsInode_PGET {
     private String _checksum;
 
-    public FsInode_PCRC(FileSystemProvider fs, String id) {
-        super(fs, id, FsInodeType.PCRC);
+    public FsInode_PCRC(FileSystemProvider fs, long ino) {
+        super(fs, ino, FsInodeType.PCRC);
     }
 
     protected String value() throws ChimeraFsException {

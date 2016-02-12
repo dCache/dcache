@@ -58,7 +58,8 @@ public class Stat {
     private final EnumSet<StatAttributes> _definedAttrs = EnumSet.noneOf(StatAttributes.class);
 
     private int _dev; //
-    private int _ino; //
+    private long _ino; //
+    private String _id;
     private int _mode; //
     private int _nlink; //
     private int _uid; //
@@ -89,6 +90,31 @@ public class Stat {
      */
     private long _crtime;
 
+    public Stat()
+    {
+    }
+
+    public Stat(Stat stat)
+    {
+        _definedAttrs.addAll(stat._definedAttrs);
+        _dev = stat._dev;
+        _ino = stat._ino;
+        _id = stat._id;
+        _mode = stat._mode;
+        _nlink = stat._nlink;
+        _uid = stat._uid;
+        _gid = stat._gid;
+        _rdev = stat._rdev;
+        _size = stat._size;
+        _generation = stat._generation;
+        _accessLatency = stat._accessLatency;
+        _retentionPolicy = stat._retentionPolicy;
+        _atime = stat._atime;
+        _mtime = stat._mtime;
+        _ctime = stat._ctime;
+        _crtime = stat._crtime;
+    }
+
     public int getDev() {
         guard(StatAttributes.DEV);
         return _dev;
@@ -99,14 +125,24 @@ public class Stat {
         _dev = dev;
     }
 
-    public int getIno() {
+    public long getIno() {
         guard(StatAttributes.INO);
         return _ino;
     }
 
-    public void setIno(int ino) {
+    public void setIno(long ino) {
         define(StatAttributes.INO);
         _ino = ino;
+    }
+
+    public String getId() {
+        guard(StatAttributes.FILEID);
+        return _id;
+    }
+
+    public void setId(String id) {
+        define(StatAttributes.FILEID);
+        _id = id;
     }
 
     public int getMode() {
@@ -272,7 +308,7 @@ public class Stat {
     public int hashCode() {
         int hash = 5;
         hash = 79 * hash + this._dev;
-        hash = 79 * hash + this._ino;
+        hash = 79 * hash + (int) (this._ino ^ (this._ino >>> 32));
         hash = 79 * hash + this._mode;
         hash = 79 * hash + this._nlink;
         hash = 79 * hash + this._uid;
@@ -376,51 +412,49 @@ public class Stat {
      */
     public void update(Stat other) {
         for (Stat.StatAttributes attr : other.getDefinedAttributeses()) {
-	    switch (attr) {
-		case DEV:
-		    this.setDev(other.getDev());
-		    break;
-		case INO:
-		    this.setIno(other.getIno());
-		    break;
-		case MODE:
-		    this.setMode(other.getMode() & UnixPermission.S_PERMS | getMode() & ~UnixPermission.S_PERMS);
-		    break;
-		case NLINK:
-		    this.setNlink(other.getNlink());
-		    break;
-		case UID:
-		    this.setUid(other.getUid());
-		    break;
-		case GID:
-		    this.setGid(other.getGid());
-		    break;
-		case RDEV:
-		    this.setRdev(other.getRdev());
-		    break;
-		case SIZE:
-		    this.setSize(other.getSize());
-		    break;
-		case FILEID:
-		    break;
-		case GENERATION:
-		    this.setGeneration(other.getGeneration());
-		    break;
-		case ATIME:
-		    this.setATime(other.getATime());
-		    break;
-		case MTIME:
-		    this.setMTime(other.getMTime());
-		    break;
-		case CTIME:
-		    this.setCTime(other.getCTime());
-		    break;
-		case CRTIME:
-		    this.setCrTime(other.getCrTime());
-		    break;
-		case BLK_SIZE:
-		    break;
-	    }
-	}
+            switch (attr) {
+            case DEV:
+                this.setDev(other.getDev());
+                break;
+            case MODE:
+                this.setMode(other.getMode() & UnixPermission.S_PERMS | getMode() & ~UnixPermission.S_PERMS);
+                break;
+            case NLINK:
+                this.setNlink(other.getNlink());
+                break;
+            case UID:
+                this.setUid(other.getUid());
+                break;
+            case GID:
+                this.setGid(other.getGid());
+                break;
+            case RDEV:
+                this.setRdev(other.getRdev());
+                break;
+            case SIZE:
+                this.setSize(other.getSize());
+                break;
+            case FILEID:
+            case INO:
+                break;
+            case GENERATION:
+                this.setGeneration(other.getGeneration());
+                break;
+            case ATIME:
+                this.setATime(other.getATime());
+                break;
+            case MTIME:
+                this.setMTime(other.getMTime());
+                break;
+            case CTIME:
+                this.setCTime(other.getCTime());
+                break;
+            case CRTIME:
+                this.setCrTime(other.getCrTime());
+                break;
+            case BLK_SIZE:
+                break;
+            }
+        }
     }
 }

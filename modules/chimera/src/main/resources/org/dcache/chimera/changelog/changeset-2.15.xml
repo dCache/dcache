@@ -1,0 +1,2141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="1" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not creating lost+found as it already exists (this is not an error)">
+            <sqlCheck expectedResult="0">
+                SELECT count(*) FROM t_inodes WHERE ipnfsid='000000000000000000000000000000000001'
+            </sqlCheck>
+        </preConditions>
+
+        <comment>Create lost+found directory</comment>
+
+        <insert tableName="t_inodes">
+            <column name="ipnfsid" value="000000000000000000000000000000000001"/>
+            <column name="itype" valueNumeric="16384"/>
+            <column name="imode" valueNumeric="700"/>
+            <column name="inlink" valueNumeric="2"/>
+            <column name="iuid" valueNumeric="0"/>
+            <column name="igid" valueNumeric="0"/>
+            <column name="isize" valueNumeric="512"/>
+            <column name="iio" valueNumeric="0"/>
+            <column name="ictime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="iatime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="imtime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="icrtime" valueDate="CURRENT_TIMESTAMP"/>
+            <column name="igeneration" valueDate="0"/>
+        </insert>
+        <insert tableName="t_dirs">
+            <column name="iparent" value="000000000000000000000000000000000000"/>
+            <column name="iname"   value="lost+found"/>
+            <column name="ipnfsid" value="000000000000000000000000000000000001"/>
+        </insert>
+
+        <sql>
+            UPDATE t_inodes SET inlink=inlink+1,ictime=now(),imtime=now() WHERE ipnfsid='000000000000000000000000000000000000'
+        </sql>
+
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="2" author="behrmann">
+        <comment>Move lost links to lost+found</comment>
+        <sql>
+            UPDATE t_dirs SET iparent='000000000000000000000000000000000001',iname=ipnfsid WHERE NOT EXISTS (SELECT 1 FROM t_inodes WHERE ipnfsid=iparent);
+            UPDATE t_inodes SET inlink=2+(SELECT count(*) FROM t_dirs WHERE iparent='000000000000000000000000000000000001') WHERE ipnfsid='000000000000000000000000000000000001';
+        </sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="4" author="behrmann">
+        <comment>Move unlinked files and directories to lost+found</comment>
+        <sql>
+            UPDATE t_inodes i SET inlink=1 WHERE itype != 16384 AND NOT EXISTS (SELECT 1 FROM t_dirs d WHERE d.ipnfsid=i.ipnfsid);
+            INSERT INTO t_dirs (SELECT '000000000000000000000000000000000001',ipnfsid,ipnfsid FROM t_inodes i WHERE ipnfsid!='000000000000000000000000000000000000' AND NOT EXISTS (SELECT 1 FROM t_dirs d WHERE d.ipnfsid=i.ipnfsid));
+            UPDATE t_inodes SET inlink=2+(SELECT count(*) FROM t_dirs WHERE iparent='000000000000000000000000000000000001') WHERE ipnfsid='000000000000000000000000000000000001';
+        </sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="5" author="behrmann">
+        <comment>Correct link count on directories</comment>
+        <sql>
+            UPDATE t_inodes i SET inlink=2+(SELECT count(*) FROM t_dirs d WHERE d.iparent=i.ipnfsid) WHERE itype=16384 AND inlink!=2+(SELECT count(*) FROM t_dirs d WHERE d.iparent=i.ipnfsid);
+        </sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="6" author="behrmann">
+        <comment>Add inumber identity field</comment>
+
+        <addColumn tableName="t_inodes">
+            <column name="inumber" type="bigint" autoIncrement="true"/>
+        </addColumn>
+
+        <!-- We add this subsequently as specifying it in the addColumn above apparently causes the constraint name to be lost -->
+        <addUniqueConstraint tableName="t_inodes" columnNames="inumber" constraintName="i_inodes_inumber"/>
+    </changeSet>
+
+    <changeSet id="7" author="behrmann" dbms="postgresql">
+        <comment>Update f_create_inode stored procedure to return inumber</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION f_create_inode(parent bigint, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS bigint AS $$
+            DECLARE
+                newid bigint;
+            BEGIN
+                INSERT INTO t_inodes VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0) RETURNING inumber INTO newid;
+                INSERT INTO t_dirs VALUES (parent, newid, name);
+                UPDATE t_inodes SET inlink=inlink+1,imtime=now,ictime=now,igeneration=igeneration+1 WHERE inumber = parent;
+                RETURN newid;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+
+        <rollback>
+            <createProcedure>
+                CREATE OR REPLACE FUNCTION f_create_inode(parent varchar, name varchar, id varchar, type integer, mode integer, nlink integer, uid integer, gid int, size bigint, io integer, now timestamp) RETURNS void AS $$
+                BEGIN
+                    INSERT INTO t_inodes VALUES (id,type,mode,nlink,uid,gid,size,io,now,now,now,now,0);
+                    INSERT INTO t_dirs VALUES (parent, name, id);
+                    UPDATE t_inodes SET inlink=inlink+1,imtime=now,ictime=now,igeneration=igeneration+1 WHERE ipnfsid=parent;
+                END;
+                $$ LANGUAGE plpgsql;
+            </createProcedure>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="8" author="behrmann">
+        <comment>Rewrite t_tags to use inumber as foreign key</comment>
+
+        <renameTable oldTableName="t_tags" newTableName="t_tags2"/>
+
+        <createTable tableName="t_tags">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itagid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isorign" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itagname" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            insert into t_tags (inumber, itagid, isorign, itagname) (select i.inumber, t.itagid, t.isorign, t.itagname from t_tags2 t join t_inodes i on t.ipnfsid = i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_tags2"/>
+
+        <addPrimaryKey columnNames="inumber,itagname" constraintName="t_tags_pkey" tableName="t_tags"/>
+
+        <createIndex tableName="t_tags" indexName="i_tags_itagid">
+            <column name="itagid"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="itagid" baseTableName="t_tags"
+                                 constraintName="t_tags_itagid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="itagid"
+                                 referencedTableName="t_tags_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_tags"
+                                 constraintName="t_tags_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_tags" newTableName="t_tags2"/>
+
+            <createTable tableName="t_tags">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="itagname" type="varchar(255)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="itagid" type="bigint">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isorign" type="int">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <sql>
+                insert into t_tags (ipnfsid, itagname, itagid, isorign) (select i.ipnfsid, t.itagname, t.itagid, t.isorign from t_tags2 t join t_inodes i on t.inumber = i.inumber)
+            </sql>
+
+            <dropTable tableName="t_tags2"/>
+
+            <addPrimaryKey columnNames="ipnfsid,itagname" constraintName="t_tags_pkey" tableName="t_tags"/>
+
+            <createIndex tableName="t_tags" indexName="i_tags_itagid">
+                <column name="itagid"/>
+            </createIndex>
+
+            <addForeignKeyConstraint baseColumnNames="itagid" baseTableName="t_tags"
+                                     constraintName="t_tags_itagid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="NO ACTION"
+                                     onUpdate="CASCADE"
+                                     referencedColumnNames="itagid"
+                                     referencedTableName="t_tags_inodes"
+            />
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_tags"
+                                     constraintName="t_tags_inumber_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="NO ACTION"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="9" author="behrmann">
+        <comment>Replace ipnfsid by inumber as foreign key in t_dirs</comment>
+
+        <renameTable oldTableName="t_dirs" newTableName="t_dirs_old"/>
+
+        <createTable tableName="t_dirs">
+            <column name="iparent" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ichild" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iname" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            insert into t_dirs (select p.inumber, c.inumber, d.iname from t_dirs_old d join t_inodes p on d.iparent = p.ipnfsid join t_inodes c on d.ipnfsid = c.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_dirs_old"/>
+        <addPrimaryKey columnNames="iparent, iname" constraintName="t_dirs_pkey" tableName="t_dirs"/>
+
+        <createIndex indexName="i_dirs_ichild" tableName="t_dirs">
+            <column name="ichild"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="ichild" baseTableName="t_dirs"
+                                 constraintName="t_dirs_ichild_fkey"
+                                 deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <addForeignKeyConstraint baseColumnNames="iparent" baseTableName="t_dirs"
+                                 constraintName="t_dirs_iparent_fkey"
+                                 deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_dirs" newTableName="t_dirs_new"/>
+
+            <createTable tableName="t_dirs">
+                <column name="iparent" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iname" type="VARCHAR(255)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <sql>
+                insert into t_dirs (select p.ipnfsid, d.iname, c.ipnfsid from t_dirs_new d join t_inodes p on d.iparent = p.inumber join t_inodes c on d.ichild = c.inumber)
+            </sql>
+
+            <dropTable tableName="t_dirs_new"/>
+            <addPrimaryKey columnNames="iparent, iname" constraintName="t_dirs_pkey" tableName="t_dirs"/>
+
+            <createIndex indexName="i_dirs_ipnfsid" tableName="t_dirs">
+                <column name="ipnfsid"/>
+            </createIndex>
+            <createIndex indexName="i_dirs_iparent" tableName="t_dirs">
+                <column name="iparent"/>
+            </createIndex>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_dirs"
+                                     constraintName="t_dirs_ipnfid_fkey"
+                                     deferrable="false" initiallyDeferred="false"
+                                     onDelete="NO ACTION"
+                                     onUpdate="CASCADE"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+
+            <addForeignKeyConstraint baseColumnNames="iparent" baseTableName="t_dirs"
+                                     constraintName="t_dirs_iparent_fkey"
+                                     deferrable="false" initiallyDeferred="false"
+                                     onDelete="NO ACTION"
+                                     onUpdate="CASCADE"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+
+        </rollback>
+    </changeSet>
+
+    <changeSet id="10" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_inodes_data</comment>
+
+        <renameTable oldTableName="t_inodes_data" newTableName="t_inodes_data2"/>
+
+        <createTable tableName="t_inodes_data">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            insert into t_inodes_data (inumber,ifiledata) (select i.inumber,d.ifiledata from t_inodes_data2 d join t_inodes i on d.ipnfsid = i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_inodes_data2"/>
+
+        <addPrimaryKey tableName="t_inodes_data" columnNames="inumber" constraintName="t_inodes_data_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_inodes_data"
+                                 constraintName="t_inodes_data_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_inodes_data" newTableName="t_inodes_data2"/>
+
+            <createTable tableName="t_inodes_data">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ifiledata" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                insert into t_inodes_data (ipnfsid,ifiledata) (select i.ipnfsid,d.ifiledata from t_inodes_data2 d join t_inodes i on d.inumber = i.inumber)
+            </sql>
+
+            <dropTable tableName="t_inodes_data2"/>
+
+            <addPrimaryKey tableName="t_inodes_data" columnNames="ipnfsid" constraintName="t_inodes_data_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_inodes_data"
+                                     constraintName="t_inodes_data_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="11" author="behrmann" dbms="postgresql">
+        <comment>Update stored procedures for inumber changes in t_dirs</comment>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION path2inumber(root bigint, path varchar) RETURNS bigint AS $$
+            DECLARE
+                id       bigint := root;
+                elements varchar[] := string_to_array(path, '/');
+                child    bigint;
+                type     int;
+                link     varchar;
+            BEGIN
+                FOR i IN 1..array_upper(elements,1) LOOP
+                    CASE
+                    WHEN elements[i] = '.' THEN
+                        child := id;
+                    WHEN elements[i] = '..' THEN
+                        SELECT iparent INTO child FROM t_dirs WHERE ichild = id;
+                        IF NOT FOUND THEN
+                            child := id;
+                        END IF;
+                    ELSE
+                        SELECT d.ichild, c.itype INTO child, type FROM t_dirs d JOIN t_inodes c ON d.ichild = c.inumber WHERE d.iparent = id AND d.iname = elements[i];
+                        IF type = 40960 THEN
+                            SELECT encode(ifiledata,'escape') INTO link FROM t_inodes_data WHERE inumber = child;
+                            IF link LIKE '/%' THEN
+                                child := path2inumber(pnfsid2inumber('000000000000000000000000000000000000'), substring(link from 2));
+                            ELSE
+                                child := path2inumber(id, link);
+                            END IF;
+                        END IF;
+                    END CASE;
+                    IF child IS NULL THEN
+                        RETURN NULL;
+                    END IF;
+                    id := child;
+                END LOOP;
+                RETURN id;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION
+                path2inodes(root bigint, path varchar, OUT inode t_inodes)
+                RETURNS SETOF t_inodes AS $$
+            DECLARE
+                dir      bigint;
+                elements text[] := string_to_array(path, '/');
+                inodes   t_inodes[];
+                parent   t_inodes;
+                link     varchar;
+            BEGIN
+                -- Find the inode of the root
+                SELECT * INTO inode FROM t_inodes WHERE inumber = root;
+                IF NOT FOUND THEN
+                    RETURN;
+                END IF;
+
+                -- We build an array of the inodes for the path
+                inodes := ARRAY[inode];
+
+                -- For each path element
+                FOR i IN 1..array_upper(elements,1) LOOP
+                    -- Return empty set if not a directory
+                    IF inode.itype != 16384 THEN
+                        RETURN;
+                    END IF;
+
+                    -- The ID of the directory
+                    dir := inode.inumber;
+
+                    -- Lookup the next path element
+                    CASE
+                    WHEN elements[i] = '.' THEN
+                        CONTINUE;
+                    WHEN elements[i] = '..' THEN
+                        SELECT p.* INTO parent
+                            FROM t_inodes p JOIN t_dirs d ON p.inumber = d.iparent
+                            WHERE d.ichild = dir;
+                        IF FOUND THEN
+                            inode := parent;
+                        ELSE
+                            CONTINUE;
+                        END IF;
+                    ELSE
+                        SELECT c.* INTO inode
+                            FROM t_inodes c JOIN t_dirs d ON c.inumber = d.ichild
+                            WHERE d.iparent = dir AND d.iname = elements[i];
+
+                        -- Return the empty set if not found
+                        IF NOT FOUND THEN
+                            RETURN;
+                        END IF;
+                    END CASE;
+
+                    -- Append the inode to the result set
+                    inodes := array_append(inodes, inode);
+
+                    -- If inode is a symbolic link
+                    IF inode.itype = 40960 THEN
+                        -- Read the link
+                        SELECT encode(ifiledata,'escape') INTO STRICT link
+                            FROM t_inodes_data WHERE inumber = inode.inumber;
+
+                        -- If absolute path then resolve from the file system root
+                        IF link LIKE '/%' THEN
+                            dir := pnfsid2inumber('000000000000000000000000000000000000');
+                            link := substring(link from 2);
+
+                            -- Call recursively and add inodes to result set
+                            FOR inode IN SELECT * FROM path2inodes(dir, link) LOOP
+                                inodes := array_append(inodes, inode);
+                            END LOOP;
+                        ELSE
+                            -- Call recursively and add inodes to result set; skip
+                            -- first inode as it is the inode of dir
+                            FOR inode IN SELECT * FROM path2inodes(dir, link) OFFSET 1 LOOP
+                                inodes := array_append(inodes, inode);
+                            END LOOP;
+                        END IF;
+
+                        -- Return empty set if link could not be resolved
+                        IF NOT FOUND THEN
+                            RETURN;
+                        END IF;
+
+                        -- Continue from the inode pointed to by the link
+                        inode = inodes[array_upper(inodes,1)];
+                    END IF;
+                END LOOP;
+
+                -- Output all inodes
+                FOR i IN 1..array_upper(inodes,1) LOOP
+                    inode := inodes[i];
+                    RETURN NEXT;
+                END LOOP;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION inumber2path(bigint) RETURNS varchar AS $$
+            DECLARE
+                 inumber bigint := $1;
+                 path    varchar := '';
+                 entry   record;
+            BEGIN
+                LOOP
+                    SELECT * INTO entry FROM t_dirs WHERE ichild = inumber;
+                    IF FOUND AND entry.iparent != inumber
+                    THEN
+                        path := '/' || entry.iname || path;
+                        inumber := entry.iparent;
+                    ELSE
+                        EXIT;
+                    END IF;
+                END LOOP;
+
+                RETURN path;
+            END;
+            $$
+            LANGUAGE 'plpgsql';
+        </createProcedure>
+
+        <!-- The following are mostly for interactive use and compatibility with third party queries -->
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION pnfsid2inumber(varchar) RETURNS bigint AS $$
+                SELECT inumber FROM t_inodes WHERE ipnfsid = $1;
+            $$
+            LANGUAGE SQL;
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION inumber2pnfsid(bigint) RETURNS varchar AS $$
+                SELECT ipnfsid FROM t_inodes WHERE inumber = $1;
+            $$
+            LANGUAGE SQL;
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION inode2path(varchar) RETURNS varchar AS $$
+                 SELECT inumber2path(pnfsid2inumber($1));
+            $$
+            LANGUAGE SQL;
+        </createProcedure>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION path2inode(root varchar, path varchar) RETURNS varchar AS $$
+                 SELECT inumber2pnfsid(path2inumber(pnfsid2inumber($1), $2));
+            $$
+            LANGUAGE SQL;
+        </createProcedure>
+
+        <sql>
+            DROP FUNCTION path2inodes(root varchar, path varchar, OUT inode t_inodes)
+        </sql>
+
+        <rollback>
+            <createProcedure>
+                CREATE OR REPLACE FUNCTION path2inode(root varchar, path varchar) RETURNS varchar AS $$
+                DECLARE
+                    id varchar := root;
+                    elements varchar[] := string_to_array(path, '/');
+                    child varchar;
+                    itype INT;
+                    link varchar;
+                BEGIN
+                    FOR i IN 1..array_upper(elements,1) LOOP
+                        CASE
+                        WHEN elements[i] = '.' THEN
+                            child := id;
+                        WHEN elements[i] = '..' THEN
+                            IF id = '000000000000000000000000000000000000' THEN
+                                child := id;
+                            ELSE
+                                SELECT iparent INTO child FROM t_dirs WHERE ipnfsid=id;
+                            END IF;
+                        ELSE
+                            SELECT dir.ipnfsid, inode.itype INTO child, itype FROM t_dirs dir, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.iname=elements[i];
+                            IF itype=40960 THEN
+                                SELECT encode(ifiledata,'escape') INTO link FROM t_inodes_data WHERE ipnfsid=child;
+                                IF link LIKE '/%' THEN
+                                    child := path2inode('000000000000000000000000000000000000', substring(link from 2));
+                                ELSE
+                                    child := path2inode(id, link);
+                                END IF;
+                            END IF;
+                        END CASE;
+                        IF child IS NULL THEN
+                            RETURN NULL;
+                        END IF;
+                        id := child;
+                    END LOOP;
+                    RETURN id;
+                END;
+                $$ LANGUAGE plpgsql;
+            </createProcedure>
+
+            <createProcedure>
+                CREATE OR REPLACE FUNCTION
+                    path2inodes(root varchar, path varchar, OUT inode t_inodes)
+                    RETURNS SETOF t_inodes AS $$
+                DECLARE
+                    dir varchar;
+                    elements text[] := string_to_array(path, '/');
+                    inodes t_inodes[];
+                    link varchar;
+                BEGIN
+                    -- Find the inode of the root
+                    SELECT * INTO inode FROM t_inodes WHERE ipnfsid = root;
+                    IF NOT FOUND THEN
+                        RETURN;
+                    END IF;
+
+                    -- We build an array of the inodes for the path
+                    inodes := ARRAY[inode];
+
+                    -- For each path element
+                    FOR i IN 1..array_upper(elements,1) LOOP
+                        -- Return empty set if not a directory
+                        IF inode.itype != 16384 THEN
+                            RETURN;
+                        END IF;
+
+                        -- The PNFS ID of the directory
+                        dir := inode.ipnfsid;
+
+                        -- Lookup the next path element
+                        CASE
+                        WHEN elements[i] = '.' THEN
+                            CONTINUE;
+                        WHEN elements[i] = '..' THEN
+                            IF dir = '000000000000000000000000000000000000' THEN
+                                CONTINUE;
+                            ELSE
+                                SELECT t_inodes.* INTO inode
+                                    FROM t_inodes, t_dirs
+                                    WHERE t_inodes.ipnfsid = t_dirs.iparent
+                                            AND t_dirs.ipnfsid = dir;
+                            END IF;
+                        ELSE
+                            SELECT t_inodes.* INTO inode
+                                FROM t_inodes, t_dirs
+                                WHERE t_inodes.ipnfsid = t_dirs.ipnfsid
+                                        AND t_dirs.iparent = dir AND iname = elements[i];
+                        END CASE;
+
+                        -- Return the empty set if not found
+                        IF NOT FOUND THEN
+                            RETURN;
+                        END IF;
+
+                        -- Append the inode to the result set
+                        inodes := array_append(inodes, inode);
+
+                        -- If inode is a symbolic link
+                        IF inode.itype = 40960 THEN
+                            -- Read the link
+                            SELECT encode(ifiledata,'escape') INTO STRICT link
+                                FROM t_inodes_data WHERE ipnfsid = inode.ipnfsid;
+
+                            -- If absolute path then resolve from the file system root
+                            IF link LIKE '/%' THEN
+                                dir := '000000000000000000000000000000000000';
+                                link := substring(link from 2);
+
+                                -- Call recursively and add inodes to result set
+                                FOR inode IN SELECT * FROM path2inodes(dir, link) LOOP
+                                    inodes := array_append(inodes, inode);
+                                END LOOP;
+                            ELSE
+                                -- Call recursively and add inodes to result set; skip
+                                -- first inode as it is the inode of dir
+                                FOR inode IN SELECT * FROM path2inodes(dir, link) OFFSET 1 LOOP
+                                    inodes := array_append(inodes, inode);
+                                END LOOP;
+                            END IF;
+
+                            -- Return empty set if link could not be resolved
+                            IF NOT FOUND THEN
+                                RETURN;
+                            END IF;
+
+                            -- Continue from the inode pointed to by the link
+                            inode = inodes[array_upper(inodes,1)];
+                        END IF;
+                    END LOOP;
+
+                    -- Output all inodes
+                    FOR i IN 1..array_upper(inodes,1) LOOP
+                        inode := inodes[i];
+                        RETURN NEXT;
+                    END LOOP;
+                END;
+                $$ LANGUAGE plpgsql;
+            </createProcedure>
+
+            <createProcedure>
+                CREATE OR REPLACE FUNCTION inode2path(varchar) RETURNS varchar AS $$
+                DECLARE
+                     inode VARCHAR := $1;
+                     ipath varchar := '';
+                     ichain  RECORD;
+                BEGIN
+
+                    LOOP
+                        SELECT INTO ichain * FROM t_dirs WHERE ipnfsid=inode AND iname != '.' AND iname != '..';
+                        IF FOUND  AND ichain.iparent != inode
+                        THEN
+                            ipath :=   '/' || ichain.iname ||  ipath;
+                            inode := ichain.iparent;
+                        ELSE
+                            EXIT;
+                        END IF;
+
+                        END LOOP;
+
+                     RETURN ipath;
+                END;
+                $$
+                LANGUAGE 'plpgsql';
+            </createProcedure>
+
+            <sql>
+                DROP FUNCTION inumber2path(BIGINT);
+                DROP FUNCTION path2inodes(root bigint, path varchar, OUT inode t_inodes);
+                DROP FUNCTION path2inumber(root bigint, path varchar);
+                DROP FUNCTION pnfsid2inumber(varchar);
+                DROP FUNCTION inumber2pnfsid(bigint);
+            </sql>
+        </rollback>
+    </changeSet>
+
+
+    <changeSet id="12" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_inodes_checksum</comment>
+
+        <renameTable oldTableName="t_inodes_checksum" newTableName="t_inodes_checksum2"/>
+
+        <createTable tableName="t_inodes_checksum">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itype" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isum" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            insert into t_inodes_checksum (inumber, itype, isum) (select i.inumber,c.itype,c.isum from t_inodes_checksum2 c join t_inodes i on c.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_inodes_checksum2"/>
+
+        <addPrimaryKey tableName="t_inodes_checksum" columnNames="inumber,itype" constraintName="t_inodes_checksum_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_inodes_checksum"
+                                 constraintName="t_inodes_checksum_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_inodes_checksum" newTableName="t_inodes_checksum2"/>
+
+            <createTable tableName="t_inodes_checksum">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="itype" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isum" type="VARCHAR(128)">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <sql>
+                insert into t_inodes_checksum (ipnfsid, itype, isum) (select i.ipnfsid,c.itype,c.isum from t_inodes_checksum2 c join t_inodes i on c.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_inodes_checksum2"/>
+
+            <addPrimaryKey tableName="t_inodes_checksum" columnNames="ipnfsid,itype" constraintName="t_inodes_checksum_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_inodes_checksum"
+                                     constraintName="t_inodes_checksum_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+
+    </changeSet>
+
+    <changeSet id="13" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_storageinfo</comment>
+
+        <renameTable oldTableName="t_storageinfo" newTableName="t_storageinfo2"/>
+
+        <createTable tableName="t_storageinfo">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ihsmname" type="varchar(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="istoragegroup" type="varchar(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="istoragesubgroup" type="varchar(256)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            insert into t_storageinfo (inumber,ihsmname,istoragegroup,istoragesubgroup) (select i.inumber,s.ihsmname,s.istoragegroup,s.istoragesubgroup from t_storageinfo2 s join t_inodes i on s.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_storageinfo2"/>
+
+        <addPrimaryKey tableName="t_storageinfo" columnNames="inumber" constraintName="t_storageinfo_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_storageinfo"
+                                 constraintName="t_storageinfo_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_storageinfo" newTableName="t_storageinfo2"/>
+
+            <createTable tableName="t_storageinfo">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ihsmname" type="varchar(64)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="istoragegroup" type="varchar(64)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="istoragesubgroup" type="varchar(256)">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <sql>
+                insert into t_storageinfo (ipnfsid,ihsmname,istoragegroup,istoragesubgroup) (select i.ipnfsid,s.ihsmname,s.istoragegroup,s.istoragesubgroup from t_storageinfo2 s join t_inodes i on s.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_storageinfo2"/>
+
+            <addPrimaryKey tableName="t_storageinfo" columnNames="ipnfsid" constraintName="t_storageinfo_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_storageinfo"
+                                     constraintName="t_storageinfo_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="14" author="behrmann" dbms="hsqldb">
+        <sql>
+            DROP TRIGGER tgr_locationinfo_trash;
+            DROP TRIGGER tgr_locationinfo_trash2;
+        </sql>
+        <rollback>
+            <createProcedure>
+                CREATE TRIGGER tgr_locationinfo_trash AFTER DELETE ON t_locationinfo
+                  REFERENCING OLD ROW old
+                  FOR EACH ROW WHEN (NOT EXISTS (SELECT 1 FROM t_inodes WHERE ipnfsid = old.ipnfsid))
+                  INSERT INTO t_locationinfo_trash
+                    VALUES (old.ipnfsid, old.itype, old.ilocation, old.ipriority, old.ictime, old.iatime, old.istate)
+            </createProcedure>
+            <createProcedure>
+                CREATE TRIGGER tgr_locationinfo_trash2 AFTER DELETE ON t_inodes
+                    REFERENCING OLD ROW old
+                    FOR EACH ROW
+                    INSERT INTO t_locationinfo_trash
+                        VALUES (old.ipnfsid, 2, '', 0, now(), now(), 1)
+            </createProcedure>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="15" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_locationinfo</comment>
+
+        <renameTable oldTableName="t_locationinfo" newTableName="t_locationinfo2"/>
+
+        <createTable tableName="t_locationinfo">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itype" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ipriority" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="istate" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ilocation" type="VARCHAR(1024)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            insert into t_locationinfo (inumber,itype,ipriority,ictime,iatime,istate,ilocation) (select i.inumber,l.itype,l.ipriority,l.ictime,l.iatime,l.istate,l.ilocation from t_locationinfo2 l join t_inodes i on l.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_locationinfo2"/>
+
+        <addPrimaryKey tableName="t_locationinfo" columnNames="inumber,itype,ilocation" constraintName="t_locationinfo_pkey"/>
+
+        <addForeignKeyConstraint baseTableName="t_locationinfo" baseColumnNames="inumber"
+                                 constraintName="t_locationinfo_inumber_fkey"
+                                 referencedTableName="t_inodes"
+                                 referencedColumnNames="inumber"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"/>
+
+        <rollback>
+            <renameTable oldTableName="t_locationinfo" newTableName="t_locationinfo2"/>
+
+            <createTable tableName="t_locationinfo">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="itype" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ilocation" type="VARCHAR(1024)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ipriority" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="istate" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <sql>
+                insert into t_locationinfo (ipnfsid,itype,ilocation,ipriority,ictime,iatime,istate) (select i.ipnfsid,l.itype,l.ilocation,l.ipriority,l.ictime,l.iatime,l.istate from t_locationinfo2 l join t_inodes i on l.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_locationinfo2"/>
+
+            <addPrimaryKey tableName="t_locationinfo" columnNames="ipnfsid,itype,ilocation" constraintName="t_locationinfo_pkey"/>
+
+            <addForeignKeyConstraint baseTableName="t_locationinfo" baseColumnNames="ipnfsid"
+                                     constraintName="t_locationinfo_inumber_fkey"
+                                     referencedTableName="t_inodes"
+                                     referencedColumnNames="ipnfsid"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="16" author="behrmann" dbms="postgresql">
+        <comment>Update stored procedures for inumber changes in t_locationinfo</comment>
+        <createProcedure>
+            DROP TRIGGER IF EXISTS tgr_locationinfo_trash ON t_inodes;
+
+            --
+            -- store location of deleted inodes in trash table
+            --
+
+            CREATE OR REPLACE FUNCTION f_locationinfo2trash() RETURNS TRIGGER AS $t_inodes_trash$
+            BEGIN
+                IF (TG_OP = 'DELETE') THEN
+                    INSERT INTO t_locationinfo_trash
+                        SELECT
+                            OLD.ipnfsid,
+                            itype,
+                            ilocation,
+                            ipriority,
+                            ictime,
+                            iatime,
+                            istate
+                        FROM t_locationinfo
+                        WHERE inumber = OLD.inumber
+                      UNION
+                        SELECT OLD.ipnfsid, 2, '', 0, now(), now(), 1;
+                END IF;
+
+                RETURN OLD;
+            END;
+
+            $t_inodes_trash$ LANGUAGE plpgsql;
+
+
+            --
+            -- trigger to store removed inodes
+            --
+
+            CREATE TRIGGER tgr_locationinfo_trash BEFORE DELETE ON t_inodes
+                FOR EACH ROW EXECUTE PROCEDURE f_locationinfo2trash();
+        </createProcedure>
+
+        <rollback>
+            <createProcedure>
+                DROP TRIGGER IF EXISTS tgr_locationinfo_trash ON t_inodes;
+
+                --
+                --  store location of deleted  inodes in trash table
+                --
+                -- stores a old values into the trash table except last access time,
+                -- which replaced with a time, when the trigger was running
+                --
+
+                CREATE OR REPLACE FUNCTION f_locationinfo2trash() RETURNS TRIGGER AS $t_inodes_trash$
+                BEGIN
+
+                    IF (TG_OP = 'DELETE') THEN
+
+                        INSERT INTO t_locationinfo_trash
+                            SELECT
+                                ipnfsid ,
+                                itype,
+                                ilocation ,
+                                ipriority,
+                                ictime ,
+                                iatime ,
+                                istate
+                            FROM t_locationinfo
+                            WHERE ipnfsid = OLD.ipnfsid
+                          UNION
+                            SELECT OLD.ipnfsid, 2, '', 0, now(), now(), 1;
+
+                    END IF;
+
+                    RETURN OLD;
+                END;
+
+                $t_inodes_trash$ LANGUAGE plpgsql;
+
+
+                --
+                -- trigger to store removed inodes
+                --
+
+                CREATE TRIGGER tgr_locationinfo_trash BEFORE DELETE ON t_inodes
+                    FOR EACH ROW EXECUTE PROCEDURE f_locationinfo2trash();
+            </createProcedure>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="17" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_level_1</comment>
+
+        <renameTable oldTableName="t_level_1" newTableName="t_level_1_old"/>
+
+        <createTable tableName="t_level_1">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            insert into t_level_1 (inumber,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.inumber,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_1_old l join t_inodes i on l.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_level_1_old"/>
+
+        <addPrimaryKey tableName="t_level_1" columnNames="inumber" constraintName="t_level_1_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_level_1"
+                                 constraintName="t_level_1_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_level_1" newTableName="t_level_1_old"/>
+
+            <createTable tableName="t_level_1">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imode" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="inlink" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iuid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="igid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isize" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imtime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ifiledata" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                insert into t_level_1 (ipnfsid,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.ipnfsid,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_1_old l join t_inodes i on l.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_level_1_old"/>
+
+            <addPrimaryKey tableName="t_level_1" columnNames="ipnfsid" constraintName="t_level_1_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_1"
+                                     constraintName="t_level_1_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="18" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_level_2</comment>
+
+        <renameTable oldTableName="t_level_2" newTableName="t_level_2_old"/>
+
+        <createTable tableName="t_level_2">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            insert into t_level_2 (inumber,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.inumber,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_2_old l join t_inodes i on l.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_level_2_old"/>
+
+        <addPrimaryKey tableName="t_level_2" columnNames="inumber" constraintName="t_level_2_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_level_2"
+                                 constraintName="t_level_2_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_level_2" newTableName="t_level_2_old"/>
+
+            <createTable tableName="t_level_2">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imode" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="inlink" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iuid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="igid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isize" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imtime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ifiledata" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                insert into t_level_2 (ipnfsid,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.ipnfsid,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_2_old l join t_inodes i on l.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_level_2_old"/>
+
+            <addPrimaryKey tableName="t_level_2" columnNames="ipnfsid" constraintName="t_level_2_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_2"
+                                     constraintName="t_level_2_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="19" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_level_3</comment>
+
+        <renameTable oldTableName="t_level_3" newTableName="t_level_3_old"/>
+
+        <createTable tableName="t_level_3">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            insert into t_level_3 (inumber,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.inumber,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_3_old l join t_inodes i on l.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_level_3_old"/>
+
+        <addPrimaryKey tableName="t_level_3" columnNames="inumber" constraintName="t_level_3_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_level_3"
+                                 constraintName="t_level_3_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_level_3" newTableName="t_level_3_old"/>
+
+            <createTable tableName="t_level_3">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imode" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="inlink" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iuid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="igid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isize" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imtime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ifiledata" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                insert into t_level_3 (ipnfsid,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.ipnfsid,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_3_old l join t_inodes i on l.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_level_3_old"/>
+
+            <addPrimaryKey tableName="t_level_3" columnNames="ipnfsid" constraintName="t_level_3_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_3"
+                                     constraintName="t_level_3_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="20" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_level_4</comment>
+
+        <renameTable oldTableName="t_level_4" newTableName="t_level_4_old"/>
+
+        <createTable tableName="t_level_4">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            insert into t_level_4 (inumber,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.inumber,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_4_old l join t_inodes i on l.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_level_4_old"/>
+
+        <addPrimaryKey tableName="t_level_4" columnNames="inumber" constraintName="t_level_4_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_level_4"
+                                 constraintName="t_level_4_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_level_4" newTableName="t_level_4_old"/>
+
+            <createTable tableName="t_level_4">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imode" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="inlink" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iuid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="igid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isize" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imtime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ifiledata" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                insert into t_level_4 (ipnfsid,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.ipnfsid,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_4_old l join t_inodes i on l.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_level_4_old"/>
+
+            <addPrimaryKey tableName="t_level_4" columnNames="ipnfsid" constraintName="t_level_4_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_4"
+                                     constraintName="t_level_4_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="21" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_level_5</comment>
+
+        <renameTable oldTableName="t_level_5" newTableName="t_level_5_old"/>
+
+        <createTable tableName="t_level_5">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            insert into t_level_5 (inumber,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.inumber,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_5_old l join t_inodes i on l.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_level_5_old"/>
+
+        <addPrimaryKey tableName="t_level_5" columnNames="inumber" constraintName="t_level_5_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_level_5"
+                                 constraintName="t_level_5_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_level_5" newTableName="t_level_5_old"/>
+
+            <createTable tableName="t_level_5">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imode" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="inlink" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iuid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="igid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isize" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imtime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ifiledata" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                insert into t_level_5 (ipnfsid,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.ipnfsid,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_5_old l join t_inodes i on l.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_level_5_old"/>
+
+            <addPrimaryKey tableName="t_level_5" columnNames="ipnfsid" constraintName="t_level_5_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_5"
+                                     constraintName="t_level_5_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="22" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_level_6</comment>
+
+        <renameTable oldTableName="t_level_6" newTableName="t_level_6_old"/>
+
+        <createTable tableName="t_level_6">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            insert into t_level_6 (inumber,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.inumber,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_6_old l join t_inodes i on l.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_level_6_old"/>
+
+        <addPrimaryKey tableName="t_level_6" columnNames="inumber" constraintName="t_level_6_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_level_6"
+                                 constraintName="t_level_6_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_level_6" newTableName="t_level_6_old"/>
+
+            <createTable tableName="t_level_6">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imode" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="inlink" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iuid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="igid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isize" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imtime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ifiledata" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                insert into t_level_6 (ipnfsid,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.ipnfsid,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_6_old l join t_inodes i on l.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_level_6_old"/>
+
+            <addPrimaryKey tableName="t_level_6" columnNames="ipnfsid" constraintName="t_level_6_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_6"
+                                     constraintName="t_level_6_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="23" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_level_7</comment>
+
+        <renameTable oldTableName="t_level_7" newTableName="t_level_7_old"/>
+
+        <createTable tableName="t_level_7">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ifiledata" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            insert into t_level_7 (inumber,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.inumber,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_7_old l join t_inodes i on l.ipnfsid=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_level_7_old"/>
+
+        <addPrimaryKey tableName="t_level_7" columnNames="inumber" constraintName="t_level_7_pkey"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_level_7"
+                                 constraintName="t_level_7_inumber_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="inumber"
+                                 referencedTableName="t_inodes"
+        />
+
+        <rollback>
+            <renameTable oldTableName="t_level_7" newTableName="t_level_7_old"/>
+
+            <createTable tableName="t_level_7">
+                <column name="ipnfsid" type="varchar(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imode" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="inlink" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iuid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="igid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isize" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imtime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ifiledata" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                insert into t_level_7 (ipnfsid,imode,inlink,iuid,igid,isize,ictime,iatime,imtime,ifiledata) (select i.ipnfsid,l.imode,l.inlink,l.iuid,l.igid,l.isize,l.ictime,l.iatime,l.imtime,l.ifiledata from t_level_7_old l join t_inodes i on l.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_level_7_old"/>
+
+            <addPrimaryKey tableName="t_level_7" columnNames="ipnfsid" constraintName="t_level_7_pkey"/>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_level_7"
+                                     constraintName="t_level_7_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+            />
+        </rollback>
+    </changeSet>
+
+    <changeSet id="24" author="behrmann" dbms="postgresql">
+        <comment>Update enstore procedures for inumber changes</comment>
+
+        <createProcedure>
+          --
+          -- populate t_storageinfo from information in t_level_4
+          --
+          CREATE OR REPLACE FUNCTION "public"."enstore2chimera" ()  RETURNS void AS $$
+          DECLARE
+            ichain  RECORD;
+            istring text[];
+            igroup text;
+            istore text;
+            l_entries text[];
+            ilocation text;
+          BEGIN
+            FOR ichain IN SELECT * FROM t_level_4 LOOP
+              ilocation = f_enstore2uri(encode(ichain.ifiledata,'escape'));
+              IF ilocation IS NULL THEN
+                raise warning 'ilocation is NULL %',ichain.inumber;
+                CONTINUE;
+              ELSE
+                BEGIN
+                  INSERT INTO t_locationinfo VALUES ( ichain.inumber, 0, ilocation, 10, NOW(), NOW(), 1);
+                  EXCEPTION WHEN unique_violation THEN
+                        -- do nothing
+                    RAISE NOTICE 'Tape location for % aready exist.', ichain.inumber;
+                    CONTINUE;
+                    END;
+                l_entries = string_to_array(encode(ichain.ifiledata,'escape'), E'\n');
+                BEGIN
+                  INSERT INTO t_storageinfo
+                  VALUES (ichain.inumber,'enstore','enstore',l_entries[4]);
+                  EXCEPTION WHEN unique_violation THEN
+                        -- do nothing
+                    RAISE NOTICE 'Storage info for % aready exist.', ichain.inumber;
+                  CONTINUE;
+                    END;
+              END IF;
+            END LOOP;
+          END;
+          $$
+          LANGUAGE 'plpgsql';
+        </createProcedure>
+
+        <createProcedure>
+          DROP TRIGGER IF EXISTS tgr_enstore_location ON t_level_4;
+
+          CREATE OR REPLACE FUNCTION f_enstorelevel2locationinfo() RETURNS TRIGGER
+          AS $$
+          DECLARE
+            l_entries text[];
+                location text;
+            file_data varchar;
+          BEGIN
+            IF (TG_OP = 'INSERT') THEN
+                  location := f_enstore2uri(encode(NEW.ifiledata,'escape'));
+              IF location IS NULL THEN
+                -- encp only creates empty layer 4 file
+                -- so NEW.ifiledata is null
+                INSERT INTO t_locationinfo VALUES (NEW.inumber,0,'enstore:',10,NOW(),NOW(),1);
+                INSERT INTO t_storageinfo
+               VALUES (NEW.inumber,'enstore','enstore','enstore');
+              ELSE
+                    l_entries = string_to_array(encode(NEW.ifiledata,'escape'), E'\n');
+                INSERT INTO t_locationinfo VALUES (NEW.inumber,0,location,10,NOW(),NOW(),1);
+                INSERT INTO t_storageinfo
+               VALUES (NEW.inumber,'enstore','enstore',l_entries[4]);
+                  END IF;
+               --
+                   -- we assume all files coming through level4 to be CUSTODIAL-NEARLINE
+               --
+                   -- the block below is needed for files written directly by encp
+                   --
+              BEGIN
+                    UPDATE t_inodes SET iaccesslatency = 0, iretentionpolicy = 0 WHERE inumber = NEW.inumber;
+              END;
+            ELSEIF (TG_OP = 'UPDATE')  THEN
+              file_data := encode(NEW.ifiledata, 'escape');
+                  IF ( file_data = E'\n') THEN
+                UPDATE t_locationinfo SET ilocation = file_data
+                      WHERE inumber = NEW.inumber and itype=0;
+                  ELSE
+                location := f_enstore2uri(file_data);
+                    IF location IS NOT NULL THEN
+                  UPDATE t_locationinfo
+                SET ilocation = f_enstore2uri(file_data)
+                        WHERE inumber = NEW.inumber and itype=0;
+                      l_entries = string_to_array(file_data, E'\n');
+                  UPDATE t_storageinfo SET istoragesubgroup=l_entries[4]
+                    WHERE  inumber = NEW.inumber;
+                    END IF;
+                  END IF;
+                END IF;
+                RETURN NEW;
+              END;
+          $$
+          LANGUAGE plpgsql;
+          CREATE TRIGGER tgr_enstore_location BEFORE INSERT OR UPDATE ON t_level_4
+            FOR EACH ROW EXECUTE PROCEDURE f_enstorelevel2locationinfo();
+        </createProcedure>
+
+        <rollback>
+            <createProcedure>
+              --
+              -- populate t_storageinfo from information in t_level_4
+              --
+              CREATE OR REPLACE FUNCTION "public"."enstore2chimera" ()  RETURNS void AS $$
+              DECLARE
+                ichain  RECORD;
+                istring text[];
+                igroup text;
+                istore text;
+                l_entries text[];
+                ilocation text;
+              BEGIN
+                FOR ichain IN SELECT * FROM t_level_4 LOOP
+                  ilocation = f_enstore2uri(encode(ichain.ifiledata,'escape'));
+                  IF ilocation IS NULL THEN
+                    raise warning 'ilocation is NULL %',ichain.ipnfsid;
+                    CONTINUE;
+                  ELSE
+                    BEGIN
+                      INSERT INTO t_locationinfo VALUES ( ichain.ipnfsid, 0, ilocation, 10, NOW(), NOW(), 1);
+                      EXCEPTION WHEN unique_violation THEN
+                            -- do nothing
+                        RAISE NOTICE 'Tape location for % aready exist.', ichain.ipnfsid;
+                        CONTINUE;
+                        END;
+                    l_entries = string_to_array(encode(ichain.ifiledata,'escape'), E'\n');
+                    BEGIN
+                      INSERT INTO t_storageinfo
+                      VALUES (ichain.ipnfsid,'enstore','enstore',l_entries[4]);
+                      EXCEPTION WHEN unique_violation THEN
+                            -- do nothing
+                        RAISE NOTICE 'Storage info for % aready exist.', ichain.ipnfsid;
+                      CONTINUE;
+                        END;
+                  END IF;
+                END LOOP;
+              END;
+              $$
+              LANGUAGE 'plpgsql';
+            </createProcedure>
+            <createProcedure>
+              DROP TRIGGER IF EXISTS tgr_enstore_location ON t_level_4;
+
+              CREATE OR REPLACE FUNCTION f_enstorelevel2locationinfo() RETURNS TRIGGER
+              AS $$
+              DECLARE
+                l_entries text[];
+                    location text;
+                file_data varchar;
+              BEGIN
+                IF (TG_OP = 'INSERT') THEN
+                      location := f_enstore2uri(encode(NEW.ifiledata,'escape'));
+                  IF location IS NULL THEN
+                    -- encp only creates empty layer 4 file
+                    -- so NEW.ifiledata is null
+                    INSERT INTO t_locationinfo VALUES (NEW.ipnfsid,0,'enstore:',10,NOW(),NOW(),1);
+                    INSERT INTO t_storageinfo
+                   VALUES (NEW.ipnfsid,'enstore','enstore','enstore');
+                  ELSE
+                        l_entries = string_to_array(encode(NEW.ifiledata,'escape'), E'\n');
+                    INSERT INTO t_locationinfo VALUES (NEW.ipnfsid,0,location,10,NOW(),NOW(),1);
+                    INSERT INTO t_storageinfo
+                   VALUES (NEW.ipnfsid,'enstore','enstore',l_entries[4]);
+                      END IF;
+                   --
+                       -- we assume all files coming through level4 to be CUSTODIAL-NEARLINE
+                   --
+                       -- the block below is needed for files written directly by encp
+                       --
+                  BEGIN
+                        UPDATE t_inodes SET iaccesslatency = 0, iretentionpolicy = 0 WHERE ipnfsid = NEW.ipnfsid;
+                  END;
+                ELSEIF (TG_OP = 'UPDATE')  THEN
+                  file_data := encode(NEW.ifiledata, 'escape');
+                      IF ( file_data = E'\n') THEN
+                    UPDATE t_locationinfo SET ilocation = file_data
+                          WHERE ipnfsid = NEW.ipnfsid and itype=0;
+                      ELSE
+                    location := f_enstore2uri(file_data);
+                        IF location IS NOT NULL THEN
+                      UPDATE t_locationinfo
+                    SET ilocation = f_enstore2uri(file_data)
+                            WHERE ipnfsid = NEW.ipnfsid and itype=0;
+                          l_entries = string_to_array(file_data, E'\n');
+                      UPDATE t_storageinfo SET istoragesubgroup=l_entries[4]
+                        WHERE  ipnfsid = NEW.ipnfsid;
+                        END IF;
+                      END IF;
+                    END IF;
+                    RETURN NEW;
+                  END;
+              $$
+              LANGUAGE plpgsql;
+              CREATE TRIGGER tgr_enstore_location BEFORE INSERT OR UPDATE ON t_level_4
+                FOR EACH ROW EXECUTE PROCEDURE f_enstorelevel2locationinfo();
+            </createProcedure>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="25" author="behrmann">
+        <comment>Replace ipndsid by inumber as foreign key in t_acl</comment>
+
+        <renameTable oldTableName="t_acl" newTableName="t_acl2"/>
+
+        <createTable tableName="t_acl">
+            <column name="inumber" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ace_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rs_type" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="access_msk" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="who" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="who_id" type="INT"/>
+            <column name="flags" type="INT"/>
+        </createTable>
+
+        <sql>
+            insert into t_acl (inumber,ace_order,rs_type,type,access_msk,who,who_id,flags)
+                (select i.inumber,a.ace_order,a.rs_type,a.type,a.access_msk,a.who,a.who_id,a.flags from t_acl2 a join t_inodes i on a.rs_id=i.ipnfsid)
+        </sql>
+
+        <dropTable tableName="t_acl2"/>
+
+        <addPrimaryKey columnNames="inumber,ace_order" constraintName="t_acl_pkey" tableName="t_acl"/>
+
+        <addForeignKeyConstraint baseColumnNames="inumber" baseTableName="t_acl" constraintName="t_acl_fkey"
+                                 deferrable="false" initiallyDeferred="false"
+                                 referencedColumnNames="inumber" referencedTableName="t_inodes"
+                                 onDelete="CASCADE"
+                                 onUpdate="CASCADE"/>
+
+        <rollback>
+            <renameTable oldTableName="t_acl" newTableName="t_acl2"/>
+            <createTable tableName="t_acl">
+                <column name="rs_id" type="VARCHAR(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="rs_type" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column defaultValueNumeric="0" name="type" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="flags" type="INT"/>
+                <column defaultValueNumeric="0" name="access_msk" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="who" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="who_id" type="INT"/>
+                <column defaultValueNumeric="0" name="ace_order" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <sql>
+                insert into t_acl (rs_id,rs_type,type,flags,access_msk,who,who_id,ace_order)
+                    (select i.ipnfsid,a.rs_type,a.type,a.flags,a.access_msk,a.who,a.who_id,a.ace_order from t_acl2 a join t_inodes i on a.inumber=i.inumber)
+            </sql>
+
+            <dropTable tableName="t_acl2"/>
+
+            <addPrimaryKey columnNames="rs_id, ace_order" constraintName="t_acl_pkey"
+                           tableName="t_acl"/>
+
+            <addForeignKeyConstraint baseColumnNames="rs_id" baseTableName="t_acl" constraintName="t_acl_fkey"
+                                     deferrable="false" initiallyDeferred="false"
+                                     onDelete="CASCADE"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid" referencedTableName="t_inodes"/>
+
+            <createIndex indexName="i_t_acl_rs_id" tableName="t_acl" unique="false">
+                <column name="rs_id"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

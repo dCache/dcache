@@ -68,7 +68,7 @@ public interface FileSystemProvider extends Closeable {
      * Create a new entry with given inode id.
      *
      * @param parent
-     * @param inode
+     * @param id
      * @param name
      * @param owner
      * @param group
@@ -76,8 +76,7 @@ public interface FileSystemProvider extends Closeable {
      * @param type
      * @throws ChimeraFsException
      */
-    void createFileWithId(FsInode parent, FsInode inode,
-                          String name, int owner, int group, int mode, int type)
+    void createFileWithId(FsInode parent, String id, String name, int owner, int group, int mode, int type)
             throws ChimeraFsException;
 
     String[] listDir(String dir);
@@ -142,6 +141,35 @@ public interface FileSystemProvider extends Closeable {
 
     FsInode path2inode(String path, FsInode startFrom)
             throws ChimeraFsException;
+
+    /**
+     * Maps an inode to a persistent identifier.
+     *
+     * May throw FileNotFoundHimeraFsException if the inode does not exist, however since the mapping
+     * is semi persistent (it may only change while Chimera/dCache is shut down), it may be cached and
+     * there is no guarantee that the inode exists if this method does not throw an exception.
+     *
+     * @param inode
+     * @return
+     * @throws ChimeraFsException
+     */
+    String inode2id(FsInode inode) throws ChimeraFsException;
+
+    /**
+     * Maps a persistent identifier to an inode.
+     *
+     * May throw FileNotFoundHimeraFsException if such an inode does not exist, however since the mapping
+     * is semi persistent (it may only change while Chimera/dCache is shut down), it may be cached and
+     * there is no guarantee that the inode exists if this method does not throw an exception.
+     *
+     * If {@code stat} is [@code STAT}, the stat cache of the inode is pre-filled. The stat information
+     * is up to date as of this call.
+     *
+     * @param id
+     * @return
+     * @throws ChimeraFsException
+     */
+    FsInode id2inode(String id, StatCacheOption stat) throws ChimeraFsException;
 
     List<FsInode> path2inodes(String path)
         throws ChimeraFsException;
@@ -320,19 +348,19 @@ public interface FileSystemProvider extends Closeable {
     /**
      * Implementation-specific.  Can be NOP.
      *
-     * @param pnfsid
+     * @param inode
      * @param lifetime
      * @throws ChimeraFsException
      */
-    void pin(String pnfsid, long lifetime) throws ChimeraFsException;
+    void pin(FsInode inode, long lifetime) throws ChimeraFsException;
 
     /**
      * Implementation-specific.  Can be NOP.
      *
-     * @param pnfsid
+     * @param inode
      * @throws ChimeraFsException
      */
-    void unpin(String pnfsid) throws ChimeraFsException;
+    void unpin(FsInode inode) throws ChimeraFsException;
 
     enum StatCacheOption
     {

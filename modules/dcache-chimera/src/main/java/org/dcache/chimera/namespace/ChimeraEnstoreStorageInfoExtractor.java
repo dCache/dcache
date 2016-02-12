@@ -43,7 +43,6 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
                 info = parentStorageInfo;
             }
             else {
-                InodeStorageInformation inodeStorageInfo = inode.getFs().getStorageInfo(inode);
                 info = new EnstoreStorageInfo(parentStorageInfo.getStorageGroup(),
                                               parentStorageInfo.getFileFamily());
                 info.setIsNew(false);

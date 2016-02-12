@@ -26,11 +26,11 @@ public class FsInode_TAG extends FsInode {
     /**
      *
      * @param fs pointer to 'File System'
-     * @param id inode id of the
+     * @param ino inode number of the
      * @param tag
      */
-    public FsInode_TAG(FileSystemProvider fs, String id, String tag) {
-        super(fs, id, FsInodeType.TAG);
+    public FsInode_TAG(FileSystemProvider fs, long ino, String tag) {
+        super(fs, ino, FsInodeType.TAG);
         _tag = tag;
     }
 

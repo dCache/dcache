@@ -26,21 +26,20 @@ import org.dcache.acl.enums.RsType;
 
 public class HsqlDBFsSqlDriver extends FsSqlDriver {
 
-    protected HsqlDBFsSqlDriver(DataSource dataSource)
+    protected HsqlDBFsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
     }
 
     @Override
-    void removeTag(FsInode dir)
-    {
+    void removeTag(FsInode dir) {
         /* Get the tag IDs of the tag links to be removed.
          */
-        List<String> ids = _jdbc.queryForList("SELECT itagid FROM t_tags WHERE ipnfsid=?", String.class, dir.toString());
+        List<String> ids = _jdbc.queryForList("SELECT itagid FROM t_tags WHERE inumber=?", String.class, dir.ino());
         if (!ids.isEmpty()) {
             /* Remove the links.
              */
-            _jdbc.update("DELETE FROM t_tags WHERE ipnfsid=?", dir.toString());
+            _jdbc.update("DELETE FROM t_tags WHERE inumber=?", dir.ino());
 
             /* Remove any tag inode of of the tag links removed above, which are
              * not referenced by any other links either.
@@ -83,23 +82,22 @@ public class HsqlDBFsSqlDriver extends FsSqlDriver {
      */
     @Override
     void copyTags(FsInode orign, FsInode destination) {
-        _jdbc.update("INSERT INTO t_tags ( SELECT ? , itagname, itagid, 0 from t_tags WHERE ipnfsid=?)",
-                     destination.toString(), orign.toString());
+        _jdbc.update("INSERT INTO t_tags (inumber,itagid,isorign,itagname) (SELECT ?,itagid,0,itagname from t_tags WHERE inumber=?)",
+                     destination.ino(), orign.ino());
     }
 
     @Override
-    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags)
-    {
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags) {
         int msk = mask.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
         int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
-        _jdbc.update("INSERT INTO t_acl " +
+        _jdbc.update("INSERT INTO t_acl (inumber,rs_type,type,flags,access_msk,who,who_id,ace_order) " +
                      "SELECT ?, ?, type, BITANDNOT(flags, ?), access_msk, who, who_id, ace_order " +
-                     "FROM t_acl WHERE rs_id = ? AND BITAND(flags, ?) > 0",
+                     "FROM t_acl WHERE inumber = ? AND BITAND(flags, ?) > 0",
                      ps -> {
-                         ps.setString(1, inode.toString());
+                         ps.setLong(1, inode.ino());
                          ps.setInt(2, type.getValue());
                          ps.setInt(3, msk);
-                         ps.setString(4, source.toString());
+                         ps.setLong(4, source.ino());
                          ps.setInt(5, flgs);
                      });
     }

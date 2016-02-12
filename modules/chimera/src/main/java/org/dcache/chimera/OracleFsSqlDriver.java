@@ -39,11 +39,11 @@ class OracleFsSqlDriver extends FsSqlDriver {
      *  this is a utility class which is issues SQL queries on database
      *
      */
-    protected OracleFsSqlDriver(DataSource dataSource) {
+    protected OracleFsSqlDriver(DataSource dataSource) throws ChimeraFsException
+    {
         super(dataSource);
         _log.info("Running Oracle specific Driver");
     }
-    private static final String sqlInode2Path = "SELECT iname, LEVEL AS deep FROM (SELECT * FROM  t_dirs) start with ipnfsid=? CONNECT BY  ipnfsid = PRIOR iparent ORDER BY deep DESC";
 
     /**
      *
@@ -55,30 +55,30 @@ class OracleFsSqlDriver extends FsSqlDriver {
      */
     @Override
     String inode2path(FsInode inode, FsInode startFrom) {
-        return _jdbc.query(sqlInode2Path,
-                           rs -> {
-                               StringBuilder sb = new StringBuilder();
-                               while (rs.next()) {
-                                   sb.append("/").append(rs.getString("iname"));
-                               }
-                               return sb.toString();
-                           },
-                           inode.toString());
+        return _jdbc.query(
+                "SELECT iname, LEVEL AS deep FROM (SELECT * FROM  t_dirs) start with ichild=? CONNECT BY  ichild = PRIOR iparent ORDER BY deep DESC",
+                rs -> {
+                    StringBuilder sb = new StringBuilder();
+                    while (rs.next()) {
+                        sb.append("/").append(rs.getString("iname"));
+                    }
+                    return sb.toString();
+                },
+                inode.ino());
     }
 
     @Override
-    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags)
-    {
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags) {
         int msk = EnumSet.complementOf(mask).stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
         int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
-        _jdbc.update("INSERT INTO t_acl " +
+        _jdbc.update("INSERT INTO t_acl (inumber,rs_type,type,flags,access_msk,who,who_id,ace_order) " +
                      "SELECT ?, ?, type, BITAND(flags, ?), access_msk, who, who_id, ace_order " +
-                     "FROM t_acl WHERE rs_id = ? AND BITAND(flags, ?) > 0",
+                     "FROM t_acl WHERE inumber = ? AND BITAND(flags, ?) > 0",
                      ps -> {
-                         ps.setString(1, inode.toString());
+                         ps.setLong(1, inode.ino());
                          ps.setInt(2, type.getValue());
                          ps.setInt(3, msk);
-                         ps.setString(4, source.toString());
+                         ps.setLong(4, source.ino());
                          ps.setInt(5, flgs);
                      });
     }

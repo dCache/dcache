@@ -25,8 +25,8 @@ package org.dcache.chimera;
 public class FsInode_PLOC extends FsInode_PGET {
     private String _locality;
 
-    public FsInode_PLOC(FileSystemProvider fs, String id) {
-        super(fs, id, FsInodeType.PLOC);
+    public FsInode_PLOC(FileSystemProvider fs, long ino) {
+        super(fs, ino, FsInodeType.PLOC);
     }
 
     @Override

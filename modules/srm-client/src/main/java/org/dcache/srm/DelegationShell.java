@@ -111,6 +111,11 @@ public class DelegationShell extends ShellApplication
     private final PEMCredential _proxy;
     private final String _proxyPath;
 
+    static {
+        Call.setTransportForProtocol("http", HttpClientTransport.class);
+        Call.setTransportForProtocol("https", HttpClientTransport.class);
+    }
+
     public static void main(String[] arguments) throws Throwable
     {
         Args args = new Args(arguments);
@@ -136,10 +141,6 @@ public class DelegationShell extends ShellApplication
     {
         _proxyPath = proxyPath;
         _proxy = new PEMCredential(proxyPath, (char[]) null);
-
-        Call.initialize();
-        Call.setTransportForProtocol("http", HttpClientTransport.class);
-        Call.setTransportForProtocol("https", HttpClientTransport.class);
 
         HttpClientSender sender = new HttpClientSender();
         sender.setSslContextFactory(CanlContextFactory.createDefault());

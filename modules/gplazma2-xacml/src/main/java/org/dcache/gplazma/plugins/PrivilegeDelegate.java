@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import org.apache.axis.EngineConfiguration;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.opensciencegrid.authz.xacml.common.LocalId;
 
@@ -90,5 +91,11 @@ public class PrivilegeDelegate implements IMapCredentialsClient {
     @Override
     public void setX509SubjectIssuer(String x509SubjectIssuer) {
         client.setX509SubjectIssuer(x509SubjectIssuer);
+    }
+
+    @Override
+    public void setAxisConfiguration(EngineConfiguration axisConfiguration)
+    {
+        client.setAxisConfiguration(axisConfiguration);
     }
 }

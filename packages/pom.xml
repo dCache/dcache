@@ -55,11 +55,6 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
-        <artifactId>gplazma2-gsi</artifactId>
-        <version>${project.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.dcache</groupId>
         <artifactId>dcache-srm</artifactId>
         <version>${project.version}</version>
     </dependency>

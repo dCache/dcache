@@ -95,11 +95,13 @@ public class DCacheAwareJdbcFs extends JdbcFs {
     private CellStub pinManagerStub;
     private PnfsHandler pnfsHandler;
 
-    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) {
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) throws ChimeraFsException
+    {
         super(dataSource, txManager, dialect);
     }
 
-    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect, int id) {
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect, int id) throws ChimeraFsException
+    {
         super(dataSource, txManager, dialect, id);
     }
 
@@ -117,7 +119,7 @@ public class DCacheAwareJdbcFs extends JdbcFs {
 
     @Override
     public String getFileLocality(FsInode_PLOC node) throws ChimeraFsException {
-        FsInode pathInode = new FsInode(DCacheAwareJdbcFs.this, node.toString());
+        FsInode pathInode = new FsInode(DCacheAwareJdbcFs.this, node.ino());
         return getFileLocality(inode2path(pathInode));
     }
 
@@ -126,9 +128,9 @@ public class DCacheAwareJdbcFs extends JdbcFs {
      * a given file.
      */
     @Override
-    public void pin(String pnfsid, long lifetime) throws ChimeraFsException {
+    public void pin(FsInode inode, long lifetime) throws ChimeraFsException {
         FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(new PnfsId(pnfsid));
+        attributes.setPnfsId(new PnfsId(inode.getId()));
         /*
          * TODO improve code to pass in the actual InetAddress of the
          * client so that link net masks do not interfere; note that SRM uses
@@ -147,9 +149,9 @@ public class DCacheAwareJdbcFs extends JdbcFs {
      * a given file.
      */
     @Override
-    public void unpin(String pnfsid) throws ChimeraFsException {
+    public void unpin(FsInode inode) throws ChimeraFsException {
         PinManagerUnpinMessage message
-            = new PinManagerUnpinMessage(new PnfsId(pnfsid));
+            = new PinManagerUnpinMessage(new PnfsId(inode.getId()));
 
         pinManagerStub.notify(message);
     }

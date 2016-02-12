@@ -28,7 +28,7 @@ SELECT
     SUM(isize)::int8 AS size
 FROM
     t_inodes
-    JOIN t_locationinfo ON t_inodes.ipnfsid = t_locationinfo.ipnfsid
+    JOIN t_locationinfo ON t_inodes.inumber = t_locationinfo.inumber
 GROUP BY
     igid,
     substring(ilocation FROM '^.*://([^/]*)'),

@@ -24,7 +24,7 @@ public class FsInode_PATHOF extends FsInode {
 
     private byte[] _path;
 
-    public FsInode_PATHOF(FileSystemProvider fs, String id) {
+    public FsInode_PATHOF(FileSystemProvider fs, long id) {
         super(fs, id, FsInodeType.PATHOF);
     }
 

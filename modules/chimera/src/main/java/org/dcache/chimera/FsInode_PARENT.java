@@ -20,10 +20,10 @@ import org.dcache.chimera.posix.Stat;
 
 public class FsInode_PARENT extends FsInode {
 
-    String _parent;
+    FsInode _parent;
 
-    public FsInode_PARENT(FileSystemProvider fs, String id) {
-        super(fs, id, FsInodeType.PARENT);
+    public FsInode_PARENT(FileSystemProvider fs, long ino) {
+        super(fs, ino, FsInodeType.PARENT);
     }
 
     @Override
@@ -33,16 +33,20 @@ public class FsInode_PARENT extends FsInode {
 
         if (_parent == null) {
             try {
-                _parent = _fs.getParentOf(this).toString();
+                _parent = _fs.getParentOf(this);
             } catch (ChimeraFsException e) {
                 return -1;
             }
         }
 
         // if parent and we have same id then that's end
-        if (!_parent.equals(this.toString())) {
-
-            byte[] b = (_parent + "\n").getBytes();
+        if (_parent.ino() != ino()) {
+            byte[] b;
+            try {
+                b = (_parent.statCache().getId() + "\n").getBytes();
+            } catch (ChimeraFsException e) {
+                return -1;
+            }
 
             /*
              * are we still inside ?
@@ -63,21 +67,21 @@ public class FsInode_PARENT extends FsInode {
     @Override
     public Stat stat() throws ChimeraFsException {
 
-        Stat ret = super.stat();
+        Stat ret = new Stat(super.stat());
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
         if (_parent == null) {
             FsInode parentInode = _fs.getParentOf(this);
             if (parentInode == null) {
                 throw new FileNotFoundHimeraFsException();
             }
-            _parent = parentInode.toString();
+            _parent = parentInode;
         }
 
-        if (_parent.equals(this.toString())) {
-            throw new ChimeraFsException("Parent and child equil");
+        if (_parent.ino() == ino()) {
+            throw new ChimeraFsException("Parent and child equal");
         }
 
-        ret.setSize(_parent.length() + 1);
+        ret.setSize(_parent.statCache().getId().length() + 1);
         return ret;
     }
 

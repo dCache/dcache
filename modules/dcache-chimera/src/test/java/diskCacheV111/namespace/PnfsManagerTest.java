@@ -182,7 +182,7 @@ public class PnfsManagerTest
          * while we have a backdoor, let check what really happened
          */
 
-        Stat stat = _fs.stat(new FsInode(_fs, pnfsCreateDirectoryMessage.getPnfsId().toString()));
+        Stat stat = _fs.id2inode(pnfsCreateDirectoryMessage.getPnfsId().toString(), FileSystemProvider.StatCacheOption.STAT).statCache();
         assertEquals("new mode do not equal to specified one", (stat.getMode() & 0777), 0750);
     }
 
@@ -261,7 +261,7 @@ public class PnfsManagerTest
     @Test
     public void testGetFileAttributesNonExist() {
 
-        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId("000000000000000000000000000000000001"), EnumSet.noneOf(FileAttribute.class));
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(FsInode.generateNewID()), EnumSet.noneOf(FileAttribute.class));
         _pnfsManager.getFileAttributes(message);
 
         assertTrue("get storageInfo of non existing file should return FILE_NOT_FOUND", message.getReturnCode() == CacheException.FILE_NOT_FOUND );
@@ -348,7 +348,7 @@ public class PnfsManagerTest
     public void testGetStorageInfoNoTags() throws ChimeraFsException {
 
         FsInode rootInode = _fs.path2inode("/pnfs");
-        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(rootInode.toString()), SOME_ATTRIBUTES);
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(rootInode.statCache().getId()), SOME_ATTRIBUTES);
         _pnfsManager.getFileAttributes(message);
 
         // I don't know yet what is expected reply, but not NPE !
@@ -403,7 +403,7 @@ public class PnfsManagerTest
     @Ignore
     public void testAddCacheLocationNonExist() {
 
-        PnfsAddCacheLocationMessage pnfsAddCacheLocationMessage = new PnfsAddCacheLocationMessage(new PnfsId("000000000000000000000000000000000001"), "aPool");
+        PnfsAddCacheLocationMessage pnfsAddCacheLocationMessage = new PnfsAddCacheLocationMessage(new PnfsId(FsInode.generateNewID()), "aPool");
 
         _pnfsManager.addCacheLocation(pnfsAddCacheLocationMessage);
         assertTrue("add cache location of non existing file should return FILE_NOT_FOUND",
@@ -473,7 +473,7 @@ public class PnfsManagerTest
     @Test
     public void testAddChecksumNonExist() {
 
-        PnfsSetChecksumMessage pnfsSetChecksumMessage = new PnfsSetChecksumMessage(new PnfsId("000000000000000000000000000000000001"), 1, "12345678");
+        PnfsSetChecksumMessage pnfsSetChecksumMessage = new PnfsSetChecksumMessage(new PnfsId(FsInode.generateNewID()), 1, "12345678");
         pnfsSetChecksumMessage.setReplyRequired(false);
         _pnfsManager.processPnfsMessage(null, pnfsSetChecksumMessage);
 
@@ -485,7 +485,7 @@ public class PnfsManagerTest
     public void testGetCombinedAttributesNonExist() {
 
         PnfsGetFileAttributes message =
-            new PnfsGetFileAttributes(new PnfsId("000000000000000000000000000000000001"),
+            new PnfsGetFileAttributes(new PnfsId(FsInode.generateNewID()),
                                       EnumSet.noneOf(FileAttribute.class));
         _pnfsManager.getFileAttributes(message);
         assertEquals("Get attributes for non existing file have to return FILE_NOT_FOUND",
@@ -498,7 +498,7 @@ public class PnfsManagerTest
         FsInode dir = _fs.mkdir("/notags");
         FsInode inode = _fs.createFile(dir, "afile");
         PnfsGetFileAttributes message =
-            new PnfsGetFileAttributes(new PnfsId(inode.toString()), SOME_ATTRIBUTES);
+            new PnfsGetFileAttributes(new PnfsId(inode.statCache().getId()), SOME_ATTRIBUTES);
         _pnfsManager.getFileAttributes(message);
 
         assertEquals("failed to get storageInfo for a directory without tags", 0, message
@@ -517,7 +517,7 @@ public class PnfsManagerTest
         attr.setMode(mode);
 
         PnfsSetFileAttributes pnfsSetFileAttributes =
-                new PnfsSetFileAttributes(new PnfsId(inode.toString()), attr);
+                new PnfsSetFileAttributes(new PnfsId(inode.statCache().getId()), attr);
         _pnfsManager.setFileAttributes(pnfsSetFileAttributes);
 
         Stat new_stat = _fs.stat(inode);
@@ -535,7 +535,7 @@ public class PnfsManagerTest
         _fs.setInodeAttributes(inode, 0, stat);
 
         PnfsGetFileAttributes pnfsGetFileAttributes
-                = new PnfsGetFileAttributes(new PnfsId(inode.toString()),
+                = new PnfsGetFileAttributes(new PnfsId(inode.statCache().getId()),
                 EnumSet.of(FileAttribute.CHANGE_TIME, FileAttribute.CREATION_TIME));
         _pnfsManager.getFileAttributes(pnfsGetFileAttributes);
 

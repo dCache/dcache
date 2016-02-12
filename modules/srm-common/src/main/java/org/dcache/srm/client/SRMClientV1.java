@@ -106,6 +106,11 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     private String service_url;
     private String host;
 
+    static {
+        Call.setTransportForProtocol("http", HttpClientTransport.class);
+        Call.setTransportForProtocol("https", HttpClientTransport.class);
+    }
+
     public static String unwrapHttpRedirection(String http_url) {
         if(http_url == null || !http_url.startsWith("http://")) {
             return http_url;
@@ -219,9 +224,6 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             service_url += "/"+webservice_path;
         }
         logger.debug("SRMClientV1 calling org.globus.axis.util.Util.registerTransport() ");
-        Call.initialize();
-        Call.setTransportForProtocol("http", HttpClientTransport.class);
-        Call.setTransportForProtocol("https", HttpClientTransport.class);
         SimpleProvider provider = new SimpleProvider();
         GsiHttpClientSender sender = new GsiHttpClientSender();
         sender.setSslContextFactory(CanlContextFactory.createDefault());

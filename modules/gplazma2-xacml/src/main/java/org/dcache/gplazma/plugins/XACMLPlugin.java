@@ -6,8 +6,14 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Ordering;
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
-import eu.emi.security.authn.x509.impl.CertificateUtils;
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.PEMCredential;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
+import org.apache.axis.AxisEngine;
+import org.apache.axis.ConfigurationException;
+import org.apache.axis.SimpleTargetedChain;
+import org.apache.axis.client.Call;
+import org.apache.axis.configuration.SimpleProvider;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -20,14 +26,16 @@ import org.opensciencegrid.authz.xacml.common.XACMLConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.security.KeyStoreException;
 import java.security.Principal;
 import java.security.cert.CertPath;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -41,6 +49,9 @@ import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertPaths;
+import org.dcache.srm.client.HttpClientSender;
+import org.dcache.srm.client.HttpClientTransport;
+import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -255,6 +266,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
          */
         @Override
         public LocalId load(VomsExtensions key) throws AuthenticationException {
+
             IMapCredentialsClient xacmlClient = newClient();
             xacmlClient.configure(_properties);
             xacmlClient.setX509Subject(key._x509Subject);
@@ -268,6 +280,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
             xacmlClient.setResourceX509ID(_targetServiceName);
             xacmlClient.setResourceX509Issuer(_targetServiceIssuer);
             xacmlClient.setRequestedaction(XACMLConstants.ACTION_ACCESS);
+            xacmlClient.setAxisConfiguration(axisConfiguration);
 
             LocalId localId = xacmlClient.mapCredentials(_mappingServiceURL);
             Preconditions.checkArgument(localId != null, DENIED_MESSAGE + key);
@@ -278,8 +291,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
         }
     }
 
-    static final String CADIR = "gplazma.xacml.vomsdir.ca";
-    static final String VOMSDIR = "gplazma.xacml.vomsdir.dir";
+    static final String VOMSDIR = "gplazma.xacml.vomsdir";
     static final String ILLEGAL_CACHE_SIZE = "cache size must be non-zero positive integer; was: ";
     static final String ILLEGAL_CACHE_LIFE = "cache life must be positive integer; was: ";
     static final String DENIED_MESSAGE = "Permission Denied: "
@@ -289,7 +301,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
     static final String CLIENT_TYPE_PROPERTY = "gplazma.xacml.client.type";
     static final String SERVICE_KEY = "gplazma.xacml.hostkey";
     static final String SERVICE_CERT = "gplazma.xacml.hostcert";
-    static final String SERVICE_CA = "gplazma.xacml.ca";
+    static final String CADIR = "gplazma.xacml.ca";
     static final String CACHE_LIFETIME = "gplazma.xacml.cachelife.secs";
     static final String CACHE_SIZE = "gplazma.xacml.cache.maxsize";
 
@@ -325,11 +337,17 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
     private String _targetServiceName;
     private String _targetServiceIssuer;
     private String _resourceDNSHostName;
+    private SimpleProvider axisConfiguration;
 
     /*
      * VOMS setup
      */
     private VOMSACValidator validator;
+
+    static {
+        Call.setTransportForProtocol("http", HttpClientTransport.class);
+        Call.setTransportForProtocol("https", HttpClientTransport.class);
+    }
 
     /**
      * Configures VOMS extension validation, XACML service location, local id
@@ -341,32 +359,50 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
     }
 
     @Override
-    public void start() throws ClassNotFoundException, IOException
+    public void start() throws ClassNotFoundException, IOException, CertificateException, KeyStoreException
     {
         String caDir = _properties.getProperty(CADIR);
         String vomsDir = _properties.getProperty(VOMSDIR);
 
-        checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
-        checkArgument(vomsDir != null, "Undefined property: " + CADIR);
+        checkArgument(caDir != null, "Undefined property: " + CADIR);
+        checkArgument(vomsDir != null, "Undefined property: " + VOMSDIR);
 
         VOMSTrustStore vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
         X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
         validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
 
-        /*
-         * Adds SSL system properties required by privilege library.
-         */
-        System.setProperty("sslCAFiles", _properties.getProperty(SERVICE_CA) + "/*.0");
-        System.setProperty("sslCertfile", _properties.getProperty(SERVICE_CERT));
-        System.setProperty("sslKey", _properties.getProperty(SERVICE_KEY));
+        X509Credential credential = new PEMCredential(_properties.getProperty(SERVICE_KEY),
+                                                      _properties.getProperty(SERVICE_CERT),
+                                                      null);
+        _targetServiceName = convertFromRfc2253(credential.getCertificate().getSubjectX500Principal().getName(), true);
+        _targetServiceIssuer = convertFromRfc2253(credential.getCertificate().getIssuerX500Principal().getName(), true);
 
         /*
          * XACML setup
          */
         checkArgument(_mappingServiceURL != null, "Undefined property: " + SERVICE_URL_PROPERTY);
         setClientType(_properties.getProperty(CLIENT_TYPE_PROPERTY));
-        configureTargetServiceInfo();
         configureResourceDNSHostName();
+
+        /*
+         * AXIS configuration
+         */
+        HttpClientSender sender = new HttpClientSender();
+        sender.setSslContextFactory(CanlContextFactory.custom().withCertificateAuthorityPath(caDir).build());
+        sender.init();
+        Hashtable<String,Object> options = new Hashtable<>();
+        options.put(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, credential);
+        options.put(Call.SESSION_MAINTAIN_PROPERTY, true);
+
+        axisConfiguration = new SimpleProvider() {
+            @Override
+            public void configureEngine(AxisEngine engine) throws ConfigurationException
+            {
+                engine.refreshGlobalOptions();
+            }
+        };
+        axisConfiguration.deployTransport(HttpClientTransport.DEFAULT_TRANSPORT_NAME, new SimpleTargetedChain(sender));
+        axisConfiguration.setGlobalOptions(options);
 
         /*
          * LocalId Cache setup
@@ -508,18 +544,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
     }
 
     /**
-     * Extracts the identity and certificate issuer from the host certificate.
-     */
-    private void configureTargetServiceInfo() throws IOException
-    {
-        X509Certificate[] cert =
-                CertificateUtils.loadCertificateChain(new FileInputStream(_properties.getProperty(SERVICE_CERT)),
-                                                      CertificateUtils.Encoding.PEM);
-        _targetServiceName = convertFromRfc2253(cert[0].getSubjectX500Principal().getName(), true);
-        _targetServiceIssuer = convertFromRfc2253(cert[0].getIssuerX500Principal().getName(), true);
-    }
-
-    /**
      * Extracts VOMS extensions from the public credentials and adds them to the
      * running list.
      */
@@ -614,8 +638,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
      */
     private IMapCredentialsClient newClient() throws AuthenticationException {
         try {
-            IMapCredentialsClient newInstance
-                = _clientType.newInstance();
+            IMapCredentialsClient newInstance = _clientType.newInstance();
             return newInstance;
         } catch (InstantiationException | IllegalAccessException t) {
             throw new AuthenticationException(t.getMessage(), t);

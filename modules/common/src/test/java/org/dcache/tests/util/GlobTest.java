@@ -2,10 +2,12 @@ package org.dcache.tests.util;
 
 import org.junit.Test;
 
+import java.util.regex.PatternSyntaxException;
+
 import org.dcache.util.Glob;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.*;
 
 public class GlobTest
 {
@@ -145,11 +147,125 @@ public class GlobTest
     }
 
     @Test
+    public void testCurlyBrackets()
+    {
+        Glob pattern = new Glob("{foo,bar}");
+
+        assertFalse(pattern.matches("foo,bar"));
+        assertTrue(pattern.matches("foo"));
+        assertTrue(pattern.matches("bar"));
+    }
+
+    @Test
+    public void testCurlyBracketsInsidePattern()
+    {
+        Glob pattern = new Glob("a{foo,bar}b");
+
+        assertFalse(pattern.matches("ab"));
+        assertTrue(pattern.matches("afoob"));
+        assertTrue(pattern.matches("abarb"));
+    }
+
+    @Test
+    public void testNestedCurlyBrackets()
+    {
+        Glob pattern = new Glob("{foo,{bar,baz*}}");
+
+        assertFalse(pattern.matches("bar1"));
+        assertTrue(pattern.matches("foo"));
+        assertTrue(pattern.matches("bar"));
+        assertTrue(pattern.matches("baz"));
+        assertTrue(pattern.matches("baz1"));
+    }
+
+    @Test
+    public void testIncompleteCurlyBrackets()
+    {
+        Glob pattern = new Glob("{foo{bar}");
+        assertTrue(pattern.matches("{foobar"));
+    }
+
+    @Test
+    public void testComma()
+    {
+        Glob pattern = new Glob(",");
+        assertTrue(pattern.matches(","));
+    }
+
+    @Test
     public void testIsAnchored()
     {
         Glob pattern = new Glob("foo*bar");
 
         assertTrue(pattern.toPattern().matcher("foo-bar").find());
         assertFalse(pattern.toPattern().matcher("<foo-bar>").find());
+    }
+
+    @Test
+    public void testGlobExpansion()
+    {
+        assertThat(Glob.expandGlob(""), containsInAnyOrder(""));
+        assertThat(Glob.expandGlob("foo"), containsInAnyOrder("foo"));
+        assertThat(Glob.expandGlob("foo{}"), containsInAnyOrder("foo"));
+        assertThat(Glob.expandGlob("foo{a}"), containsInAnyOrder("fooa"));
+        assertThat(Glob.expandGlob("foo{a,b}"), containsInAnyOrder("fooa", "foob"));
+        assertThat(Glob.expandGlob("foo{a,b,c}"), containsInAnyOrder("fooa", "foob", "fooc"));
+        assertThat(Glob.expandGlob("{}"), containsInAnyOrder(""));
+        assertThat(Glob.expandGlob("{,}"), containsInAnyOrder("", ""));
+        assertThat(Glob.expandGlob("{a,b,c}"), containsInAnyOrder("a", "b", "c"));
+        assertThat(Glob.expandGlob("{a,b,c}foo"), containsInAnyOrder("afoo", "bfoo", "cfoo"));
+        assertThat(Glob.expandGlob("foo{a,b,c}foo"), containsInAnyOrder("fooafoo", "foobfoo", "foocfoo"));
+        assertThat(Glob.expandGlob("foo{a,bar{c,d}}"), containsInAnyOrder("fooa", "foobarc", "foobard"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGlobExpansionUnmatchedOpen()
+    {
+        Glob.expandGlob("{");
+    }
+
+    // REVISIT: This should not throw an exception
+    @Test(expected = IllegalArgumentException.class)
+    public void testGlobExpansionComma()
+    {
+        Glob.expandGlob(",");
+    }
+
+    // REVISIT: This should not throw an exception
+    @Test(expected = IllegalArgumentException.class)
+    public void testGlobExpansionComma2()
+    {
+        Glob.expandGlob("a,b");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGlobExpansionUnmatchedClose1()
+    {
+        Glob.expandGlob("}");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGlobExpansionUnmatchedClose2()
+    {
+        Glob.expandGlob("{}}");
+    }
+
+    @Test
+    public void testListExpansion()
+    {
+        assertThat(Glob.expandList(""), containsInAnyOrder(""));
+        assertThat(Glob.expandList("foo"), containsInAnyOrder("foo"));
+        assertThat(Glob.expandList("foo{}"), containsInAnyOrder("foo"));
+        assertThat(Glob.expandList("foo{a}"), containsInAnyOrder("fooa"));
+        assertThat(Glob.expandList("foo{a,b}"), containsInAnyOrder("fooa", "foob"));
+        assertThat(Glob.expandList("foo{a,b,c}"), containsInAnyOrder("fooa", "foob", "fooc"));
+        assertThat(Glob.expandList("{}"), containsInAnyOrder(""));
+        assertThat(Glob.expandList("{,}"), containsInAnyOrder("", ""));
+        assertThat(Glob.expandList(","), containsInAnyOrder("", ""));
+        assertThat(Glob.expandList("{a,b,c}"), containsInAnyOrder("a", "b", "c"));
+        assertThat(Glob.expandList("a,b,c"), containsInAnyOrder("a", "b", "c"));
+        assertThat(Glob.expandList("{a,b,c}foo"), containsInAnyOrder("afoo", "bfoo", "cfoo"));
+        assertThat(Glob.expandList("foo{a,b,c}foo"), containsInAnyOrder("fooafoo", "foobfoo", "foocfoo"));
+        assertThat(Glob.expandList("foo{a,bar{c,d}}"), containsInAnyOrder("fooa", "foobarc", "foobard"));
     }
 }
