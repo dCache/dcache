@@ -98,11 +98,6 @@
       <constructor-arg value="2"/>
   </bean>
 
-  <bean id="path-mapper" class="org.dcache.webdav.PathMapper">
-      <description>Mapping between request paths and dCache paths</description>
-      <property name="rootPath" value="${webdav.root}"/>
-  </bean>
-
   <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
       <description>Processes login requests</description>
       <property name="loginStrategies">
@@ -476,6 +471,21 @@
               class="org.dcache.missingfiles.RemoteMissingFileStrategy">
             <description>door-side component for querying missing-files service</description>
             <property name="missingFilesCellStub" ref="missing-files-stub"/>
+        </bean>
+    </beans>
+
+    <beans profile="owncloud-true">
+        <bean id="path-mapper" class="org.dcache.webdav.owncloud.OwnCloudPathMapper">
+            <description>Mapping between request paths and dCache paths with OwnCloud Sync client-specific path trimming.</description>
+            <property name="rootPath" value="${webdav.root}"/>
+            <property name="ownCloudPrefix" value="${webdav.owncloud.door}"/>
+        </bean>
+    </beans>
+
+    <beans profile="owncloud-false">
+        <bean id="path-mapper" class="org.dcache.webdav.PathMapper">
+            <description>Mapping between request paths and dCache paths</description>
+            <property name="rootPath" value="${webdav.root}"/>
         </bean>
     </beans>
 </beans>
