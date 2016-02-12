@@ -88,7 +88,8 @@
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
       <property name="aclEnabled" value="${pnfsmanager.enable.acl}"/>
-      <property name="uploadDirectory" value="${pnfsmanager.upload-directory}/%d"/>
+      <property name="uploadDirectory" value="${pnfsmanager.upload-directory}"/>
+      <property name="uploadSubDirectory" value="%d"/>
   </bean>
 
   <bean id="acl-admin" class="org.dcache.acl.AclAdmin">
