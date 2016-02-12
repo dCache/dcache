@@ -46,4 +46,10 @@ public class FsPathTest
     {
         new FsPath("/my/root").relativize(new FsPath("/my/root2/foo/bar/"));
     }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testRelativePath()
+    {
+        new FsPath("foo");
+    }
 }
