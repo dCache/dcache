@@ -115,7 +115,8 @@ public class PnfsManagerTest
         chimera.setPermissionHandler(new PosixPermissionHandler());
         chimera.setAclEnabled(false);
         chimera.setFileSystem(_fs);
-        chimera.setUploadDirectory("/upload/%d");
+        chimera.setUploadDirectory("/upload");
+        chimera.setUploadSubDirectory("%d");
 
 
         _pnfsManager = new PnfsManagerV3();
