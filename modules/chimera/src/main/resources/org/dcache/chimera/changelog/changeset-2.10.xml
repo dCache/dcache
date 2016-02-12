@@ -11,4 +11,10 @@
             <column name="itagid"></column>
         </createIndex>
     </changeSet>
+
+    <changeSet id="2" author="behrmann" dbms="postgresql">
+        <comment>Adjust statistics target for t_tags(itagid) to avoid bad query planning for tag inode deletion</comment>
+        <sql>alter table t_tags alter itagid set statistics 1000</sql>
+        <rollback/>
+    </changeSet>
 </databaseChangeLog>
