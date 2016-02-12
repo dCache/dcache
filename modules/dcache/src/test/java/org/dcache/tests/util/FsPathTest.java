@@ -4,7 +4,7 @@ import org.junit.Test;
 
 import diskCacheV111.util.FsPath;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class FsPathTest
 {
@@ -51,5 +51,21 @@ public class FsPathTest
     public void testRelativePath()
     {
         new FsPath("foo");
+    }
+
+    @Test
+    public void testContains()
+    {
+        assertTrue(new FsPath("/foo").contains("foo"));
+        assertTrue(new FsPath("/foo").contains(""));
+        assertTrue(new FsPath("/foo/bar").contains("foo"));
+        assertTrue(new FsPath("/foo/bar").contains("foo/bar"));
+        assertTrue(new FsPath("/foo/bar").contains("foo/bar/"));
+        assertTrue(new FsPath("/foo/bar").contains("bar"));
+        assertTrue(new FsPath("/foo/bar").contains("bar/"));
+        assertTrue(new FsPath("/").contains(""));
+        assertFalse(new FsPath("/").contains("foo"));
+        assertFalse(new FsPath("/bar").contains("foo"));
+        assertFalse(new FsPath("/bar/foo").contains("foo/bar"));
     }
 }
