@@ -828,13 +828,13 @@ public class CellNucleus implements ThreadFactory
             } else if (!msg.isReply()) {
                 long queueTime = _lastQueueTime;
                 if (msg.getTtl() < queueTime) {
-                    msg.setMessageObject(
+                    CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),
                             new NoRouteToCellException(msg, getCellName() + "@" + getCellDomainName() +
                                                             " is busy (its estimated response time of " +
                                                             queueTime + " ms is longer than the message TTL of " +
                                                             msg.getTtl() + " ms)."));
-                    msg.revertDirection();
-                    sendMessage(msg, true, true);
+                    envelope.setLastUOID(msg.getUOID());
+                    sendMessage(envelope, true, true);
                 }
             }
 
