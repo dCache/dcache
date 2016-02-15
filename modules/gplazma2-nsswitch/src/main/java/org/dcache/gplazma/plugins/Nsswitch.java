@@ -8,6 +8,7 @@ import com.sun.jna.Structure;
 import com.sun.jna.ptr.IntByReference;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -22,6 +23,7 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
 
 import static com.google.common.collect.Iterables.filter;
+import static java.util.Arrays.asList;
 
 /**
  * {@code GPlazmaMappingPlugin} and {@code GPlazmaIdentityPlugin} implementation for
@@ -164,6 +166,11 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
         public String gecos;
         public String dir;
         public String shell;
+
+        @Override
+        protected List<String> getFieldOrder() {
+            return asList("name", "passwd", "uid", "gid", "gecos", "dir", "shell");
+        }
     }
 
     /*
@@ -175,6 +182,11 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
         public String passwd;
         public int gid;
         public Pointer mem;
+
+        @Override
+        protected List<String> getFieldOrder() {
+            return asList("name", "passwd", "gid", "mem");
+        }
     }
 
     /*
