@@ -926,7 +926,7 @@ public class MigrationModule
         String id;
 
         @Override
-        public String call()
+        public String call() throws NoSuchElementException
         {
             Job job = getJob(id);
             job.suspend();
@@ -942,7 +942,7 @@ public class MigrationModule
         String id;
 
         @Override
-        public String call()
+        public String call() throws NoSuchElementException
         {
             Job job = getJob(id);
             job.resume();
@@ -961,7 +961,7 @@ public class MigrationModule
         String id;
 
         @Override
-        public String call()
+        public String call() throws NoSuchElementException
         {
             Job job = getJob(id);
             job.cancel(force);
@@ -1000,7 +1000,7 @@ public class MigrationModule
     public class MigrationListCommand implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call() throws NoSuchElementException
         {
             StringBuilder s = new StringBuilder();
             for (String id: _jobs.keySet()) {
