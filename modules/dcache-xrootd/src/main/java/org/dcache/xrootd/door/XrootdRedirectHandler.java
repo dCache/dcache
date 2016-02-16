@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -47,13 +48,12 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.MessageCallback;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.core.XrootdException;
-import org.dcache.xrootd.protocol.messages.AsyncResponse;
-import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
 import org.dcache.xrootd.protocol.messages.DirListResponse;
 import org.dcache.xrootd.protocol.messages.MkDirRequest;
@@ -72,7 +72,6 @@ import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.OpaqueStringParser;
 
-import static com.google.common.collect.Iterables.transform;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 /**
@@ -452,8 +451,15 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             }
 
             _log.info("Listing directory {}", listPath);
-            MessageCallback<PnfsListDirectoryMessage> callback = new ListCallback(request, ctx);
-            _door.listPath(createFullPath(listPath), request.getSubject(), callback);
+            if (request.isDirectoryStat()) {
+                _door.listPath(createFullPath(listPath), request.getSubject(),
+                               new StatListCallback(request, ctx),
+                               _door.getRequiredAttributesForFileStatus());
+            } else {
+                _door.listPath(createFullPath(listPath), request.getSubject(),
+                               new ListCallback(request, ctx),
+                               EnumSet.noneOf(FileAttribute.class));
+            }
             return null;
         } catch (PermissionDeniedCacheException e) {
             throw new XrootdException(kXR_NotAuthorized, e.getMessage());
@@ -576,13 +582,14 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     private class ListCallback
         extends AbstractMessageCallback<PnfsListDirectoryMessage>
     {
-        private final DirListRequest _request;
-        private final ChannelHandlerContext _context;
+        protected final DirListRequest _request;
+        protected final ChannelHandlerContext _context;
+        protected final DirListResponse.Builder _response;
 
-        public ListCallback(DirListRequest request,
-                            ChannelHandlerContext context)
+        public ListCallback(DirListRequest request, ChannelHandlerContext context)
         {
             _request = request;
+            _response = DirListResponse.builder(request);
             _context = context;
         }
 
@@ -637,7 +644,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                     withError(_request,
                               kXR_ServerError,
                               "Could not contact PNFS Manager."));
-
         }
 
         /**
@@ -652,19 +658,11 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         @Override
         public void success(PnfsListDirectoryMessage message)
         {
-            Iterable<String> directories =
-                transform(message.getEntries(), DirectoryEntry::getName);
-
+            message.getEntries().stream().map(DirectoryEntry::getName).forEach(_response::add);
             if (message.isFinal()) {
-                _log.debug("XrootdRedirectHandler: Received final listing " +
-                           "message!");
-                respond(_context,
-                        new DirListResponse(_request, directories));
+                respond(_context, _response.buildFinal());
             } else {
-                respond(_context,
-                        new DirListResponse(_request,
-                                            kXR_oksofar,
-                                            directories));
+                respond(_context, _response.buildPartial());
             }
         }
 
@@ -677,6 +675,29 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                     withError(_request,
                               kXR_ServerError,
                               "Timeout when trying to list directory!"));
+        }
+    }
+
+    private class StatListCallback extends ListCallback
+    {
+        private final String _client;
+
+        public StatListCallback(DirListRequest request, ChannelHandlerContext context)
+        {
+            super(request, context);
+            _client = ((InetSocketAddress) context.channel().remoteAddress()).getAddress().getHostAddress();
+        }
+
+        @Override
+        public void success(PnfsListDirectoryMessage message)
+        {
+            message.getEntries().stream().forEach(
+                    e -> _response.add(e.getName(), _door.getFileStatus(_request.getSubject(), _client, e.getFileAttributes())));
+            if (message.isFinal()) {
+                respond(_context, _response.buildFinal());
+            } else {
+                respond(_context, _response.buildPartial());
+            }
         }
     }
 

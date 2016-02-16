@@ -574,7 +574,8 @@ public class XrootdDoor
      */
     public void listPath(FsPath path,
                          Subject subject,
-                         MessageCallback<PnfsListDirectoryMessage> callback)
+                         MessageCallback<PnfsListDirectoryMessage> callback,
+                         EnumSet<FileAttribute> attributes)
     {
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
 
@@ -583,7 +584,7 @@ public class XrootdDoor
                     path.toString(),
                     null,
                     Range.<Integer>all(),
-                    EnumSet.noneOf(FileAttribute.class));
+                    attributes);
         UUID uuid = msg.getUUID();
 
         try {
@@ -854,16 +855,25 @@ public class XrootdDoor
         /* Fetch file attributes.
          */
         PnfsHandler pnfsHandler = new PnfsHandler(_pnfs, subject);
-        Set<FileAttribute> requestedAttributes = EnumSet.of(TYPE, SIZE, MODIFICATION_TIME, STORAGEINFO);
+        Set<FileAttribute> requestedAttributes = getRequiredAttributesForFileStatus();
+        FileAttributes attributes = pnfsHandler.getFileAttributes(fullPath.toString(), requestedAttributes);
+        return getFileStatus(subject, clientHost, attributes);
+    }
+
+    public EnumSet<FileAttribute> getRequiredAttributesForFileStatus()
+    {
+        EnumSet<FileAttribute> requestedAttributes = EnumSet.of(TYPE, SIZE, MODIFICATION_TIME, STORAGEINFO);
         requestedAttributes.addAll(PoolMonitorV5.getRequiredAttributesForFileLocality());
         requestedAttributes.addAll(_pdp.getRequiredAttributes());
+        return requestedAttributes;
+    }
 
-        FileAttributes attributes =
-                pnfsHandler.getFileAttributes(fullPath.toString(), requestedAttributes);
+    public FileStatus getFileStatus(Subject subject, String clientHost, FileAttributes attributes)
+    {
+        int flags = getFileStatusFlags(subject, attributes);
 
         /* Determine file locality.
          */
-        int flags = getFileStatusFlags(subject, attributes);
         if (attributes.getFileType() != FileType.DIR) {
             FileLocality locality =
                     _poolMonitor.getFileLocality(attributes, clientHost);
