@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Map;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -46,12 +47,15 @@ public class MetaDataStoreYamlTool
         for (PnfsId id: metaStore.list()) {
             try {
                 MetaDataRecord record = metaStore.get(id);
+                if (record == null) {
+                    continue;
+                }
                 FileAttributes attributes = record.getFileAttributes();
 
                 out.format("%s:\n", id);
                 out.format("  state: %s\n", record.getState());
                 out.format("  sticky:\n");
-                for (StickyRecord sticky: record.stickyRecords()) {
+                for (StickyRecord sticky : record.stickyRecords()) {
                     out.format("    %s: %d\n", sticky.owner(), sticky.expire());
                 }
                 if (attributes.isDefined(FileAttribute.STORAGECLASS)) {
@@ -64,7 +68,7 @@ public class MetaDataStoreYamlTool
                     StorageInfo info = attributes.getStorageInfo();
                     out.format("  bitfileid: %s\n", info.getBitfileId());
                     out.format("  locations:\n");
-                    for (URI location: info.locations()) {
+                    for (URI location : info.locations()) {
                         out.format("    - %s\n", location);
                     }
                 }
@@ -76,7 +80,7 @@ public class MetaDataStoreYamlTool
                 }
                 if (attributes.isDefined(FileAttribute.FLAGS)) {
                     out.format("  map:\n");
-                    for (Map.Entry<String,String> entry : attributes.getFlags().entrySet()) {
+                    for (Map.Entry<String, String> entry : attributes.getFlags().entrySet()) {
                         out.format("    %s: %s\n", entry.getKey(), entry.getValue());
                     }
                 }
@@ -86,7 +90,7 @@ public class MetaDataStoreYamlTool
                 if (attributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
                     out.format("  accesslatency: %s\n", attributes.getAccessLatency());
                 }
-            } catch (Exception e) {
+            } catch (CacheException e) {
                 error.println("Failed to read " + id + ": " + e.getMessage());
             }
         }
