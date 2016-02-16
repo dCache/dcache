@@ -1120,24 +1120,26 @@ public final class Storage
     public void abortPut(SRMUser user, String localTransferPath, URI surl, String reason) throws SRMException
     {
         try {
-            Subject subject = ((DcacheUser) user).getSubject();
-            FsPath actualPnfsPath = getPath(surl);
-            PnfsCancelUpload msg =
-                    new PnfsCancelUpload(subject, new FsPath(localTransferPath), actualPnfsPath);
-            _pnfsStub.sendAndWait(msg);
+            if (localTransferPath.startsWith("/")) { // safe-guard against incompatible file id from earlier versions
+                Subject subject = ((DcacheUser) user).getSubject();
+                FsPath actualPnfsPath = getPath(surl);
+                PnfsCancelUpload msg =
+                        new PnfsCancelUpload(subject, new FsPath(localTransferPath), actualPnfsPath);
+                _pnfsStub.sendAndWait(msg);
 
-            DoorRequestInfoMessage infoMsg =
-                    new DoorRequestInfoMessage(getCellAddress().toString());
-            infoMsg.setSubject(subject);
-            infoMsg.setBillingPath(actualPnfsPath.toString());
-            infoMsg.setTransaction(CDC.getSession());
-            infoMsg.setPnfsId(msg.getPnfsId());
-            infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, reason);
-            Origin origin = Subjects.getOrigin(subject);
-            if (origin != null) {
-                infoMsg.setClient(origin.getAddress().getHostAddress());
+                DoorRequestInfoMessage infoMsg =
+                        new DoorRequestInfoMessage(getCellAddress().toString());
+                infoMsg.setSubject(subject);
+                infoMsg.setBillingPath(actualPnfsPath.toString());
+                infoMsg.setTransaction(CDC.getSession());
+                infoMsg.setPnfsId(msg.getPnfsId());
+                infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, reason);
+                Origin origin = Subjects.getOrigin(subject);
+                if (origin != null) {
+                    infoMsg.setClient(origin.getAddress().getHostAddress());
+                }
+                _billingStub.notify(infoMsg);
             }
-            _billingStub.notify(infoMsg);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied.", e);
         } catch (CacheException e) {
