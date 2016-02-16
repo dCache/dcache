@@ -253,7 +253,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     public RepositoryChannel openChannel() throws DiskErrorCacheException {
         RepositoryChannel channel;
         try {
-            channel = new FileRepositoryChannel(_handle.getFile(), getIoMode().toOpenString());
+            channel = _handle.createChannel();
             if (getIoMode() == IoMode.WRITE) {
                 try {
                     channel = _checksumChannel = new ChecksumChannel(channel, _checksumFactory);

@@ -1,5 +1,6 @@
 package org.dcache.pool.repository.v5;
 
+import java.io.IOException;
 import java.io.File;
 import java.util.EnumSet;
 import java.util.Set;
@@ -8,8 +9,11 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
@@ -47,6 +51,10 @@ class ReadHandleImpl implements ReplicaDescriptor
         _open = false;
     }
 
+    @Override
+    public RepositoryChannel createChannel() throws IOException {
+        return new FileRepositoryChannel(getFile(), IoMode.READ.toOpenString());
+    }
 
     /**
      * @return disk file

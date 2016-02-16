@@ -17,12 +17,15 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
@@ -126,6 +129,11 @@ class WriteHandleImpl implements ReplicaDescriptor
     private synchronized boolean isOpen()
     {
         return _state == HandleState.OPEN;
+    }
+
+    @Override
+    public RepositoryChannel createChannel() throws IOException {
+        return new FileRepositoryChannel(getFile(), IoMode.WRITE.toOpenString());
     }
 
     /**

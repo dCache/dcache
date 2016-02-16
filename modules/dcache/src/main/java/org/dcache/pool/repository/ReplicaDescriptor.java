@@ -1,5 +1,6 @@
 package org.dcache.pool.repository;
 
+import java.io.IOException;
 import java.io.File;
 
 import diskCacheV111.util.CacheException;
@@ -79,6 +80,13 @@ public interface ReplicaDescriptor extends Allocator
      * @throws IllegalStateException if the descriptor is closed.
      */
     File getFile() throws IllegalStateException;
+
+    /**
+     * Get {@link RepositoryChannel} for this {@code ReplicaDescriptor}.
+     * @return repository channel.
+     * @throws IOException if repository channel can't be created.
+     */
+    RepositoryChannel createChannel() throws IOException;
 
     /**
      * Returns the file attributes of the file represented by this replica.
