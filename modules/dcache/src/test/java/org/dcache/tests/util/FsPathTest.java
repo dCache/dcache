@@ -46,26 +46,4 @@ public class FsPathTest
     {
         new FsPath("/my/root").relativize(new FsPath("/my/root2/foo/bar/"));
     }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testRelativePath()
-    {
-        new FsPath("foo");
-    }
-
-    @Test
-    public void testContains()
-    {
-        assertTrue(new FsPath("/foo").contains("foo"));
-        assertTrue(new FsPath("/foo").contains(""));
-        assertTrue(new FsPath("/foo/bar").contains("foo"));
-        assertTrue(new FsPath("/foo/bar").contains("foo/bar"));
-        assertTrue(new FsPath("/foo/bar").contains("foo/bar/"));
-        assertTrue(new FsPath("/foo/bar").contains("bar"));
-        assertTrue(new FsPath("/foo/bar").contains("bar/"));
-        assertTrue(new FsPath("/").contains(""));
-        assertFalse(new FsPath("/").contains("foo"));
-        assertFalse(new FsPath("/bar").contains("foo"));
-        assertFalse(new FsPath("/bar/foo").contains("foo/bar"));
-    }
 }

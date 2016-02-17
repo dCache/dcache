@@ -10,6 +10,7 @@ import java.util.StringTokenizer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;
 
+
 public class FsPath {
 
     private final List<String> _list;
@@ -20,11 +21,7 @@ public class FsPath {
 
     public FsPath(String path) {
         this();
-        checkArgument(path.startsWith("/"));
-        StringTokenizer st = new StringTokenizer(path, "/");
-        while (st.hasMoreTokens()) {
-            addSingleItem(st.nextToken());
-        }
+        add(path);
     }
 
     public FsPath()
@@ -105,7 +102,6 @@ public class FsPath {
             }
             return;
         }
-        checkArgument(!item.isEmpty());
         _list.add(item);
     }
 
