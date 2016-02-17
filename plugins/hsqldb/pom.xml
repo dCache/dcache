@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.dcache</groupId>
     <artifactId>plugins</artifactId>
-    <version>2.11.46-SNAPSHOT</version>
+    <version>2.11.46</version>
   </parent>
 
   <artifactId>dcache-plugin-hsqldb</artifactId>
