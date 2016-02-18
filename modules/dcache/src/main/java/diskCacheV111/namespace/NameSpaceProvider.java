@@ -196,7 +196,7 @@ public interface NameSpaceProvider
      * @param subject Subject of user who invoked this method.
      * @param pnfsId of the file
      * @param attr array of requested attributes
-     * @param acquire attributes to query after the update, if any.
+     * @param fetch attributes to query after the update, if any.
      * @return the updated attributes selected by acquire
      */
     FileAttributes setFileAttributes(Subject subject, PnfsId pnfsId,
@@ -260,9 +260,11 @@ public interface NameSpaceProvider
      * @param uploadPath the temporary path as returned by createUploadPath
      * @param path the path of file that is uploaded
      * @param options options specifying how the path should be committed
-     * @return PnfsId of committed file
+     * @param fetch attributes of the file to return
+     * @return Requested file attributes of the committed file.
      */
-    PnfsId commitUpload(Subject subject, FsPath uploadPath, FsPath path, Set<CreateOption> options) throws CacheException;
+    FileAttributes commitUpload(Subject subject, FsPath uploadPath, FsPath path,
+                                Set<CreateOption> options, Set<FileAttribute> fetch) throws CacheException;
 
     /**
      * Remove temporary upload location.

@@ -19,6 +19,7 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -159,13 +160,16 @@ public class ExtendedInode extends FsInode
     }
 
     public ImmutableList<String> getTag(String tag)
-            throws IOException
     {
-        byte[] data = getTags().get(tag);
-        if (data == null || data.length == 0) {
-            return ImmutableList.of();
+        try {
+            byte[] data = getTags().get(tag);
+            if (data == null || data.length == 0) {
+                return ImmutableList.of();
+            }
+            return ByteSource.wrap(data).asCharSource(Charsets.UTF_8).readLines();
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
         }
-        return ByteSource.wrap(data).asCharSource(Charsets.UTF_8).readLines();
     }
 
     public ImmutableCollection<Checksum> getChecksums() throws ChimeraFsException
