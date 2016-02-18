@@ -154,7 +154,8 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public PnfsId commitUpload(Subject subject, FsPath uploadPath, FsPath pnfsPath, Set<CreateOption> options)
+    public FileAttributes commitUpload(Subject subject, FsPath uploadPath, FsPath pnfsPath,
+                                       Set<CreateOption> options, Set<FileAttribute> attributesToFetch)
     {
         throw new UnsupportedOperationException();
     }

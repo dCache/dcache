@@ -1183,16 +1183,12 @@ public class PnfsManagerV3
     private void commitUpload(PnfsCommitUpload message)
     {
         try {
-            PnfsId pnfsId = _nameSpaceProvider.commitUpload(message.getSubject(),
-                                                            message.getUploadPath(),
-                                                            message.getPath(),
-                                                            message.getOptions());
-            message.setPnfsId(pnfsId);
-            Set<FileAttribute> attributes = message.getRequestedAttributes();
-            if (!attributes.isEmpty()) {
-                message.setFileAttributes(
-                        _nameSpaceProvider.getFileAttributes(Subjects.ROOT, pnfsId, attributes));
-            }
+            FileAttributes attributes = _nameSpaceProvider.commitUpload(message.getSubject(),
+                                                                        message.getUploadPath(),
+                                                                        message.getPath(),
+                                                                        message.getOptions(),
+                                                                        message.getRequestedAttributes());
+            message.setFileAttributes(attributes);
             message.setSucceeded();
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
