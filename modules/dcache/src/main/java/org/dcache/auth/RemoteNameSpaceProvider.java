@@ -203,7 +203,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
             Range<Integer> range, Set<FileAttribute> attrs, ListHandler handler)
             throws CacheException
     {
-        try (DirectoryStream stream = _handler.list(subject, Restrictions.none(), new FsPath(path), glob, range, attrs)) {
+        try (DirectoryStream stream = _handler.list(subject, Restrictions.none(), FsPath.create(path), glob, range, attrs)) {
             for (DirectoryEntry entry : stream) {
                 handler.addEntry(entry.getName(), entry.getFileAttributes());
             }

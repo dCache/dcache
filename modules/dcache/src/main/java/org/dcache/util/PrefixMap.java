@@ -70,10 +70,9 @@ public class PrefixMap<V>
         if (path == null) {
             throw new IllegalArgumentException("Null argument not allowed");
         }
-        path = new FsPath(path);
         V v = _entries.get(path);
-        while (v == null && !path.isEmpty()) {
-            path.pop();
+        while (v == null && !path.isRoot()) {
+            path = path.parent();
             v = _entries.get(path);
         }
         return v;

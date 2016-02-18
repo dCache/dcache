@@ -500,8 +500,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
 
         URI uri = new URI(request.getUri());
-        FsPath requestedFile = new FsPath(uri.getPath());
-        FsPath transferFile = new FsPath(file.getProtocolInfo().getPath());
+        FsPath requestedFile = FsPath.create(uri.getPath());
+        FsPath transferFile = FsPath.create(file.getProtocolInfo().getPath());
 
         if (!requestedFile.equals(transferFile)) {
             _logger.warn("Received an illegal request for file {}, while serving {}",
@@ -560,7 +560,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             }
             headers().add("Content-Disposition",
                           contentDisposition(protocolInfo.getDisposition(),
-                                             new FsPath(protocolInfo.getPath()).getName()));
+                                             FsPath.create(protocolInfo.getPath()).name()));
             if (protocolInfo.getLocation() != null) {
                 headers().add(CONTENT_LOCATION, protocolInfo.getLocation());
             }

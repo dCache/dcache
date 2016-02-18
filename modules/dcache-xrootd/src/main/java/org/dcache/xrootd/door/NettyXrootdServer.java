@@ -147,7 +147,7 @@ public class NettyXrootdServer implements CellMessageSender
     @Required
     public void setRootPath(String s)
     {
-        _rootPath = new FsPath(s);
+        _rootPath = FsPath.create(s);
     }
 
     public String getRootPath()
@@ -157,7 +157,7 @@ public class NettyXrootdServer implements CellMessageSender
 
     public void setUploadPath(File uploadPath)
     {
-        this._uploadPath = uploadPath.isAbsolute() ? new FsPath(uploadPath.getPath()) : null;
+        this._uploadPath = uploadPath.isAbsolute() ? FsPath.create(uploadPath.getPath()) : null;
     }
 
     public File getUploadPath()

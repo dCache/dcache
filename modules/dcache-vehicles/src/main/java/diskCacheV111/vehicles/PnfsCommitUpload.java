@@ -68,12 +68,12 @@ public class PnfsCommitUpload extends PnfsMessage
 
     public FsPath getPath()
     {
-        return new FsPath(getPnfsPath());
+        return FsPath.create(getPnfsPath());
     }
 
     public FsPath getUploadPath()
     {
-        return new FsPath(uploadPath);
+        return FsPath.create(uploadPath);
     }
 
     public Set<CreateOption> getOptions()

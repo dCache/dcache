@@ -123,8 +123,8 @@ public class XrootdDoor
     private static final TransferRetryPolicy RETRY_POLICY =
         TransferRetryPolicies.tryOncePolicy(Long.MAX_VALUE);
 
-    private List<FsPath> _readPaths = Collections.singletonList(new FsPath());
-    private List<FsPath> _writePaths = Collections.singletonList(new FsPath());
+    private List<FsPath> _readPaths = Collections.singletonList(FsPath.ROOT);
+    private List<FsPath> _writePaths = Collections.singletonList(FsPath.ROOT);
 
     private CellStub _poolStub;
     private CellStub _poolManagerStub;
@@ -185,7 +185,7 @@ public class XrootdDoor
     {
         List<FsPath> list = new ArrayList<>();
         for (String path: Splitter.on(":").omitEmptyStrings().split(s)) {
-            list.add(new FsPath(path));
+            list.add(FsPath.create(path));
         }
         return list;
     }
@@ -705,7 +705,7 @@ public class XrootdDoor
     private boolean isWriteAllowed(FsPath path)
     {
         for (FsPath prefix: _writePaths) {
-            if (path.startsWith(prefix)) {
+            if (path.hasPrefix(prefix)) {
                 return true;
             }
         }
@@ -721,7 +721,7 @@ public class XrootdDoor
     private boolean isReadAllowed(FsPath path)
     {
         for (FsPath prefix: _readPaths) {
-            if (path.startsWith(prefix)) {
+            if (path.hasPrefix(prefix)) {
                 return true;
             }
         }

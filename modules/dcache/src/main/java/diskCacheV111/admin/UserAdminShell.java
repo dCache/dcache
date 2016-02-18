@@ -1020,7 +1020,7 @@ public class UserAdminShell
      */
     private DirectoryStream list(String dir, String pattern) throws InterruptedException, CacheException
     {
-        return _list.list(Subjects.ROOT, Restrictions.none(), new FsPath(dir),
+        return _list.list(Subjects.ROOT, Restrictions.none(), FsPath.create(dir),
                 new Glob(pattern), Range.<Integer>all(), EnumSet.of(FileAttribute.TYPE));
     }
 

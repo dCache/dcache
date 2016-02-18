@@ -32,11 +32,11 @@ import dmg.cells.nucleus.CellInfoProvider;
  */
 public class PathMapper implements CellInfoProvider
 {
-    private FsPath _rootPath = new FsPath();
+    private FsPath _rootPath = FsPath.ROOT;
 
     public void setRootPath(String path)
     {
-        _rootPath = new FsPath(path);
+        _rootPath = FsPath.create(path);
     }
 
     public String getRootPath()
@@ -49,7 +49,7 @@ public class PathMapper implements CellInfoProvider
      */
     public FsPath asDcachePath(HttpServletRequest request, String path)
     {
-        return new FsPath(_rootPath, new FsPath(path));
+        return _rootPath.chroot(path);
     }
 
     /**
@@ -59,7 +59,7 @@ public class PathMapper implements CellInfoProvider
      */
     public String asRequestPath(HttpServletRequest request, FsPath path)
     {
-        return _rootPath.relativize(path).toString();
+        return path.stripPrefix(_rootPath);
     }
 
     @Override

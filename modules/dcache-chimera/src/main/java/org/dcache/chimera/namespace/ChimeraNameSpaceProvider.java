@@ -1076,7 +1076,7 @@ public class ChimeraNameSpaceProvider
             FileAttributes attributesOfParent
                     = getFileAttributesForPermissionHandler(parent);
             if (_permissionHandler.canCreateSubDir(subject, attributesOfParent) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " + new FsPath(parent.getPath(), name));
+                throw new PermissionDeniedCacheException("Access denied: " + parent.getPath().child(name));
             }
         }
         if (uid == DEFAULT) {
@@ -1106,9 +1106,9 @@ public class ChimeraNameSpaceProvider
         try {
             inode = lookupDirectory(Subjects.ROOT, path);
         } catch (FileNotFoundCacheException e) {
-            ExtendedInode parentOfPath = installDirectory(Subjects.ROOT, path.getParent(), mode);
+            ExtendedInode parentOfPath = installDirectory(Subjects.ROOT, path.parent(), mode);
             try {
-                inode = parentOfPath.mkdir(path.getName(), 0, 0, mode, acl, tags);
+                inode = parentOfPath.mkdir(path.name(), 0, 0, mode, acl, tags);
             } catch (FileExistsChimeraFsException e1) {
                 /* Concurrent directory creation. Current transaction is invalid.
                  */
@@ -1124,9 +1124,9 @@ public class ChimeraNameSpaceProvider
         try {
             inode = lookupDirectory(subject, path);
         } catch (FileNotFoundCacheException e) {
-            ExtendedInode parentOfPath = installDirectory(subject, path.getParent(), mode);
+            ExtendedInode parentOfPath = installDirectory(subject, path.parent(), mode);
             try {
-                inode = mkdir(subject, parentOfPath, path.getName(), DEFAULT, DEFAULT, mode);
+                inode = mkdir(subject, parentOfPath, path.name(), DEFAULT, DEFAULT, mode);
             } catch (FileExistsChimeraFsException e1) {
                 /* Concurrent directory creation. Current transaction is invalid.
                  */
@@ -1160,8 +1160,8 @@ public class ChimeraNameSpaceProvider
              */
             ExtendedInode parentOfPath =
                     options.contains(CreateOption.CREATE_PARENTS)
-                            ? installDirectory(subject, path.getParent(), DEFAULT)
-                            : lookupDirectory(subject, path.getParent());
+                            ? installDirectory(subject, path.parent(), DEFAULT)
+                            : lookupDirectory(subject, path.parent());
 
             FileAttributes attributesOfParent =
                     !Subjects.isRoot(subject)
@@ -1171,7 +1171,7 @@ public class ChimeraNameSpaceProvider
             /* File must not exist unless overwrite is enabled.
              */
             try {
-                ExtendedInode inodeOfPath = parentOfPath.inodeOf(path.getName(), STAT);
+                ExtendedInode inodeOfPath = parentOfPath.inodeOf(path.name(), STAT);
                 if (!options.contains(CreateOption.OVERWRITE_EXISTING) ||
                         (inodeOfPath.statCache().getMode() & UnixPermission.S_TYPE) != UnixPermission.S_IFREG) {
                     throw new FileExistsCacheException("File exists: " + path);
@@ -1251,10 +1251,9 @@ public class ChimeraNameSpaceProvider
              * that's the case depends on if the configured upload directory is an absolute
              * or relative path.
              */
-            FsPath uploadDirectory = new FsPath(rootPath);
-            uploadDirectory.add(_uploadDirectory);
+            FsPath uploadDirectory = rootPath.resolve(_uploadDirectory);
             if (_uploadSubDirectory != null) {
-                uploadDirectory.add(String.format(_uploadSubDirectory, threadId.get()));
+                uploadDirectory = uploadDirectory.chroot(String.format(_uploadSubDirectory, threadId.get()));
             }
 
             /* Upload directory must exist and have the right permissions.
@@ -1274,7 +1273,7 @@ public class ChimeraNameSpaceProvider
             UUID uuid = UUID.randomUUID();
             _fs.mkdir(inodeOfUploadDir, uuid.toString(), uid, gid, mode, acl, tags);
 
-            return new FsPath(uploadDirectory, uuid.toString(), path.getName());
+            return uploadDirectory.child(uuid.toString()).child(path.name());
         } catch (ChimeraFsException e) {
             _log.error("Problem with database: {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -1287,7 +1286,7 @@ public class ChimeraNameSpaceProvider
     {
         FsPath temporaryDirContainer = getParentOfFile(temporaryDir);
         if (_uploadDirectory.startsWith("/")) {
-            if (!temporaryDirContainer.startsWith(new FsPath(_uploadDirectory))) {
+            if (!temporaryDirContainer.hasPrefix(FsPath.create(_uploadDirectory))) {
                 throw new InvalidMessageCacheException(
                         temporaryPath + " is not part of the " + _uploadDirectory + " tree.");
             }
@@ -1297,7 +1296,7 @@ public class ChimeraNameSpaceProvider
                         temporaryPath + " is not part of the " + _uploadDirectory + " tree.");
             }
         }
-        if (temporaryDir.isEmpty()) {
+        if (temporaryDir.isRoot()) {
             throw new InvalidMessageCacheException("A temporary upload path cannot be in the root directory.");
         }
     }
@@ -1319,9 +1318,9 @@ public class ChimeraNameSpaceProvider
             ExtendedInode temporaryDirInode;
             ExtendedInode inodeOfFile;
             try {
-                uploadDirInode = new ExtendedInode(_fs, _fs.path2inode(temporaryDir.getParent().toString()));
-                temporaryDirInode = uploadDirInode.inodeOf(temporaryDir.getName(), STAT);
-                inodeOfFile = temporaryDirInode.inodeOf(temporaryPath.getName(), STAT);
+                uploadDirInode = new ExtendedInode(_fs, _fs.path2inode(temporaryDir.parent().toString()));
+                temporaryDirInode = uploadDirInode.inodeOf(temporaryDir.name(), STAT);
+                inodeOfFile = temporaryDirInode.inodeOf(temporaryPath.name(), STAT);
             } catch (FileNotFoundHimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryPath, e);
             }
@@ -1357,7 +1356,7 @@ public class ChimeraNameSpaceProvider
             /* File must not exist unless overwrite is enabled.
              */
             try {
-                ExtendedInode inodeOfExistingFile = finalDirInode.inodeOf(finalPath.getName(), STAT);
+                ExtendedInode inodeOfExistingFile = finalDirInode.inodeOf(finalPath.name(), STAT);
                 if (!options.contains(CreateOption.OVERWRITE_EXISTING)) {
                     throw new FileExistsCacheException("File exists: " + finalPath);
                 }
@@ -1384,11 +1383,11 @@ public class ChimeraNameSpaceProvider
 
             /* File is moved to correct directory.
              */
-            _fs.rename(inodeOfFile, temporaryDirInode, temporaryPath.getName(), finalDirInode, finalPath.getName());
+            _fs.rename(inodeOfFile, temporaryDirInode, temporaryPath.name(), finalDirInode, finalPath.name());
 
             /* Delete temporary upload directory and any files in it.
              */
-            removeRecursively(uploadDirInode, temporaryDir.getName(), temporaryDirInode);
+            removeRecursively(uploadDirInode, temporaryDir.name(), temporaryDirInode);
 
             return attributes;
         } catch (ChimeraFsException e) {
@@ -1411,14 +1410,14 @@ public class ChimeraNameSpaceProvider
              */
             ExtendedInode uploadDirInode;
             try {
-                uploadDirInode = new ExtendedInode(_fs, _fs.path2inode(temporaryDir.getParent().toString()));
+                uploadDirInode = new ExtendedInode(_fs, _fs.path2inode(temporaryDir.parent().toString()));
             } catch (FileNotFoundHimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryDir, e);
             }
 
             /* Delete temporary upload directory and any files in it.
              */
-            String name = temporaryPath.getParent().getName();
+            String name = temporaryPath.parent().name();
             removeRecursively(uploadDirInode, name, uploadDirInode.inodeOf(name, STAT));
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
@@ -1449,7 +1448,7 @@ public class ChimeraNameSpaceProvider
     private FsPath getParentOfFile(FsPath path) throws NotFileCacheException
     {
         try {
-            return path.getParent();
+            return path.parent();
         } catch (IllegalStateException e) {
             throw new NotFileCacheException("Not a file: " + path);
         }

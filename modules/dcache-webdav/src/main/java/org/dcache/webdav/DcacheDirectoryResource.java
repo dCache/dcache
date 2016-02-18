@@ -65,7 +65,7 @@ public class DcacheDirectoryResource
     @Override
     public Resource child(String childName)
     {
-        FsPath fchild = new FsPath(_path, childName);
+        FsPath fchild = _path.child(childName);
         return _factory.getResource(fchild);
     }
 
@@ -90,7 +90,7 @@ public class DcacheDirectoryResource
                BadRequestException
     {
         try {
-            FsPath path = new FsPath(_path, newName);
+            FsPath path = _path.child(newName);
             if (_factory.shouldRedirect(HttpManager.request())) {
                 throw new RedirectException(this, _factory.getWriteUrl(path, length));
             } else {
@@ -168,8 +168,7 @@ public class DcacheDirectoryResource
         throws NotAuthorizedException, ConflictException
     {
         try {
-            return _factory.makeDirectory(_attributes,
-                                          new FsPath(_path, newName));
+            return _factory.makeDirectory(_attributes, _path.child(newName));
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (CacheException e) {

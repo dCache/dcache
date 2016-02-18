@@ -463,7 +463,7 @@ public class CopyFilter implements Filter
                 if (direction == Direction.PUSH) {
                     throw new ErrorResponseException(Status.SC_NOT_FOUND, "no such file");
                 } else {
-                    pnfs.getFileAttributes(path.getParent().toString(), Collections.emptySet(),
+                    pnfs.getFileAttributes(path.parent().toString(), Collections.emptySet(),
                                            CREATE_ACCESS_MASK, false);
                 }
             }

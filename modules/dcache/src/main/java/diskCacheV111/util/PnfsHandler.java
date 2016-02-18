@@ -275,7 +275,7 @@ public class PnfsHandler
         try {
             message = createPnfsDirectory(path.toString());
         } catch (FileNotFoundCacheException e) {
-            createDirectories(path.getParent());
+            createDirectories(path.parent());
             message = createPnfsDirectory(path.toString());
         }
 
@@ -409,7 +409,7 @@ public class PnfsHandler
 	 * @throws CacheException
 	 */
 	public FsPath getPathByPnfsId(PnfsId pnfsID) throws CacheException {
-		return new FsPath(request(new PnfsMapPathMessage(pnfsID)).getPnfsPath());
+		return FsPath.create(request(new PnfsMapPathMessage(pnfsID)).getPnfsPath());
 	}
 
 	/**

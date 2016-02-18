@@ -33,7 +33,7 @@ public class RestrictionsTests
     {
         Restriction restriction = Restrictions.denyAll();
 
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         assertThat(restriction.isRestricted(DELETE, path), is(equalTo(true)));
         assertThat(restriction.isRestricted(DOWNLOAD, path), is(equalTo(true)));
@@ -49,7 +49,7 @@ public class RestrictionsTests
     {
         Restriction restriction = Restrictions.none();
 
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         assertThat(restriction.isRestricted(DELETE, path), is(equalTo(false)));
         assertThat(restriction.isRestricted(DOWNLOAD, path), is(equalTo(false)));
@@ -65,7 +65,7 @@ public class RestrictionsTests
     {
         Restriction restriction = Restrictions.readOnly();
 
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         assertThat(restriction.isRestricted(DOWNLOAD, path), is(equalTo(false)));
         assertThat(restriction.isRestricted(LIST, path), is(equalTo(false)));
@@ -222,7 +222,7 @@ public class RestrictionsTests
         assertThat(concat, is(not(equalTo(denyDownload))));
         assertThat(concat, is(not(equalTo(denyUpload))));
 
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         assertThat(concat.isRestricted(DOWNLOAD, path), is(equalTo(true)));
         assertThat(concat.isRestricted(UPLOAD, path), is(equalTo(true)));
@@ -247,7 +247,7 @@ public class RestrictionsTests
         assertThat(concat, is(not(equalTo(denyDownload))));
         assertThat(concat, is(not(equalTo(denyUpload))));
 
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         assertThat(concat.isRestricted(DOWNLOAD, path), is(equalTo(true)));
         assertThat(concat.isRestricted(UPLOAD, path), is(equalTo(true)));

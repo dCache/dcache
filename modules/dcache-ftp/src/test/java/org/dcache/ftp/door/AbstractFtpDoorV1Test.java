@@ -62,8 +62,8 @@ public class AbstractFtpDoorV1Test {
     {
         MockitoAnnotations.initMocks(this);
         door._settings = OptionParser.injectDefaults(new FtpDoorSettings());
-        door._userRootPath = new FsPath("pathRoot");
-        door._doorRootPath = new FsPath("pathRoot");
+        door._userRootPath = FsPath.create("/pathRoot");
+        door._doorRootPath = FsPath.create("/pathRoot");
         door._cwd = "/cwd";
         door._pnfs = pnfs;
         door._authz = Restrictions.none();

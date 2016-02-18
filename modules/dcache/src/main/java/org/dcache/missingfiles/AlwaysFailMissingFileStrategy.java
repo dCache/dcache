@@ -18,7 +18,7 @@ public class AlwaysFailMissingFileStrategy implements MissingFileStrategy
 
     @Override
     public Action recommendedAction(Subject subject, FsPath dCachePath,
-            FsPath requestPath)
+            String requestPath)
     {
         return Action.FAIL;
     }

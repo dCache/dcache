@@ -829,7 +829,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final Inode _nfsInode;
 
         NfsTransfer(PnfsHandler pnfs, Inode nfsInode, Subject ioSubject) {
-            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  new FsPath("/"));
+            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  FsPath.ROOT);
             _nfsInode = nfsInode;
         }
 

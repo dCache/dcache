@@ -616,7 +616,7 @@ public final class Storage
         // Catches replies for which the callback timed out
         if (msg.isReply() && msg.getReturnCode() == 0) {
             _pnfsStub.notify(
-                    new PnfsCancelUpload(msg.getSubject(), msg.getRestriction(), new FsPath(msg.getUploadPath()), msg.getPath()));
+                    new PnfsCancelUpload(msg.getSubject(), msg.getRestriction(), msg.getUploadPath(), msg.getPath()));
         }
     }
 
@@ -745,7 +745,7 @@ public final class Storage
         throws SRMException
     {
         DcacheUser user = asDcacheUser(srmUser);
-        FsPath path = new FsPath(fileId);
+        FsPath path = FsPath.create(fileId);
         return getTurl(loginBrokerSource.writeDoorsByProtocol(), user,
                        path, protocols, srmPutNotSupportedProtocols, previousTurl,
                        d -> d.canWrite(user.getRoot(), path));
@@ -793,7 +793,7 @@ public final class Storage
             /* Determine path component of TURL.
              */
             String protocol = door.getProtocolFamily();
-            String transferPath = door.relativize(user.getRoot(), path).toString();
+            String transferPath = door.relativize(user.getRoot(), path);
             if (protocol.equals("gsiftp") || protocol.equals("ftp") || protocol.equals("gkftp")) {
                 /* According to RFC 1738 an FTP URL is relative to the FTP server's initial
                  * working directory, which in dCache is the user's home directory.
@@ -899,7 +899,7 @@ public final class Storage
     {
         FsPath user_root = user.getRoot();
         _log.trace("getTurl() user root is {}", user_root);
-        if (!absolutePath.startsWith(user_root)) {
+        if (!absolutePath.hasPrefix(user_root)) {
             _log.warn("verifyUserPathIsInTheRoot error: user's path {} is not subpath of the user's root {}",
                     absolutePath, user_root);
             return false;
@@ -1182,7 +1182,7 @@ public final class Storage
             PnfsCommitUpload msg =
                     new PnfsCommitUpload(subject,
                                          restriction,
-                                         new FsPath(localTransferPath),
+                                         FsPath.create(localTransferPath),
                                          fullPath,
                                          options,
                                          EnumSet.of(PNFSID, SIZE, STORAGEINFO));
@@ -1266,7 +1266,7 @@ public final class Storage
                 Restriction restriction = (user == null) ? Restrictions.none() : asDcacheUser(user).getRestriction();
                 FsPath actualPnfsPath = config.getPath(surl);
                 PnfsCancelUpload msg =
-                        new PnfsCancelUpload(subject, restriction, new FsPath(localTransferPath), actualPnfsPath);
+                        new PnfsCancelUpload(subject, restriction, FsPath.create(localTransferPath), actualPnfsPath);
                 _pnfsStub.sendAndWait(msg);
 
                 DoorRequestInfoMessage infoMsg =
@@ -1334,7 +1334,7 @@ public final class Storage
     @Override
     public FileMetaData getFileMetaData(SRMUser user, URI surl, String fileId) throws SRMException
     {
-        return getFileMetaData(asDcacheUser(user), false, new FsPath(fileId));
+        return getFileMetaData(asDcacheUser(user), false, FsPath.create(fileId));
     }
 
     private FileMetaData getFileMetaData(DcacheUser user, boolean checkReadPermissions, FsPath path) throws SRMException
@@ -1419,7 +1419,7 @@ public final class Storage
         throws SRMException
     {
         FsPath actualFromFilePath = config.getPath(fromSurl);
-        FsPath actualToFilePath = new FsPath(localTransferPath);
+        FsPath actualToFilePath = FsPath.create(localTransferPath);
         long id = getNextMessageID();
         _log.debug("localCopy for user " + user +
                    "from actualFromFilePath to actualToFilePath");
@@ -1575,7 +1575,7 @@ public final class Storage
 
         // Result list uses post-order so directories will be deleted bottom-up.
         for (DirectoryEntry child : children) {
-            FsPath path = new FsPath(dir, child.getName());
+            FsPath path = dir.child(child.getName());
             listSubdirectoriesRecursivelyForDelete(subject, restriction, path, child.getFileAttributes(), result);
             result.add(path);
         }
@@ -1588,7 +1588,7 @@ public final class Storage
         FileAttributes parentAttributes;
         FileAttributes attributes;
         try {
-            parentAttributes = pnfs.getFileAttributes(path.getParent().toString(), attributesRequiredForRmdir);
+            parentAttributes = pnfs.getFileAttributes(path.parent().toString(), attributesRequiredForRmdir);
             attributes = pnfs.getFileAttributes(path.toString(), attributesRequiredForRmdir);
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Name space timeout", e);
@@ -1637,7 +1637,7 @@ public final class Storage
         Restriction restriction = asDcacheUser(user).getRestriction();
         FsPath path = config.getPath(surl);
 
-        if (path.isEmpty()) {
+        if (path.isRoot()) {
             throw new SRMAuthorizationException("Permission denied");
         }
 
@@ -1725,7 +1725,7 @@ public final class Storage
                     throw new SRMDuplicationException("Destination exists");
                 }
 
-                toPath = new FsPath(toPath, fromPath.getName());
+                toPath = toPath.child(fromPath.name());
             } catch (FileNotFoundCacheException e) {
                 /* Destination name does not exist; not a problem.
                  */
@@ -1740,7 +1740,7 @@ public final class Storage
             /* The parent of the target name did not exist or was not
              * a directory.
              */
-            FsPath parent = toPath.getParent();
+            FsPath parent = toPath.parent();
             throw new SRMInvalidPathException("No such directory: " +
                                               parent, e);
         } catch (PermissionDeniedCacheException e) {
@@ -1765,7 +1765,7 @@ public final class Storage
                                     CopyCallbacks callbacks)
         throws SRMException
     {
-        FsPath path = new FsPath(fileId);
+        FsPath path = FsPath.create(fileId);
         _log.debug("getFromRemoteTURL from {} to {}", remoteTURL, path);
         return performRemoteTransfer(user,remoteTURL,path,true,
                 extraInfo,
@@ -2087,7 +2087,7 @@ public final class Storage
         protected final List<FileMetaData> _result =
             new ArrayList<>();
         protected final FsPath _root =
-            new FsPath(config.getSrm_root());
+            FsPath.create(config.getSrm_root());
 
         @Override
         public Set<FileAttribute> getRequiredAttributes()
@@ -2101,8 +2101,8 @@ public final class Storage
             FileAttributes attributes = entry.getFileAttributes();
             DcacheFileMetaData fmd = new DcacheFileMetaData(attributes);
             String name = entry.getName();
-            FsPath path = (dir == null) ? new FsPath(name) : new FsPath(dir, name);
-            fmd.SURL = _root.relativize(path).toString();
+            FsPath path = (dir == null) ? FsPath.ROOT : dir.child(name);
+            fmd.SURL = path.stripPrefix(_root);
             return fmd;
         }
 

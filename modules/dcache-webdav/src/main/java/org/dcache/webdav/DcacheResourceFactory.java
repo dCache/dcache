@@ -171,7 +171,7 @@ public class DcacheResourceFactory
     private String _ioQueue;
     private PathMapper _pathMapper;
     private List<FsPath> _allowedPaths =
-        Collections.singletonList(new FsPath());
+        Collections.singletonList(FsPath.ROOT);
     private InetAddress _internalAddress;
     private String _path;
     private boolean _doRedirectOnRead = true;
@@ -334,7 +334,7 @@ public class DcacheResourceFactory
     {
         List<FsPath> list = new ArrayList<>();
         for (String path: s.split(":")) {
-            list.add(new FsPath(path));
+            list.add(FsPath.create(path));
         }
         _allowedPaths = list;
     }
@@ -571,7 +571,7 @@ public class DcacheResourceFactory
             return null;
         }
 
-        FsPath requestPath = new FsPath(getRequestPath());
+        String requestPath = getRequestPath();
         boolean haveRetried = false;
         Subject subject = getSubject();
 
@@ -795,7 +795,7 @@ public class DcacheResourceFactory
                 @Override
                 public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
                 {
-                    result.add(getResource(new FsPath(path, entry.getName()),
+                    result.add(getResource(path.child(entry.getName()),
                                            entry.getFileAttributes()));
                 }
             };
@@ -1087,7 +1087,7 @@ public class DcacheResourceFactory
     private boolean isAllowedPath(FsPath path)
     {
         for (FsPath allowedPath: _allowedPaths) {
-            if (path.startsWith(allowedPath)) {
+            if (path.hasPrefix(allowedPath)) {
                 return true;
             }
         }

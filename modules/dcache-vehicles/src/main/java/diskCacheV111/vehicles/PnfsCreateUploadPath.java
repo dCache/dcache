@@ -97,17 +97,17 @@ public class PnfsCreateUploadPath extends PnfsMessage
 
     public FsPath getPath()
     {
-        return new FsPath(getPnfsPath());
+        return FsPath.create(getPnfsPath());
     }
 
     public FsPath getRootPath()
     {
-        return (rootPath == null) ? new FsPath() : new FsPath(rootPath);
+        return (rootPath == null) ? FsPath.ROOT : FsPath.create(rootPath);
     }
 
     public FsPath getUploadPath()
     {
-        return (uploadPath == null) ? null : new FsPath(uploadPath);
+        return (uploadPath == null) ? null : FsPath.create(uploadPath);
     }
 
     public void setUploadPath(FsPath uploadPath)

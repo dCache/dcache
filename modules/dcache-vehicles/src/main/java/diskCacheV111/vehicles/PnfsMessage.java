@@ -38,7 +38,7 @@ public class PnfsMessage extends Message {
 
     public FsPath getFsPath()
     {
-        return _path == null ? null : new FsPath(_path);
+        return _path == null ? null : FsPath.create(_path);
     }
 
     public PnfsId getPnfsId(){

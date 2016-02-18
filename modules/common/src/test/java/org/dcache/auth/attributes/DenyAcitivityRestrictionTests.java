@@ -31,7 +31,7 @@ public class DenyAcitivityRestrictionTests
     @Test
     public void shouldRestrictAllActivity()
     {
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = DenyActivityRestriction.restrictAllActivity();
 
@@ -47,7 +47,7 @@ public class DenyAcitivityRestrictionTests
     @Test
     public void shouldRestrictNoActivity()
     {
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = DenyActivityRestriction.restrictNoActivity();
 
@@ -63,7 +63,7 @@ public class DenyAcitivityRestrictionTests
     @Test
     public void shouldRestrictSingleActivity()
     {
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = new DenyActivityRestriction(DELETE);
 
@@ -80,7 +80,7 @@ public class DenyAcitivityRestrictionTests
     @Test
     public void shouldRestrictTwoActivities()
     {
-        FsPath path = new FsPath("/some/arbitrary/path");
+        FsPath path = FsPath.create("/some/arbitrary/path");
 
         Restriction r = new DenyActivityRestriction(DELETE, MANAGE);
 

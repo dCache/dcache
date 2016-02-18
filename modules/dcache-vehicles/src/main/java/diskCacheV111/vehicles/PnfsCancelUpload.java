@@ -47,11 +47,11 @@ public class PnfsCancelUpload extends PnfsMessage
 
     public FsPath getPath()
     {
-        return new FsPath(getPnfsPath());
+        return FsPath.create(getPnfsPath());
     }
 
     public FsPath getUploadPath()
     {
-        return new FsPath(uploadPath);
+        return FsPath.create(uploadPath);
     }
 }

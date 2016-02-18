@@ -1169,6 +1169,6 @@ public class Configuration {
             }
         }
 
-        return new FsPath(new FsPath(getSrm_root()), new FsPath(path));
+        return FsPath.create(getSrm_root()).chroot(path);
     }
 }

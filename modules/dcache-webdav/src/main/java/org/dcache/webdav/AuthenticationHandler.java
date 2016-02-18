@@ -138,27 +138,27 @@ public class AuthenticationHandler extends HandlerWrapper {
      */
     private void checkRootPath(HttpServletRequest request, LoginReply login)
             throws CacheException, RedirectException {
-        FsPath userRoot = new FsPath();
-        FsPath userHome = new FsPath();
+        FsPath userRoot = FsPath.ROOT;
+        String userHome = "/";
         for (LoginAttribute attribute: login.getLoginAttributes()) {
             if (attribute instanceof RootDirectory) {
-                userRoot = new FsPath(((RootDirectory) attribute).getRoot());
+                userRoot = FsPath.create(((RootDirectory) attribute).getRoot());
             } else if (attribute instanceof HomeDirectory) {
-                userHome = new FsPath(((HomeDirectory) attribute).getHome());
+                userHome = ((HomeDirectory) attribute).getHome();
             }
         }
 
         String path = request.getPathInfo();
         FsPath fullPath = _pathMapper.asDcachePath(request, path);
-        if (!fullPath.startsWith(userRoot) &&
-                (_uploadPath == null || !fullPath.startsWith(_uploadPath))) {
-            if (!path.equals("/")) {
-                throw new PermissionDeniedCacheException("Permission denied: " +
-                        "path outside user's root");
-            }
-
+        if (fullPath.hasPrefix(userRoot)) {
+            return;
+        }
+        if (_uploadPath != null && fullPath.hasPrefix(_uploadPath)) {
+            return;
+        }
+        if (path.equals("/")) {
             try {
-                FsPath redirectFullPath = new FsPath(userRoot, userHome);
+                FsPath redirectFullPath = userRoot.chroot(userHome);
                 String redirectPath = _pathMapper.asRequestPath(request, redirectFullPath);
                 URI uri = new URI(request.getRequestURL().toString());
                 URI redirect = new URI(uri.getScheme(), uri.getAuthority(), redirectPath, null, null);
@@ -167,6 +167,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 throw new CacheException(e.getMessage(), e);
             }
         }
+        throw new PermissionDeniedCacheException("Permission denied: path outside user's root");
     }
 
     private void addX509ChainToSubject(HttpServletRequest request, Subject subject)
@@ -294,7 +295,7 @@ public class AuthenticationHandler extends HandlerWrapper {
     }
 
     public void setUploadPath(File uploadPath) {
-        this._uploadPath = uploadPath.isAbsolute() ? new FsPath(uploadPath.getPath()) : null;
+        this._uploadPath = uploadPath.isAbsolute() ? FsPath.create(uploadPath.getPath()) : null;
     }
 
     public File getUploadPath() {

@@ -240,7 +240,7 @@ public class ExtendedInode extends FsInode
 
     public FsPath getPath() throws ChimeraFsException
     {
-        return new FsPath(_fs.inode2path(this));
+        return FsPath.create(_fs.inode2path(this));
     }
 
     public FileType getFileType() throws ChimeraFsException

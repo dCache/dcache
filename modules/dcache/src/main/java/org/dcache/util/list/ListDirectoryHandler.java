@@ -129,12 +129,12 @@ public class ListDirectoryHandler
         PnfsHandler handler = new PnfsHandler(_pnfs, subject, restriction);
         Set<FileAttribute> required = printer.getRequiredAttributes();
         FileAttributes attributes = handler.getFileAttributes(path.toString(), required);
-        DirectoryEntry entry = new DirectoryEntry(path.getName(), attributes);
-        if (path.isEmpty()) {
+        DirectoryEntry entry = new DirectoryEntry(path.name(), attributes);
+        if (path.isRoot()) {
             printer.print(null, null, entry);
         } else {
-            FileAttributes dirAttr = handler.getFileAttributes(path.getParent().toString(), required);
-            printer.print(path.getParent(), dirAttr, entry);
+            FileAttributes dirAttr = handler.getFileAttributes(path.parent().toString(), required);
+            printer.print(path.parent(), dirAttr, entry);
         }
     }
 

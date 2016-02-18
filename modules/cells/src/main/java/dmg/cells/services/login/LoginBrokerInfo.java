@@ -95,10 +95,10 @@ public class LoginBrokerInfo implements Serializable
             _hosts[i] = addresses.get(i).getHostAddress();
         }
         if (_root != null) {
-            _rootFsPath = new FsPath(_root);
+            _rootFsPath = FsPath.create(_root);
         }
-        _readFsPaths = _readPaths.stream().map(FsPath::new).collect(toList());
-        _writeFsPaths = _writePaths.stream().map(FsPath::new).collect(toList());
+        _readFsPaths = _readPaths.stream().map(FsPath::create).collect(toList());
+        _writeFsPaths = _writePaths.stream().map(FsPath::create).collect(toList());
     }
 
     public boolean supports(InetAddressScope scope)
@@ -173,21 +173,21 @@ public class LoginBrokerInfo implements Serializable
         return (_rootFsPath == null) ? userRoot : _rootFsPath;
     }
 
-    public FsPath relativize(FsPath userRoot, FsPath path)
+    public String relativize(FsPath userRoot, FsPath path)
     {
-        return getRoot(userRoot).relativize(path);
+        return path.stripPrefix(getRoot(userRoot));
     }
 
     public boolean canWrite(FsPath userRoot, FsPath path)
     {
-        return path.startsWith(getRoot(userRoot)) &&
-               _writeFsPaths.stream().anyMatch(path::startsWith);
+        return path.hasPrefix(getRoot(userRoot)) &&
+               _writeFsPaths.stream().anyMatch(path::hasPrefix);
     }
 
     public boolean canRead(FsPath userRoot, FsPath path)
     {
-        return path.startsWith(getRoot(userRoot)) &&
-               _readFsPaths.stream().anyMatch(path::startsWith);
+        return path.hasPrefix(getRoot(userRoot)) &&
+               _readFsPaths.stream().anyMatch(path::hasPrefix);
     }
 
     public Collection<String> getTags()
@@ -268,9 +268,9 @@ public class LoginBrokerInfo implements Serializable
     {
         stream.defaultReadObject();
         if (_root != null) {
-            _rootFsPath = new FsPath(_root);
+            _rootFsPath = FsPath.create(_root);
         }
-        _readFsPaths = _readPaths.stream().map(FsPath::new).collect(toList());
-        _writeFsPaths = _writePaths.stream().map(FsPath::new).collect(toList());
+        _readFsPaths = _readPaths.stream().map(FsPath::create).collect(toList());
+        _writeFsPaths = _writePaths.stream().map(FsPath::create).collect(toList());
     }
 }

@@ -534,8 +534,8 @@ public abstract class AbstractFtpDoorV1
     protected Subject _subject;
     protected Restriction _doorRestriction;
     protected Restriction _authz = Restrictions.denyAll();
-    protected FsPath _userRootPath = new FsPath();
-    protected FsPath _doorRootPath = new FsPath();
+    protected FsPath _userRootPath = FsPath.ROOT;
+    protected FsPath _doorRootPath = FsPath.ROOT;
     protected String _cwd = "/";    // Relative to _doorRootPath
     protected FsPath _filepath; // Absolute filepath to the file to be renamed
     protected PnfsId _fileId; // Id of the file to be renamed
@@ -1157,7 +1157,7 @@ public abstract class AbstractFtpDoorV1
         _checkStagePermission = new CheckStagePermission(_settings.getStageConfigurationFilePath());
 
         if (_settings.getUploadPath().isAbsolute()) {
-            _absoluteUploadPath = new FsPath(_settings.getUploadPath().getPath());
+            _absoluteUploadPath = FsPath.create(_settings.getUploadPath().getPath());
         }
 
         reply(_commandLine, "220 " + _ftpDoorName + " door ready");
@@ -1172,14 +1172,13 @@ public abstract class AbstractFtpDoorV1
 
         Subject mappedSubject = login.getSubject();
 
-        boolean isUserReadOnly = false;
-        FsPath userRootPath = new FsPath();
-        FsPath userHomePath = new FsPath();
+        FsPath userRootPath = FsPath.ROOT;
+        String userHomePath = "/";
         for (LoginAttribute attribute: login.getLoginAttributes()) {
             if (attribute instanceof RootDirectory) {
-                userRootPath = new FsPath(((RootDirectory) attribute).getRoot());
+                userRootPath = FsPath.create(((RootDirectory) attribute).getRoot());
             } else if (attribute instanceof HomeDirectory) {
-                userHomePath = new FsPath(((HomeDirectory) attribute).getHome());
+                userHomePath = ((HomeDirectory) attribute).getHome();
             }
         }
         _authz = Restrictions.concat(_doorRestriction, login.getRestriction());
@@ -1187,13 +1186,13 @@ public abstract class AbstractFtpDoorV1
         String cwd;
         if (_settings.getRoot() == null) {
             doorRootPath = userRootPath;
-            cwd = userHomePath.toString();
+            cwd = userHomePath;
         } else {
-            doorRootPath = new FsPath(_settings.getRoot());
-            if (userRootPath.startsWith(doorRootPath)) {
-                cwd = doorRootPath.relativize(new FsPath(userRootPath, userHomePath)).toString();
-            } else if (_absoluteUploadPath != null && _absoluteUploadPath.startsWith(doorRootPath)) {
-                cwd = doorRootPath.relativize(_absoluteUploadPath).toString();
+            doorRootPath = FsPath.create(_settings.getRoot());
+            if (userRootPath.hasPrefix(doorRootPath)) {
+                cwd = userRootPath.chroot(userHomePath).stripPrefix(doorRootPath);
+            } else if (_absoluteUploadPath != null && _absoluteUploadPath.hasPrefix(doorRootPath)) {
+                cwd = _absoluteUploadPath.stripPrefix(doorRootPath);
             } else {
                 throw new PermissionDeniedCacheException("User's files are not visible through this FTP service.");
             }
@@ -1752,14 +1751,14 @@ public abstract class AbstractFtpDoorV1
 
     private FsPath absolutePath(String path) throws FTPCommandException
     {
-        FsPath relativePath = new FsPath(_cwd);
-        relativePath.add(path);
-        FsPath absolutePath = new FsPath(_doorRootPath, relativePath);
-        if (!absolutePath.startsWith(_userRootPath) &&
-                (_absoluteUploadPath == null || !absolutePath.startsWith(_absoluteUploadPath))) {
-            throw new FTPCommandException(550, "Permission denied");
+        FsPath absolutePath = _doorRootPath.chroot(_cwd + "/" + path);
+        if (absolutePath.hasPrefix(_userRootPath)) {
+            return absolutePath;
         }
-        return absolutePath;
+        if (_absoluteUploadPath != null && absolutePath.hasPrefix(_absoluteUploadPath)) {
+            return absolutePath;
+        }
+        throw new FTPCommandException(550, "Permission denied");
     }
 
 
@@ -1818,9 +1817,7 @@ public abstract class AbstractFtpDoorV1
             return;
         }
         FsPath path = absolutePath(arg);
-        FsPath relativePath = new FsPath(_cwd);
-        relativePath.add(arg);
-        String properDirectoryStringReply = relativePath.toString().replaceAll("\"","\"\"");
+        String properDirectoryStringReply = path.stripPrefix(_doorRootPath).replaceAll("\"","\"\"");
         try {
             _pnfs.createPnfsDirectory(path.toString());
             /*
@@ -2000,7 +1997,7 @@ public abstract class AbstractFtpDoorV1
         try {
             FsPath newcwd = absolutePath(arg);
             checkIsDirectory(newcwd);
-            _cwd = _doorRootPath.relativize(newcwd).toString();
+            _cwd = newcwd.stripPrefix(_doorRootPath);
             reply("250 CWD command succcessful. New CWD is <" + _cwd + ">");
         } catch (NotDirCacheException e) {
             reply("550 Not a directory: " + arg);
@@ -3399,7 +3396,7 @@ public abstract class AbstractFtpDoorV1
                      */
                     total =
                         _listSource.printDirectory(_subject, _authz, printer,
-                                path.getParent(), new Glob(path.getName()),
+                                path.parent(), new Glob(path.name()),
                                 Range.<Integer>all());
                 }
 
@@ -3447,7 +3444,7 @@ public abstract class AbstractFtpDoorV1
              * query the file type first. We allow path to be a pattern though,
              * to allow mget functionality.
              */
-            Matcher m = GLOB_PATTERN.matcher(path.getName());
+            Matcher m = GLOB_PATTERN.matcher(path.name());
             boolean pathIsPattern = m.find();
             if ( !pathIsPattern ) {
                 checkIsDirectory(path);
@@ -3466,7 +3463,7 @@ public abstract class AbstractFtpDoorV1
                 DirectoryListPrinter printer = new ShortListPrinter(writer);
                 if ( pathIsPattern ) {
                     total = _listSource.printDirectory(_subject, _authz,
-                            printer, path.getParent(), new Glob(path.getName()),
+                            printer, path.parent(), new Glob(path.name()),
                             Range.<Integer>all());
                 } else {
                     total = _listSource.printDirectory(_subject, _authz,
@@ -4183,8 +4180,7 @@ public abstract class AbstractFtpDoorV1
         {
             StringBuilder mode = new StringBuilder();
             FileAttributes attr = entry.getFileAttributes();
-            FsPath dirPath = dir == null ? new FsPath() : dir;
-            FsPath path = new FsPath(dirPath).add(entry.getName());
+            FsPath path = (dir == null) ? FsPath.ROOT : dir.child(entry.getName());
 
             if (attr.getFileType() == FileType.DIR) {
                 boolean canListDir = _pdp.canListDir(_subject, attr) == ACCESS_ALLOWED &&
@@ -4310,8 +4306,7 @@ public abstract class AbstractFtpDoorV1
         @Override
         public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
-            FsPath path = dir == null ? new FsPath(entry.getName()) :
-                    new FsPath(dir).add(entry.getName());
+            FsPath path = (dir == null) ? FsPath.ROOT : dir.child(entry.getName());
 
             if (!_currentFacts.isEmpty()) {
                 AccessType access;
@@ -4567,8 +4562,8 @@ public abstract class AbstractFtpDoorV1
         protected void printName(FsPath dir, DirectoryEntry entry)
         {
             String name = entry.getName();
-            FsPath path = (dir == null) ? new FsPath(name) : new FsPath(dir, name);
-            _out.print(_doorRootPath.relativize(path));
+            FsPath path = (dir == null) ? FsPath.ROOT : dir.child(name);
+            _out.print(path.stripPrefix(_doorRootPath));
         }
     }
 

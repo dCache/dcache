@@ -69,15 +69,15 @@ public class DcacheUser implements SRMUser
                         .findFirst()
                         .map(RootDirectory.class::cast)
                         .map(RootDirectory::getRoot)
-                        .map(FsPath::new)
-                        .orElseGet(FsPath::new);
+                        .map(FsPath::create)
+                        .orElse(FsPath.ROOT);
     }
 
     public DcacheUser(Token token, GlobusPrincipal dn)
     {
         this.token = token;
         this.subject = new Subject(true, singleton(dn), emptySet(), emptySet());
-        this.root = new FsPath();
+        this.root = FsPath.ROOT;
         this.isLoggedIn = false;
         this.restriction = Restrictions.denyAll();
     }
@@ -86,7 +86,7 @@ public class DcacheUser implements SRMUser
     {
         this.token = null;
         this.subject = Subjects.NOBODY;
-        this.root = new FsPath();
+        this.root = FsPath.ROOT;
         this.isLoggedIn = false;
         this.restriction = Restrictions.denyAll();
     }

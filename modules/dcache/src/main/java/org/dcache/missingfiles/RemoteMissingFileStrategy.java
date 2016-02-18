@@ -29,10 +29,10 @@ public class RemoteMissingFileStrategy implements MissingFileStrategy
 
 
     @Override
-    public Action recommendedAction(Subject subject, FsPath dCachePath, FsPath requestPath)
+    public Action recommendedAction(Subject subject, FsPath dCachePath, String requestPath)
     {
         MissingFileMessage msg
-                = new MissingFileMessage(requestPath.toString(), dCachePath.toString());
+                = new MissingFileMessage(requestPath, dCachePath.toString());
         msg.setSubject(subject);
 
         MissingFileMessage reply;

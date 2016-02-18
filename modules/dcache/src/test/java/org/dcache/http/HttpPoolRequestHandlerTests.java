@@ -570,7 +570,7 @@ public class HttpPoolRequestHandlerTests
 
         public String getFileName()
         {
-            return new FsPath(_path).getName();
+            return FsPath.create(_path).name();
         }
 
         public UUID getUuid()

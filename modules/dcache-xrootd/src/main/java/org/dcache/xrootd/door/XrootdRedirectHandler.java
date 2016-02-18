@@ -87,7 +87,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     private final FsPath _uploadPath;
 
     private Restriction _authz = Restrictions.denyAll();
-    private FsPath _userRootPath = new FsPath();
+    private FsPath _userRootPath = FsPath.ROOT;
 
     /**
      * Custom entries for kXR_Qconfig requests.
@@ -679,7 +679,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         public void success(PnfsListDirectoryMessage message)
         {
             message.getEntries().stream().forEach(
-                    e -> _response.add(e.getName(), _door.getFileStatus(_request.getSubject(), _authz, new FsPath(_dirPath).add(e.getName()), _client, e.getFileAttributes())));
+                    e -> _response.add(e.getName(), _door.getFileStatus(_request.getSubject(), _authz, _dirPath.child(e.getName()), _client, e.getFileAttributes())));
             if (message.isFinal()) {
                 respond(_context, _response.buildFinal());
             } else {
@@ -695,12 +695,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     {
         LoginReply reply = event.getLoginReply();
         _authz = Restrictions.none();
-        _userRootPath = new FsPath();
+        _userRootPath = FsPath.ROOT;
         if (reply != null) {
             _authz = reply.getRestriction();
             for (LoginAttribute attribute : reply.getLoginAttributes()) {
                 if (attribute instanceof RootDirectory) {
-                    _userRootPath = new FsPath(((RootDirectory) attribute).getRoot());
+                    _userRootPath = FsPath.create(((RootDirectory) attribute).getRoot());
                 }
             }
         }
@@ -714,11 +714,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     private FsPath createFullPath(String path)
             throws PermissionDeniedCacheException
     {
-        FsPath fullPath = new FsPath(_rootPath, new FsPath(path));
-        if (!fullPath.startsWith(_userRootPath) &&
-                (_uploadPath == null || !fullPath.startsWith(_uploadPath))) {
-            throw new PermissionDeniedCacheException("Permission denied");
+        FsPath fullPath = _rootPath.chroot(path);
+        if (fullPath.hasPrefix(_userRootPath)) {
+            return fullPath;
         }
-        return fullPath;
+        if (_uploadPath != null && fullPath.hasPrefix(_uploadPath)) {
+            return fullPath;
+        }
+        throw new PermissionDeniedCacheException("Permission denied");
     }
 }

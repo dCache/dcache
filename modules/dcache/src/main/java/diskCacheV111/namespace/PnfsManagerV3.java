@@ -1373,10 +1373,10 @@ public class PnfsManagerV3
                 sourcePath = _nameSpaceProvider.pnfsidToPath(msg.getSubject(), pnfsId);
             }
             _log.info("Rename {} to new name: {}", sourcePath, destinationPath);
-            checkRestriction(msg, MANAGE, new FsPath(sourcePath).getParent());
-            checkRestriction(msg, MANAGE, new FsPath(destinationPath).getParent());
+            checkRestriction(msg, MANAGE, FsPath.create(sourcePath).parent());
+            checkRestriction(msg, MANAGE, FsPath.create(destinationPath).parent());
             boolean overwrite = msg.getOverwrite()
-                    && !msg.getRestriction().isRestricted(DELETE, new FsPath(destinationPath));
+                    && !msg.getRestriction().isRestricted(DELETE, FsPath.create(destinationPath));
             _nameSpaceProvider.rename(msg.getSubject(), pnfsId, sourcePath, destinationPath, overwrite);
         } catch (CacheException e){
             msg.setFailed(e.getRc(), e.getMessage());
@@ -1408,11 +1408,11 @@ public class PnfsManagerV3
             if (globalPath == null) {
                 _log.info("map:  id2path for " + pnfsId);
                 String path = pathfinder(subject, pnfsId);
-                checkRestriction(pnfsMessage, READ_METADATA, new FsPath(path));
+                checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(path));
                 pnfsMessage.setGlobalPath(path);
             } else {
                 _log.info("map:  path2id for " + globalPath);
-                checkRestriction(pnfsMessage, READ_METADATA, new FsPath(globalPath));
+                checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(globalPath));
                 pnfsMessage.setPnfsId(pathToPnfsid(subject, globalPath, shouldResolve));
             }
             checkMask(pnfsMessage);
@@ -1840,10 +1840,10 @@ public class PnfsManagerV3
     {
         try {
             if (_threadGroups > 1) {
-                Integer db = _pathToDBCache.get(new FsPath(path));
+                Integer db = _pathToDBCache.get(FsPath.create(path));
                 if (db == null || db != id) {
                     String root = getDatabaseRoot(new File(path)).getPath();
-                    _pathToDBCache.put(new FsPath(root), id);
+                    _pathToDBCache.put(FsPath.create(root), id);
                     _log.info("Path cache updated: " + root + " -> " + id);
                 }
             }
@@ -1915,7 +1915,7 @@ public class PnfsManagerV3
             return 0;
         }
 
-        Integer db = _pathToDBCache.get(new FsPath(path));
+        Integer db = _pathToDBCache.get(FsPath.create(path));
         if (db != null) {
             return db % _threadGroups;
         }
@@ -2232,9 +2232,8 @@ public class PnfsManagerV3
     {
         if (!Subjects.isRoot(message.getSubject())) {
             FsPath path = message.getFsPath();
-            if (path != null && !path.isEmpty()) {
-                checkRestriction(message.getRestriction(),
-                        message.getAccessMask(), activity, path.getParent());
+            if (path != null && !path.isRoot()) {
+                checkRestriction(message.getRestriction(), message.getAccessMask(), activity, path.parent());
             }
         }
     }

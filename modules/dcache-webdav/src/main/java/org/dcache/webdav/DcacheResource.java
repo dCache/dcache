@@ -77,7 +77,7 @@ public class DcacheResource
     @Override
     public String getName()
     {
-        return _path.getName();
+        return _path.name();
     }
 
     @Override
@@ -109,7 +109,7 @@ public class DcacheResource
         try {
             DcacheDirectoryResource directory =
                 (DcacheDirectoryResource) newParent;
-            FsPath newPath = new FsPath(directory._path, name);
+            FsPath newPath = directory._path.child(name);
             _factory.move(_path, _attributes.getPnfsId(), newPath);
             _path = newPath;
         } catch (CacheException e) {

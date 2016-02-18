@@ -82,7 +82,7 @@ public class Layout
         throws URISyntaxException, IOException
     {
         URL url = NetworkUtils.toURL(uri);
-        _source = new FsPath(url.getPath()).getName();
+        _source = FsPath.create(url.getPath()).name();
         try (Reader reader = new InputStreamReader(url.openStream())) {
             load(reader);
         }

@@ -549,8 +549,8 @@ public class PnfsManagerTest
     @Test
     public void testCancelUpload() throws ChimeraFsException
     {
-        FsPath root = new FsPath("/");
-        FsPath path = new FsPath("/test");
+        FsPath root = FsPath.ROOT;
+        FsPath path = FsPath.create("/test");
 
         PnfsCreateUploadPath create =
                 new PnfsCreateUploadPath(Subjects.ROOT, Restrictions.none(), path, root, null,
@@ -569,8 +569,8 @@ public class PnfsManagerTest
     @Test
     public void testCancelUploadRecursively() throws ChimeraFsException
     {
-        FsPath root = new FsPath("/");
-        FsPath path = new FsPath("/test");
+        FsPath root = FsPath.ROOT;
+        FsPath path = FsPath.create("/test");
 
         PnfsCreateUploadPath create =
                 new PnfsCreateUploadPath(Subjects.ROOT, Restrictions.none(), path, root, null,
@@ -579,9 +579,9 @@ public class PnfsManagerTest
         assertThat(create.getReturnCode(), is(0));
 
         _fs.createFile(create.getUploadPath().toString());
-        _fs.mkdir(create.getUploadPath().getParent() + "/bar");
-        _fs.mkdir(create.getUploadPath().getParent() + "/baz");
-        _fs.createFile(create.getUploadPath().getParent() + "/baz/baz");
+        _fs.mkdir(create.getUploadPath().parent() + "/bar");
+        _fs.mkdir(create.getUploadPath().parent() + "/baz");
+        _fs.createFile(create.getUploadPath().parent() + "/baz/baz");
 
         PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT, Restrictions.none(), create.getUploadPath(), path);
         _pnfsManager.cancelUpload(cancel);

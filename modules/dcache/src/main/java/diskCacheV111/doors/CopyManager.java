@@ -311,8 +311,8 @@ public class CopyManager extends AbstractCellComponent
 
                     copy(message.getSubject(),
                          message.getRestriction(),
-                         new FsPath(message.getSrcPnfsPath()),
-                         new FsPath(message.getDstPnfsPath()));
+                         FsPath.create(message.getSrcPnfsPath()),
+                         FsPath.create(message.getDstPnfsPath()));
 
                     message.setReturnCode(0);
                     message.setDescription("file "+

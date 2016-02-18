@@ -113,8 +113,7 @@ public class DcacheFileResource
                 dispositionFor(params.get(PARAM_ACTION)).toString().toLowerCase());
 
         try {
-            _factory.readFile(new FsPath(_path), _attributes.getPnfsId(),
-                              out, range);
+            _factory.readFile(_path, _attributes.getPnfsId(), out, range);
         } catch (EofException e) {
             // Milton reacts badly to receiving any IOException and wraps the
             // IOException in a RuntimeException.  Here, we translate this to
