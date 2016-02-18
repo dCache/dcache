@@ -2,6 +2,7 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -31,7 +32,9 @@ import java.util.regex.Pattern;
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
@@ -1309,7 +1312,8 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public PnfsId commitUpload(Subject subject, FsPath temporaryPath, FsPath finalPath, Set<CreateOption> options)
+    public FileAttributes commitUpload(Subject subject, FsPath temporaryPath, FsPath finalPath,
+                                       Set<CreateOption> options, Set<FileAttribute> attributesToFetch)
             throws CacheException
     {
         try {
@@ -1318,17 +1322,36 @@ public class ChimeraNameSpaceProvider
 
             checkIsTemporaryDirectory(temporaryPath, temporaryDir);
 
-            /* File must have been uploaded.
+            /* File must have been created...
              */
-            FsInode uploadDirInode;
-            FsInode temporaryDirInode;
-            FsInode inodeOfFile;
+            ExtendedInode uploadDirInode;
+            ExtendedInode temporaryDirInode;
+            ExtendedInode inodeOfFile;
             try {
-                uploadDirInode = _fs.path2inode(temporaryDir.getParent().toString());
+                uploadDirInode = new ExtendedInode(_fs, _fs.path2inode(temporaryDir.getParent().toString()).toString());
                 temporaryDirInode = uploadDirInode.inodeOf(temporaryDir.getName());
                 inodeOfFile = temporaryDirInode.inodeOf(temporaryPath.getName());
             } catch (FileNotFoundHimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryPath, e);
+            }
+
+            /* ...and upload must have completed...
+             */
+            ImmutableList<StorageLocatable> locations = inodeOfFile.getLocations();
+            if (locations.isEmpty()) {
+                throw new FileIsNewCacheException("Upload has not completed.");
+            }
+
+            /* ...and it must have the correct size.
+             */
+            ImmutableList<String> size = inodeOfFile.getTag(TAG_EXPECTED_SIZE);
+            if (!size.isEmpty()) {
+                long expectedSize = Long.parseLong(size.get(0));
+                long actualSize = inodeOfFile.statCache().getSize();
+                if (expectedSize != actualSize) {
+                    throw new FileCorruptedCacheException("File has unexpected size (expected=" + expectedSize +
+                                                          ";actual=" + actualSize + ").");
+                }
             }
 
             /* Target directory must exist.
@@ -1371,10 +1394,12 @@ public class ChimeraNameSpaceProvider
              */
             removeRecursively(uploadDirInode, temporaryDir.getName());
 
-            return new PnfsId(inodeOfFile.toString());
+            return getFileAttributes(inodeOfFile, attributesToFetch);
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
+        } catch (NumberFormatException e) {
+            throw new FileCorruptedCacheException("Failed to commit file: " + e.getMessage());
         }
     }
 

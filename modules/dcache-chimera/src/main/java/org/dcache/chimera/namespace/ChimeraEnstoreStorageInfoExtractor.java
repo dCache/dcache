@@ -93,27 +93,22 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
         else {
             dirInode = inode;
         }
-        try {
-            Map<String, String> hash = new HashMap<>();
-            ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
-            ImmutableList<String> group       = dirInode.getTag("storage_group");
-            ImmutableList<String> family      = dirInode.getTag("file_family");
+        Map<String, String> hash = new HashMap<>();
+        ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
+        ImmutableList<String> group       = dirInode.getTag("storage_group");
+        ImmutableList<String> family      = dirInode.getTag("file_family");
 
-            for (String line: OSMTemplate) {
-                StringTokenizer st = new StringTokenizer(line);
-                if (st.countTokens() >= 2) {
-                    hash.put(st.nextToken().intern(), st.nextToken());
-                }
+        for (String line: OSMTemplate) {
+            StringTokenizer st = new StringTokenizer(line);
+            if (st.countTokens() >= 2) {
+                hash.put(st.nextToken().intern(), st.nextToken());
             }
-            String sg = getFirstLine(group).transform(internString()).or("none");
-            String ff = getFirstLine(family).transform(internString()).or("none");
-            EnstoreStorageInfo info = new EnstoreStorageInfo(sg,ff);
-            info.addKeys(hash);
-            return info;
         }
-        catch (IOException e) {
-            throw new CacheException(e.getMessage());
-        }
+        String sg = getFirstLine(group).transform(internString()).or("none");
+        String ff = getFirstLine(family).transform(internString()).or("none");
+        EnstoreStorageInfo info = new EnstoreStorageInfo(sg,ff);
+        info.addKeys(hash);
+        return info;
     }
 
     private static boolean isEncoded(String s) throws UnsupportedEncodingException {
