@@ -1,8 +1,14 @@
 package diskCacheV111.util;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Arrays.asList;
 
 public class FsPath {
 
@@ -14,7 +20,11 @@ public class FsPath {
 
     public FsPath(String path) {
         this();
-        add(path);
+        checkArgument(path.startsWith("/"));
+        StringTokenizer st = new StringTokenizer(path, "/");
+        while (st.hasMoreTokens()) {
+            addSingleItem(st.nextToken());
+        }
     }
 
     public FsPath()
@@ -95,6 +105,7 @@ public class FsPath {
             }
             return;
         }
+        checkArgument(!item.isEmpty());
         _list.add(item);
     }
 
@@ -149,6 +160,18 @@ public class FsPath {
             }
         }
         return true;
+    }
+
+    public boolean contains(String path)
+    {
+        List<String> pathSequence = Splitter.on("/").omitEmptyStrings().splitToList(path);
+        int len = pathSequence.size();
+        for (int i = 0; i <= _list.size() - len; i++) {
+            if (_list.subList(i, i + len).equals(pathSequence)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
