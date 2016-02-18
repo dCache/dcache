@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -26,6 +27,7 @@ import dmg.util.command.Option;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Args;
+import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.stream.Collectors.joining;
@@ -161,7 +163,7 @@ public class RepositoryInterpreter
     public static final String fh_rep_ls =
         "\n"+
         " Format I  :  [<pnfsId> [<pnfsId> [...]]]\n"+
-        " Format II : -l[=<selectionOptions>] [-s]\n"+
+        " Format II : -l[=<selectionOptions>] [-si=<glob>] [-s]\n"+
         "              Options :\n"+
         "              -l[=splunc]  # selected list\n"+
         "                 s  : sticky files\n"+
@@ -170,6 +172,9 @@ public class RepositoryInterpreter
         "                 u  : files in use\n"+
         "                 nc : files which are not cached\n" +
         "                 e  : files which error condition\n" +
+        "              -si=<glob>   # select only replicas\n" +
+        "                             of files with storage-\n" +
+        "                             info that matches <glob>\n" +
         "              -s[=kmgt] [-sum]       # statistics\n" +
         "                 k  : data amount in KBytes\n"+
         "                 m  : data amount in MBytes\n"+
@@ -192,7 +197,6 @@ public class RepositoryInterpreter
         " bit 11 is \"L(x)(y)\" if entry is in locked or \"-\" if not \n"+
         "        x is epoch until which the entry is locked, 0 for non expiring lock \n"+
         "        y is the link count";
-
     public static final String hh_rep_ls = "[-l[=s,l,u,nc,p]] [-s[=kmgt]] | [<pnfsId> [...] ]";
     public Object ac_rep_ls_$_0_99(final Args args) throws Exception
     {
@@ -302,10 +306,22 @@ public class RepositoryInterpreter
                         boolean broken    = format.indexOf('e')  > -1;
                         boolean cached    = format.indexOf('c')  > -1;
 
+                        String si = args.getOption("si");
+                        Pattern siFilter = si == null ? null : Glob.parseGlobToPattern(si);
+
                         for (PnfsId id: _repository) {
                             try {
                                 CacheEntry entry = _repository.getEntry(id);
                                 EntryState state = entry.getState();
+                                if (siFilter != null) {
+                                    FileAttributes attributes = entry.getFileAttributes();
+                                    String siValue = attributes.isDefined(FileAttribute.STORAGECLASS)
+                                            ? attributes.getStorageClass()
+                                            : "<unknown>";
+                                    if (!siFilter.matcher(siValue).matches()) {
+                                        continue;
+                                    }
+                                }
                                 if (format.length() == 0 ||
                                     (notcached && state != EntryState.CACHED) ||
                                     (precious && state == EntryState.PRECIOUS) ||
