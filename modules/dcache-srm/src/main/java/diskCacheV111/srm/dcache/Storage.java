@@ -111,6 +111,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -137,6 +138,7 @@ import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
@@ -153,6 +155,7 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PnfsCancelUpload;
 import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
+import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
@@ -165,6 +168,7 @@ import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
 
@@ -1074,6 +1078,9 @@ public final class Storage
         try {
             Subject subject = ((DcacheUser) user).getSubject();
             FsPath fullPath = getPath(surl);
+
+            checkNonBrokenUpload(localTransferPath);
+
             EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
             if (overwrite) {
                 options.add(CreateOption.OVERWRITE_EXISTING);
@@ -1113,6 +1120,45 @@ public final class Storage
             throw new SRMInternalErrorException("Operation interrupted", e);
         } catch (NoRouteToCellException e) {
             _log.error(e.getMessage());
+        }
+    }
+
+    /**
+     * Check that file has a non-broken location. This is temporary code that will be
+     * removed once pools register actual file size and/or file brokenness in the
+     * name space.
+     */
+    private void checkNonBrokenUpload(String fullPath) throws InterruptedException, CacheException
+    {
+        FileAttributes fileAttributes = _pnfs.getFileAttributes(fullPath, EnumSet.of(PNFSID, LOCATIONS));
+        Iterator<String> iterator = fileAttributes.getLocations().iterator();
+        if (iterator.hasNext()) {
+            CacheException error;
+            String location;
+            do {
+                location = iterator.next();
+                try {
+                    checkPoolFile(location, fileAttributes);
+                    return;
+                } catch (CacheException e) {
+                    error = e;
+                }
+            } while (iterator.hasNext());
+            throw error;
+        }
+        throw new FileIsNewCacheException("No file was uploaded.");
+    }
+
+    private void checkPoolFile(String location, FileAttributes fileAttributes)
+            throws CacheException, InterruptedException
+    {
+        /* Since this is a temporary workaround, we borrow the pnfs stub.
+         */
+        PoolCheckFileMessage message = _pnfsStub.sendAndWait(new CellPath(location),
+                                                             new PoolCheckFileMessage(location,
+                                                                                      fileAttributes.getPnfsId()));
+        if (message.getWaiting()) {
+            throw new FileIsNewCacheException("Upload has not completed.");
         }
     }
 
