@@ -37,6 +37,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -99,6 +100,7 @@ public class ChimeraNameSpaceProvider
     private boolean _aclEnabled;
     private PermissionHandler _permissionHandler;
     private String _uploadDirectory;
+    private String _uploadSubDirectory;
 
     private final ThreadLocal<Integer> threadId = new ThreadLocal<Integer>() {
         private final AtomicInteger counter = new AtomicInteger();
@@ -154,16 +156,24 @@ public class ChimeraNameSpaceProvider
     /**
      * Base directory for temporary upload directories. If not an absolute path, the directory
      * is relative to the user's root directory.
+     */
+    @Required
+    public void setUploadDirectory(String path)
+    {
+        _uploadDirectory = path;
+    }
+
+    /**
+     * Sub directory in the upload directory in which to create temporary upload directories.
      *
      * May be parametrised by a thread id by inserting %d into the string. This allows Chimera
      * lock contention on the base directory to be reduced. If used it is important that the
      * same set threads call into the provider repeatedly as otherwise a large number of
      * base directories will be created.
      */
-    @Required
-    public void setUploadDirectory(String path)
+    public void setUploadSubDirectory(String path)
     {
-        _uploadDirectory = path;
+        _uploadSubDirectory = path;
     }
 
     private FsInode pathToInode(Subject subject, String path)
@@ -1210,7 +1220,10 @@ public class ChimeraNameSpaceProvider
              * or relative path.
              */
             FsPath uploadDirectory = new FsPath(rootPath);
-            uploadDirectory.add(String.format(_uploadDirectory, threadId.get()));
+            uploadDirectory.add(_uploadDirectory);
+            if (_uploadSubDirectory != null) {
+                uploadDirectory.add(String.format(_uploadSubDirectory, threadId.get()));
+            }
 
             /* Upload directory must exist and have the right permissions.
              */
@@ -1237,6 +1250,26 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    protected void checkIsTemporaryDirectory(FsPath temporaryPath, FsPath temporaryDir)
+            throws NotFileCacheException, InvalidMessageCacheException
+    {
+        FsPath temporaryDirContainer = getParentOfFile(temporaryDir);
+        if (_uploadDirectory.startsWith("/")) {
+            if (!temporaryDirContainer.startsWith(new FsPath(_uploadDirectory))) {
+                throw new InvalidMessageCacheException(
+                        temporaryPath + " is not part of the " + _uploadDirectory + " tree.");
+            }
+        } else {
+            if (!temporaryDirContainer.contains(_uploadDirectory)) {
+                throw new InvalidMessageCacheException(
+                        temporaryPath + " is not part of the " + _uploadDirectory + " tree.");
+            }
+        }
+        if (temporaryDir.isEmpty()) {
+            throw new InvalidMessageCacheException("A temporary upload path cannot be in the root directory.");
+        }
+    }
+
     @Override
     public PnfsId commitUpload(Subject subject, FsPath temporaryPath, FsPath finalPath, Set<CreateOption> options)
             throws CacheException
@@ -1244,6 +1277,8 @@ public class ChimeraNameSpaceProvider
         try {
             FsPath temporaryDir = getParentOfFile(temporaryPath);
             FsPath finalDir = getParentOfFile(finalPath);
+
+            checkIsTemporaryDirectory(temporaryPath, temporaryDir);
 
             /* File must have been uploaded.
              */
@@ -1310,6 +1345,8 @@ public class ChimeraNameSpaceProvider
     {
         try {
             FsPath temporaryDir = getParentOfFile(temporaryPath);
+
+            checkIsTemporaryDirectory(temporaryPath, temporaryDir);
 
             /* Temporary upload directory must exist.
              */
