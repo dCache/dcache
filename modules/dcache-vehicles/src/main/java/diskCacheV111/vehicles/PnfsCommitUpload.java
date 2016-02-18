@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2016 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,6 +17,8 @@
  */
 package diskCacheV111.vehicles;
 
+import com.google.common.collect.Sets;
+
 import javax.security.auth.Subject;
 
 import java.util.Collections;
@@ -28,6 +30,10 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.collect.Iterables.concat;
+import static java.util.Collections.singleton;
+import static org.dcache.namespace.FileAttribute.PNFSID;
 
 /**
  * Commit an upload path to its final name.
@@ -77,7 +83,8 @@ public class PnfsCommitUpload extends PnfsMessage
 
     public Set<FileAttribute> getRequestedAttributes()
     {
-        return requestedAttributes;
+        // REVISIT: Addition of PNFSID is for backwards compatibility with pre 2.15 - remove in 2.17
+        return Sets.newHashSet(concat(requestedAttributes, singleton(PNFSID)));
     }
 
     public FileAttributes getFileAttributes()
@@ -87,6 +94,9 @@ public class PnfsCommitUpload extends PnfsMessage
 
     public void setFileAttributes(FileAttributes fileAttributes)
     {
+        if (fileAttributes.isDefined(PNFSID)) {
+            setPnfsId(fileAttributes.getPnfsId());
+        }
         this.fileAttributes = fileAttributes;
     }
 }

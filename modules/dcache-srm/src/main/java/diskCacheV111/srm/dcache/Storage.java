@@ -134,7 +134,9 @@ import diskCacheV111.services.space.message.Release;
 import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
@@ -1159,7 +1161,7 @@ public final class Storage
                                          new FsPath(localTransferPath),
                                          fullPath,
                                          options,
-                                         EnumSet.of(SIZE, STORAGEINFO));
+                                         EnumSet.of(PNFSID, SIZE, STORAGEINFO));
             msg = _pnfsStub.sendAndWait(msg);
 
             DoorRequestInfoMessage infoMsg =
@@ -1168,7 +1170,7 @@ public final class Storage
             infoMsg.setBillingPath(fullPath.toString());
             infoMsg.setTransferPath(localTransferPath);
             infoMsg.setTransaction(CDC.getSession());
-            infoMsg.setPnfsId(msg.getPnfsId());
+            infoMsg.setPnfsId(msg.getFileAttributes().getPnfsId());
             infoMsg.setResult(0, "");
             infoMsg.setFileSize(msg.getFileAttributes().getSizeIfPresent().or(0L));
             infoMsg.setStorageInfo(msg.getFileAttributes().getStorageInfo());
@@ -1179,6 +1181,8 @@ public final class Storage
             _billingStub.notify(infoMsg);
         } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException(e.getMessage(), e);
+        } catch (FileIsNewCacheException | FileCorruptedCacheException  e) {
+            throw new SRMException(e.getMessage(), e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied.", e);
         } catch (FileExistsCacheException e) {
