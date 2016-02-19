@@ -2198,7 +2198,7 @@ public class PnfsManagerV3
     {
         if (!Subjects.isRoot(message.getSubject())) {
             FsPath path = message.getFsPath();
-            if (path != null) {
+            if (path != null && !path.isEmpty()) {
                 checkRestriction(message.getRestriction(),
                         message.getAccessMask(), activity, path.getParent());
             }
