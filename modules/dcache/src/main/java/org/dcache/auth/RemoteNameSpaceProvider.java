@@ -218,7 +218,8 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public PnfsId commitUpload(Subject subject, FsPath uploadPath, FsPath pnfsPath, Set<CreateOption> options)
+    public FileAttributes commitUpload(Subject subject, FsPath uploadPath, FsPath pnfsPath,
+                                       Set<CreateOption> options, Set<FileAttribute> attributes)
             throws CacheException
     {
         PnfsCommitUpload msg = new PnfsCommitUpload(subject,
@@ -226,7 +227,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
                                                     pnfsPath,
                                                     options,
                                                     EnumSet.noneOf(FileAttribute.class));
-        return _pnfs.pnfsRequest(msg).getPnfsId();
+        return _pnfs.pnfsRequest(msg).getFileAttributes();
     }
 
     @Override
