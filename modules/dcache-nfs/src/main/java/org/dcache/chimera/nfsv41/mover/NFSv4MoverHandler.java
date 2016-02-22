@@ -230,7 +230,7 @@ public class NFSv4MoverHandler {
                 .withMaxPort(portRange.getUpper())
                 .withTCP()
                 .withoutAutoPublish()
-                .withWorkerThreadIoStrategy();
+                .withSameThreadIoStrategy();
 
         if (withGss) {
             RpcLoginService rpcLoginService = new RpcLoginService() {
