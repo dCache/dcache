@@ -13,7 +13,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.CharsetUtil;
-import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,15 +35,12 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(HttpRequestHandler.class);
-    private boolean _isKeepAlive;
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Object msg)
     {
         if (msg instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) msg;
-
-            _isKeepAlive = HttpHeaders.isKeepAlive(request);
 
             ChannelFuture future;
             if (request.getMethod() == HttpMethod.GET) {
@@ -62,9 +58,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
             }
             if (future != null) {
                 future.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-                if (!isKeepAlive()) {
-                    future.addListener(ChannelFutureListener.CLOSE);
-                }
                 return;
             }
         }
@@ -72,9 +65,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
             ChannelFuture future = doOnContent(ctx, (HttpContent) msg);
             if (future != null) {
                 future.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-                if (!isKeepAlive()) {
-                    future.addListener(ChannelFutureListener.CLOSE);
-                }
             }
         }
     }
@@ -126,8 +116,8 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
     {
         if (t instanceof TooLongFrameException) {
             HttpTextResponse response = createErrorResponse(BAD_REQUEST, "Max request length exceeded");
-            response.headers().set(CONNECTION, CLOSE);
-            ctx.channel().writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+            HttpHeaders.setKeepAlive(response, false);
+            ctx.channel().writeAndFlush(response);
         } else if (ctx.channel().isActive()) {
             // We cannot know whether the error was generated before or
             // after we sent the response headers - if we already sent
@@ -144,11 +134,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
         } else {
             LOGGER.warn(t.toString());
         }
-    }
-
-    protected boolean isKeepAlive()
-    {
-        return _isKeepAlive;
     }
 
     /**
