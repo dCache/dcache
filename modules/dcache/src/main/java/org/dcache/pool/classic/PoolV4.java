@@ -36,6 +36,7 @@ import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
@@ -975,8 +976,7 @@ public class PoolV4
             poolMessage.setWaiting(true);
             break;
         case BROKEN:
-            throw new CacheException(CacheException.DEFAULT_ERROR_CODE,
-                                     id.toString() + " is broken in " + _poolName);
+            throw new FileCorruptedCacheException(id.toString() + " is broken in " + _poolName);
         default:
             poolMessage.setHave(false);
             poolMessage.setWaiting(false);
