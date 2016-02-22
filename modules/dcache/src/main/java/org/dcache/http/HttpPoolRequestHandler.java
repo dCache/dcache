@@ -5,7 +5,6 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -36,7 +35,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -50,7 +48,6 @@ import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static io.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
