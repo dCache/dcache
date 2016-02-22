@@ -23,6 +23,7 @@ import io.milton.http.FilterChain;
 import io.milton.http.Request;
 import io.milton.http.Response;
 import io.milton.http.Response.Status;
+import io.milton.http.exceptions.BadRequestException;
 import io.milton.servlet.ServletRequest;
 import org.globus.gsi.X509Credential;
 import org.slf4j.Logger;
@@ -35,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.AccessController;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,6 +54,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -94,6 +97,10 @@ public class CopyFilter implements Filter
     private static final String REQUEST_HEADER_CREDENTIAL = "Credential";
     private static final Set<AccessMask> READ_ACCESS_MASK =
             EnumSet.of(AccessMask.READ_DATA);
+    private static final Set<AccessMask> WRITE_ACCESS_MASK =
+            EnumSet.of(AccessMask.WRITE_DATA);
+    private static final Set<AccessMask> CREATE_ACCESS_MASK =
+            EnumSet.of(AccessMask.ADD_FILE);
 
     /**
      * Describes where to fetch the delegated credential, if at all.
@@ -182,62 +189,88 @@ public class CopyFilter implements Filter
             }
         } catch (ErrorResponseException e) {
             response.sendError(e.getStatus(), e.getMessage());
+        } catch (BadRequestException e) {
+            response.sendError(Status.SC_BAD_REQUEST, e.getMessage());
         } catch (InterruptedException ignored) {
             response.sendError(Response.Status.SC_SERVICE_UNAVAILABLE,
                     "dCache is shutting down");
         }
     }
 
-    private boolean isRequestThirdPartyCopy(Request request)
-            throws ErrorResponseException
+    public static boolean isRequestThirdPartyCopy(Request request)
+            throws BadRequestException
     {
         if (request.getMethod() != Request.Method.COPY) {
             return false;
         }
 
-        URI uri = getDestination(request);
+        URI uri = getRemoteLocation();
 
-        // We treat any Destination URI that has scheme and host parts as a
+        // We treat any URI that has scheme and host parts as a
         // third-party transfer request.  This isn't guaranteed but
         // probably good enough for now.
         return uri.getScheme() != null && uri.getHost() != null;
     }
 
-    private static URI getDestination(Request request) throws ErrorResponseException
+    private static Direction getDirection() throws BadRequestException
     {
-        String destination = request.getDestinationHeader();
-        if (destination == null) {
-            throw new RuntimeException("Destination request header is missing"); // Bug in Milton
+        // Note that each invocation of Request#getHeaders creates a HashMap
+        // and populates it with all headers.  Therefore, we use ServletRequest
+        // which Milton only makes available via a ThreadLocal.
+        HttpServletRequest servletRequest = ServletRequest.getRequest();
+
+        String pullUrl = servletRequest.getHeader(Direction.PULL.getHeaderName());
+        String pushUrl = servletRequest.getHeader(Direction.PUSH.getHeaderName());
+
+        if (pullUrl == null && pushUrl == null) {
+            throw new BadRequestException("COPY request is missing both " +
+                    Direction.PUSH.getHeaderName() + " and " +
+                    Direction.PULL.getHeaderName() + " request headers");
         }
 
+        if (pullUrl != null && pushUrl != null) {
+            throw new BadRequestException("COPY request contains both " +
+                    Direction.PUSH.getHeaderName() + " and " +
+                    Direction.PULL.getHeaderName() + " request headers");
+        }
+
+        return pushUrl != null ? Direction.PUSH : Direction.PULL;
+    }
+
+    private static URI getRemoteLocation() throws BadRequestException
+    {
+        Direction direction = getDirection();
+        String remote = ServletRequest.getRequest().getHeader(direction.getHeaderName());
+
         try {
-            return new URI(request.getDestinationHeader());
+            return new URI(remote);
         } catch (URISyntaxException e) {
-            throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                    "Destination request header contains an invalid URI: " +
-                            e.getMessage());
+            throw new BadRequestException(direction.getHeaderName() +
+                    " request header contains an invalid URI: " + e.getMessage());
         }
     }
 
     private void processThirdPartyCopy(Request request, Response response)
-            throws ErrorResponseException, InterruptedException
+            throws BadRequestException, InterruptedException, ErrorResponseException
     {
-        URI destination = getDestination(request);
+        Direction direction = getDirection();
+        URI remote = getRemoteLocation();
 
-        TransferType type = TransferType.fromScheme(destination.getScheme());
+        TransferType type = TransferType.fromScheme(remote.getScheme());
         if (type == null) {
             throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                    "Destination URI contains unsupported scheme; supported " +
-                            "schemes are " + Joiner.on(", ").join(TransferType.validSchemes()));
+                    "The " + direction.getHeaderName() + " request header URI " +
+                    "contains unsupported scheme; supported schemes are " +
+                    Joiner.on(", ").join(TransferType.validSchemes()));
         }
 
-        if (destination.getPath() == null) {
+        if (remote.getPath() == null) {
             throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                    "Destination is missing a path");
+                    direction.getHeaderName() + " header is missing a path");
         }
 
         FsPath path = getFullPath(request.getAbsolutePath());
-        checkPath(path);
+        checkPath(path, direction);
 
         CredentialSource source = getCredentialSource(request, type);
         X509Credential credential = fetchCredential(source);
@@ -245,8 +278,8 @@ public class CopyFilter implements Filter
             redirectWithDelegation(response);
         } else {
             _remoteTransfers.acceptRequest(response.getOutputStream(),
-                    request.getHeaders(), getSubject(), path, destination,
-                    credential);
+                    request.getHeaders(), getSubject(), path, remote,
+                    credential, direction);
         }
     }
 
@@ -269,7 +302,7 @@ public class CopyFilter implements Filter
         if (!type.isSupported(source)) {
             throw new ErrorResponseException(Status.SC_BAD_REQUEST,
                     "HTTP header 'Credential' value \"" + headerValue + "\" is not " +
-                    "supported for transport " + getDestination(request).getScheme());
+                    "supported for transport " + type.getScheme());
         }
 
         return source;
@@ -371,35 +404,78 @@ public class CopyFilter implements Filter
         return request.getParameter(QUERY_KEY_ASKED_TO_DELEGATE) != null;
     }
 
+    private boolean clientAllowsOverwrite() throws ErrorResponseException
+    {
+        String overwrite = ServletRequest.getRequest().getHeader("Overwrite");
+        if (overwrite != null) {
+            switch (overwrite) {
+            case "T":
+                return true;
+            case "F":
+                return false;
+            default:
+                throw new ErrorResponseException(Status.SC_BAD_REQUEST,
+                        "Invalid Overwrite request header value: must be either 'T' or 'F'");
+            }
+        }
+
+        return true;
+    }
+
     /**
-     * Check whether the source may be transferred.  Updates the response as
-     * a side-effect if the returned value is false.
+     * Check whether the path is allowed for this transfer.
      */
-    private void checkPath(FsPath path) throws ErrorResponseException
+    private void checkPath(FsPath path, Direction direction) throws ErrorResponseException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
 
+        // Always check any client-supplied Overwrite header.
+        boolean overwriteAllowed = clientAllowsOverwrite();
+
+        Set<AccessMask> mask = direction == Direction.PUSH ? READ_ACCESS_MASK : WRITE_ACCESS_MASK;
         FileAttributes attributes;
         try {
-            attributes = pnfs.getFileAttributes(path.toString(),
-                    EnumSet.of(PNFSID, TYPE), READ_ACCESS_MASK, false);
-        } catch (FileNotFoundCacheException e) {
-            _log.debug("No such file: {}", e.getMessage());
-            throw new ErrorResponseException(Response.Status.SC_NOT_FOUND, "no such file");
+            try {
+                attributes = pnfs.getFileAttributes(path.toString(),
+                        EnumSet.of(PNFSID, TYPE), mask, false);
+
+                if (attributes.getFileType() != FileType.REGULAR) {
+                    throw new ErrorResponseException(Status.SC_BAD_REQUEST, "Not a file");
+                }
+
+                if (direction == Direction.PULL) {
+                    if (!overwriteAllowed) {
+                        throw new ErrorResponseException(Status.SC_PRECONDITION_FAILED,
+                                "File already exists");
+                    }
+
+                    // REVISIT: ideally, the transfermanager would handle
+                    // deleting existing entry.
+                    try {
+                        pnfs.deletePnfsEntry(attributes.getPnfsId(), path.toString(),
+                                EnumSet.of(FileType.REGULAR));
+                    } catch (FileNotFoundCacheException ignored) {
+                        // Ignore this: someone else deleted the file, which
+                        // suggests we might be unlucky pulling the data.
+                    }
+                }
+            } catch (FileNotFoundCacheException e) {
+                if (direction == Direction.PUSH) {
+                    throw new ErrorResponseException(Status.SC_NOT_FOUND, "no such file");
+                } else {
+                    pnfs.getFileAttributes(path.getParent().toString(), Collections.emptySet(),
+                                           CREATE_ACCESS_MASK, false);
+                }
+            }
         } catch (PermissionDeniedCacheException e) {
             _log.debug("Permission denied: {}", e.getMessage());
-            throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
+            throw new ErrorResponseException(Status.SC_UNAUTHORIZED,
                     "Permission denied");
         } catch (CacheException e) {
             _log.error("failed query file {} for copy request: {}", path,
                     e.getMessage());
-            throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
+            throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
                     "Internal problem with server");
-        }
-
-        if (attributes.getFileType() != FileType.REGULAR) {
-            throw new ErrorResponseException(Response.Status.SC_BAD_REQUEST,
-                    "Source is not a file");
         }
     }
 
