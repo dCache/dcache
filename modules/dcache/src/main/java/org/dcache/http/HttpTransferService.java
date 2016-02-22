@@ -160,6 +160,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
                                               clientIdleTimeout,
                                               clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+        pipeline.addLast("keepalive", new KeepAliveHandler());
 
         if (!customHeaders.isEmpty()) {
             pipeline.addLast("custom-headers", new CustomResponseHeadersHandler(customHeaders));
