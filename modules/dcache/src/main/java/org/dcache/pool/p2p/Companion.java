@@ -15,6 +15,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -458,36 +459,41 @@ class Companion
     /** Asynchronously requests delivery from the source pool. */
     synchronized void sendDeliveryRequest()
     {
-        HttpProtocolInfo protocolInfo =
-            new HttpProtocolInfo(PROTOCOL_INFO_NAME,
-                                 PROTOCOL_INFO_MAJOR_VERSION,
-                                 PROTOCOL_INFO_MINOR_VERSION,
-                                 new InetSocketAddress(_address, 0),
-                                 _destinationPoolCellname,
-                                 _destinationPoolCellDomainName,
-                                 "/" + _pnfsId,
-                                 null);
-        protocolInfo.setSessionId(_id);
+        try {
+            InetAddress address = (_address == null) ? InetAddress.getLocalHost() : _address;
+            HttpProtocolInfo protocolInfo =
+                new HttpProtocolInfo(PROTOCOL_INFO_NAME,
+                                     PROTOCOL_INFO_MAJOR_VERSION,
+                                     PROTOCOL_INFO_MINOR_VERSION,
+                                     new InetSocketAddress(address, 0),
+                                     _destinationPoolCellname,
+                                     _destinationPoolCellDomainName,
+                                     "/" + _pnfsId,
+                                     null);
+            protocolInfo.setSessionId(_id);
 
-        PoolDeliverFileMessage request =
-                new PoolDeliverFileMessage(_sourcePoolName,
-                                           protocolInfo,
-                                           _fileAttributes);
-        request.setPool2Pool();
-        request.setInitiator(getInitiator());
-        request.setId(_id);
-        request.setForceSourceMode(_forceSourceMode);
+            PoolDeliverFileMessage request =
+                    new PoolDeliverFileMessage(_sourcePoolName,
+                                               protocolInfo,
+                                               _fileAttributes);
+            request.setPool2Pool();
+            request.setInitiator(getInitiator());
+            request.setId(_id);
+            request.setForceSourceMode(_forceSourceMode);
 
-        CellStub.addCallback(_pool.send(new CellPath(_sourcePoolName), request),
-                             new Callback<PoolDeliverFileMessage>()
-                             {
-                                 @Override
-                                 public void success(PoolDeliverFileMessage message)
+            CellStub.addCallback(_pool.send(new CellPath(_sourcePoolName), request),
+                                 new Callback<PoolDeliverFileMessage>()
                                  {
-                                     setMoverId(message.getMoverId());
-                                     super.success(message);
-                                 }
-                             }, _executor);
+                                     @Override
+                                     public void success(PoolDeliverFileMessage message)
+                                     {
+                                         setMoverId(message.getMoverId());
+                                         super.success(message);
+                                     }
+                                 }, _executor);
+        } catch (UnknownHostException e) {
+            _executor.execute(() -> _fsm.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e));
+        }
     }
 
     private String getInitiator()

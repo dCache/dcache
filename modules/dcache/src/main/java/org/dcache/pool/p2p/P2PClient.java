@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
@@ -95,12 +94,6 @@ public class P2PClient
             (_companions.size() > _maxActive)
             ? (_companions.size() - _maxActive)
             : 0;
-    }
-
-    public synchronized InetAddress getInterface()
-        throws UnknownHostException
-    {
-        return (_interface == null) ? InetAddress.getLocalHost() : _interface;
     }
 
     public synchronized void messageArrived(DoorTransferFinishedMessage message)
@@ -255,7 +248,7 @@ public class P2PClient
         Callback cb = new Callback(callback);
 
         Companion companion =
-            new Companion(_executor, getInterface(), _repository,
+            new Companion(_executor, _interface, _repository,
                           _checksumModule,
                           _pnfs, _pool,
                           fileAttributes,
@@ -299,10 +292,8 @@ public class P2PClient
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        try {
-            pw.println("  Interface  : " + getInterface());
-        } catch (UnknownHostException e) {
-            pw.println("  Interface  : " + e.getMessage());
+        if (_interface != null) {
+            pw.println("  Interface  : " + _interface);
         }
         pw.println("  Max Active : " + _maxActive);
         pw.println("Pnfs Timeout : " + _pnfs.getTimeout() + " " + _pnfs.getTimeoutUnit());
@@ -389,7 +380,7 @@ public class P2PClient
                 if (address != null) {
                     _interface = address.equals("*") ? null : InetAddress.getByName(address);
                 }
-                return "PP interface is " + getInterface();
+                return "PP interface is " + ((_interface == null) ? "selected automatically" : _interface) + ".";
             }
         }
     }
