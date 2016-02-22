@@ -1,12 +1,9 @@
 package org.dcache.chimera.namespace;
 
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.net.URI;
@@ -94,8 +91,6 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             throw new FileNotFoundCacheException(e.getMessage(), e);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to obtain AccessLatency: " + e.getMessage(), e);
-        } catch (IOException e) {
-            throw new CacheException(37, "Failed to obtain AccessLatency: " + e.getMessage(), e);
         }
     }
 
@@ -136,8 +131,6 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             throw new FileNotFoundCacheException(e.getMessage(), e);
         } catch (ChimeraFsException e) {
             throw new CacheException("Failed to obtain RetentionPolicy: " + e.getMessage(), e);
-        } catch (IOException e) {
-            throw new CacheException(37, "Failed to obtain RetentionPolicy: " + e.getMessage(), e);
         }
     }
 
@@ -171,29 +164,25 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             dirInode = inode.getParent();
         }
 
-        try {
-            // overwrite hsm type with hsmInstance tag
-            Optional<String> hsmInstance = getFirstLine(dirInode.getTag("hsmInstance"));
-            if (hsmInstance.isPresent()) {
-                info.setHsm(hsmInstance.get().intern());
-            }
+        // overwrite hsm type with hsmInstance tag
+        Optional<String> hsmInstance = getFirstLine(dirInode.getTag("hsmInstance"));
+        if (hsmInstance.isPresent()) {
+            info.setHsm(hsmInstance.get().intern());
+        }
 
-            Optional<String> cacheClass = getFirstLine(dirInode.getTag("cacheClass"));
-            if (cacheClass.isPresent()) {
-                info.setCacheClass(cacheClass.get().intern());
-            }
+        Optional<String> cacheClass = getFirstLine(dirInode.getTag("cacheClass"));
+        if (cacheClass.isPresent()) {
+            info.setCacheClass(cacheClass.get().intern());
+        }
 
-            Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
-            if (spaceToken.isPresent() ) {
-                info.setKey("writeToken", spaceToken.get());
-            }
+        Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
+        if (spaceToken.isPresent() ) {
+            info.setKey("writeToken", spaceToken.get());
+        }
 
-            Optional<String> path = getFirstLine(dirInode.getTag("Path"));
-            if (path.isPresent() ) {
-                info.setKey("path", path.get());
-            }
-        } catch (IOException e) {
-            throw new CacheException( 37, "Unable to fetch tags: " + e.getMessage());
+        Optional<String> path = getFirstLine(dirInode.getTag("Path"));
+        if (path.isPresent() ) {
+            info.setKey("path", path.get());
         }
 
         return info;
