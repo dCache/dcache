@@ -33,8 +33,10 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -91,6 +93,7 @@ public class ChimeraNameSpaceProvider
     private boolean _aclEnabled;
     private PermissionHandler _permissionHandler;
     private String _uploadDirectory;
+    private String _uploadSubDirectory;
 
     private final ThreadLocal<Integer> threadId = new ThreadLocal<Integer>() {
         private final AtomicInteger counter = new AtomicInteger();
@@ -141,16 +144,24 @@ public class ChimeraNameSpaceProvider
     /**
      * Base directory for temporary upload directories. If not an absolute path, the directory
      * is relative to the user's root directory.
+     */
+    @Required
+    public void setUploadDirectory(String path)
+    {
+        _uploadDirectory = path;
+    }
+
+    /**
+     * Sub directory in the upload directory in which to create temporary upload directories.
      *
      * May be parametrised by a thread id by inserting %d into the string. This allows Chimera
      * lock contention on the base directory to be reduced. If used it is important that the
      * same set threads call into the provider repeatedly as otherwise a large number of
      * base directories will be created.
      */
-    @Required
-    public void setUploadDirectory(String path)
+    public void setUploadSubDirectory(String path)
     {
-        _uploadDirectory = path;
+        _uploadSubDirectory = path;
     }
 
     private FsInode pathToInode(Subject subject, String path)
@@ -1198,7 +1209,10 @@ public class ChimeraNameSpaceProvider
              * or relative path.
              */
             FsPath uploadDirectory = new FsPath(rootPath);
-            uploadDirectory.add(String.format(_uploadDirectory, threadId.get()));
+            uploadDirectory.add(_uploadDirectory);
+            if (_uploadSubDirectory != null) {
+                uploadDirectory.add(String.format(_uploadSubDirectory, threadId.get()));
+            }
 
             /* Upload directory must exist and have the right permissions.
              */
@@ -1225,25 +1239,67 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    protected void checkIsTemporaryDirectory(FsPath temporaryPath, FsPath temporaryDir)
+            throws NotFileCacheException, InvalidMessageCacheException
+    {
+        FsPath temporaryDirContainer = getParentOfFile(temporaryDir);
+        if (_uploadDirectory.startsWith("/")) {
+            if (!temporaryDirContainer.startsWith(new FsPath(_uploadDirectory))) {
+                throw new InvalidMessageCacheException(
+                        temporaryPath + " is not part of the " + _uploadDirectory + " tree.");
+            }
+        } else {
+            if (!temporaryDirContainer.contains(_uploadDirectory)) {
+                throw new InvalidMessageCacheException(
+                        temporaryPath + " is not part of the " + _uploadDirectory + " tree.");
+            }
+        }
+        if (temporaryDir.isEmpty()) {
+            throw new InvalidMessageCacheException("A temporary upload path cannot be in the root directory.");
+        }
+    }
+
     @Override
-    public PnfsId commitUpload(Subject subject, FsPath temporaryPath, FsPath finalPath, Set<CreateOption> options)
+    public FileAttributes commitUpload(Subject subject, FsPath temporaryPath, FsPath finalPath,
+                                       Set<CreateOption> options, Set<FileAttribute> attributesToFetch)
             throws CacheException
     {
         try {
             FsPath temporaryDir = getParentOfFile(temporaryPath);
             FsPath finalDir = getParentOfFile(finalPath);
 
-            /* File must have been uploaded.
+            checkIsTemporaryDirectory(temporaryPath, temporaryDir);
+
+            /* File must have been created...
              */
-            FsInode uploadDirInode;
-            FsInode temporaryDirInode;
-            FsInode inodeOfFile;
+            ExtendedInode uploadDirInode;
+            ExtendedInode temporaryDirInode;
+            ExtendedInode inodeOfFile;
             try {
-                uploadDirInode = _fs.path2inode(temporaryDir.getParent().toString());
+                uploadDirInode = new ExtendedInode(_fs, _fs.path2inode(temporaryDir.getParent().toString()).toString());
                 temporaryDirInode = uploadDirInode.inodeOf(temporaryDir.getName());
                 inodeOfFile = temporaryDirInode.inodeOf(temporaryPath.getName());
             } catch (FileNotFoundHimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryPath, e);
+            }
+
+            /* ...and upload must have completed...
+             */
+            ImmutableList<StorageLocatable> locations = inodeOfFile.getLocations();
+            if (locations.isEmpty()) {
+                throw new FileIsNewCacheException("Upload has not completed.");
+            }
+
+            /* ...and it must have the correct size.
+             */
+            ImmutableList<String> size = inodeOfFile.getTag(TAG_EXPECTED_SIZE);
+            if (!size.isEmpty()) {
+                long expectedSize = Long.parseLong(size.get(0));
+                long actualSize = inodeOfFile.statCache().getSize();
+                if (expectedSize != actualSize) {
+                    throw new FileCorruptedCacheException("File has unexpected size (expected=" + expectedSize +
+                                                          ";actual=" + actualSize + ").");
+                }
             }
 
             /* Target directory must exist.
@@ -1286,10 +1342,12 @@ public class ChimeraNameSpaceProvider
              */
             removeRecursively(uploadDirInode, temporaryDir.getName());
 
-            return new PnfsId(inodeOfFile.toString());
+            return getFileAttributes(inodeOfFile, attributesToFetch);
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
+        } catch (NumberFormatException e) {
+            throw new FileCorruptedCacheException("Failed to commit file: " + e.getMessage());
         }
     }
 
@@ -1298,6 +1356,8 @@ public class ChimeraNameSpaceProvider
     {
         try {
             FsPath temporaryDir = getParentOfFile(temporaryPath);
+
+            checkIsTemporaryDirectory(temporaryPath, temporaryDir);
 
             /* Temporary upload directory must exist.
              */
