@@ -2,7 +2,6 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.collect.ImmutableList;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -78,33 +77,28 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
         else {
             dirInode = inode;
         }
-        try {
-            HashMap<String, String> hash = new HashMap<>();
-            String store = null;
-            ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
-            if (!OSMTemplate.isEmpty()) {
-                for (String line: OSMTemplate) {
-                    StringTokenizer st = new StringTokenizer(line);
-                    if (st.countTokens() < 2) {
-                        continue;
-                    }
-                    hash.put(st.nextToken().intern(), st.nextToken());
+        HashMap<String, String> hash = new HashMap<>();
+        String store = null;
+        ImmutableList<String> OSMTemplate = dirInode.getTag("OSMTemplate");
+        if (!OSMTemplate.isEmpty()) {
+            for (String line: OSMTemplate) {
+                StringTokenizer st = new StringTokenizer(line);
+                if (st.countTokens() < 2) {
+                    continue;
                 }
-                store = hash.get("StoreName");
-                if (store == null) {
-                    throw new CacheException(37, "StoreName not found in template");
-                }
+                hash.put(st.nextToken().intern(), st.nextToken());
             }
+            store = hash.get("StoreName");
+            if (store == null) {
+                throw new CacheException(37, "StoreName not found in template");
+            }
+        }
 
-            ImmutableList<String> sGroup = dirInode.getTag("sGroup");
-            String group = getFirstLine(sGroup).transform(internString()).orNull();
-            OSMStorageInfo info = new OSMStorageInfo(store, group);
-            info.addKeys(hash);
-            return info;
-        }
-        catch (IOException e) {
-            throw new CacheException(e.getMessage());
-        }
+        ImmutableList<String> sGroup = dirInode.getTag("sGroup");
+        String group = getFirstLine(sGroup).transform(internString()).orNull();
+        OSMStorageInfo info = new OSMStorageInfo(store, group);
+        info.addKeys(hash);
+        return info;
     }
 
 }
