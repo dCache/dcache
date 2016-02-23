@@ -4179,12 +4179,13 @@ public abstract class AbstractFtpDoorV1
         {
             StringBuilder mode = new StringBuilder();
             FileAttributes attr = entry.getFileAttributes();
-            FsPath path = new FsPath(dir).add(entry.getName());
+            FsPath dirPath = dir == null ? new FsPath() : dir;
+            FsPath path = new FsPath(dirPath).add(entry.getName());
 
             if (attr.getFileType() == FileType.DIR) {
                 boolean canListDir =
                     _pdp.canListDir(_subject, attr) == AccessType.ACCESS_ALLOWED
-                            && !_authz.isRestricted(Activity.LIST, dir);
+                            && !_authz.isRestricted(Activity.LIST, dirPath);
                 boolean canLookup =
                     _pdp.canLookup(_subject, attr) == AccessType.ACCESS_ALLOWED
                             && !_authz.isRestricted(Activity.READ_METADATA, path);
@@ -4310,7 +4311,8 @@ public abstract class AbstractFtpDoorV1
         @Override
         public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
         {
-            FsPath path = new FsPath(dir).add(entry.getName());
+            FsPath path = dir == null ? new FsPath(entry.getName()) :
+                    new FsPath(dir).add(entry.getName());
 
             if (!_currentFacts.isEmpty()) {
                 AccessType access;
