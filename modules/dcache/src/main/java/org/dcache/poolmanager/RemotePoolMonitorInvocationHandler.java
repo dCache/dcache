@@ -10,10 +10,14 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.springframework.aop.target.dynamic.Refreshable;
 import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.remoting.RemoteInvocationFailureException;
+import org.springframework.remoting.RemoteProxyFailureException;
+import org.springframework.remoting.RemoteTimeoutException;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -56,18 +60,15 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
         _refreshDelay = refreshDelay;
     }
 
-    private PoolMonitor getPoolMonitor()
-            throws InterruptedException
+    private PoolMonitor getPoolMonitor() throws InterruptedException, CacheException
     {
         try {
             return _poolMonitor.get(KEY);
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             Throwables.propagateIfInstanceOf(cause, InterruptedException.class);
-            if (cause instanceof TimeoutCacheException) {
-                throw new RemoteConnectFailureException("Failed to fetch pool monitor: " + cause.getMessage(), cause);
-            }
-            throw new RemoteInvocationFailureException("Failed to fetch pool monitor: " + cause.getMessage(), cause);
+            Throwables.propagateIfInstanceOf(cause, CacheException.class);
+            throw Throwables.propagate(cause);
         }
     }
 
@@ -113,12 +114,21 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args)
-            throws Throwable
     {
-        if (method.getDeclaringClass().isAssignableFrom(Refreshable.class)) {
-            return method.invoke(this, args);
+        try {
+            if (method.getDeclaringClass().isAssignableFrom(Refreshable.class)) {
+                return method.invoke(this, args);
+            }
+            return method.invoke(getPoolMonitor(), args);
+        } catch (IllegalAccessException | InterruptedException e) {
+            throw new RemoteProxyFailureException("Failed to fetch pool monitor: " + e.getMessage(), e);
+        } catch (InvocationTargetException e) {
+            throw new RemoteInvocationFailureException("Failed to fetch pool monitor: " + e.getCause().getMessage(), e.getCause());
+        } catch (TimeoutCacheException e) {
+            throw new RemoteTimeoutException("Failed to fetch pool monitor: " + e.getMessage(), e);
+        } catch (CacheException e) {
+            throw new RemoteInvocationFailureException("Failed to fetch pool monitor: " + e.getMessage(), e);
         }
-        return method.invoke(getPoolMonitor(), args);
     }
 
     private class PoolMonitorCacheLoader extends CacheLoader<String, PoolMonitor>
