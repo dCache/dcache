@@ -70,7 +70,6 @@
         <version.jetty>9.3.7.v20160115</version.jetty>
         <version.wicket>7.2.0</version.wicket>
         <version.xrootd4j>3.0.5</version.xrootd4j>
-        <version.jersey>2.22.1</version.jersey>
 
         <!-- BouncyCastle seems to change the naming convention of
              their ArtifactId fairly often.  Here is a summary of
@@ -445,26 +444,6 @@
                 <version>${version.jetty}</version>
             </dependency>
 
-            <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
-                <version>2.0.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId>
-                <artifactId>jersey-container-servlet</artifactId>
-                <version>${version.jersey}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-client</artifactId>
-                <version>${version.jersey}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-json-jackson</artifactId>
-                <version>${version.jersey}</version>
-            </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>ST4</artifactId>
@@ -1201,7 +1180,6 @@
         <module>modules/dcache-dcap</module>
         <module>modules/dcache-gplazma</module>
         <module>modules/dcache-webadmin</module>
-        <module>modules/dcache-webapi</module>
         <module>modules/dcache-nfs</module>
         <module>modules/dcache-srm</module>
         <module>modules/dcache-info</module>
