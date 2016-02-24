@@ -3,6 +3,8 @@ package org.dcache.auth;
 import java.io.Serializable;
 import java.security.Principal;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * This Principal represents the trusted username of a signed in
  * person. This is in contrast to a LoginNamePrincipal.
@@ -16,9 +18,7 @@ public class UserNamePrincipal implements Principal, Serializable
     private String _username;
 
     public UserNamePrincipal(String username) {
-        if (username == null) {
-            throw new NullPointerException();
-        }
+        checkArgument(!username.isEmpty(), "Username can't be an empty string");
         _username = username;
     }
 
