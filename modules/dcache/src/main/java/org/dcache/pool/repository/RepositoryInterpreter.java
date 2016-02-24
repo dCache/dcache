@@ -162,8 +162,8 @@ public class RepositoryInterpreter
 
     public static final String fh_rep_ls =
         "\n"+
-        " Format I  :  [<pnfsId> [<pnfsId> [...]]]\n"+
-        " Format II : -l[=<selectionOptions>] [-si=<glob>] [-s]\n"+
+        " Format I  : <pnfsId>...\n"+
+        " Format II : [-l[=<selectionOptions>]] [-storage=<glob>] [-s]\n"+
         "              Options :\n"+
         "              -l[=splunc]  # selected list\n"+
         "                 s  : sticky files\n"+
@@ -197,7 +197,7 @@ public class RepositoryInterpreter
         " bit 11 is \"L(x)(y)\" if entry is in locked or \"-\" if not \n"+
         "        x is epoch until which the entry is locked, 0 for non expiring lock \n"+
         "        y is the link count";
-    public static final String hh_rep_ls = "[-l[=s,l,u,nc,p]] [-s[=kmgt]] | [<pnfsId> [...] ]";
+    public static final String hh_rep_ls = "[-l[=s,l,u,nc,p]] [-s[=kmgt]] [-storage=<glob>] | <pnfsId>...";
     public Object ac_rep_ls_$_0_99(final Args args) throws Exception
     {
         if (args.argc() > 0) {
@@ -306,7 +306,7 @@ public class RepositoryInterpreter
                         boolean broken    = format.indexOf('e')  > -1;
                         boolean cached    = format.indexOf('c')  > -1;
 
-                        String si = args.getOption("si");
+                        String si = args.getOption("storage");
                         Pattern siFilter = si == null ? null : Glob.parseGlobToPattern(si);
 
                         for (PnfsId id: _repository) {
