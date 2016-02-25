@@ -296,7 +296,6 @@ public class P2PClient
             pw.println("  Interface  : " + _interface);
         }
         pw.println("  Max Active : " + _maxActive);
-        pw.println("Pnfs Timeout : " + _pnfs.getTimeout() + " " + _pnfs.getTimeoutUnit());
     }
 
     @Override
@@ -304,7 +303,6 @@ public class P2PClient
     {
         pw.println("#\n#  Pool to Pool (P2P)\n#");
         pw.println("pp set max active " + _maxActive);
-        pw.println("pp set pnfs timeout " + (_pnfs.getTimeoutInMillis() / 1000L));
         if (_interface != null) {
             pw.println("pp interface " + _interface.getHostAddress());
         }
@@ -315,6 +313,9 @@ public class P2PClient
             description = "This command is obsolete.")
     public class PpSetPnfsTimeoutCommand implements Callable<String>
     {
+        @Argument
+        int timeout;
+
         @Override
         public String call()
         {
