@@ -199,21 +199,17 @@ public class PartitionManager
     @Command(name = "pm set",
             hint = "set partition parameters",
             description = "Set one or more parameters on a partition. If no partition " +
-                    "name is provided, then the set of inherited parameters is updated. " +
-                    "These parameters are inherited by all partitions except for those " +
-                    "that explicitly redefine the parameters.\n\n" +
+                          "name is provided, then the set of inherited parameters is updated. " +
+                          "These parameters are inherited by all partitions except for those " +
+                          "that explicitly redefine the parameters.\n\n" +
 
-                    "Setting a parameter to the value 'off' resets it back to inherited " +
-                    "value or back to the default parameter value.\n\n" +
+                          "Setting a parameter to the value 'off' resets it back to inherited " +
+                          "value or back to the default parameter value.\n\n" +
 
-                    "Different partitions have different parameters and their corresponding " +
-                    "values but a small set of parameters are common to all partition types. " +
-                    "These are:\n" +
-                    "\t\t-p2p-allowed=yes|no|off\n" +
-                    "\t\t-p2p-oncost=yes|no|off\n" +
-                    "\t\t-p2p-fortransfer=yes|no|off\n" +
-                    "\t\t-stage-allowed=yes|no|off\n" +
-                    "\t\t-stage-oncost=yes|no|off")
+                          "Different partitions have different parameters and their corresponding " +
+                          "values, but a small set of parameters are common to all partition types. " +
+                          "Use 'pm ls -a' to see all available parameters and their current value.",
+            allowAnyOption = true)
     public class PmSetCommand implements Callable<String>
     {
         @CommandLine
@@ -224,30 +220,25 @@ public class PartitionManager
                         "values.")
         String partition;
 
-        @Option(name = "p2p-allowed", values = {"yes", "no", "off"})
+        @Option(name = "p2p-allowed", category = "Common options", values = {"yes", "no", "off"})
         String p2pAllowed;
 
-        @Option(name = "p2p-oncost", values = {"yes", "no", "off"})
+        @Option(name = "p2p-oncost", category = "Common options", values = {"yes", "no", "off"})
         String p2pOncost;
 
-        @Option(name = "p2p-fortransfer", values = {"yes", "no", "off"})
+        @Option(name = "p2p-fortransfer", category = "Common options", values = {"yes", "no", "off"})
         String p2pFortransfer;
 
-        @Option(name = "stage-allowed", values = {"yes", "no", "off"})
+        @Option(name = "stage-allowed", category = "Common options", values = {"yes", "no", "off"})
         String stageAllowed;
 
-        @Option(name = "stage-oncost", values = {"yes", "no", "off"})
+        @Option(name = "stage-oncost", category = "Common options", values = {"yes", "no", "off"})
         String stageOncost;
-
-        @Option(name = "otherOPTIONS", valueSpec = "VALUE",
-                usage = "Available parameters depend on the partition type. Use 'pm ls -a' to " +
-                        "see available parameters and their current value.")
-        String Options;
 
         @Override
         public String call() throws IllegalArgumentException
         {
-            setProperties(args.argv(0), scanProperties(args));
+            setProperties(partition, scanProperties(args));
             return "";
         }
     }
