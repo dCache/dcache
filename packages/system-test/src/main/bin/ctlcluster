@@ -87,11 +87,11 @@ case "$1" in
         esac
 
         # Add base config
-		CAT > "${DIR}/etc/dcache.conf" <<-EOF
+		cat > "${DIR}/etc/dcache.conf" <<-EOF
 			dcache.layout=system-test
 		EOF
 
-        CAT > "${DIR}/etc/layouts/system-test.conf" <<-EOF
+        cat > "${DIR}/etc/layouts/system-test.conf" <<-EOF
 			system-test.home=@TARGET@/dcache
 			dcache.pid.dir=/tmp
 			dcache.java.memory.heap=256m
@@ -108,7 +108,7 @@ case "$1" in
 		EOF
 
         # Enable cell communication
-        sed -i '' -e "/dcache.broker.scheme=none/d" "@TARGET@/dcache/etc/layouts/system-test.conf"
+        sed -i'' -e "/dcache.broker.scheme=none/d" "@TARGET@/dcache/etc/layouts/system-test.conf"
         ;;
 
     switch)
