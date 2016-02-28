@@ -6,6 +6,7 @@ require 'fileutils'
 require 'tempfile'
 require 'ansi/code'
 require 'etc'
+require 'open3'
 
 include ANSI::Code
 
@@ -30,6 +31,28 @@ include ANSI::Code
 
 def makeTempName
   "test-#{@unique}-#{@count += 1}"
+end
+
+def runExpectingStatus(expectedCode, *args)
+  a = args.insert(1, "-D-").flatten
+  puts yellow { a.join(" ") + " [=> #{expectedCode}]" }
+  begin
+    print faint
+    stdin, stdout, stderr, wait_thr = Open3.popen3(*a)
+    result = stdout.gets
+    stdin.close
+    stdout.close
+    stderr.close
+    if wait_thr.value != 0
+      raise "Failed #{wait_thr.value}"
+    end
+    actualCode = result.scan(/[0-9]{3}/)[0].to_i
+    if actualCode != expectedCode
+      raise "Wrong status code: #{actualCode}"
+    end
+  ensure
+    print reset
+  end
 end
 
 def run(*args)
@@ -192,19 +215,51 @@ def gsidcap(source, dest, *args)
 end
 
 def http(source, dest, *args)
+  args << "-s"
   tmp1 = makeTempName
-  run(@curl, args, "-f", "-s", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
-  run(@curl, args, "-f", "-s", "-L", "-o", dest, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-o", "/dev/null", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-L", "-o", dest, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
   run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-X", "DELETE", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  runExpectingStatus(404, @curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
+      "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+
+  # REVISIT: the correct response for the following request is 404,
+  #          since anonymous users with READONLY access can list
+  #          directories.  However, implementing that would be tricky.
+  runExpectingStatus(401, @curl, args, "-X", "DELETE",
+      "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+end
+
+def httpNoAnonymous(source, dest, *args)
+  args << "-s"
+  tmp1 = makeTempName
+  runExpectingStatus(401, @curl, args, "-o", "/dev/null", "-L", "-T", source, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-o", "/dev/null", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+  runExpectingStatus(401, @curl, args, "-L", "-o", dest, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-L", "-o", dest, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-X", "DELETE", "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+  runExpectingStatus(404, @curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
+      "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+  runExpectingStatus(401, @curl, args, "-X", "DELETE",
+      "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
 end
 
 def https(source, dest, *args)
+  args << "--capath" << "/etc/grid-security/certificates" << "-s"
   tmp1 = makeTempName
-  run(@curl, args, "--capath /etc/grid-security/certificates", "-s", "-u", "#{Etc.getlogin}:password", "-L", "-T",
-      source, "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
-  run(@curl, args, "--capath /etc/grid-security/certificates", "-s", "-L", "-o",
-      dest, "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
-  run(@curl, args, "--capath /etc/grid-security/certificates", "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-L", "-T", source,
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-L", "-o", dest,
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+  runExpectingStatus(404, @curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
+                     "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+
+  # REVISIT: the correct response for the following request is 404,
+  #          since anonymous users with READONLY access can list
+  #          directories.  However, implementing that would be tricky.
+  runExpectingStatus(401, @curl, args, "-X", "DELETE",
       "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
 end
 
@@ -269,7 +324,7 @@ def OptionParser.parse(args)
               ],
     :arc => [ [ :arcSrm ],
               [ :arcHttps ] ],
-    :http => [ [ :http ], [ :https ] ]
+    :http => [ [ :http ], [ :https ], [ :httpNoAnonymous ] ]
   }
 
   parser = OptionParser.new do |opts|
