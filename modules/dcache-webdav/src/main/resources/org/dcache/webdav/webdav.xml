@@ -211,7 +211,11 @@
         </property>
         <property name="defaultStandardFilter" ref="dispatch-filter"/>
         <property name="enableDigestAuth" value="false"/>
-        <property name="enableBasicAuth" value="#{ '${webdav.authn.basic}' == 'true' }"/>
+
+	<!-- Always enable BASIC auth support in Milton; it is never used for actual
+	     authentication, but we identify logged in users by simulating that a BASIC
+	     authentication has happened -->
+        <property name="enableBasicAuth" value="true"/>
         <property name="enableExpectContinue" value="false"/>
         <property name="enableCompression" value="false"/>
         <property name="enableFormAuth" value="false"/>
