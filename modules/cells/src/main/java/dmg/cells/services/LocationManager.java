@@ -68,6 +68,7 @@ import java.util.function.Function;
 
 import dmg.cells.network.LocationManagerConnector;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellDomainRole;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.DelayedReply;
@@ -233,6 +234,13 @@ public class LocationManager extends CellAdapter
             return "";
         }
 
+        public String ac_role_$_2(Args args)
+        {
+            CellDomainRole role = CellDomainRole.valueOf(args.argv(1).toUpperCase());
+            nodes.computeIfPresent(args.argv(0), (domain, info) -> info.setRole(role));
+            return "";
+        }
+
         public String ac_nodefaultroute_$_1(Args args)
         {
             nodes.computeIfPresent(args.argv(0), (domain, info) -> info.setDefault(null));
@@ -298,21 +306,23 @@ public class LocationManager extends CellAdapter
             private final String defaultRoute;
             private final boolean listen;
             private final int port;
+            private final CellDomainRole role;
             private final String sec;
             private final ImmutableList<String> connections;
 
             NodeInfo(String domainName)
             {
-                this(domainName, null, false, 0, null, ImmutableList.of());
+                this(domainName, null, false, 0, CellDomainRole.SATELLITE, null, ImmutableList.of());
             }
 
-            NodeInfo(String domainName, String defaultRoute, boolean listen, int port, String sec,
+            NodeInfo(String domainName, String defaultRoute, boolean listen, int port, CellDomainRole role, String sec,
                      ImmutableList<String> connections)
             {
                 this.domainName = domainName;
                 this.defaultRoute = defaultRoute;
                 this.listen = listen;
                 this.port = port;
+                this.role = role;
                 this.sec = sec;
                 this.connections = connections;
             }
@@ -322,9 +332,21 @@ public class LocationManager extends CellAdapter
                 return domainName;
             }
 
+            NodeInfo setRole(CellDomainRole role)
+            {
+                return (this.role == role)
+                       ? this : new NodeInfo(domainName, defaultRoute, listen, port, role, sec, connections);
+            }
+
+            CellDomainRole getRole()
+            {
+                return role;
+            }
+
             NodeInfo setDefault(String defaultRoute)
             {
-                return Objects.equals(defaultRoute, this.defaultRoute) ? this : new NodeInfo(domainName, defaultRoute, listen, port, sec, connections);
+                return Objects.equals(defaultRoute, this.defaultRoute)
+                       ? this : new NodeInfo(domainName, defaultRoute, listen, port, role, sec, connections);
             }
 
             String getDefault()
@@ -345,7 +367,7 @@ public class LocationManager extends CellAdapter
             NodeInfo addConnection(String connection)
             {
                 if (!connections.contains(connection)) {
-                    return new NodeInfo(domainName, defaultRoute, listen, port, sec,
+                    return new NodeInfo(domainName, defaultRoute, listen, port, role, sec,
                                         ImmutableList.copyOf(concat(connections, singletonList(connection))));
                 }
                 return this;
@@ -354,7 +376,7 @@ public class LocationManager extends CellAdapter
             NodeInfo removeConnection(String connection)
             {
                 if (connections.contains(connection)) {
-                    return new NodeInfo(domainName, defaultRoute, listen, port, sec,
+                    return new NodeInfo(domainName, defaultRoute, listen, port, role, sec,
                                         ImmutableList.copyOf(filter(connections, c -> !c.equals(connection))));
                 }
                 return this;
@@ -362,7 +384,8 @@ public class LocationManager extends CellAdapter
 
             NodeInfo setPort(int port)
             {
-                return (port == this.port) ? this : new NodeInfo(domainName, defaultRoute, listen, port, sec, connections);
+                return (port == this.port)
+                       ? this : new NodeInfo(domainName, defaultRoute, listen, port, role, sec, connections);
             }
 
             int getPort()
@@ -372,12 +395,14 @@ public class LocationManager extends CellAdapter
 
             NodeInfo setSecurity(String sec)
             {
-                return Objects.equals(sec, this.sec) ? this : new NodeInfo(domainName, defaultRoute, listen, port, sec, connections);
+                return Objects.equals(sec, this.sec)
+                       ? this : new NodeInfo(domainName, defaultRoute, listen, port, role, sec, connections);
             }
 
             NodeInfo setListen(boolean listen)
             {
-                return (listen == this.listen) ? this : new NodeInfo(domainName, defaultRoute, listen, port, sec, connections);
+                return (listen == this.listen)
+                       ? this : new NodeInfo(domainName, defaultRoute, listen, port, role, sec, connections);
             }
 
             boolean mustListen()
@@ -427,6 +452,9 @@ public class LocationManager extends CellAdapter
                         pw.append(" -port=").append(String.valueOf(port));
                     }
                     pw.println();
+                }
+                if (role != CellDomainRole.SATELLITE) {
+                    pw.append("role ").append(domainName).append(' ').append(role.toString().toLowerCase()).println();
                 }
                 String def = defaultRoute;
                 if (def != null) {
@@ -810,6 +838,40 @@ public class LocationManager extends CellAdapter
             }
         }
 
+        @Command(name = "role", hint = "set role of domain in cell topology",
+                description = "Domains are either satellite or core domains. Satellite domains are the default " +
+                              "role.\n\n" +
+                              "Core domains are central hubs in the messaging topology, forwarding messages from " +
+                              "other domains. Satellite domains can forward messages from other domains too, but " +
+                              "core domains have a number of unique properties:\n\n" +
+                              "- all domains automatically connect to all core domains;\n" +
+                              "- satellite domains automatically and dynamically add a default\n" +
+                              "  route to any core domain they connect to;\n" +
+                              "- messages from core domains are not forwarded;\n" +
+                              "- core domains publish their well known cells and topics to\n" +
+                              "  connected core domains;\n" +
+                              "- core domains publish their well known cells to connected\n" +
+                              "  satellite domains.\n\n" +
+                              "These properties enable installations with multiple core domains and a redundant " +
+                              "cell message topology with multiple paths between domains.")
+        class RoleCommand implements Callable<Reply>
+        {
+            @Argument(usage = "A dCache domain name.", index = 0)
+            String domainName;
+
+            @Argument(usage = "Role of the domain in the cell topology.", index = 1)
+            CellDomainRole role;
+
+            @CommandLine
+            Args args;
+
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_role_$_2(args));
+            }
+        }
+
         @Command(name = "nodefaultroute", hint = "clear default route",
                 description = "Configures a domain not to install a default route.")
         class NoDefaultRouteCommand implements Callable<Reply>
@@ -1020,6 +1082,7 @@ public class LocationManager extends CellAdapter
                 } else {
                     writer = new ColumnWriter()
                             .header("NAME").left("name").space()
+                            .header("ROLE").left("role").space()
                             .header("UPSTREAM").left("default").space()
                             .header("SECURITY").left("sec").space()
                             .header("LISTEN").left("listen").space();
@@ -1030,6 +1093,7 @@ public class LocationManager extends CellAdapter
                     for (LocationManagerConfig.NodeInfo info : config.nodes()) {
                         writer.row()
                                 .value("name", info.getDomainName())
+                                .value("role", info.getRole())
                                 .value("default", info.getDefault())
                                 .value("sec", info.getSecurity())
                                 .value("listen", info.mustListen() ? (info.getPort() == 0 ? "true" : info.getPort()) : "")
@@ -1177,7 +1241,7 @@ public class LocationManager extends CellAdapter
             return "";
         }
 
-        private void startListener(int port, String securityContext) throws Exception
+        private void startListener(int port, String securityContext, CellDomainRole role) throws Exception
         {
             String cellName = "l*";
             String cellClass = "dmg.cells.network.LocationMgrTunnel";
@@ -1189,14 +1253,14 @@ public class LocationManager extends CellAdapter
             } else {
                 protocol = securityContext;
             }
-            String cellArgs = port + " " + cellClass + " " + protocol + " -lm=" + getCellName();
+            String cellArgs = port + " " + cellClass + " " + protocol + " -lm=" + getCellName() + " -role=" + role;
             LOGGER.info("Starting acceptor with arguments: {}", cellArgs);
             LoginManager c = new LoginManager(cellName, "System", cellArgs);
             c.start().get();
             LOGGER.info("Created : {}", c);
         }
 
-        private void startConnector(final String remoteDomain)
+        private void startConnector(final String remoteDomain, CellDomainRole role)
                 throws Exception
         {
             String cellName = "c-" + remoteDomain + "*";
@@ -1208,9 +1272,9 @@ public class LocationManager extends CellAdapter
             String cellArgs =
                     "-domain=" + remoteDomain + " "
                     + "-lm=" + getCellName() + " "
+                    + "-role=" + role + " "
                     + clientKey + " "
                     + clientName;
-
             LOGGER.info("LocationManager starting connector with {}", cellArgs);
             LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs);
             c.start().get();
@@ -1238,10 +1302,10 @@ public class LocationManager extends CellAdapter
                     if (info != null) {
                         synchronized (info) {
                             if (info.mustListen()) {
-                                startListener(info.getPort(), info.getSecurity());
+                                startListener(info.getPort(), info.getSecurity(), info.getRole());
                             }
                             for (String domain : info.connections()) {
-                                startConnector(domain);
+                                startConnector(domain, info.getRole());
                             }
                             String defaultRoute = info.getDefault();
                             if (defaultRoute != null) {

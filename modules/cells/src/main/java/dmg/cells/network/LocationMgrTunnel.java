@@ -1,3 +1,20 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2001 - 2016 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package dmg.cells.network;
 
 import org.slf4j.Logger;
@@ -19,6 +36,7 @@ import java.util.Map;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellDomainInfo;
+import dmg.cells.nucleus.CellDomainRole;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellRoute;
@@ -32,17 +50,10 @@ import dmg.util.StreamEngine;
 import org.dcache.util.Args;
 import org.dcache.util.Version;
 
-/**
- *
- *
- * @author Patrick Fuhrmann
- * @version 0.1, 5 Mar 2001
- */
 public class LocationMgrTunnel
     extends CellAdapter
     implements CellTunnel, Runnable
 {
-
     /**
      * We use a single shared instance of Tunnels to coordinate route
      * creation between tunnels.
@@ -54,6 +65,7 @@ public class LocationMgrTunnel
 
     private final CellNucleus  _nucleus;
 
+    private CellDomainInfo  _localDomainInfo;
     private CellDomainInfo  _remoteDomainInfo;
     private final Socket _socket;
 
@@ -78,6 +90,10 @@ public class LocationMgrTunnel
         _socket = engine.getSocket();
         _rawOut = new BufferedOutputStream(engine.getOutputStream());
         _rawIn = new BufferedInputStream(engine.getInputStream());
+        CellDomainRole role = args.hasOption("role") ? CellDomainRole.valueOf(
+                args.getOption("role")) : CellDomainRole.SATELLITE;
+        _localDomainInfo = new CellDomainInfo(_nucleus.getCellDomainName(),
+                                              Version.of(LocationMgrTunnel.class).getVersion(), role);
     }
 
     @Override
@@ -97,8 +113,7 @@ public class LocationMgrTunnel
     {
         try  {
             ObjectOutputStream out = new ObjectOutputStream(_rawOut);
-            out.writeObject(new CellDomainInfo(_nucleus.getCellDomainName(),
-                    Version.of(LocationMgrTunnel.class).getVersion()));
+            out.writeObject(_localDomainInfo);
             out.flush();
             ObjectInputStream in = new ObjectInputStream(_rawIn);
 
@@ -189,9 +204,7 @@ public class LocationMgrTunnel
     @Override
     public CellTunnelInfo getCellTunnelInfo()
     {
-        return new CellTunnelInfo(getCellName(),
-                new CellDomainInfo(_nucleus.getCellDomainName()),
-                                  _remoteDomainInfo);
+        return new CellTunnelInfo(getCellName(), _localDomainInfo, _remoteDomainInfo);
     }
 
     protected String getRemoteDomainName()
@@ -209,10 +222,18 @@ public class LocationMgrTunnel
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("Location Mgr Tunnel : " + getCellName());
-        pw.println("-> Tunnel     : " + _messagesToTunnel);
-        pw.println("-> Domain     : " + _messagesToSystem);
-        pw.println("Peer          : " + getRemoteDomainName());
+        pw.println("Tunnel        : " + getCellName());
+        pw.println("Messages delivered to");
+        pw.println("   Peer       : " + _messagesToTunnel);
+        pw.println("   Local      : " + _messagesToSystem);
+        pw.println("Local domain");
+        pw.println("   Name       : " + _localDomainInfo.getCellDomainName());
+        pw.println("   Version    : " + _localDomainInfo.getVersion());
+        pw.println("   Role       : " + _localDomainInfo.getRole());
+        pw.println("Peer domain");
+        pw.println("   Name       : " + _remoteDomainInfo.getCellDomainName());
+        pw.println("   Version    : " + _remoteDomainInfo.getVersion());
+        pw.println("   Role       : " + _remoteDomainInfo.getRole());
     }
 
     @Override
