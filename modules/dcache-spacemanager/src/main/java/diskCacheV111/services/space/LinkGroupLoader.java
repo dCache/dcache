@@ -82,7 +82,12 @@ public class LinkGroupLoader
     public void start()
     {
         executor = Executors.newSingleThreadScheduledExecutor();
-        executor.schedule(this, 100, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void afterStart()
+    {
+        executor.schedule(this, 0, TimeUnit.MILLISECONDS);
     }
 
     public void stop()
