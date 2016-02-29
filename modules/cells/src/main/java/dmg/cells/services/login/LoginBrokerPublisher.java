@@ -59,9 +59,9 @@ public class LoginBrokerPublisher
     private static final Logger _log =
             LoggerFactory.getLogger(LoginBrokerPublisher.class);
 
-    private enum UpdateMode
+    private enum LastEvent
     {
-        EAGER, NORMAL
+        NONE, UPDATE_SUBMITTED, UPDATE_SENT, ROUTE_ADDED, NOROUTE;
     }
 
     private CellAddressCore _topic;
@@ -71,7 +71,7 @@ public class LoginBrokerPublisher
     private long _brokerUpdateTime = MINUTES.toMillis(5);
     private TimeUnit _brokerUpdateTimeUnit = MILLISECONDS;
     private double _brokerUpdateThreshold = 0.1;
-    private UpdateMode _currentUpdateMode = UpdateMode.NORMAL;
+    private LastEvent _lastEvent = LastEvent.NONE;
     private LoadProvider _load = () -> 0.0;
     private Supplier<List<InetAddress>> _addresses = createAnyAddressSupplier();
     private int _port;
@@ -213,11 +213,17 @@ public class LoginBrokerPublisher
     private synchronized void sendUpdate(Optional<LoginBrokerInfo> info)
     {
         if (_topic != null) {
-            _currentUpdateMode = UpdateMode.NORMAL;
+            _lastEvent = LastEvent.UPDATE_SENT;
             if (info.isPresent()) {
                 sendMessage(new CellMessage(_topic, info.get()));
             }
         }
+    }
+
+    protected void submitUpdate()
+    {
+        _lastEvent = LastEvent.UPDATE_SUBMITTED;
+        _executor.execute(this::sendUpdate);
     }
 
     private void sendUpdate()
@@ -227,10 +233,17 @@ public class LoginBrokerPublisher
 
     public synchronized void messageArrived(NoRouteToCellException e)
     {
-        if (_currentUpdateMode != UpdateMode.EAGER) {
-            CellAddressCore destinationAddress = e.getDestinationPath().getDestinationAddress();
-            if (destinationAddress.equals(_topic)) {
-                _currentUpdateMode = UpdateMode.EAGER;
+        CellAddressCore destinationAddress = e.getDestinationPath().getDestinationAddress();
+        if (_topic != null && destinationAddress.equals(_topic)) {
+            switch (_lastEvent) {
+            case UPDATE_SENT:
+                _lastEvent = LastEvent.NOROUTE;
+                break;
+            case ROUTE_ADDED:
+                submitUpdate();
+                break;
+            default:
+                break;
             }
         }
     }
@@ -258,10 +271,17 @@ public class LoginBrokerPublisher
     @Override
     public synchronized void routeAdded(CellEvent ce)
     {
-        if (_currentUpdateMode == UpdateMode.EAGER) {
-            CellRoute route = (CellRoute) ce.getSource();
-            if (route.getRouteType() == CellRoute.TOPIC || route.getRouteType() == CellRoute.DOMAIN) {
-                sendUpdate();
+        CellRoute route = (CellRoute) ce.getSource();
+        if (route.getRouteType() == CellRoute.TOPIC || route.getRouteType() == CellRoute.DOMAIN) {
+            switch (_lastEvent) {
+            case UPDATE_SENT:
+                _lastEvent = LastEvent.ROUTE_ADDED;
+                break;
+            case NOROUTE:
+                submitUpdate();
+                break;
+            default:
+                break;
             }
         }
     }
@@ -289,6 +309,7 @@ public class LoginBrokerPublisher
         pw.println("    Write paths      : " + _writePaths  + (_writeEnabled ? "" : " (disabled)"));
         pw.println("    Update Time      : " + _brokerUpdateTime + " " + _brokerUpdateTimeUnit);
         pw.println("    Update Threshold : " + ((int) (_brokerUpdateThreshold * 100.0)) + " %");
+        pw.println("    Last event       : " + _lastEvent);
     }
 
     /**
