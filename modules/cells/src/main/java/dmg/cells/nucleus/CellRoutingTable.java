@@ -2,6 +2,7 @@ package dmg.cells.nucleus;
 
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.SetMultimap;
+import com.google.common.math.IntMath;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class CellRoutingTable implements Serializable
     private final SetMultimap<String, CellRoute> _exact = LinkedHashMultimap.create();
     private final Map<String, CopyOnWriteArraySet<CellRoute>> _topic = new HashMap<>();
     private final AtomicReference<CellRoute> _dumpster = new AtomicReference<>();
-    private final AtomicReference<CellRoute> _default = new AtomicReference<>();
+    private final List<CellRoute> _default = new ArrayList<>();
 
     public void add(CellRoute route)
             throws IllegalArgumentException
@@ -72,8 +73,10 @@ public class CellRoutingTable implements Serializable
             }
             break;
         case CellRoute.DEFAULT:
-            if (!_default.compareAndSet(null, route)) {
-                throw new IllegalArgumentException("Duplicated route entry for default.");
+            synchronized (_default) {
+                if (!_default.contains(route)) {
+                    _default.add(route);
+                }
             }
             break;
         case CellRoute.DUMPSTER:
@@ -127,9 +130,10 @@ public class CellRoutingTable implements Serializable
             }
             break;
         case CellRoute.DEFAULT:
-            CellRoute currentDefault = _default.get();
-            if (!Objects.equals(currentDefault, route) || !_default.compareAndSet(currentDefault, null)) {
-                throw new IllegalArgumentException("Route entry not found for default");
+            synchronized (_default) {
+                if (!_default.remove(route)) {
+                    throw new IllegalArgumentException("Route entry not found for default");
+                }
             }
             break;
         case CellRoute.DUMPSTER:
@@ -146,10 +150,15 @@ public class CellRoutingTable implements Serializable
         Collection<CellRoute> deleted = new ArrayList<>();
 
         String addr = target.toString();
-        delete(_exact, addr, deleted);
-        delete(_wellknown, addr, deleted);
-        delete(_domain, addr, deleted);
-
+        synchronized (_exact) {
+            delete(_exact.values(), addr, deleted);
+        }
+        synchronized (_wellknown) {
+            delete(_wellknown.values(), addr, deleted);
+        }
+        synchronized (_domain) {
+            delete(_domain.values(), addr, deleted);
+        }
         synchronized (_topic) {
             /* We cannot use the regular delete method because a CopyOnWriteArraySet iterator
              * doesn't allow manipulating operations. We trade expensive deletion for not having
@@ -167,20 +176,20 @@ public class CellRoutingTable implements Serializable
                 deleted.addAll(toRemove);
             }
         }
-
+        synchronized (_default) {
+            delete(_default, addr, deleted);
+        }
         return deleted;
     }
 
-    private void delete(SetMultimap<String,CellRoute> routes, String addr, Collection<CellRoute> deleted)
+    private void delete(Collection<CellRoute> values, String addr, Collection<CellRoute> deleted)
     {
-        synchronized (routes) {
-            Iterator<CellRoute> iterator = routes.values().iterator();
-            while (iterator.hasNext()) {
-                CellRoute route = iterator.next();
-                if (route.getTargetName().equals(addr)) {
-                    iterator.remove();
-                    deleted.add(route);
-                }
+        Iterator<CellRoute> iterator = values.iterator();
+        while (iterator.hasNext()) {
+            CellRoute route = iterator.next();
+            if (route.getTargetName().equals(addr)) {
+                iterator.remove();
+                deleted.add(route);
             }
         }
     }
@@ -215,7 +224,9 @@ public class CellRoutingTable implements Serializable
                 return route.get();
             }
         }
-        return _default.get();
+        synchronized (_default) {
+            return _default.isEmpty() ? null : _default.get(IntMath.mod(addr.hashCode(), _default.size()));
+        }
     }
 
     public Set<CellRoute> findTopicRoutes(CellAddressCore addr)
@@ -259,9 +270,8 @@ public class CellRoutingTable implements Serializable
         synchronized (_domain) {
             _domain.values().forEach(append);
         }
-        CellRoute defaultRoute = _default.get();
-        if (defaultRoute != null) {
-            append.accept(defaultRoute);
+        synchronized (_default) {
+            _default.forEach(append);
         }
         CellRoute dumpsterRoute = _dumpster.get();
         if (dumpsterRoute != null) {
@@ -285,9 +295,8 @@ public class CellRoutingTable implements Serializable
         synchronized (_domain) {
             routes.addAll(_domain.values());
         }
-        CellRoute defaultRoute = _default.get();
-        if (defaultRoute != null) {
-            routes.add(defaultRoute);
+        synchronized (_default) {
+            routes.addAll(_default);
         }
         CellRoute dumpsterRoute = _dumpster.get();
         if (dumpsterRoute != null) {
