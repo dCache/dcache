@@ -67,6 +67,8 @@ public class LocationMgrTunnel
 
     private CellDomainInfo  _localDomainInfo;
     private CellDomainInfo  _remoteDomainInfo;
+    private boolean _allowForwardingOfRemoteMessages;
+
     private final Socket _socket;
 
     private final OutputStream _rawOut;
@@ -123,6 +125,8 @@ public class LocationMgrTunnel
                 throw new IOException("EOS encountered while reading DomainInfo");
             }
 
+            _allowForwardingOfRemoteMessages = (_remoteDomainInfo.getRole() != CellDomainRole.CORE);
+
             _input = new JavaObjectSource(in);
             _output = new JavaObjectSink(out);
         } catch (ClassNotFoundException e) {
@@ -148,7 +152,7 @@ public class LocationMgrTunnel
     {
         CellMessage msg;
         while ((msg = _input.readObject()) != null) {
-            sendMessage(msg);
+            getNucleus().sendMessage(msg, true, _allowForwardingOfRemoteMessages);
             _messagesToSystem++;
         }
     }
