@@ -29,7 +29,7 @@ public class CellRoutingTable implements Serializable
     private final SetMultimap<String, CellRoute> _wellknown = LinkedHashMultimap.create();
     private final SetMultimap<String, CellRoute> _domain = LinkedHashMultimap.create();
     private final SetMultimap<String, CellRoute> _exact = LinkedHashMultimap.create();
-    private final Map<String, Set<CellRoute>> _topic = new HashMap<>();
+    private final Map<String, CopyOnWriteArraySet<CellRoute>> _topic = new HashMap<>();
     private final AtomicReference<CellRoute> _dumpster = new AtomicReference<>();
     private final AtomicReference<CellRoute> _default = new AtomicReference<>();
 
@@ -155,7 +155,7 @@ public class CellRoutingTable implements Serializable
              * doesn't allow manipulating operations. We trade expensive deletion for not having
              * to copy the set of topic routes in findTopicRoutes.
              */
-            Iterator<Set<CellRoute>> iterator = _topic.values().iterator();
+            Iterator<CopyOnWriteArraySet<CellRoute>> iterator = _topic.values().iterator();
             while (iterator.hasNext()) {
                 Set<CellRoute> routes = iterator.next();
                 List<CellRoute> toRemove =
@@ -225,9 +225,11 @@ public class CellRoutingTable implements Serializable
         if (!domainName.equals("local")) {
             return Collections.emptySet();
         }
+        CopyOnWriteArraySet<CellRoute> routes;
         synchronized (_topic) {
-            return _topic.getOrDefault(cellName, Collections.emptySet());
+            routes = _topic.get(cellName);
         }
+        return (routes != null) ? routes : Collections.emptySet();
     }
 
     public String toString()
