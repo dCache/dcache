@@ -389,34 +389,41 @@ public class PoolSelectionUnitV2
 
     @Override
     public SelectionPool getPool(String poolName, boolean create) {
-        Pool pool = _pools.get(poolName);
-        if ((pool != null) || !create) {
-            return pool;
-        }
-
-        pool = new Pool(poolName);
-
         _psuReadLock.lock();
         try {
-            _pools.put(pool.getName(), pool);
-            PGroup group = _pGroups.get("default");
-            if (group == null) {
-                throw new IllegalArgumentException("Not found : " + "default");
+            Pool pool = _pools.get(poolName);
+            if (pool != null || !create) {
+                return pool;
             }
-
-            //
-            // shall we disallow more than one parent group ?
-            //
-            // if( pool._pGroupList.size() > 0 )
-            // throw new
-            // IllegalArgumentException( poolName +" already member" ) ;
-
-            pool._pGroupList.put(group.getName(), group);
-            group._poolList.put(pool.getName(), pool);
         } finally {
             _psuReadLock.unlock();
         }
-        return pool;
+
+        _psuWriteLock.lock();
+        try {
+            Pool pool = _pools.get(poolName);
+            if (pool == null) {
+                pool = new Pool(poolName);
+                _pools.put(pool.getName(), pool);
+                PGroup group = _pGroups.get("default");
+                if (group == null) {
+                    throw new IllegalArgumentException("Not found : " + "default");
+                }
+
+                //
+                // shall we disallow more than one parent group ?
+                //
+                // if( pool._pGroupList.size() > 0 )
+                // throw new
+                // IllegalArgumentException( poolName +" already member" ) ;
+
+                pool._pGroupList.put(group.getName(), group);
+                group._poolList.put(pool.getName(), pool);
+            }
+            return pool;
+        } finally {
+            _psuWriteLock.unlock();
+        }
     }
 
     public Map<String, Link> match(Map<String, Link> map, Unit unit,
