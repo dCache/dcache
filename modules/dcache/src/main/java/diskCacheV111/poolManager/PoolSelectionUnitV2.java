@@ -7,6 +7,8 @@ import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -2268,6 +2270,16 @@ public class PoolSelectionUnitV2
                 return "One pool";
             default:
                 return String.valueOf(count) + " pools";
+        }
+    }
+
+    private void writeObject(ObjectOutputStream stream) throws IOException
+    {
+        _psuReadLock.lock();
+        try {
+            stream.defaultWriteObject();
+        } finally {
+            _psuReadLock.unlock();
         }
     }
 }
