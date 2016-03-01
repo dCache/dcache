@@ -8,16 +8,13 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.springframework.aop.target.dynamic.Refreshable;
-import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.remoting.RemoteProxyFailureException;
-import org.springframework.remoting.RemoteTimeoutException;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -125,7 +122,7 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
         } catch (InvocationTargetException e) {
             throw new RemoteInvocationFailureException("Failed to fetch pool monitor: " + e.getCause().getMessage(), e.getCause());
         } catch (TimeoutCacheException e) {
-            throw new RemoteTimeoutException("Failed to fetch pool monitor: " + e.getMessage(), e);
+            throw new RemoteProxyFailureException("Failed to fetch pool monitor: " + e.getMessage(), e);
         } catch (CacheException e) {
             throw new RemoteInvocationFailureException("Failed to fetch pool monitor: " + e.getMessage(), e);
         }
