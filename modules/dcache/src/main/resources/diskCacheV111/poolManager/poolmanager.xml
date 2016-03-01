@@ -12,7 +12,7 @@
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
       <description>Undeliverable message logger</description>
-      <property name="excludedDestinations" value="${poolmanager.destination.pool-status}"/>
+      <property name="excludedDestinations" value="${poolmanager.destination.pool-status},${poolmanager.pool-monitor.topic}"/>
   </bean>
 
   <bean id="poolManager" class="diskCacheV111.poolManager.PoolManagerV5"
@@ -23,6 +23,9 @@
     <property name="poolMonitor" ref="poolMonitor"/>
     <property name="requestContainer" ref="rc"/>
     <property name="poolStatusTopic" ref="poolStatusTopic"/>
+    <property name="poolMonitorTopic" ref="poolMonitorTopic"/>
+    <property name="poolMonitorUpdatePeriod" value="${poolmanager.pool-monitor.update-period}"/>
+    <property name="poolMonitorUpdatePeriodUnit" value="${poolmanager.pool-monitor.update-period.unit}"/>
     <property name="quotaManager" value="#{ '${poolmanager.plugins.quota-manager}' == 'none' ? null : quota-stub }"/>
     <property name="pnfsHandler" ref="pnfs"/>
   </bean>
@@ -77,6 +80,10 @@
 
   <bean id="poolStatusTopic" class="org.dcache.cells.CellStub">
       <property name="destination" value="${poolmanager.destination.pool-status}"/>
+  </bean>
+
+  <bean id="poolMonitorTopic" class="org.dcache.cells.CellStub">
+      <property name="destination" value="${poolmanager.pool-monitor.topic}"/>
   </bean>
 
   <bean id="rc-pool" class="org.dcache.util.CDCExecutorServiceDecorator"

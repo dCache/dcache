@@ -8,7 +8,6 @@ import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,8 +37,8 @@ import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
-import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.SerializablePoolMonitor;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Strings.nullToEmpty;
@@ -47,7 +46,7 @@ import static java.util.stream.Collectors.toList;
 import static org.dcache.namespace.FileAttribute.*;
 
 public class PoolMonitorV5
-    implements Serializable, PoolMonitor
+    extends SerializablePoolMonitor
 {
     private static final Logger _log =
         LoggerFactory.getLogger(PoolMonitorV5.class);

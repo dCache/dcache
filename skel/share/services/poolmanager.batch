@@ -13,6 +13,9 @@ check -strong poolmanager.service.pool.timeout
 check -strong poolmanager.service.pool.timeout.unit
 check -strong poolmanager.destination.pool-status
 check -strong poolmanager.enable.cache-hit-message
+check -strong poolmanager.pool-monitor.topic
+check -strong poolmanager.pool-monitor.update-period
+check -strong poolmanager.pool-monitor.update-period.unit
 check poolmanager.setup.file
 
 # External settings

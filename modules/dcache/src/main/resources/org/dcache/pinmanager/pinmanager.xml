@@ -45,7 +45,7 @@
       <property name="timeoutUnit" value="${pinmanager.service.pool.timeout.unit}"/>
   </bean>
 
-  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean">
+  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
       <description>Maintains runtime information about all pools</description>
       <property name="poolManagerStub" ref="pool-manager-stub"/>
   </bean>

@@ -7,6 +7,7 @@ onerror shutdown
 onerror shutdown
 check -strong spacemanager.cell.name
 check -strong spacemanager.cell.export
+check spacemanager.cell.subscribe
 check -strong spacemanager.db.url
 check -strong spacemanager.db.user
 check spacemanager.db.password
@@ -21,5 +22,6 @@ check -strong spacemanager.service.poolmanager
 check -strong spacemanager.service.pnfsmanager
 
 create org.dcache.cells.UniversalSpringCell ${spacemanager.cell.name} \
-   "classpath:diskCacheV111/services/space/spacemanager.xml -export"
+   "classpath:diskCacheV111/services/space/spacemanager.xml -export -subscribe=${spacemanager.cell.subscribe} \
+"
 

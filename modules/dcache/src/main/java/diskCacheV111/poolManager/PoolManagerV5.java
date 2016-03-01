@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.CostCalculationV5;
@@ -60,8 +61,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolLinkGroupInfo;
-import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.SerializablePoolMonitor;
 import org.dcache.poolmanager.Utils;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
@@ -84,14 +85,16 @@ public class PoolManagerV5
     private int _counterSelectReadPool;
 
     private PoolSelectionUnit _selectionUnit ;
-    private PoolMonitor _poolMonitor;
+    private SerializablePoolMonitor _poolMonitor;
 
     private CostModule   _costModule  ;
     private CellStub _poolStatusTopic;
+    private CellStub _poolMonitorTopic;
     private PnfsHandler _pnfsHandler;
 
     private RequestContainerV5 _requestContainer ;
     private WatchdogThread     _watchdog;
+    private PoolMonitorThread _poolMonitorThread;
 
     private boolean _quotasEnabled;
     private CellStub _quotaManager;
@@ -105,6 +108,8 @@ public class PoolManagerV5
                     new ThreadFactoryBuilder().setNameFormat("write-request-pool-%d").build()
             )
     );
+    private long _poolMonitorUpdatePeriod;
+    private TimeUnit _poolMonitorUpdatePeriodUnit;
 
     public PoolManagerV5()
     {
@@ -120,7 +125,7 @@ public class PoolManagerV5
         _costModule = costModule;
     }
 
-    public void setPoolMonitor(PoolMonitor poolMonitor)
+    public void setPoolMonitor(SerializablePoolMonitor poolMonitor)
     {
         _poolMonitor = poolMonitor;
     }
@@ -151,6 +156,21 @@ public class PoolManagerV5
         _pnfsHandler = pnfsHandler;
     }
 
+    public void setPoolMonitorTopic(CellStub stub)
+    {
+        _poolMonitorTopic = stub;
+    }
+
+    public void setPoolMonitorUpdatePeriod(long period)
+    {
+        _poolMonitorUpdatePeriod = period;
+    }
+
+    public void setPoolMonitorUpdatePeriodUnit(TimeUnit unit)
+    {
+        _poolMonitorUpdatePeriodUnit = unit;
+    }
+
     public void init()
     {
         String watchdogParam = getArgs().getOpt("watchdog");
@@ -159,13 +179,25 @@ public class PoolManagerV5
         } else {
             _watchdog = new WatchdogThread();
         }
-        _watchdog.start();
+        _poolMonitorThread = new PoolMonitorThread();
         _log.info("Watchdog : {}", _watchdog);
+    }
+
+    @Override
+    public void afterStart()
+    {
+        _watchdog.start();
+        _poolMonitorThread.start();
     }
 
     public void shutdown() throws InterruptedException
     {
-        _watchdog.interrupt();
+        if (_watchdog != null) {
+            _watchdog.interrupt();
+        }
+        if (_poolMonitorThread != null) {
+            _poolMonitorThread.interrupt();
+        }
         _executor.shutdown();
     }
 
@@ -252,6 +284,21 @@ public class PoolManagerV5
             return "DeathDetection=" + (_deathDetected / 1000L) + ";Sleep="
                     + (_sleepTimer / 1000L) + ";Counter="
                     + _watchdogSequenceCounter + ";";
+        }
+    }
+
+    private class PoolMonitorThread extends Thread
+    {
+        @Override
+        public void run()
+        {
+            try {
+                while (!Thread.interrupted()) {
+                    _poolMonitorTopic.notify(_poolMonitor);
+                    _poolMonitorUpdatePeriodUnit.sleep(_poolMonitorUpdatePeriod);
+                }
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 

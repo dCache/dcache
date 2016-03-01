@@ -2,7 +2,6 @@ package diskCacheV111.services.space;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.aop.target.dynamic.Refreshable;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DeadlockLoserDataAccessException;
@@ -21,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.VOInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
@@ -29,7 +29,7 @@ import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 
 import org.dcache.poolmanager.PoolLinkGroupInfo;
-import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.poolmanager.Utils;
 
 public class LinkGroupLoader
@@ -45,7 +45,7 @@ public class LinkGroupLoader
     private LinkGroupAuthorizationFile linkGroupAuthorizationFile;
     private long authorizationFileLastUpdateTimestamp;
 
-    private PoolMonitor poolMonitor;
+    private RemotePoolMonitor poolMonitor;
     private SpaceManagerDatabase db;
 
     private ScheduledExecutorService executor;
@@ -63,7 +63,7 @@ public class LinkGroupLoader
     }
 
     @Required
-    public void setPoolMonitor(PoolMonitor poolMonitor)
+    public void setPoolMonitor(RemotePoolMonitor poolMonitor)
     {
         this.poolMonitor = poolMonitor;
     }
@@ -210,11 +210,9 @@ public class LinkGroupLoader
 
         @Override
         protected String execute()
-                throws InterruptedException, RemoteAccessException, DataAccessException, TransactionException
+                throws InterruptedException, DataAccessException, TransactionException, CacheException
         {
-            if (poolMonitor instanceof Refreshable) {
-                ((Refreshable) poolMonitor).refresh();
-            }
+            poolMonitor.refresh();
             int updated = updateLinkGroups();
             return updated + (updated == 1 ? " link group " : " link groups ") + "updated.";
         }
