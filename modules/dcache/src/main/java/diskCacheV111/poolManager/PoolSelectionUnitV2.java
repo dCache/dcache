@@ -2,6 +2,7 @@ package diskCacheV111.poolManager;
 
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,7 @@ public class PoolSelectionUnitV2
 
     private static final long serialVersionUID = 4852540784324544199L;
 
+    private Collection<Pool> _poolsFromBeforeSetup;
     private final Map<String, PGroup> _pGroups = new HashMap<>();
     private final Map<String, Pool> _pools = new HashMap<>();
     private final Map<String, Link> _links = new HashMap<>();
@@ -182,12 +184,32 @@ public class PoolSelectionUnitV2
     public void beforeSetup()
     {
         _psuWriteLock.lock();
+        _poolsFromBeforeSetup = Lists.newArrayList(_pools.values());
         clear();
     }
 
     @Override
     public void afterSetup()
     {
+        _poolsFromBeforeSetup.stream().filter(Pool::isActive)
+                .forEach(p -> {
+                    Pool pool = _pools.get(p.getName());
+                    if (pool == null) {
+                        pool = new Pool(p.getName());
+                        _pools.put(pool.getName(), pool);
+                        PGroup group = _pGroups.get("default");
+                        if (group != null) {
+                            pool._pGroupList.put(group.getName(), group);
+                            group._poolList.put(pool.getName(), pool);
+                        }
+                    }
+                    pool.setAddress(p.getAddress());
+                    pool.setPoolMode(p.getPoolMode());
+                    pool.setHsmInstances(p.getHsmInstances());
+                    pool.setActive(true);
+                    pool.setSerialId(p.getSerialId());
+                });
+        _poolsFromBeforeSetup = null;
         _psuWriteLock.unlock();
     }
 
