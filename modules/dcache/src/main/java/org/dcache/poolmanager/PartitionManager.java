@@ -3,6 +3,8 @@ package org.dcache.poolmanager;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Formatter;
@@ -456,5 +458,10 @@ public class PartitionManager
             }
             pw.println();
         }
+    }
+
+    private synchronized void writeObject(ObjectOutputStream stream) throws IOException
+    {
+        stream.defaultWriteObject();
     }
 }
