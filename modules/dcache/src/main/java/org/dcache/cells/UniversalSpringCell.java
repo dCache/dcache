@@ -43,6 +43,7 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -281,20 +282,23 @@ public class UniversalSpringCell
         }
     }
 
-    private void executeSetup()
+    private synchronized void executeSetup()
         throws IOException, CommandException
     {
         executeSetupContext();
 
         if( _setupFile != null && _setupFile.isFile() ) {
-            for (CellSetupProvider provider: _setupProviders.values()) {
-                provider.beforeSetup();
-            }
-
-            execFile(_setupFile);
-
-            for (CellSetupProvider provider: _setupProviders.values()) {
-                provider.afterSetup();
+            List<CellSetupProvider> providers = new ArrayList<>();
+            try {
+                for (CellSetupProvider provider : _setupProviders.values()) {
+                    provider.beforeSetup();
+                    providers.add(provider);
+                }
+                execFile(_setupFile);
+            } finally {
+                for (CellSetupProvider provider : Lists.reverse(providers)) {
+                    provider.afterSetup();
+                }
             }
         }
     }

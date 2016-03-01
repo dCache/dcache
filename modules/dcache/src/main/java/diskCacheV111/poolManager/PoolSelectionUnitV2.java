@@ -182,12 +182,14 @@ public class PoolSelectionUnitV2
     @Override
     public void beforeSetup()
     {
+        _psuWriteLock.lock();
         clear();
     }
 
     @Override
     public void afterSetup()
     {
+        _psuWriteLock.unlock();
     }
 
     @Override
