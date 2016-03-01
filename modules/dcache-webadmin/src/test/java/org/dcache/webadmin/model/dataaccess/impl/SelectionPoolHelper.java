@@ -70,6 +70,12 @@ public class SelectionPoolHelper implements SelectionPool {
     }
 
     @Override
+    public long getSerialId()
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public boolean isActive() {
         return active;
     }

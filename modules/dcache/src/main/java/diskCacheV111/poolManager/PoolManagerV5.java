@@ -16,10 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.CostCalculationV5;
@@ -80,7 +82,7 @@ public class PoolManagerV5
     private int  _writeThreads;
     private int  _readThreads;
 
-    private int _counterPoolUp;
+    private LongAdder _counterPoolUp = new LongAdder();
     private int _counterSelectWritePool;
     private int _counterSelectReadPool;
 
@@ -101,7 +103,6 @@ public class PoolManagerV5
 
 
     private static final Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
-    private static final Logger _logPoolMonitor = LoggerFactory.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
 
     private final ExecutorService _executor = new CDCExecutorServiceDecorator<>(
             Executors.newCachedThreadPool(
@@ -335,9 +336,9 @@ public class PoolManagerV5
                     _requestContainer.poolStatusChanged(name, PoolStatusChangedMessage.DOWN);
                     sendPoolStatusRelay(name, PoolStatusChangedMessage.DOWN,
                                         null, 666, "DEAD");
-                    _logPoolMonitor.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DOWN, name),
-                                    "Pool {} declared as DOWN: no ping in "
-                                    + deathDetectedTimer/1000 +" seconds.", name);
+                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DOWN, name),
+                               "Pool {} declared as DOWN: no ping in "
+                               + deathDetectedTimer/1000 +" seconds.", name);
                 }
             }
         }
@@ -378,56 +379,20 @@ public class PoolManagerV5
        return sb.toString();
     }
 
-    public synchronized
-        void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage poolMessage)
+    public void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage poolMessage)
     {
-        _counterPoolUp++;
+        _log.debug("PoolUp message from {} with mode {} and serialId {}",
+                   poolMessage.getPoolName(), poolMessage.getPoolMode(), poolMessage.getSerialId());
 
         String poolName = poolMessage.getPoolName();
-        PoolSelectionUnit.SelectionPool pool =
-            _selectionUnit.getPool(poolName, true);
+        PoolV2Mode poolMode = poolMessage.getPoolMode();
+        Set<String> poolHsmInstances = poolMessage.getHsmInstances();
+        CellAddressCore poolAddress = envelope.getSourcePath().getSourceAddress();
+        long poolSerialId = poolMessage.getSerialId();
 
-        PoolV2Mode newMode = poolMessage.getPoolMode();
-        PoolV2Mode oldMode = pool.getPoolMode();
+        _counterPoolUp.increment();
 
-        if (_logPoolMonitor.isDebugEnabled()) {
-            _logPoolMonitor.debug("PoolUp message from " + poolName
-                                  + " with mode " + newMode
-                                  + " and serialId " + poolMessage.getSerialId());
-        }
-
-        /* For compatibility with previous versions of dCache, a pool
-         * marked DISABLED, but without any other DISABLED_ flags set
-         * is considered fully disabled.
-         */
-        boolean disabled =
-            newMode.getMode() == PoolV2Mode.DISABLED
-            || newMode.isDisabled(PoolV2Mode.DISABLED_DEAD)
-            || newMode.isDisabled(PoolV2Mode.DISABLED_STRICT);
-
-        /* By convention, the serial number is set to zero when a pool
-         * is disabled. This is used by the watchdog to identify, that
-         * we have already announced that the pool is down.
-         */
-        long serial = disabled ? 0 : poolMessage.getSerialId();
-
-        /* Any change in the kind of operations a pool might be able
-         * to perform has to be propagated to a number of other
-         * components.
-         *
-         * Notice that calling setSerialId has a side-effect, which is
-         * why we call it first.
-         */
-        boolean changed =
-            pool.setSerialId(serial)
-            || pool.isActive() == disabled
-            || (newMode.getMode() != oldMode.getMode())
-            || !pool.getHsmInstances().equals(poolMessage.getHsmInstances());
-
-        pool.setAddress(envelope.getSourcePath().getSourceAddress());
-        pool.setPoolMode(newMode);
-        pool.setHsmInstances(poolMessage.getHsmInstances());
-        pool.setActive(!disabled);
+        boolean changed = _selectionUnit.updatePool(poolName, poolAddress, poolSerialId, poolMode, poolHsmInstances);
 
         /* Notify others in case the pool status has changed. Due to
          * limitations of the PoolStatusChangedMessage, we will often
@@ -435,19 +400,22 @@ public class PoolManagerV5
          * mode has changed.
          */
         if (changed) {
-            _logPoolMonitor.warn("Pool " + poolName + " changed from mode "
-                                 + oldMode + " to " + newMode);
-
+            /* For compatibility with previous versions of dCache, a pool
+             * marked DISABLED, but without any other DISABLED_ flags set
+             * is considered fully disabled.
+             */
+            boolean disabled =
+                    poolMode.getMode() == PoolV2Mode.DISABLED
+                    || poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)
+                    || poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT);
             if (disabled) {
-                _requestContainer.poolStatusChanged(poolName,
-                                                    PoolStatusChangedMessage.DOWN);
+                _requestContainer.poolStatusChanged(poolName, PoolStatusChangedMessage.DOWN);
                 sendPoolStatusRelay(poolName, PoolStatusChangedMessage.DOWN,
                                     poolMessage.getPoolMode(),
                                     poolMessage.getCode(),
                                     poolMessage.getMessage());
             } else {
-                _requestContainer.poolStatusChanged(poolName,
-                                                    PoolStatusChangedMessage.UP);
+                _requestContainer.poolStatusChanged(poolName, PoolStatusChangedMessage.UP);
                 sendPoolStatusRelay(poolName, PoolStatusChangedMessage.RESTART);
             }
         }

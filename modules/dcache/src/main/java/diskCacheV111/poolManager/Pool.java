@@ -19,7 +19,7 @@ public class Pool extends PoolCore implements SelectionPool {
     private static final long serialVersionUID = 8108406418388363116L;
     final Map<String, PGroup> _pGroupList = new ConcurrentHashMap<>();
     private boolean _enabled = true;
-    private long _active;
+    private volatile long _active;
     private boolean _ping = true;
     private long _serialId;
     private boolean _rdOnly;
@@ -143,6 +143,12 @@ public class Pool extends PoolCore implements SelectionPool {
         }
         _serialId = serialId;
         return true;
+    }
+
+    @Override
+    public long getSerialId()
+    {
+        return _serialId;
     }
 
     @Override

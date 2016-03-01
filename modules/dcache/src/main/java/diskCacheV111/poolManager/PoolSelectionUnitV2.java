@@ -3,7 +3,6 @@ package diskCacheV111.poolManager;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +15,6 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,17 +26,19 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
+
+import dmg.cells.nucleus.CellAddressCore;
+
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Comparator.comparing;
-import static java.util.stream.Collectors.toList;
 
 public class PoolSelectionUnitV2
                 implements Serializable,
@@ -392,17 +391,54 @@ public class PoolSelectionUnitV2
     }
 
     @Override
-    public SelectionPool getPool(String poolName, boolean create) {
+    public boolean updatePool(String poolName, CellAddressCore address, long serialId, PoolV2Mode mode, Set<String> hsmInstances)
+    {
+        /* For compatibility with previous versions of dCache, a pool
+         * marked DISABLED, but without any other DISABLED_ flags set
+         * is considered fully disabled.
+         */
+        boolean disabled =
+                mode.getMode() == PoolV2Mode.DISABLED
+                || mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
+                || mode.isDisabled(PoolV2Mode.DISABLED_STRICT);
+
+        /* By convention, the serial number is set to zero when a pool
+         * is disabled. This is used by the watchdog to identify, that
+         * we have already announced that the pool is down.
+         */
+        long newSerialId = disabled ? 0 : serialId;
+
+        /* The update is done in two steps; most of the time an update will not change anything except
+         * refresh the heartbeat timestamp. We do this under a read lock.
+         */
         _psuReadLock.lock();
         try {
             Pool pool = _pools.get(poolName);
-            if (pool != null || !create) {
-                return pool;
+            if (pool != null) {
+                /* Any change in the kind of operations a pool might be able
+                 * to perform has to be propagated to a number of other
+                 * components.
+                 *
+                 * Notice that calling setSerialId has a side-effect, which is
+                 * why we call it first.
+                 */
+                boolean changed =
+                        pool.getSerialId() != newSerialId
+                        || pool.isActive() == disabled
+                        || (mode.getMode() != pool.getPoolMode().getMode())
+                        || !Objects.equals(pool.getHsmInstances(), hsmInstances)
+                        || !Objects.equals(pool.getAddress(), address);
+                if (!changed) {
+                    pool.setActive(!disabled);
+                    return false;
+                }
             }
         } finally {
             _psuReadLock.unlock();
         }
 
+        /* We detected that something changed and fall through to a full update under a write lock.
+         */
         _psuWriteLock.lock();
         try {
             Pool pool = _pools.get(poolName);
@@ -413,18 +449,35 @@ public class PoolSelectionUnitV2
                 if (group == null) {
                     throw new IllegalArgumentException("Not found : " + "default");
                 }
-
-                //
-                // shall we disallow more than one parent group ?
-                //
-                // if( pool._pGroupList.size() > 0 )
-                // throw new
-                // IllegalArgumentException( poolName +" already member" ) ;
-
                 pool._pGroupList.put(group.getName(), group);
                 group._poolList.put(pool.getName(), pool);
             }
-            return pool;
+
+            PoolV2Mode oldMode = pool.getPoolMode();
+
+            /* Any change in the kind of operations a pool might be able
+             * to perform has to be propagated to a number of other
+             * components.
+             *
+             * Notice that calling setSerialId has a side-effect, which is
+             * why we call it first.
+             */
+            boolean changed =
+                    pool.setSerialId(newSerialId)
+                    || pool.isActive() == disabled
+                    || (mode.getMode() != oldMode.getMode())
+                    || !Objects.equals(pool.getHsmInstances(), hsmInstances)
+                    || !Objects.equals(pool.getAddress(), address);
+
+            if (mode.getMode() != oldMode.getMode()) {
+                _log.warn("Pool {} changed from mode {}  to {}.", poolName, oldMode, mode);
+            }
+
+            pool.setAddress(address);
+            pool.setPoolMode(mode);
+            pool.setHsmInstances(hsmInstances);
+            pool.setActive(!disabled);
+            return changed;
         } finally {
             _psuWriteLock.unlock();
         }

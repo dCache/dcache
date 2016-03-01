@@ -92,6 +92,8 @@ public interface PoolSelectionUnit  {
          */
         boolean setSerialId(long serialId);
 
+        long getSerialId();
+
         /**
          * Returns true if the pool is marked as active. This is
          * normally the case if a heartbeat has been received within
@@ -177,7 +179,9 @@ public interface PoolSelectionUnit  {
         Collection<SelectionLink> getLinksPointingTo();
     }
    SelectionPool getPool(String poolName) ;
-   SelectionPool getPool(String poolName, boolean create) ;
+
+    boolean updatePool(String poolName, CellAddressCore address, long serialId, PoolV2Mode mode, Set<String> hsmInstances);
+
    SelectionLink getLinkByName(String linkName) throws NoSuchElementException ;
    PoolPreferenceLevel []
             match(DirectionType type, String net, String protocol,
