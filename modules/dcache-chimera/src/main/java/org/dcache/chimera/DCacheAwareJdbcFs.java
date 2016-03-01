@@ -61,21 +61,29 @@ package org.dcache.chimera;
 
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.security.auth.Subject;
 import javax.sql.DataSource;
 
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.Set;
+import java.security.AccessController;
+
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessageSender;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import org.dcache.acl.enums.AccessMask;
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerPinMessage;
@@ -90,10 +98,12 @@ import org.dcache.vehicles.FileAttributes;
  *
  * @author arossi
  */
-public class DCacheAwareJdbcFs extends JdbcFs {
+public class DCacheAwareJdbcFs extends JdbcFs implements CellMessageSender {
     private CellStub poolManagerStub;
     private CellStub pinManagerStub;
+    private CellStub billingStub;
     private PnfsHandler pnfsHandler;
+    private CellEndpoint endpoint;
 
     public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) throws ChimeraFsException
     {
@@ -115,6 +125,15 @@ public class DCacheAwareJdbcFs extends JdbcFs {
 
     public void setPinManagerStub(CellStub pinManagerStub) {
         this.pinManagerStub = pinManagerStub;
+    }
+
+    public void setBillingStub(CellStub billingStub) {
+        this.billingStub = billingStub;
+    }
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint) {
+        this.endpoint = endpoint;
     }
 
     @Override
@@ -154,6 +173,26 @@ public class DCacheAwareJdbcFs extends JdbcFs {
             = new PinManagerUnpinMessage(new PnfsId(inode.getId()));
 
         pinManagerStub.notify(message);
+    }
+
+    @Override
+    public void remove(FsInode directory, String name, FsInode inode) throws ChimeraFsException {
+
+        super.remove(directory, name, inode);
+        CellInfo cellInfo = endpoint.getCellInfo();
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        DoorRequestInfoMessage infoRemove
+                = new DoorRequestInfoMessage(cellInfo.getCellName() + "@"
+                        + cellInfo.getDomainName(), "remove");
+
+        infoRemove.setSubject(subject);
+        infoRemove.setPnfsId(new PnfsId(inode.getId()));
+        infoRemove.setFileSize(0L);
+        infoRemove.setBillingPath("parent:[" + directory.getId() + "]/" + name);
+        infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
+        infoRemove.setClientChain(infoRemove.getClient());
+
+        billingStub.notify(infoRemove);
     }
 
     /**

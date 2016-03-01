@@ -100,6 +100,7 @@
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="poolManagerStub" ref="poolManagerStub"/>
         <property name="pinManagerStub" ref="pinManagerStub"/>
+        <property name="billingStub" ref="billing-stub"/>
     </bean>
 
     <bean id="export" class="org.dcache.nfs.ExportFile">
