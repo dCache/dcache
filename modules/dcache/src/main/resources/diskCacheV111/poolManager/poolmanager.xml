@@ -26,6 +26,7 @@
     <property name="poolMonitorTopic" ref="poolMonitorTopic"/>
     <property name="poolMonitorUpdatePeriod" value="${poolmanager.pool-monitor.update-period}"/>
     <property name="poolMonitorUpdatePeriodUnit" value="${poolmanager.pool-monitor.update-period.unit}"/>
+    <property name="poolMonitorMaxUpdatesPerSecond" value="${poolmanager.pool-monitor.max-updates-per-second}"/>
     <property name="quotaManager" value="#{ '${poolmanager.plugins.quota-manager}' == 'none' ? null : quota-stub }"/>
     <property name="pnfsHandler" ref="pnfs"/>
   </bean>

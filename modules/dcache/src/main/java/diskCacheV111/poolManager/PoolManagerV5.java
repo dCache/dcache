@@ -2,6 +2,7 @@ package diskCacheV111.poolManager ;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,6 +112,7 @@ public class PoolManagerV5
     );
     private long _poolMonitorUpdatePeriod;
     private TimeUnit _poolMonitorUpdatePeriodUnit;
+    private double _poolMonitorMaxUpdatesPerSecond;
 
     public PoolManagerV5()
     {
@@ -172,6 +174,11 @@ public class PoolManagerV5
         _poolMonitorUpdatePeriodUnit = unit;
     }
 
+    public void setPoolMonitorMaxUpdatesPerSecond(double maxUpdatesPerSecond)
+    {
+        _poolMonitorMaxUpdatesPerSecond = maxUpdatesPerSecond;
+    }
+
     public void init()
     {
         String watchdogParam = getArgs().getOpt("watchdog");
@@ -182,6 +189,8 @@ public class PoolManagerV5
         }
         _poolMonitorThread = new PoolMonitorThread();
         _log.info("Watchdog : {}", _watchdog);
+
+        _poolMonitor.getPoolSelectionUnit().addChangeListener(_poolMonitorThread.ON_CHANGE);
     }
 
     @Override
@@ -197,6 +206,7 @@ public class PoolManagerV5
             _watchdog.interrupt();
         }
         if (_poolMonitorThread != null) {
+            _poolMonitor.getPoolSelectionUnit().removeChangeListener(_poolMonitorThread.ON_CHANGE);
             _poolMonitorThread.interrupt();
         }
         _executor.shutdown();
@@ -290,16 +300,38 @@ public class PoolManagerV5
 
     private class PoolMonitorThread extends Thread
     {
+        final Runnable ON_CHANGE = this::onChange;
+
+        private boolean isChanged;
+
+        private final RateLimiter limiter = RateLimiter.create(_poolMonitorMaxUpdatesPerSecond);
+
         @Override
         public void run()
         {
             try {
+                limiter.acquire();
                 while (!Thread.interrupted()) {
                     _poolMonitorTopic.notify(_poolMonitor);
-                    _poolMonitorUpdatePeriodUnit.sleep(_poolMonitorUpdatePeriod);
+                    waitUntilNextUpdate();
+                    limiter.acquire();
                 }
             } catch (InterruptedException ignored) {
             }
+        }
+
+        protected synchronized void waitUntilNextUpdate() throws InterruptedException
+        {
+            if (!isChanged) {
+                _poolMonitorUpdatePeriodUnit.timedWait(this, _poolMonitorUpdatePeriod);
+            }
+            isChanged = false;
+        }
+
+        public synchronized void onChange()
+        {
+            isChanged = true;
+            notifyAll();
         }
     }
 

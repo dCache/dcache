@@ -16,6 +16,7 @@ check -strong poolmanager.enable.cache-hit-message
 check -strong poolmanager.pool-monitor.topic
 check -strong poolmanager.pool-monitor.update-period
 check -strong poolmanager.pool-monitor.update-period.unit
+check -strong poolmanager.pool-monitor.max-updates-per-second
 check poolmanager.setup.file
 
 # External settings
