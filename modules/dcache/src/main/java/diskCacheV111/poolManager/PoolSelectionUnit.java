@@ -197,6 +197,9 @@ public interface PoolSelectionUnit  {
    Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName);
    Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws NoSuchElementException;
 
+   void addChangeListener(Runnable runnable);
+   void removeChangeListener(Runnable runnable);
+
    Map<String, SelectionLink> getLinks();
    Map<String, SelectionPool> getPools();
    Map<String, SelectionPoolGroup> getPoolGroups();

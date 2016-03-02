@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -24,8 +25,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -72,51 +73,65 @@ public class PoolSelectionUnitV2
     private boolean _useRegex;
     private boolean _allPoolsActive;
 
+    private transient CopyOnWriteArrayList<Runnable> _onChangeListeners = new CopyOnWriteArrayList<>();
+
     /**
      * Ok, this is the critical part of PoolManager, but (!!!) the whole select
      * path is READ-ONLY, unless we change setup. So ReadWriteLock is what we
      * are looking for, while is a point of serialization.
      */
 
-    private final ReadWriteLock _psuReadWriteLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock _psuReadWriteLock = new ReentrantReadWriteLock();
     private final Lock _psuReadLock = _psuReadWriteLock.readLock();
     private final Lock _psuWriteLock = _psuReadWriteLock.writeLock();
 
     private final NetHandler _netHandler = new NetHandler();
 
     @Override
+    public void addChangeListener(Runnable runnable)
+    {
+        _onChangeListeners.add(runnable);
+    }
+
+    @Override
+    public void removeChangeListener(Runnable runnable)
+    {
+        _onChangeListeners.remove(runnable);
+    }
+
+    @Override
     public Map<String, SelectionLink> getLinks() {
-        _psuReadLock.lock();
+        rlock();
         try {
             return Maps.<String, SelectionLink>newHashMap(_links);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
     @Override
     public Map<String, SelectionUnit> getSelectionUnits() {
-        _psuReadLock.lock();
+        rlock();
         try {
             return Maps.<String, SelectionUnit>newHashMap(_units);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
     @Override
     public Map<String, SelectionUnitGroup> getUnitGroups() {
-        _psuReadLock.lock();
+        rlock();
         try {
             return Maps.<String, SelectionUnitGroup>newHashMap(_uGroups);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
     @Override
     public Collection<SelectionLink> getLinksPointingToPoolGroup(String poolGroup) throws NoSuchElementException {
-        _psuReadLock.lock();
+        rlock();
         try {
             PGroup group = _pGroups.get(poolGroup);
             if (group == null) {
@@ -124,7 +139,7 @@ public class PoolSelectionUnitV2
             }
             return new ArrayList<>(group._linkList.values());
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
@@ -133,14 +148,14 @@ public class PoolSelectionUnitV2
 
         Link link = null;
 
-        _psuReadLock.lock();
+        rlock();
         try {
             link = _links.get(name);
             if (link == null) {
                 throw new NoSuchElementException("Link not found : " + name);
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return link;
     }
@@ -149,7 +164,7 @@ public class PoolSelectionUnitV2
     public String[] getDefinedPools(boolean enabledOnly) {
 
         List<String> list = new ArrayList<>();
-        _psuReadLock.lock();
+        rlock();
         try {
 
             for (Pool pool : _pools.values()) {
@@ -158,7 +173,7 @@ public class PoolSelectionUnitV2
                 }
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return list.toArray(new String[list.size()]);
     }
@@ -167,7 +182,7 @@ public class PoolSelectionUnitV2
     public String[] getActivePools() {
         List<String> list = new ArrayList<>();
 
-        _psuReadLock.lock();
+        rlock();
         try {
             for (Pool pool : _pools.values()) {
                 if (pool.isEnabled() && pool.isActive()) {
@@ -175,7 +190,7 @@ public class PoolSelectionUnitV2
                 }
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return list.toArray(new String[list.size()]);
     }
@@ -183,7 +198,7 @@ public class PoolSelectionUnitV2
     @Override
     public void beforeSetup()
     {
-        _psuWriteLock.lock();
+        wlock();
         _poolsFromBeforeSetup = Lists.newArrayList(_pools.values());
         clear();
     }
@@ -210,13 +225,13 @@ public class PoolSelectionUnitV2
                     pool.setSerialId(p.getSerialId());
                 });
         _poolsFromBeforeSetup = null;
-        _psuWriteLock.unlock();
+        wunlock();
     }
 
     @Override
     public void printSetup(PrintWriter pw)
     {
-        _psuReadLock.lock();
+        rlock();
         try {
             pw.append("psu set regex ").println(_useRegex ? "on" : "off");
             pw.append("psu set allpoolsactive ").println(_allPoolsActive ? "on" : "off");
@@ -321,12 +336,12 @@ public class PoolSelectionUnitV2
                         pw.println();
                     });
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
     public void clear() {
-        _psuWriteLock.lock();
+        wlock();
         try {
             _netHandler.clear();
             _pGroups.clear();
@@ -336,40 +351,40 @@ public class PoolSelectionUnitV2
             _units.clear();
             _linkGroups.clear();
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void setActive(String poolName, boolean active) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             Pool pool = _pools.get(poolName);
             if (pool != null) {
                 pool.setActive(active);
             }
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public long getActive(String poolName) {
 
         long active = 100000000L;
-        _psuReadLock.lock();
+        rlock();
         try {
             Pool pool = _pools.get(poolName);
             if (pool != null) {
                 active = pool.getActive();
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return active;
     }
 
     private int setEnabled(Glob glob, boolean enabled)
     {
-        _psuWriteLock.lock();
+        wlock();
         try {
             int count = 0;
             for (Pool pool: getPools(glob.toPattern())) {
@@ -378,21 +393,21 @@ public class PoolSelectionUnitV2
             }
             return count;
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public boolean isEnabled(String poolName) {
 
         boolean isEnabled = false;
-        _psuReadLock.lock();
+        rlock();
         try {
             Pool pool = _pools.get(poolName);
             if (pool != null) {
                 isEnabled = pool.isEnabled();
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return isEnabled;
     }
@@ -402,11 +417,11 @@ public class PoolSelectionUnitV2
 
         SelectionPool pool = null;
 
-        _psuReadLock.lock();
+        rlock();
         try {
             pool = _pools.get(poolName);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         return pool;
@@ -433,7 +448,7 @@ public class PoolSelectionUnitV2
         /* The update is done in two steps; most of the time an update will not change anything except
          * refresh the heartbeat timestamp. We do this under a read lock.
          */
-        _psuReadLock.lock();
+        rlock();
         try {
             Pool pool = _pools.get(poolName);
             if (pool != null) {
@@ -456,12 +471,12 @@ public class PoolSelectionUnitV2
                 }
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         /* We detected that something changed and fall through to a full update under a write lock.
          */
-        _psuWriteLock.lock();
+        wlock();
         try {
             Pool pool = _pools.get(poolName);
             if (pool == null) {
@@ -501,7 +516,7 @@ public class PoolSelectionUnitV2
             pool.setActive(!disabled);
             return changed;
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
@@ -547,7 +562,7 @@ public class PoolSelectionUnitV2
 
 
         PoolPreferenceLevel[] result = null;
-        _psuReadLock.lock();
+        rlock();
         try {
             //
             // resolve the unit from the unitname (or net unit mask)
@@ -809,7 +824,7 @@ public class PoolSelectionUnitV2
             }
 
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         if( _log.isDebugEnabled() ) {
@@ -859,7 +874,7 @@ public class PoolSelectionUnitV2
         // */*
         //
         Unit unit = null;
-        _psuReadLock.lock();
+        rlock();
         try {
             unit = _units.get(protocolUnitName);
             if (unit != null) {
@@ -875,7 +890,7 @@ public class PoolSelectionUnitV2
             }
 
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         //
         return unit;
@@ -885,7 +900,7 @@ public class PoolSelectionUnitV2
     @Override
     public String getNetIdentifier(String address) throws UnknownHostException {
 
-        _psuReadLock.lock();
+        rlock();
         try {
             NetUnit unit = _netHandler.match(address);
             if (unit == null) {
@@ -893,7 +908,7 @@ public class PoolSelectionUnitV2
             }
             return unit.getCanonicalName();
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
@@ -911,7 +926,7 @@ public class PoolSelectionUnitV2
 
         Map<String, Link> map = new HashMap<>();
 
-        _psuReadLock.lock();
+        rlock();
         try {
             for (UGroup uGroup : unit._uGroupList.values()) {
                 for (Link link : uGroup._linkList.values()) {
@@ -937,13 +952,13 @@ public class PoolSelectionUnitV2
                 }
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return map;
     }
 
     public void setAllPoolsActive(String mode) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             switch (mode) {
                 case "on":
@@ -959,18 +974,18 @@ public class PoolSelectionUnitV2
                                     "Syntax error," + " no such mode: " + mode);
             }
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public String netMatch(String hostAddress) throws UnknownHostException {
         NetUnit unit = null;
 
-        _psuReadLock.lock();
+        rlock();
         try {
             unit = _netHandler.match(hostAddress);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         if (unit == null) {
             throw new IllegalArgumentException("Host not a unit : "
@@ -1016,7 +1031,7 @@ public class PoolSelectionUnitV2
         Map<String, Link> map = null;
         int required = units.size();
 
-        _psuReadLock.lock();
+        rlock();
         try {
             for (String unitName: units) {
                 Unit unit = _units.get(unitName);
@@ -1049,7 +1064,7 @@ public class PoolSelectionUnitV2
             }
 
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return sb.toString();
     }
@@ -1064,7 +1079,7 @@ public class PoolSelectionUnitV2
     //
 
     public void createPoolGroup(String name) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             if (_pGroups.get(name) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
@@ -1074,7 +1089,7 @@ public class PoolSelectionUnitV2
 
             _pGroups.put(group.getName(), group);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
@@ -1097,7 +1112,7 @@ public class PoolSelectionUnitV2
     }
 
     public void createPool(String name, boolean isNoPing, boolean isDisabled) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             if (_pools.get(name) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
@@ -1114,13 +1129,13 @@ public class PoolSelectionUnitV2
 
             _pools.put(pool.getName(), pool);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public String setPool(String glob, String mode) {
         Pattern pattern = Glob.parseGlobToPattern(glob);
-        _psuWriteLock.lock();
+        wlock();
         try {
             int count = 0;
             for (Pool pool: getPools(pattern)) {
@@ -1151,7 +1166,7 @@ public class PoolSelectionUnitV2
             }
             return poolCountDescriptionFor(count) + " updated";
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
@@ -1166,7 +1181,7 @@ public class PoolSelectionUnitV2
     }
 
     public void createLink(String name, ImmutableList<String> unitGroup) {
-        _psuWriteLock.lock();
+        wlock();
         try {
 
             if (_links.get(name) != null) {
@@ -1195,12 +1210,12 @@ public class PoolSelectionUnitV2
             _links.put(link.getName(), link);
 
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void createUnitGroup(String name) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             if (_uGroups.get(name) != null) {
                 throw new IllegalArgumentException("Duplicated entry : " + name);
@@ -1210,14 +1225,14 @@ public class PoolSelectionUnitV2
 
             _uGroups.put(group.getName(), group);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void createUnit(String name, boolean isNet, boolean isStore,
                     boolean isDcache, boolean isProtocol) {
         Unit unit = null;
-        _psuWriteLock.lock();
+        wlock();
         try {
             if (isNet) {
                 NetUnit net = new NetUnit(name);
@@ -1243,12 +1258,12 @@ public class PoolSelectionUnitV2
 
             _units.put(canonicalName, unit);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void createLinkGroup(String groupName, boolean isReset) {
-        _psuWriteLock.lock();
+        wlock();
         try {
 
             if (_linkGroups.containsKey(groupName) && !isReset) {
@@ -1259,7 +1274,7 @@ public class PoolSelectionUnitV2
             LinkGroup newGroup = new LinkGroup(groupName);
             _linkGroups.put(groupName, newGroup);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
@@ -1270,7 +1285,7 @@ public class PoolSelectionUnitV2
     //
     public Object listPoolXml(String poolName) {
         Object xlsResult = null;
-        _psuReadLock.lock();
+        rlock();
         try {
             if (poolName == null) {
                 xlsResult = _pools.keySet().toArray();
@@ -1291,7 +1306,7 @@ public class PoolSelectionUnitV2
                 xlsResult = result;
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         return xlsResult;
@@ -1299,7 +1314,7 @@ public class PoolSelectionUnitV2
 
     public Object listPoolGroupXml(String groupName) {
         Object xlsResult = null;
-        _psuReadLock.lock();
+        rlock();
         try {
 
             if (groupName == null) {
@@ -1318,7 +1333,7 @@ public class PoolSelectionUnitV2
                 xlsResult = result;
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         return xlsResult;
@@ -1326,17 +1341,17 @@ public class PoolSelectionUnitV2
 
     @Override
     public Map<String, SelectionPoolGroup> getPoolGroups() {
-        _psuReadLock.lock();
+        rlock();
         try {
             return Maps.<String, SelectionPoolGroup>newHashMap(_pGroups);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
     public Object listUnitXml(String unitName) {
         Object xlsResult = null;
-        _psuReadLock.lock();
+        rlock();
         try {
 
             if (unitName == null) {
@@ -1358,7 +1373,7 @@ public class PoolSelectionUnitV2
                 xlsResult = result;
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         return xlsResult;
@@ -1366,7 +1381,7 @@ public class PoolSelectionUnitV2
 
     public Object listUnitGroupXml(String groupName) {
         Object xlsResult = null;
-        _psuReadLock.lock();
+        rlock();
         try {
             if (groupName == null) {
                 xlsResult = _uGroups.keySet().toArray();
@@ -1384,7 +1399,7 @@ public class PoolSelectionUnitV2
                 xlsResult = result;
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         return xlsResult;
@@ -1392,7 +1407,7 @@ public class PoolSelectionUnitV2
 
     public Object listLinkXml(boolean isX, boolean resolve, String linkName) {
         Object xlsResult = null;
-        _psuReadLock.lock();
+        rlock();
         try {
 
             if (linkName == null) {
@@ -1415,7 +1430,7 @@ public class PoolSelectionUnitV2
                 xlsResult = fillLinkProperties(link, resolve);
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         return xlsResult;
@@ -1512,7 +1527,7 @@ public class PoolSelectionUnitV2
     //
     public String listPool(boolean more, boolean detail, ImmutableList<String> globs) {
         StringBuilder sb = new StringBuilder();
-        _psuReadLock.lock();
+        rlock();
         try {
             Stream<Pool> pools;
             if (globs.isEmpty()) {
@@ -1537,14 +1552,14 @@ public class PoolSelectionUnitV2
                         }
                     });
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return sb.toString();
     }
 
     public String listPoolGroups(boolean more, boolean detail, ImmutableList<String> groups) {
         StringBuilder sb = new StringBuilder();
-        _psuReadLock.lock();
+        rlock();
         try {
             Iterator<PGroup> i;
             if (groups.isEmpty()) {
@@ -1572,14 +1587,14 @@ public class PoolSelectionUnitV2
                 }
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return sb.toString();
     }
 
     public String listPoolLinks(boolean more, boolean detail, ImmutableList<String> names) {
         StringBuilder sb = new StringBuilder();
-        _psuReadLock.lock();
+        rlock();
         try {
             Stream<Link> links;
             if (names.isEmpty()) {
@@ -1616,7 +1631,7 @@ public class PoolSelectionUnitV2
                         }
                     });
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return sb.toString();
     }
@@ -1624,7 +1639,7 @@ public class PoolSelectionUnitV2
     public String listUnitGroups(boolean more, boolean detail, ImmutableList<String> names) {
 
         StringBuilder sb = new StringBuilder();
-        _psuReadLock.lock();
+        rlock();
         try {
             Stream<UGroup> i;
             if (names.isEmpty()) {
@@ -1647,7 +1662,7 @@ public class PoolSelectionUnitV2
                         }
                     });
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return sb.toString();
     }
@@ -1655,7 +1670,7 @@ public class PoolSelectionUnitV2
     public String listNetUnits() {
         StringBuilder sb = new StringBuilder();
 
-        _psuReadLock.lock();
+        rlock();
         try {
             for (int i = 0; i < _netHandler._netList.length; i++) {
                 Map<Long, NetUnit> map = _netHandler._netList[i];
@@ -1674,14 +1689,14 @@ public class PoolSelectionUnitV2
 
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return sb.toString();
     }
 
     public String listUnits(boolean more, boolean detail, ImmutableList<String> names) {
         StringBuilder sb = new StringBuilder();
-        _psuReadLock.lock();
+        rlock();
         try {
             Stream<Unit> i;
             if (names.isEmpty()) {
@@ -1703,7 +1718,7 @@ public class PoolSelectionUnitV2
                         }
                     });
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return sb.toString();
     }
@@ -1711,7 +1726,7 @@ public class PoolSelectionUnitV2
     public String listLinkGroups(boolean isLongOutput, ImmutableList<String> linkGroups) {
         StringBuilder sb = new StringBuilder();
 
-        _psuReadLock.lock();
+        rlock();
         try {
             if (!linkGroups.isEmpty()) {
                 linkGroups.stream().forEachOrdered(lgroup -> {
@@ -1732,7 +1747,7 @@ public class PoolSelectionUnitV2
                         linkGroup -> sb.append(isLongOutput ? linkGroup : linkGroup.getName()).append("\n"));
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
 
         return sb.toString();
@@ -1750,7 +1765,7 @@ public class PoolSelectionUnitV2
     // the 'removes'
     //
     public void removeUnit(String name, boolean isNet) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             if (isNet) {
                 NetUnit netUnit = _netHandler.find(new NetUnit(name));
@@ -1776,12 +1791,12 @@ public class PoolSelectionUnitV2
 
             _units.remove(name);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void removeUnitGroup(String name) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             UGroup group = _uGroups.get(name);
             if (group == null) {
@@ -1802,12 +1817,12 @@ public class PoolSelectionUnitV2
             _uGroups.remove(name);
 
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void removePoolGroup(String name) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             PGroup group = _pGroups.get(name);
             if (group == null) {
@@ -1832,12 +1847,12 @@ public class PoolSelectionUnitV2
             //
             _pGroups.remove(name);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void removePool(String name) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             Pool pool = _pools.get(name);
             if (pool == null) {
@@ -1861,12 +1876,12 @@ public class PoolSelectionUnitV2
             //
             _pools.remove(name);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void removeFromUnitGroup(String groupName, String unitName, boolean isNet) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             UGroup group = _uGroups.get(groupName);
             if (group == null) {
@@ -1896,12 +1911,12 @@ public class PoolSelectionUnitV2
             group._unitList.remove(canonicalName);
             unit._uGroupList.remove(groupName);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void removeFromPoolGroup(String groupName, String poolName) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             Pool pool = _pools.get(poolName);
             if (pool == null) {
@@ -1923,12 +1938,12 @@ public class PoolSelectionUnitV2
             group._poolList.remove(poolName);
             pool._pGroupList.remove(groupName);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void removeFromLinkGroup(String linkGroupName, String linkName) {
-        _psuWriteLock.lock();
+        wlock();
         try {
 
             LinkGroup linkGroup = _linkGroups.get(linkGroupName);
@@ -1950,12 +1965,12 @@ public class PoolSelectionUnitV2
             link.setLinkGroup(null);
 
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void removeLinkGroup(String name) {
-        _psuWriteLock.lock();
+        wlock();
         try {
 
             LinkGroup linkGroup = _linkGroups.remove(name);
@@ -1971,12 +1986,12 @@ public class PoolSelectionUnitV2
             }
 
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void removeLink(String name) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             Link link = _links.get(name);
             if (link == null) {
@@ -2008,7 +2023,7 @@ public class PoolSelectionUnitV2
             //
             _links.remove(name);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
@@ -2019,7 +2034,7 @@ public class PoolSelectionUnitV2
     //
     public void addToPoolGroup(String pGroupName, String poolName) {
 
-        _psuWriteLock.lock();
+        wlock();
         try {
             PGroup group = _pGroups.get(pGroupName);
             if (group == null) {
@@ -2033,12 +2048,12 @@ public class PoolSelectionUnitV2
             pool._pGroupList.put(group.getName(), group);
             group._poolList.put(pool.getName(), pool);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void addToUnitGroup(String uGroupName, String unitName, boolean isNet) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             if (isNet) {
                 NetUnit netUnit = _netHandler.find(new NetUnit(unitName));
@@ -2066,12 +2081,12 @@ public class PoolSelectionUnitV2
             unit._uGroupList.put(group.getName(), group);
             group._unitList.put(canonicalName, unit);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void addToLinkGroup(String linkGroupName, String linkName) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             LinkGroup linkGroup = _linkGroups.get(linkGroupName);
             if (linkGroup == null) {
@@ -2098,12 +2113,12 @@ public class PoolSelectionUnitV2
             linkGroup.add(link);
             link.setLinkGroup(linkGroup);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void unlink(String linkName, String poolName) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             Link link = _links.get(linkName);
             if (link == null) {
@@ -2126,12 +2141,12 @@ public class PoolSelectionUnitV2
             core._linkList.remove(linkName);
             link._poolList.remove(poolName);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void addLink(String linkName, String poolName) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             Link link = _links.get(linkName);
             if (link == null) {
@@ -2149,12 +2164,12 @@ public class PoolSelectionUnitV2
             core._linkList.put(link.getName(), link);
             link._poolList.put(core.getName(), core);
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void setPoolActive(String poolName, boolean active) {
-        _psuWriteLock.lock();
+        wlock();
         try {
             if (poolName.equals("*")) {
                 for (Pool pool : _pools.values()) {
@@ -2170,13 +2185,13 @@ public class PoolSelectionUnitV2
             }
 
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void setLink(String linkName, String readPref, String writePref,
                     String cachePref, String p2pPref, String section) {
-        _psuWriteLock.lock();
+        wlock();
 
         try {
             Link link = _links.get(linkName);
@@ -2200,14 +2215,14 @@ public class PoolSelectionUnitV2
                 link.setTag(section.equalsIgnoreCase("NONE") ? null : section);
             }
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     public void setLinkGroup(String linkGroupName, String custodial,
                     String nearline, String online, String output,
                     String replica) {
-        _psuWriteLock.lock();
+        wlock();
 
         try {
             LinkGroup linkGroup = _linkGroups.get(linkGroupName);
@@ -2236,47 +2251,47 @@ public class PoolSelectionUnitV2
                 linkGroup.setReplicaAllowed(Boolean.parseBoolean(replica));
             }
         } finally {
-            _psuWriteLock.unlock();
+            wunlock();
         }
     }
 
     @Override
     public Map<String, SelectionPool> getPools()
     {
-        _psuReadLock.lock();
+        rlock();
         try {
             return new HashMap<>(_pools);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
     @Override
     public Map<String, SelectionLinkGroup> getLinkGroups()
     {
-        _psuReadLock.lock();
+        rlock();
         try {
             return new HashMap<>(_linkGroups);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 
     @Override
     public LinkGroup getLinkGroupByName(String linkGroupName) {
         LinkGroup linkGroup = null;
-        _psuReadLock.lock();
+        rlock();
         try {
             linkGroup = _linkGroups.get(linkGroupName);
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return linkGroup;
     }
 
     @Override
     public Collection<SelectionPoolGroup> getPoolGroupsOfPool(String PoolName) {
-        _psuReadLock.lock();
+        rlock();
         try {
             Pool pool = _pools.get(PoolName);
             if (pool != null) {
@@ -2285,7 +2300,7 @@ public class PoolSelectionUnitV2
                 throw new NoSuchElementException(PoolName);
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
 
         }
     }
@@ -2325,7 +2340,7 @@ public class PoolSelectionUnitV2
     @Override
     public Collection<SelectionPool> getAllDefinedPools(boolean enabledOnly) {
         List<SelectionPool> pools = new ArrayList<>(_pools.size());
-        _psuReadLock.lock();
+        rlock();
         try {
             for (Pool pool : _pools.values()) {
                 if ((!enabledOnly) || pool.isEnabled()) {
@@ -2333,7 +2348,7 @@ public class PoolSelectionUnitV2
                 }
             }
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
         return pools;
     }
@@ -2357,13 +2372,43 @@ public class PoolSelectionUnitV2
         }
     }
 
-    private void writeObject(ObjectOutputStream stream) throws IOException
+    protected void wlock()
+    {
+        _psuWriteLock.lock();
+    }
+
+    protected void wunlock()
+    {
+        _psuWriteLock.unlock();
+        if (!_psuReadWriteLock.isWriteLockedByCurrentThread()) {
+            _onChangeListeners.stream().forEach(Runnable::run);
+        }
+    }
+
+    protected void rlock()
     {
         _psuReadLock.lock();
+    }
+
+    protected void runlock()
+    {
+        _psuReadLock.unlock();
+    }
+
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        _onChangeListeners = new CopyOnWriteArrayList<>();
+    }
+
+    private void writeObject(ObjectOutputStream stream) throws IOException
+    {
+        rlock();
         try {
             stream.defaultWriteObject();
         } finally {
-            _psuReadLock.unlock();
+            runlock();
         }
     }
 }
