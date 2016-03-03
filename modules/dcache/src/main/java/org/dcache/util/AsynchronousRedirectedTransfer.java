@@ -14,10 +14,6 @@ import java.util.concurrent.FutureTask;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.vehicles.PoolMoverKillMessage;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.attributes.Restriction;
 
@@ -32,7 +28,6 @@ import static com.google.common.base.Preconditions.checkState;
  * are to implement onQueued, onRedirect, onFinish and onFailure. The class deals with out
  * of order notifications and guarantees that:
  *
- *  - a mover ID is known before onQueued is called
  *  - onQueued is always called before onRedirect
  *  - onRedirect is always called before onFinish
  *  - that onRedirect and onFinish are not called once onFailure was called
@@ -169,7 +164,7 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
         private synchronized void doFinish()
         {
             try {
-                if (!isDone && getMoverId() != null  && isRedirected && isFinished) {
+                if (!isDone && isQueued && isRedirected && isFinished) {
                     onFinish();
                     isDone = true;
                 }
@@ -192,14 +187,7 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
             if (queueFuture != null) {
                 queueFuture.cancel(true);
             }
-            if (hasMover()) {
-                int moverId = getMoverId();
-                String pool = getPool();
-                CellAddressCore poolAddress = getPoolAddress();
-                PoolMoverKillMessage message = new PoolMoverKillMessage(pool, moverId);
-                message.setReplyRequired(false);
-                _pool.notify(new CellPath(poolAddress), message);
-            }
+            killMover(0);
         }
 
         /**
