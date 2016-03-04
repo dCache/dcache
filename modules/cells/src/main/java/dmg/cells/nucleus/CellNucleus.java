@@ -424,24 +424,19 @@ public class CellNucleus implements ThreadFactory
         for (final CellLock lock: expired) {
             try (CDC ignored = lock.getCdc().restore()) {
                 try {
-                    lock.getExecutor().execute(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            CellMessage envelope = lock.getMessage();
-                            try {
-                                lock.getCallback().answerTimedOut(envelope);
-                                EventLogger.sendEnd(envelope);
-                            } catch (RejectedExecutionException e) {
-                                /* May happen when the callback itself tries to schedule the call
-                                 * on an executor. Put the request back and let it time out.
-                                 */
-                                synchronized (_waitHash) {
-                                    _waitHash.put(envelope.getUOID(), lock);
-                                }
-                                LOGGER.warn("Failed to invoke callback: {}", e.toString());
+                    lock.getExecutor().execute(() -> {
+                        CellMessage envelope = lock.getMessage();
+                        try {
+                            lock.getCallback().answerTimedOut(envelope);
+                            EventLogger.sendEnd(envelope);
+                        } catch (RejectedExecutionException e) {
+                            /* May happen when the callback itself tries to schedule the call
+                             * on an executor. Put the request back and let it time out.
+                             */
+                            synchronized (_waitHash) {
+                                _waitHash.put(envelope.getUOID(), lock);
                             }
+                            LOGGER.warn("Failed to invoke callback: {}", e.toString());
                         }
                     });
                 } catch (RejectedExecutionException e) {
@@ -528,23 +523,18 @@ public class CellNucleus implements ThreadFactory
                 _waitHash.remove(uoid);
             }
             try {
-                executor.execute(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        try {
-                            callback.exceptionArrived(msg, e);
-                            EventLogger.sendEnd(msg);
-                        } catch (RejectedExecutionException e) {
-                            /* May happen when the callback itself tries to schedule the call
-                             * on an executor. Put the request back and let it time out.
-                             */
-                            synchronized (_waitHash) {
-                                _waitHash.put(uoid, lock);
-                            }
-                            LOGGER.error("Failed to invoke callback: {}", e.toString());
+                executor.execute(() -> {
+                    try {
+                        callback.exceptionArrived(msg, e);
+                        EventLogger.sendEnd(msg);
+                    } catch (RejectedExecutionException e1) {
+                        /* May happen when the callback itself tries to schedule the call
+                         * on an executor. Put the request back and let it time out.
+                         */
+                        synchronized (_waitHash) {
+                            _waitHash.put(uoid, lock);
                         }
+                        LOGGER.error("Failed to invoke callback: {}", e1.toString());
                     }
                 });
             } catch (RejectedExecutionException e1) {
@@ -705,24 +695,18 @@ public class CellNucleus implements ThreadFactory
 
     private Runnable wrapLoggingContext(final Runnable runnable)
     {
-        return new Runnable() {
-            @Override
-            public void run() {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    runnable.run();
-                }
+        return () -> {
+            try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                runnable.run();
             }
         };
     }
 
     private <T> Callable<T> wrapLoggingContext(final Callable<T> callable)
     {
-        return new Callable<T>() {
-            @Override
-            public T call() throws Exception {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    return callable.call();
-                }
+        return () -> {
+            try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                return callable.call();
             }
         };
     }

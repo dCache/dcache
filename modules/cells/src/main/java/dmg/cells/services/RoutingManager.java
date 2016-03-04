@@ -361,17 +361,12 @@ public class RoutingManager
             _log.info("Routing info arrived for domain {}", domain);
 
             if (_updates.put(domain, info) == null) {
-                _executor.execute(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        try {
-                            updateRoutingInfo(_updates.remove(domain));
-                        } catch (Throwable e) {
-                            Thread t = Thread.currentThread();
-                            t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                        }
+                _executor.execute(() -> {
+                    try {
+                        updateRoutingInfo(_updates.remove(domain));
+                    } catch (Throwable e) {
+                        Thread t = Thread.currentThread();
+                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
                     }
                 });
             }

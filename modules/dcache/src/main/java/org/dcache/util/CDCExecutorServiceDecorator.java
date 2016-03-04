@@ -104,13 +104,9 @@ public class CDCExecutorServiceDecorator<E extends ExecutorService> extends Forw
     protected <T> Callable<T> wrap(final Callable<T> task)
     {
         final CDC cdc = new CDC();
-        return new Callable<T>() {
-            @Override
-            public T call() throws Exception
-            {
-                try (CDC ignored = cdc.restore()) {
-                    return task.call();
-                }
+        return () -> {
+            try (CDC ignored = cdc.restore()) {
+                return task.call();
             }
         };
     }

@@ -139,75 +139,71 @@ public class PcellsCommand implements Command, Runnable
 
                 final DomainObjectFrame frame = (DomainObjectFrame) obj;
                 LOGGER.trace("Frame id {} received", frame.getId());
-                _executor.execute(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        Object result;
-                        try {
-                            if (frame.getDestination() == null) {
-                                result = _shell.executeCommand(frame.getPayload().toString());
-                            } else {
-                                switch (frame.getDestination()) {
-                                case "PnfsManager":
-                                    result = _shell.executeCommand(_pnfsManager.getDestinationPath(), frame.getPayload());
-                                    break;
-                                case "PoolManager":
-                                    result = _shell.executeCommand(_poolManager.getDestinationPath(), frame.getPayload());
-                                    break;
-                                case "SrmSpaceManager":
-                                    if (frame.getPayload().equals("ls -l")) {
-                                        result = listSpaceReservations();
-                                    } else {
-                                        result = _shell.executeCommand(_spaceManager.getDestinationPath(), frame.getPayload());
-                                    }
-                                    break;
-                                case "TransferObserver":
-                                    if (frame.getPayload().equals("ls iolist")) {
-                                        result = listTransfers(_transfers);
-                                    } else {
-                                        result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
-                                    }
-                                    break;
-                                case "LoginBroker":
-                                    String cmd = frame.getPayload().toString();
-                                    if (cmd.startsWith("ls") && cmd.contains("-binary")) {
-                                        result = _loginBrokerSource.doors().stream().toArray(LoginBrokerInfo[]::new);
-                                    } else {
-                                        result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
-                                    }
-                                    break;
-                                default:
-                                    result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
-                                    break;
+                _executor.execute(() -> {
+                    Object result;
+                    try {
+                        if (frame.getDestination() == null) {
+                            result = _shell.executeCommand(frame.getPayload().toString());
+                        } else {
+                            switch (frame.getDestination()) {
+                            case "PnfsManager":
+                                result = _shell.executeCommand(_pnfsManager.getDestinationPath(), frame.getPayload());
+                                break;
+                            case "PoolManager":
+                                result = _shell.executeCommand(_poolManager.getDestinationPath(), frame.getPayload());
+                                break;
+                            case "SrmSpaceManager":
+                                if (frame.getPayload().equals("ls -l")) {
+                                    result = listSpaceReservations();
+                                } else {
+                                    result = _shell.executeCommand(_spaceManager.getDestinationPath(), frame.getPayload());
                                 }
+                                break;
+                            case "TransferObserver":
+                                if (frame.getPayload().equals("ls iolist")) {
+                                    result = listTransfers(_transfers);
+                                } else {
+                                    result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
+                                }
+                                break;
+                            case "LoginBroker":
+                                String cmd = frame.getPayload().toString();
+                                if (cmd.startsWith("ls") && cmd.contains("-binary")) {
+                                    result = _loginBrokerSource.doors().stream().toArray(LoginBrokerInfo[]::new);
+                                } else {
+                                    result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
+                                }
+                                break;
+                            default:
+                                result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
+                                break;
                             }
-                        } catch (CommandException e) {
-                            result = e;
-                            _done = true;
-                            try {
-                                in.close();
-                            } catch (IOException ignored) {
-                            }
-                        } catch (TimeoutCacheException e) {
-                            if (e.getCause() instanceof NoRouteToCellException) {
-                                result = e.getCause();
-                            } else {
-                                result = null;
-                            }
-                        } catch (Exception ae) {
-                            result = ae;
                         }
-                        frame.setPayload(result);
+                    } catch (CommandException e) {
+                        result = e;
+                        _done = true;
                         try {
-                            synchronized (out) {
-                                out.writeObject(frame);
-                                out.flush();
-                                out.reset();  // prevents memory leaks...
-                            }
-                        } catch (IOException e) {
-                            LOGGER.error("Problem sending result : {}", e);
+                            in.close();
+                        } catch (IOException ignored) {
                         }
+                    } catch (TimeoutCacheException e) {
+                        if (e.getCause() instanceof NoRouteToCellException) {
+                            result = e.getCause();
+                        } else {
+                            result = null;
+                        }
+                    } catch (Exception ae) {
+                        result = ae;
+                    }
+                    frame.setPayload(result);
+                    try {
+                        synchronized (out) {
+                            out.writeObject(frame);
+                            out.flush();
+                            out.reset();  // prevents memory leaks...
+                        }
+                    } catch (IOException e) {
+                        LOGGER.error("Problem sending result : {}", e);
                     }
                 });
             }

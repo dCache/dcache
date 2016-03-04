@@ -70,13 +70,7 @@ public class SEMsgPlugin implements Plugin
     public Future<Result> accept(final Subject subject,
             final String requestPath, final String internalPath)
     {
-        _executor.execute(new FireAndForgetTask(new Runnable() {
-           @Override
-           public void run()
-           {
-               sendMessage(subject, requestPath);
-           }
-        }));
+        _executor.execute(new FireAndForgetTask(() -> sendMessage(subject, requestPath)));
 
         return DEFER;
     }

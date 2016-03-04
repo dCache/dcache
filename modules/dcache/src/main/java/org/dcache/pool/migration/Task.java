@@ -355,19 +355,14 @@ public class Task
     synchronized void startTimer(long delay)
     {
         Runnable task =
-            new Runnable()
-            {
-                @Override
-                public void run()
-                {
+                () -> {
                     synchronized (Task.this) {
                         if (_timerTask != null) {
                             _fsm.timer();
                             _timerTask = null;
                         }
                     }
-                }
-            };
+                };
         _timerTask =
             _parameters.executor.schedule(new FireAndForgetTask(task),
                                delay, TimeUnit.MILLISECONDS);

@@ -197,15 +197,7 @@ public class SetupManager extends CellAdapter {
    public String ac_ls_class_$_0_1( Args args ){
       StringBuilder sb = new StringBuilder() ;
       if( args.argc() == 0 ){
-         File [] fileList = _config.listFiles(
-            new FileFilter(){
-               @Override
-               public boolean accept(File filepath ){
-                  return filepath.isDirectory();
-               }
-            }
-         );
-          for (File file : fileList) {
+         for (File file : _config.listFiles(File::isDirectory)) {
               sb.append(file.getName()).append("\n");
           }
          return sb.toString();
@@ -218,15 +210,7 @@ public class SetupManager extends CellAdapter {
                      IllegalArgumentException("Class not found : " + className);
          }
 
-         File [] fileList = classDir.listFiles(
-            new FileFilter(){
-               @Override
-               public boolean accept(File filepath ){
-                  return filepath.isFile();
-               }
-            }
-         );
-          for (File file : fileList) {
+          for (File file : classDir.listFiles(File::isFile)) {
               sb.append(file.getName()).append("\n");
           }
          return sb.toString();

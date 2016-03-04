@@ -95,21 +95,18 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
         final NDC ndc = NDC.cloneNdc();
 
         _pendingRequestCount.incrementAndGet();
-        _scheduler.execute(new FireAndForgetTask(new Runnable() {
-            @Override
-            public void run() {
-                CDC.reset(_cellName, _domainName);
-                NDC.set(ndc);
-                try {
-                    LOGGER.trace("starting job to process update {}", pendingUpdate);
-                    _caretaker.processUpdate(pendingUpdate);
-                    checkScheduledExpungeActivity();
-                    LOGGER.trace("finished job to process update {}", pendingUpdate);
-                } finally {
-                    _pendingRequestCount.decrementAndGet();
-                    pendingUpdate.updateComplete();
-                    CDC.clear();
-                }
+        _scheduler.execute(new FireAndForgetTask(() -> {
+            CDC.reset(_cellName, _domainName);
+            NDC.set(ndc);
+            try {
+                LOGGER.trace("starting job to process update {}", pendingUpdate);
+                _caretaker.processUpdate(pendingUpdate);
+                checkScheduledExpungeActivity();
+                LOGGER.trace("finished job to process update {}", pendingUpdate);
+            } finally {
+                _pendingRequestCount.decrementAndGet();
+                pendingUpdate.updateComplete();
+                CDC.clear();
             }
         }));
     }
@@ -185,15 +182,12 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
         LOGGER.trace("Scheduling next metric purge in {} s", delay/1000.0);
 
         try {
-            _metricExpiryFuture = _scheduler.schedule(new FireAndForgetTask(new Runnable() {
-                @Override
-                public void run() {
-                    LOGGER.trace("Starting metric purge");
-                    _caretaker.removeExpiredMetrics();
-                    scheduleMetricExpunge();
-                    LOGGER.trace("Metric purge completed");
-                    expungeCompleted();
-                }
+            _metricExpiryFuture = _scheduler.schedule(new FireAndForgetTask(() -> {
+                LOGGER.trace("Starting metric purge");
+                _caretaker.removeExpiredMetrics();
+                scheduleMetricExpunge();
+                LOGGER.trace("Metric purge completed");
+                expungeCompleted();
             }), delay, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException e) {
             LOGGER.trace("Failed to enqueue expunge task as queue is not accepting further work.");

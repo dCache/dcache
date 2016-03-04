@@ -46,13 +46,9 @@ public class ConfigurationMapFactoryBean implements EnvironmentAware,
     {
         ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
 
-        Replaceable replaceable = new Replaceable() {
-            @Override
-            public String getReplacement(String name)
-            {
-                Object value =  _environment.get(name);
-                return (value == null) ? null : value.toString().trim();
-            }
+        Replaceable replaceable = name -> {
+            Object value =  _environment.get(name);
+            return (value == null) ? null : value.toString().trim();
         };
 
         int prefixLength = _prefix.length();

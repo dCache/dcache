@@ -52,32 +52,26 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
             final Set<Principal> identifiedPrincipals)
             throws AuthenticationException
     {
-        pamStyleAuthentiationStrategy.callPlugins(new PluginCaller<GPlazmaAuthenticationPlugin>()
-        {
-            @Override
-            public void call(GPlazmaPluginService<GPlazmaAuthenticationPlugin> pe)
-                    throws AuthenticationException
-            {
-                monitor.authPluginBegins(pe.getName(), pe.getControl(),
-                        publicCredential, privateCredential,
+        pamStyleAuthentiationStrategy.callPlugins(service -> {
+            monitor.authPluginBegins(service.getName(), service.getControl(),
+                    publicCredential, privateCredential,
+                    identifiedPrincipals);
+
+            GPlazmaAuthenticationPlugin plugin = service.getPlugin();
+
+            Result result = Result.FAIL;
+            String error = null;
+            try {
+                plugin.authenticate(publicCredential,
+                        privateCredential, identifiedPrincipals);
+                result = Result.SUCCESS;
+            } catch(AuthenticationException e) {
+                error = e.getMessage();
+                throw e;
+            } finally {
+                monitor.authPluginEnds(service.getName(), service.getControl(),
+                        result, error, publicCredential, privateCredential,
                         identifiedPrincipals);
-
-                GPlazmaAuthenticationPlugin plugin = pe.getPlugin();
-
-                Result result = Result.FAIL;
-                String error = null;
-                try {
-                    plugin.authenticate(publicCredential,
-                            privateCredential, identifiedPrincipals);
-                    result = Result.SUCCESS;
-                } catch(AuthenticationException e) {
-                    error = e.getMessage();
-                    throw e;
-                } finally {
-                    monitor.authPluginEnds(pe.getName(), pe.getControl(),
-                            result, error, publicCredential, privateCredential,
-                            identifiedPrincipals);
-                }
             }
         });
     }

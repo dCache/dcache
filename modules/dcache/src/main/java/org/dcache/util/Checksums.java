@@ -33,10 +33,7 @@ public class Checksums
             withKeyValueSeparator(Splitter.on('=').limit(2));
 
     private static final EntryTransformer<String,String,Checksum>
-            RFC3230_TO_CHECKSUM = new EntryTransformer<String,String,Checksum>(){
-            @Override
-            public Checksum transformEntry(String type, String value)
-            {
+            RFC3230_TO_CHECKSUM = (type, value) -> {
                 try {
                     /*
                      * These names are defined in RFC-3230 and
@@ -59,19 +56,11 @@ public class Checksums
                             type);
                     return null;
                 }
-            }};
+            };
     private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDERING =
             Ordering.explicit(MD5_TYPE, ADLER32, MD4_TYPE);
     private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
-                    PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(
-                            new Function<Checksum, ChecksumType>()
-                            {
-                                @Override
-                                public ChecksumType apply(Checksum checksum)
-                                {
-                                    return checksum.getType();
-                                }
-                            });
+            PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(Checksum::getType);
 
 
     /**
@@ -79,24 +68,20 @@ public class Checksums
      * fragment of an RFC 3230 response.
      */
     private static final Function<Checksum,String> TO_RFC3230_FRAGMENT =
-            new Function<Checksum,String>() {
-        @Override
-        public String apply(Checksum f)
-        {
-            byte[] bytes = f.getBytes();
+            f -> {
+                byte[] bytes = f.getBytes();
 
-            switch(f.getType()) {
-            case ADLER32:
-                return "adler32=" + Checksum.bytesToHexString(bytes);
-            case MD4_TYPE:
-                return null;
-            case MD5_TYPE:
-                return "md5=" + Base64.getEncoder().encodeToString(bytes);
-            default:
-                return null;
-            }
-        }
-    };
+                switch(f.getType()) {
+                case ADLER32:
+                    return "adler32=" + Checksum.bytesToHexString(bytes);
+                case MD4_TYPE:
+                    return null;
+                case MD5_TYPE:
+                    return "md5=" + Base64.getEncoder().encodeToString(bytes);
+                default:
+                    return null;
+                }
+            };
 
     /**
      * This Function maps a collection of Checksum objects to the corresponding
@@ -106,14 +91,7 @@ public class Checksums
      *     http://www.iana.org/assignments/http-dig-alg/http-dig-alg.xml
      */
     public static final Function<Collection<Checksum>,String> TO_RFC3230 =
-            new Function<Collection<Checksum>,String>() {
-        @Override
-        public String apply(Collection<Checksum> checksums)
-        {
-            Iterable<String> parts = transform(checksums, TO_RFC3230_FRAGMENT);
-            return Joiner.on(',').skipNulls().join(parts);
-        }
-    };
+            checksums -> Joiner.on(',').skipNulls().join(transform(checksums, TO_RFC3230_FRAGMENT));
 
     private Checksums()
     {

@@ -429,19 +429,14 @@ class Companion
     synchronized void startTimer(long delay)
     {
         Runnable task =
-            new Runnable()
-            {
-                @Override
-                public void run()
-                {
+                () -> {
                     synchronized (Companion.this) {
                         if (_timerTask != null) {
                             _fsm.timer();
                             _timerTask = null;
                         }
                     }
-                }
-            };
+                };
         _timerTask =
             _executor.schedule(new FireAndForgetTask(task),
                                delay, TimeUnit.MILLISECONDS);
@@ -590,21 +585,17 @@ class Companion
 
             final Object error = _error;
 
-            _executor.execute(new FireAndForgetTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        Throwable t;
-
-                        if (error == null) {
-                            t = null;
-                        } else if (error instanceof Throwable) {
-                            t = (Throwable)error;
-                        } else {
-                            t = new CacheException(error.toString());
-                        }
-                        _callback.cacheFileAvailable(_pnfsId, t);
-                    }
-                }));
+            _executor.execute(new FireAndForgetTask(() -> {
+                Throwable t;
+                if (error == null) {
+                    t = null;
+                } else if (error instanceof Throwable) {
+                    t = (Throwable)error;
+                } else {
+                    t = new CacheException(error.toString());
+                }
+                _callback.cacheFileAvailable(_pnfsId, t);
+            }));
         }
     }
 

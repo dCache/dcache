@@ -415,16 +415,13 @@ public class WebAdminInterface extends WebApplication {
 
         RoleAuthorizationStrategy roleStrategy
             = new RoleAuthorizationStrategy(
-                        new IRoleCheckingStrategy() {
-                            @Override
-                            public boolean hasAnyRole(Roles roles) {
-                                _log.debug("checking {}", roles.toString());
-                                boolean hasAnyRoles = ((WebAdminInterfaceSession)
-                                                Session.get()).hasAnyRole(roles);
-                                _log.debug("results in: {}", hasAnyRoles);
-                                return hasAnyRoles;
-                            }
-                        });
+                roles -> {
+                    _log.debug("checking {}", roles.toString());
+                    boolean hasAnyRoles = ((WebAdminInterfaceSession)
+                                    Session.get()).hasAnyRole(roles);
+                    _log.debug("results in: {}", hasAnyRoles);
+                    return hasAnyRoles;
+                });
 
         final CompoundAuthorizationStrategy compoundStrategy
             = new CompoundAuthorizationStrategy();

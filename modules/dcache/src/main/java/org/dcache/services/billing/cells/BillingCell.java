@@ -90,13 +90,9 @@ public final class BillingCell
 
     @Override
     public void setEnvironment(final Map<String,Object> environment) {
-        Replaceable replaceable = new Replaceable() {
-            @Override
-            public String getReplacement(String name)
-            {
-                Object value =  environment.get(name);
-                return (value == null) ? null : value.toString().trim();
-            }
+        Replaceable replaceable = name -> {
+            Object value =  environment.get(name);
+            return (value == null) ? null : value.toString().trim();
         };
         for (Map.Entry<String,Object> e: environment.entrySet()) {
             String key = e.getKey();

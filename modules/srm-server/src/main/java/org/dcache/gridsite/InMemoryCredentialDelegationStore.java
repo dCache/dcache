@@ -53,22 +53,17 @@ public class InMemoryCredentialDelegationStore implements
             LoggerFactory.getLogger(InMemoryCredentialDelegationStore.class);
 
     private final RemovalListener<DelegationIdentity,CredentialDelegation>
-            LOG_REMOVALS = new RemovalListener<DelegationIdentity,CredentialDelegation>() {
-                @Override
-                public void onRemoval(RemovalNotification<DelegationIdentity,
-                        CredentialDelegation> event)
-                {
-                    DelegationIdentity identity = event.getKey();
-                    switch(event.getCause()) {
-                    case EXPIRED:
-                        LOG.debug("removing delegation from {}: client took" +
-                                " too long to reply", identity.getDn());
-                        break;
-                    case SIZE:
-                        LOG.debug("removing delegation from {}: too many" +
-                                " on-going delegations", identity.getDn());
-                        break;
-                    }
+            LOG_REMOVALS = notification -> {
+                DelegationIdentity identity = notification.getKey();
+                switch(notification.getCause()) {
+                case EXPIRED:
+                    LOG.debug("removing delegation from {}: client took" +
+                            " too long to reply", identity.getDn());
+                    break;
+                case SIZE:
+                    LOG.debug("removing delegation from {}: too many" +
+                            " on-going delegations", identity.getDn());
+                    break;
                 }
             };
 

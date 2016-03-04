@@ -45,13 +45,9 @@ public class CDCThreadFactory implements ThreadFactory
     @Override
     public Thread newThread(final Runnable r)
     {
-        return _factory.newThread(new Runnable() {
-                @Override
-                public void run()
-                {
-                    CDC.reset(_cellName, _domainName);
-                    r.run();
-                }
-            });
+        return _factory.newThread(() -> {
+            CDC.reset(_cellName, _domainName);
+            r.run();
+        });
     }
 }

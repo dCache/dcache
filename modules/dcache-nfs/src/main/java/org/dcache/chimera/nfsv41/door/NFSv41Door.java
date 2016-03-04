@@ -523,16 +523,11 @@ public class NFSv41Door extends AbstractCellComponent implements
              * when open state id is disposed
              */
             nfsState.addDisposeListener(
-                    // use java7 for 2.10 backport
-                    new StateDisposeListener() {
-
-                        @Override
-                        public void notifyDisposed(NFS4State state) {
-                            try {
-                                client.releaseState(layoutStateId.stateid());
-                            }catch(ChimeraNFSException e) {
-                                _log.warn("can't release layout stateid.: {}", e.getMessage() );
-                            }
+                    state -> {
+                        try {
+                            client.releaseState(layoutStateId.stateid());
+                        }catch(ChimeraNFSException e) {
+                            _log.warn("can't release layout stateid.: {}", e.getMessage() );
                         }
                     }
             );

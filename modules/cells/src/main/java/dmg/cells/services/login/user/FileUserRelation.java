@@ -83,16 +83,7 @@ public class FileUserRelation implements TopDownUserRelationable {
     }
     @Override
     public Enumeration<String> getContainers(){
-       return new ListEnumeration(
-            _dbDir.list(
-                  new FilenameFilter(){
-                        @Override
-                        public boolean accept( File dir , String name ){
-                            return ! name.startsWith(".") ;
-                        }
-                  }
-            )
-       ) ;
+       return new ListEnumeration(_dbDir.list((dir, name) -> ! name.startsWith(".")));
     }
     @Override
     public synchronized Enumeration<String> getElementsOf( String container )

@@ -69,18 +69,11 @@ class CellGlue
         _domainAddress = new CellAddressCore("*", _cellDomainName);
         _masterThreadGroup = new ThreadGroup("Master-Thread-Group");
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
-        ThreadFactory killerThreadFactory = new ThreadFactory()
-        {
-            @Override
-            public Thread newThread(Runnable r)
-            {
-                return new Thread(_killerThreadGroup, r);
-            }
-        };
+        ThreadFactory killerThreadFactory = r -> new Thread(_killerThreadGroup, r);
         _killerExecutor = Executors.newCachedThreadPool(killerThreadFactory);
         _emergencyKillerExecutor = new ThreadPoolExecutor(1, 1,
                                                           0L, TimeUnit.MILLISECONDS,
-                                                          new LinkedBlockingQueue<Runnable>(),
+                                                          new LinkedBlockingQueue<>(),
                                                           killerThreadFactory);
         _emergencyKillerExecutor.prestartCoreThread();
     }

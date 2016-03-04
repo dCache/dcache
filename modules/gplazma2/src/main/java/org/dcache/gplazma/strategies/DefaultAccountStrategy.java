@@ -54,29 +54,22 @@ public class DefaultAccountStrategy implements AccountStrategy
             final Set<Principal> authorizedPrincipals)
             throws AuthenticationException
     {
-        pamStyleAccountStrategy.callPlugins(new PluginCaller<GPlazmaAccountPlugin>()
-        {
-            @Override
-            public void call(GPlazmaPluginService<GPlazmaAccountPlugin> pe)
-                    throws AuthenticationException
-            {
-                monitor.accountPluginBegins(pe.getName(), pe.getControl(),
-                        authorizedPrincipals);
+        pamStyleAccountStrategy.callPlugins(service -> {
+            monitor.accountPluginBegins(service.getName(), service.getControl(), authorizedPrincipals);
 
-                GPlazmaAccountPlugin plugin = pe.getPlugin();
+            GPlazmaAccountPlugin plugin = service.getPlugin();
 
-                Result result = Result.FAIL;
-                String error = null;
-                try {
-                    plugin.account(authorizedPrincipals);
-                    result = Result.SUCCESS;
-                } catch(AuthenticationException e) {
-                    error = e.getMessage();
-                    throw e;
-                } finally {
-                    monitor.accountPluginEnds(pe.getName(), pe.getControl(),
-                        result, error, authorizedPrincipals);
-                }
+            Result result = Result.FAIL;
+            String error = null;
+            try {
+                plugin.account(authorizedPrincipals);
+                result = Result.SUCCESS;
+            } catch(AuthenticationException e) {
+                error = e.getMessage();
+                throw e;
+            } finally {
+                monitor.accountPluginEnds(service.getName(), service.getControl(),
+                    result, error, authorizedPrincipals);
             }
         });
     }

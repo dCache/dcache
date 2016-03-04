@@ -233,13 +233,7 @@ public class NFSv4MoverHandler {
                 .withSameThreadIoStrategy();
 
         if (withGss) {
-            RpcLoginService rpcLoginService = new RpcLoginService() {
-
-                @Override
-                public Subject login(Principal principal) {
-                    return Subjects.NOBODY;
-                }
-            };
+            RpcLoginService rpcLoginService = principal -> Subjects.NOBODY;
             GssSessionManager gss = new GssSessionManager(rpcLoginService);
             oncRpcSvcBuilder.withGssSessionManager(gss);
         }

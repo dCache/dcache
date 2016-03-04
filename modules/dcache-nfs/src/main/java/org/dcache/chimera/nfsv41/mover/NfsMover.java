@@ -91,12 +91,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         open();
         _completionHandler = completionHandler;
         _nfsIO.add(this);
-        return new Cancellable() {
-            @Override
-            public void cancel() {
-                disable(null);
-            }
-        };
+        return () -> disable(null);
 
     }
 

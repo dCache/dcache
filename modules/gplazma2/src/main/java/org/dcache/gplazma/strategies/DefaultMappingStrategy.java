@@ -53,28 +53,22 @@ public class DefaultMappingStrategy implements MappingStrategy
             final Set<Principal> principals)
             throws AuthenticationException
     {
-        pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>()
-        {
-            @Override
-            public void call(GPlazmaPluginService<GPlazmaMappingPlugin> pe)
-                    throws AuthenticationException
-            {
-                monitor.mapPluginBegins(pe.getName(), pe.getControl(), principals);
+        pamStyleMappingStrategy.callPlugins(service -> {
+            monitor.mapPluginBegins(service.getName(), service.getControl(), principals);
 
-                GPlazmaMappingPlugin plugin = pe.getPlugin();
+            GPlazmaMappingPlugin plugin = service.getPlugin();
 
-                Result result = Result.FAIL;
-                String error = null;
-                try {
-                    plugin.map(principals);
-                    result = Result.SUCCESS;
-                } catch(AuthenticationException e) {
-                    error = e.getMessage();
-                    throw e;
-                } finally {
-                    monitor.mapPluginEnds(pe.getName(), pe.getControl(), result,
-                            error, principals);
-                }
+            Result result = Result.FAIL;
+            String error = null;
+            try {
+                plugin.map(principals);
+                result = Result.SUCCESS;
+            } catch(AuthenticationException e) {
+                error = e.getMessage();
+                throw e;
+            } finally {
+                monitor.mapPluginEnds(service.getName(), service.getControl(), result,
+                        error, principals);
             }
         });
     }

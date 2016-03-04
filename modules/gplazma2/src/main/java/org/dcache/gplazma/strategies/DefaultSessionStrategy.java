@@ -59,28 +59,22 @@ public class DefaultSessionStrategy implements SessionStrategy
             final Set<Principal> authorizedPrincipals,
             final Set<Object> attrib) throws AuthenticationException
     {
-        pamStyleSessionStrategy.callPlugins( new PluginCaller<GPlazmaSessionPlugin>()
-        {
-            @Override
-            public void call(GPlazmaPluginService<GPlazmaSessionPlugin> pe)
-                    throws AuthenticationException
-            {
-                monitor.sessionPluginBegins(pe.getName(), pe.getControl(),
-                        authorizedPrincipals, attrib);
+        pamStyleSessionStrategy.callPlugins(service -> {
+            monitor.sessionPluginBegins(service.getName(), service.getControl(),
+                    authorizedPrincipals, attrib);
 
-                GPlazmaSessionPlugin plugin = pe.getPlugin();
-                String error = null;
-                Result result = Result.FAIL;
-                try {
-                    plugin.session(authorizedPrincipals, attrib);
-                    result = Result.SUCCESS;
-                } catch(AuthenticationException e) {
-                    error = e.getMessage();
-                    throw e;
-                } finally {
-                    monitor.sessionPluginEnds(pe.getName(), pe.getControl(),
-                            result, error, authorizedPrincipals, attrib);
-                }
+            GPlazmaSessionPlugin plugin = service.getPlugin();
+            String error = null;
+            Result result = Result.FAIL;
+            try {
+                plugin.session(authorizedPrincipals, attrib);
+                result = Result.SUCCESS;
+            } catch(AuthenticationException e) {
+                error = e.getMessage();
+                throw e;
+            } finally {
+                monitor.sessionPluginEnds(service.getName(), service.getControl(),
+                        result, error, authorizedPrincipals, attrib);
             }
         });
     }

@@ -674,13 +674,10 @@ public class XrootdDoor
          */
         public synchronized void resetTimeout()
             throws RejectedExecutionException {
-            Runnable target = new Runnable() {
-                @Override
-                public void run() {
-                    if (_requestHandlers.remove(_uuid)
-                            == DirlistRequestHandler.this) {
-                        _callback.timeout(null);
-                    }
+            Runnable target = () -> {
+                if (_requestHandlers.remove(_uuid)
+                        == DirlistRequestHandler.this) {
+                    _callback.timeout(null);
                 }
             };
 

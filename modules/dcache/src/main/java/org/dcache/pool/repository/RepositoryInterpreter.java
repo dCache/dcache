@@ -348,36 +348,32 @@ public class RepositoryInterpreter
     public String ac_rep_rmclass_$_1(Args args)
     {
         final String storageClassName = args.argv(0);
-        new Thread(new Runnable() {
-                @Override
-                public void run()
-                {
-                    int cnt = 0;
-                    for (PnfsId id: _repository) {
-                        try {
-                            CacheEntry entry = _repository.getEntry(id);
-                            FileAttributes fileAttributes = entry.getFileAttributes();
-                            if (fileAttributes.isDefined(FileAttribute.STORAGECLASS)) {
-                                String sc = fileAttributes.getStorageClass();
-                                if (sc.equals(storageClassName)) {
-                                    _repository.setState(id, EntryState.REMOVED);
-                                    cnt++;
-                                }
-                            }
-                        } catch (FileNotInCacheException ignored) {
-                            // File was deleted - no problem
-                        } catch (IllegalTransitionException ignored) {
-                            // File is transient - no problem
-                        } catch (CacheException e) {
-                            _log.error("Failed to delete {}: {}", id, e.getMessage());
-                        } catch (InterruptedException e) {
-                            _log.warn("File removal was interrupted.");
-                            break;
+        new Thread(() -> {
+            int cnt = 0;
+            for (PnfsId id: _repository) {
+                try {
+                    CacheEntry entry = _repository.getEntry(id);
+                    FileAttributes fileAttributes = entry.getFileAttributes();
+                    if (fileAttributes.isDefined(FileAttribute.STORAGECLASS)) {
+                        String sc = fileAttributes.getStorageClass();
+                        if (sc.equals(storageClassName)) {
+                            _repository.setState(id, EntryState.REMOVED);
+                            cnt++;
                         }
                     }
-                    _log.info("'rep rmclass {}' removed {} files.", storageClassName, cnt);
+                } catch (FileNotInCacheException ignored) {
+                    // File was deleted - no problem
+                } catch (IllegalTransitionException ignored) {
+                    // File is transient - no problem
+                } catch (CacheException e) {
+                    _log.error("Failed to delete {}: {}", id, e.getMessage());
+                } catch (InterruptedException e) {
+                    _log.warn("File removal was interrupted.");
+                    break;
                 }
-            }, "rmclass").start();
+            }
+            _log.info("'rep rmclass {}' removed {} files.", storageClassName, cnt);
+        }, "rmclass").start();
         return "Backgrounded";
     }
 

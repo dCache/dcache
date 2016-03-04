@@ -88,12 +88,7 @@ public final class ThumbnailPanelProvider extends
 
     private static final long serialVersionUID = 9211014459588122003L;
 
-    private static final FilenameFilter filter = new FilenameFilter() {
-        @Override
-        public boolean accept(File arg0, String arg1) {
-            return arg1.contains(RrdSettings.FILE_SUFFIX);
-        }
-    };
+    private static final FilenameFilter filter = (dir, name) -> name.contains(RrdSettings.FILE_SUFFIX);
 
     private static final int MAX_COLS = 8;
 
@@ -150,23 +145,20 @@ public final class ThumbnailPanelProvider extends
 
     @Override
     protected Comparator<ThumbnailPanelBean> getComparator() {
-        return new Comparator<ThumbnailPanelBean>() {
-            @Override
-            public int compare(ThumbnailPanelBean p0, ThumbnailPanelBean p1) {
-                SortParam sort = getSort();
-                int dir;
-                if (sort == null) {
-                    dir = 1;
-                } else {
-                    dir = sort.isAscending() ? 1 : -1;
-                }
-                Comparable c0 = p0.getName();
-                Comparable c1 = p1.getName();
-                if (c0 == null) {
-                    return dir;
-                }
-                return dir * c0.compareTo(c1);
+        return (p0, p1) -> {
+            SortParam sort = getSort();
+            int dir1;
+            if (sort == null) {
+                dir1 = 1;
+            } else {
+                dir1 = sort.isAscending() ? 1 : -1;
             }
+            Comparable c0 = p0.getName();
+            Comparable c1 = p1.getName();
+            if (c0 == null) {
+                return dir1;
+            }
+            return dir1 * c0.compareTo(c1);
         };
     }
 

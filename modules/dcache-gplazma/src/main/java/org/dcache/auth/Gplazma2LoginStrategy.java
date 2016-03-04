@@ -10,6 +10,7 @@ import java.io.File;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -84,14 +85,7 @@ public class Gplazma2LoginStrategy
 
     public Properties getEnvironmentAsProperties()
     {
-        Replaceable replaceable = new Replaceable() {
-                @Override
-                public String getReplacement(String name)
-                {
-                    Object value =  _environment.get(name);
-                    return (value == null) ? null : value.toString();
-                }
-            };
+        Replaceable replaceable = name -> Objects.toString(_environment.get(name), null);
 
         Properties properties = new Properties();
         for (Map.Entry<String,Object> e: _environment.entrySet()) {

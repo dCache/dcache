@@ -87,61 +87,56 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     @Override
     public void execute(final Mover<?> mover, final CompletionHandler<Void, Void> completionHandler)
     {
-        _executor.execute(new FireAndForgetTask(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                long fileSize = 0;
+        _executor.execute(new FireAndForgetTask(() -> {
+            long fileSize = 0;
+            try {
+                ReplicaDescriptor handle = mover.getIoHandle();
                 try {
-                    ReplicaDescriptor handle = mover.getIoHandle();
-                    try {
-                        fileSize = handle.getFile().length();
-                        if (mover.getIoMode() == IoMode.WRITE) {
-                            handle.addChecksums(mover.getExpectedChecksums());
-                            _checksumModule.enforcePostTransferPolicy(handle, mover.getActualChecksums());
-                        }
-                        handle.commit();
-                    } finally {
-                        handle.close();
+                    fileSize = handle.getFile().length();
+                    if (mover.getIoMode() == IoMode.WRITE) {
+                        handle.addChecksums(mover.getExpectedChecksums());
+                        _checksumModule.enforcePostTransferPolicy(handle, mover.getActualChecksums());
                     }
-                    completionHandler.completed(null, null);
-                } catch (InterruptedIOException | InterruptedException e) {
-                    LOGGER.warn("Transfer was forcefully killed during post-processing");
-                    mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
-                            "Transfer was forcefully killed");
-                    completionHandler.failed(e, null);
-                } catch (DiskErrorCacheException e) {
-                    LOGGER.warn("Transfer failed in post-processing due to disk error: {}", e.toString());
-                    _faultListener.faultOccurred(
-                            new FaultEvent("repository", FaultAction.DISABLED, e.getMessage(), e));
-                    mover.setTransferStatus(e.getRc(), "Disk error: " + e.getMessage());
-                    completionHandler.failed(e, null);
-                } catch (CacheException e) {
-                    LOGGER.warn("Transfer failed in post-processing: {}", e.getMessage());
-                    mover.setTransferStatus(e.getRc(), "Post-processing failed: " + e.getMessage());
-                    completionHandler.failed(e, null);
-                } catch (IOException e) {
-                    LOGGER.warn("Transfer failed in post-processing: {}", e.toString());
-                    mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                            "Transfer failed in post-processing: " + e.getMessage());
-                    completionHandler.failed(e, null);
-                } catch (RuntimeException e) {
-                    LOGGER.error(
-                            "Transfer failed in post-processing. Please report this bug to support@dcache.org.", e);
-                    mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                            "Transfer failed due to unexpected exception: " + e.getMessage());
-                    completionHandler.failed(e, null);
-                } catch (Throwable e) {
-                    Thread t = Thread.currentThread();
-                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                    mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                            "Transfer failed due to unexpected exception: " + e.getMessage());
-                    completionHandler.failed(e, null);
+                    handle.commit();
+                } finally {
+                    handle.close();
                 }
-                sendBillingMessage(mover, fileSize);
-                sendFinished(mover);
+                completionHandler.completed(null, null);
+            } catch (InterruptedIOException | InterruptedException e) {
+                LOGGER.warn("Transfer was forcefully killed during post-processing");
+                mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
+                        "Transfer was forcefully killed");
+                completionHandler.failed(e, null);
+            } catch (DiskErrorCacheException e) {
+                LOGGER.warn("Transfer failed in post-processing due to disk error: {}", e.toString());
+                _faultListener.faultOccurred(
+                        new FaultEvent("repository", FaultAction.DISABLED, e.getMessage(), e));
+                mover.setTransferStatus(e.getRc(), "Disk error: " + e.getMessage());
+                completionHandler.failed(e, null);
+            } catch (CacheException e) {
+                LOGGER.warn("Transfer failed in post-processing: {}", e.getMessage());
+                mover.setTransferStatus(e.getRc(), "Post-processing failed: " + e.getMessage());
+                completionHandler.failed(e, null);
+            } catch (IOException e) {
+                LOGGER.warn("Transfer failed in post-processing: {}", e.toString());
+                mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                        "Transfer failed in post-processing: " + e.getMessage());
+                completionHandler.failed(e, null);
+            } catch (RuntimeException e) {
+                LOGGER.error(
+                        "Transfer failed in post-processing. Please report this bug to support@dcache.org.", e);
+                mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                        "Transfer failed due to unexpected exception: " + e.getMessage());
+                completionHandler.failed(e, null);
+            } catch (Throwable e) {
+                Thread t = Thread.currentThread();
+                t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                        "Transfer failed due to unexpected exception: " + e.getMessage());
+                completionHandler.failed(e, null);
             }
+            sendBillingMessage(mover, fileSize);
+            sendFinished(mover);
         }));
     }
 

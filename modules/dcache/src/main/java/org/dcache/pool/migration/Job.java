@@ -126,14 +126,10 @@ public class Job
         _pinPrefix = context.getPinManagerStub().getDestinationPath().getDestinationAddress().getCellName();
 
         _refreshTask =
-            executor.scheduleWithFixedDelay(new FireAndForgetTask(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        _definition.sourceList.refresh();
-                        _definition.poolList.refresh();
-                    }
-                }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
+            executor.scheduleWithFixedDelay(new FireAndForgetTask(() -> {
+                _definition.sourceList.refresh();
+                _definition.poolList.refresh();
+            }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
 
         executor.submit(new FireAndForgetTask(new Runnable() {
                 @Override
@@ -420,44 +416,36 @@ public class Job
                     break;
 
                 case SLEEPING:
-                    _context.getExecutor().schedule(new FireAndForgetTask(new Runnable() {
-                            @Override
-                            public void run()
-                            {
-                                _lock.lock();
-                                try {
-                                    if (getState() == State.SLEEPING) {
-                                        setState(State.RUNNING);
-                                    }
-                                } finally {
-                                    _lock.unlock();
-                                }
+                    _context.getExecutor().schedule(new FireAndForgetTask(() -> {
+                        _lock.lock();
+                        try {
+                            if (getState() == State.SLEEPING) {
+                                setState(State.RUNNING);
                             }
-                        }), 10, TimeUnit.SECONDS);
+                        } finally {
+                            _lock.unlock();
+                        }
+                    }), 10, TimeUnit.SECONDS);
                     break;
 
                 case PAUSED:
-                    _context.getExecutor().schedule(new FireAndForgetTask(new Runnable() {
-                            @Override
-                            public void run()
-                            {
-                                _lock.lock();
-                                try {
-                                    if (getState() == State.PAUSED) {
-                                        Expression stopWhen = _definition.stopWhen;
-                                        if (stopWhen != null && evaluateLifetimePredicate(stopWhen)) {
-                                            stop();
-                                        }
-                                        Expression pauseWhen = _definition.pauseWhen;
-                                        if (!evaluateLifetimePredicate(pauseWhen)) {
-                                            setState(State.RUNNING);
-                                        }
-                                    }
-                                } finally {
-                                    _lock.unlock();
+                    _context.getExecutor().schedule(new FireAndForgetTask(() -> {
+                        _lock.lock();
+                        try {
+                            if (getState() == State.PAUSED) {
+                                Expression stopWhen = _definition.stopWhen;
+                                if (stopWhen != null && evaluateLifetimePredicate(stopWhen)) {
+                                    stop();
+                                }
+                                Expression pauseWhen = _definition.pauseWhen;
+                                if (!evaluateLifetimePredicate(pauseWhen)) {
+                                    setState(State.RUNNING);
                                 }
                             }
-                        }), 10, TimeUnit.SECONDS);
+                        } finally {
+                            _lock.unlock();
+                        }
+                    }), 10, TimeUnit.SECONDS);
                     break;
 
                 case FINISHED:

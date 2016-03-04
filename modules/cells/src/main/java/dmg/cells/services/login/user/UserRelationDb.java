@@ -97,13 +97,7 @@ public class UserRelationDb {
     }
     private void _loadElements()
     {
-        String [] elements = _dbDir.list(
-                     new FilenameFilter(){
-                        @Override
-                        public boolean accept( File dir , String name ){
-                           return ! name.startsWith(".") ;
-                        }
-                     } ) ;
+        String [] elements = _dbDir.list((dir, name) -> ! name.startsWith("."));
         Hashtable<String,ElementItem > hash = new Hashtable<>() ;
         for (String element : elements) {
             File file = new File(_dbDir, element);
