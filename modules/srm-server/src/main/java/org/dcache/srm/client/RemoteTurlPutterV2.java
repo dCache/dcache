@@ -204,8 +204,8 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                                     credential.getDelegatedCredential(),
                                     retry_timout,
                                     retry_num,
-                                    true,
-                                    true,
+                                    false,
+                                    false,
                                     caCertificatePath,
                                     transport);
 
@@ -462,8 +462,8 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                                             credential.getDelegatedCredential(),
                                             retry_timeout,
                                             retry_num,
-                                            true,
-                                            true,
+                                            false,
+                                            false,
                                             caCertificatePath,
                                             transport);
         String requestToken = requestTokenString;
