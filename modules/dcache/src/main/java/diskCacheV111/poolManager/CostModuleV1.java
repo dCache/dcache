@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -674,5 +675,10 @@ public class CostModuleV1
         in.defaultReadObject();
         _handlers = new CellMessageDispatcher("messageToForward");
         _handlers.addMessageListener(this);
+    }
+
+    private synchronized void writeObject(ObjectOutputStream stream) throws IOException
+    {
+        stream.defaultWriteObject();
     }
 }
