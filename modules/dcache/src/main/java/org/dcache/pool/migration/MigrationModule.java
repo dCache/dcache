@@ -681,7 +681,7 @@ public class MigrationModule
                 ParsingResult<Expression> result =
                         new ReportingParseRunner<Expression>(parser.Top()).run(s);
 
-                if (result.hasErrors()) {
+                if (!result.isSuccess()) {
                     throw new IllegalArgumentException("Invalid expression: " +
                             printParseErrors(result));
                 }

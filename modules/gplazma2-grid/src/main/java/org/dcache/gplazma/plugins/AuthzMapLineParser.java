@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,7 +178,7 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
         @Override
         public String toString()
         {
-            return Objects.toStringHelper(this)
+            return MoreObjects.toStringHelper(this)
                     .add("username", _username)
                     .add("access", _access)
                     .add("uid", _uid)

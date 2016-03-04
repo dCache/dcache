@@ -102,6 +102,7 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.transform;
+import static com.google.common.util.concurrent.Futures.transformAsync;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -743,14 +744,14 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         public ListenableFuture<Void> activate()
         {
             LOGGER.debug("Activating flush of {}.", getFileAttributes().getPnfsId());
-            return register(Futures.transform(super.activate(), new PreFlushFunction(), executor));
+            return register(transformAsync(super.activate(), new PreFlushFunction(), executor));
         }
 
         @Override
         public ListenableFuture<String> activateWithPath()
         {
             LOGGER.debug("Activating flush of {}.", getFileAttributes().getPnfsId());
-            return register(Futures.transform(super.activate(), new PreFlushWithPathFunction(), executor));
+            return register(transformAsync(super.activate(), new PreFlushWithPathFunction(), executor));
         }
 
         @Override

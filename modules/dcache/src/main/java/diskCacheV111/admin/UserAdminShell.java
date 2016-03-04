@@ -320,11 +320,11 @@ public class UserAdminShell
                                 .map(cell -> cell + "@" + domain)
                                 .collect(toList()));
         /* Log and ignore any errors. */
-        return withFallback(future,
-                            t -> {
-                                _log.debug("Failed to query the System cell of domain {}: {}", domain, t);
-                                return immediateFuture(emptyList());
-                            });
+        return catchingAsync(future, Throwable.class,
+                             t -> {
+                                 _log.debug("Failed to query the System cell of domain {}: {}", domain, t);
+                                 return immediateFuture(emptyList());
+                             });
     }
 
     /**
@@ -368,7 +368,7 @@ public class UserAdminShell
         ListenableFuture<List<String>> poolGroups = getPoolGroups();
 
         /* Query the pools of each pool group so we have a list of list of pools. */
-        ListenableFuture<List<Stream<String>>> pools = transform(
+        ListenableFuture<List<Stream<String>>> pools = transformAsync(
                 poolGroups,
                 (List<String> groups) ->
                         allAsList(groups.stream().filter(predicate).map(this::getPools).collect(toList())));

@@ -1,6 +1,7 @@
 package org.dcache.util.expression;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import org.parboiled.trees.ImmutableTreeNode;
 
 import java.util.Arrays;
@@ -19,7 +20,7 @@ public class Expression extends ImmutableTreeNode<Expression>
     private Type _type = UNKNOWN;
 
     public Expression(double number) {
-        super();
+        super(ImmutableList.of());
         _token = NUMBER_LITERAL;
         _number = number;
         _string = null;
@@ -27,7 +28,7 @@ public class Expression extends ImmutableTreeNode<Expression>
 
 
     public Expression(Token token, String string) {
-        super();
+        super(ImmutableList.of());
         _token = token;
         _number = 0.0;
         _string = string;

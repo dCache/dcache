@@ -19,7 +19,6 @@ package org.dcache.util;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
-import com.google.common.util.concurrent.FutureFallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,9 +111,9 @@ public class TransferCollector
         ListenableFuture<Collection<LoginManagerChildrenInfo>> loginManagerInfo =
                 collectLoginManagerInfo(getLoginManagers(loginBrokerInfo));
         ListenableFuture<Collection<IoDoorInfo>> doorInfo =
-                transform(loginManagerInfo,
+                transformAsync(loginManagerInfo,
                           (Collection<LoginManagerChildrenInfo> l) -> collectDoorInfo(getDoors(l)));
-        return transform(doorInfo,
+        return transformAsync(doorInfo,
                          (Collection<IoDoorInfo> l) ->
                                  transform(collectMovers(getPools(l)),
                                            (Collection<IoJobInfo> movers) -> getTransfers(l, movers)));
@@ -193,18 +192,13 @@ public class TransferCollector
     {
         List<ListenableFuture<T>> futures =
                 cells.stream()
-                        .map(cell -> withFallback(stub.send(cell, query, returnType),
-                                                  logAndIgnore(errorMsg, defaultValue)))
+                        .map(cell -> catchingAsync(stub.send(cell, query, returnType), Throwable.class,
+                                                   t -> {
+                                                       LOGGER.debug(errorMsg, t.toString());
+                                                       return immediateFuture(defaultValue);
+                                                   }))
                         .collect(toList());
         return allAsList(futures);
-    }
-
-    private static <T> FutureFallback<T> logAndIgnore(String msg, T defaultValue)
-    {
-        return t -> {
-            LOGGER.debug(msg, t.toString());
-            return immediateFuture(defaultValue);
-        };
     }
 
     /**

@@ -1,6 +1,6 @@
 package dmg.cells.services ;
 
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,7 +129,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    }
 
    @Override
-   @SuppressWarnings(
+   @SuppressFBWarnings(
        value="DM_GC",
        justification="Although bad practice, the GC call is part of the design of the cell"
    )

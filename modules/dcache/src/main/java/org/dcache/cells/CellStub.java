@@ -8,8 +8,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
 
-import javax.annotation.Nullable;
-
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -497,31 +495,26 @@ public class CellStub
     public static <T extends Message> void addCallback(
             final ListenableFuture<T> future, final MessageCallback<? super T> callback, Executor executor)
     {
-        future.addListener(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    T reply = getUninterruptibly(future);
-                    callback.setReply(reply);
-                    if (reply.getReturnCode() != 0) {
-                        callback.failure(reply.getReturnCode(), reply.getErrorObject());
-                    } else {
-                        callback.success();
-                    }
-                } catch (ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof TimeoutCacheException) {
-                        callback.timeout(cause.getMessage());
-                    } else if (cause instanceof CacheException) {
-                        CacheException cacheException = (CacheException) cause;
-                        callback.failure(cacheException.getRc(), cacheException.getMessage());
-                    } else if (cause instanceof NoRouteToCellException) {
-                        callback.noroute(((NoRouteToCellException) cause).getDestinationPath());
-                    } else {
-                        callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause);
-                    }
+        future.addListener(() -> {
+            try {
+                T reply = getUninterruptibly(future);
+                callback.setReply(reply);
+                if (reply.getReturnCode() != 0) {
+                    callback.failure(reply.getReturnCode(), reply.getErrorObject());
+                } else {
+                    callback.success();
+                }
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof TimeoutCacheException) {
+                    callback.timeout(cause.getMessage());
+                } else if (cause instanceof CacheException) {
+                    CacheException cacheException = (CacheException) cause;
+                    callback.failure(cacheException.getRc(), cacheException.getMessage());
+                } else if (cause instanceof NoRouteToCellException) {
+                    callback.noroute(((NoRouteToCellException) cause).getDestinationPath());
+                } else {
+                    callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause);
                 }
             }
         }, executor);
@@ -560,17 +553,13 @@ public class CellStub
     public static <T extends Message, V> ListenableFuture<V> transform(
             ListenableFuture<T> future, Function<T, V> f)
     {
-        return Futures.transform(future,
-                                 new AsyncFunction<T, V>() {
-                                     @Override
-                                     public ListenableFuture<V> apply(T msg) throws Exception
-                                     {
-                                         if (msg.getReturnCode() != 0) {
-                                             throw CacheExceptionFactory.exceptionOf(msg);
-                                         }
-                                         return Futures.immediateFuture(f.apply(msg));
-                                     }
-                                 });
+        return Futures.transformAsync(future,
+                                      msg -> {
+                                          if (msg.getReturnCode() != 0) {
+                                              throw CacheExceptionFactory.exceptionOf(msg);
+                                          }
+                                          return Futures.immediateFuture(f.apply(msg));
+                                      });
     }
 
     /**
@@ -587,17 +576,13 @@ public class CellStub
     public static <T extends Message, V> ListenableFuture<V> transform(
             ListenableFuture<T> future, AsyncFunction<T, V> f)
     {
-        return Futures.transform(future,
-                                 new AsyncFunction<T, V>() {
-                                     @Override
-                                     public ListenableFuture<V> apply(T msg) throws Exception
-                                     {
-                                         if (msg.getReturnCode() != 0) {
-                                             throw CacheExceptionFactory.exceptionOf(msg);
-                                         }
-                                         return f.apply(msg);
-                                     }
-                                 });
+        return Futures.transformAsync(future,
+                                      msg -> {
+                                          if (msg.getReturnCode() != 0) {
+                                              throw CacheExceptionFactory.exceptionOf(msg);
+                                          }
+                                          return f.apply(msg);
+                                      });
     }
 
     /**

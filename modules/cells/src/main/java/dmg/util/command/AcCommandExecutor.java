@@ -1,6 +1,6 @@
 package dmg.util.command;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 
 import java.io.Serializable;
@@ -12,6 +12,7 @@ import dmg.util.CommandException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
+
 import org.dcache.util.Args;
 import org.dcache.util.cli.CommandExecutor;
 
@@ -175,7 +176,7 @@ class AcCommandExecutor implements CommandExecutor
     @Override
     public String toString()
     {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .addValue(_method)
                 .addValue(_fullHelp)
                 .addValue(_helpHint)

@@ -1,12 +1,9 @@
 package org.dcache.util;
 
-import static com.google.common.base.Preconditions.*;
-
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.FutureFallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
@@ -44,7 +41,6 @@ import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -72,6 +68,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
+import static com.google.common.base.Preconditions.*;
 import static com.google.common.util.concurrent.Futures.*;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.MathUtils.addWithInfinity;
@@ -712,7 +709,7 @@ public class Transfer implements Comparable<Transfer>
      * @throws FileIsNewCacheException        when attempting to download an incomplete file
      * @throws CacheException                 if reading the entry failed
      * @throws InterruptedException           if the thread is interrupted
-     * @oaram allowWrite whether the file may be opened for writing
+     * @param allowWrite whether the file may be opened for writing
      */
     public final void readNameSpaceEntry(boolean allowWrite)
             throws CacheException, InterruptedException
@@ -726,7 +723,7 @@ public class Transfer implements Comparable<Transfer>
      * <p>
      * Changes the I/O mode from write to read if the file is not new.
      *
-     * @oaram allowWrite whether the file may be opened for writing
+     * @param allowWrite whether the file may be opened for writing
      */
     public ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite)
     {
@@ -808,7 +805,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Returns the length of the file to be transferred.
      *
-     * @throw IllegalStateException if the length isn't known
+     * @throws IllegalStateException if the length isn't known
      */
     public synchronized long getLength()
     {
@@ -1023,8 +1020,7 @@ public class Transfer implements Comparable<Transfer>
         /* As always, PoolIoFileMessage has to be sent via the
          * PoolManager (which could be the SpaceManager).
          */
-        CellPath poolPath =
-                (CellPath) _poolManager.getDestinationPath().clone();
+        CellPath poolPath = _poolManager.getDestinationPath().clone();
         poolPath.add(getPoolAddress());
 
         ListenableFuture<PoolIoFileMessage> reply = _pool.send(poolPath, message, timeout);
@@ -1202,47 +1198,44 @@ public class Transfer implements Comparable<Transfer>
         AsyncFunction<Void, Void> readNameSpaceEntry =
                 ignored -> readNameSpaceEntryAsync(false, getTimeoutFor(_pnfs, deadLine));
 
-        FutureFallback<Void> retry =
-                new FutureFallback<Void>()
+        AsyncFunction<CacheException,Void> retry =
+                new AsyncFunction<CacheException, Void>()
                 {
                     private int count;
 
                     private long start = System.currentTimeMillis();
 
                     @Override
-                    public ListenableFuture<Void> create(Throwable t) throws Exception
+                    public ListenableFuture<Void> apply (CacheException t) throws Exception
                     {
                         count++;
 
-                        if (t instanceof TimeoutCacheException) {
+                        switch (t.getRc()) {
+                        case CacheException.TIMEOUT:
                             if (getPool() != null && isWrite()) {
                                 return immediateFailedFuture(t);
                             }
-                        } else if (t instanceof CacheException) {
-                            switch (((CacheException) t).getRc()) {
-                            case CacheException.OUT_OF_DATE:
-                            case CacheException.POOL_DISABLED:
-                            case CacheException.FILE_NOT_IN_REPOSITORY:
-                                _log.info("Retrying pool selection: {}", t.getMessage());
-                                return retryWhen(immediateFuture(null));
-                            case CacheException.FILE_IN_CACHE:
-                            case CacheException.INVALID_ARGS:
-                                return immediateFailedFuture(t);
-                            case CacheException.NO_POOL_CONFIGURED:
-                                _log.error(t.getMessage());
-                                return immediateFailedFuture(t);
-                            case CacheException.NO_POOL_ONLINE:
-                                _log.warn(t.getMessage());
-                                break;
-                            case CacheException.PERMISSION_DENIED:
-                                _log.info("request rejected due to permission settings: {}", t.getMessage());
-                                return immediateFailedFuture(t);
-                            default:
-                                _log.error(t.getMessage());
-                                break;
-                            }
-                        } else {
+                            break;
+                        case CacheException.OUT_OF_DATE:
+                        case CacheException.POOL_DISABLED:
+                        case CacheException.FILE_NOT_IN_REPOSITORY:
+                            _log.info("Retrying pool selection: {}", t.getMessage());
+                            return retryWhen(immediateFuture(null));
+                        case CacheException.FILE_IN_CACHE:
+                        case CacheException.INVALID_ARGS:
                             return immediateFailedFuture(t);
+                        case CacheException.NO_POOL_CONFIGURED:
+                            _log.error(t.getMessage());
+                            return immediateFailedFuture(t);
+                        case CacheException.NO_POOL_ONLINE:
+                            _log.warn(t.getMessage());
+                            break;
+                        case CacheException.PERMISSION_DENIED:
+                            _log.info("request rejected due to permission settings: {}", t.getMessage());
+                            return immediateFailedFuture(t);
+                        default:
+                            _log.error(t.getMessage());
+                            break;
                         }
 
                         if (count >= policy.getRetryCount()) {
@@ -1269,15 +1262,15 @@ public class Transfer implements Comparable<Transfer>
                     public ListenableFuture<Void> retryWhen(ListenableFuture<Void> future)
                     {
                         if (!isWrite()) {
-                            future = transform(future, readNameSpaceEntry);
+                            future = transformAsync(future, readNameSpaceEntry);
                         }
                         start = System.currentTimeMillis();
-                        return withFallback(transform(transform(future, selectPool), startMover), this);
+                        return catchingAsync(transformAsync(transformAsync(future, selectPool), startMover), CacheException.class, this);
                     }
                 };
 
-        return withFallback(transform(
-                selectPoolAsync(getTimeoutFor(_poolManager, deadLine)), startMover), retry);
+        return catchingAsync(transformAsync(
+                selectPoolAsync(getTimeoutFor(_poolManager, deadLine)), startMover), CacheException.class, retry);
     }
 
     /**

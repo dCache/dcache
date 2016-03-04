@@ -32,7 +32,7 @@ public class AnnotatedCommandScanner implements CommandScanner
     @SuppressWarnings("unchecked")
     private Class<? extends Callable<? extends Serializable>> cast(Class<?> clazz)
     {
-        if (EXPECTED_TYPE.isAssignableFrom(clazz)) {
+        if (EXPECTED_TYPE.isSupertypeOf(clazz)) {
             return (Class<? extends Callable<? extends Serializable>>) clazz.asSubclass(Callable.class);
         }
         throw new RuntimeException("This is a bug. Please notify support@dcache.org (" + clazz +

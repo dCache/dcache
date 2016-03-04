@@ -1,6 +1,6 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
@@ -94,7 +94,7 @@ public class PoolLinkGroupInfo
     @Override
     public String toString()
     {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("groupName", _groupName)
                 .add("totalSpace", _totalSpaceInBytes)
                 .add("availableSpace", _availableSpaceInBytes)

@@ -1,6 +1,6 @@
 package dmg.cells.applets.login ;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 import java.io.Serializable;
 
@@ -41,7 +41,7 @@ public class DomainObjectFrame implements Serializable {
     @Override
     public String toString()
     {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("payload", _payload)
                 .add("destination", _destination)
                 .add("id", _id)

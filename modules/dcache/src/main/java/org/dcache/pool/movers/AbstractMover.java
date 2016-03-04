@@ -26,16 +26,16 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
-import java.io.InterruptedIOException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -45,7 +45,6 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.TransferService;
-import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
@@ -83,7 +82,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                          ChecksumModule checksumModule)
     {
         TypeToken<M> type = new TypeToken<M>(getClass()) {};
-        checkArgument(type.isAssignableFrom(getClass()));
+        checkArgument(type.isSupertypeOf(getClass()));
 
         _queue = message.getIoQueueName();
         _protocolInfo = (P) message.getProtocolInfo();
