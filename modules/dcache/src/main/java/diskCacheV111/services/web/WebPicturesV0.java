@@ -161,10 +161,9 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
    @Override
    public void run(){
-       Thread thread = Thread.currentThread() ;
        CellPath path = new CellPath("PoolManager");
        CellMessage msg = new CellMessage( path , "xrc ls");
-       while( ! thread.interrupted() ){
+       while( ! Thread.interrupted() ){
 
            try{
 

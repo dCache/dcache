@@ -264,14 +264,14 @@ public class StorageInfoQuotaObserver extends CellAdapter {
            */
           _log.info("Collector will be delayed");
 
-          try{ Thread.currentThread().sleep(10000L) ;}
+          try{ Thread.sleep(10000L) ;}
           catch(Exception ee){ return ; }
 
           _log.info("QueryPoolManager now starting");
 
           _nucleus.newThread( new QueryPoolManager() , "QueryPoolManager" ).start() ;
 
-          try{ Thread.currentThread().sleep(10000L) ;}
+          try{ Thread.sleep(10000L) ;}
           catch(Exception ee){ return ; }
 
           _log.info("QueryPools now starting");
@@ -287,7 +287,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
              queryLinks() ;
              queryPoolManager() ;
-             try{ Thread.currentThread().sleep(_poolManagerQueryInterval) ;}
+             try{ Thread.sleep(_poolManagerQueryInterval) ;}
              catch(Exception ee){
                  _log.warn("Query Pool Manager worker interrupted");
                  break ;
@@ -306,7 +306,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
              queryPools() ;
 
-             try{ Thread.currentThread().sleep(_poolQueryInterval) ;}
+             try{ Thread.sleep(_poolQueryInterval) ;}
              catch(Exception ee){
                  _log.warn("Query Pools worker interrupted");
                  break ;

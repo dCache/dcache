@@ -155,7 +155,7 @@ public class HsmFlushControlManager  extends CellAdapter {
 
           try{
              _log.info("QueueWatch : waiting awhile before starting");
-             Thread.currentThread().sleep(10000);
+              Thread.sleep(10000);
           }catch(InterruptedException ie ){
              _log.warn("QueueWatch: interrupted during initial wait. Stopping");
              return ;
@@ -169,7 +169,7 @@ public class HsmFlushControlManager  extends CellAdapter {
           next_sendGainControl   = now + _gainControlTicker ;
           next_timerEvent        = now + _timerInterval ;
 
-          while( ! Thread.currentThread().interrupted() ){
+          while( ! Thread.interrupted() ){
              synchronized( this ){
                 _status = "Sleeping" ;
                 try{
