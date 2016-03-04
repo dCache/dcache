@@ -347,15 +347,15 @@ public class PoolQueueTableWriter
         for (PoolCellQueryInfo info : itemSet) {
             try {
                 PoolCellInfo cellInfo = info.getPoolCellInfo();
-                if (info.isOk() && (cellInfo instanceof PoolCellInfo)) {
-                    PoolCellInfo pci = cellInfo;
-                    int [] [] status = decodePoolCostInfo(pci.getPoolCostInfo());
+                if (info.isOk()) {
+                    PoolCostInfo pci = cellInfo.getPoolCostInfo();
+                    int [] [] status = decodePoolCostInfo(pci);
 
                     if (status != null) {
-                        list.add(new PoolCostEntry(pci.getCellName(),
-                                pci.getDomainName(),
-                                status,
-                                pci.getPoolCostInfo().getExtendedMoverHash()));
+                        list.add(new PoolCostEntry(cellInfo.getCellName(),
+                                                   cellInfo.getDomainName(),
+                                                   status,
+                                                   pci.getExtendedMoverHash()));
                     }
                 }
             } catch (Exception e) {

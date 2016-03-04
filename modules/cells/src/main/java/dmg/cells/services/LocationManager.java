@@ -282,13 +282,25 @@ public class LocationManager extends CellAdapter {
             _setupMode = SETUP_NONE ;
             return ;
          }
-         String tmp = setupMode ;
 
-         _setupMode = tmp == null          ? SETUP_AUTO :
-                      tmp.equals("rw")     ? SETUP_WRITE :
-                      tmp.equals("rdonly") ? SETUP_RDONLY :
-                      tmp.equals("auto")   ? SETUP_AUTO :
-                      SETUP_ERROR ;
+          if (setupMode == null) {
+              _setupMode = SETUP_AUTO;
+          } else {
+              switch (setupMode) {
+              case "rw":
+                  _setupMode = SETUP_WRITE;
+                  break;
+              case "rdonly":
+                  _setupMode = SETUP_RDONLY;
+                  break;
+              case "auto":
+                  _setupMode = SETUP_AUTO;
+                  break;
+              default:
+                  _setupMode = SETUP_ERROR;
+                  break;
+              }
+          }
 
          if( _setupMode == SETUP_ERROR ) {
              throw new

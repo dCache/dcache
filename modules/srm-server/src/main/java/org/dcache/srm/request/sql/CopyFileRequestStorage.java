@@ -105,36 +105,35 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                           String query,
                                           Job job) throws SQLException {
         CopyFileRequest request = (CopyFileRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  query,
-                                  request.getNextJobId(),
-                                  request.getCreationTime(),
-                                  request.getLifetime(),
-                                  request.getState().getStateId(),
-                                  request.getErrorMessage(),
-                                  request.getSchedulerId(),
-                                  request.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  request.getLastStateTransitionTime(),
-                                  request.getRequestId(), // 10
-                                  request.getCredentialId(),
-                                  request.getStatusCodeString(),
-                                  request.getSourceSurl().toString(),
-                                  request.getDestinationSurl().toString(),
-                                  (request.getSourceTurl()!=null?request.getSourceTurl().toString():null),
-                                  (request.getDestinationTurl()!=null?request.getDestinationTurl().toString():null),
-                                  request.getLocalSourcePath(),
-                                  request.getLocalDestinationPath(),
-                                  request.getSize(),//20
-                                  null, // FromFileId (unused)
-                                  null, // ToFileId (unused)
-                                  request.getRemoteRequestId(),
-                                  request.getRemoteFileId(),
-                                  request.getSpaceReservationId(),
-                                  request.getTransferId(),
-                                  serialiseMap(request.getExtraInfo()),
-                                  request.getId());
-        return stmt;
+        return getPreparedStatement(connection,
+                                    query,
+                                    request.getNextJobId(),
+                                    request.getCreationTime(),
+                                    request.getLifetime(),
+                                    request.getState().getStateId(),
+                                    request.getErrorMessage(),
+                                    request.getSchedulerId(),
+                                    request.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    request.getLastStateTransitionTime(),
+                                    request.getRequestId(), // 10
+                                    request.getCredentialId(),
+                                    request.getStatusCodeString(),
+                                    request.getSourceSurl().toString(),
+                                    request.getDestinationSurl().toString(),
+                                    (request.getSourceTurl()!=null?request.getSourceTurl().toString():null),
+                                    (request.getDestinationTurl()!=null?request.getDestinationTurl().toString():null),
+                                    request.getLocalSourcePath(),
+                                    request.getLocalDestinationPath(),
+                                    request.getSize(),//20
+                                    null, // FromFileId (unused)
+                                    null, // ToFileId (unused)
+                                    request.getRemoteRequestId(),
+                                    request.getRemoteFileId(),
+                                    request.getSpaceReservationId(),
+                                    request.getTransferId(),
+                                    serialiseMap(request.getExtraInfo()),
+                                    request.getId());
     }
 
 
@@ -189,36 +188,35 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
             throw new IllegalArgumentException("fr is not CopyFileRequest" );
         }
         CopyFileRequest request = (CopyFileRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  INSERT_SQL,
-                                  request.getId(),
-                                  request.getNextJobId(),
-                                  request.getCreationTime(),
-                                  request.getLifetime(),
-                                  request.getState().getStateId(),
-                                  request.getErrorMessage(),
-                                  request.getSchedulerId(),
-                                  request.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  request.getLastStateTransitionTime(),
-                                  request.getRequestId(),
-                                  request.getCredentialId(),
-                                  request.getStatusCodeString(),
-                                  request.getSourceSurl().toString(),
-                                  request.getDestinationSurl().toString(),
-                                  (request.getSourceTurl()!=null?request.getSourceTurl().toString():null),
-                                  (request.getDestinationTurl()!=null?request.getDestinationTurl().toString():null),
-                                  request.getLocalSourcePath(),
-                                  request.getLocalDestinationPath(),
-                                  request.getSize(),
-                                  null, // FromFileId (unused)
-                                  null, // ToFileId (unused)
-                                  request.getRemoteRequestId(),
-                                  request.getRemoteFileId(),
-                                  request.getSpaceReservationId(),
-                                  request.getTransferId(),
-                                  serialiseMap(request.getExtraInfo()));
-        return stmt;
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    request.getId(),
+                                    request.getNextJobId(),
+                                    request.getCreationTime(),
+                                    request.getLifetime(),
+                                    request.getState().getStateId(),
+                                    request.getErrorMessage(),
+                                    request.getSchedulerId(),
+                                    request.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    request.getLastStateTransitionTime(),
+                                    request.getRequestId(),
+                                    request.getCredentialId(),
+                                    request.getStatusCodeString(),
+                                    request.getSourceSurl().toString(),
+                                    request.getDestinationSurl().toString(),
+                                    (request.getSourceTurl()!=null?request.getSourceTurl().toString():null),
+                                    (request.getDestinationTurl()!=null?request.getDestinationTurl().toString():null),
+                                    request.getLocalSourcePath(),
+                                    request.getLocalDestinationPath(),
+                                    request.getSize(),
+                                    null, // FromFileId (unused)
+                                    null, // ToFileId (unused)
+                                    request.getRemoteRequestId(),
+                                    request.getRemoteFileId(),
+                                    request.getSpaceReservationId(),
+                                    request.getTransferId(),
+                                    serialiseMap(request.getExtraInfo()));
     }
 
 

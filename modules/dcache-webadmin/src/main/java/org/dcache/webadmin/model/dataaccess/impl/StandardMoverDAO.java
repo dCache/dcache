@@ -96,9 +96,7 @@ public class StandardMoverDAO implements MoverDAO {
     public Set<RestoreInfo> getRestores()
     {
         try {
-            Set<RestoreInfo> restores = (Set<RestoreInfo>) _pageCache.getCacheContent(
-                    ContextPaths.RESTORE_INFOS);
-            return restores;
+            return (Set<RestoreInfo>) _pageCache.getCacheContent(ContextPaths.RESTORE_INFOS);
         } catch (NoSuchContextException e) {
             return Collections.emptySet();
         }

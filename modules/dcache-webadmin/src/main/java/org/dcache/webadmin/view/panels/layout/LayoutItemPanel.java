@@ -71,8 +71,7 @@ public class LayoutItemPanel extends BasePanel {
     private String buildStyleAttribute(float width) {
         NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
         _percentage = numberFormat.format(width);
-        String style = "width: " + _percentage + "%";
-        return style;
+        return "width: " + _percentage + "%";
     }
 
     private String buildInfoBox(String percentage, String layout) {

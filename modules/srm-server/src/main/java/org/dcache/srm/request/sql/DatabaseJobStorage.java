@@ -187,20 +187,19 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         int NUMOFRETR = set.getInt(9);
         int MAXNUMOFRETR = set.getInt(10);
         long LASTSTATETRANSITIONTIME = set.getLong(11);
-        J job = getJob(_con,
-                ID,
-                NEXTJOBID ,
-                CREATIONTIME,
-                LIFETIME,
-                STATE,
-                ERRORMESSAGE,
-                SCHEDULERID,
-                SCHEDULER_TIMESTAMP,
-                NUMOFRETR,
-                LASTSTATETRANSITIONTIME,
-                set,
-                12 );
-        return job;
+        return getJob(_con,
+                      ID,
+                      NEXTJOBID ,
+                      CREATIONTIME,
+                      LIFETIME,
+                      STATE,
+                      ERRORMESSAGE,
+                      SCHEDULERID,
+                      SCHEDULER_TIMESTAMP,
+                      NUMOFRETR,
+                      LASTSTATETRANSITIONTIME,
+                      set,
+                      12 );
     }
 
     private void saveHistory(Connection connection, Job job,

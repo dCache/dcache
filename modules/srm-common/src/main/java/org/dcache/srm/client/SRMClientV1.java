@@ -554,8 +554,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
             try {
                 try
                 {
-                    String protocols[] =axis_isrm.getProtocols();
-                    return protocols;
+                    return axis_isrm.getProtocols();
                 }catch(java.rmi.RemoteException re) {
                     throw new RuntimeException (re.toString());
                 }

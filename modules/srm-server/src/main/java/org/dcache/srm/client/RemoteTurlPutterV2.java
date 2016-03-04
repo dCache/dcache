@@ -452,7 +452,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
 
     public static void staticPutDone(RequestCredential credential,
                                      String surl,
-                                     String requestTokenString,
+                                     String requestToken,
                                      long retry_timeout,
                                      int retry_num,
                                      String caCertificatePath, Transport transport) throws Exception
@@ -466,7 +466,6 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                                             false,
                                             caCertificatePath,
                                             transport);
-        String requestToken = requestTokenString;
         URI surlArray[] = new URI[1];
         surlArray[0]= new URI(surl);
         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();

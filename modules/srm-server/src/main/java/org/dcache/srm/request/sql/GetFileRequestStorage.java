@@ -40,25 +40,24 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                           String query,
                                           Job job) throws SQLException {
         GetFileRequest request = (GetFileRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                                      query,
-                                                      request.getNextJobId(),
-                                                      request.getCreationTime(),
-                                                      request.getLifetime(),
-                                                      request.getState().getStateId(),
-                                                      request.getErrorMessage(),
-                                                      request.getSchedulerId(),
-                                                      request.getSchedulerTimeStamp(),
-                                                      0, // num of retries
-                                                      request.getLastStateTransitionTime(),
-                                                      request.getRequestId(),
-                                                      request.getStatusCodeString(),
-                                                      request.getSurlString(),
-                                                      request.getTurlString(),
-                                                      request.getFileId(),
-                                                      request.getPinId(),
-                                                      request.getId());
-        return stmt;
+        return getPreparedStatement(connection,
+                                    query,
+                                    request.getNextJobId(),
+                                    request.getCreationTime(),
+                                    request.getLifetime(),
+                                    request.getState().getStateId(),
+                                    request.getErrorMessage(),
+                                    request.getSchedulerId(),
+                                    request.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    request.getLastStateTransitionTime(),
+                                    request.getRequestId(),
+                                    request.getStatusCodeString(),
+                                    request.getSurlString(),
+                                    request.getTurlString(),
+                                    request.getFileId(),
+                                    request.getPinId(),
+                                    request.getId());
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -109,25 +108,24 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
             throw new IllegalArgumentException("job is not GetFileRequest" );
         }
         GetFileRequest request = (GetFileRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                                      INSERT_SQL,
-                                                      request.getId(),
-                                                      request.getNextJobId(),
-                                                      request.getCreationTime(),
-                                                      request.getLifetime(),
-                                                      request.getState().getStateId(),
-                                                      request.getErrorMessage(),
-                                                      request.getSchedulerId(),
-                                                      request.getSchedulerTimeStamp(),
-                                                      0, // num of retries
-                                                      request.getLastStateTransitionTime(),
-                                                      request.getRequestId(),
-                                                      request.getStatusCodeString(),
-                                                      request.getSurlString(),
-                                                      request.getTurlString(),
-                                                      request.getFileId(),
-                                                      request.getPinId());
-        return stmt;
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    request.getId(),
+                                    request.getNextJobId(),
+                                    request.getCreationTime(),
+                                    request.getLifetime(),
+                                    request.getState().getStateId(),
+                                    request.getErrorMessage(),
+                                    request.getSchedulerId(),
+                                    request.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    request.getLastStateTransitionTime(),
+                                    request.getRequestId(),
+                                    request.getStatusCodeString(),
+                                    request.getSurlString(),
+                                    request.getTurlString(),
+                                    request.getFileId(),
+                                    request.getPinId());
     }
 
     /** Creates a new instance of GetFileRequestStorage */

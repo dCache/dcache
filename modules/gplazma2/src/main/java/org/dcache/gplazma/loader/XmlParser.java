@@ -179,9 +179,7 @@ public class XmlParser {
             return new EmptyNodeList();
         }
 
-        NodeList nodes = (NodeList) result;
-
-        return nodes;
+        return (NodeList) result;
     }
 
     private void addPluginsFromNodeList( NodeList nodes) {

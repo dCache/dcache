@@ -12,8 +12,7 @@ public class TelnetInputStream2 extends InputStream {
    }
    @Override
    public int read() throws IOException {
-      int rc = _core.read() ;
-      return rc ;
+       return _core.read();
    }
    //
    // we have to overwrite the following two

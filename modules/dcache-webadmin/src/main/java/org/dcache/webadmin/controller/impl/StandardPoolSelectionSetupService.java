@@ -57,8 +57,7 @@ public class StandardPoolSelectionSetupService implements PoolSelectionSetupServ
     public List<PartitionsBean> getPartitions() throws PoolSelectionSetupServiceException {
         try {
             Map<String, Partition> partitions = getPoolsDAO().getPartitions();
-            List<PartitionsBean> partitionBeans = createPartitionBeans(partitions);
-            return partitionBeans;
+            return createPartitionBeans(partitions);
         } catch (DAOException ex) {
             throw new PoolSelectionSetupServiceException("could not retrive selection data", ex);
         }

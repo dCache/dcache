@@ -318,8 +318,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
     }
 
     public URI getTSURLInfo(String surl) throws Exception {
-        URI uri = new URI(surl);
-        return uri;
+        return new URI(surl);
     }
 
 

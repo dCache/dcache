@@ -174,19 +174,18 @@ public class BeanDataMapper {
     }
 
     private static String mapLinkGroupAllowanceFlags(LinkGroup linkGroup) {
-        String result = (linkGroup.isOnlineAllowed()
+        return (linkGroup.isOnlineAllowed()
                 ? AccessLatency.ONLINE.getShortcut().toUpperCase()
                 : AccessLatency.ONLINE.getShortcut().toLowerCase())
-                + (linkGroup.isNearlineAllowed()
+               + (linkGroup.isNearlineAllowed()
                 ? AccessLatency.NEARLINE.getShortcut().toUpperCase()
                 : AccessLatency.NEARLINE.getShortcut().toLowerCase())
-                + (linkGroup.isReplicaAllowed()
+               + (linkGroup.isReplicaAllowed()
                 ? RetentionPolicy.REPLICA.getShortcut().toUpperCase()
                 : RetentionPolicy.REPLICA.getShortcut().toLowerCase())
-                + (linkGroup.isCustodialAllowed()
+               + (linkGroup.isCustodialAllowed()
                 ? RetentionPolicy.CUSTODIAL.getShortcut().toUpperCase()
                 : RetentionPolicy.CUSTODIAL.getShortcut().toLowerCase());
-        return result;
     }
 
     public static SpaceReservationBean spaceReservationModelToView(Space reservation) {
@@ -226,9 +225,8 @@ public class BeanDataMapper {
     }
 
     private static String mapReservationAllowanceFlags(Space reservation) {
-        String result = mapAccessLatency(reservation.getAccessLatency())
-                + mapRetentionPolicy(reservation.getRetentionPolicy());
-        return result;
+        return mapAccessLatency(reservation.getAccessLatency())
+               + mapRetentionPolicy(reservation.getRetentionPolicy());
     }
 
     private static String mapAccessLatency(diskCacheV111.util.AccessLatency accessLatency) {

@@ -70,8 +70,7 @@ public class LoginStrategyLogInService implements LogInService {
         } catch (CacheException ex) {
             throw new LogInServiceException(ex.getMessage(), ex);
         }
-        UserBean user = mapLoginToUser(login);
-        return user;
+        return mapLoginToUser(login);
     }
 
     private UserBean mapLoginToUser(LoginReply login) {

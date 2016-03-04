@@ -57,7 +57,6 @@ public class ArgusPepRequestFactory {
         subjectAttribute.getValues().add(dn);
         subject.getAttributes().add(subjectAttribute);
 
-        Request request = profile.createRequest(subject, resource, action, environment);
-        return request;
+        return profile.createRequest(subject, resource, action, environment);
     }
 }

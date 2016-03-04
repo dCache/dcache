@@ -178,8 +178,7 @@ public class LambdaStationMap {
                                        domain = text_value;
                                        break;
                                    case "enable-LS":
-                                       String inh = text_value;
-                                       if (inh.startsWith("n")) {
+                                       if (text_value.startsWith("n")) {
                                            enabled = false;
                                        }
                                        break;

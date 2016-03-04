@@ -189,12 +189,11 @@ public class SRMGetPermissionClientV2 extends SRMClient {
                     continue;
                 }
             }
-            TPermissionReturn pr = permission;
-            txt.append("# owner : ").append(pr.getOwner()).append("\n");
-            txt.append("owner:").append(pr.getOwner()).append(":")
-                    .append(pr.getOwnerPermission().toString()).append("\n");
-            ArrayOfTUserPermission arrayOfUserPermissions = pr
-                    .getArrayOfUserPermissions();
+            txt.append("# owner : ").append(permission.getOwner()).append("\n");
+            txt.append("owner:").append(permission.getOwner()).append(":")
+                    .append(permission.getOwnerPermission().toString()).append("\n");
+            ArrayOfTUserPermission arrayOfUserPermissions =
+                    permission.getArrayOfUserPermissions();
             if (arrayOfUserPermissions != null) {
                 TUserPermission[] userPermissionArray = arrayOfUserPermissions
                         .getUserPermissionArray();
@@ -209,8 +208,8 @@ public class SRMGetPermissionClientV2 extends SRMClient {
                     }
                 }
             }
-            ArrayOfTGroupPermission arrayOfGroupPermissions = pr
-                    .getArrayOfGroupPermissions();
+            ArrayOfTGroupPermission arrayOfGroupPermissions =
+                    permission.getArrayOfGroupPermissions();
             if (arrayOfGroupPermissions != null) {
                 TGroupPermission[] groupPermissionArray = arrayOfGroupPermissions
                         .getGroupPermissionArray();
@@ -225,7 +224,7 @@ public class SRMGetPermissionClientV2 extends SRMClient {
                     }
                 }
             }
-            txt.append("other:").append(pr.getOtherPermission().toString())
+            txt.append("other:").append(permission.getOtherPermission().toString())
                     .append("\n");
         }
         System.out.println(txt.toString());

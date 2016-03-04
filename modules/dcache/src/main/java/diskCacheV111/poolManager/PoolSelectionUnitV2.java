@@ -1250,13 +1250,11 @@ public class PoolSelectionUnitV2
                                 "Unit type missing net/store/dcache/protocol");
             }
 
-            String canonicalName = name; // will use the input name
-            if (_units.get(canonicalName) != null) {
-                throw new IllegalArgumentException("Duplicated entry : "
-                                + canonicalName);
+            if (_units.get(name) != null) {
+                throw new IllegalArgumentException("Duplicated entry : " + name);
             }
 
-            _units.put(canonicalName, unit);
+            _units.put(name, unit);
         } finally {
             wunlock();
         }
@@ -1838,9 +1836,8 @@ public class PoolSelectionUnitV2
             //
             // remove the links
             //
-            PoolCore core = group;
-            for (Link link : core._linkList.values()) {
-                link._poolList.remove(core.getName());
+            for (Link link : group._linkList.values()) {
+                link._poolList.remove(group.getName());
             }
             //
             // remove from global
@@ -1867,9 +1864,8 @@ public class PoolSelectionUnitV2
             //
             // remove the links
             //
-            PoolCore core = pool;
-            for (Link link : core._linkList.values()) {
-                link._poolList.remove(core.getName());
+            for (Link link : pool._linkList.values()) {
+                link._poolList.remove(pool.getName());
             }
             //
             // remove from global

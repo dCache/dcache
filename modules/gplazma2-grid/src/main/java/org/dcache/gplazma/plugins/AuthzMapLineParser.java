@@ -147,11 +147,10 @@ class AuthzMapLineParser implements LineParser<AuthzMapLineParser.StringPredicat
 
         @Override
         public int hashCode() {
-            int hash = _username.hashCode() ^ _access.hashCode()
-                    ^ Arrays.hashCode(_gids)
-                    ^ _home.hashCode() ^ _root.hashCode() ^ _fsroot.hashCode()
-                    ^ Objects.hashCode(_uid);
-            return hash;
+            return _username.hashCode() ^ _access.hashCode()
+                   ^ Arrays.hashCode(_gids)
+                   ^ _home.hashCode() ^ _root.hashCode() ^ _fsroot.hashCode()
+                   ^ Objects.hashCode(_uid);
         }
 
         @Override

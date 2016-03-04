@@ -47,9 +47,7 @@ public class StandardDomainsDAO implements DomainsDAO {
     {
         _log.debug("getCellStatuses called");
         try {
-            Set<CellStatus> states = (Set<CellStatus>) _pageCache.getCacheContent(
-                    ContextPaths.CELLINFO_LIST);
-            return states;
+            return (Set<CellStatus>) _pageCache.getCacheContent(ContextPaths.CELLINFO_LIST);
         } catch (NoSuchContextException e) {
             return Collections.emptySet();
         }

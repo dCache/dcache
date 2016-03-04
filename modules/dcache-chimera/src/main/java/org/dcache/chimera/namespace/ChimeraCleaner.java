@@ -737,9 +737,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             return "HSM Cleaner is disabled.";
         }
         if (args.argc() > 0) {
-            long timeOutHSM = Long.parseLong(args.argv(0));
-
-            _hsmTimeout = timeOutHSM;
+            _hsmTimeout = Long.parseLong(args.argv(0));
             _hsmTimeoutUnit = SECONDS;
         }
         return "Timeout for cleaning requests to HSM-pools is set to " + _hsmTimeout + " " + _hsmTimeoutUnit;

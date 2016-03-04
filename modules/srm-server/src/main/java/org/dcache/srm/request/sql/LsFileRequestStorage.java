@@ -76,23 +76,22 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
         private PreparedStatement getStatement(Connection connection,
                                               String query,
                                               Job fr) throws SQLException {
-                LsFileRequest gfr = (LsFileRequest)fr;
-                PreparedStatement stmt = getPreparedStatement(connection,
-                                          query,
-                                          gfr.getNextJobId(),
-                                          gfr.getCreationTime(),
-                                          gfr.getLifetime(),
-                                          gfr.getState().getStateId(),
-                                          gfr.getErrorMessage(),
-                                          gfr.getSchedulerId(),
-                                          gfr.getSchedulerTimeStamp(),
-                                          0, // num of retries
-                                          gfr.getLastStateTransitionTime(),
-                                          gfr.getRequestId(),
-                                          gfr.getStatusCodeString(),
-                                          gfr.getSurlString(),
-                                          gfr.getId());
-                return stmt;
+            LsFileRequest gfr = (LsFileRequest)fr;
+            return getPreparedStatement(connection,
+                                    query,
+                                    gfr.getNextJobId(),
+                                    gfr.getCreationTime(),
+                                    gfr.getLifetime(),
+                                    gfr.getState().getStateId(),
+                                    gfr.getErrorMessage(),
+                                    gfr.getSchedulerId(),
+                                    gfr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    gfr.getLastStateTransitionTime(),
+                                    gfr.getRequestId(),
+                                    gfr.getStatusCodeString(),
+                                    gfr.getSurlString(),
+                                    gfr.getId());
         }
 
         private static final String UPDATE_REQUEST_SQL =
@@ -131,25 +130,24 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
         public PreparedStatement getCreateStatement(Connection connection,
                                                 Job fr)
                 throws SQLException {
-                if(fr == null || !(fr instanceof LsFileRequest)) {
-                        throw new IllegalArgumentException("fr is not LsFileRequest" );
-                }
-                LsFileRequest gfr = (LsFileRequest)fr;
-                PreparedStatement stmt = getPreparedStatement(connection,
-                                          INSERT_SQL,
-                                          gfr.getId(),
-                                          gfr.getNextJobId(),
-                                          gfr.getCreationTime(),
-                                          gfr.getLifetime(),
-                                          gfr.getState().getStateId(),
-                                          gfr.getErrorMessage(),
-                                          gfr.getSchedulerId(),
-                                          gfr.getSchedulerTimeStamp(),
-                                          0, // num of retries
-                                          gfr.getLastStateTransitionTime(),
-                                          gfr.getRequestId(),
-                                          gfr.getStatusCodeString(),
-                                          gfr.getSurlString());
-                return stmt;
+            if(fr == null || !(fr instanceof LsFileRequest)) {
+                throw new IllegalArgumentException("fr is not LsFileRequest" );
+            }
+            LsFileRequest gfr = (LsFileRequest)fr;
+            return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    gfr.getId(),
+                                    gfr.getNextJobId(),
+                                    gfr.getCreationTime(),
+                                    gfr.getLifetime(),
+                                    gfr.getState().getStateId(),
+                                    gfr.getErrorMessage(),
+                                    gfr.getSchedulerId(),
+                                    gfr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    gfr.getLastStateTransitionTime(),
+                                    gfr.getRequestId(),
+                                    gfr.getStatusCodeString(),
+                                    gfr.getSurlString());
         }
 }

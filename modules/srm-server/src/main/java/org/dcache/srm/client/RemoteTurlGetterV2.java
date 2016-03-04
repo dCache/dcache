@@ -405,7 +405,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
 
     public static void staticReleaseFile(RequestCredential credential,
                                          String surl,
-                                         String requestTokenString,
+                                         String requestToken,
                                          long retry_timeout,
                                          int retry_num,
                                          String caCertificatePath, Transport transport) throws Exception
@@ -419,7 +419,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                                             false,
                                             caCertificatePath,
                                             transport);
-        String requestToken = requestTokenString;
         URI surlArray[] = new URI[1];
         surlArray[0]= new URI(surl);
         SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();

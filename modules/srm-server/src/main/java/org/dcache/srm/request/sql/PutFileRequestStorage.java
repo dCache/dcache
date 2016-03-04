@@ -45,29 +45,28 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
         PutFileRequest request = (PutFileRequest)job;
         TRetentionPolicy retentionPolicy = request.getRetentionPolicy();
         TAccessLatency  accessLatency = request.getAccessLatency();
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                                      query,
-                                                      request.getNextJobId(),
-                                                      request.getCreationTime(),
-                                                      request.getLifetime(),
-                                                      request.getState().getStateId(),
-                                                      request.getErrorMessage(),
-                                                      request.getSchedulerId(),
-                                                      request.getSchedulerTimeStamp(),
-                                                      0, // num of retries
-                                                      request.getLastStateTransitionTime(),
-                                                      request.getRequestId(),
-                                                      request.getStatusCodeString(),
-                                                      request.getSurlString(),
-                                                      request.getTurlString(),
-                                                      request.getFileId(),
-                                                      null, // parentFileId (unused)
-                                                      request.getSpaceReservationId(),
-                                                      request.getSize(),
-                                                      (retentionPolicy!=null? retentionPolicy.getValue():null),
-                                                      (accessLatency!=null? accessLatency.getValue():null),
-                                                      request.getId());
-        return stmt;
+        return getPreparedStatement(connection,
+                                    query,
+                                    request.getNextJobId(),
+                                    request.getCreationTime(),
+                                    request.getLifetime(),
+                                    request.getState().getStateId(),
+                                    request.getErrorMessage(),
+                                    request.getSchedulerId(),
+                                    request.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    request.getLastStateTransitionTime(),
+                                    request.getRequestId(),
+                                    request.getStatusCodeString(),
+                                    request.getSurlString(),
+                                    request.getTurlString(),
+                                    request.getFileId(),
+                                    null, // parentFileId (unused)
+                                    request.getSpaceReservationId(),
+                                    request.getSize(),
+                                    (retentionPolicy!=null? retentionPolicy.getValue():null),
+                                    (accessLatency!=null? accessLatency.getValue():null),
+                                    request.getId());
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -126,29 +125,28 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
         PutFileRequest request = (PutFileRequest)job;
         TRetentionPolicy retentionPolicy = request.getRetentionPolicy();
         TAccessLatency  accessLatency = request.getAccessLatency();
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                                      INSERT_SQL,
-                                                      request.getId(),
-                                                      request.getNextJobId(),
-                                                      request.getCreationTime(),
-                                                      request.getLifetime(),
-                                                      request.getState().getStateId(),
-                                                      request.getErrorMessage(),
-                                                      request.getSchedulerId(),
-                                                      request.getSchedulerTimeStamp(),
-                                                      0, // num of retries
-                                                      request.getLastStateTransitionTime(),
-                                                      request.getRequestId(),
-                                                      request.getStatusCodeString(),
-                                                      request.getSurlString(),
-                                                      request.getTurlString(),
-                                                      request.getFileId(),
-                                                      null, // parentFileId (unused)
-                                                      request.getSpaceReservationId(),
-                                                      request.getSize(),
-                                                      (retentionPolicy!=null? retentionPolicy.getValue():null),
-                                                      (accessLatency!=null? accessLatency.getValue():null));
-        return stmt;
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    request.getId(),
+                                    request.getNextJobId(),
+                                    request.getCreationTime(),
+                                    request.getLifetime(),
+                                    request.getState().getStateId(),
+                                    request.getErrorMessage(),
+                                    request.getSchedulerId(),
+                                    request.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    request.getLastStateTransitionTime(),
+                                    request.getRequestId(),
+                                    request.getStatusCodeString(),
+                                    request.getSurlString(),
+                                    request.getTurlString(),
+                                    request.getFileId(),
+                                    null, // parentFileId (unused)
+                                    request.getSpaceReservationId(),
+                                    request.getSize(),
+                                    (retentionPolicy!=null? retentionPolicy.getValue():null),
+                                    (accessLatency!=null? accessLatency.getValue():null));
     }
 
    /** Creates a new instance of PutFileRequestStorage */

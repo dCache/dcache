@@ -71,26 +71,25 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
         PutRequest pr = (PutRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  INSERT_SQL,
-                                  pr.getId(),
-                                  pr.getNextJobId(),
-                                  pr.getCreationTime(),
-                                  pr.getLifetime(),
-                                  pr.getState().getStateId(),//5
-                                  pr.getErrorMessage(),
-                                  pr.getSchedulerId(),
-                                  pr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  pr.getLastStateTransitionTime(), // 10
-                                  //Database Request Storage
-                                  pr.getRetryDeltaTime(),
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    pr.getId(),
+                                    pr.getNextJobId(),
+                                    pr.getCreationTime(),
+                                    pr.getLifetime(),
+                                    pr.getState().getStateId(),//5
+                                    pr.getErrorMessage(),
+                                    pr.getSchedulerId(),
+                                    pr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    pr.getLastStateTransitionTime(), // 10
+                                    //Database Request Storage
+                                    pr.getRetryDeltaTime(),
                                   pr.isShould_updateretryDeltaTime()?0:1,
-                                  pr.getDescription(),
-                                  pr.getClient_host(),
-                                  pr.getStatusCodeString(),
-                                  pr.getUser().getId());
-       return stmt;
+                                    pr.getDescription(),
+                                    pr.getClient_host(),
+                                    pr.getStatusCodeString(),
+                                    pr.getUser().getId());
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -105,7 +104,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
     public PreparedStatement getUpdateStatement(Connection connection,
             Job job) throws SQLException {
         PutRequest pr = (PutRequest)job;
-        PreparedStatement stmt = getPreparedStatement(
+        return getPreparedStatement(
                                   connection,
                                   UPDATE_REQUEST_SQL,
                                   pr.getNextJobId(),
@@ -125,8 +124,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                   pr.getStatusCodeString(),
                                   pr.getUser().getId(),
                                   pr.getId());
-
-        return stmt;
     }
 
 

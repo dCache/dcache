@@ -48,8 +48,7 @@ public class SSLTunnelServerSocket extends ServerSocket {
 
     @Override
     public Socket accept() throws IOException {
-		Socket s = new SSLTunnelSocket( sock.accept(), uv );
-		return s;
+		return new SSLTunnelSocket(sock.accept(), uv );
 	}
 
 

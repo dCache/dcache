@@ -275,8 +275,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 if(remainingLifetime >= newLifetime) {
                         return remainingLifetime;
                 }
-                long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
-                return requestLifetime;
+            return getContainerRequest().extendLifetimeMillis(newLifetime);
         }
 
         public TMetaDataPathDetail getMetaDataPathDetail()

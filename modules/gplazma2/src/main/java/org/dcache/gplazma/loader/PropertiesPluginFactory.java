@@ -31,9 +31,7 @@ public class PropertiesPluginFactory implements PluginFactory
             Properties properties) throws PluginLoadingException
     {
         Constructor<T> constructor = tryToGetConstructor(pluginClass);
-
-        T plugin = tryToCreatePlugin( constructor, properties);
-        return plugin;
+        return tryToCreatePlugin(constructor, properties);
     }
 
 

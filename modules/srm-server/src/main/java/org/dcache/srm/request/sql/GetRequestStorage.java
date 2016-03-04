@@ -70,26 +70,25 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
         GetRequest gr = (GetRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  INSERT_SQL,
-                                  gr.getId(),
-                                  gr.getNextJobId(),
-                                  gr.getCreationTime(),
-                                  gr.getLifetime(),
-                                  gr.getState().getStateId(),//5
-                                  gr.getErrorMessage(),
-                                  gr.getSchedulerId(),
-                                  gr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  gr.getLastStateTransitionTime(), // 10
-                                  //Database Request Storage
-                                  gr.getRetryDeltaTime(),
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    gr.getId(),
+                                    gr.getNextJobId(),
+                                    gr.getCreationTime(),
+                                    gr.getLifetime(),
+                                    gr.getState().getStateId(),//5
+                                    gr.getErrorMessage(),
+                                    gr.getSchedulerId(),
+                                    gr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    gr.getLastStateTransitionTime(), // 10
+                                    //Database Request Storage
+                                    gr.getRetryDeltaTime(),
                                   gr.isShould_updateretryDeltaTime()?0:1,
-                                  gr.getDescription(),
-                                  gr.getClient_host(),
-                                  gr.getStatusCodeString(),
-                                  gr.getUser().getId());
-       return stmt;
+                                    gr.getDescription(),
+                                    gr.getClient_host(),
+                                    gr.getStatusCodeString(),
+                                    gr.getUser().getId());
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -104,27 +103,25 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
     public PreparedStatement getUpdateStatement(Connection connection,
             Job job) throws SQLException {
         GetRequest gr = (GetRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  UPDATE_REQUEST_SQL,
-                                  gr.getNextJobId(),
-                                  gr.getCreationTime(),
-                                  gr.getLifetime(),
-                                  gr.getState().getStateId(),
-                                  gr.getErrorMessage(),//5
-                                  gr.getSchedulerId(),
-                                  gr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  gr.getLastStateTransitionTime(),
-                                  //Database Request Storage
-                                  gr.getRetryDeltaTime(), // 10
+        return getPreparedStatement(connection,
+                                    UPDATE_REQUEST_SQL,
+                                    gr.getNextJobId(),
+                                    gr.getCreationTime(),
+                                    gr.getLifetime(),
+                                    gr.getState().getStateId(),
+                                    gr.getErrorMessage(),//5
+                                    gr.getSchedulerId(),
+                                    gr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    gr.getLastStateTransitionTime(),
+                                    //Database Request Storage
+                                    gr.getRetryDeltaTime(), // 10
                                   gr.isShould_updateretryDeltaTime()?0:1,
-                                  gr.getDescription(),
-                                  gr.getClient_host(),
-                                  gr.getStatusCodeString(),
-                                  gr.getUser().getId(),
-                                  gr.getId());
-
-        return stmt;
+                                    gr.getDescription(),
+                                    gr.getClient_host(),
+                                    gr.getStatusCodeString(),
+                                    gr.getUser().getId(),
+                                    gr.getId());
     }
 
 

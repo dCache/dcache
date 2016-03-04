@@ -634,8 +634,7 @@ public class KAuthFile {
             }
             line = reader.readLine();
         }
-        UserAuthRecord record = new UserAuthRecord(Username,false, UID,GID,Home,Root,FsRoot,Principals);
-        return record;
+        return new UserAuthRecord(Username, false, UID, GID, Home, Root, FsRoot, Principals);
     }
 
     public void dcuseradd(Arguments arguments) {

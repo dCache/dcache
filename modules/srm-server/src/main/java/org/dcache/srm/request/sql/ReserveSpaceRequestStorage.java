@@ -78,31 +78,30 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         if(rsr.getAccessLatency() != null) {
             accessLatencyValue = rsr.getAccessLatency().getValue();
         }
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  INSERT_SQL,
-                                  rsr.getId(),
-                                  rsr.getNextJobId(),
-                                  rsr.getCreationTime(),
-                                  rsr.getLifetime(),
-                                  rsr.getState().getStateId(),//5
-                                  rsr.getErrorMessage(),
-                                  rsr.getSchedulerId(),
-                                  rsr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  rsr.getLastStateTransitionTime(), // 10
-                                  //Database Request Storage
-                                  rsr.getRetryDeltaTime(),
-                                  rsr.isShould_updateretryDeltaTime()?0:1,
-                                  rsr.getDescription(),
-                                  rsr.getClient_host(),
-                                  rsr.getStatusCodeString(),
-                                  rsr.getUser().getId(),
-                                  rsr.getSizeInBytes(),
-                                  rsr.getSpaceReservationLifetime(),
-                                  rsr.getSpaceToken(),
-                                  retentionPolicyValue,
-                                  accessLatencyValue);
-       return stmt;
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    rsr.getId(),
+                                    rsr.getNextJobId(),
+                                    rsr.getCreationTime(),
+                                    rsr.getLifetime(),
+                                    rsr.getState().getStateId(),//5
+                                    rsr.getErrorMessage(),
+                                    rsr.getSchedulerId(),
+                                    rsr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    rsr.getLastStateTransitionTime(), // 10
+                                    //Database Request Storage
+                                    rsr.getRetryDeltaTime(),
+                                    rsr.isShould_updateretryDeltaTime()?0:1,
+                                    rsr.getDescription(),
+                                    rsr.getClient_host(),
+                                    rsr.getStatusCodeString(),
+                                    rsr.getUser().getId(),
+                                    rsr.getSizeInBytes(),
+                                    rsr.getSpaceReservationLifetime(),
+                                    rsr.getSpaceToken(),
+                                    retentionPolicyValue,
+                                    accessLatencyValue);
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -131,32 +130,30 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         if(rsr.getAccessLatency() != null) {
             accessLatencyValue = rsr.getAccessLatency().getValue();
         }
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  UPDATE_REQUEST_SQL,
-                                  rsr.getNextJobId(),
-                                  rsr.getCreationTime(),
-                                  rsr.getLifetime(),
-                                  rsr.getState().getStateId(),
-                                  rsr.getErrorMessage(),//5
-                                  rsr.getSchedulerId(),
-                                  rsr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  rsr.getLastStateTransitionTime(),
-                                  //Database Request Storage
-                                  rsr.getRetryDeltaTime(), // 10
-                                  rsr.isShould_updateretryDeltaTime()?0:1,
-                                  rsr.getDescription(),
-                                  rsr.getClient_host(),
-                                  rsr.getStatusCodeString(),
-                                  rsr.getUser().getId(),
-                                  rsr.getSizeInBytes(),
-                                  rsr.getSpaceReservationLifetime(),
-                                  rsr.getSpaceToken(),
-                                  retentionPolicyValue,
-                                  accessLatencyValue,
-                                  rsr.getId());
-
-        return stmt;
+        return getPreparedStatement(connection,
+                                    UPDATE_REQUEST_SQL,
+                                    rsr.getNextJobId(),
+                                    rsr.getCreationTime(),
+                                    rsr.getLifetime(),
+                                    rsr.getState().getStateId(),
+                                    rsr.getErrorMessage(),//5
+                                    rsr.getSchedulerId(),
+                                    rsr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    rsr.getLastStateTransitionTime(),
+                                    //Database Request Storage
+                                    rsr.getRetryDeltaTime(), // 10
+                                    rsr.isShould_updateretryDeltaTime()?0:1,
+                                    rsr.getDescription(),
+                                    rsr.getClient_host(),
+                                    rsr.getStatusCodeString(),
+                                    rsr.getUser().getId(),
+                                    rsr.getSizeInBytes(),
+                                    rsr.getSpaceReservationLifetime(),
+                                    rsr.getSpaceToken(),
+                                    retentionPolicyValue,
+                                    accessLatencyValue,
+                                    rsr.getId());
     }
 
     /** Creates a new instance of FileRequestStorage */

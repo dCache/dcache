@@ -183,9 +183,7 @@ public class StandardPoolsDAO implements PoolsDAO {
     }
 
     private PoolMonitor getPoolMonitor() throws NoSuchContextException {
-        PoolMonitor poolMonitor = (PoolMonitor) _pageCache.getCacheContent(
-                ContextPaths.POOLMONITOR);
-        return poolMonitor;
+        return (PoolMonitor) _pageCache.getCacheContent(ContextPaths.POOLMONITOR);
     }
 
     @Override

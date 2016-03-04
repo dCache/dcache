@@ -458,16 +458,15 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void poolDoorMessageArrived(DoorTransferFinishedMessage doorMessage)
     {
-        log.debug("poolDoorMessageArrived, doorMessage.getReturnCode()=" + doorMessage.getReturnCode());
+        log.debug("poolDoorMessageArrived, doorMessage.getReturnCode()={}", doorMessage.getReturnCode());
         if (doorMessage.getReturnCode() != 0) {
             sendErrorReply(CacheException.THIRD_PARTY_TRANSFER_FAILED,
                     doorMessage.getErrorObject());
             return;
         }
 
-        DoorTransferFinishedMessage finished = doorMessage;
         if (store && tlog != null) {
-            tlog.middle(finished.getFileAttributes().getSize());
+            tlog.middle(doorMessage.getFileAttributes().getSize());
         }
         sendSuccessReply();
     }

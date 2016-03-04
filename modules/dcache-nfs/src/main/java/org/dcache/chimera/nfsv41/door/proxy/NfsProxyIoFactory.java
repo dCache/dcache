@@ -68,35 +68,25 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
     @Override
     public ProxyIoAdapter getOrCreateProxy(Inode inode, stateid4 stateid, CompoundContext context, boolean isWrite) throws IOException {
         try {
-            ProxyIoAdapter adapter = _proxyIO.get(stateid,
-                    new Callable<ProxyIoAdapter>() {
+            return _proxyIO.get(stateid,
+                                () -> {
+                                    final NFS4Client nfsClient;
+                                    if (context.getMinorversion() == 1) {
+                                        nfsClient = context.getSession().getClient();
+                                    } else {
+                                        nfsClient = context.getStateHandler().getClientIdByStateId(stateid);
+                                    }
 
-                        @Override
-                        public ProxyIoAdapter call() throws Exception {
+                                    final NFS4State state = nfsClient.state(stateid);
+                                    final ProxyIoAdapter adapter = createIoAdapter(inode, stateid, context, isWrite);
 
-                            final NFS4Client nfsClient;
-                            if (context.getMinorversion() == 1) {
-                                nfsClient = context.getSession().getClient();
-                            } else {
-                                nfsClient = context.getStateHandler().getClientIdByStateId(stateid);
-                            }
+                                    state.addDisposeListener(s -> {
+                                        tryToClose(adapter);
+                                        _proxyIO.invalidate(s.stateid());
+                                    });
 
-                            final NFS4State state = nfsClient.state(stateid);
-                            final ProxyIoAdapter adapter = createIoAdapter(inode, stateid, context, isWrite);
-
-                            state.addDisposeListener(new StateDisposeListener() {
-                                @Override
-                                public void notifyDisposed(NFS4State state) {
-                                    tryToClose(adapter);
-                                    _proxyIO.invalidate(state.stateid());
-                                }
-                            });
-
-                            return adapter;
-                        }
-                    });
-
-            return adapter;
+                                    return adapter;
+                                });
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
             _log.error("failed to create IO adapter: {}", t.getMessage());

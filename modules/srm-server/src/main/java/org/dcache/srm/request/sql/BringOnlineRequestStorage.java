@@ -79,26 +79,25 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
         BringOnlineRequest bor = (BringOnlineRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                                      INSERT_SQL,
-                                                      bor.getId(),
-                                                      bor.getNextJobId(),
-                                                      bor.getCreationTime(),
-                                                      bor.getLifetime(),
-                                                      bor.getState().getStateId(),//5
-                                                      bor.getErrorMessage(),
-                                                      bor.getSchedulerId(),
-                                                      bor.getSchedulerTimeStamp(),
-                                                      0, // num of retries
-                                                      bor.getLastStateTransitionTime(), // 10
-                                                      //Database Request Storage
-                                                      bor.getRetryDeltaTime(),
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    bor.getId(),
+                                    bor.getNextJobId(),
+                                    bor.getCreationTime(),
+                                    bor.getLifetime(),
+                                    bor.getState().getStateId(),//5
+                                    bor.getErrorMessage(),
+                                    bor.getSchedulerId(),
+                                    bor.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    bor.getLastStateTransitionTime(), // 10
+                                    //Database Request Storage
+                                    bor.getRetryDeltaTime(),
                                                       bor.isShould_updateretryDeltaTime()?0:1,
-                                                      bor.getDescription(),
-                                                      bor.getClient_host(),
-                                                      bor.getStatusCodeString(),
-                                                      bor.getUser().getId());
-       return stmt;
+                                    bor.getDescription(),
+                                    bor.getClient_host(),
+                                    bor.getStatusCodeString(),
+                                    bor.getUser().getId());
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -113,27 +112,25 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     public PreparedStatement getUpdateStatement(Connection connection,
             Job job) throws SQLException {
         BringOnlineRequest bor = (BringOnlineRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  UPDATE_REQUEST_SQL,
-                                  bor.getNextJobId(),
-                                  bor.getCreationTime(),
-                                  bor.getLifetime(),
-                                  bor.getState().getStateId(),
-                                  bor.getErrorMessage(),//5
-                                  bor.getSchedulerId(),
-                                  bor.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  bor.getLastStateTransitionTime(),//10
-                                  //Database Request Storage
-                                  bor.getRetryDeltaTime(),
+        return getPreparedStatement(connection,
+                                    UPDATE_REQUEST_SQL,
+                                    bor.getNextJobId(),
+                                    bor.getCreationTime(),
+                                    bor.getLifetime(),
+                                    bor.getState().getStateId(),
+                                    bor.getErrorMessage(),//5
+                                    bor.getSchedulerId(),
+                                    bor.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    bor.getLastStateTransitionTime(),//10
+                                    //Database Request Storage
+                                    bor.getRetryDeltaTime(),
                                   bor.isShould_updateretryDeltaTime()?0:1,
-                                  bor.getDescription(),
-                                  bor.getClient_host(),
-                                  bor.getStatusCodeString(),
-                                  bor.getUser().getId(),
-                                  bor.getId());
-
-        return stmt;
+                                    bor.getDescription(),
+                                    bor.getClient_host(),
+                                    bor.getStatusCodeString(),
+                                    bor.getUser().getId(),
+                                    bor.getId());
     }
 
 

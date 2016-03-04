@@ -167,9 +167,7 @@ public abstract class PnfsBaseInfo implements IHistogramData {
 
     @Override
     public Map<String, Double> data() {
-        Map<String, Double> dataMap = Collections
-                        .synchronizedMap(new HashMap<String, Double>());
-        return dataMap;
+        return Collections.synchronizedMap(new HashMap<>());
     }
 
     protected String dateString() {

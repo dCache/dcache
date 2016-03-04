@@ -11,9 +11,7 @@ public class XmlResourcePluginLoader extends AbstractPluginLoader {
             new XmlResourcePluginRepositoryFactory();
 
     public static PluginLoader newPluginLoader() {
-        PluginLoader inner = new XmlResourcePluginLoader();
-        PluginLoader outer = new SafePluginLoaderDecorator( inner);
-        return outer;
+        return new SafePluginLoaderDecorator(new XmlResourcePluginLoader());
     }
 
     private XmlResourcePluginLoader() {

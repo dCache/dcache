@@ -103,24 +103,23 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                           String query,
                                           Job fr) throws SQLException {
         BringOnlineFileRequest gfr = (BringOnlineFileRequest)fr;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  query,
-                                  gfr.getNextJobId(),
-                                  gfr.getCreationTime(),
-                                  gfr.getLifetime(),
-                                  gfr.getState().getStateId(),
-                                  gfr.getErrorMessage(),//5
-                                  gfr.getSchedulerId(),
-                                  gfr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  gfr.getLastStateTransitionTime(),
-                                  gfr.getRequestId(),//10
-                                  gfr.getStatusCodeString(),
-                                  gfr.getSurlString(),
-                                  gfr.getFileId(),
-                                  gfr.getPinId(),
-                                  gfr.getId());//15
-        return stmt;
+        return getPreparedStatement(connection,
+                                    query,
+                                    gfr.getNextJobId(),
+                                    gfr.getCreationTime(),
+                                    gfr.getLifetime(),
+                                    gfr.getState().getStateId(),
+                                    gfr.getErrorMessage(),//5
+                                    gfr.getSchedulerId(),
+                                    gfr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    gfr.getLastStateTransitionTime(),
+                                    gfr.getRequestId(),//10
+                                    gfr.getStatusCodeString(),
+                                    gfr.getSurlString(),
+                                    gfr.getFileId(),
+                                    gfr.getPinId(),
+                                    gfr.getId());
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -162,25 +161,24 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                                 Job fr)
         throws SQLException {
         BringOnlineFileRequest gfr = (BringOnlineFileRequest)fr;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  INSERT_SQL,
-                                  gfr.getId(),
-                                  gfr.getNextJobId(),
-                                  gfr.getCreationTime(),
-                                  gfr.getLifetime(),
-                                  gfr.getState().getStateId(),//5
-                                  gfr.getErrorMessage(),
-                                  gfr.getSchedulerId(),
-                                  gfr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  gfr.getLastStateTransitionTime(),
-                                 //DATABSE FILE REQUEST STORAGE
-                                  gfr.getRequestId(),
-                                  gfr.getStatusCodeString(),
-                                 // BRING ONLINE FILE REQUEST
-                                  gfr.getSurlString(),
-                                  gfr.getFileId(),//15
-                                  gfr.getPinId());
-       return stmt;
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    gfr.getId(),
+                                    gfr.getNextJobId(),
+                                    gfr.getCreationTime(),
+                                    gfr.getLifetime(),
+                                    gfr.getState().getStateId(),//5
+                                    gfr.getErrorMessage(),
+                                    gfr.getSchedulerId(),
+                                    gfr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    gfr.getLastStateTransitionTime(),
+                                    //DATABSE FILE REQUEST STORAGE
+                                    gfr.getRequestId(),
+                                    gfr.getStatusCodeString(),
+                                    // BRING ONLINE FILE REQUEST
+                                    gfr.getSurlString(),
+                                    gfr.getFileId(),//15
+                                    gfr.getPinId());
     }
 }

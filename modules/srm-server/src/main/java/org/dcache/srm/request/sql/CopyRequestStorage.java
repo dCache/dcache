@@ -82,30 +82,29 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
         if(cr.getTargetAccessLatency() != null) {
             accessLatencyValue = cr.getTargetAccessLatency().getValue();
         }
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  INSERT_SQL,
-                                  cr.getId(),
-                                  cr.getNextJobId(),
-                                  cr.getCreationTime(),
-                                  cr.getLifetime(),
-                                  cr.getState().getStateId(),//5
-                                  cr.getErrorMessage(),
-                                  cr.getSchedulerId(),
-                                  cr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  cr.getLastStateTransitionTime(), // 10
-                                  //Database Request Storage
-                                  cr.getCredentialId(),
-                                  cr.getRetryDeltaTime(),
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    cr.getId(),
+                                    cr.getNextJobId(),
+                                    cr.getCreationTime(),
+                                    cr.getLifetime(),
+                                    cr.getState().getStateId(),//5
+                                    cr.getErrorMessage(),
+                                    cr.getSchedulerId(),
+                                    cr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    cr.getLastStateTransitionTime(), // 10
+                                    //Database Request Storage
+                                    cr.getCredentialId(),
+                                    cr.getRetryDeltaTime(),
                                   cr.isShould_updateretryDeltaTime()?0:1,
-                                  cr.getDescription(),
-                                  cr.getClient_host(),
-                                  cr.getStatusCodeString(),
-                                  cr.getUser().getId(),
-                                  storageTypeValue,
-                                  retentionPolicyValue,
-                                  accessLatencyValue);
-       return stmt;
+                                    cr.getDescription(),
+                                    cr.getClient_host(),
+                                    cr.getStatusCodeString(),
+                                    cr.getUser().getId(),
+                                    storageTypeValue,
+                                    retentionPolicyValue,
+                                    accessLatencyValue);
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -137,31 +136,30 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
         if(cr.getTargetAccessLatency() != null) {
             accessLatencyValue = cr.getTargetAccessLatency().getValue();
         }
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  UPDATE_REQUEST_SQL,
-                                  cr.getNextJobId(),
-                                  cr.getCreationTime(),
-                                  cr.getLifetime(),
-                                  cr.getState().getStateId(),
-                                  cr.getErrorMessage(),//5
-                                  cr.getSchedulerId(),
-                                  cr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  cr.getLastStateTransitionTime(),
-                                  //Database Request Storage
-                                  cr.getCredentialId(), // 10
-                                  cr.getRetryDeltaTime(),
-                                  cr.isShould_updateretryDeltaTime()?0:1,
-                                  cr.getDescription(),
-                                  cr.getClient_host(),
-                                  cr.getStatusCodeString(),
-                                  cr.getUser().getId(),
-                                  storageTypeValue,
-                                  retentionPolicyValue,
-                                  accessLatencyValue,
-                                  cr.getId());
 
-        return stmt;
+        return getPreparedStatement(connection,
+                                    UPDATE_REQUEST_SQL,
+                                    cr.getNextJobId(),
+                                    cr.getCreationTime(),
+                                    cr.getLifetime(),
+                                    cr.getState().getStateId(),
+                                    cr.getErrorMessage(),//5
+                                    cr.getSchedulerId(),
+                                    cr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    cr.getLastStateTransitionTime(),
+                                    //Database Request Storage
+                                    cr.getCredentialId(), // 10
+                                    cr.getRetryDeltaTime(),
+                                  cr.isShould_updateretryDeltaTime()?0:1,
+                                    cr.getDescription(),
+                                    cr.getClient_host(),
+                                    cr.getStatusCodeString(),
+                                    cr.getUser().getId(),
+                                    storageTypeValue,
+                                    retentionPolicyValue,
+                                    accessLatencyValue,
+                                    cr.getId());
     }
 
     /** Creates a new instance of GetRequestStorage */

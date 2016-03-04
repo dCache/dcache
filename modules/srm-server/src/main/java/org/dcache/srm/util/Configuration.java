@@ -403,8 +403,7 @@ public class Configuration {
      */
     public Set<String> getSrmHosts() {
         synchronized(localSrmHosts) {
-            Set<String> srmhostsCopy = new HashSet<>(localSrmHosts);
-            return srmhostsCopy;
+            return new HashSet<>(localSrmHosts);
         }
     }
 

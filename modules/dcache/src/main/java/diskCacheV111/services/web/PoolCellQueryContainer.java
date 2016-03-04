@@ -8,11 +8,10 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import diskCacheV111.pools.PoolCellInfo;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 class PoolCellQueryInfo implements Serializable
 {
@@ -23,7 +22,7 @@ class PoolCellQueryInfo implements Serializable
 
     public PoolCellQueryInfo(PoolCellInfo poolInfo, long pingTime, long arrivalTime)
     {
-        _poolInfo = poolInfo;
+        _poolInfo = checkNotNull(poolInfo);
         _pingTime = pingTime;
         _arrivalTime = arrivalTime;
     }

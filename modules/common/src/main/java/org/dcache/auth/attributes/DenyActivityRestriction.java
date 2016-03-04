@@ -46,11 +46,9 @@ public class DenyActivityRestriction implements Restriction
 
     public DenyActivityRestriction(Activity... denied)
     {
-        EnumSet<Activity> d = denied.length > 0 ?
-                EnumSet.of(denied[0], denied) :
-                EnumSet.noneOf(Activity.class);
-
-        this.denied = d;
+        this.denied = (denied.length > 0)
+                      ? EnumSet.of(denied[0], denied)
+                      : EnumSet.noneOf(Activity.class);
     }
 
     private DenyActivityRestriction(EnumSet<Activity> denied)

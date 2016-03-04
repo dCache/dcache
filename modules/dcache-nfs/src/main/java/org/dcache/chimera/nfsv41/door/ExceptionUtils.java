@@ -72,10 +72,9 @@ public class ExceptionUtils {
 
     private static <T extends ChimeraNFSException> T buildNfsException(Class<T> type, Throwable cause) {
         try {
-            T nfsException = type
+            return type
                     .getConstructor(String.class, Throwable.class)
                     .newInstance(cause.getMessage(), cause);
-            return nfsException;
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ee) {
             // points to a bug
             throw new RuntimeException("Failed to invoke constructor", ee);

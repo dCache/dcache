@@ -21,15 +21,11 @@ public class StaticClassPluginLoader extends AbstractPluginLoader {
         ImmutableList.Builder<Class<? extends GPlazmaPlugin>> b = ImmutableList.builder();
         b.add(plugin);
         Collection<Class<? extends GPlazmaPlugin>> plugins = b.build();
-        PluginLoader inner = new StaticClassPluginLoader(plugins);
-        PluginLoader outer = new SafePluginLoaderDecorator(inner);
-        return outer;
+        return new SafePluginLoaderDecorator(new StaticClassPluginLoader(plugins));
     }
 
     public static PluginLoader newPluginLoader(Collection<Class<? extends GPlazmaPlugin>> plugins) {
-        PluginLoader inner = new StaticClassPluginLoader(plugins);
-        PluginLoader outer = new SafePluginLoaderDecorator(inner);
-        return outer;
+        return new SafePluginLoaderDecorator(new StaticClassPluginLoader(plugins));
     }
 
     private StaticClassPluginLoader(Collection<Class<? extends GPlazmaPlugin>> plugins) {

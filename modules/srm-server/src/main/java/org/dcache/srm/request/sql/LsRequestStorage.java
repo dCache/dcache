@@ -60,32 +60,31 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
         LsRequest lr = (LsRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  INSERT_SQL,
-                                  lr.getId(),
-                                  lr.getNextJobId(),
-                                  lr.getCreationTime(),
-                                  lr.getLifetime(),
-                                  lr.getState().getStateId(),//5
-                                  lr.getErrorMessage(),
-                                  lr.getSchedulerId(),
-                                  lr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  lr.getLastStateTransitionTime(), // 10
-                                  //Database Request Storage
-                                  lr.getRetryDeltaTime(),
-                                  lr.isShould_updateretryDeltaTime()?0:1,
-                                  lr.getDescription(),
-                                  lr.getClient_host(),
-                                  lr.getStatusCodeString(),
-                                  lr.getUser().getId(),
-                                  lr.getExplanation(),
+        return getPreparedStatement(connection,
+                                    INSERT_SQL,
+                                    lr.getId(),
+                                    lr.getNextJobId(),
+                                    lr.getCreationTime(),
+                                    lr.getLifetime(),
+                                    lr.getState().getStateId(),//5
+                                    lr.getErrorMessage(),
+                                    lr.getSchedulerId(),
+                                    lr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    lr.getLastStateTransitionTime(), // 10
+                                    //Database Request Storage
+                                    lr.getRetryDeltaTime(),
+                                    lr.isShould_updateretryDeltaTime()?0:1,
+                                    lr.getDescription(),
+                                    lr.getClient_host(),
+                                    lr.getStatusCodeString(),
+                                    lr.getUser().getId(),
+                                    lr.getExplanation(),
                                   lr.getLongFormat() ?1:0,
-                                  lr.getNumOfLevels(),
-                                  lr.getCount(),
-                                  lr.getOffset()
+                                    lr.getNumOfLevels(),
+                                    lr.getCount(),
+                                    lr.getOffset()
                                   );
-       return stmt;
     }
 
     private static final String UPDATE_REQUEST_SQL =
@@ -106,32 +105,30 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
     public PreparedStatement getUpdateStatement(Connection connection,
             Job job) throws SQLException {
         LsRequest lr = (LsRequest)job;
-        PreparedStatement stmt = getPreparedStatement(connection,
-                                  UPDATE_REQUEST_SQL,
-                                  lr.getNextJobId(),
-                                  lr.getCreationTime(),
-                                  lr.getLifetime(),
-                                  lr.getState().getStateId(),
-                                  lr.getErrorMessage(),//5
-                                  lr.getSchedulerId(),
-                                  lr.getSchedulerTimeStamp(),
-                                  0, // num of retries
-                                  lr.getLastStateTransitionTime(),
-                                  //Database Request Storage
-                                  lr.getRetryDeltaTime(), // 10
-                                  lr.isShould_updateretryDeltaTime()?0:1,
-                                  lr.getDescription(),
-                                  lr.getClient_host(),
-                                  lr.getStatusCodeString(),
-                                  lr.getUser().getId(),
-                                  lr.getExplanation(),
+        return getPreparedStatement(connection,
+                                    UPDATE_REQUEST_SQL,
+                                    lr.getNextJobId(),
+                                    lr.getCreationTime(),
+                                    lr.getLifetime(),
+                                    lr.getState().getStateId(),
+                                    lr.getErrorMessage(),//5
+                                    lr.getSchedulerId(),
+                                    lr.getSchedulerTimeStamp(),
+                                    0, // num of retries
+                                    lr.getLastStateTransitionTime(),
+                                    //Database Request Storage
+                                    lr.getRetryDeltaTime(), // 10
+                                    lr.isShould_updateretryDeltaTime()?0:1,
+                                    lr.getDescription(),
+                                    lr.getClient_host(),
+                                    lr.getStatusCodeString(),
+                                    lr.getUser().getId(),
+                                    lr.getExplanation(),
                                   lr.getLongFormat() ?1:0,
-                                  lr.getNumOfLevels(),
-                                  lr.getCount(),
-                                  lr.getOffset(),
-                                  lr.getId());
-
-        return stmt;
+                                    lr.getNumOfLevels(),
+                                    lr.getCount(),
+                                    lr.getOffset(),
+                                    lr.getId());
     }
 
         public LsRequestStorage(Configuration.DatabaseParameters configuration,
