@@ -1,7 +1,6 @@
 package dmg.cells.nucleus;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import org.dcache.util.Args;

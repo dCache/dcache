@@ -81,7 +81,6 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UnionLoginStrategy;
-import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
@@ -93,7 +92,6 @@ import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.DIR;
 import static org.dcache.namespace.FileType.REGULAR;

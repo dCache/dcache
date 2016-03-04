@@ -51,7 +51,6 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 import static com.google.common.collect.Collections2.*;
-import static com.google.common.collect.Collections2.transform;
 import static dmg.cells.services.login.LoginBrokerInfo.Capability.READ;
 import static dmg.cells.services.login.LoginBrokerInfo.Capability.WRITE;
 import static java.util.Arrays.asList;

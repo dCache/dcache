@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellMessage;
 

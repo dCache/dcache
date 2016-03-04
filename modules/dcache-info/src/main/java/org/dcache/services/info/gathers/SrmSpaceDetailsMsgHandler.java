@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.Set;
 
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;

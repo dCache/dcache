@@ -60,7 +60,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.HsmLocationExtractorFactory;

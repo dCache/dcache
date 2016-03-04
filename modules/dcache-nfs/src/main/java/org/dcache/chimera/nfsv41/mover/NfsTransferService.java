@@ -49,7 +49,6 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.util.Args;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.utils.Bytes;

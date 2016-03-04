@@ -1,6 +1,5 @@
 package dmg.cells.services.login;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
 
 import java.util.ServiceLoader;

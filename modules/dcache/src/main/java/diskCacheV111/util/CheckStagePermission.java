@@ -18,8 +18,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;

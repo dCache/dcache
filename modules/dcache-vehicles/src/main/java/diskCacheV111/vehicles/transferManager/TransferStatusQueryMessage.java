@@ -1,7 +1,6 @@
 package diskCacheV111.vehicles.transferManager;
 
 import diskCacheV111.vehicles.IoJobInfo;
-import diskCacheV111.vehicles.JobInfo;
 
 /**
  * Message to query the transfermanager service to discover the current

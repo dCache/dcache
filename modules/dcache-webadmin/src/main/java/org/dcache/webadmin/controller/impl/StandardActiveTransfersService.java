@@ -1,6 +1,5 @@
 package org.dcache.webadmin.controller.impl;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 
 import java.util.Collection;

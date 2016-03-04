@@ -22,7 +22,6 @@ import javax.security.auth.Subject;
 import java.nio.channels.CompletionHandler;
 import java.util.Set;
 
-import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;

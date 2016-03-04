@@ -7,8 +7,6 @@ import org.apache.wicket.request.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.dcache.webadmin.view.util.Role;
-
 /**
  * The session-Object to store Session-Data like User-Credentials, and page
  * options.

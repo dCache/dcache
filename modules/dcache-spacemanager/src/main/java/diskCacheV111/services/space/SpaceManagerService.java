@@ -39,13 +39,11 @@ import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -72,9 +70,6 @@ import static diskCacheV111.util.CacheException.*;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.InvalidMessageCacheException;
-import diskCacheV111.util.MissingResourceCacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -107,7 +102,6 @@ import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.util.CDCExecutorServiceDecorator;
-import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;

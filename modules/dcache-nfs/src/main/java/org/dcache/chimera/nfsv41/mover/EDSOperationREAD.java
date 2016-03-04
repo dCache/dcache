@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
-import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;

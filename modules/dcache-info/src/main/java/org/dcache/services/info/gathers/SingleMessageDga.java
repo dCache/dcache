@@ -1,12 +1,5 @@
 package org.dcache.services.info.gathers;
 
-import com.google.common.base.Splitter;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
 import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellMessage;

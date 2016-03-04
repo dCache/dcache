@@ -16,7 +16,6 @@ import java.net.Socket;
 import java.nio.channels.AsynchronousCloseException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellDomainInfo;

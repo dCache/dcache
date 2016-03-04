@@ -21,7 +21,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.dcache.commons.stats.RequestCounter;
-import org.dcache.commons.stats.RequestCounterImpl;
 import org.dcache.commons.stats.RequestCounters;
 
 /**

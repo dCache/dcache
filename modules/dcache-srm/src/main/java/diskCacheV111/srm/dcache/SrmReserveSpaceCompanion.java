@@ -66,7 +66,6 @@ documents or software obtained from this server.
 
 package diskCacheV111.srm.dcache;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

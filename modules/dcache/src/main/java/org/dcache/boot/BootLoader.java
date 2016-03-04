@@ -4,7 +4,6 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;

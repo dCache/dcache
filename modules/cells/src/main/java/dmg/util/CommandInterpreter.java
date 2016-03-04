@@ -1,6 +1,5 @@
 package dmg.util;
 
-import java.io.Serializable;
 import dmg.util.command.AcCommandScanner;
 
 import org.dcache.util.Args;

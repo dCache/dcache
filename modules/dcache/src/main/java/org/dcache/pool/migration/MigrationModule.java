@@ -1,7 +1,6 @@
 package org.dcache.pool.migration;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;

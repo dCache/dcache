@@ -64,7 +64,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.util.backoff.IBackoffAlgorithm.Status.FAILURE;
 import static org.dcache.util.backoff.IBackoffAlgorithm.Status.SUCCESS;
 

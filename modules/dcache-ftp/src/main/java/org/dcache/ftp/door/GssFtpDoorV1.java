@@ -1,6 +1,5 @@
 package org.dcache.ftp.door;
 
-import com.google.common.base.Throwables;
 import org.dcache.dss.DssContext;
 import org.dcache.dss.DssContextFactory;
 
@@ -11,7 +10,6 @@ import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.security.cert.CertPathValidatorException;
 import java.util.Base64;
 
 import diskCacheV111.util.CacheException;
@@ -20,9 +18,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import dmg.util.CommandExitException;
 
 import org.dcache.auth.LoginNamePrincipal;
-
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.getFirst;
 
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {

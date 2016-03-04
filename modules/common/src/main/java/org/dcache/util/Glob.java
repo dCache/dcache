@@ -4,7 +4,6 @@ import com.google.common.base.CharMatcher;
 
 import java.io.Serializable;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * A glob is a pattern used for limited pattern matching. The class

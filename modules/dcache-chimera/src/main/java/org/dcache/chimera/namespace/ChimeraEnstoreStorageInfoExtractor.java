@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.HashMap;
@@ -21,7 +20,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.InodeStorageInformation;
 
 
 public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExtractor {

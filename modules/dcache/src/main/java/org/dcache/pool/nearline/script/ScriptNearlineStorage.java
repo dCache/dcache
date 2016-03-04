@@ -43,7 +43,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HsmRunSystem;
@@ -59,7 +58,6 @@ import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Arrays.asList;
 
 /**

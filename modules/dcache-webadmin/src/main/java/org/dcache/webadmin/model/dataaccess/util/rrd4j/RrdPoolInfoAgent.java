@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.model.dataaccess.util.rrd4j;
 
-import com.google.common.base.Preconditions;
 import org.rrd4j.core.RrdDb;
 import org.rrd4j.core.RrdDef;
 import org.rrd4j.core.Sample;

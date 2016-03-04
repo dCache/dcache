@@ -67,7 +67,6 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

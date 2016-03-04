@@ -90,7 +90,6 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.util.TimeUtils.TimeUnitFormat;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.util.TimeUtils.*;

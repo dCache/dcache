@@ -1,16 +1,6 @@
 package org.dcache.commons.util;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
 import org.slf4j.MDC;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Strings.nullToEmpty;
 
 /**
  * The class emulates the Nested Diagnostic Context of Log4j.

@@ -2,7 +2,6 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.collect.ImmutableList;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;

@@ -60,8 +60,6 @@ import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Collections2.filter;
 import static com.google.common.collect.Iterables.*;
-import static com.google.common.collect.Iterables.getFirst;
-import static com.google.common.collect.Iterables.removeIf;
 
 public class GPlazma
 {

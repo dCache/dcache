@@ -25,15 +25,12 @@ import org.slf4j.Logger;
 import javax.security.auth.Subject;
 
 import java.net.InetSocketAddress;
-import java.security.Principal;
 import java.time.Instant;
 
 import dmg.cells.nucleus.CDC;
 
-import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.UidPrincipal;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.xrootd.door.LoginEvent;
 import org.dcache.xrootd.protocol.XrootdProtocol;

@@ -1,7 +1,6 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

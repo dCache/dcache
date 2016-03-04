@@ -24,7 +24,6 @@ import org.dcache.services.info.gathers.DataGatheringScheduler;
 import org.dcache.services.info.gathers.MessageHandlerChain;
 import org.dcache.services.info.serialisation.SimpleTextSerialiser;
 import org.dcache.services.info.serialisation.StateSerialiser;
-import org.dcache.services.info.serialisation.XmlSerialiser;
 import org.dcache.util.Args;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 

@@ -1,7 +1,6 @@
 package org.dcache.webdav.federation;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.escape.Escaper;
 import com.google.common.net.PercentEscaper;

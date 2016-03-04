@@ -7,13 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Hashtable;
 import java.util.Map;
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;

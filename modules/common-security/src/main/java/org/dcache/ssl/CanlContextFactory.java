@@ -54,8 +54,6 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.util.CachingCertificateValidator;
 
 import static eu.emi.security.authn.x509.ValidationErrorCategory.*;
-import static eu.emi.security.authn.x509.ValidationErrorCategory.CRL;
-import static eu.emi.security.authn.x509.ValidationErrorCategory.OCSP;
 import static org.dcache.util.Callables.memoizeFromFiles;
 import static org.dcache.util.Callables.memoizeWithExpiration;
 

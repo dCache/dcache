@@ -25,7 +25,6 @@ import org.dcache.ftp.client.DataChannelAuthentication;
 import org.dcache.ftp.client.DataSink;
 import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.GridFTPSession;
-import org.dcache.ftp.client.extended.GridFTPServerFacade;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 
 /**

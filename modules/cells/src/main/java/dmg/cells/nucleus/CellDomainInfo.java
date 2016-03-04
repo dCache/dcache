@@ -1,7 +1,6 @@
 package dmg.cells.nucleus;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * @author Patrick Fuhrmann

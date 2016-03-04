@@ -17,7 +17,6 @@
  */
 package org.dcache.pool.nearline.tar;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;

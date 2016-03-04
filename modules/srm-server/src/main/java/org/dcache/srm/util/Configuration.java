@@ -68,7 +68,6 @@ package org.dcache.srm.util;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import org.italiangrid.voms.ac.VOMSACValidator;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.annotation.Nonnull;
@@ -84,9 +83,7 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.FsPath;
 
-import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMInvalidPathException;
-import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.client.Transport;
 
 public class Configuration {

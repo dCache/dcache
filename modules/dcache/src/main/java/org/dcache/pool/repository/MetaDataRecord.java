@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.vehicles.FileAttributes;

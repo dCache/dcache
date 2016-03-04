@@ -1,6 +1,5 @@
 package  dmg.cells.services ;
 
-import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +10,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
-import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellAdapter;

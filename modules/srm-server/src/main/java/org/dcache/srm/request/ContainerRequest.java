@@ -73,7 +73,6 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,9 +80,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.function.LongFunction;
@@ -103,7 +99,6 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.srm.handler.ReturnStatuses.*;
 
 import static org.dcache.util.TimeUtils.relativeTimestamp;

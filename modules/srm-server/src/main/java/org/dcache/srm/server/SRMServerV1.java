@@ -10,7 +10,6 @@ import java.rmi.RemoteException;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.srm.SRM;
-import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.client.ConvertUtil;

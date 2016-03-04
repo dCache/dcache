@@ -27,7 +27,6 @@ import java.rmi.RemoteException;
 
 import org.dcache.srm.SRMException;
 import org.dcache.srm.v2_2.SrmPingResponse;
-import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
 import org.dcache.srm.v2_2.SrmRmResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TMetaDataPathDetail;

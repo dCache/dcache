@@ -27,7 +27,6 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -39,7 +38,6 @@ import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
-import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 
 import static com.google.common.base.Preconditions.checkNotNull;

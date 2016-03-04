@@ -4,7 +4,6 @@ import com.google.common.collect.Range;
 
 import javax.security.auth.Subject;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 

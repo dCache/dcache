@@ -4,8 +4,6 @@ package diskCacheV111.util;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 
-import javax.annotation.Nullable;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -13,7 +11,6 @@ import java.util.Map;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 
 public class SpreadAndWait<T extends Serializable>

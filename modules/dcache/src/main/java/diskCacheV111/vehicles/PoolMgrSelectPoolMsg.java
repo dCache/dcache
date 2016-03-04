@@ -5,7 +5,6 @@ import javax.annotation.Nonnull;
 import java.util.EnumSet;
 
 import diskCacheV111.poolManager.RequestContainerV5;
-import diskCacheV111.util.FsPath;
 
 import org.dcache.vehicles.FileAttributes;
 

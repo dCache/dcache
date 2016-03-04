@@ -1,6 +1,5 @@
 package org.dcache.auth;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 
 import javax.security.auth.Subject;

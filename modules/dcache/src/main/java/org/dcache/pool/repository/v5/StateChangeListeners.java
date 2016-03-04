@@ -1,7 +1,6 @@
 package org.dcache.pool.repository.v5;
 
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.Uninterruptibles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

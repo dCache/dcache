@@ -108,7 +108,6 @@ import org.dcache.srm.qos.QOSTicket;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
-import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.ArrayOfTCopyRequestFileStatus;
 import org.dcache.srm.v2_2.SrmCopyResponse;
 import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;

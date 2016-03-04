@@ -29,7 +29,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.qos.QOSPlugin;
 import org.dcache.srm.qos.QOSTicket;
-import org.dcache.srm.util.Configuration;
 
 public class TerapathsPlugin implements QOSPlugin {
     private static final Logger logger =

@@ -9,7 +9,6 @@ package org.dcache.srm.request.sql;
 import com.google.common.collect.ImmutableList;
 import org.springframework.dao.DataAccessException;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

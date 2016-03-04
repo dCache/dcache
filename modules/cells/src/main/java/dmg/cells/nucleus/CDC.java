@@ -1,10 +1,6 @@
 package dmg.cells.nucleus;
 
-import com.google.common.io.BaseEncoding;
-import com.google.common.primitives.Longs;
 import org.slf4j.MDC;
-
-import dmg.util.TimebasedCounter;
 
 import org.dcache.commons.util.NDC;
 
