@@ -446,15 +446,15 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         if (requestToken==null) {
             return;
         }
-        String[] surl_strings = pendingSurlsMap.keySet()
-                .toArray(new String[pendingSurlsMap.size()]);
+        java.net.URI[] surl_strings = pendingSurlsMap.keySet()
+                .toArray(new java.net.URI[pendingSurlsMap.size()]);
         int len = surl_strings.length;
         say("Releasing all remaining file requests");
         URI surlArray[] = new URI[len];
 
         for(int i=0;i<len;++i){
             URI uri =
-                new URI(surl_strings[i]);
+                new URI(surl_strings[i].toASCIIString());
             surlArray[i]=uri;
         }
         SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
