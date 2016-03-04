@@ -79,11 +79,11 @@ public final class TimeFramePlotProperties {
         TRANSFERS_P2P,
         CONNECTION_TIME,
         CACHE_HITS
-    };
+    }
 
     public enum TimeFrame {
         DAILY, WEEKLY, MONTHLY, YEARLY
-    };
+    }
 
     public static final String POPUP_WIDTH = "plot.width";
     public static final String POPUP_HEIGHT = "plot.height";

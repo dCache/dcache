@@ -53,7 +53,7 @@ public class SizeWrapper
             fmt = "%.2f";
         }
         return String.format(fmt, val) + " " + units;
-    };
+    }
 
     @Override
     public String toString()

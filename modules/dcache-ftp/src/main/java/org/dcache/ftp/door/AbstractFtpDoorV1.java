@@ -219,7 +219,7 @@ import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 
 enum AnonymousPermission
 {
-    ALLOW_ANONYMOUS_USER, FORBID_ANONYMOUS_USER;
+    ALLOW_ANONYMOUS_USER, FORBID_ANONYMOUS_USER
 }
 
 /**

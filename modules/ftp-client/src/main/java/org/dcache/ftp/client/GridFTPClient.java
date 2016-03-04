@@ -144,7 +144,7 @@ public class GridFTPClient extends FTPClient
             }
 
             try {
-                Reply reply = gridFTPControlChannel.exchange(new Command("PASS", "dummy"));;
+                Reply reply = gridFTPControlChannel.exchange(new Command("PASS", "dummy"));
                 if (!Reply.isPositiveCompletion(reply)) {
                     throw ServerException.embedUnexpectedReplyCodeException(
                             new UnexpectedReplyCodeException(reply),

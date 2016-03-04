@@ -61,7 +61,7 @@ public class LoginBrokerPublisher
 
     private enum LastEvent
     {
-        NONE, UPDATE_SUBMITTED, UPDATE_SENT, ROUTE_ADDED, NOROUTE;
+        NONE, UPDATE_SUBMITTED, UPDATE_SENT, ROUTE_ADDED, NOROUTE
     }
 
     private CellAddressCore _topic;

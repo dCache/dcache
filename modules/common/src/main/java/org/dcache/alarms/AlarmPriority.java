@@ -65,5 +65,5 @@ package org.dcache.alarms;
  * @author arossi
  */
 public enum AlarmPriority {
-    LOW, MODERATE, HIGH, CRITICAL;
+    LOW, MODERATE, HIGH, CRITICAL
 }

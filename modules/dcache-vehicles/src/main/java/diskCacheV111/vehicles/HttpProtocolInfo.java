@@ -24,7 +24,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
 
         // hint to user-agent to download content
         ATTACHMENT
-    };
+    }
 
   private String _name  = "Unkown" ;
   private int    _minor;

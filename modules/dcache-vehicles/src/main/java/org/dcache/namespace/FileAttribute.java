@@ -28,5 +28,5 @@ public enum FileAttribute {
     STORAGEINFO,
     TYPE,
     SIMPLE_TYPE,
-    PNFSID;
+    PNFSID
 }

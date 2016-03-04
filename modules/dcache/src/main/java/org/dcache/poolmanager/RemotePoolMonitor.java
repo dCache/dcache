@@ -60,7 +60,7 @@ public class RemotePoolMonitor
 
     private enum LastEvent
     {
-        NONE, REQUEST_SUBMITTED, ROUTE_ADDED, NOROUTE;
+        NONE, REQUEST_SUBMITTED, ROUTE_ADDED, NOROUTE
     }
 
     private long lastRefreshTime;

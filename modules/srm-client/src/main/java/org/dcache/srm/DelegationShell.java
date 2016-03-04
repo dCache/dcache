@@ -87,7 +87,7 @@ public class DelegationShell extends ShellApplication
     private enum GridSiteVersion
     {
         V1_1_0,
-        V2_0_0;
+        V2_0_0
     }
 
     /**
@@ -99,7 +99,7 @@ public class DelegationShell extends ShellApplication
     {
         ASSUME_V1,
         ASSUME_V2,
-        PROBE;
+        PROBE
     }
 
     private final DelegationServiceLocator _v2Locator;

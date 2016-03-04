@@ -10,5 +10,5 @@ public enum EntryState
     CACHED,
     PRECIOUS,
     REMOVED,
-    DESTROYED;
+    DESTROYED
 }

@@ -59,7 +59,7 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
     private boolean isUsingLegacyClose;
     private CrlCheckingMode crlCheckingMode = CrlCheckingMode.IF_VALID;
     private OCSPCheckingMode ocspCheckingMode = OCSPCheckingMode.IF_AVAILABLE;
-    private NamespaceCheckingMode namespaceMode = NamespaceCheckingMode.EUGRIDPMA_GLOBUS;;
+    private NamespaceCheckingMode namespaceMode = NamespaceCheckingMode.EUGRIDPMA_GLOBUS;
     private KeyPairCache keyPairCache;
 
     public int getAcceptors()

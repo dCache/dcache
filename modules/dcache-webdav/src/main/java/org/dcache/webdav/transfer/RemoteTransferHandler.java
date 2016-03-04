@@ -171,7 +171,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
         {
             return BY_SCHEME.keySet();
         }
-    };
+    }
 
     private enum TransferFlag {
         REQUIRE_VERIFICATION
