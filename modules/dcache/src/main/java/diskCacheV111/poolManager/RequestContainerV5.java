@@ -637,9 +637,7 @@ public class RequestContainerV5
         PoolRequestHandler handler;
         _log.info( "Adding request for : "+canonicalName ) ;
         synchronized( _handlerHash ){
-           handler = _handlerHash.computeIfAbsent(canonicalName, n -> {
-                return new PoolRequestHandler(pnfsId, n, allowedStates);
-            });
+           handler = _handlerHash.computeIfAbsent(canonicalName, n -> new PoolRequestHandler(pnfsId, n, allowedStates));
            handler.addRequest(envelope) ;
         }
     }

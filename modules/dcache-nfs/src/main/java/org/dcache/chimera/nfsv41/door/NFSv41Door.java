@@ -82,6 +82,7 @@ import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
+import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.RoundRobinStripingPattern;
 import org.dcache.nfs.v4.StateDisposeListener;
@@ -720,16 +721,16 @@ public class NFSv41Door extends AbstractCellComponent implements
                     .filter(c -> host == null? true : c.getRemoteAddress().getAddress().equals(clientAddress))
                     .forEach(c -> {
                         sb.append("    ").append(c).append("\n");
-                        c.sessions().forEach((session) -> {
+                        for (NFSv41Session session : c.sessions()) {
                             sb.append("        ")
-                            .append(session)
-                            .append(" max slot: ")
-                            .append(session.getHighestSlot())
-                            .append("/")
-                            .append(session.getHighestUsedSlot())
-                            .append("\n");
+                                    .append(session)
+                                    .append(" max slot: ")
+                                    .append(session.getHighestSlot())
+                                    .append("/")
+                                    .append(session.getHighestUsedSlot())
+                                    .append("\n");
+                        }
                     });
-                });
             return sb.toString();
         }
     }

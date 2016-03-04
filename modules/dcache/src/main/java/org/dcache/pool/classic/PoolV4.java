@@ -749,11 +749,11 @@ public class PoolV4
         String doorUniqueId = envelope.getSourceAddress().toString() + message.getId();
 
         if (message instanceof PoolAcceptFileMessage) {
-            return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> { return this.createMover(envelope, message); }, IoPriority.HIGH);
+            return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> createMover(envelope, message), IoPriority.HIGH);
         } else if (message.isPool2Pool()) {
-            return _ioQueue.getOrCreateMover(P2P_QUEUE_NAME, doorUniqueId, () -> { return this.createMover(envelope, message); }, IoPriority.HIGH);
+            return _ioQueue.getOrCreateMover(P2P_QUEUE_NAME, doorUniqueId, () -> createMover(envelope, message), IoPriority.HIGH);
         } else {
-            return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> { return this.createMover(envelope, message); }, IoPriority.REGULAR);
+            return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> createMover(envelope, message), IoPriority.REGULAR);
         }
     }
 

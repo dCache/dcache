@@ -1164,7 +1164,7 @@ public class DcacheResourceFactory
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);
         List<InetSocketAddress> addresses = Subjects.getOrigin(subject).getClientChain().stream().
-                map(a -> {return new InetSocketAddress(a, PROTOCOL_INFO_UNKNOWN_PORT);}).
+                map(a -> new InetSocketAddress(a, PROTOCOL_INFO_UNKNOWN_PORT)).
                 collect(Collectors.toList());
         transfer.setClientAddresses(addresses);
         transfer.setOverwriteAllowed(_isOverwriteAllowed);

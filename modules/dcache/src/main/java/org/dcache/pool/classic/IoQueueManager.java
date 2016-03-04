@@ -119,9 +119,7 @@ public class IoQueueManager {
     }
 
     public void printSetup(PrintWriter pw) {
-        _queues.forEach(s -> {
-            pw.println("mover set max active -queue=" + s.getName() + " " + s.getMaxActiveJobs());
-        });
+        _queues.forEach(s -> pw.println("mover set max active -queue=" + s.getName() + " " + s.getMaxActiveJobs()));
     }
 
     public JobInfo findJob(String client, long id) {
