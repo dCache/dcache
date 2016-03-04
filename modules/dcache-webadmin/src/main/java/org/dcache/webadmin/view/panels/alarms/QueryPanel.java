@@ -116,8 +116,8 @@ public class QueryPanel extends Panel {
                         "alarm");
         RadioGroup rgrp = new RadioGroup("selectgroup", selectAlarmValue);
         rgrp.add(new Radio("all", Model.of((Boolean) null)));
-        rgrp.add(new Radio("alarmsonly", Model.of((Boolean) true)));
-        rgrp.add(new Radio("noalarms", Model.of((Boolean) false)));
+        rgrp.add(new Radio("alarmsonly", Model.of(true)));
+        rgrp.add(new Radio("noalarms", Model.of(false)));
         add(rgrp);
     }
 

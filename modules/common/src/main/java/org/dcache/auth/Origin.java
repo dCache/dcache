@@ -78,7 +78,7 @@ public class Origin implements Principal, Serializable
     }
 
     public ImmutableList<InetAddress> getClientChain() {
-        return _clientChain == null ? ImmutableList.<InetAddress>of(_address) : _clientChain;
+        return _clientChain == null ? ImmutableList.of(_address) : _clientChain;
     }
 
     @Override

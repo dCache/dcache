@@ -24,8 +24,7 @@ public class Handler extends URLStreamHandler
             if (threadLoader != null) {
                 Class<? extends URLConnection> cls = threadLoader.loadClass(
                    "dmg.cells.nucleus.CellUrl.DomainUrlConnection").asSubclass(URLConnection.class);
-                Constructor<? extends URLConnection> constr=cls.getConstructor(new Class[]
-                    {URL.class,String.class});
+                Constructor<? extends URLConnection> constr=cls.getConstructor(URL.class, String.class);
                 return constr.newInstance(u,"cell");
 
 

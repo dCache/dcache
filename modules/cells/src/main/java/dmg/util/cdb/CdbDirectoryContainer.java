@@ -103,7 +103,7 @@ public class      CdbDirectoryContainer
        //
        try{
           _elementRemoveMethod =
-              _elementClass.getMethod( "remove" , new Class[0] ) ;
+              _elementClass.getMethod("remove");
        }catch( NoSuchMethodException nsmei ){
            throw new CdbException( "No matching remove method found" ) ;
        }

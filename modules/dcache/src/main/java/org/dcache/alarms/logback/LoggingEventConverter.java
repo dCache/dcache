@@ -126,7 +126,7 @@ final class LoggingEventConverter {
             return null;
         }
 
-        Marker alarmType = (Marker) typeMarker.iterator().next();
+        Marker alarmType = typeMarker.iterator().next();
         Preconditions.checkNotNull(alarmType);
         return alarmType.getName();
     }

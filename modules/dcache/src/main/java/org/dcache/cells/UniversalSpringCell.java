@@ -1003,7 +1003,7 @@ public class UniversalSpringCell
         Args args = getArgs();
         try {
             context = new ClassPathXmlApplicationContext();
-            context.setConfigLocations(new String[]{args.argv(0)});
+            context.setConfigLocations(args.argv(0));
             context.addBeanFactoryPostProcessor(
                     beanFactory -> beanFactory.addBeanPostProcessor(UniversalSpringCell.this));
             context.addBeanFactoryPostProcessor(
