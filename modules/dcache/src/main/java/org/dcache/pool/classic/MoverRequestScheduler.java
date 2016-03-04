@@ -193,7 +193,7 @@ public class MoverRequestScheduler implements Runnable {
      *
      * @return list of all jobs
      */
-    public List<JobInfo> getJobInfos() {
+    public List<IoJobInfo> getJobInfos() {
 
         return Collections.unmodifiableList(_jobs.values().stream()
                 .map(PrioritizedRequest::toJobInfo)
@@ -480,7 +480,7 @@ public class MoverRequestScheduler implements Runnable {
             return _state + " : " + _mover.toString();
         }
 
-        public synchronized JobInfo toJobInfo() {
+        public synchronized IoJobInfo toJobInfo() {
             return new IoJobInfo(_submitTime, _startTime, _state.toString(), _id,
                                  _mover.getPathToDoor().getDestinationAddress().toString(), _mover.getClientId(),
                                  _mover.getFileAttributes().getPnfsId(), _mover.getBytesTransferred(),

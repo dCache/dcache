@@ -2028,7 +2028,7 @@ public class PoolV4
     private Object mover_ls(Collection<MoverRequestScheduler> jobSchedulers, boolean binary) {
 
         if (binary) {
-            List<JobInfo> list = new ArrayList<>();
+            List<IoJobInfo> list = new ArrayList<>();
             for (MoverRequestScheduler js : jobSchedulers) {
                 list.addAll(js.getJobInfos());
             }
