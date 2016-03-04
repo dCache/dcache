@@ -14,8 +14,8 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,11 +31,13 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.UnitInteger;
+import diskCacheV111.util.DiskSpace;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
@@ -58,13 +60,10 @@ import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.pool.repository.EntryState.*;
@@ -186,19 +185,19 @@ public class CacheRepositoryV5
      * Pool size configured through the 'max disk space' command.
      */
     @GuardedBy("_stateLock")
-    private long _runtimeMaxSize = Long.MAX_VALUE;
+    private DiskSpace _runtimeMaxSize = DiskSpace.UNSPECIFIED;
 
     /**
      * Pool size configured in the configuration files.
      */
     @GuardedBy("_stateLock")
-    private long _staticMaxSize = Long.MAX_VALUE;
+    private DiskSpace _staticMaxSize = DiskSpace.UNSPECIFIED;
 
     /**
      * Pool size gap to report to pool manager.
      */
     @GuardedBy("_stateLock")
-    private Optional<Long> _gap = Optional.empty();
+    private DiskSpace _gap = DiskSpace.UNSPECIFIED;
 
     /**
      * Throws an IllegalStateException if the repository has been
@@ -421,14 +420,11 @@ public class CacheRepositoryV5
 
     public void setMaxDiskSpaceString(String size)
     {
-        setMaxDiskSpace(UnitInteger.parseUnitLong(size));
+        setMaxDiskSpace(size.isEmpty() ? DiskSpace.UNSPECIFIED : new DiskSpace(size));
     }
 
-    public void setMaxDiskSpace(long size)
+    public void setMaxDiskSpace(DiskSpace size)
     {
-        if (size < 0) {
-            throw new IllegalArgumentException("Negative value is not allowed");
-        }
         _stateLock.writeLock().lock();
         try {
             _staticMaxSize = size;
@@ -891,7 +887,7 @@ public class CacheRepositoryV5
             long gap = space.getGap();
 
             pw.println("Disk space");
-            pw.println("    Total    : " + UnitInteger.toUnitString(total));
+            pw.println("    Total    : " + DiskSpace.toUnitString(total));
             pw.println("    Used     : " + used + "    ["
                        + (((float) used) / ((float) total)) + "]");
             pw.println("    Free     : " + (total - used) + "    Gap : " + gap);
@@ -908,8 +904,8 @@ public class CacheRepositoryV5
                        "    [" + (((float) fsFree) / fsTotal) + "]");
             pw.println("Limits for maximum disk space");
             pw.println("    File system          : " + (fsFree + used));
-            pw.println("    Statically configured: " + UnitInteger.toUnitString(_staticMaxSize));
-            pw.println("    Runtime configured   : " + UnitInteger.toUnitString(_runtimeMaxSize));
+            pw.println("    Statically configured: " + _staticMaxSize);
+            pw.println("    Runtime configured   : " + _runtimeMaxSize);
         } finally {
             _stateLock.readLock().unlock();
         }
@@ -1085,51 +1081,69 @@ public class CacheRepositoryV5
          return getCellName();
     }
 
-    public static final String hh_set_max_diskspace =
-        "<bytes>[<unit>]|Infinity # unit = k|m|g|t";
-    public static final String fh_set_max_diskspace =
-        "Sets the maximum disk space to be used by this pool. Overrides\n" +
-        "whatever maximum was defined in the configuration file. The value\n" +
-        "will be saved to the pool setup file if the save command is\n" +
-        "executed. If inf is specified, then the pool will return to the\n" +
-        "size configured in the configuration file, or no maximum if such a\n" +
-        "size is not defined.";
-    public String ac_set_max_diskspace_$_1(Args args)
+    @Command(name = "set max diskspace",
+            hint = "set size of pool",
+            description = "Sets the maximum disk space to be used by this pool. Overrides " +
+                          "whatever maximum was defined in the configuration file. The value " +
+                          "will be saved to the pool setup file if the save command is " +
+                          "executed.")
+    class SetMaxDiskspaceCommand implements Callable<String>
     {
-        long size = UnitInteger.parseUnitLong(args.argv(0));
-        if (size < 0) {
-            throw new IllegalArgumentException("Negative value is not allowed");
-        }
-        _stateLock.writeLock().lock();
-        try {
-            _runtimeMaxSize = size;
-            if (_state == State.OPEN) {
-                updateAccountSize();
+        @Argument(valueSpec = "-|BYTES[k|m|g|t]",
+                usage = "Disk space in bytes, kibibytes, mebibytes, gibibytes, or tebibytes. If " +
+                        "- is specified, then the pool will return to the size configured in " +
+                        "the configuration file, or no maximum if such a size is not defined.")
+        DiskSpace size;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            _stateLock.writeLock().lock();
+            try {
+                _runtimeMaxSize = size;
+                if (_state == State.OPEN) {
+                    updateAccountSize();
+                }
+            } finally {
+                _stateLock.writeLock().unlock();
             }
-        } finally {
-            _stateLock.writeLock().unlock();
+            return "";
         }
-        return "";
     }
 
-    public static final String hh_set_gap = "<always removable gap>/size[<unit>] # unit = k|m|g";
-    public String ac_set_gap_$_1(Args args)
+    @Command(name = "set gap",
+            hint = "set minimum free space target",
+            description = "New transfers will not be assigned to a pool once it has less free space than the " +
+                          "gap. This is to ensure that there is a reasonable chance for ongoing transfers to " +
+                          "complete. To prevent that writes will fail due to lack of space, the gap should be " +
+                          "in the order of the expected largest file size multiplied by the largest number of " +
+                          "concurrent writes expected to a pool, although a smaller value will often do.\n\n" +
+                          "It is not an error for a pool to have less free space than the gap.")
+    class SetGapCommand implements Callable<String>
     {
-        long gap = UnitInteger.parseUnitLong(args.argv(0));
-        _stateLock.writeLock().lock();
-        try {
-            _gap = Optional.of(gap);
-        } finally {
-            _stateLock.writeLock().unlock();
+        @Argument(valueSpec = "BYTES[k|m|g|t]", required = false,
+                usage = "The gap in bytes, kibibytes, mebibytes, gibibytes or tebibytes. If not specified the " +
+                        "default is the smaller of 4 GiB or 25% of the pool size.")
+        DiskSpace gap = DiskSpace.UNSPECIFIED;
+
+        @Override
+        public String call() throws Exception
+        {
+            _stateLock.writeLock().lock();
+            try {
+                _gap = gap;
+            } finally {
+                _stateLock.writeLock().unlock();
+            }
+            return "Gap set to " + gap;
         }
-        return "Gap set to " + gap;
     }
 
     @Override
     public void printSetup(PrintWriter pw)
     {
-        long runtimeMaxSize;
-        Optional<Long> gap;
+        DiskSpace runtimeMaxSize;
+        DiskSpace gap;
 
         _stateLock.readLock().lock();
         try {
@@ -1139,19 +1153,19 @@ public class CacheRepositoryV5
             _stateLock.readLock().unlock();
         }
 
-        if (runtimeMaxSize < Long.MAX_VALUE) {
+        if (runtimeMaxSize.isSpecified()) {
             pw.println("set max diskspace " + runtimeMaxSize);
         }
-        if (gap.isPresent()) {
-            pw.println("set gap " + gap.get());
+        if (gap.isSpecified()) {
+            pw.println("set gap " + gap);
         }
     }
 
-    private long getConfiguredMaxSize()
+    private DiskSpace getConfiguredMaxSize()
     {
         _stateLock.readLock().lock();
         try {
-            return (_runtimeMaxSize < Long.MAX_VALUE) ? _runtimeMaxSize : _staticMaxSize;
+            return _runtimeMaxSize.orElse(_staticMaxSize);
         } finally {
             _stateLock.readLock().unlock();
         }
@@ -1195,30 +1209,28 @@ public class CacheRepositoryV5
     {
         Account account = _account;
         synchronized (account) {
-            long configuredMaxSize = getConfiguredMaxSize();
-            long fileSystemMaxSize = getFileSystemMaxSize();
-            boolean hasConfiguredMaxSize = (configuredMaxSize < Long.MAX_VALUE);
+            DiskSpace configuredPoolSize = getConfiguredMaxSize();
+            long maxPoolSize = getFileSystemMaxSize();
             long used = account.getUsed();
 
             if (!isTotalSpaceReported()) {
                 LOGGER.warn("Java reported the file system size as 0. This typically happens on Solaris with a 32-bit JVM. Please use a 64-bit JVM.");
-                if (!hasConfiguredMaxSize) {
+                if (!configuredPoolSize.isSpecified()) {
                     throw new IllegalStateException("Failed to determine file system size. A pool size must be configured.");
                 }
             }
 
-            if (hasConfiguredMaxSize && fileSystemMaxSize < configuredMaxSize) {
-                LOGGER.warn("Configured pool size ({}) is larger than what is available on disk ({})", configuredMaxSize,
-                            fileSystemMaxSize);
+            long newSize;
+
+            if (configuredPoolSize.isLargerThan(maxPoolSize)) {
+                LOGGER.warn("Configured pool size ({}) is larger than what is available on disk ({}).",
+                            configuredPoolSize, maxPoolSize);
+            } else if (configuredPoolSize.isLessThan(used)) {
+                LOGGER.warn("Configured pool size ({}) is less than what is used already ({}).",
+                            configuredPoolSize, used);
             }
 
-            if (configuredMaxSize < used) {
-                LOGGER.warn("Configured pool size ({}) is smaller than what is used already ({})", configuredMaxSize,
-                            used);
-            }
-
-            long newSize =
-                Math.max(used, Math.min(configuredMaxSize, fileSystemMaxSize));
+            newSize = Math.max(used, configuredPoolSize.orElse(maxPoolSize);
             if (newSize != account.getTotal()) {
                 LOGGER.info("Adjusting pool size to {}", newSize);
                 account.setTotal(newSize);

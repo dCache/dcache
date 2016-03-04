@@ -26,6 +26,7 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.DiskSpace;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
@@ -196,7 +197,7 @@ public class RepositorySubsystemTest
         repository.setSynchronousNotification(true);
         repository.addListener(this);
         repository.setSpaceSweeperPolicy(sweeper);
-        repository.setMaxDiskSpace(5120);
+        repository.setMaxDiskSpace(new DiskSpace(5120));
     }
 
     @Before
@@ -611,7 +612,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        repository.setMaxDiskSpace(3072);
+        repository.setMaxDiskSpace(new DiskSpace(3072));
         assertSpaceRecord(3072, 0, 1024, 1024);
     }
 
@@ -623,7 +624,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        repository.setMaxDiskSpace(-1);
+        repository.setMaxDiskSpace(new DiskSpace(-1));
     }
 
     @Test
@@ -925,7 +926,7 @@ public class RepositorySubsystemTest
         repository.load();
         stateChangeEvents.clear();
 
-        repository.setMaxDiskSpace(3072);
+        repository.setMaxDiskSpace(new DiskSpace(3072));
         createEntry4(0, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(3072, 0, 2048, 0);

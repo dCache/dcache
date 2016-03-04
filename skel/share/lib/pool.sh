@@ -28,10 +28,20 @@ getSizeOfPool() # in $1 = pool path
     if [ -z "$size" ]; then
         size=$(getProperty pool.size "$domain" "$cell")
     fi
-    if [ "$size" != "Infinity" ]; then
-        stringToGiB "$size" size
-    fi
-    echo $size
+    case "$size" in
+        Infinity)
+            echo "-"
+            ;;
+        -)
+            echo "-"
+            ;;
+        "")
+            echo "-"
+            ;;
+        *)
+            stringToGiB "$size" size
+            echo "${size}G"
+    esac
 }
 
 printPoolConfig() # $1 = path, $2 = name, $3 = domain, $4 = optional size, $5 = optional meta, $6 = optional lfs

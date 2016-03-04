@@ -532,13 +532,7 @@ case "$1" in
                                         ;;
                                 esac
 
-                                max=$(getSizeOfPool "$path")
-                                if [ "$max" = "Infinity" ]; then
-                                    max="-"
-                                else
-                                    max="${max}G"
-                                fi
-                                printf "${name}\t${domain}\t${meta}\t${max}\t$(getFreeSpace ${path}/data)G\t${path}\n"
+                                printf "${name}\t${domain}\t${meta}\t$(getSizeOfPool "$path")\t$(getFreeSpace ${path}/data)G\t${path}\n"
                             fi
                         done
                     done

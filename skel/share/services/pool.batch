@@ -6,7 +6,7 @@ check -strong pool.cell.max-message-threads
 check pool.cell.max-messages-queued
 check -strong pool.name
 check -strong pool.path
-check -strong pool.size
+check pool.size
 check -strong pool.lfs
 check pool.queues
 check pool.tags
