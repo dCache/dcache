@@ -10,6 +10,7 @@ import java.util.Date;
  */
 public class RestoreBean implements Serializable{
 
+    private static final long serialVersionUID = 6511001022217245840L;
     private final String _pnfsId;
     private final String _subnet;
     private String _pool = "";

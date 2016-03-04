@@ -19,6 +19,8 @@ package org.dcache.srm.shell;
 
 public class SrmProtocolException extends RuntimeException
 {
+    private static final long serialVersionUID = 6584774389928563732L;
+
     public SrmProtocolException(String message)
     {
         super(message);

@@ -25,6 +25,8 @@ import org.dcache.srm.v2_2.TStatusCode;
  */
 public class SRMExceedAllocationException extends SRMException
 {
+    private static final long serialVersionUID = -2916383405078605986L;
+
     public SRMExceedAllocationException()
     {
     }

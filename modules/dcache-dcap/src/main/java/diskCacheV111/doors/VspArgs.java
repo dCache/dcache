@@ -17,6 +17,7 @@ import org.dcache.util.Args;
  */
 
 public class VspArgs extends Args {
+   private static final long serialVersionUID = 5281270069586832220L;
    private int _sessionId;
    private int _subSessionId;
    private String _name;

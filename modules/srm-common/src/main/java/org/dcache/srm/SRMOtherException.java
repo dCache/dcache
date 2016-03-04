@@ -21,6 +21,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 public class SRMOtherException extends SRMException
 {
+    private static final long serialVersionUID = 2572990986579044025L;
     private TStatusCode statusCode;
 
     public SRMOtherException(TStatusCode statusCode)

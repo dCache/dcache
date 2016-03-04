@@ -20,6 +20,7 @@ package org.dcache.ftp.client.exception;
  */
 public class FTPReplyParseException extends FTPException
 {
+    private static final long serialVersionUID = -1666767510302111418L;
 
     //public static final int UNSPECIFIED = 0;
     public static final int STRING_TOO_SHORT = 1;

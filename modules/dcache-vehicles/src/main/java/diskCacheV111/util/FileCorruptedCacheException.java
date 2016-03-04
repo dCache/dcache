@@ -32,6 +32,8 @@ import org.dcache.util.Checksum;
  */
 public class FileCorruptedCacheException extends CacheException
 {
+    private static final long serialVersionUID = 6022529795888425409L;
+
     private final Optional<Set<Checksum>> _expectedChecksums;
     private final Optional<Set<Checksum>> _actualChecksums;
     private final Optional<Long> _expectedSize;

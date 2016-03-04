@@ -47,6 +47,8 @@ import org.dcache.vehicles.FileAttributes;
  */
 public class BufferPartition extends Partition
 {
+    private static final long serialVersionUID = 437942839152498525L;
+
     private static final SecureRandom RANDOM = new SecureRandom();
 
     static final String TYPE = "buffer";

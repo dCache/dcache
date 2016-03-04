@@ -24,6 +24,7 @@ package org.dcache.ftp.client.exception;
  **/
 public class ServerException extends FTPException
 {
+    private static final long serialVersionUID = 5580992642770614098L;
 
     /**
      * Server refused performing the request

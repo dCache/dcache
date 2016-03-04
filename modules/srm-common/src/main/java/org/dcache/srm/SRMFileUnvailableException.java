@@ -24,6 +24,8 @@ import org.dcache.srm.v2_2.TStatusCode;
  */
 public class SRMFileUnvailableException extends SRMException
 {
+    private static final long serialVersionUID = -1354387727495296801L;
+
     public SRMFileUnvailableException()
     {
     }

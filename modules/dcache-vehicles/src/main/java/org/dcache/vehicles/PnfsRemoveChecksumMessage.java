@@ -10,6 +10,7 @@ import org.dcache.util.ChecksumType;
  */
 public class PnfsRemoveChecksumMessage extends PnfsMessage
 {
+    private static final long serialVersionUID = 5150401282647239718L;
     private final ChecksumType _type;
 
     public PnfsRemoveChecksumMessage(PnfsId pnfsId, ChecksumType type)

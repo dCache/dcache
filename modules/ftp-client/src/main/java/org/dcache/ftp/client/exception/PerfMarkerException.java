@@ -20,6 +20,7 @@ package org.dcache.ftp.client.exception;
  **/
 public class PerfMarkerException extends FTPException
 {
+    private static final long serialVersionUID = -2293885018513524380L;
 
     /**
 

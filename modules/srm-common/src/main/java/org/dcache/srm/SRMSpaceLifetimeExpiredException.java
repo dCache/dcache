@@ -24,6 +24,8 @@ import org.dcache.srm.v2_2.TStatusCode;
  */
 public class SRMSpaceLifetimeExpiredException extends SRMException
 {
+    private static final long serialVersionUID = 3698747527038391036L;
+
     public SRMSpaceLifetimeExpiredException()
     {
     }

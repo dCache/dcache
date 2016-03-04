@@ -84,6 +84,8 @@ public class PoolQueuesPanel extends BasePanel {
 
     private class EmptyStringPropertyModel extends PropertyModel<Object> {
 
+        private static final long serialVersionUID = 7296305267768847448L;
+
         public EmptyStringPropertyModel(Object modelObject, String expression) {
             super(modelObject, expression);
         }

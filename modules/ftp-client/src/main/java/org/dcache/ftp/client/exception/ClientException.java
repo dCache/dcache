@@ -22,6 +22,7 @@ package org.dcache.ftp.client.exception;
  **/
 public class ClientException extends FTPException
 {
+    private static final long serialVersionUID = 5234134826161554176L;
 
 
     //public static final int UNSPECIFIED = 0;

@@ -58,6 +58,8 @@ import static java.util.concurrent.TimeUnit.DAYS;
  */
 public class WeightedAvailableSpaceSelection implements Serializable
 {
+    private static final long serialVersionUID = 6196398425106858164L;
+
     /* SecureRandom is a higher quality source for randomness than
      * Random.
      */

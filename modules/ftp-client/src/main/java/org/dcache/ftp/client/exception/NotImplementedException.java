@@ -22,6 +22,7 @@ package org.dcache.ftp.client.exception;
  **/
 public class NotImplementedException extends RuntimeException
 {
+    private static final long serialVersionUID = 8514401642930835941L;
 
     public NotImplementedException()
     {

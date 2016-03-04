@@ -21,6 +21,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 public class ForeignKeyViolationException extends DataIntegrityViolationException
 {
+    private static final long serialVersionUID = 5003417901540979046L;
+
     public ForeignKeyViolationException(String msg)
     {
         super(msg);

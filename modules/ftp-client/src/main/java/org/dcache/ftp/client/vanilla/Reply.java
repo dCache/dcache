@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class Reply
         implements Serializable
 {
+    private static final long serialVersionUID = 3736894002484160637L;
 
     private static final Logger logger = LoggerFactory.getLogger(Reply.class);
 

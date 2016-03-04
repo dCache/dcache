@@ -20,6 +20,7 @@ package org.dcache.ftp.client.exception;
  **/
 public class DataChannelException extends FTPException
 {
+    private static final long serialVersionUID = -9003310749534244741L;
 
     //public static final int UNSPECIFIED = 0;
     public static final int UNDEFINED_SERVER_MODE = 1;

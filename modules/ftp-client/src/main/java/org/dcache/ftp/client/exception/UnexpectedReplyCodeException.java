@@ -23,7 +23,7 @@ import org.dcache.ftp.client.vanilla.Reply;
  */
 public class UnexpectedReplyCodeException extends FTPException
 {
-
+    private static final long serialVersionUID = 5488036776861630956L;
     private final Reply reply;
 
     public UnexpectedReplyCodeException(int code, String msg, Reply r)

@@ -13,6 +13,7 @@ public class AuthorizedArgs
        extends Args
        implements Authorizable  {
 
+    private static final long serialVersionUID = 5896111781527949338L;
     private String _principal;
    public AuthorizedArgs( Authorizable authObject ){
        super( authObject.toString() ) ;

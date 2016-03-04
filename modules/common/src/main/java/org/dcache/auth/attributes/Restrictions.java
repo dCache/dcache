@@ -151,6 +151,7 @@ public class Restrictions
      */
     private static class CompositeRestriction implements Restriction
     {
+        private static final long serialVersionUID = 1854305439062458336L;
         private final Set<Restriction> restrictions;
 
         public CompositeRestriction(Set<Restriction> restrictions)

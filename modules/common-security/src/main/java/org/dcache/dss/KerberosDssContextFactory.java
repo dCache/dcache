@@ -126,6 +126,8 @@ public class KerberosDssContextFactory implements DssContextFactory
 
     private static class WrappedGssException extends RuntimeException
     {
+        private static final long serialVersionUID = -4196646840625155999L;
+
         public WrappedGssException(GSSException e)
         {
             super(e);

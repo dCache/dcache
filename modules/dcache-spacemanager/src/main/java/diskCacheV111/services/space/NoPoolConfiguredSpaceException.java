@@ -7,6 +7,8 @@ package diskCacheV111.services.space;
  */
 public class NoPoolConfiguredSpaceException extends NoFreeSpaceException
 {
+    private static final long serialVersionUID = 6474390713292494503L;
+
     public NoPoolConfiguredSpaceException(String message)
     {
         super(message);

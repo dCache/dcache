@@ -4,6 +4,8 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 public class SRMRequestTimedOutException extends SRMException
 {
+    private static final long serialVersionUID = -1815356006475088546L;
+
     public SRMRequestTimedOutException()
     {
     }
