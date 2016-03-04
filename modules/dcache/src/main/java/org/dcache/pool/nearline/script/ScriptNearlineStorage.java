@@ -259,7 +259,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     private List<String> buildOptions(Map<String, String> properties)
     {
         return properties.entrySet().stream()
-                .filter(property -> !PROPERTIES.contains(property))
+                .filter(entry -> !PROPERTIES.contains(entry.getKey()))
                 .map(entry -> "-" + entry.getKey() + (Strings.isNullOrEmpty(entry.getValue()) ? "" : "="+entry.getValue()))
                 .collect(Collectors.toList());
     }
