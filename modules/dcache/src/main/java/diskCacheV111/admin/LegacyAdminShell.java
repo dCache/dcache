@@ -86,7 +86,7 @@ public class LegacyAdminShell
     private final CellStub _pnfsManager;
     private final CellStub _cellStub;
     private String _user;
-    private String _authUser;
+    private final String _authUser;
     private long _timeout = TimeUnit.SECONDS.toMillis(10);
     private boolean _fullException;
     private final String      _instance ;
@@ -220,12 +220,12 @@ public class LegacyAdminShell
     private class Path
     {
 
-        private String _pathString;
+        private final String _pathString;
         private boolean _isAbsolutePath;
         private boolean _isPath;
         private boolean _isDomain;
 
-        private String[] _path;
+        private final String[] _path;
 
         private Path(String pathString)
         {
@@ -811,8 +811,8 @@ public class LegacyAdminShell
 
     private class PnfsFlagReply
     {
-        private PnfsId _pnfsId;
-        private PnfsFlagMessage _message;
+        private final PnfsId _pnfsId;
+        private final PnfsFlagMessage _message;
 
         public PnfsFlagReply(PnfsId pnfsId, PnfsFlagMessage message)
         {

@@ -37,8 +37,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private static final Logger _log =
         LoggerFactory.getLogger(ReplicaDbV1.class);
 
-    private CellAdapter _cell;
-    private HikariDataSource dataSource;
+    private final CellAdapter _cell;
+    private final HikariDataSource dataSource;
     private static final String ERRCODE_UNIQUE_VIOLATION = "23505";
 
     public ReplicaDbV1(ReplicaManagerV2 cell, String jdbcUrl, String user, String pass)

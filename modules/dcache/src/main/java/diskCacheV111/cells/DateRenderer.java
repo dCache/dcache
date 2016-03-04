@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class DateRenderer implements AttributeRenderer
 {
-    private Map<String, DateFormat> formatMap = Maps.newHashMap();
+    private final Map<String, DateFormat> formatMap = Maps.newHashMap();
     private static final String DEFAULT_FORMAT_PATTERN = "MM.dd HH:mm:ss";
 
     /**

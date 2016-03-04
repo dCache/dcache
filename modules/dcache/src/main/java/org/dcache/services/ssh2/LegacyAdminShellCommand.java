@@ -50,9 +50,9 @@ public class LegacyAdminShellCommand implements Command, Runnable
     private Thread _adminShellThread;
     private ConsoleReader _console;
     private MemoryHistory _history;
-    private boolean _useColors;
+    private final boolean _useColors;
     private final CellEndpoint _endpoint;
-    private String _prompt;
+    private final String _prompt;
 
     public LegacyAdminShellCommand(CellEndpoint endpoint, File historyFile, int historySize, String prompt, boolean useColor)
     {

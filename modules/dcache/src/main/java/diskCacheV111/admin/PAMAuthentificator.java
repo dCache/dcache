@@ -53,7 +53,7 @@ public class PAMAuthentificator  extends CellAdapter {
    private PAM_Auth    _pam;
    private ExecAuth    _execAuth;
 
-   private Args   _args;
+   private final Args   _args;
    private Date   _started       = new Date() ;
 
    private int    _requestCount;
@@ -493,9 +493,9 @@ public class PAMAuthentificator  extends CellAdapter {
       return r ;
   }
   private static final long HASH_REFRESH = 4*3600*1000 ;
-  private AgingHash _map = new AgingHash(400) ;
+  private final AgingHash _map = new AgingHash(400) ;
   private class UserRecord {
-     private Attributes _userRecord;
+     private final Attributes _userRecord;
      private long       _timestamp;
      private UserRecord( Attributes userRecord ){
         _userRecord = userRecord ;

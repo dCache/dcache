@@ -21,7 +21,7 @@ public class RunSystem implements Runnable {
     private final Thread _readErrorThread ;
     private final Thread _readOutputThread ;
     private final Thread _processThread ;
-    private int     _id            = nextId() ;
+    private final int     _id            = nextId() ;
     private Process _process ;
     private int     _stoppedReader;
     private boolean _processDone;

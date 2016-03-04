@@ -23,11 +23,11 @@ import org.dcache.util.Args;
  */
     public class HsmDriverOSM implements HsmControllable  {
 
-        private Logger _log = LoggerFactory.getLogger(HsmDriverOSM.class);
+        private static final Logger LOGGER = LoggerFactory.getLogger(HsmDriverOSM.class);
 
-        private Args _global;
-        private Args _local;
-        private String _command;
+        private final Args _global;
+        private final Args _local;
+        private final String _command;
 
         public HsmDriverOSM( Args global , Args local )
         {
@@ -47,7 +47,7 @@ import org.dcache.util.Args;
             try{
                 setVolumeDetails( storageInfo );
             }catch(Exception ee){
-                _log.error("Can't get volume details "+ee);
+                LOGGER.error("Can't get volume details " + ee);
             }
 
         }
@@ -87,7 +87,7 @@ import org.dcache.util.Args;
                          error);
              }
 
-             _log.info("Output : "+output);
+             LOGGER.info("Output : " + output);
 
              String volNbf;
              String volStat;
@@ -147,7 +147,7 @@ import org.dcache.util.Args;
                          error);
              }
 
-             _log.info("Output : "+output);
+             LOGGER.info("Output : " + output);
 
              String tape;
              String status;

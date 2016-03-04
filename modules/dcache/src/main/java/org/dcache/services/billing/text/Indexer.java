@@ -247,11 +247,11 @@ public class Indexer
     {
         return new OutputWriter()
         {
-            Function<String, Map<String, String>> parser =
+            final Function<String, Map<String, String>> parser =
                     new BillingParserBuilder(configuration)
                             .addAllAttributes()
                             .buildToMap();
-            JsonWriter writer = new JsonWriter(new OutputStreamWriter(out));
+            final JsonWriter writer = new JsonWriter(new OutputStreamWriter(out));
 
             {
                 writer.setIndent("  ");
@@ -286,7 +286,7 @@ public class Indexer
     {
         return new OutputWriter()
         {
-            Function<String, Map<String, String>> parser =
+            final Function<String, Map<String, String>> parser =
                     new BillingParserBuilder(configuration)
                             .addAllAttributes()
                             .buildToMap();

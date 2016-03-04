@@ -3,7 +3,7 @@ package org.dcache.pool.migration;
 public class PoolMigrationJobCancelMessage extends PoolMigrationJobMessage
 {
     private static final long serialVersionUID = 7250151494463302009L;
-    private boolean _forced;
+    private final boolean _forced;
 
     public PoolMigrationJobCancelMessage(String id, boolean forced)
     {

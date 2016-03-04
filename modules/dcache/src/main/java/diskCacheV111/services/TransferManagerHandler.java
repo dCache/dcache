@@ -63,8 +63,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     private static final Logger log =
             LoggerFactory.getLogger(TransferManagerHandler.class);
     private final TransferManager manager;
-    private TransferManagerMessage transferRequest;
-    private CellPath requestor;
+    private final TransferManagerMessage transferRequest;
+    private final CellPath requestor;
     private String pnfsPath;
     private transient String parentDir;
     boolean store;

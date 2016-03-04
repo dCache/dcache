@@ -17,8 +17,8 @@ public class PinManagerExtendPinMessage extends Message
 {
     private static final long serialVersionUID = 4239204053634579521L;
 
-    private FileAttributes _fileAttributes;
-    private long _pinId;
+    private final FileAttributes _fileAttributes;
+    private final long _pinId;
     private long _lifetime;
     private Date _expirationTime;
 

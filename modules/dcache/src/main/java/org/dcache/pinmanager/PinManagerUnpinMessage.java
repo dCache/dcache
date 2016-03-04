@@ -11,7 +11,7 @@ public class PinManagerUnpinMessage extends Message
 
     private Long _pinId;
     private String _requestId;
-    private PnfsId _pnfsId;
+    private final PnfsId _pnfsId;
 
     public PinManagerUnpinMessage(PnfsId pnfsId)
     {

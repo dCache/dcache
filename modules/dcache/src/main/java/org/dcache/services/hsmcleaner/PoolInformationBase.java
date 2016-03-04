@@ -25,19 +25,19 @@ public class PoolInformationBase implements CellMessageReceiver
      * Time in milliseconds after which pool information is
      * invalidated.
      */
-    private long _timeout = 5 * 60 * 1000; // 5 minutes
+    private static final long TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
     /**
      * Map of all pools currently up.
      */
-    private Map<String, PoolInformation> _pools =
+    private final Map<String, PoolInformation> _pools =
         new HashMap<>();
 
     /**
      * Map from HSM instance name to the set of pools attached to that
      * HSM.
      */
-    private Map<String, Collection<PoolInformation>> _hsmToPool =
+    private final Map<String, Collection<PoolInformation>> _hsmToPool =
         new HashMap<>();
 
     /**
@@ -66,7 +66,7 @@ public class PoolInformationBase implements CellMessageReceiver
         Collection<PoolInformation> pools = _hsmToPool.get(hsm);
         if (pools != null) {
             for (PoolInformation pool : pools) {
-                if (pool.getAge() <= _timeout
+                if (pool.getAge() <= TIMEOUT
                     && !pool.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
                     return pool;
                 }

@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 class ReverseOrder<T> implements Comparator<T>
 {
-    private Comparator<T> _inner;
+    private final Comparator<T> _inner;
 
     public ReverseOrder(Comparator<T> inner)
     {

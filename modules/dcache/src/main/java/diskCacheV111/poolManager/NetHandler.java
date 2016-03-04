@@ -10,12 +10,12 @@ import java.util.Map;
 
 class NetHandler implements Serializable {
     private static final long serialVersionUID = 8911153851483100573L;
-    Map<Long, NetUnit>[] _netList = new HashMap[33];
-    private String[] _maskStrings = new String[33];
-    private long[] _masks = new long[33];
-    Map<BigInteger, NetUnit>[] _netListV6 = new HashMap[129];
-    private String[] _maskStringsV6 = new String[129];
-    private BigInteger[] _masksV6 = new BigInteger[129];
+    final Map<Long, NetUnit>[] _netList = new HashMap[33];
+    private final String[] _maskStrings = new String[33];
+    private final long[] _masks = new long[33];
+    final Map<BigInteger, NetUnit>[] _netListV6 = new HashMap[129];
+    private final String[] _maskStringsV6 = new String[129];
+    private final BigInteger[] _masksV6 = new BigInteger[129];
 
     NetHandler() {
         long mask = 0;

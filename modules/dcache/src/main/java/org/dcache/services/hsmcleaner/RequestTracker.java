@@ -44,8 +44,8 @@ public class RequestTracker implements CellMessageReceiver
      */
     class Timeout extends TimerTask
     {
-        String _hsm;
-        String _pool;
+        final String _hsm;
+        final String _pool;
 
         Timeout(String hsm, String pool)
         {
@@ -75,7 +75,7 @@ public class RequestTracker implements CellMessageReceiver
      *
      * For each HSM, we have at most one outstanding remove request.
      */
-    private Map<String,Timeout> _poolRequests =
+    private final Map<String,Timeout> _poolRequests =
         new HashMap<>();
 
     /**
@@ -86,7 +86,7 @@ public class RequestTracker implements CellMessageReceiver
      * requests. For each HSM, there will be at most one outstanding
      * remove request; new entries during that period will be queued.
      */
-    private Map<String,Set<URI>> _locationsToDelete =
+    private final Map<String,Set<URI>> _locationsToDelete =
         new HashMap<>();
 
     /**
@@ -112,7 +112,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Timer used for implementing timeouts.
      */
-    private Timer _timer = new Timer("Request tracker timeout");
+    private final Timer _timer = new Timer("Request tracker timeout");
 
     /**
      * Pools currently available.

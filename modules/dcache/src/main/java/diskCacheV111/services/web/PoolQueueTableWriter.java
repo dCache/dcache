@@ -41,7 +41,7 @@ class PoolCostEntry
 
 class ActionHeaderExtension
 {
-    private TreeMap<String,int[]> _map;
+    private final TreeMap<String,int[]> _map;
 
     ActionHeaderExtension(TreeMap<String,int[]> map)
     {

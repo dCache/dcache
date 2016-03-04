@@ -22,8 +22,8 @@ import static com.google.common.collect.Iterables.filter;
  */
 public class LoginReply
 {
-    private Subject _subject;
-    private Set<LoginAttribute> _attributes;
+    private final Subject _subject;
+    private final Set<LoginAttribute> _attributes;
 
     public LoginReply()
     {

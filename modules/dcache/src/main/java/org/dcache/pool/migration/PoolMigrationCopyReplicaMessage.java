@@ -21,7 +21,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
 {
     private static final long serialVersionUID = 6328444770149191656L;
 
-    private FileAttributes _fileAttributes;
+    private final FileAttributes _fileAttributes;
     private final EntryState _state;
     private final List<StickyRecord> _stickyRecords;
     private final boolean _computeChecksumOnUpdate;

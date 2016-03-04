@@ -30,7 +30,7 @@ public class PathHandler extends AbstractHandler {
 
     private static final FileNameMap mimeTypeMap = URLConnection.getFileNameMap();
 
-    private File path;
+    private final File path;
 
     public PathHandler(File path) {
         this.path = path;

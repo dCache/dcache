@@ -8,8 +8,8 @@ import java.util.Arrays;
 
 public class DCapProrocolChallenge {
 
-	private int _sessionID;
-	private byte[] _challenge;
+	private final int _sessionID;
+	private final byte[] _challenge;
 
 	public DCapProrocolChallenge(int session, byte[] challenge) {
 		_sessionID = session;

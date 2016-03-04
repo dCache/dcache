@@ -54,14 +54,14 @@ public class AnsiTerminalCommand implements Command, Runnable {
 
     private static final Logger _logger =
         LoggerFactory.getLogger(AnsiTerminalCommand.class);
-    private UserAdminShell _userAdminShell;
+    private final UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;
     private InputStream _in;
     private OutputStream _out;
     private Thread _adminShellThread;
     private ConsoleReader _console;
     private MemoryHistory _history;
-    private boolean _useColors;
+    private final boolean _useColors;
 
     private PipedOutputStream _pipedOut;
     private PipedInputStream _pipedIn;

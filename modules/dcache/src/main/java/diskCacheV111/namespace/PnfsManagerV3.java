@@ -166,7 +166,7 @@ public class PnfsManagerV3
     /**
      * Executor for ProcessThread instances.
      */
-    private ExecutorService executor =
+    private final ExecutorService executor =
             Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("proc-%d").build());
 
     private CellPath _cacheModificationRelay;

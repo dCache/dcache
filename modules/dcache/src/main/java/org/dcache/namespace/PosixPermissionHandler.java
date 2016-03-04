@@ -23,13 +23,13 @@ import static org.dcache.namespace.FileAttribute.*;
  */
 public class PosixPermissionHandler implements PermissionHandler
 {
-    private Set<FileAttribute> _requiredAttributes =
+    private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
         Collections.unmodifiableSet(EnumSet.of(OWNER, OWNER_GROUP, MODE));
 
     @Override
     public Set<FileAttribute> getRequiredAttributes()
     {
-        return _requiredAttributes;
+        return REQUIRED_ATTRIBUTES;
     }
 
     private boolean isSet(int mode, int flag)

@@ -59,7 +59,7 @@ public class MigrationModuleServer
     private static final Logger _log =
         LoggerFactory.getLogger(MigrationModuleServer.class);
 
-    private Map<UUID, Request> _requests = new ConcurrentHashMap<>();
+    private final Map<UUID, Request> _requests = new ConcurrentHashMap<>();
     private P2PClient _p2p;
     private Repository _repository;
     private ExecutorService _executor;

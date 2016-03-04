@@ -16,7 +16,7 @@ public class PoolInformation
     private final long _created;
 
     /** Last PoolUp message received from the pool. */
-    PoolManagerPoolUpMessage _poolup;
+    final PoolManagerPoolUpMessage _poolup;
 
     public PoolInformation(PoolManagerPoolUpMessage message)
     {

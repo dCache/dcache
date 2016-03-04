@@ -659,9 +659,9 @@ public void messageArrived( CellMessage message ){
        private static final int QUERY_1  = 4 ;
        private static final int QUERY_2  = 5 ;
 
-       private long    _size;
-       private boolean _isPrecious;
-       private PnfsId  _pnfsId;
+       private final long    _size;
+       private final boolean _isPrecious;
+       private final PnfsId  _pnfsId;
        private boolean _exists      = true ;
        private String  _destination;
        //

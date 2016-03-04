@@ -42,7 +42,7 @@ public class	FTPTransactionLog
 
 	private FileWriter LWriter;
 	private File LogFilePath;
-	private String root;
+	private final String root;
 	private String tid;
 	private boolean GotMiddle;
 

@@ -83,7 +83,7 @@ public class PoolManagerV5
     private int  _writeThreads;
     private int  _readThreads;
 
-    private LongAdder _counterPoolUp = new LongAdder();
+    private final LongAdder _counterPoolUp = new LongAdder();
     private int _counterSelectWritePool;
     private int _counterSelectReadPool;
 

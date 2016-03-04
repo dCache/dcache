@@ -25,13 +25,13 @@ import static org.dcache.namespace.FileAttribute.*;
  */
 public class ACLPermissionHandler implements PermissionHandler
 {
-    private Set<FileAttribute> _requiredAttributes =
+    private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
         Collections.unmodifiableSet(EnumSet.of(ACL, OWNER, OWNER_GROUP));
 
     @Override
     public Set<FileAttribute> getRequiredAttributes()
     {
-        return _requiredAttributes;
+        return REQUIRED_ATTRIBUTES;
     }
 
     private Permission getPermission(Subject subject, FileAttributes attr)

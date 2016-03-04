@@ -19,8 +19,8 @@ public class PinTask
 {
     private static final Logger _log = LoggerFactory.getLogger(PinTask.class);
 
-    private PinManagerPinMessage _request;
-    private MessageReply<PinManagerPinMessage> _reply;
+    private final PinManagerPinMessage _request;
+    private final MessageReply<PinManagerPinMessage> _reply;
     private Pin _pin;
     private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
 

@@ -186,7 +186,7 @@ public class PoolV4
     private int _hybridCurrent;
 
     private ChecksumModule _checksumModule;
-    private ReplicationHandler _replicationHandler = new ReplicationHandler();
+    private final ReplicationHandler _replicationHandler = new ReplicationHandler();
 
     private ReplicaStatePolicy _replicaStatePolicy;
 

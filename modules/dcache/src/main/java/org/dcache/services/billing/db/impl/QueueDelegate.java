@@ -91,8 +91,8 @@ public abstract class QueueDelegate {
     protected int maxBatchSize;
     protected int maxQueueSize;
     protected boolean dropMessagesAtLimit;
-    protected AtomicLong dropped = new AtomicLong(0);
-    protected AtomicLong committed = new AtomicLong(0);
+    protected final AtomicLong dropped = new AtomicLong(0);
+    protected final AtomicLong committed = new AtomicLong(0);
 
     protected BlockingQueue moverQueue;
     protected BlockingQueue doorQueue;
@@ -109,7 +109,7 @@ public abstract class QueueDelegate {
     private boolean running;
 
     private class Consumer extends Thread {
-        private BlockingQueue queue;
+        private final BlockingQueue queue;
 
         private Consumer(String name, BlockingQueue queue) {
             super(name);

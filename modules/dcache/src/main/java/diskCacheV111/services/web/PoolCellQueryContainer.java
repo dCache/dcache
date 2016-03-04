@@ -51,7 +51,7 @@ class PoolCellQueryInfo implements Serializable
 public class PoolCellQueryContainer implements Serializable
 {
     private static final long serialVersionUID = 1883299694718571158L;
-    private Map<String,PoolCellQueryInfo> _infoMap = new HashMap<>();
+    private final Map<String,PoolCellQueryInfo> _infoMap = new HashMap<>();
     private Map<String,Map<String,Map<String,Object>>> _topology;
 
     public synchronized void put(String name, PoolCellQueryInfo info)

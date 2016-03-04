@@ -215,7 +215,7 @@ public class CanlContextFactory extends SslContextFactory
     {
         SslContextFactory factory = new SslContextFactory()
         {
-            private PEMCredential serverCredential =
+            private final PEMCredential serverCredential =
                     new PEMCredential(keyPath.toString(), certificatePath.toString(), null);
 
             @Override

@@ -13,11 +13,11 @@ import org.dcache.pool.repository.CacheEntry;
  */
 public class PnfsIdFilter implements CacheEntryFilter
 {
-    private Collection<PnfsId> _pnfsIds;
+    private final Collection<PnfsId> _pnfsIds;
 
     public PnfsIdFilter(Collection<PnfsId> pnfsIds)
     {
-        _pnfsIds = new HashSet(pnfsIds);
+        _pnfsIds = new HashSet<>(pnfsIds);
     }
 
     @Override

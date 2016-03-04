@@ -61,7 +61,7 @@ public class TransferObserverV1
         = new HashMap<>();
 
 
-    private static String[] __className =
+    private static final String[] __className =
     {
         "cell",               //   0
         "domain",             //   1
@@ -82,7 +82,7 @@ public class TransferObserverV1
         "started"             //  16
     };
 
-    private static String[] __listHeader =
+    private static final String[] __listHeader =
     {
         "Cell",               //   0
         "Domain",             //   1
@@ -219,9 +219,9 @@ public class TransferObserverV1
 
     private static class TableEntry
     {
-        private String  _tableName;
-        private int []  _fields;
-        private String  _title;
+        private final String  _tableName;
+        private final int []  _fields;
+        private final String  _title;
         private long    _olderThan;
         private boolean _ifNotYetStarted;
         private boolean _ifMoverMissing;
@@ -230,6 +230,7 @@ public class TransferObserverV1
         {
             _tableName = tableName;
             _fields    = fields;
+            _title     = null;
         }
 
         private TableEntry(String tableName, int [] fields, String title)

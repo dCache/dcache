@@ -425,7 +425,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
       printFlushingPools( pw , flushManagerName , options , pools ) ;
       printFlushingStorageClasses( pw , flushManagerName , options , flushs ) ;
    }
-   private String [] _poolTableTitle =
+   private static final String [] POOL_TABLE_TITLE =
         { "Action" , "PoolName" , "Pool Mode" ,  "Flushing" , "Total Size" ,
           "Precious Size" , "Fraction" } ;
    private void printFlushingPools( PrintWriter pw , String flushManagerName ,  Map<?,?> options , List<HttpFlushManagerHelper.PoolEntry> pools ){
@@ -434,7 +434,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
       pw.println("<h2 class=\"s-table\">Flushing Pools</h2>");
       pw.println("<center><table class=\"s-table\">");
       pw.println("<tr class=\"s-table\">");
-       for (String s : _poolTableTitle) {
+       for (String s : POOL_TABLE_TITLE) {
            pw.print("<th class=\"s-table\">");
            pw.print(s);
            pw.println("</th>");
@@ -492,7 +492,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
       pw.println("</form>");
       pw.println("<hr>");
    }
-   private String [] _flushTableTitle =
+   private static final String [] FLUSH_TABLE_TITLE =
         { "Action" , "PoolName" , "StorageClass" ,  "Status" ,
           "Total Size" ,  "Precious Size" , "Fraction" ,
           "Active" , "Pending" , "Failed"
@@ -503,7 +503,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
       pw.print("<h2 class=\"s-table\">Flushing Storage Classes</h2>");
       pw.print("<center><table class=\"s-table\">");
       pw.println("<tr class=\"s-table\">");
-       for (String s : _flushTableTitle) {
+       for (String s : FLUSH_TABLE_TITLE) {
            pw.print("<th class=\"s-table\">");
            pw.print(s);
            pw.println("</th>");

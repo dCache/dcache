@@ -103,7 +103,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     private Channel serverChannel;
 
     /** All open Netty cild channels. */
-    private ChannelGroup openChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    private final ChannelGroup openChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
 
     /** Socket address of the last server channel created. */
     private InetSocketAddress lastServerAddress;
@@ -115,7 +115,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     private final ConcurrentMap<UUID, NettyMoverChannel> uuids = Maps.newConcurrentMap();
 
     /** Server name. */
-    private String name;
+    private final String name;
 
     /** Number of IO threads. */
     private int threads;

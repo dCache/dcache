@@ -53,7 +53,7 @@ public class BufferPartition extends Partition
 
     private static final Map<String,String> DEFAULTS =
             ImmutableMap.of("cpucostfactor", "1.0");
-    private double costFactor;
+    private final double costFactor;
 
     public BufferPartition(Map<String, String> inherited)
     {

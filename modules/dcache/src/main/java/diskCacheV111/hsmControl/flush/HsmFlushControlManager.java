@@ -50,18 +50,18 @@ public class HsmFlushControlManager  extends CellAdapter {
     private static final Logger _log =
         LoggerFactory.getLogger(HsmFlushControlManager.class);
 
-    private CellNucleus _nucleus;
+    private final CellNucleus _nucleus;
     private int         _requests;
     private int         _failed;
     private File        _database;
     private String      _status     = "init" ;
-    private boolean     _logEnabled = true ;
+    private static final boolean LOG_ENABLED = true ;
     private final PoolCollector   _poolCollector;
-    private Set<String> _poolGroupList           = new HashSet<>() ;
+    private final Set<String> _poolGroupList           = new HashSet<>() ;
     private long            _getPoolCollectionTicker = 2L * 60L * 1000L ;
     private long            _timerInterval           =      30L * 1000L ;
-    private FlushController _flushController         = new FlushController() ;
-    private EventDispatcher _eventDispatcher         = new EventDispatcher() ;
+    private final FlushController _flushController         = new FlushController() ;
+    private final EventDispatcher _eventDispatcher         = new EventDispatcher() ;
     private QueueWatch      _queueWatch;
 
     private Map<String,Object>    _properties        = new HashMap<>() ;
@@ -233,7 +233,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                                poolName,
                                _control ? gainControlInterval : 0L);
 
-               if (_logEnabled) {
+               if (LOG_ENABLED) {
                    _log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to " + poolName);
                }
                sendMessage(new CellMessage(new CellPath(poolName), msg));
@@ -247,8 +247,8 @@ public class HsmFlushControlManager  extends CellAdapter {
        private int     _flushingError;
        private Object  _flushingErrorObj;
        private long    _flushingId;
-       private HFCPool _pool;
-       private String  _name;
+       private final HFCPool _pool;
+       private final String  _name;
 
        public HFCFlushInfo( HFCPool pool , StorageClassFlushInfo flush ){
           _flushInfo = flush ;
@@ -298,7 +298,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     }
     private class HFCPool implements HsmFlushControlCore.Pool  {
 
-        private String       _poolName;
+        private final String       _poolName;
         private HashMap<String, HFCFlushInfo> flushInfos    = new HashMap<>() ;
         private PoolCellInfo cellInfo;
         private int          mode;
@@ -424,7 +424,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     {
        private boolean _active;
        private int     _waitingFor;
-       private HashMap<String, Object[]> _poolGroupHash      = new HashMap<>() ;
+       private final HashMap<String, Object[]> _poolGroupHash      = new HashMap<>() ;
        private HashMap<String, HFCPool> _configuredPoolList = new HashMap<>() ;
        private boolean _poolSetupReady;
 
@@ -473,7 +473,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            CellPath path = new CellPath( "PoolManager" ) ;
            for (Object o : list) {
                String command = "psux ls pgroup " + o;
-               if (_logEnabled) {
+               if (LOG_ENABLED) {
                    _log.info("runCollector sending : " + command + " to " + path);
                }
                Futures.addCallback(_poolManager.send(command, Object[].class), this);
@@ -483,19 +483,19 @@ public class HsmFlushControlManager  extends CellAdapter {
        private synchronized void answer(){
           _waitingFor-- ;
           if( _waitingFor == 0 ){
-             if(_logEnabled) {
+             if(LOG_ENABLED) {
                  _log.info("PoolCollector : we are done : " + _poolGroupHash);
              }
              _active = false ;
              HashMap<String, HFCPool> map = new HashMap<>() ;
-             if(_logEnabled) {
+             if(LOG_ENABLED) {
                  _log.info("Creating ping set");
              }
               for (Object o : _poolGroupHash.values()) {
                   Object[] c = (Object[]) o;
                   for (Object aC : c) {
                       String pool = (String) aC;
-                      if (_logEnabled) {
+                      if (LOG_ENABLED) {
                           _log.info("Adding pool : " + pool);
                       }
                       HFCPool p = _configuredPoolList.get(pool);
@@ -535,13 +535,13 @@ public class HsmFlushControlManager  extends CellAdapter {
         @Override
         public void onSuccess(Object[] reply)
         {
-            if(_logEnabled) {
+            if(LOG_ENABLED) {
                 _log.info("answer Arrived: {}", Arrays.toString(reply));
             }
             if (reply.length >= 3 && reply[0] instanceof String && reply[1] instanceof Object []) {
                 String poolGroupName = (String) reply[0] ;
                 _poolGroupHash.put( poolGroupName , (Object[]) reply[1]);
-                if(_logEnabled) {
+                if(LOG_ENABLED) {
                     _log.info("PoolCollector : " + ((Object[]) reply[1]).length + " pools arrived for " + poolGroupName);
                 }
             }else{
@@ -879,7 +879,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            private static final int PROPERTIES_UPDATED      = 10 ;
            private static final int RESET                   = 11 ;
 
-           int type;
+           final int type;
            Object [] args;
            long timestamp = System.currentTimeMillis() ;
 
@@ -902,7 +902,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            }
        }
        private class Pipe {
-           private ArrayList<Event> _list = new ArrayList<>() ;
+           private final ArrayList<Event> _list = new ArrayList<>() ;
 
            public synchronized void push( Event obj ){
               _list.add( obj ) ;
@@ -915,11 +915,11 @@ public class HsmFlushControlManager  extends CellAdapter {
               return _list.remove(0);
            }
        }
-       private Class<?>[] _argumentClasses = {
+       private final Class<?>[] _argumentClasses = {
             CellAdapter.class ,
             HsmFlushControlCore.class
        } ;
-       private Object[] _argumentObjects = {
+       private final Object[] _argumentObjects = {
             diskCacheV111.hsmControl.flush.HsmFlushControlManager.this ,
             this
        } ;
@@ -1218,7 +1218,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     //      message arrived handler
     //
     private void poolFlushDoFlushMessageArrived( PoolFlushDoFlushMessage msg ){
-        if(_logEnabled) {
+        if(LOG_ENABLED) {
             _log.info("poolFlushDoFlushMessageArrived : " + msg);
         }
         String poolName  = msg.getPoolName() ;
@@ -1238,7 +1238,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                info = new HFCFlushInfo( pool , new StorageClassFlushInfo( msg.getHsmName() , msg.getStorageClassName() ) ) ;
             }
             if( msg.getReturnCode() != 0 ){
-               if(_logEnabled) {
+               if(LOG_ENABLED) {
                    _log.info("Flush failed (msg=" + (msg
                            .isFinished() ? "Finished" : "Ack") + ") : " + msg);
                }
@@ -1250,7 +1250,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                return ;
             }
             if( msg.isFinished() ){
-                if(_logEnabled) {
+                if(LOG_ENABLED) {
                     _log.info("Flush finished : " + msg);
                 }
 
@@ -1263,7 +1263,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         }
     }
     private void poolFlushGainControlMessageDidntArrive( String poolName ){
-        if(_logEnabled) {
+        if(LOG_ENABLED) {
             _log.info("poolFlushGainControlMessageDidntArrive : " + poolName);
         }
         synchronized( _poolCollector ){
@@ -1307,7 +1307,7 @@ public class HsmFlushControlManager  extends CellAdapter {
 
     }
     private void poolFlushGainControlMessageArrived( PoolFlushGainControlMessage msg ){
-        if(_logEnabled) {
+        if(LOG_ENABLED) {
             _log.info("PoolFlushGainControlMessage : " + msg);
         }
         String poolName  = msg.getPoolName() ;
@@ -1324,7 +1324,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         }
     }
     private void poolModeInfoArrived( PoolManagerPoolModeMessage msg ){
-        if(_logEnabled) {
+        if(LOG_ENABLED) {
             _log.info("PoolManagerPoolModeMessage : " + msg);
         }
         String poolName  = msg.getPoolName() ;

@@ -91,7 +91,7 @@ import org.dcache.util.NetworkUtils;
 final class LoggingEventConverter {
     static class MarkedAlarm implements Alarm {
         String type;
-        String key;
+        final String key;
 
         MarkedAlarm(String type, String key) {
             this.type = type;

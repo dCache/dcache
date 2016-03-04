@@ -209,7 +209,7 @@ public class LogEntryHandler {
     /**
      * Concurrent handling.
      */
-    private AbstractExecutorService executor;
+    private final AbstractExecutorService executor;
 
     /**
      * State.

@@ -18,7 +18,7 @@ import java.io.PrintWriter;
  */
 public class Pgpass {
 
-    private String _pwdfile;
+    private final String _pwdfile;
     private String _hostname;
     private String _port;
     private String _database;

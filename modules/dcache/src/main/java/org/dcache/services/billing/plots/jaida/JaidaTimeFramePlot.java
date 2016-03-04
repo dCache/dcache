@@ -91,7 +91,7 @@ public final class JaidaTimeFramePlot extends AbstractTimeFramePlot {
 
     private final IPlotterFactory factory;
     private final IPlotter plotter;
-    private String[] titles;
+    private final String[] titles;
 
     public JaidaTimeFramePlot(IAnalysisFactory af, ITree tree, String name,
                     String[] titles, Properties properties) {

@@ -47,7 +47,7 @@ import static java.util.Arrays.asList;
 public class BerkeleyDBMetaDataRepository
     implements MetaDataStore, EnvironmentAware
 {
-    private static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(BerkeleyDBMetaDataRepository.class);
 
     private static final String DIRECTORY_NAME = "meta";

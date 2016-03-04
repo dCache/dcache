@@ -32,15 +32,15 @@ import static java.util.stream.Collectors.toSet;
 public class FileMetaDataRepository
     implements MetaDataStore
 {
-    private static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private static final String DIRECTORY_NAME = "control";
     private static final String REMOVING_REDUNDANT_META_DATA =
             "Removing redundant meta data for %s.";
 
-    private FileStore _fileStore;
-    private File _metadir;
+    private final FileStore _fileStore;
+    private final File _metadir;
 
     public FileMetaDataRepository(FileStore fileStore,
                                   File baseDir)

@@ -10,7 +10,7 @@ class LinkMap {
 
     private class LinkMapEntry {
 
-        private Link _link;
+        private final Link _link;
         private int _counter;
 
         private LinkMapEntry(Link link) {
@@ -18,7 +18,7 @@ class LinkMap {
             _counter = link._uGroupList.size() - 1;
         }
     }
-    private Map<String, LinkMapEntry> _linkHash = new HashMap<>();
+    private final Map<String, LinkMapEntry> _linkHash = new HashMap<>();
 
     Iterator<Link> iterator() {
         List<Link> list = new ArrayList<>();

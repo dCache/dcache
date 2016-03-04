@@ -77,7 +77,7 @@ public abstract class TransferManager extends AbstractCellComponent
     private TimebasedCounter idGenerator = new TimebasedCounter();
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
     private String _poolProxy;
-    private ExecutorService executor =
+    private final ExecutorService executor =
             new CDCExecutorServiceDecorator<>(Executors.newCachedThreadPool());
     private PersistenceManagerFactory _pmf;
 

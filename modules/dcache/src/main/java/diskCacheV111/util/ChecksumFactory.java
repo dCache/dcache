@@ -82,7 +82,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
     private static final long BYTES_IN_MEBIBYTE = 1024 * 1024;
     private static final long MILLISECONDS_IN_SECOND = 1000;
 
-    private ChecksumType _type;
+    private final ChecksumType _type;
 
     public GenericIdChecksumFactory(ChecksumType type)
         throws NoSuchAlgorithmException

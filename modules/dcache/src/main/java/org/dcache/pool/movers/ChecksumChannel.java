@@ -50,7 +50,7 @@ public class ChecksumChannel implements RepositoryChannel
     /**
      * Digest used for computing the checksum during write.
      */
-    private MessageDigest _digest;
+    private final MessageDigest _digest;
 
     /**
      * Cached checksum after getChecksum is called the first time.
@@ -81,7 +81,7 @@ public class ChecksumChannel implements RepositoryChannel
     /**
      * lock to prevent writes while or after getChecksum was called
      */
-    private ReadWriteLock _checksumLock = new ReentrantReadWriteLock(false);
+    private final ReadWriteLock _checksumLock = new ReentrantReadWriteLock(false);
 
     /**
      * Buffer to be used for reading data back from the inner channel for

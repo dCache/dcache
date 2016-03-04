@@ -143,9 +143,9 @@ public class RemoteGsiftpTransferProtocol
         GridftpClient.setSupportedChecksumTypes(names);
     }
 
-    private PortRange _portRange;
-    private String[] _bannedCiphers;
-    private SslContextFactory _sslContextFactory;
+    private final PortRange _portRange;
+    private final String[] _bannedCiphers;
+    private final SslContextFactory _sslContextFactory;
 
     public RemoteGsiftpTransferProtocol(CellEndpoint cell, PortRange portRange, String[] bannedCiphers,
                                         SslContextFactory sslContextFactory)

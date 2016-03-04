@@ -45,12 +45,12 @@ public class FileHoppingManager extends CellAdapter {
        LoggerFactory.getLogger(FileHoppingManager.class);
 
    private final CellNucleus _nucleus;
-   private Map<String, Entry> _map           = new TreeMap<>() ;
+   private final Map<String, Entry> _map           = new TreeMap<>() ;
    private final Object      _mapLock       = new Object() ;
    private int         _totalRequests;
    private final File        _configFile;
 
-   private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
+   private final CellPath    _defaultDestinationPath = new CellPath("PoolManager");
 
      public FileHoppingManager(String name, String arguments)
      {
@@ -181,11 +181,11 @@ public class FileHoppingManager extends CellAdapter {
       private boolean _retry;
       private boolean _continue;
 
-      private String  _patternStr;
-      private Pattern _pattern;
+      private final String  _patternStr;
+      private final Pattern _pattern;
 
-      private int     _status;
-      private String  _statusStr;
+      private final int     _status;
+      private final String  _statusStr;
 
       private String   _dest;
       private CellPath _path;

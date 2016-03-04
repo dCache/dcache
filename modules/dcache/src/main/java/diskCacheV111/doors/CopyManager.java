@@ -50,8 +50,8 @@ public class CopyManager extends AbstractCellComponent
     private InetSocketAddress _localAddr;
     private long _moverTimeout = 24;
     private TimeUnit _moverTimeoutUnit = TimeUnit.HOURS;
-    private int _bufferSize = 256 * 1024;
-    private int _tcpBufferSize = 256 * 1024;
+    private static final int BUFFER_SIZE = 256 * 1024;
+    private static final int TCP_BUFFER_SIZE = 256 * 1024;
     private int _maxTransfers = 30;
     private int _numTransfers;
 
@@ -437,8 +437,8 @@ public class CopyManager extends AbstractCellComponent
                                               getCellName(),
                                               getCellDomainName(),
                                               target.getId(),
-                                              _bufferSize,
-                                              _tcpBufferSize);
+                                              BUFFER_SIZE,
+                                              TCP_BUFFER_SIZE);
         }
 
         private ProtocolInfo createSourceProtocolInfo(DCapClientPortAvailableMessage redirect, long id)

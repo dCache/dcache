@@ -60,8 +60,8 @@ public class PcellsCommand implements Command, Runnable
     private ExitCallback _exitCallback;
     private OutputStream _out;
     private Thread _adminShellThread;
-    private ExecutorService _executor = Executors.newCachedThreadPool();
-    private ScheduledExecutorService _scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final ExecutorService _executor = Executors.newCachedThreadPool();
+    private final ScheduledExecutorService _scheduler = Executors.newSingleThreadScheduledExecutor();
     private volatile boolean _done = false;
     private final TransferCollector _collector;
     private volatile List<Transfer> _transfers = Collections.emptyList();

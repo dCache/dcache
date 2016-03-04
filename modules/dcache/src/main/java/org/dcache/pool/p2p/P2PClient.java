@@ -167,7 +167,7 @@ public class P2PClient
      */
     private class Callback implements CacheFileAvailable
     {
-        private CacheFileAvailable _callback;
+        private final CacheFileAvailable _callback;
         private int _id;
 
         Callback(CacheFileAvailable callback)

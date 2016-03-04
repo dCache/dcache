@@ -12,10 +12,10 @@ import diskCacheV111.vehicles.StorageInfo;
 
 public class PoolSelectionRequest {
 
-	private long _size;
-	String _pnfsid;
-	private ProtocolInfo _protocolInfo;
-	private StorageInfo _storageInfo;
+	private final long _size;
+	private final String _pnfsid;
+	private final ProtocolInfo _protocolInfo;
+	private final StorageInfo _storageInfo;
 
 	PoolSelectionRequest(long size, String pnfsid, StorageInfo storageInfo, ProtocolInfo protocolInfo){
 		_size = size;

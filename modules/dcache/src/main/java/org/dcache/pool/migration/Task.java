@@ -72,7 +72,7 @@ public class Task
 
     private ScheduledFuture<?> _timerTask;
     private Deque<String> _locations = new ArrayDeque<>(0);
-    private Set<String> _replicas = new HashSet<>();
+    private final Set<String> _replicas = new HashSet<>();
     private CellPath _target;
 
     public Task(TaskParameters parameters,

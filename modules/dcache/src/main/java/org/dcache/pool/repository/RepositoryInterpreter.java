@@ -40,7 +40,7 @@ public class RepositoryInterpreter
 
     private Repository _repository;
 
-    private StatisticsListener _statiStatisticsListener = new StatisticsListener();
+    private final StatisticsListener _statiStatisticsListener = new StatisticsListener();
 
     public void setRepository(Repository repository)
     {

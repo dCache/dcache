@@ -33,7 +33,7 @@ public class NoTerminalCommand implements Command, Runnable
 {
     private static final Logger _logger =
         LoggerFactory.getLogger(NoTerminalCommand.class);
-    private UserAdminShell _userAdminShell;
+    private final UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;
     private BufferedReader _reader;
     private PrintWriter _error;

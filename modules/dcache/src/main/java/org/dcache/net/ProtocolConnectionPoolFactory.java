@@ -11,8 +11,8 @@ public class ProtocolConnectionPoolFactory {
 	private static final Object _initLock = new Object();
 	private static ProtocolConnectionPool _protocolConnectionPool;
 
-	private int _port;
-	ChallengeReader _challengeReader;
+	private final int _port;
+	final ChallengeReader _challengeReader;
 
 	public ProtocolConnectionPoolFactory(int port, ChallengeReader challengeReader) {
 		_port = port;

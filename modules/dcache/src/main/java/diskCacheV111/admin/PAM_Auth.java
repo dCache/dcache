@@ -2,7 +2,7 @@ package diskCacheV111.admin ;
 
 public class PAM_Auth {
 
-   private        String  _service;
+   private final String  _service;
    private static boolean _libLoaded;
 
    private native int checkUser(String service,String user, String pass);

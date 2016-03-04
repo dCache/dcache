@@ -11,8 +11,8 @@ import org.dcache.pool.repository.Repository;
 
 class CacheEntryOrder implements Comparator<PnfsId>
 {
-    private Repository _repository;
-    private Comparator<CacheEntry> _comparator;
+    private final Repository _repository;
+    private final Comparator<CacheEntry> _comparator;
 
     public CacheEntryOrder(Repository repository,
                            Comparator<CacheEntry> comparator)

@@ -14,7 +14,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.pools.PoolCellInfo;
@@ -55,7 +54,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         private long    _started;
         private long    _shortPeriod     = 20000L;
         private long    _regularPeriod   = 120000L;
-        private long    _retentionFactor = 4;
+        private final long    _retentionFactor = 4;
 
         private SleepHandler(boolean aggressive)
         {
@@ -119,7 +118,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     private SleepHandler     _sleepHandler;
-    private SimpleDateFormat _formatter    = new SimpleDateFormat ("MM/dd HH:mm:ss");
+    private final SimpleDateFormat _formatter    = new SimpleDateFormat ("MM/dd HH:mm:ss");
 
     private class CellQueryInfo
     {
@@ -429,7 +428,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private class ActionHeaderExtension
     {
-        private TreeMap<String,int[]> _map;  // TreeMap because we need it sorted
+        private final TreeMap<String,int[]> _map;  // TreeMap because we need it sorted
         private ActionHeaderExtension(TreeMap<String,int[]> map)
         {
             _map = map == null ? new TreeMap<>() : map;
@@ -760,18 +759,10 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private class PoolCostEntry
     {
-        String  _cellName;
-        String  _domainName;
-        int[][] _row;
-        Map<String,PoolCostInfo.NamedPoolQueueInfo> _movers;
-
-        PoolCostEntry(String name, String domain, int[][] row)
-        {
-            _cellName   = name;
-            _domainName = domain;
-            _row        = row;
-            _movers     = null;
-        }
+        final String  _cellName;
+        final String  _domainName;
+        final int[][] _row;
+        final Map<String,PoolCostInfo.NamedPoolQueueInfo> _movers;
 
         PoolCostEntry(String name, String domain, int[][] row, Map<String, PoolCostInfo.NamedPoolQueueInfo> movers)
         {

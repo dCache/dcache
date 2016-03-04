@@ -22,7 +22,7 @@ import org.dcache.pool.repository.v3.entry.state.Sticky;
 
 public class CacheRepositoryEntryState
 {
-    private static Logger _log = LoggerFactory.getLogger(CacheRepositoryEntryState.class);
+    private static final Logger _log = LoggerFactory.getLogger(CacheRepositoryEntryState.class);
 
     private static final Pattern VERSION_PATTERN =
         Pattern.compile("#\\s+version\\s+[0-9]\\.[0-9]");

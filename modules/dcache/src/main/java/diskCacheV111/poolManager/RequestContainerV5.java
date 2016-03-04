@@ -98,7 +98,7 @@ public class RequestContainerV5
     private CellStub _poolStub;
     private long        _retryTimer    = 15 * 60 * 1000 ;
 
-    private int         _maxRequestClumping = 20;
+    private static final int MAX_REQUEST_CLUMPING = 20;
 
     private String      _onError       = "suspend" ;
     private int         _maxRetries    = 3 ;
@@ -1654,7 +1654,7 @@ public class RequestContainerV5
                     synchronized (_handlerHash) {
                         _handlerHash.remove(_name);
                     }
-                    while (answerRequest(_maxRequestClumping)) {
+                    while (answerRequest(MAX_REQUEST_CLUMPING)) {
                         setError(CacheException.OUT_OF_DATE,
                                  "Request clumping limit reached");
                     }

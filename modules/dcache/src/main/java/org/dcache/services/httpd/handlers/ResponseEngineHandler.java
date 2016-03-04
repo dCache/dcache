@@ -25,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class ResponseEngineHandler extends AbstractHandler
 {
-    private HttpResponseEngine engine;
+    private final HttpResponseEngine engine;
 
     public ResponseEngineHandler(HttpResponseEngine engine) {
         this.engine = engine;

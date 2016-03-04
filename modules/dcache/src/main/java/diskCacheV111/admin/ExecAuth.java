@@ -14,14 +14,14 @@ public class ExecAuth implements Runnable {
 
    private BufferedReader  _input;
    private PrintWriter _output;
-   private String _execPath;
+   private final String _execPath;
 
    public ExecAuth( String execpath ){
       _execPath = execpath ;
       new Thread(this).start() ;
    }
    private class Destroy implements Runnable {
-      private InputStream _error;
+      private final InputStream _error;
       private Destroy( InputStream in ){
          _error = in ;
          new Thread(this).start() ;

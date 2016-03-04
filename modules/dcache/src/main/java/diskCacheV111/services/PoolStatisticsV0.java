@@ -238,7 +238,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     private CellStub _billing;
     private CellStub _poolStub;
 
-    private CellNucleus      _nucleus;
+    private final CellNucleus      _nucleus;
 
     private CellCron.TimerTask _hourly;
 
@@ -419,7 +419,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     }
 
     private class HourlyRunner implements Runnable {
-        private Calendar _calendar;
+        private final Calendar _calendar;
         private HourlyRunner(Calendar calendar) {
             _calendar = calendar;
             _nucleus.newThread(this,"FreeRunner").start();
@@ -793,9 +793,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     }
 
     private static class PatternIterator implements Iteratable {
-        private Pattern _pattern;
-        private StringBuffer _sb;
-        private long [] _sum     = new long[16];
+        private final Pattern _pattern;
+        private final StringBuffer _sb;
+        private final long [] _sum     = new long[16];
         private int     _mx;
         private PatternIterator(Pattern pattern) {
             _pattern = pattern;
@@ -865,7 +865,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
     private static class DataStore {
         private Map<String,Map<String,long[]>> _data;
-        private Map<String,Object> _attributes = new HashMap<>();
+        private final Map<String,Object> _attributes = new HashMap<>();
         private int _minCount = 64;
         private int _maxCount;
         public DataStore(Map<String,Map<String,long[]>> data) {
@@ -1477,26 +1477,26 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     }
 
     private static class BaseStatisticsHtml {
-        private int         _height  = 10;
-        private int         _absoluteWidth   = 500;
-        private int         _relativeWidth   = 100;
-        private String  []  _bgcolor = { "white", "#bebebe" };
+        private final int         _height  = 10;
+        private final int         _absoluteWidth   = 500;
+        private final int         _relativeWidth   = 100;
+        private final String  []  _bgcolor = { "white", "#bebebe" };
         private PrintWriter _pw;
-        private String      _imageBase     = "/images/";
-        private String      _poolYesterday = _imageBase+"greenbox.gif";
-        private String      _poolToday     = _imageBase+"redbox.gif";
-        private String      _restore       = _imageBase+"bluebox.gif";
-        private String      _transferIn    = _imageBase+"navybox.gif";
-        private String      _transferOut   = _imageBase+"yellowbox.gif";
-        private String      _store         = _imageBase+"orangebox.gif";
+        private final String      _imageBase     = "/images/";
+        private final String      _poolYesterday = _imageBase + "greenbox.gif";
+        private final String      _poolToday     = _imageBase + "redbox.gif";
+        private final String      _restore       = _imageBase + "bluebox.gif";
+        private final String      _transferIn    = _imageBase + "navybox.gif";
+        private final String      _transferOut   = _imageBase + "yellowbox.gif";
+        private final String      _store         = _imageBase + "orangebox.gif";
         private long        _absoluteNorm  = 1L;
         private Map<String,Object[]> _map;
         private long        _maxCounterValue;
         private String      _title           = "Title";
         private String      _author        = "dCache Team";
-        private String      _tableTitleColor = "#115259";
-        private String      _keyType = "Key";
-        private String []   _tableTitles = { _keyType,
+        private final String      _tableTitleColor = "#115259";
+        private final String      _keyType = "Key";
+        private final String []   _tableTitles = { _keyType,
                 "Absolute Values",
                 "Data / MBytes",
                 "Relative Values" };

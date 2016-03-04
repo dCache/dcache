@@ -1,6 +1,5 @@
 package org.dcache.pool.classic;
 
-import dmg.util.command.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +22,7 @@ import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.Formats;
+import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
@@ -38,7 +38,6 @@ import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
-import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Comparator.naturalOrder;
@@ -52,7 +51,7 @@ public class SpaceSweeper2
     private static final DateTimeFormatter ISO8601_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(ZoneId.systemDefault());
 
-    private LruQueue<PnfsId> _queue = new LruQueue<>();
+    private final LruQueue<PnfsId> _queue = new LruQueue<>();
 
     private Repository _repository;
 

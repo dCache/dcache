@@ -205,7 +205,7 @@ public class BootLoader
      */
     private static class ErrorsAsWarningsProblemConsumer implements ProblemConsumer
     {
-        ProblemConsumer _inner;
+        final ProblemConsumer _inner;
 
         ErrorsAsWarningsProblemConsumer( ProblemConsumer inner) {
             _inner = inner;

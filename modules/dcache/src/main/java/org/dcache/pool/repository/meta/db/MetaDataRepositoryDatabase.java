@@ -21,7 +21,7 @@ import java.util.Properties;
  */
 public class MetaDataRepositoryDatabase
 {
-    private static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger("logger.org.dcache.repository");
 
     private final Environment env;

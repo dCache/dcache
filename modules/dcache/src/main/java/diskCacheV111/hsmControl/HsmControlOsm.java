@@ -36,7 +36,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     private int         _requests;
     private int         _failed;
     private int         _outstandingRequests;
-    private File        _database;
+    private final File        _database;
 
     private final BlockingQueue<CellMessage>  _fifo = new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
 
@@ -140,7 +140,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
             _log.info("Working thread finished");
         }
     }
-    private Map<String, Object[]> _driverMap = new HashMap<>() ;
+    private final Map<String, Object[]> _driverMap = new HashMap<>() ;
     public static final String hh_check_osm = "<store> <bfid>";
     public String ac_check_osm_$_2( Args args )throws Exception {
        String store = args.argv(0);

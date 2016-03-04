@@ -7,10 +7,10 @@ package diskCacheV111.poolManager;
  */
 public class LinkReadWritePreferences {
 
-    private int _readPref;
-    private int _writePref;
-    private int _restorePref;
-    private int _p2pPref;
+    private final int _readPref;
+    private final int _writePref;
+    private final int _restorePref;
+    private final int _p2pPref;
 
     public LinkReadWritePreferences(int readPref, int writePref, int restorePref, int p2pPref) {
         _readPref = readPref;

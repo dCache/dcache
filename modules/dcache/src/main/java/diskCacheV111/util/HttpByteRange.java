@@ -9,8 +9,8 @@ import dmg.util.HttpException;
 
 public class HttpByteRange
 {
-    private long _lower;
-    private long _upper;
+    private final long _lower;
+    private final long _upper;
 
     public HttpByteRange(long lower, long upper){
         _lower = lower;

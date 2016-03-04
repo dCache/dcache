@@ -10,7 +10,7 @@ import org.dcache.pool.repository.CacheEntry;
  */
 public class AccessedFilter implements CacheEntryFilter
 {
-    private Range<Long> _time;
+    private final Range<Long> _time;
 
     /**
      * Creates a new instance. The interval is specified in seconds

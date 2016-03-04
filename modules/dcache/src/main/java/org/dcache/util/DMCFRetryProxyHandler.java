@@ -18,8 +18,8 @@ import java.sql.SQLException;
 */
 public class DMCFRetryProxyHandler implements InvocationHandler {
 
-    protected Object delegate;
-    private	int timeout;
+    protected final Object delegate;
+    private final int timeout;
 
     public DMCFRetryProxyHandler(Object delegate) {
         this(delegate, -1);
