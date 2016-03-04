@@ -84,28 +84,21 @@ public class EnstoreLocationExtractor implements HsmLocation {
 
 		Map<String, String> parsed = parseURI(_uri);
 
-		StringBuilder asLevel1 = new StringBuilder();
+		levelData.put(1, parsed.get("bfid") + "\n");
 
-		asLevel1.append(parsed.get("bfid")).append("\n");
+		String asLevel4 = parsed.get("volume") + "\n" +
+						  parsed.get("location") + "\n" +
+						  parsed.get("size") + "\n" +
+						  parsed.get("origff") + "\n" +
+						  parsed.get("origname") + "\n" +
+						  parsed.get("mapfile") + "\n" +
+						  parsed.get("pnfsid") + "\n" +
+						  parsed.get("pnfsidmap") + "\n" +
+						  parsed.get("bfid") + "\n" +
+						  parsed.get("drive") + "\n" +
+						  parsed.get("crc") + "\n";
 
-		levelData.put(1, asLevel1.toString());
-
-		StringBuilder asLevel4 = new StringBuilder();
-
-		asLevel4.
-		append(parsed.get("volume")).append("\n").
-		append(parsed.get("location")).append("\n").
-		append(parsed.get("size")).append("\n").
-		append(parsed.get("origff")).append("\n").
-		append(parsed.get("origname")).append("\n").
-		append(parsed.get("mapfile")).append("\n").
-		append(parsed.get("pnfsid")).append("\n").
-		append(parsed.get("pnfsidmap")).append("\n").
-		append(parsed.get("bfid")).append("\n").
-		append(parsed.get("drive")).append("\n").
-		append(parsed.get("crc")).append("\n");
-
-		levelData.put(4, asLevel4.toString());
+		levelData.put(4, asLevel4);
 
 
 		return levelData;

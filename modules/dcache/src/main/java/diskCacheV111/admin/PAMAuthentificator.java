@@ -661,14 +661,11 @@ public class PAMAuthentificator  extends CellAdapter {
            throw (Exception) answer;
        }
        Object [] a = (Object [])answer ;
-       StringBuilder sb = new StringBuilder() ;
-       sb.append("  Uid : ").append(a[5]).append("\n") ;
-       sb.append("  Gid : ").append(a[6]).append("\n") ;
-       sb.append(" Home : ").append(a[7]).append("\n") ;
-       sb.append("Shell : ").append(a[8]).append("\n") ;
-       sb.append(" Name : ").append(a[9]).append("\n") ;
-
-       return sb.toString();
+       return "  Uid : " + a[5] + "\n" +
+              "  Gid : " + a[6] + "\n" +
+              " Home : " + a[7] + "\n" +
+              "Shell : " + a[8] + "\n" +
+              " Name : " + a[9] + "\n";
    }
    public static final String hh_check_auth = "<user> <password>" ;
    public String ac_check_auth_$_2( Args args )

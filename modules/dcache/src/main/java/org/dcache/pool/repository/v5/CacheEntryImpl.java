@@ -120,31 +120,27 @@ public class CacheEntryImpl implements CacheEntry
     @Override
     public String toString()
     {
-        StringBuilder sb = new StringBuilder();
 
-        sb.append(getPnfsId());
-
-        sb.append(" <");
-        sb.append((_state == EntryState.CACHED)      ? "C" : "-");
-        sb.append((_state == EntryState.PRECIOUS)    ? "P" : "-");
-        sb.append((_state == EntryState.FROM_CLIENT) ? "C" : "-");
-        sb.append((_state == EntryState.FROM_STORE)  ? "S" : "-");
-        sb.append("-");
-        sb.append("-");
-        sb.append((_state == EntryState.REMOVED)     ? "R" : "-");
-        sb.append((_state == EntryState.DESTROYED)   ? "D" : "-");
-        sb.append(isSticky()                         ? "X" : "-");
-        sb.append((_state == EntryState.BROKEN)      ? "E" : "-");
-        sb.append("-");
-        sb.append("L(0)[").append(_linkCount).append("]");
-        sb.append("> ");
-
-        sb.append(_size);
-        sb.append(" si={")
-            .append(_fileAttributes.isDefined(FileAttribute.STORAGECLASS)
-                            ? _fileAttributes.getStorageClass()
-                            : "<unknown>")
-            .append("}");
-        return sb.toString();
+        return getPnfsId() +
+               " <" +
+               ((_state == EntryState.CACHED) ? "C" : "-") +
+               ((_state == EntryState.PRECIOUS) ? "P" : "-") +
+               ((_state == EntryState.FROM_CLIENT) ? "C" : "-") +
+               ((_state == EntryState.FROM_STORE) ? "S" : "-") +
+               "-" +
+               "-" +
+               ((_state == EntryState.REMOVED) ? "R" : "-") +
+               ((_state == EntryState.DESTROYED) ? "D" : "-") +
+               (isSticky() ? "X" : "-") +
+               ((_state == EntryState.BROKEN) ? "E" : "-") +
+               "-" +
+               "L(0)[" + _linkCount + "]" +
+               "> " +
+               _size +
+               " si={" +
+               (_fileAttributes.isDefined(FileAttribute.STORAGECLASS)
+                     ? _fileAttributes.getStorageClass()
+                     : "<unknown>") +
+               "}";
     }
 }

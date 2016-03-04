@@ -375,14 +375,10 @@ public class HsmFlushControlManager  extends CellAdapter {
            return res ;
         }
         public String toString(){
-           StringBuilder sb = new StringBuilder() ;
-           sb.append(_poolName).append(";IOMode=").append(getPoolModeString()) ;
-           sb.append(";A=").append(isActive).
-              append(";LU=").
-              append( lastUpdated == 0 ?
-                      "Never" :
-                      ( "" + (  (System.currentTimeMillis()-lastUpdated ) / 1000L ) )  ) ;
-           return sb.toString();
+            return _poolName + ";IOMode=" + getPoolModeString() +
+                   ";A=" + isActive +
+                   ";LU=" +
+                   (lastUpdated == 0 ? "Never" : ("" + ((System.currentTimeMillis() - lastUpdated) / 1000L)));
         }
     }
     private void flushStorageClass( String poolName , String storageClass , int count ) {

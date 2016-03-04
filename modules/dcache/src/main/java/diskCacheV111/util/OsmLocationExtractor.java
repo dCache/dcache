@@ -76,14 +76,12 @@ public class OsmLocationExtractor implements HsmLocation {
 
 		Map<String, String> parsed = parseURI(_uri);
 
-		StringBuilder asLevel = new StringBuilder();
+		String asLevel = parsed.get("store") +
+						 " " + parsed.get("group") +
+						 " " + parsed.get("bfid") +
+						 " " + _uri.getAuthority();
 
-		asLevel.append(parsed.get("store"))
-			.append(" ").append(parsed.get("group"))
-			.append(" ").append(parsed.get("bfid"))
-			.append(" ").append(_uri.getAuthority());
-
-		levelData.put(1, asLevel.toString());
+		levelData.put(1, asLevel);
 
 		return levelData;
 	}

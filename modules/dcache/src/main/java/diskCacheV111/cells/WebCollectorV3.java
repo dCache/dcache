@@ -110,13 +110,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         @Override
         public String toString()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append("E=").append(_enabled).
-                append(";A=").append(_mode).
-                append(";S=").append(_shortPeriod).
-                append(";Ret").append(_retentionFactor).
-                append(";R=").append(_regularPeriod);
-            return sb.toString();
+            return "E=" + _enabled +
+                   ";A=" + _mode +
+                   ";S=" + _shortPeriod +
+                   ";Ret" + _retentionFactor +
+                   ";R=" + _regularPeriod;
         }
     }
 

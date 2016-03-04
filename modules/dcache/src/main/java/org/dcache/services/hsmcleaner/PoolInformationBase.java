@@ -160,7 +160,7 @@ public class PoolInformationBase implements CellMessageReceiver
         PoolInformation pool = this.getPool(poolName);
 
         if (pool == null) {
-            sb.append("No information available about pool " + poolName);
+            sb.append("No information available about pool ").append(poolName);
         } else {
             Collection<String> listHSMs = pool.getHsmInstances();
             if (listHSMs == null || listHSMs.isEmpty()) {

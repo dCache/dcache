@@ -325,15 +325,13 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     public synchronized String toString()
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SCI=").append(_storageClass).
-            append("@").append(_hsmName).
-            append(";def=").append(_defined).
-            append(";exp=").append(TimeUnit.MILLISECONDS.toSeconds(_expiration)).
-            append(";pend=").append(_pending).
-            append(";maxTotal=").append(_maxTotalSize).
-            append(";waiting=").append(_requests.size());
-        return sb.toString();
+        return "SCI=" + _storageClass +
+               "@" + _hsmName +
+               ";def=" + _defined +
+               ";exp=" + TimeUnit.MILLISECONDS.toSeconds(_expiration) +
+               ";pend=" + _pending +
+               ";maxTotal=" + _maxTotalSize +
+               ";waiting=" + _requests.size();
     }
 
     public synchronized boolean hasExpired()

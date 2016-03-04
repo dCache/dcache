@@ -37,14 +37,9 @@ public class BadConfigHandler extends AbstractHandler {
 
     public void setFailureMessage(String failureMessage) {
         if (failureMessage != null) {
-            final StringBuilder sb = new StringBuilder();
-            sb  .append(BAD_CONFIG)
-                .append(": ")
-                .append(failureMessage)
-                .append(".");
             exception = new ServletException(new HttpException(
                             HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                            sb.toString()));
+                            BAD_CONFIG + ": " + failureMessage + "."));
         }
     }
 }
