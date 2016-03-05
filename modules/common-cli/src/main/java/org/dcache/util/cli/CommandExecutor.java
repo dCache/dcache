@@ -14,6 +14,11 @@ import org.dcache.util.Args;
 public interface CommandExecutor
 {
     /**
+     * Returns true if and only if the command is marked as deprecated.
+     */
+    boolean isDeprecated();
+
+    /**
      * Returns true if and only if the command has any ACLs.
      */
     boolean hasACLs();

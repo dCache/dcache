@@ -262,6 +262,11 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
         writer.append(Strings.wrap("       ", literal(command.name()) + " " + getSignature(clazz), WIDTH));
         writer.println();
 
+        if (clazz.getDeclaredAnnotation(Deprecated.class) != null) {
+            writer.append(Strings.wrap("       ", "This command is deprecated and will be removed in a future release.", WIDTH));
+            writer.println();
+        }
+
         if (!command.description().isEmpty()) {
             writer.println(heading("DESCRIPTION"));
             writer.append(Strings.wrap("       ", command.description(), WIDTH));
