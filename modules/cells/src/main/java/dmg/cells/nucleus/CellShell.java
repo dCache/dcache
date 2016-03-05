@@ -82,6 +82,11 @@ public class CellShell extends CommandInterpreter
     private static final Logger _logNucleus =
         LoggerFactory.getLogger(CellNucleus.class);
 
+    enum ErrorAction
+    {
+        SHUTDOWN, EXIT, CONTINUE
+    }
+
    private final CellNucleus  _nucleus ;
    private StringBuilder _contextString;
    private String       _contextName;
@@ -92,7 +97,7 @@ public class CellShell extends CommandInterpreter
    private int          _helpMode       = 1 ;
    private int          _errorCode;
    private String       _errorMsg;
-   private String       _doOnExit;
+   private ErrorAction _doOnError = ErrorAction.CONTINUE;
    private final Map<String, Object> _environment =
            new ConcurrentHashMap<>();
    private CommandInterpreter _externalInterpreter;
@@ -276,15 +281,12 @@ public class CellShell extends CommandInterpreter
          _errorCode = ce.getErrorCode() ;
          _errorMsg  = ce.getErrorMessage() ;
 
-         if( _doOnExit != null ){
-            if( _doOnExit.equals( "shutdown" ) ) {
-                throw new CommandExitException(ce.toString(), 666);
-            } else {
-                throw new CommandExitException(ce.getErrorMessage(),
-                        ce.getErrorCode());
-            }
-
-         }
+          switch (_doOnError) {
+          case SHUTDOWN:
+              throw new CommandExitException(ce.toString(), 666);
+          case EXIT:
+              throw new CommandExitException(ce.getErrorMessage(), ce.getErrorCode());
+          }
          if( ce instanceof CommandSyntaxException ){
             CommandSyntaxException cse = (CommandSyntaxException)ce ;
 
@@ -998,22 +1000,55 @@ public class CellShell extends CommandInterpreter
        }
    }
 
-   ////////////////////////////////////////////////////////////
-   //
-   //   this and that
-   //
-   public static final String hh_onerror = "shutdown|exit|continue" ;
-   public String ac_onerror_$_1( Args args ){
-      if( args.argv(0).equals( "continue" ) ) {
-          _doOnExit = null;
-      } else {
-          _doOnExit = args.argv(0);
-      }
-      return "" ;
-   }
-   public String ac_show_onexit( Args args ){
-      return _doOnExit != null ? _doOnExit : "" ;
-   }
+    ////////////////////////////////////////////////////////////
+    //
+    //   this and that
+    //
+    @Command(name = "onerror", hint = "set error action",
+            description = "Defines how the command interpreter reacts to processing errors.")
+    class OnErrorCommand implements Callable<String>
+    {
+        @Argument(valueSpec = "shutdown|exit|continue",
+                usage = "shutdown:\n" +
+                        "\tterminate dCache domain.\n" +
+                        "exit:\n" +
+                        "\tterminate interpreter.\n" +
+                        "continue:\n" +
+                        "\tignore error.")
+        ErrorAction action;
+
+        @Override
+        public String call()
+        {
+            _doOnError = action;
+            return "";
+        }
+    }
+
+    @Command(name = "show onexit", hint = "show current error action",
+            description = "Shows how the command interpreter reacts to errors. The action can " +
+                          "be set using the onerror command.")
+    @Deprecated
+    class ShowOnExitCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            return _doOnError.toString().toLowerCase();
+        }
+    }
+
+    @Command(name = "show onerror", hint = "show current error action",
+            description = "Shows how the command interpreter reacts to errors. The action can " +
+                          "be set using the onerror command.")
+    class ShowOnErrorCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            return _doOnError.toString().toLowerCase();
+        }
+    }
 
 
     private static final int  PRINT_CELL          =    1;
@@ -1631,11 +1666,11 @@ public class CellShell extends CommandInterpreter
                                 "information.", error.getCause());
                     }
 
-                    if (_doOnExit != null) {
+                    if (_doOnError != ErrorAction.CONTINUE) {
                         String msg =
                             String.format("%s: line %d: %s", source, no,
                                           error.getMessage());
-                        if (_doOnExit.equals("shutdown")) {
+                        if (_doOnError == ErrorAction.SHUTDOWN) {
                             throw new CommandExitException(msg, 666, error);
                         } else if (error instanceof CommandException) {
                             int rc = ((CommandException) error).getErrorCode();

@@ -29,10 +29,17 @@ class AcCommandExecutor implements CommandExecutor
     private Field _fullHelp;
     private Field _helpHint;
     private Field _acls;
+    private boolean _isDeprecated;
 
     public AcCommandExecutor(Object listener)
     {
         _listener = listener;
+    }
+
+    @Override
+    public boolean isDeprecated()
+    {
+        return _isDeprecated;
     }
 
     public void setMethod(Method m, int mn, int mx)
@@ -40,6 +47,7 @@ class AcCommandExecutor implements CommandExecutor
         _method = m;
         _minArgs = mn;
         _maxArgs = mx;
+        _isDeprecated = m.getDeclaredAnnotation(Deprecated.class) != null;
     }
 
     public void setFullHelpField(Field f) {
