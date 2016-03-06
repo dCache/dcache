@@ -72,7 +72,7 @@ public class WassPartition extends ClassicPartition
     {
         PoolInfo pool = wass.selectByAvailableSpace(pools, preallocated, PoolInfo::getCostInfo);
         if (pool == null) {
-            throw new CacheException(21, "All pools are full");
+            throw new CostException("All pools are full", null, _fallbackOnSpace, false);
         }
         return pool;
     }
