@@ -174,6 +174,7 @@ public class PoolMonitorV5
                                                  ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
             }
 
+            CostException fallback = null;
             for (PoolPreferenceLevel level: levels) {
                 List<PoolInfo> pools =
                         level.getPoolList().stream()
@@ -182,8 +183,22 @@ public class PoolMonitorV5
                                 .collect(toList());
                 if (!pools.isEmpty()) {
                     Partition partition = _partitionManager.getPartition(level.getTag());
-                    return partition.selectWritePool(_costModule, pools, _fileAttributes, preallocated);
+                    try {
+                        return partition.selectWritePool(_costModule, pools, _fileAttributes, preallocated);
+                    } catch (CostException e) {
+                        if (!e.shouldFallBack()) {
+                            throw e;
+                        }
+                        fallback = e;
+                    }
                 }
+            }
+
+            /* We were asked to fall back, but all available links were
+             * exhausted. Let the caller deal with it.
+             */
+            if (fallback != null) {
+                throw fallback;
             }
 
             throw new CacheException(CacheException.NO_POOL_ONLINE,
