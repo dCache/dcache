@@ -36,7 +36,7 @@ public class LruPartition extends Partition
     /**
      * Pool name to access order. Making this static will mean that
      * all instances of LruPartition will share this information. It
-     z     * will also ensure that this information is not serialized,
+     * will also ensure that this information is not serialized,
      * meaning that multiple deserialized instances preserve this
      * information.
      */
