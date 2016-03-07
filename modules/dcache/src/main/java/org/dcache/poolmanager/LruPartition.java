@@ -1,6 +1,5 @@
 package org.dcache.poolmanager;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.util.List;
@@ -12,11 +11,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CostException;
 
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.filter;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -127,7 +126,7 @@ public class LruPartition extends Partition
         List<PoolInfo> freePools =
                 pools.stream().filter(pool -> canHoldFile(pool, preallocated)).collect(toList());
         if (freePools.isEmpty()) {
-            throw new CacheException(21, "All pools are full");
+            throw new CostException("All pools are full", null, false, false);
         }
         return select(freePools, _lastWrite);
     }

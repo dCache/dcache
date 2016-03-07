@@ -1,7 +1,5 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
 
@@ -35,7 +33,7 @@ public abstract class ClassicPartition extends Partition
 
     /**
      * COSTFACTORS
-     *u
+     *
      *   spacecostfactor   double
      *   cpucostfactor     double
      *
@@ -49,17 +47,19 @@ public abstract class ClassicPartition extends Partition
      *   fallback  double
      *
      * OTHER
-     *   max-copies     int
+     *   max-copies       int
+     *   fallback-onspace boolean
      *
-     *    Options  |  Description
-     *  -------------------------------------------------------------------
-     *      idle   |  below 'idle' : 'reduce duplicate' mode
-     *      p2p    |  above : start pool to pool mode
-     *             |  If p2p value is a percent then p2p is dynamically
-     *             |  assigned that percentile value of pool performance costs
-     *      alert  |  stop pool 2 pool mode, start stage only mode
-     *      halt   |  suspend system
-     *    fallback |  Allow fallback in Permission matrix on high load
+     *    Options        |  Description
+     *  ----------------------------------------------------------------------------
+     *         idle      |  below 'idle' : 'reduce duplicate' mode
+     *         p2p       |  above : start pool to pool mode
+     *                   |  If p2p value is a percent then p2p is dynamically
+     *                   |  assigned that percentile value of pool performance costs
+     *        alert      |  stop pool 2 pool mode, start stage only mode
+     *         halt      |  suspend system
+     *       fallback    |  Allow fallback in Permission matrix on high load
+     *  fallback-onspace |  Allow fallback on write if out of free space
      */
     private static final Map<String,String> DEFAULTS =
         ImmutableMap.<String,String>builder()
@@ -68,6 +68,7 @@ public abstract class ClassicPartition extends Partition
         .put("alert", "0.0")
         .put("halt", "0.0")
         .put("fallback", "0.0")
+        .put("fallback-onspace", "no")
         .put("spacecostfactor", "1.0")
         .put("cpucostfactor", "1.0")
         .put("sameHostCopy", "besteffort")
@@ -76,21 +77,22 @@ public abstract class ClassicPartition extends Partition
         .put("idle", "0.0")
         .build();
 
-    public final SameHost _allowSameHostCopy;
-    public final SameHost _allowSameHostRetry;
-    public final long _maxPnfsFileCopies;
+    protected final SameHost _allowSameHostCopy;
+    protected final SameHost _allowSameHostRetry;
+    protected final long _maxPnfsFileCopies;
 
-    public final double  _costCut;
-    public final boolean _costCutIsPercentile;
-    public final double  _alertCostCut;
-    public final double  _panicCostCut;
-    public final double  _fallbackCostCut;
+    protected final double  _costCut;
+    protected final boolean _costCutIsPercentile;
+    protected final double  _alertCostCut;
+    protected final double  _panicCostCut;
+    protected final double  _fallbackCostCut;
+    protected final boolean _fallbackOnSpace;
 
-    public final double  _spaceCostFactor;
-    public final double  _performanceCostFactor;
+    protected final double  _spaceCostFactor;
+    protected final double  _performanceCostFactor;
 
-    public final double  _slope;
-    public final double  _minCostCut;
+    protected final double  _slope;
+    protected final double  _minCostCut;
 
     /**
      * Order by performance cost.
@@ -123,6 +125,7 @@ public abstract class ClassicPartition extends Partition
         _performanceCostFactor = getDouble("cpucostfactor");
         _slope = getDouble("slope");
         _minCostCut = getDouble("idle");
+        _fallbackOnSpace = getBoolean("fallback-onspace");
 
         String costCut = getProperty("p2p");
         if (costCut.endsWith("%")) {

@@ -7,6 +7,7 @@ import java.util.Random;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CostException;
 
 import org.dcache.vehicles.FileAttributes;
 
@@ -70,7 +71,7 @@ public class RandomPartition extends Partition
         List<PoolInfo> freePools =
                 pools.stream().filter(pool -> canHoldFile(pool, preallocated)).collect(toList());
         if (freePools.isEmpty()) {
-            throw new CacheException(21, "All pools are full");
+            throw new CostException("All pools are full", null, false, false);
         }
         return select(freePools);
     }
