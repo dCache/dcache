@@ -1120,6 +1120,7 @@ public final class Storage
                                              future.setException(new SRMDuplicationException(msg));
                                              break;
                                          case CacheException.FILE_NOT_FOUND:
+                                         case CacheException.NOT_DIR:
                                              future.setException(new SRMInvalidPathException(msg));
                                              break;
                                          case CacheException.LOCKED:
