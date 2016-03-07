@@ -174,8 +174,8 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                     credential.getDelegatedCredential(),
                     retry_timout,
                     retry_num,
-                    true,
-                    true,
+                    false,
+                    false,
                     transport);
             int len = SURLs.length;
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
@@ -412,8 +412,8 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 credential.getDelegatedCredential(),
                 retry_timeout,
                 retry_num,
-                true,
-                true,
+                false,
+                false,
                 transport);
         String requestToken = requestTokenString;
         URI surlArray[] = new URI[1];
