@@ -1101,6 +1101,8 @@ public final class Storage
             CellStub.addCallback(_pnfsStub.send(msg),
                                  new AbstractMessageCallback<PnfsCreateUploadPath>()
                                  {
+                                     int failures = 0;
+
                                      @Override
                                      public void success(PnfsCreateUploadPath message)
                                      {
@@ -1110,6 +1112,7 @@ public final class Storage
                                      @Override
                                      public void failure(int rc, Object error)
                                      {
+                                         failures++;
                                          String msg = Objects.toString(error, "");
                                          switch (rc) {
                                          case CacheException.PERMISSION_DENIED:
@@ -1120,6 +1123,20 @@ public final class Storage
                                              break;
                                          case CacheException.FILE_NOT_FOUND:
                                              future.setException(new SRMInvalidPathException(msg));
+                                             break;
+                                         case CacheException.LOCKED:
+                                             if (failures < 3) {
+                                                 /* Usually due to concurrent uploads to the same non-existing target
+                                                  * directory. Retry a few times.
+                                                  */
+                                                 PnfsCreateUploadPath retry =
+                                                         new PnfsCreateUploadPath(subject, fullPath,
+                                                                                  user.getRoot(),
+                                                                                  size, al, rp, spaceToken, options);
+                                                 CellStub.addCallback(_pnfsStub.send(retry), this, _executor);
+                                             } else {
+                                                 future.setException(new SRMInternalErrorException(msg));
+                                             }
                                              break;
                                          case CacheException.TIMEOUT:
                                          default:
