@@ -39,6 +39,7 @@ import diskCacheV111.util.FileIsNewCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
+import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -1073,9 +1074,9 @@ public class ChimeraNameSpaceProvider
             try {
                 inode = parentOfPath.mkdir(path.getName(), 0, 0, mode, acl, tags);
             } catch (FileExistsChimeraFsException e1) {
-                /* Concurrent directory creation. Do another lookup.
+                /* Concurrent directory creation. Current transaction is invalid.
                  */
-                inode = lookupDirectory(Subjects.ROOT, path);
+                throw new LockedCacheException("Concurrent access prevented this operation from completing. Please retry.");
             }
         }
         return inode;
@@ -1091,9 +1092,9 @@ public class ChimeraNameSpaceProvider
             try {
                 inode = mkdir(subject, parentOfPath, path.getName(), uid, gid, mode);
             } catch (FileExistsChimeraFsException e1) {
-                /* Concurrent directory creation. Do another lookup.
+                /* Concurrent directory creation. Current transaction is invalid.
                  */
-                inode = lookupDirectory(subject, path);
+                throw new LockedCacheException("Concurrent access prevented this operation from completing. Please retry.");
             }
         }
         return inode;
