@@ -1377,6 +1377,11 @@ public class ChimeraNameSpaceProvider
             } catch (FileNotFoundHimeraFsException ignored) {
             }
 
+            /* Read file attributes before moving the file. Otherwise the cached parent will
+             * be gone.
+             */
+            FileAttributes attributes = getFileAttributes(inodeOfFile, attributesToFetch);
+
             /* File is moved to correct directory.
              */
             _fs.rename(inodeOfFile, temporaryDirInode, temporaryPath.getName(), finalDirInode, finalPath.getName());
@@ -1385,7 +1390,7 @@ public class ChimeraNameSpaceProvider
              */
             removeRecursively(uploadDirInode, temporaryDir.getName(), temporaryDirInode);
 
-            return getFileAttributes(inodeOfFile, attributesToFetch);
+            return attributes;
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
