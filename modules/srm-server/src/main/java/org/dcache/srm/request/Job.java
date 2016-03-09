@@ -714,7 +714,11 @@ public abstract class Job  {
         try {
             if (creationTime + lifetime < System.currentTimeMillis() && !state.isFinal()) {
                 logger.info("expiring job #{}", getId());
-                setState(State.FAILED, "Request lifetime expired.");
+                StringBuilder sb = new StringBuilder();
+                sb.append("Request lifetime (");
+                TimeUtils.appendDuration(sb, lifetime, MILLISECONDS, TimeUnitFormat.SHORT);
+                sb.append(") expired.");
+                setState(State.FAILED, sb.toString());
             }
         } catch (IllegalStateTransition e) {
             logger.error("Illegal state transition while expiring job: {}", e.toString());
