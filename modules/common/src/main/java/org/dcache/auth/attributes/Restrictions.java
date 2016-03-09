@@ -171,6 +171,17 @@ public class Restrictions
         }
 
         @Override
+        public boolean isRestricted(Activity activity, FsPath directory, String name)
+        {
+            for (Restriction r : restrictions) {
+                if (r.isRestricted(activity, directory, name)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
         public boolean equals(Object other)
         {
             if (!(other instanceof CompositeRestriction)) {

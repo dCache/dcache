@@ -63,6 +63,12 @@ public class DenyActivityRestriction implements Restriction
     }
 
     @Override
+    public boolean isRestricted(Activity activity, FsPath directory, String name)
+    {
+        return denied.contains(activity);
+    }
+
+    @Override
     public int hashCode()
     {
         return denied.hashCode();
