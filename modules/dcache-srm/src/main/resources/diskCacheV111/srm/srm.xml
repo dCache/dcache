@@ -469,6 +469,7 @@
 	    <property name="prefix" value="srm.ping-extra-info"/>
 	</bean>
     </property>
+    <property name="maximumClientAssumedBandwidth" value="${srm.request.maximum-client-assumed-bandwidth}"/>
   </bean>
 
   <bean id="scheduling-strategy-provider" class="org.dcache.srm.scheduler.SchedulingStrategyFactoryBean">
