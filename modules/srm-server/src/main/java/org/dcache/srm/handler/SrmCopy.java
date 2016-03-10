@@ -18,6 +18,7 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmCopyRequest;
 import org.dcache.srm.v2_2.SrmCopyResponse;
@@ -86,7 +87,7 @@ public class SrmCopy implements CredentialAwareHandler
                    SRMInternalErrorException
     {
         TCopyFileRequest[] arrayOfFileRequests = getFileRequests(request);
-        long lifetime = getTotalRequestTime(request, configuration.getCopyLifetime());
+        long lifetime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(), configuration.getCopyLifetime());
         String spaceToken = request.getTargetSpaceToken();
 
         URI from_urls[] = new URI[arrayOfFileRequests.length];
@@ -166,30 +167,6 @@ public class SrmCopy implements CredentialAwareHandler
             throw new SRMNotSupportedException("Overwrite Mode WHEN_FILES_ARE_DIFFERENT is not supported");
         }
         return overwriteMode;
-    }
-
-    private static long getTotalRequestTime(SrmCopyRequest request, long max) throws SRMInvalidRequestException
-    {
-        long lifetimeInSeconds = 0;
-        if (request.getDesiredTotalRequestTime() != null) {
-            long reqLifetime = request.getDesiredTotalRequestTime();
-            /* [ SRM 2.2, 5.7.2 ]
-             *
-             * o)    If input parameter desiredTotalRequestTime is 0 (zero),
-             *       each file request must be tried at least once. Negative
-             *       value must be invalid.
-             */
-            if (reqLifetime < 0) {
-                throw new SRMInvalidRequestException("Negative desiredTotalRequestTime is invalid");
-            }
-            lifetimeInSeconds = reqLifetime;
-        }
-
-        if (lifetimeInSeconds <= 0) {
-            /* FIXME: This is not spec compliant. */
-            return max;
-        }
-        return Math.min(TimeUnit.SECONDS.toMillis(lifetimeInSeconds), max);
     }
 
     private static TCopyFileRequest[] getFileRequests(SrmCopyRequest request) throws SRMInvalidRequestException
