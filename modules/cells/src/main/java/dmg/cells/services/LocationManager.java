@@ -27,6 +27,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import dmg.cells.network.LocationManagerConnector;
 import dmg.cells.nucleus.CellAdapter;
@@ -873,7 +878,7 @@ public class LocationManager extends CellAdapter
     private class LocationManagerHandler implements Runnable
     {
         private final DatagramSocket _socket;
-        private final Map<Integer, StringBuffer> _map = new HashMap<>();
+        private final ConcurrentMap<Integer, BlockingQueue<String>> _map = new ConcurrentHashMap<>();
         private int _serial;
         private final InetAddress _address;
         private final int _port;
@@ -918,10 +923,9 @@ public class LocationManager extends CellAdapter
         @Override
         public void run()
         {
-            DatagramPacket packet;
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    packet = new DatagramPacket(new byte[1024], 1024);
+                    DatagramPacket packet = new DatagramPacket(new byte[1024], 1024);
 
                     _socket.receive(packet);
 
@@ -941,7 +945,7 @@ public class LocationManager extends CellAdapter
                     }
 
                     Integer s = Integer.valueOf(tmp);
-                    StringBuffer b = _map.get(s);
+                    BlockingQueue<String> b = _map.get(s);
                     if (b == null) {
                         LOGGER.warn("Not waiting for " + s);
                         continue;
@@ -949,10 +953,7 @@ public class LocationManager extends CellAdapter
 
                     LOGGER.info("Reasonable reply arrived (" + s + ") : " + b);
 
-                    synchronized (b) {
-                        b.append(a.toString());
-                        b.notifyAll();
-                    }
+                    b.offer(a.toString());
                 } catch (InterruptedIOException e) {
                     Thread.currentThread().interrupt();
                 } catch (SocketException e) {
@@ -976,37 +977,24 @@ public class LocationManager extends CellAdapter
                 serial = (_serial++);
             }
 
-            byte[] data = (message + " -serial=" + serial).getBytes();
+            String request = message + " -serial=" + serial;
 
-            StringBuffer b = new StringBuffer();
-            DatagramPacket packet;
+            LOGGER.info("Sending to {}:{}: {}", _address, _port, request);
 
-            Integer s = serial;
-            long rest = waitTime;
-            long start = System.currentTimeMillis();
-            long now;
-
-
-            LOGGER.info("Sending to " + _address + ":" + _port + " : " + new String(data, 0, data.length));
-
-            synchronized (b) {
-                packet = new DatagramPacket(data, data.length, _address, _port);
-                _map.put(s, b);
-                _socket.send(packet);
-                while (rest > 0) {
-                    b.wait(rest);
-                    if (b.length() > 0) {
-                        _repliesReceived++;
-                        _map.remove(s);
-                        return b.toString();
-                    }
-                    now = System.currentTimeMillis();
-                    rest -= (now - start);
-                    start = now;
+            BlockingQueue<String> b = new ArrayBlockingQueue<>(1);
+            _map.put(serial, b);
+            try {
+                byte[] data = request.getBytes();
+                _socket.send(new DatagramPacket(data, data.length, _address, _port));
+                String poll = b.poll(waitTime, TimeUnit.MILLISECONDS);
+                if (poll == null) {
+                    throw new IOException("Request timed out");
                 }
-                _map.remove(s);
+                _repliesReceived++;
+                return poll;
+            } finally {
+                _map.remove(serial);
             }
-            throw new IOException("Request timed out");
         }
 
         /**
