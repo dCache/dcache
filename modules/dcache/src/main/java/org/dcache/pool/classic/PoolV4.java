@@ -4,9 +4,6 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Throwables;
 import com.google.common.net.InetAddresses;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -49,7 +46,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
-import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -83,6 +79,9 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
 import dmg.util.CommandSyntaxException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -1509,14 +1508,14 @@ public class PoolV4
                     "than 1.0, the default value of " + DEFAULT_BREAK_EVEN + " is used.")
     public class SetBreakevenCommand implements Callable<String>
     {
-        @Argument(usage = "Specify the breakeven value. This value has to be a positive and " +
-                "less than 1.0.")
+        @Argument(usage = "Specify the breakeven value. This value has to be greater than or " +
+                "equal zero")
         double parameter = _breakEven;
 
         @Override
         public String call() throws IllegalArgumentException
         {
-            checkArgument(parameter > 0, "The breakeven parameter must be a positive number.");
+            checkArgument(parameter >= 0, "The breakeven parameter must be greater than or equal to zero.");
 
             if (parameter >= 1){
                 parameter = DEFAULT_BREAK_EVEN;
