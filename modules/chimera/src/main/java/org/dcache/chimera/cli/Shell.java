@@ -63,6 +63,7 @@ import static com.google.common.base.Strings.padStart;
 import static com.google.common.io.ByteStreams.toByteArray;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static org.dcache.util.ByteUnit.KiB;
 
 public class Shell extends ShellApplication
 {
@@ -240,9 +241,9 @@ public class Shell extends ShellApplication
     {
         private static final String DEFAULT_TIME = "mtime";
 
-        /* The block size is purely nominal; we use 1k here as historically
-         * filesystems have used a 1k block size. */
-        private final int BLOCK_SIZE = 1024;
+        /* The block size is purely nominal; we use 1KiB here as historically
+         * filesystems have used a 1KiB block size. */
+        private final int BLOCK_SIZE = KiB.toBytes(1);
 
         private final  int[] INT_SIZE_TABLE = {9, 99, 999, 9999, 99999,
                 999999, 9999999, 99999999, 999999999, Integer.MAX_VALUE};

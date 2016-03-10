@@ -13,6 +13,10 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellNucleus;
 
 import org.dcache.util.Args;
+import org.dcache.util.ByteUnit;
+
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.MiB;
 
 public class MemoryWatch extends CellAdapter implements Runnable {
 
@@ -29,7 +33,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    private String  _outputFile;
    private int     _generations = 2 ;
    private int     _current;
-   private int     _maxFileSize = 1024 * 1024 ;
+   private int     _maxFileSize = MiB.toBytes(1);
 
     public MemoryWatch(String name, String args)
     {
@@ -176,7 +180,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    public String ac_set_maxFilesize_$_1( Args args )
    {
        int g = Integer.parseInt( args.argv(0) ) ;
-       if( g < 1024 ) {
+       if( g < KiB.toBytes(1) ) {
            throw new
                    IllegalArgumentException("maxFilesize not in range (>1k)");
        }

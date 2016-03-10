@@ -23,9 +23,9 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static org.dcache.util.ByteUnit.KiB;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -262,7 +262,7 @@ public class ChecksumChannelTest {
         Because of the way the methods in this test are mocked,
         readBackCapacity has to be a divisor of writeBufferCapacity
          */
-        int readBackCapacity = 256 * 1024;
+        int readBackCapacity = KiB.toBytes(256);
         int writeBufferCapacity = 4 * readBackCapacity;
         ByteBuffer writeBuffer = ByteBuffer.allocate(writeBufferCapacity);
         chksumChannel._readBackBuffer = ByteBuffer.allocate(readBackCapacity);
@@ -280,7 +280,7 @@ public class ChecksumChannelTest {
 
     @Test
     public void shouldBeAbleToFillZeroRangesOfSizeGreater4Gb() throws IOException {
-        chksumChannel._zerosBuffer = ByteBuffer.allocate(256 * 1024);
+        chksumChannel._zerosBuffer = ByteBuffer.allocate(KiB.toBytes(256));
         chksumChannel._channel = mock(FileRepositoryChannel.class);
         when(chksumChannel._channel.write(any(), anyLong())).thenReturn(buffers[0].capacity());
         when(chksumChannel._channel.read(any(), anyLong())).thenReturn(2);

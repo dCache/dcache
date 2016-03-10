@@ -25,6 +25,7 @@ import org.dcache.util.Checksum;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayList;
+import static org.dcache.util.ByteUnit.KiB;
 
 /**
  * A wrapper for RepositoryChannel that computes a digest
@@ -88,14 +89,14 @@ public class ChecksumChannel implements RepositoryChannel
      * checksum calculations.
      */
     @VisibleForTesting
-    ByteBuffer _readBackBuffer = ByteBuffer.allocate(256 * 1024);
+    ByteBuffer _readBackBuffer = ByteBuffer.allocate(KiB.toBytes(256));
 
     /**
      * Buffer to be used for feeding the checksum digester with 0s to fill up
      * gaps in ranges.
      */
     @VisibleForTesting
-    ByteBuffer _zerosBuffer = ByteBuffer.allocate(256 * 1024);
+    ByteBuffer _zerosBuffer = ByteBuffer.allocate(KiB.toBytes(256));
 
     public ChecksumChannel(RepositoryChannel inner,
                            ChecksumFactory checksumFactory)

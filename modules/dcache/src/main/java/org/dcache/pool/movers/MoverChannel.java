@@ -20,6 +20,7 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.util.ByteUnit.MiB;
 
 /**
  * A wrapper for RepositoryChannel adding features used by movers.
@@ -38,7 +39,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
      * The minimum number of bytes to increment the space
      * allocation.
      */
-    private static final long SPACE_INC = 50 * (1 << 20);
+    private static final long SPACE_INC = MiB.toBytes(50);
 
     /**
      * Inner channel to which most operations are delegated.

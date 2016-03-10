@@ -4,6 +4,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 
 public class SnmpTest {
  public static final int listenPort = 22112 ;
@@ -12,7 +14,7 @@ public class SnmpTest {
      try{
        DatagramSocket socket = new DatagramSocket(listenPort) ;
        DatagramPacket recPacket = new DatagramPacket(
-                                        new byte[1024] , 1024 ) ;
+                                        new byte[KiB.toBytes(1)], KiB.toBytes(1));
        System.out.println( "Waiting for answer" ) ;
        socket.receive( recPacket ) ;
        System.out.println( "Tranmission finished" ) ;
@@ -55,7 +57,7 @@ public class SnmpTest {
        DatagramSocket socket = new DatagramSocket() ;
        InetAddress addr = InetAddress.getByName( hostName ) ;
        DatagramPacket recPacket = new DatagramPacket(
-                                        new byte[1024] , 1024 ) ;
+                                        new byte[KiB.toBytes(1)], KiB.toBytes(1));
        DatagramPacket packet = new DatagramPacket(
                                     b , b.length ,
                                     addr , port ) ;

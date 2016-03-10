@@ -13,6 +13,7 @@ import org.dcache.util.TimeUtils.TimeUnitFormat;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.util.ByteUnit.KiB;
 
 /**
  *  Utility methods for handling lifetime of requests.
@@ -40,7 +41,7 @@ public class Lifetimes
      * an extended lifetime is returned.
      * @param requestedLifetime the requested lifetime in seconds, or null if absent from request
      * @param size the size of the file or zero if no value is supplied
-     * @param bandwidth the maximum bandwidth the client may assume for this transfer in kiB/s, or zero if there is no limit
+     * @param bandwidth the maximum bandwidth the client may assume for this transfer in KiB/s, or zero if there is no limit
      * @param maximumLifetime the maximum allowed lifetime in milliseconds.
      * @return the lifetime of this request in milliseconds
      * @throws SRMInvalidRequestException
@@ -73,7 +74,7 @@ public class Lifetimes
      * (possibly) insufficient, in which case the estimated duration is returned.
      * @param lifetime client-supplied request lifetime, in milliseconds
      * @param size the number of bytes to transfer
-     * @param bandwidth the maximum bandwidth the client may assume in kiB/s
+     * @param bandwidth the maximum bandwidth the client may assume in KiB/s
      * @param maximumLifetime the configured maximum lifetime in milliseconds
      * @return a reasonable request lifetime, in milliseconds
      */
@@ -81,7 +82,7 @@ public class Lifetimes
             long size, long bandwidth, long maximumLifetime)
     {
         if (size > 0 && bandwidth > 0) {
-            long estimatedDuration = SECONDS.toMillis((size/bandwidth) / 1024L);
+            long estimatedDuration = SECONDS.toMillis(size/KiB.toBytes(bandwidth));
             long cappedDuration = Math.min(estimatedDuration, maximumLifetime);
             if (lifetime < cappedDuration) {
                 LOGGER.info("Requested lifetime of {} too short to transfer {} bytes; adjusting to {}",

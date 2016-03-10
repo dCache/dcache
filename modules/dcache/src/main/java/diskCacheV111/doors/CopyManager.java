@@ -37,6 +37,8 @@ import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 public class CopyManager extends AbstractCellComponent
     implements CellMessageReceiver, CellCommandListener
 {
@@ -50,8 +52,8 @@ public class CopyManager extends AbstractCellComponent
     private InetSocketAddress _localAddr;
     private long _moverTimeout = 24;
     private TimeUnit _moverTimeoutUnit = TimeUnit.HOURS;
-    private static final int BUFFER_SIZE = 256 * 1024;
-    private static final int TCP_BUFFER_SIZE = 256 * 1024;
+    private static final int BUFFER_SIZE = KiB.toBytes(256);
+    private static final int TCP_BUFFER_SIZE = KiB.toBytes(256);
     private int _maxTransfers = 30;
     private int _numTransfers;
 

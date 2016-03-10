@@ -46,6 +46,9 @@ import org.dcache.ftp.client.vanilla.Reply;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.PortRange;
+
+import static org.dcache.util.ByteUnit.MiB;
+
 /**
  * THE CLASS IS NOT THREAD SAVE
  * DO ONLY ONE OPERATION (READ / WRITE) AT A TIME
@@ -68,7 +71,7 @@ public class GridftpClient
     private String _cksmValue;
 
     private int _streamsNum = 10;
-    private int _bufferSize = 1024*1024;
+    private int _bufferSize = MiB.toBytes(1);
 
     private volatile IDiskDataSourceSink _current_source_sink;
     private long _last_transfer_time = System.currentTimeMillis();

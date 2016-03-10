@@ -396,7 +396,7 @@ public class RemoteNameSpaceProviderTests
             @Override
             public void modify(PnfsGetFileAttributes reply)
             {
-                reply.setFileAttributes(attributes().size(1024L).type(REGULAR).build());
+                reply.setFileAttributes(attributes().size(1234L).type(REGULAR).build());
             }
         });
 
@@ -413,7 +413,7 @@ public class RemoteNameSpaceProviderTests
         assertThat(sent.getRequestedAttributes(), hasItem(TYPE));
         assertThat(sent.getRequestedAttributes(), hasItem(SIZE));
 
-        assertThat(attributes.getSize(), is(1024L));
+        assertThat(attributes.getSize(), is(1234L));
         assertThat(attributes.getFileType(), is(REGULAR));
     }
 

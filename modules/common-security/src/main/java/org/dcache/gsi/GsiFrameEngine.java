@@ -25,6 +25,8 @@ import javax.net.ssl.SSLSession;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static org.dcache.util.ByteUnit.MiB;
+
 /**
  * SSLEngine decorator that implements legacy GSI framing.
  *
@@ -34,7 +36,7 @@ import java.nio.ByteOrder;
 public class GsiFrameEngine extends ForwardingSSLEngine
 {
     private static final ByteBuffer EMPTY = ByteBuffer.allocate(0);
-    private static final int MAX_LEN = 32 * 1024 * 1024;
+    private static final int MAX_LEN = MiB.toBytes(32);
 
     private final ServerGsiEngine gsiEngine;
     private SSLEngine currentDelegate;

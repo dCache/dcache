@@ -47,6 +47,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 
 import static java.util.Arrays.asList;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.BYTES;
 
 /**
   *  @author Patrick Fuhrmann
@@ -362,7 +364,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     private void copyFile(File from, File to) throws IOException {
         try (InputStream in = new FileInputStream(from)) {
             try (OutputStream out = new FileOutputStream(to)) {
-                byte [] buffer = new byte[16*1024];
+                byte [] buffer = new byte[KiB.toBytes(16)];
 
                 for (int rc = in.read(buffer, 0, buffer.length); rc > 0; rc = in.read(buffer, 0, buffer.length)) {
                     out.write(buffer, 0, rc);
@@ -1498,7 +1500,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         private final String      _keyType = "Key";
         private final String []   _tableTitles = { _keyType,
                 "Absolute Values",
-                "Data / MBytes",
+                "Data / MiB",
                 "Relative Values" };
 
         private HtmlDrawable _header;
@@ -1613,7 +1615,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             if (counter <= 0) {
                 return "0";
             }
-            String unit = ""+counter/(1024L*1024L);
+            String unit = ""+BYTES.toMiB(counter);
             StringBuilder sb = new StringBuilder();
             for(int j = unit.length() - 1, c = 0; j >= 0; j--, c++) {
                 if ((c > 0) && (c%3 == 0)) {

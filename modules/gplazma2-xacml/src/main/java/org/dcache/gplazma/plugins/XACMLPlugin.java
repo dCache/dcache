@@ -63,6 +63,7 @@ import static java.util.Arrays.asList;
 import static org.dcache.gplazma.util.CertPaths.getOriginalUserDnAsGlobusPrincipal;
 import static org.dcache.gplazma.util.CertPaths.isX509CertPath;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import static org.dcache.util.ByteUnit.KiB;
 
 /**
  * Responsible for taking an X509Certificate chain from the public credentials
@@ -311,7 +312,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
      * caching enabled by default
      */
     private static final String DEFAULT_CACHE_LIFETIME = "30";
-    private static final String DEFAULT_CACHE_SIZE = "1024";
 
     /*
      * Optimization for rapid sequential storage operation requests. Cache is
@@ -510,9 +510,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
             throw new IllegalArgumentException(ILLEGAL_CACHE_LIFE + expiry);
         }
 
-        int size
-            = Integer.parseInt(_properties.getProperty(CACHE_SIZE,
-                        DEFAULT_CACHE_SIZE));
+        int size = _properties.containsKey(CACHE_SIZE)
+                ? Integer.parseInt(_properties.getProperty(CACHE_SIZE))
+                : KiB.toBytes(1);
 
         if (size < 1) {
             throw new IllegalArgumentException(ILLEGAL_CACHE_SIZE + size);

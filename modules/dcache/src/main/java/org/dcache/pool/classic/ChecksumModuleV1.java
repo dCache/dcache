@@ -41,6 +41,7 @@ import dmg.util.command.Option;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -50,13 +51,13 @@ import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
 import static org.dcache.pool.classic.ChecksumModule.PolicyFlag.*;
 import static org.dcache.util.ChecksumType.*;
+import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.ByteUnit.BYTES;
 
 public class ChecksumModuleV1
     extends AbstractCellComponent
     implements CellCommandListener, ChecksumModule
 {
-    private static final long BYTES_IN_MEBIBYTE = 1024 * 1024;
-
     private final EnumSet<PolicyFlag> _policy = EnumSet.of(ON_TRANSFER, ENFORCE_CRC);
 
     private double _throughputLimit = Double.POSITIVE_INFINITY;
@@ -92,7 +93,7 @@ public class ChecksumModuleV1
         if (hasPolicy(SCRUB)) {
             pw.print("csm set policy -scrub=on");
             pw.print(" -limit=" +
-                    (Double.isInfinite(_throughputLimit) ? "off" : _throughputLimit / BYTES_IN_MEBIBYTE));
+                    (Double.isInfinite(_throughputLimit) ? "off" : BYTES.toMiB(_throughputLimit)));
             pw.println(" -period=" + TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
         } else {
             pw.println("csm set policy -scrub=off");
@@ -134,7 +135,7 @@ public class ChecksumModuleV1
                 break;
             case SCRUB:
                 pw.print("scrub(");
-                pw.print("limit=" + (Double.isInfinite(_throughputLimit) ? "off" : _throughputLimit / BYTES_IN_MEBIBYTE));
+                pw.print("limit=" + (Double.isInfinite(_throughputLimit) ? "off" : BYTES.toMiB(_throughputLimit)));
                 pw.print(",");
                 pw.print("period=" + TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
                 pw.print(") ");
@@ -160,7 +161,7 @@ public class ChecksumModuleV1
             if (Double.isInfinite(_throughputLimit)) {
                 sb.append("             limit  = off\n");
             } else {
-                sb.append("             limit  = ").append(_throughputLimit / BYTES_IN_MEBIBYTE).append(" MiB/s\n");
+                sb.append("             limit  = ").append(BYTES.toMiB(_throughputLimit)).append(" MiB/s\n");
             }
             sb.append("             period = ").append(TimeUnit.MILLISECONDS.toHours(_scrubPeriod)).append(" hours\n");
         }
@@ -301,8 +302,7 @@ public class ChecksumModuleV1
                     if (limit.equals("off")) {
                         _throughputLimit = Double.POSITIVE_INFINITY;
                     } else {
-                        double value =
-                                Double.parseDouble(limit) * BYTES_IN_MEBIBYTE;
+                        double value = MiB.toBytes(Double.parseDouble(limit));
                         if (value <= 0) {
                             throw new IllegalArgumentException("Throughput limit must be > 0");
                         }

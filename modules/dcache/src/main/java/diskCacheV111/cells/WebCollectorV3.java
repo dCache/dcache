@@ -33,6 +33,8 @@ import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.util.Args;
 
+import static org.dcache.util.ByteUnit.BYTES;
+
 public class WebCollectorV3 extends CellAdapter implements Runnable
 {
     private static final Logger _log =
@@ -656,8 +658,6 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private void printPoolInfoRow(PoolCellInfo cellInfo, HTMLBuilder page)
     {
-        long mb     = 1024 * 1024;
-
         PoolCostInfo.PoolSpaceInfo info =
             cellInfo.getPoolCostInfo().getSpaceInfo();
 
@@ -680,9 +680,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             page.beginRow(null, "odd");
             page.td("cell",     cellInfo.getCellName());
             page.td("domain",   cellInfo.getDomainName());
-            page.td("total",    total / mb);
-            page.td("free",     freespace / mb);
-            page.td("precious", precious / mb);
+            page.td("total",    BYTES.toMiB(total));
+            page.td("free",     BYTES.toMiB(freespace));
+            page.td("precious", BYTES.toMiB(precious));
             page.td("layout",
                     "<div>",
                     "<div class=\"layout_precious\" style=\"width: ", String.format(Locale.US, "%.1f", red), "%\"></div>",

@@ -53,6 +53,7 @@ import org.dcache.util.Version;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.net.InetAddresses.toUriString;
+import static org.dcache.util.ByteUnit.KiB;
 
 /**
  * *
@@ -766,7 +767,7 @@ public class LoginManager
                 inputStream = _socket.getInputStream();
                 outputStream = _socket.getOutputStream();
                 outputStream.close();
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[KiB.toBytes(1)];
                     /*
                      * eat the outstanding date from socket and close it
                      */

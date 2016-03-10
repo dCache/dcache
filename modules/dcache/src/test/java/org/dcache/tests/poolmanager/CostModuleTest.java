@@ -17,6 +17,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.IoQueueManager;
 
+import static org.dcache.util.ByteUnit.GiB;
 import static org.junit.Assert.*;
 
 public class CostModuleTest {
@@ -32,7 +33,6 @@ public class CostModuleTest {
 
     private static final long DEFAULT_FILE_SIZE = 100;
     private static final double DEFAULT_PERCENTILE = 0.95;
-    private static final long BYTES_IN_GIGABYTE = 1073741824;
 
     /*
      * Various numbers used to test percentile cost threshold
@@ -288,10 +288,10 @@ public class CostModuleTest {
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
         PoolCostInfo poolCost = new PoolCostInfo( poolName, IoQueueManager.DEFAULT_QUEUE);
 
-        poolCost.setSpaceUsage( totalSpace * BYTES_IN_GIGABYTE,
-                                freeSpace * BYTES_IN_GIGABYTE,
-                                preciousSpace * BYTES_IN_GIGABYTE,
-                                removableSpace * BYTES_IN_GIGABYTE);
+        poolCost.setSpaceUsage(GiB.toBytes(totalSpace),
+                               GiB.toBytes(freeSpace),
+                               GiB.toBytes(preciousSpace),
+                               GiB.toBytes(removableSpace));
 
         long serialId = System.currentTimeMillis();
 
@@ -319,10 +319,10 @@ public class CostModuleTest {
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
         PoolCostInfo poolCost = new PoolCostInfo( poolName, IoQueueManager.DEFAULT_QUEUE);
 
-        poolCost.setSpaceUsage( totalSpace * BYTES_IN_GIGABYTE,
-                                freeSpace * BYTES_IN_GIGABYTE,
-                                preciousSpace * BYTES_IN_GIGABYTE,
-                                removableSpace * BYTES_IN_GIGABYTE);
+        poolCost.setSpaceUsage(GiB.toBytes(totalSpace),
+                               GiB.toBytes(freeSpace),
+                               GiB.toBytes(preciousSpace),
+                               GiB.toBytes(removableSpace));
 
         poolCost.setQueueSizes(
                 restoreActive, restoreMaxActive, restoreQueued,
@@ -363,13 +363,13 @@ public class CostModuleTest {
                                              long totalSpace, long freeSpace,
                                              long removableSpace,
                                              long preciousSpace) {
-        assertEquals( msg + ": total space", totalSpace*BYTES_IN_GIGABYTE,
+        assertEquals(msg + ": total space", GiB.toBytes(totalSpace),
                       info.getTotalSpace());
-        assertEquals( msg + ": free space", freeSpace*BYTES_IN_GIGABYTE,
+        assertEquals(msg + ": free space", GiB.toBytes(freeSpace),
                       info.getFreeSpace());
-        assertEquals( msg + ": removable space", removableSpace*BYTES_IN_GIGABYTE,
+        assertEquals(msg + ": removable space", GiB.toBytes(removableSpace),
                       info.getRemovableSpace());
-        assertEquals( msg + ": precious space", preciousSpace*BYTES_IN_GIGABYTE,
+        assertEquals(msg + ": precious space", GiB.toBytes(preciousSpace),
                       info.getPreciousSpace());
     }
 

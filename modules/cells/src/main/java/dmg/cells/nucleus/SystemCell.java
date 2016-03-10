@@ -23,6 +23,8 @@ import dmg.util.logback.FilterShell;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 
+import static org.dcache.util.ByteUnit.MiB;
+
 /**
   *
   *
@@ -37,7 +39,7 @@ public class      SystemCell
 
     /* Released on OOM to increase the chance that the shutdown succeeds.
      */
-    private byte[] _oomSafetyBuffer = new byte[2 << 20];
+    private byte[] _oomSafetyBuffer = new byte[MiB.toBytes(2)];
 
    private final CellShell   _cellShell ;
    private final CellNucleus _nucleus ;

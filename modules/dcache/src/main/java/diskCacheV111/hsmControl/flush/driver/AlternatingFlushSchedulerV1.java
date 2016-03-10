@@ -29,6 +29,9 @@ import dmg.util.CommandInterpreter;
 
 import org.dcache.util.Args;
 
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.MiB;
+
 /**
  * @author Patrick Fuhrmann patrick.fuhrmann@desy.de
  * @version 0.0, Dec 03, 2005
@@ -723,7 +726,6 @@ import org.dcache.util.Args;
          best.flushAll() ;
 
      }
-     private static final long MEGA_BYTES = 1024L * 1024L ;
      private PoolComparator _poolComparator = new PoolComparator() ;
      public class PoolComparator implements Comparator<Pool> {
         @Override
@@ -736,7 +738,7 @@ import org.dcache.util.Args;
      private double getPoolMetric( Pool ip ){
        return
           (
-         (double)ip._preciousSpace     / (double) ( _parameter._maxPreciousStored * MEGA_BYTES ) +
+         (double)ip._preciousSpace     / (double) (MiB.toBytes(_parameter._maxPreciousStored)) +
          (double)ip._preciousFileCount / (double) ( _parameter._maxFilesStored                 ) +
         ((double)( System.currentTimeMillis() - ip._oldestTimestamp ) /  (double)(_parameter._maxTimeStored   * 60000L) )          )
              /  3.0 ;
@@ -744,7 +746,7 @@ import org.dcache.util.Args;
      private boolean isCandidate( Pool ip ){
         ip.refreshLocalVariables();
         return
-             ( ip._preciousSpace > ( _parameter._maxPreciousStored * MEGA_BYTES ) ) ||
+             ( ip._preciousSpace > (MiB.toBytes(_parameter._maxPreciousStored))) ||
              ( ip._preciousFileCount > _parameter._maxFilesStored               )   ||
              ( ip._oldestTimestamp + ( _parameter._maxTimeStored   * 60000L ) < System.currentTimeMillis() )
         ;
@@ -940,7 +942,7 @@ import org.dcache.util.Args;
      private class AltParameter extends Parameter {
 
         private long   _maxFilesStored    = 500L ;
-        private long   _maxPreciousStored = ( 500L * 1024L ) ;
+        private long   _maxPreciousStored = KiB.toBytes(500L);
         private long   _maxTimeStored     = ( 2L * 60L ) ;
         private long   _timer             = ( 60L ) ;
         private double _percentageToFlush = 0.5 ;

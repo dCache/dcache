@@ -106,6 +106,8 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 public class RemoteGsiftpTransferProtocol
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
@@ -328,7 +330,7 @@ public class RemoteGsiftpTransferProtocol
                 return null;
             }
 
-            ByteBuffer buffer = ByteBuffer.allocate(128*1024);
+            ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
             _fileChannel.position(_previousUpdateEndOffset);
             while (_fileChannel.read(buffer) >= 0) {
                 buffer.flip();

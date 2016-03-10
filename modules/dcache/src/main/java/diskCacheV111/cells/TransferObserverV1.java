@@ -38,6 +38,7 @@ import org.dcache.util.TransferCollector;
 import org.dcache.util.TransferCollector.Transfer;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.util.ByteUnit.BYTES;
 
 public class TransferObserverV1
     extends CellAdapter
@@ -583,7 +584,7 @@ public class TransferObserverV1
         } else {
             page.td("state", transfer.getMoverStatus());
             if (transfer.getMoverStart() > 0L) {
-                page.td("transferred", transfer.getBytesTransferred() / 1024);
+                page.td("transferred", BYTES.toKiB(transfer.getBytesTransferred()));
             } else {
                 page.td("transferred", "-");
             }

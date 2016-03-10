@@ -6,9 +6,12 @@ package org.dcache.pool.movers;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Base64;
+
 import diskCacheV111.util.DCapProrocolChallenge;
 
 import org.dcache.net.ChallengeReader;
+
+import static org.dcache.util.ByteUnit.KiB;
 
 class DCapChallengeReader implements ChallengeReader
 {
@@ -26,7 +29,7 @@ class DCapChallengeReader implements ChallengeReader
          */
 
         try {
-            ByteBuffer buffer = ByteBuffer.allocate(1024);
+            ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(1));
 
             buffer.rewind();
             buffer.limit(8);

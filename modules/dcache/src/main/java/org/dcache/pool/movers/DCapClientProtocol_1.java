@@ -35,6 +35,8 @@ import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 public class DCapClientProtocol_1 implements MoverProtocol
 {
     private static final Logger _log =
@@ -273,7 +275,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
                     IOException("Protocol Violation : NOT DATA : " + type);
         }
 
-        byte [] data = new byte[256*1024];
+        byte [] data = new byte[KiB.toBytes(256)];
         ByteBuffer bb = ByteBuffer.wrap(data);
         int nextPacket;
         while(true){

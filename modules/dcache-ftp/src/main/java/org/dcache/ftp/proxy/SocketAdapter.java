@@ -80,6 +80,8 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 /**
  * Data channel proxy for FTP door. The proxy will run at the GridFTP
  * door and relay data between the client and the pool. Mode S and
@@ -193,7 +195,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
             try {
                 LOGGER.info("Starting mode S proxy from {} to {}",
                             inputAddress, outputAddress);
-                ByteBuffer buffer = ByteBuffer.allocate(128 * 1024);
+                ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
                 while (_input.read(buffer) != -1) {
                     buffer.flip();
                     reading = false;

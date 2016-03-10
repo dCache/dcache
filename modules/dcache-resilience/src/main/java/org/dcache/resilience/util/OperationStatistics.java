@@ -85,6 +85,10 @@ import java.util.regex.Pattern;
 import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
+import org.dcache.util.ByteUnit;
+
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnits.jedecSymbol;
 
 /**
  * <p>For recording cumulative activity.  This data is either
@@ -124,9 +128,6 @@ public final class OperationStatistics {
     private static final String LASTCHKD  = "Last checkpoint took %s seconds\n";
     private static final String LASTCHKCT = "Last checkpoint saved %s records\n";
 
-    private static final String[] DIMENSION = { "", "KB", "MB", "GB", "TB",
-                                                "PB", "EB" };
-
     private static final String[] MSGS      = {
                     MessageType.CLEAR_CACHE_LOCATION.name(),
                     MessageType.CORRUPT_FILE.name(),
@@ -139,24 +140,14 @@ public final class OperationStatistics {
                     Operation.POOL_SCAN_DOWN.name(),
                     Operation.POOL_SCAN_ACTIVE.name() };
 
-    private static String getDimension(long count) {
-        int i = 0;
-        long Q = 1;
-        long D = count;
-        while (true) {
-            count = count / 1024;
-            if (count == 0) {
-                break;
-            }
-            ++i;
-            Q *= 1024;
+    private static String formatWithPrefix(long count) {
+        ByteUnit units = ByteUnit.Type.BINARY.unitsOf(count);
+        if (units == BYTES) {
+            return String.format("%s", count);
+        } else {
+            return String.format("%.2f %s", units.convert((double)count, BYTES),
+                    jedecSymbol().of(units));
         }
-
-        if (i > 0) {
-            return String.format("%.2f %s", D / (double) Q, DIMENSION[i]);
-        }
-
-        return (String.format("%s %s", D, ""));
     }
 
     private static String getRateChangeSinceLast(double current, double last) {
@@ -598,10 +589,10 @@ public final class OperationStatistics {
                                          counts[0],
                                          counts[1],
                                          counts[2],
-                                         getDimension(counts[3]),
+                                         formatWithPrefix(counts[3]),
                                          counts[4],
                                          counts[5],
-                                         getDimension(counts[6])));
+                                         formatWithPrefix(counts[6])));
 
             for (int i = 0; i < totals.length; i++) {
                 totals[i] += counts[i];
@@ -613,10 +604,10 @@ public final class OperationStatistics {
                                      totals[0],
                                      totals[1],
                                      totals[2],
-                                     getDimension(totals[3]),
+                                     formatWithPrefix(totals[3]),
                                      totals[4],
                                      totals[5],
-                                     getDimension(totals[6])));
+                                     formatWithPrefix(totals[6])));
     }
 
     /**

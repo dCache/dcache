@@ -9,6 +9,11 @@ import org.parboiled.annotations.DontLabel;
 import org.parboiled.annotations.SuppressNode;
 import org.parboiled.support.Var;
 
+import org.dcache.util.ByteUnit;
+
+import static org.dcache.util.ByteUnit.*;
+import static org.dcache.util.ByteUnits.isoPrefix;
+
 @BuildParseTree
 public abstract class ExpressionParser extends BaseParser<Expression>
 {
@@ -164,18 +169,22 @@ public abstract class ExpressionParser extends BaseParser<Expression>
     }
 
     Rule Unit() {
-        return firstOf(UnitRule("Ki", 1L << 10),
-                       UnitRule("Mi", 1L << 20),
-                       UnitRule("Gi", 1L << 30),
-                       UnitRule("Ti", 1L << 40),
-                       UnitRule("Pi", 1L << 50),
-                       UnitRule("k", 1000L),
-                       UnitRule("K", 1000L),
-                       UnitRule("M", 1000L * 1000),
-                       UnitRule("G", 1000L * 1000 * 1000),
-                       UnitRule("T", 1000L * 1000 * 1000 * 1000),
-                       UnitRule("P", 1000L * 1000 * 1000 * 1000 * 1000)
+        return firstOf(UnitRule(KiB),
+                       UnitRule(MiB),
+                       UnitRule(GiB),
+                       UnitRule(TiB),
+                       UnitRule(PiB),
+                       UnitRule(KB),
+                       UnitRule("K", KB.toBytes(1L)),
+                       UnitRule(MB),
+                       UnitRule(GB),
+                       UnitRule(TB),
+                       UnitRule(PB)
                        );
+    }
+
+    Rule UnitRule(ByteUnit units) {
+        return UnitRule(isoPrefix().of(units), units.toBytes(1L));
     }
 
     Rule UnitRule(String s, long factor) {

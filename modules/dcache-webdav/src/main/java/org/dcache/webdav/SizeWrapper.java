@@ -1,5 +1,11 @@
 package org.dcache.webdav;
 
+import org.dcache.util.ByteUnit;
+
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.Type.BINARY;
+import static org.dcache.util.ByteUnits.isoSymbol;
+
 /**
  * Class to hold information about a file's size.  In particular, it
  * allows the StringTemplate language to access the file's size in different
@@ -22,37 +28,24 @@ public class SizeWrapper
             return "Empty";
         }
 
-        if (size < 0.8*(1L<<10)) {
-            return String.valueOf(size) + " B";
+        StringBuilder sb = new StringBuilder();
+        ByteUnit units = BINARY.unitsOf(size, 0.8);
+        if (units == BYTES) {
+            sb.append(size);
+        } else {
+            double val = units.convert((double)size, BYTES);
+            String fmt;
+            if (val >= 99.5) {
+                fmt = "%.0f";
+            } else if (val >= 9.95) {
+                fmt = "%.1f";
+            } else {
+                fmt = "%.2f";
+            }
+            sb.append(String.format(fmt, val));
         }
 
-        double val;
-        String units;
-        if (size < 0.8*(1L<<20)) {
-            val = (double) size / (1L<<10);
-            units = "kiB";
-        } else if (size < 0.8*(1L<<30)) {
-            val = (double) size / (1L<<20);
-            units = "MiB";
-        } else if (size < 0.8*(1L<<40)) {
-            val = (double) size / (1L<<30);
-            units = "GiB";
-        } else if (size < 0.8*(1L<<50)) {
-            val = (double) size / (1L<<40);
-            units = "TiB";
-        } else {
-            val = (double) size / (1L<<50);
-            units = "PiB";
-        }
-        String fmt;
-        if (val >= 99.5) {
-            fmt = "%.0f";
-        } else if (val >= 9.95) {
-            fmt = "%.1f";
-        } else {
-            fmt = "%.2f";
-        }
-        return String.format(fmt, val) + " " + units;
+        return sb.append(' ').append(isoSymbol().of(units)).toString();
     }
 
     @Override

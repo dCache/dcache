@@ -45,6 +45,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Maps.uniqueIndex;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
+import static org.dcache.util.ByteUnit.MiB;
 
 /**
  * This class implements transfers of data between a pool and some remote
@@ -134,7 +135,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
      * server, in bytes per millisecond.  This is used to estimate how long
      * any file post-processing (like checksum calculation) will take.
      */
-    private static final double POST_PROCESSING_BANDWIDTH = 100 * 1024 * 1024 / 1_000.0;
+    private static final double POST_PROCESSING_BANDWIDTH = MiB.toBytes(100) / 1_000.0;
 
     /** Number of milliseconds between successive requests. */
     private static final long DELAY_BETWEEN_REQUESTS = 5_000;

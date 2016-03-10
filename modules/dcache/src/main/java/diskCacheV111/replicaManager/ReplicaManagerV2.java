@@ -42,10 +42,14 @@ import dmg.util.command.DelayedCommand;
 
 import org.dcache.util.Args;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 public class ReplicaManagerV2 extends DCacheCoreControllerV2
 {
   private static final Logger _log =
       LoggerFactory.getLogger(ReplicaManagerV2.class);
+
+  private static final int _maxPnfsIdHashSize = KiB.toBytes(16);
 
   private String _jdbcUrl = "jdbc:postgresql://localhost/replicas";
   private String _user = "postgres";
@@ -226,8 +230,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       catch (IllegalMonitorStateException ex) { // Ignore
       }
     }
-
-    static final int _maxPnfsIdHashSize = 16 * 1024;
 
     public synchronized void wakeupByPnfsId() {
       /** @todo

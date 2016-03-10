@@ -126,8 +126,6 @@ import org.dcache.util.RunnableModule;
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
 public class PoolOperationMap extends RunnableModule {
-    private static final double GB = 1024*1024*1024.0;
-
     class Watchdog {
         Integer  rescanWindow;
         TimeUnit rescanWindowUnit;

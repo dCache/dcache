@@ -49,6 +49,9 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
+
+import static org.dcache.util.ByteUnit.*;
+
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -67,7 +70,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                                             GFtpProtocol_2_nio.class.getName());
 
     /** The minimum number of bytes to increment the space allocation. */
-    public static final long SPACE_INC = 50 * 1024 * 1024; // 50 MB
+    public static final long SPACE_INC = MiB.toBytes(50);
 
     /** Key used to extract the read ahead from the domain context. */
     public static final String READ_AHEAD_KEY = "gsiftpReadAhead";
@@ -78,17 +81,17 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * of data we will try to transfer in a single iteration of the
      * transfer loop.
      */
-    public static final int MODE_S_DEFAULT_BLOCK_SIZE = 512 * 1024;
+    public static final int MODE_S_DEFAULT_BLOCK_SIZE = KiB.toBytes(512);
 
     /**
      * Default block size for mode E.
      */
-    public static final int MODE_E_DEFAULT_BLOCK_SIZE = 128 * 1024;
+    public static final int MODE_E_DEFAULT_BLOCK_SIZE = KiB.toBytes(128);
 
     /**
      * Default block size for mode X.
      */
-    public static final int MODE_X_DEFAULT_BLOCK_SIZE = 128 * 1024;
+    public static final int MODE_X_DEFAULT_BLOCK_SIZE = KiB.toBytes(128);
 
     /** The cell owning this mover. Log messages are sent to it. */
     protected final CellEndpoint  _cell;
@@ -353,7 +356,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             long time = getTransferTime();
             if (time > 0) {
                 _log.info("Transfer finished: {} bytes transferred in {} seconds = {} MB/s",
-                                          amount, time / 1000.0, (1000.0 * amount) / (time * 1024 * 1024));
+                                          amount, time / 1000.0, BYTES.toMiB(1000.0 * amount / time));
             } else {
                 _log.info("Transfer finished: {} bytes transferred in less than 1 ms", amount);
             }

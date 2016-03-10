@@ -42,13 +42,16 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.MiB;
+
 
 public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArgsAware
 {
     private static Logger _log = LoggerFactory.getLogger(DCapProtocol_3_nio.class);
     private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
     private static final Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
-    private static final int INC_SPACE  =  (50*1024*1024);
+    private static final int INC_SPACE = MiB.toBytes(50);
 
     private final Map<String,Object> _context;
     private final CellEndpoint     _cell;
@@ -71,8 +74,8 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private ChecksumFactory _checksumFactory;
     private MessageDigest _digest;
 
-    private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(256 * 1024, 256 * 1024, 256 * 1024);
-    private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(1024 * 1024, 1024 * 1024, 1024 * 1024);
+    private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256), KiB.toBytes(256), KiB.toBytes(256));
+    private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1), MiB.toBytes(1));
 
     private SpaceMonitorHandler _spaceMonitorHandler;
 
@@ -98,7 +101,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     == null ? ByteBuffer.allocate(bufferSize.getIoBufferSize()) :
                         _bigBuffer;
         } catch (OutOfMemoryError om) {
-            _bigBuffer = ByteBuffer.allocate(32 * 1024);
+            _bigBuffer = ByteBuffer.allocate(KiB.toBytes(32));
         }
     }
 
@@ -336,7 +339,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         initialiseBuffer(bufferSize);
 
         SocketChannel socketChannel = null;
-        DCapOutputByteBuffer cntOut = new DCapOutputByteBuffer(1024);
+        DCapOutputByteBuffer cntOut = new DCapOutputByteBuffer(KiB.toBytes(1));
 
         _sessionId  = dcapProtocolInfo.getSessionId();
 

@@ -69,8 +69,6 @@ import org.dcache.services.billing.histograms.TimeFrame;
  */
 public interface ITimeFrameHistogramDataService {
 
-    double GB = 1024 * 1024 * 1024;
-
     /**
      * Histogram for DCache reads/writes (size).
      *

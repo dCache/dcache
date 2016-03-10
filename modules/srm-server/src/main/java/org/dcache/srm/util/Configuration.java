@@ -689,7 +689,7 @@ public class Configuration {
      * requests with too short a lifetime then they are assuming a bandwidth in
      * excess of this maximum.  Such requests will be given longer, more
      * realistic lifetimes.
-     * @value the bandwidth in kiB/s or zero to disable this feature.
+     * @value the bandwidth in KiB/s or zero to disable this feature.
      */
     public void setMaximumClientAssumedBandwidth(long value)
     {
@@ -699,7 +699,7 @@ public class Configuration {
 
     /**
      * Get the maximum allowed client-assumed bandwidth.
-     * @return the bandwidth in kiB/s or zero if this feature is disable.
+     * @return the bandwidth in KiB/s or zero if this feature is disable.
      */
     public long getMaximumClientAssumedBandwidth()
     {

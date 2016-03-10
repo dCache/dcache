@@ -13,6 +13,9 @@ import java.util.Set;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.BYTES;
+
 public abstract class ChecksumFactory
 {
     public abstract ChecksumType getType();
@@ -79,7 +82,6 @@ class GenericIdChecksumFactory extends ChecksumFactory
     private static final Logger _log =
         LoggerFactory.getLogger(GenericIdChecksumFactory.class);
 
-    private static final long BYTES_IN_MEBIBYTE = 1024 * 1024;
     private static final long MILLISECONDS_IN_SECOND = 1000;
 
     private final ChecksumType _type;
@@ -192,8 +194,8 @@ class GenericIdChecksumFactory extends ChecksumFactory
      */
     private String throughputAsString(long numBytes, long millis)
     {
-        return Double.toString(((double) numBytes / BYTES_IN_MEBIBYTE) /
-                               (( millis == 0 ? 1 : millis ) / (double) MILLISECONDS_IN_SECOND));
+        return Double.toString(BYTES.toMiB((double) numBytes)
+                        / (( millis == 0 ? 1 : millis ) / (double) MILLISECONDS_IN_SECOND));
     }
 
     @Override
@@ -202,7 +204,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
     {
         long start = System.currentTimeMillis();
         MessageDigest digest = create();
-        byte [] buffer = new byte[64 * 1024];
+        byte [] buffer = new byte[KiB.toBytes(64)];
         long sum = 0L;
         try (FileInputStream in = new FileInputStream(file)) {
             int rc;
@@ -231,7 +233,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
                               " MiB/s" +
                               (Double.isInfinite(throughputLimit) ? ""
                                                                   : " (limit " +
-                                                                    throughputLimit / BYTES_IN_MEBIBYTE +
+                                                                          BYTES.toMiB(throughputLimit) +
                                                                     " MiB/s)"));
         return checksum;
     }

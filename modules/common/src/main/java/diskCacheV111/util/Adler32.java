@@ -15,6 +15,8 @@ import java.security.MessageDigest;
 
 import org.dcache.util.Checksum;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 /**
  *
  * @author  Patrick Fuhrmann
@@ -114,7 +116,7 @@ public class Adler32 extends MessageDigest
        MessageDigest adler = new Adler32() ;
 
        FileInputStream in = new FileInputStream( args[0] ) ;
-       byte [] buffer = new byte[1024] ;
+       byte [] buffer = new byte[KiB.toBytes(1)] ;
        long sum = 0L ;
        long started = System.currentTimeMillis() ;
        while(true){

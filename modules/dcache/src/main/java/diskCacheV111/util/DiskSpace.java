@@ -1,6 +1,16 @@
 package diskCacheV111.util;
 
+import java.util.Arrays;
+
+import org.dcache.util.ByteUnit;
+import org.dcache.util.ByteUnits.JedecPrefix;
+import org.dcache.util.ByteUnits.Representation;
+
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.ByteUnit.Type.BINARY;
+import static org.dcache.util.ByteUnits.jedecPrefix;
 
 /**
  * Immutable quantity of disk space.
@@ -17,13 +27,18 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class DiskSpace
 {
     public static final DiskSpace UNSPECIFIED = new DiskSpace(Long.MAX_VALUE);
-
-    private static final long TEBI = (1L << 40);
-    private static final long GIBI = (1L << 30);
-    private static final long MEBI = (1L << 20);
-    private static final long KIBI = (1L << 10);
+    private static final Representation JEDEC_WITH_LOWER_K = new JedecPrefixLowerKRepresentation();
 
     private final long _value;
+
+    private static class JedecPrefixLowerKRepresentation extends JedecPrefix
+    {
+        @Override
+        public String of(ByteUnit unit)
+        {
+            return (unit == KiB) ? "k" : super.of(unit);
+        }
+    }
 
     public DiskSpace(long value)
     {
@@ -44,65 +59,30 @@ public class DiskSpace
             return Long.MAX_VALUE;
         }
 
-        String num;
-        long multi;
-        switch (s.charAt(s.length() - 1)) {
-        case 'k':
-        case 'K':
-            multi = KIBI;
-            num = s.substring(0, s.length() - 1);
-            break;
-        case 'm':
-        case 'M':
-            multi = MEBI;
-            num = s.substring(0, s.length() - 1);
-            break;
-        case 'g':
-        case 'G':
-            multi = GIBI;
-            num = s.substring(0, s.length() - 1);
-            break;
-        case 't':
-        case 'T':
-            multi = TEBI;
-            num = s.substring(0, s.length() - 1);
-            break;
-        default:
-            multi = 1;
-            num = s;
-        }
-        return Long.parseLong(num) * multi;
+        String lastChar = s.substring(s.length()-1).toUpperCase();
+        ByteUnit units = Arrays.stream(ByteUnit.values())
+                .skip(1)
+                .filter(u -> u.hasType(BINARY) && lastChar.equals(jedecPrefix().of(u)))
+                .findFirst()
+                .orElse(BYTES);
+
+        String number = units == BYTES ? s : s.substring(0, s.length() -1);
+        return units.toBytes(Long.parseLong(number));
     }
 
+    @Override
     public String toString()
-    {
-        return toUnitString();
-    }
-
-    public String toUnitString()
     {
         return toUnitString(_value);
     }
 
     public static String toUnitString(long value)
     {
-        long tmp;
         if (value == Long.MAX_VALUE) {
             return "-";
         }
-        if (((tmp = (value / TEBI)) > 0) && ((value % TEBI) == 0)) {
-            return Long.toString(tmp) + "T";
-        }
-        if (((tmp = (value / GIBI)) > 0) && ((value % GIBI) == 0)) {
-            return Long.toString(tmp) + "G";
-        }
-        if (((tmp = (value / MEBI)) > 0) && ((value % MEBI) == 0)) {
-            return Long.toString(tmp) + "M";
-        }
-        if (((tmp = (value / KIBI)) > 0) && ((value % KIBI) == 0)) {
-            return Long.toString(tmp) + "k";
-        }
-        return Long.toString(value);
+        ByteUnit units = BINARY.exactUnitsOf(value);
+        return Long.toString(units.convert(value, BYTES)) + JEDEC_WITH_LOWER_K.of(units);
     }
 
     public long longValue()

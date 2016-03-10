@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.Type.DECIMAL;
+import static org.dcache.util.ByteUnits.isoSymbol;
+
 /**
  * Utility class to output a formatted table.
  *
@@ -248,12 +252,6 @@ public class ColumnWriter
      */
     private class ByteColumn extends AbstractColumn
     {
-        public static final long PETA = 1000L * 1000 * 1000 * 1000 * 1000;
-        public static final long TERA = 1000L * 1000 * 1000 * 1000;
-        public static final long GIGA = 1000L * 1000 * 1000;
-        public static final long MEGA = 1000L * 1000;
-        public static final long KILO = 1000L;
-
         public ByteColumn(String name)
         {
             super(name);
@@ -271,14 +269,19 @@ public class ColumnWriter
             return abbrev ? 4 : Objects.toString(value, "").length();
         }
 
-        private void render(long value, long factor, char unit, PrintWriter out)
+        private void render(long value, ByteUnit units, PrintWriter out)
         {
-            double tmp = ((double) value) / factor;
-            if (tmp >= 0 && tmp < 9.95) {
-                out.format("%3.1f", tmp).append(unit);
+            if (units == BYTES) {
+                out.format("%3d", value);
             } else {
-                out.format("%3.0f", tmp).append(unit);
+                double tmp = units.convert((double) value, BYTES);
+                if (tmp >= 0 && tmp < 9.95) {
+                    out.format("%3.1f", tmp);
+                } else {
+                    out.format("%3.0f", tmp);
+                }
             }
+            out.append(isoSymbol().of(units));
         }
 
         @Override
@@ -290,21 +293,10 @@ public class ColumnWriter
                 }
             } else {
                 long value = (long) o;
-                long abs = Math.abs(value);
-                if (!abbrev) {
-                    out.format("%" + actualWidth + "d", value);
-                } else if (abs >= PETA) {
-                    render(value, PETA, 'P', out);
-                } else if (abs >= TERA) {
-                    render(value, TERA, 'T', out);
-                } else if (abs >= GIGA) {
-                    render(value, GIGA, 'G', out);
-                } else if (abs >= MEGA) {
-                    render(value, MEGA, 'M', out);
-                } else if (abs >= KILO) {
-                    render(value, KILO, 'k', out);
+                if (abbrev) {
+                    render(value, DECIMAL.unitsOf(value), out);
                 } else {
-                    out.format("%3d", value).append('B');
+                    out.format("%" + actualWidth + "d", value);
                 }
             }
         }

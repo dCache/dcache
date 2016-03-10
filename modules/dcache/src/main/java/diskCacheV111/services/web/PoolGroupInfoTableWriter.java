@@ -12,6 +12,8 @@ import diskCacheV111.util.HTMLWriter;
 
 import dmg.cells.nucleus.CellInfo;
 
+import static org.dcache.util.ByteUnit.BYTES;
+
 public class PoolGroupInfoTableWriter
 {
     private final HTMLWriter _html;
@@ -30,8 +32,6 @@ public class PoolGroupInfoTableWriter
                           long total, long freespace, long precious, long removable,
                           String... classes)
     {
-        final long mb = 1024 * 1024;
-
         double red     = round(100 * precious / (float)total);
         double green   = round(100 * removable / (float)total);
         double yellow  = round(100 * freespace / (float)total);
@@ -39,9 +39,9 @@ public class PoolGroupInfoTableWriter
 
         _html.beginRow(classes);
         _html.td("group",    group);
-        _html.td("total",    total / mb);
-        _html.td("free",     freespace / mb);
-        _html.td("precious", precious / mb);
+        _html.td("total",    BYTES.toMiB(total));
+        _html.td("free",     BYTES.toMiB(freespace));
+        _html.td("precious", BYTES.toMiB(precious));
         _html.td("layout",
                 "<div>",
                 "<div class=\"layout_precious\" style=\"width: ", String.format(Locale.US, "%.1f", red), "%\"></div>",

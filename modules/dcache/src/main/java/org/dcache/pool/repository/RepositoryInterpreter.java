@@ -27,10 +27,13 @@ import dmg.util.command.Option;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Args;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.stream.Collectors.joining;
+import static org.dcache.util.ByteUnit.*;
+import static org.dcache.util.ByteUnits.jedecSymbol;
 
 public class RepositoryInterpreter
     implements CellCommandListener
@@ -176,10 +179,10 @@ public class RepositoryInterpreter
         "                             of files with storage-\n" +
         "                             info that matches <glob>\n" +
         "              -s[=kmgt] [-sum]       # statistics\n" +
-        "                 k  : data amount in KBytes\n"+
-        "                 m  : data amount in MBytes\n"+
-        "                 g  : data amount in GBytes\n"+
-        "                 t  : data amount in TBytes\n"+
+        "                 k  : data amount in KiB\n"+
+        "                 m  : data amount in MiB\n"+
+        "                 g  : data amount in GiB\n"+
+        "                 t  : data amount in TiB\n"+
         " Output is a list of repository entries, one per line\n" +
         " each line has the followin syntax:\n" +
         "<pnfsid> <state> <size> <storageinfo>\n"+
@@ -262,34 +265,30 @@ public class RepositoryInterpreter
                             return result;
                         }
 
-                        long dev = 1L;
-                        dev = (stat.contains("k")) ||
-                              (stat.contains("K")) ? 1024L : dev;
-                        dev = (stat.contains("m")) ||
-                              (stat.contains("M")) ? (1024L*1024L) : dev;
-                        dev = (stat.contains("g")) ||
-                              (stat.contains("G")) ? (1024L*1024L*1024L) : dev;
-                        dev = (stat.contains("t")) ||
-                              (stat.contains("T")) ? (1024L*1024L*1024L*1024L) : dev;
+                        ByteUnit units = BYTES;
+                        units = stat.contains(jedecSymbol().of(KiB)) ? KiB : units;
+                        units = stat.contains(jedecSymbol().of(MiB)) ? MiB : units;
+                        units = stat.contains(jedecSymbol().of(GiB)) ? GiB : units;
+                        units = stat.contains(jedecSymbol().of(TiB)) ? TiB : units;
 
                         while (e2.hasNext()) {
                             String sc = e2.next();
                             long[] counter = map.get(sc);
                             sb.append(Formats.field(sc,24,Formats.LEFT)).
                                 append("  ").
-                                append(Formats.field(""+counter[0]/dev,10,Formats.RIGHT)).
+                                append(Formats.field(""+units.convert(counter[0], BYTES),10,Formats.RIGHT)).
                                 append("  ").
                                 append(Formats.field(""+counter[1],8,Formats.RIGHT)).
                                 append("  ").
-                                append(Formats.field(""+counter[2]/dev,10,Formats.RIGHT)).
+                                append(Formats.field(""+units.convert(counter[2], BYTES),10,Formats.RIGHT)).
                                 append("  ").
                                 append(Formats.field(""+counter[3],8,Formats.RIGHT)).
                                 append("  ").
-                                append(Formats.field(""+counter[4]/dev,10,Formats.RIGHT)).
+                                append(Formats.field(""+units.convert(counter[4], BYTES),10,Formats.RIGHT)).
                                 append("  ").
                                 append(Formats.field(""+counter[5],8,Formats.RIGHT)).
                                 append("  ").
-                                append(Formats.field(""+counter[6]/dev,10,Formats.RIGHT)).
+                                append(Formats.field(""+units.convert(counter[6], BYTES),10,Formats.RIGHT)).
                                 append("  ").
                                 append(Formats.field(""+counter[7],8,Formats.RIGHT)).
                                 append("\n");

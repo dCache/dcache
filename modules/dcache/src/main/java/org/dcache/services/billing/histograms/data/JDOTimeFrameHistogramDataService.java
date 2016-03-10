@@ -86,6 +86,8 @@ import org.dcache.services.billing.histograms.TimeFrame;
 import org.dcache.services.billing.histograms.TimeFrame.BinType;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData.HistogramDataType;
 
+import static org.dcache.util.ByteUnit.GiB;
+
 /**
  * Implementation of service interface which accesses {@link IBillingInfoAccess}
  * , a JDO-based DAO layer.
@@ -122,7 +124,7 @@ public final class JDOTimeFrameHistogramDataService implements
             }
         }
         histogram[0].setData(plotData);
-        histogram[0].setDfactor(GB);
+        histogram[0].setDfactor(GiB.toBytes(1.0d));
         histogram[0].setField(TransferredEntry.TRANSFERRED);
         return histogram;
     }
@@ -230,7 +232,7 @@ public final class JDOTimeFrameHistogramDataService implements
         }
         histogram[0].setData(plotData);
         histogram[0].setField(SizeEntry.SIZE);
-        histogram[0].setDfactor(GB);
+        histogram[0].setDfactor(GiB.toBytes(1.0d));
         return histogram;
     }
 
@@ -274,7 +276,7 @@ public final class JDOTimeFrameHistogramDataService implements
         }
         histogram[0].setData(plotData);
         histogram[0].setField(TransferredEntry.TRANSFERRED);
-        histogram[0].setDfactor(GB);
+        histogram[0].setDfactor(GiB.toBytes(1.0d));
         return histogram;
     }
 

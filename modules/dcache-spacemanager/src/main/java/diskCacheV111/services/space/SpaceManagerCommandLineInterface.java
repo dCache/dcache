@@ -9,6 +9,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -32,6 +33,7 @@ import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.auth.FQAN;
+import org.dcache.util.ByteUnit;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.SqlGlob;
@@ -39,6 +41,10 @@ import org.dcache.util.SqlGlob;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.primitives.Longs.tryParse;
+import static java.lang.Double.parseDouble;
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnits.isoPrefix;
+import static org.dcache.util.ByteUnits.isoSymbol;
 
 public class SpaceManagerCommandLineInterface implements CellCommandListener
 {
@@ -212,7 +218,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             }
 
             if (size != null) {
-                space.setSizeInBytes(Unit.parseByteQuantity(size));
+                space.setSizeInBytes(parseByteQuantity(size));
             }
             if (description != null) {
                 space.setDescription(description);
@@ -702,7 +708,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Override
         public String executeInTransaction() throws DataAccessException
         {
-            long sizeInBytes = Unit.parseByteQuantity(size);
+            long sizeInBytes = parseByteQuantity(size);
 
             LinkGroup linkGroup = db.getLinkGroupByName(lg);
             if (linkGroup.getUpdateTime() < linkGroupLoader.getLatestUpdateTime()) {
@@ -795,59 +801,39 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         }
     }
 
-    private enum Unit
+    private static long parseByteQuantity(String arg)
     {
-        K(1000L),
-        KB(1000L),
-        KIB(1024L),
-        M(1000L * 1000),
-        MB(1000L * 1000),
-        MIB(1024L * 1024),
-        G(1000L * 1000 * 1000),
-        GB(1000L * 1000 * 1000),
-        GIB(1024L * 1024 * 1024),
-        T(1000L * 1000 * 1000 * 1000),
-        TB(1000L * 1000 * 1000 * 1000),
-        TIB(1024L * 1024 * 1024 * 1024),
-        P(1000L * 1000 * 1000 * 1000 * 1000),
-        PB(1000L * 1000 * 1000 * 1000 * 1000),
-        PIB(1024L * 1024 * 1024 * 1024 * 1024);
+        // REVISIT: does this need really to be case insensitive?
 
-        long factor;
+        try {
+            String s = arg.endsWith("B") || arg.endsWith("b") ?
+                arg.substring(0, arg.length()-1).toUpperCase() : arg.toUpperCase();
 
-        Unit(long factor)
-        {
-            this.factor = factor;
+            ByteUnit units = Arrays.stream(ByteUnit.values())
+                    .skip(1)
+                    .filter(u -> s.endsWith(isoPrefix().of(u).toUpperCase()))
+                    .findFirst().orElse(BYTES);
+
+            String num = (units == BYTES) ? s :
+                    s.substring(0, s.length() - isoPrefix().of(units).length());
+
+            return checkNonNegative((long) (units.toBytes(parseDouble(num)) + 0.5));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Cannot convert size specified (" + arg + ") to non-negative number. \n"
+                                                       + "Valid definitions of size:\n"
+                                                       + "\t\t - a number of bytes (long integer less than 2^64) \n"
+                                                       + "\t\t - a number with a prefix; e.g., 100 k, 100 kB,\n"
+                                                       + "\t\t   100 KiB, 100M, 100MB, 100MiB, 100G, 100GB,\n"
+                                                       + "\t\t   100GiB, 10T, 10.5TB, 100TiB, 2P, 2.3PB, 1PiB\n"
+                                                       + "see http://en.wikipedia.org/wiki/Gigabyte for an explanation.");
         }
+    }
 
-        private static long parseByteQuantity(String s)
-        {
-            try {
-                s = s.toUpperCase();
-                for (Unit unit : Unit.values()) {
-                    if (s.endsWith(unit.name())) {
-                        String sSize = s.substring(0, s.length() - unit.name().length());
-                        long size = (long) (Double.parseDouble(sSize) * unit.factor + 0.5);
-                        return checkNonNegative(size);
-                    }
-                }
-                return checkNonNegative(Long.parseLong(s));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Cannot convert size specified (" + s + ") to non-negative number. \n"
-                                                           + "Valid definitions of size:\n"
-                                                           + "\t\t - a number of bytes (long integer less than 2^64) \n"
-                                                           + "\t\t - 100k, 100kB, 100KB, 100KiB, 100M, 100MB, 100MiB, 100G, 100GB, \n"
-                                                           + "\t\t   100GiB, 10T, 10.5TB, 100TiB, 2P, 2.3PB, 1PiB\n"
-                                                           + "see http://en.wikipedia.org/wiki/Gigabyte for an explanation.");
-            }
+    private static long checkNonNegative(long size)
+    {
+        if (size < 0L) {
+            throw new IllegalArgumentException("Size must be non-negative.");
         }
-
-        private static long checkNonNegative(long size)
-        {
-            if (size < 0L) {
-                throw new IllegalArgumentException("Size must be non-negative.");
-            }
-            return size;
-        }
+        return size;
     }
 }

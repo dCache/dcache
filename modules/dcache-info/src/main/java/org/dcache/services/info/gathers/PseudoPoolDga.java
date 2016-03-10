@@ -9,6 +9,9 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
+import static org.dcache.util.ByteUnit.GiB;
+import static org.dcache.util.ByteUnit.BYTES;
+
 
 /**
  * The PseudoPoolDga provides a stream of fake data about a fake pool.  It
@@ -35,7 +38,6 @@ public class PseudoPoolDga implements Schedulable
     private static final int NUM_SD = 4;
     /** The safety margin we should ensure for metrics, in seconds */
     private static final int SAFETY_MARGIN = 2;
-    private static final long BYTES_IN_GIBIBYTE = 1024 * 1024 * 1024;
 
     private static final StatePath DEFAULT_POOLGROUP_MEMBERSHIP = StatePath.parsePath("poolgroups.default.pools");
 
@@ -103,7 +105,7 @@ public class PseudoPoolDga implements Schedulable
         _ourPgMembership = DEFAULT_POOLGROUP_MEMBERSHIP.newChild(poolName);
 
         // Initially, completely empty.
-        _spaceInfo = new SpaceInfo(capacity * BYTES_IN_GIBIBYTE);
+        _spaceInfo = new SpaceInfo(GiB.toBytes(capacity));
     }
 
     // Roughly periodic: Normal with mean: _duration, SD: _spread

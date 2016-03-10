@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -33,10 +34,12 @@ import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -69,6 +72,7 @@ import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.pool.repository.EntryState.NEW;
 import static org.dcache.pool.repository.EntryState.PRECIOUS;
 import static org.dcache.pool.repository.EntryState.REMOVED;
+import static org.dcache.util.ByteUnit.GiB;
 
 
 /**
@@ -104,7 +108,7 @@ public class CacheRepositoryV5
      */
     public static final long EXPIRATION_CLOCKSHIFT_EXTRA_TIME = 1000L;
 
-    public static final long DEFAULT_GAP =  4L << 30;
+    public static final long DEFAULT_GAP = GiB.toBytes(4L);
 
     private final List<FaultListener> _faultListeners =
         new CopyOnWriteArrayList<>();

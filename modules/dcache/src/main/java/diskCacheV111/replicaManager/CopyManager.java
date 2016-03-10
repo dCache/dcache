@@ -28,9 +28,13 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
+import org.dcache.util.ByteUnit;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.Type.BINARY;
+import static org.dcache.util.ByteUnits.jedecPrefix;
 
 /**
  *
@@ -270,17 +274,9 @@ public class CopyManager extends CellAdapter {
            return;
        }
        float bytesPerSecond = (float)p._bytesFinished / (float)diff * (float)1000.0 ;
-       String [] units = { "Bytes" , "KBytes" , "MBytes" , "GBytes" , "TBytes" } ;
-       i = 0 ;
-       float value = bytesPerSecond ;
-       for(  ; i < units.length ; i++ ) {
-           if( value > (float)1024.0 ) {
-               value /= (float) 1024.0;
-           } else {
-               break;
-           }
-       }
-       pw.println( " Average Speed : "+value+" "+units[i]+"/second");
+       ByteUnit units = BINARY.unitsOf(bytesPerSecond);
+       pw.println(" Average Speed : " + units.convert(bytesPerSecond, BYTES) +
+               " " + jedecPrefix().of(units) + "Bytes/second");
 
 
    }

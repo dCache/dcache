@@ -63,6 +63,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
 
 /**
@@ -418,7 +419,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
         private IpProtocolInfo buildProtocolInfo() throws ErrorResponseException
         {
-            int buffer = 1024*1024;
+            int buffer = MiB.toBytes(1);
 
             int port = _destination.getPort();
             if (port == -1) {
@@ -431,7 +432,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
             case GSIFTP:
                 return new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
                         1, 1, address, _destination.toASCIIString(), null,
-                        null, buffer, 1024*1024, _privateKey, _certificateChain, null);
+                        null, buffer, MiB.toBytes(1), _privateKey, _certificateChain, null);
 
             case HTTP:
                 return new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
