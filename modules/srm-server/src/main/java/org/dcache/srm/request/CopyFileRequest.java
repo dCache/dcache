@@ -318,6 +318,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
         } finally {
             runlock();
         }
+
+        reassessLifetime(size);
     }
 
     @Override
@@ -462,7 +464,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             }
             return;
         }
-        size = fmd.size;
+        setSize(fmd.size);
 
         if (getDestinationFileId() == null) {
             setState(State.ASYNCWAIT, "Doing name space lookup.");

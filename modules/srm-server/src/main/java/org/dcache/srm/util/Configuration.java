@@ -90,6 +90,7 @@ import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.client.Transport;
 
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  *
@@ -175,6 +176,8 @@ public class Configuration {
     protected long copyLifetime = 24*60*60*1000;
     protected long reserveSpaceLifetime = 24*60*60*1000;
     protected long defaultSpaceLifetime = 24*60*60*1000;
+
+    protected long maximumClientAssumedBandwidth = 0;
 
     protected boolean useUrlcopyScript=false;
     protected boolean useDcapForSrmCopy=false;
@@ -776,6 +779,28 @@ public class Configuration {
      */
     public void setGetRetryTimeout(long getRetryTimeout) {
         this.getRetryTimeout = getRetryTimeout;
+    }
+
+    /**
+     * Set the maximum allowed client-assumed bandwidth.  If clients make
+     * requests with too short a lifetime then they are assuming a bandwidth in
+     * excess of this maximum.  Such requests will be given longer, more
+     * realistic lifetimes.
+     * @value the bandwidth in kiB/s or zero to disable this feature.
+     */
+    public void setMaximumClientAssumedBandwidth(long value)
+    {
+        checkArgument(value >= 0, "Bandwidth must be 0 or a positive value");
+        maximumClientAssumedBandwidth = value;
+    }
+
+    /**
+     * Get the maximum allowed client-assumed bandwidth.
+     * @return the bandwidth in kiB/s or zero if this feature is disable.
+     */
+    public long getMaximumClientAssumedBandwidth()
+    {
+        return maximumClientAssumedBandwidth;
     }
 
     /**

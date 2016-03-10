@@ -455,6 +455,7 @@
               value="${srm.persistence.reserve-space.enable.clean-pending-on-restart}"/>
     <property name="databaseParametersForReserve.storeCompletedRequestsOnly"
               value="#{ '${srm.persistence.reserve-space.enable.store-transient-state}'.equals('false') ? true : false }"/>
+    <property name="maximumClientAssumedBandwidth" value="${srm.request.maximum-client-assumed-bandwidth}"/>
   </bean>
 
   <bean id="scheduler-get" class="diskCacheV111.srm.dcache.Scheduler"
