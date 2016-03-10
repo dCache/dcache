@@ -319,6 +319,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         } finally {
             runlock();
         }
+
+        reassessLifetime(size);
     }
 
     @Override
@@ -463,7 +465,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             }
             return;
         }
-        size = fmd.size;
+        setSize(fmd.size);
 
         if (getDestinationFileId() == null) {
             addHistoryEvent("Doing name space lookup.");
