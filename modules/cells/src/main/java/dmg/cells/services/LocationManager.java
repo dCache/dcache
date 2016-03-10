@@ -32,6 +32,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 
 import dmg.cells.network.LocationManagerConnector;
 import dmg.cells.nucleus.CellAdapter;
@@ -879,13 +881,12 @@ public class LocationManager extends CellAdapter
     {
         private final DatagramSocket _socket;
         private final ConcurrentMap<Integer, BlockingQueue<String>> _map = new ConcurrentHashMap<>();
-        private int _serial;
+        private final AtomicInteger _serial = new AtomicInteger();
         private final InetAddress _address;
         private final int _port;
         private final Thread _thread;
-
-        private int _requestsSent;
-        private int _repliesReceived;
+        private final LongAdder _requestsSent = new LongAdder();
+        private final LongAdder _repliesReceived = new LongAdder();
 
         /**
          * Create a client listening on the supplied UDP port
@@ -910,14 +911,14 @@ public class LocationManager extends CellAdapter
             _thread.start();
         }
 
-        public int getRequestsSent()
+        public long getRequestsSent()
         {
-            return _requestsSent;
+            return _requestsSent.longValue();
         }
 
-        public int getRepliesReceived()
+        public long getRepliesReceived()
         {
-            return _repliesReceived;
+            return _repliesReceived.longValue();
         }
 
         @Override
@@ -970,12 +971,9 @@ public class LocationManager extends CellAdapter
         private String askServer(String message, long waitTime)
                 throws IOException, InterruptedException
         {
-            _requestsSent++;
+            _requestsSent.increment();
 
-            int serial;
-            synchronized (this) {
-                serial = (_serial++);
-            }
+            int serial = _serial.getAndIncrement();
 
             String request = message + " -serial=" + serial;
 
@@ -990,7 +988,7 @@ public class LocationManager extends CellAdapter
                 if (poll == null) {
                     throw new IOException("Request timed out");
                 }
-                _repliesReceived++;
+                _repliesReceived.increment();
                 return poll;
             } finally {
                 _map.remove(serial);
@@ -1006,7 +1004,6 @@ public class LocationManager extends CellAdapter
             _thread.interrupt();
             _socket.close();
         }
-
     }
 
     public class Client implements Runnable
@@ -1015,9 +1012,9 @@ public class LocationManager extends CellAdapter
         private String _toDo;
         private String _registered;
         private int _state;
-        private int _requestsReceived;
-        private int _repliesSent;
-        private int _totalExceptions;
+        private final LongAdder _requestsReceived = new LongAdder();
+        private final LongAdder _repliesSent = new LongAdder();
+        private final LongAdder _totalExceptions = new LongAdder();
 
         private final LocationManagerHandler _lmHandler;
 
@@ -1070,17 +1067,17 @@ public class LocationManager extends CellAdapter
             {
                 try {
                     reply(_lmHandler.askServer(_request, 4000));
-                    _repliesSent++;
+                    _repliesSent.increment();
                 } catch (IOException | InterruptedException ee) {
                     LOGGER.warn("Problem in 'whereIs' request : " + ee);
-                    _totalExceptions++;
+                    _totalExceptions.increment();
                 }
             }
         }
 
         public Reply ac_where_is_$_1(Args args)
         {
-            _requestsReceived++;
+            _requestsReceived.increment();
             String domainName = args.argv(0);
             BackgroundServerRequest request = new BackgroundServerRequest("whereIs " + domainName);
             _nucleus.newThread(request, "where-is").start();
@@ -1106,7 +1103,7 @@ public class LocationManager extends CellAdapter
                 LOGGER.warn("Couldn't resolve hostname: " + uhe);
                 return null;
             }
-            _requestsReceived++;
+            _requestsReceived.increment();
 
             BackgroundServerRequest request = new BackgroundServerRequest(
                     "listeningOn " + getCellDomainName() + " " + _registered);
