@@ -21,6 +21,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -136,7 +138,7 @@ public class LocationManager extends CellAdapter
                 _default = defaultNode;
             }
 
-            private int getConnectionCount()
+            private synchronized int getConnectionCount()
             {
                 return _connections.size();
             }
@@ -151,53 +153,53 @@ public class LocationManager extends CellAdapter
                 _connections.remove(nodeName);
             }
 
-            private void setListenPort(int port)
+            private synchronized void setListenPort(int port)
             {
                 _port = port;
             }
 
-            private void setSecurity(String sec)
+            private synchronized void setSecurity(String sec)
             {
                 _sec = sec;
             }
 
-            private void setListen(boolean listen)
+            private synchronized void setListen(boolean listen)
             {
                 _listen = listen;
             }
 
-            private void setAddress(String address)
+            private synchronized void setAddress(String address)
             {
                 _listen = true;
                 _address = address;
             }
 
-            private String getAddress()
+            private synchronized String getAddress()
             {
                 return _address;
             }
 
-            private String getDefault()
+            private synchronized String getDefault()
             {
                 return _default;
             }
 
-            private Iterator<String> connections()
+            private synchronized Collection<String> connections()
             {
-                return _connections.iterator();
+                return new ArrayList<>(_connections);
             }
 
-            private boolean mustListen()
+            private synchronized boolean mustListen()
             {
                 return _listen;
             }
 
-            private String getSecurity()
+            private synchronized String getSecurity()
             {
                 return _sec;
             }
 
-            public String toWhatToDoReply(boolean strict)
+            public synchronized String toWhatToDoReply(boolean strict)
             {
                 StringBuilder sb = new StringBuilder();
                 sb.append(_domainName).append(" ");
@@ -218,9 +220,8 @@ public class LocationManager extends CellAdapter
                 } else {
                     sb.append("nl");
                 }
-                Iterator<String> i = connections();
-                while (i.hasNext()) {
-                    sb.append(" c:").append(i.next());
+                for (String node : connections()) {
+                    sb.append(" c:").append(node);
                 }
                 if (_default != null) {
                     sb.append(" d:").append(_default);
@@ -353,9 +354,11 @@ public class LocationManager extends CellAdapter
             Map<String, String> hm = new HashMap<>();
 
             for (NodeInfo info : _nodeDb.values()) {
-                String address = info.getAddress();
-                if ((address != null) && info.mustListen()) {
-                    hm.put(info.getDomainName(), info.getAddress());
+                synchronized (info) {
+                    String address = info.getAddress();
+                    if ((address != null) && info.mustListen()) {
+                        hm.put(info.getDomainName(), info.getAddress());
+                    }
                 }
             }
             ObjectOutputStream out = null;
@@ -528,20 +531,20 @@ public class LocationManager extends CellAdapter
             pw.println("# This setup was created by the LocationManager at " + (new Date().toString()));
             pw.println("#");
             for (NodeInfo info : _nodeDb.values()) {
-                pw.println("define " + info.getDomainName());
-                if (info.mustListen()) {
-                    pw.println("listen " + info.getDomainName());
+                synchronized (info) {
+                    pw.println("define " + info.getDomainName());
+                    if (info.mustListen()) {
+                        pw.println("listen " + info.getDomainName());
+                    }
+                    String def = info.getDefault();
+                    if (def != null) {
+                        pw.println("defaultroute " + info
+                                .getDomainName() + " " + def);
+                    }
+                    for (String node : info.connections()) {
+                        pw.println("connect " + info.getDomainName() + " " + node);
+                    }
                 }
-                String def = info.getDefault();
-                if (def != null) {
-                    pw.println("defaultroute " + info
-                            .getDomainName() + " " + def);
-                }
-                Iterator<String> j = info.connections();
-                while (j.hasNext()) {
-                    pw.println("connect " + info.getDomainName() + " " + j.next());
-                }
-
             }
         }
 
