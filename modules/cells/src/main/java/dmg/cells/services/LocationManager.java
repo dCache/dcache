@@ -42,6 +42,7 @@ import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
 import dmg.cells.services.login.LoginManager;
+import dmg.util.CommandInterpreter;
 
 import org.dcache.util.Args;
 
@@ -253,11 +254,13 @@ public class LocationManager extends CellAdapter
         private String _setupFileName;
         private File _setupFile;
         private File _permFile;
+        private final RemoteCommands _remoteCommands = new RemoteCommands();
 
         private Server(int port, Args args) throws Exception
         {
             _port = port;
             addCommandListener(this);
+            addCommandListener(_remoteCommands);
 
             String strict = args.getOpt("strict");
             _strict = strict == null || !strict.equals("off") && !strict.equals("no");
@@ -511,7 +514,7 @@ public class LocationManager extends CellAdapter
             String message = new String(data, 0, datalen);
             LOGGER.info("server query : [" + address + "] " + "(" + message.length() + ") " + message);
             Args args = new Args(message);
-            message = args.argc() == 0 ? "" : (String) command(args);
+            message = args.argc() == 0 ? "" : (String) _remoteCommands.command(args);
 
             LOGGER.info("server reply : " + message);
             data = message.getBytes();
@@ -792,75 +795,6 @@ public class LocationManager extends CellAdapter
             return "";
         }
 
-        public static final String hh_whatToDo = "<domainName>";
-        public String ac_whatToDo_$_1(Args args)
-        {
-            NodeInfo info = getInfo(args.argv(0), false);
-            if (info == null) {
-                if (_strict || ((info = getInfo("*", false)) == null)) {
-                    throw new
-                            IllegalArgumentException("Domain not defined : " + args
-                            .argv(0));
-                }
-
-            }
-            String tmp;
-            String serial = (tmp = args.getOpt("serial")) != null ?
-                            ("-serial=" + tmp) : "";
-            return "do " + serial + " " + info.toWhatToDoReply(true);
-        }
-
-        public static final String hh_whereIs = "<domainName>";
-        public String ac_whereIs_$_1(Args args)
-        {
-            NodeInfo info = getInfo(args.argv(0), false);
-            if (info == null) {
-                throw new
-                        IllegalArgumentException("Domain not defined : " + args
-                        .argv(0));
-            }
-            String tmp;
-            String serial = (tmp = args.getOpt("serial")) != null ?
-                            ("-serial=" + tmp) : "";
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("location ").append(serial).append(" ").append(info.getDomainName());
-            String out = info.getAddress();
-            sb.append(" ").append(out == null ? "none" : out);
-            out = info.getSecurity();
-            if (out != null) {
-                sb.append(" -security=\"").append(out).append("\"");
-            }
-
-            return sb.toString();
-        }
-
-        public static final String hh_listeningOn = "<domainName> <address>";
-        public String ac_listeningOn_$_2(Args args)
-        {
-            String nodeName = args.argv(0);
-            NodeInfo info = getInfo(nodeName, false);
-            if (info == null) {
-                if (_strict) {
-                    throw new
-                            IllegalArgumentException("Domain not defined : " + nodeName);
-                }
-
-                _nodeDb.put(nodeName, info = new NodeInfo(nodeName, false));
-            }
-            info.setAddress(args.argv(1).equals("none") ? null : args.argv(1));
-            try {
-                savePersistentMap();
-            } catch (Exception eee) {
-            }
-            String tmp;
-            String serial = (tmp = args.getOpt("serial")) != null ?
-                            ("-serial=" + tmp) : "";
-            return "listenOn " + serial +
-                   " " + info.getDomainName() +
-                   " " + (info.getAddress() == null ? "none" : info.getAddress());
-        }
-
         public void start()
         {
             _worker.start();
@@ -874,6 +808,78 @@ public class LocationManager extends CellAdapter
         {
             _worker.interrupt();
             _socket.close();
+        }
+
+        public class RemoteCommands extends CommandInterpreter
+        {
+            public static final String hh_whatToDo = "<domainName>";
+            public String ac_whatToDo_$_1(Args args)
+            {
+                NodeInfo info = getInfo(args.argv(0), false);
+                if (info == null) {
+                    if (_strict || ((info = getInfo("*", false)) == null)) {
+                        throw new
+                                IllegalArgumentException("Domain not defined : " + args
+                                .argv(0));
+                    }
+
+                }
+                String tmp;
+                String serial = (tmp = args.getOpt("serial")) != null ?
+                                ("-serial=" + tmp) : "";
+                return "do " + serial + " " + info.toWhatToDoReply(true);
+            }
+
+            public static final String hh_whereIs = "<domainName>";
+            public String ac_whereIs_$_1(Args args)
+            {
+                NodeInfo info = getInfo(args.argv(0), false);
+                if (info == null) {
+                    throw new
+                            IllegalArgumentException("Domain not defined : " + args
+                            .argv(0));
+                }
+                String tmp;
+                String serial = (tmp = args.getOpt("serial")) != null ?
+                                ("-serial=" + tmp) : "";
+
+                StringBuilder sb = new StringBuilder();
+                sb.append("location ").append(serial).append(" ").append(info.getDomainName());
+                String out = info.getAddress();
+                sb.append(" ").append(out == null ? "none" : out);
+                out = info.getSecurity();
+                if (out != null) {
+                    sb.append(" -security=\"").append(out).append("\"");
+                }
+
+                return sb.toString();
+            }
+
+            public static final String hh_listeningOn = "<domainName> <address>";
+            public String ac_listeningOn_$_2(Args args)
+            {
+                String nodeName = args.argv(0);
+                NodeInfo info = getInfo(nodeName, false);
+                if (info == null) {
+                    if (_strict) {
+                        throw new
+                                IllegalArgumentException("Domain not defined : " + nodeName);
+                    }
+
+                    _nodeDb.put(nodeName, info = new NodeInfo(nodeName, false));
+                }
+                info.setAddress(args.argv(1).equals("none") ? null : args.argv(1));
+                try {
+                    savePersistentMap();
+                } catch (Exception eee) {
+                }
+                String tmp;
+                String serial = (tmp = args.getOpt("serial")) != null ?
+                                ("-serial=" + tmp) : "";
+                return "listenOn " + serial +
+                       " " + info.getDomainName() +
+                       " " + (info.getAddress() == null ? "none" : info.getAddress());
+            }
         }
     }
 
