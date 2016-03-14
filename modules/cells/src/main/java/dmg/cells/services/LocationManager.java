@@ -387,7 +387,6 @@ public class LocationManager extends CellAdapter
         private ServerSetup _setupMode = SETUP_NONE;
         private String _setupFileName;
         private File _setupFile;
-        private File _permFile;
         private final RemoteCommands _remoteCommands = new RemoteCommands();
         private final LocationManagerConfig _config = new LocationManagerConfig();
 
@@ -406,90 +405,8 @@ public class LocationManager extends CellAdapter
                 execSetupFile(_setupFile);
             }
 
-            preparePersistentMap(args.getOpt("perm"));
-
-            try {
-                loadPersistentMap();
-            } catch (Exception dd) {
-            }
             _socket = new DatagramSocket(_port);
             _worker = _nucleus.newThread(this, "Server");
-        }
-
-        private void preparePersistentMap(String permFileName) throws Exception
-        {
-            if ((permFileName == null) || (permFileName.length() < 1)) {
-                return;
-            }
-
-            File permFile = new File(permFileName);
-
-            if (permFile.exists()) {
-                if (!permFile.canWrite()) {
-                    throw new IllegalArgumentException("Can't write to : " + permFileName);
-                }
-                _permFile = permFile;
-//            loadPersistentMap() ;
-            } else {
-                if (!permFile.createNewFile()) {
-                    throw new IllegalArgumentException("Can't create : " + permFileName);
-                }
-                _permFile = permFile;
-            }
-            LOGGER.info("Persistent map file set to : " + _permFile);
-        }
-
-        private synchronized void loadPersistentMap() throws Exception
-        {
-            if (_permFile == null) {
-                return;
-            }
-            try (FileInputStream file = new FileInputStream(_permFile);
-                 ObjectInputStream in = new ObjectInputStream(file)) {
-                LOGGER.info("Loading persistent map file");
-                try {
-                    Map<String, String> hm = (HashMap<String, String>) in.readObject();
-
-                    LOGGER.info("Persistent map : " + hm);
-
-                    for (Map.Entry<String, String> nodeAndAddress : hm.entrySet()) {
-                        String node = nodeAndAddress.getKey();
-                        String address = nodeAndAddress.getValue();
-                        _config.createUndefinedIfAbsent(node).setAddress(node);
-                        LOGGER.info("Updated : <" + node + "> -> " + address);
-                    }
-
-                } catch (Exception ee) {
-                    LOGGER.warn("Problem reading persistent map " + ee.getMessage());
-                    _permFile.delete();
-                }
-            }
-
-        }
-
-        private synchronized void savePersistentMap()
-        {
-            if (_permFile == null) {
-                return;
-            }
-
-            Map<String, String> hm = new HashMap<>();
-
-            for (NodeInfo node : _config.nodes()) {
-                synchronized (node) {
-                    String address = node.getAddress();
-                    if ((address != null) && node.mustListen()) {
-                        hm.put(node.getDomainName(), node.getAddress());
-                    }
-                }
-            }
-            try (FileOutputStream file = new FileOutputStream(_permFile);
-                 ObjectOutputStream out = new ObjectOutputStream(file )) {
-                out.writeObject(hm);
-            } catch (Exception e) {
-                LOGGER.warn("Problem writing persistent map " + e.getMessage());
-                _permFile.delete();
-            }
         }
 
         private void prepareSetup(String setupFile, String setupMode) throws Exception
@@ -637,29 +554,6 @@ public class LocationManager extends CellAdapter
             packet.setLength(data.length);
         }
 
-        public static final String hh_ls_perm = " # list permanent file";
-        public String ac_ls_perm(Args args) throws Exception
-        {
-            if (_permFile == null) {
-                throw new IllegalArgumentException("Permanent file not defined");
-            }
-
-            Map<String, String> hm;
-            try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(_permFile))) {
-                hm = (HashMap<String, String>) in.readObject();
-            }
-
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, String> node_and_address : hm.entrySet()) {
-                String node = node_and_address.getKey();
-                String address = node_and_address.getValue();
-
-                sb.append(node).append(" -> ").append(address).append("\n");
-            }
-            return sb.toString();
-
-        }
-
         public static final String hh_setup_define = "<filename> [-mode=rw|rdonly|auto]";
         public String ac_setup_define_$_1(Args args) throws Exception
         {
@@ -742,10 +636,6 @@ public class LocationManager extends CellAdapter
             }
 
             info.setAddress(args.argv(1));
-            try {
-                savePersistentMap();
-            } catch (Exception eee) {
-            }
             return info.toString();
         }
 
@@ -758,10 +648,6 @@ public class LocationManager extends CellAdapter
             }
 
             info.setAddress(null);
-            try {
-                savePersistentMap();
-            } catch (Exception eee) {
-            }
             return info.toString();
         }
 
@@ -829,10 +715,6 @@ public class LocationManager extends CellAdapter
                     throw new IllegalArgumentException("Domain not defined : " + nodeName);
                 }
                 info.setAddress(args.argv(1).equals("none") ? null : args.argv(1));
-                try {
-                    savePersistentMap();
-                } catch (Exception eee) {
-                }
                 String serial = args.getOpt("serial");
                 return "listenOn" + (serial != null ? (" -serial=" + serial) : "") +
                        " " + info.getDomainName() +
