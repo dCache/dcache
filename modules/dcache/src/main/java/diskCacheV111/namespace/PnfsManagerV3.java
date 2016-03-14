@@ -81,6 +81,7 @@ import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -100,6 +101,7 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.acl.enums.AccessType.*;
@@ -1433,6 +1435,9 @@ public class PnfsManagerV3
         private final PnfsListDirectoryMessage _msg;
         private final long _delay;
         private final UOID _uoid;
+        private final FsPath _directory;
+        private final Subject _subject;
+        private final Restriction _restriction;
         private long _deadline;
         private int _messageCount;
 
@@ -1444,6 +1449,9 @@ public class PnfsManagerV3
             _requestor = requestor;
             _uoid = uoid;
             _delay = delay;
+            _directory = checkNotNull(_msg.getFsPath());
+            _subject = _msg.getSubject();
+            _restriction = _msg.getRestriction();
             _deadline =
                 (delay == Long.MAX_VALUE)
                 ? Long.MAX_VALUE
@@ -1465,13 +1473,16 @@ public class PnfsManagerV3
         @Override
         public void addEntry(String name, FileAttributes attrs)
         {
-            long now = System.currentTimeMillis();
-            _msg.addEntry(name, attrs);
-            if (_msg.getEntries().size() >= _directoryListLimit ||
-                now > _deadline) {
-                sendPartialReply();
-                _deadline =
-                    (_delay == Long.MAX_VALUE) ? Long.MAX_VALUE : now + _delay;
+            if (Subjects.isRoot(_subject)
+                    || !_restriction.isRestricted(READ_METADATA, _directory, name)) {
+                long now = System.currentTimeMillis();
+                _msg.addEntry(name, attrs);
+                if (_msg.getEntries().size() >= _directoryListLimit ||
+                    now > _deadline) {
+                    sendPartialReply();
+                    _deadline =
+                        (_delay == Long.MAX_VALUE) ? Long.MAX_VALUE : now + _delay;
+                }
             }
         }
 

@@ -111,6 +111,18 @@ public interface Restriction extends LoginAttribute, Serializable
     boolean isRestricted(Activity activity, FsPath path);
 
     /**
+     * An optimised version of isRestricted.  A restriction must respond as
+     * if {@literal isRestricted(activity, new FsPath(directory).add(child));}
+     * were called, but the method may be able to avoid creating a new FsPath
+     * object.
+     * @param activity What the user is attempting.
+     * @param directory The directory containing the target
+     * @param child The name of the target object within directory.
+     * @return true if the user is not allowed this activity.
+     */
+    boolean isRestricted(Activity activity, FsPath directory, String child);
+
+    /**
      * Whether another object is an equivalent restriction.
      * @param other The object to compare
      * @return true iff {@literal other} implements {@literal Restriction}
