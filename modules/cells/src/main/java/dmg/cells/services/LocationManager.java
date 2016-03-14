@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,7 +25,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -50,6 +48,7 @@ import org.dcache.util.Args;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static dmg.cells.services.LocationManager.ServerSetup.*;
+import static java.util.stream.Collectors.joining;
 
 public class LocationManager extends CellAdapter
 {
@@ -91,153 +90,287 @@ public class LocationManager extends CellAdapter
     private final Args _args;
     private final CellNucleus _nucleus;
 
-    //   Server Options : -strict[=yes|on|off|no]
-    //                    -perm=<helpFilename>
-    //                    -setupmode=write|rdonly|auto
-    //                    -setup=<setupFile>
-    //
-    //   Client Options : -noboot
-    //
-    public class Server implements Runnable
+    private static class NodeInfo
     {
-        private class NodeInfo
+        private final String _domainName;
+        private final HashSet<String> _connections = new HashSet<>();
+        private final boolean _defined;
+        private String _default;
+        private boolean _listen;
+        private String _address;
+        private int _port;
+        private String _sec;
+
+        public static NodeInfo createDefined(String domainName)
         {
-            private final String _domainName;
-            private final HashSet<String> _connections = new HashSet<>();
-            private final boolean _defined;
-            private String _default;
-            private boolean _listen;
-            private String _address;
-            private int _port;
-            private String _sec;
-
-            private NodeInfo(String domainName)
-            {
-                _domainName = domainName;
-                _defined = true;
-            }
-
-            private NodeInfo(String domainName, boolean defined)
-            {
-                _domainName = domainName;
-                _defined = defined;
-            }
-
-            private boolean isDefined()
-            {
-                return _defined;
-            }
-
-            private String getDomainName()
-            {
-                return _domainName;
-            }
-
-            private synchronized void setDefault(String defaultNode)
-            {
-                _default = defaultNode;
-            }
-
-            private synchronized int getConnectionCount()
-            {
-                return _connections.size();
-            }
-
-            private synchronized void add(String nodeName)
-            {
-                _connections.add(nodeName);
-            }
-
-            private synchronized void remove(String nodeName)
-            {
-                _connections.remove(nodeName);
-            }
-
-            private synchronized void setListenPort(int port)
-            {
-                _port = port;
-            }
-
-            private synchronized void setSecurity(String sec)
-            {
-                _sec = sec;
-            }
-
-            private synchronized void setListen(boolean listen)
-            {
-                _listen = listen;
-            }
-
-            private synchronized void setAddress(String address)
-            {
-                _listen = true;
-                _address = address;
-            }
-
-            private synchronized String getAddress()
-            {
-                return _address;
-            }
-
-            private synchronized String getDefault()
-            {
-                return _default;
-            }
-
-            private synchronized Collection<String> connections()
-            {
-                return new ArrayList<>(_connections);
-            }
-
-            private synchronized boolean mustListen()
-            {
-                return _listen;
-            }
-
-            private synchronized String getSecurity()
-            {
-                return _sec;
-            }
-
-            public synchronized String toWhatToDoReply(boolean strict)
-            {
-                StringBuilder sb = new StringBuilder();
-                sb.append(_domainName).append(" ");
-                if (_listen) {
-                    sb.append("\"l:");
-                    if (_port > 0) {
-                        sb.append(_port);
-                    }
-                    sb.append(":");
-                    if (_sec != null) {
-                        sb.append(_sec);
-                    }
-                    sb.append(":");
-                    sb.append('"');
-                    if (!strict && _address != null) {
-                        sb.append(" (").append(_address).append(")");
-                    }
-                } else {
-                    sb.append("nl");
-                }
-                for (String node : connections()) {
-                    sb.append(" c:").append(node);
-                }
-                if (_default != null) {
-                    sb.append(" d:").append(_default);
-                }
-                return sb.toString();
-            }
-
-            @Override
-            public String toString()
-            {
-                return toWhatToDoReply(false);
-            }
-
+            return new NodeInfo(domainName, true);
         }
 
-        private final Map<String, NodeInfo> _nodeDb = new HashMap<>();
+        public static NodeInfo createUndefined(String domainName)
+        {
+            return new NodeInfo(domainName, false);
+        }
+
+        private NodeInfo(String domainName, boolean defined)
+        {
+            _domainName = domainName;
+            _defined = defined;
+        }
+
+        private boolean isDefined()
+        {
+            return _defined;
+        }
+
+        private String getDomainName()
+        {
+            return _domainName;
+        }
+
+        private synchronized void setDefault(String defaultNode)
+        {
+            _default = defaultNode;
+        }
+
+        private synchronized int getConnectionCount()
+        {
+            return _connections.size();
+        }
+
+        private synchronized void add(String nodeName)
+        {
+            _connections.add(nodeName);
+        }
+
+        private synchronized void remove(String nodeName)
+        {
+            _connections.remove(nodeName);
+        }
+
+        private synchronized void setListenPort(int port)
+        {
+            _port = port;
+        }
+
+        private synchronized void setSecurity(String sec)
+        {
+            _sec = sec;
+        }
+
+        private synchronized void setListen(boolean listen)
+        {
+            _listen = listen;
+        }
+
+        private synchronized void setAddress(String address)
+        {
+            _listen = true;
+            _address = address;
+        }
+
+        private synchronized String getAddress()
+        {
+            return _address;
+        }
+
+        private synchronized String getDefault()
+        {
+            return _default;
+        }
+
+        private synchronized Collection<String> connections()
+        {
+            return new ArrayList<>(_connections);
+        }
+
+        private synchronized boolean mustListen()
+        {
+            return _listen;
+        }
+
+        private synchronized String getSecurity()
+        {
+            return _sec;
+        }
+
+        public synchronized String toWhatToDoReply(boolean strict)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append(_domainName).append(" ");
+            if (_listen) {
+                sb.append("\"l:");
+                if (_port > 0) {
+                    sb.append(_port);
+                }
+                sb.append(":");
+                if (_sec != null) {
+                    sb.append(_sec);
+                }
+                sb.append(":");
+                sb.append('"');
+                if (!strict && _address != null) {
+                    sb.append(" (").append(_address).append(")");
+                }
+            } else {
+                sb.append("nl");
+            }
+            for (String node : connections()) {
+                sb.append(" c:").append(node);
+            }
+            if (_default != null) {
+                sb.append(" d:").append(_default);
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public String toString()
+        {
+            return toWhatToDoReply(false);
+        }
+    }
+
+    public static class LocationManagerConfig extends CommandInterpreter
+    {
+        private final ConcurrentMap<String, NodeInfo> _nodes = new ConcurrentHashMap<>();
+
+        private void print(PrintWriter pw)
+        {
+            pw.println("#");
+            pw.println("# This setup was created by the LocationManager at " + (new Date().toString()));
+            pw.println("#");
+            for (NodeInfo info : _nodes.values()) {
+                synchronized (info) {
+                    pw.println("define " + info.getDomainName());
+                    if (info.mustListen()) {
+                        pw.println("listen " + info.getDomainName());
+                    }
+                    String def = info.getDefault();
+                    if (def != null) {
+                        pw.println("defaultroute " + info.getDomainName() + " " + def);
+                    }
+                    for (String node : info.connections()) {
+                        pw.println("connect " + info.getDomainName() + " " + node);
+                    }
+                }
+            }
+        }
+
+        private NodeInfo get(String nodeName)
+        {
+            return _nodes.get(nodeName);
+        }
+
+        private NodeInfo createDefinedIfAbsent(String nodeName)
+        {
+            return _nodes.computeIfAbsent(nodeName, NodeInfo::createDefined);
+        }
+
+        private NodeInfo createUndefinedIfAbsent(String nodeName)
+        {
+            return _nodes.computeIfAbsent(nodeName, NodeInfo::createUndefined);
+        }
+
+        private Collection<NodeInfo> nodes()
+        {
+            return _nodes.values();
+        }
+
+        public static final String hh_define = "<domainName>";
+        public String ac_define_$_1(Args args)
+        {
+            createDefinedIfAbsent(args.argv(0));
+            return "";
+        }
+
+        public static final String hh_undefine = "<domainName>";
+        public String ac_undefine_$_1(Args args)
+        {
+            String nodeName = args.argv(0);
+            _nodes.remove(nodeName);
+            for (NodeInfo nodeInfo : _nodes.values()) {
+                nodeInfo.remove(nodeName);
+            }
+            return "";
+        }
+
+        public static final String hh_nodefaultroute = "<sourceDomainName>";
+        public String ac_nodefaultroute_$_1(Args args)
+        {
+            NodeInfo info = get(args.argv(0));
+            if (info != null) {
+                info.setDefault(null);
+            }
+            return "";
+        }
+
+        public static final String hh_defaultroute = "<sourceDomainName> <destinationDomainName>";
+        public String ac_defaultroute_$_2(Args args)
+        {
+            createDefinedIfAbsent(args.argv(1));
+            createDefinedIfAbsent(args.argv(0)).setDefault(args.argv(1));
+            return "";
+        }
+
+        public static final String hh_connect = "<sourceDomainName> <destinationDomainName>";
+        public String ac_connect_$_2(Args args)
+        {
+            NodeInfo dest = createDefinedIfAbsent(args.argv(1));
+            dest.setListen(true);
+            createDefinedIfAbsent(args.argv(0)).add(args.argv(1));
+            return "";
+        }
+
+        public static final String hh_disconnect = "<sourceDomainName> <destinationDomainName>";
+        public String ac_disconnect_$_2(Args args)
+        {
+            NodeInfo info = get(args.argv(0));
+            if (info != null) {
+                info.remove(args.argv(1));
+            }
+            return "";
+        }
+
+        public static final String hh_listen = "<listenDomainName> [...] [-port=<portNumber>] [-security=<security>]";
+        public String ac_listen_$_1_99(Args args)
+        {
+            int port = args.getIntOption("port", 0);
+            String security = args.getOpt("security");
+            for (int i = 0; i < args.argc(); i++) {
+                NodeInfo info = createDefinedIfAbsent(args.argv(i));
+                info.setListen(true);
+                if (port > 0) {
+                    info.setListenPort(port);
+                }
+                if (security != null && security.length() > 0 && !security.equalsIgnoreCase("none")) {
+                    info.setSecurity(security);
+                }
+            }
+            return "";
+        }
+
+        public static final String hh_unlisten = "<listenDomainName> [...]";
+        public String ac_unlisten_$_1_99(Args args)
+        {
+            for (int i = 0; i < args.argc(); i++) {
+                NodeInfo info = get(args.argv(i));
+                if (info != null) {
+                    info.setListen(false);
+                }
+            }
+            return "";
+        }
+
+        public static final String hh_clear_server = "";
+        public String ac_clear_server(Args args)
+        {
+            _nodes.clear();
+            return "";
+        }
+    }
+
+    public class Server implements Runnable
+    {
         private final int _port;
         private final DatagramSocket _socket;
         private final Thread _worker;
@@ -256,12 +389,14 @@ public class LocationManager extends CellAdapter
         private File _setupFile;
         private File _permFile;
         private final RemoteCommands _remoteCommands = new RemoteCommands();
+        private final LocationManagerConfig _config = new LocationManagerConfig();
 
         private Server(int port, Args args) throws Exception
         {
             _port = port;
             addCommandListener(this);
             addCommandListener(_remoteCommands);
+            addCommandListener(_config);
 
             String strict = args.getOpt("strict");
             _strict = strict == null || !strict.equals("off") && !strict.equals("no");
@@ -291,15 +426,13 @@ public class LocationManager extends CellAdapter
 
             if (permFile.exists()) {
                 if (!permFile.canWrite()) {
-                    throw new
-                            IllegalArgumentException("Can't write to : " + permFileName);
+                    throw new IllegalArgumentException("Can't write to : " + permFileName);
                 }
                 _permFile = permFile;
 //            loadPersistentMap() ;
             } else {
                 if (!permFile.createNewFile()) {
-                    throw new
-                            IllegalArgumentException("Can't create : " + permFileName);
+                    throw new IllegalArgumentException("Can't create : " + permFileName);
                 }
                 _permFile = permFile;
             }
@@ -311,35 +444,24 @@ public class LocationManager extends CellAdapter
             if (_permFile == null) {
                 return;
             }
-            ObjectInputStream in = new ObjectInputStream(
-                    new FileInputStream(_permFile));
-            Map<String, String> hm;
-            LOGGER.info("Loading persistent map file");
-            try {
-                hm = (HashMap<String, String>) in.readObject();
-
-                LOGGER.info("Persistent map : " + hm);
-
-                for (Map.Entry<String, String> node_and_address : hm.entrySet()) {
-
-                    String node = node_and_address.getKey();
-                    String address = node_and_address.getValue();
-
-                    NodeInfo info = getInfo(node, true);
-                    if (info == null) {
-                        continue;
-                    }
-                    info.setAddress(node);
-                    LOGGER.info("Updated : <" + node + "> -> " + address);
-                }
-
-            } catch (Exception ee) {
-                LOGGER.warn("Problem reading persistent map " + ee.getMessage());
-                _permFile.delete();
-            } finally {
+            try (FileInputStream file = new FileInputStream(_permFile);
+                 ObjectInputStream in = new ObjectInputStream(file)) {
+                LOGGER.info("Loading persistent map file");
                 try {
-                    in.close();
-                } catch (IOException ee) {
+                    Map<String, String> hm = (HashMap<String, String>) in.readObject();
+
+                    LOGGER.info("Persistent map : " + hm);
+
+                    for (Map.Entry<String, String> nodeAndAddress : hm.entrySet()) {
+                        String node = nodeAndAddress.getKey();
+                        String address = nodeAndAddress.getValue();
+                        _config.createUndefinedIfAbsent(node).setAddress(node);
+                        LOGGER.info("Updated : <" + node + "> -> " + address);
+                    }
+
+                } catch (Exception ee) {
+                    LOGGER.warn("Problem reading persistent map " + ee.getMessage());
+                    _permFile.delete();
                 }
             }
 
@@ -353,29 +475,20 @@ public class LocationManager extends CellAdapter
 
             Map<String, String> hm = new HashMap<>();
 
-            for (NodeInfo info : _nodeDb.values()) {
-                synchronized (info) {
-                    String address = info.getAddress();
-                    if ((address != null) && info.mustListen()) {
-                        hm.put(info.getDomainName(), info.getAddress());
+            for (NodeInfo node : _config.nodes()) {
+                synchronized (node) {
+                    String address = node.getAddress();
+                    if ((address != null) && node.mustListen()) {
+                        hm.put(node.getDomainName(), node.getAddress());
                     }
                 }
             }
-            ObjectOutputStream out = null;
-
-            try {
-                out = new ObjectOutputStream(new FileOutputStream(_permFile));
+            try (FileOutputStream file = new FileOutputStream(_permFile);
+                 ObjectOutputStream out = new ObjectOutputStream(file )) {
                 out.writeObject(hm);
             } catch (Exception e) {
                 LOGGER.warn("Problem writing persistent map " + e.getMessage());
                 _permFile.delete();
-            } finally {
-                if (out != null) {
-                    try {
-                        out.close();
-                    } catch (Exception ee) {
-                    }
-                }
             }
         }
 
@@ -456,12 +569,11 @@ public class LocationManager extends CellAdapter
                         if (line.charAt(0) == '#') {
                             continue;
                         }
-                        LOGGER.info("Exec : " + line);
-                        command(new Args(line));
+                        LOGGER.info("Exec : {}", line);
+                        _config.command(new Args(line));
                     }
-                } catch (EOFException ignored) {
                 } catch (Exception ef) {
-                    LOGGER.warn("Ups : " + ef);
+                    LOGGER.warn("Ups: {}", ef);
                 }
             }
         }
@@ -469,13 +581,13 @@ public class LocationManager extends CellAdapter
         public void getInfo(PrintWriter pw)
         {
             pw.println("         Version : $Id: LocationManager.java,v 1.15 2007-10-22 12:30:38 behrmann Exp $");
-            pw.println("      # of nodes : " + _nodeDb.size());
+            pw.println("      # of nodes : " + _config.nodes().size());
         }
 
         @Override
         public String toString()
         {
-            return "Server:Nodes=" + _nodeDb.size();
+            return "Server:Nodes=" + _config.nodes().size();
         }
 
         @Override
@@ -523,29 +635,6 @@ public class LocationManager extends CellAdapter
             data = message.getBytes();
             packet.setData(data);
             packet.setLength(data.length);
-        }
-
-        private void createSetup(PrintWriter pw)
-        {
-            pw.println("#");
-            pw.println("# This setup was created by the LocationManager at " + (new Date().toString()));
-            pw.println("#");
-            for (NodeInfo info : _nodeDb.values()) {
-                synchronized (info) {
-                    pw.println("define " + info.getDomainName());
-                    if (info.mustListen()) {
-                        pw.println("listen " + info.getDomainName());
-                    }
-                    String def = info.getDefault();
-                    if (def != null) {
-                        pw.println("defaultroute " + info
-                                .getDomainName() + " " + def);
-                    }
-                    for (String node : info.connections()) {
-                        pw.println("connect " + info.getDomainName() + " " + node);
-                    }
-                }
-            }
         }
 
         public static final String hh_ls_perm = " # list permanent file";
@@ -605,7 +694,7 @@ public class LocationManager extends CellAdapter
 
             File tmpFile = new File(_setupFile.getParent(), "$-" + _setupFile.getName());
             try (PrintWriter pw = new PrintWriter(new FileWriter(tmpFile))) {
-                createSetup(pw);
+                _config.print(pw);
             }
             if (!tmpFile.renameTo(_setupFile)) {
                 throw new IOException("Failed to replace setupFile");
@@ -615,114 +704,12 @@ public class LocationManager extends CellAdapter
 
         }
 
-        private synchronized NodeInfo getInfo(String nodeName, boolean create)
-        {
-            NodeInfo info = _nodeDb.get(nodeName);
-            if ((info != null) || !create) {
-                return info;
-            }
-            _nodeDb.put(nodeName, info = new NodeInfo(nodeName));
-            return info;
-        }
-
-        public static final String hh_define = "<domainName>";
-        public String ac_define_$_1(Args args)
-        {
-            getInfo(args.argv(0), true);
-            return "";
-        }
-
-        public static final String hh_undefine = "<domainName>";
-        public String ac_undefine_$_1(Args args)
-        {
-            String nodeName = args.argv(0);
-            _nodeDb.remove(nodeName);
-            for (NodeInfo nodeInfo : _nodeDb.values()) {
-                nodeInfo.remove(nodeName);
-            }
-            return "";
-        }
-
-        public static final String hh_nodefaultroute = "<sourceDomainName>";
-        public String ac_nodefaultroute_$_1(Args args)
-        {
-            NodeInfo info = getInfo(args.argv(0), false);
-            if (info == null) {
-                return "";
-            }
-            info.setDefault(null);
-            return "";
-        }
-
-        public static final String hh_defaultroute = "<sourceDomainName> <destinationDomainName>";
-        public String ac_defaultroute_$_2(Args args)
-        {
-            getInfo(args.argv(1), true);
-            getInfo(args.argv(0), true).setDefault(args.argv(1));
-            return "";
-        }
-
-        public static final String hh_connect = "<sourceDomainName> <destinationDomainName>";
-        public String ac_connect_$_2(Args args)
-        {
-            NodeInfo dest = getInfo(args.argv(1), true);
-            dest.setListen(true);
-            getInfo(args.argv(0), true).add(args.argv(1));
-            return "";
-        }
-
-        public static final String hh_disconnect = "<sourceDomainName> <destinationDomainName>";
-        public String ac_disconnect_$_2(Args args)
-        {
-            NodeInfo info = getInfo(args.argv(0), false);
-            if (info == null) {
-                return "";
-            }
-            info.remove(args.argv(1));
-            return "";
-
-        }
-
-        public static final String hh_listen = "<listenDomainName> [...] [-port=<portNumber>] [-security=<security>]";
-        public String ac_listen_$_1_99(Args args)
-        {
-            int port = args.getIntOption("port", 0);
-            String secString = args.getOpt("security");
-
-            for (int i = 0; i < args.argc(); i++) {
-                NodeInfo info = getInfo(args.argv(i), true);
-                info.setListen(true);
-                if (port > 0) {
-                    info.setListenPort(port);
-                }
-                if ((secString != null) &&
-                    (secString.length() > 0) &&
-                    !secString.equalsIgnoreCase("none")) {
-                    info.setSecurity(secString);
-                }
-            }
-            return "";
-        }
-
-        public static final String hh_unlisten = "<listenDomainName> [...]";
-        public String ac_unlisten_$_1_99(Args args)
-        {
-            for (int i = 0; i < args.argc(); i++) {
-                NodeInfo info = getInfo(args.argv(i), false);
-                if (info == null) {
-                    continue;
-                }
-                info.setListen(false);
-            }
-            return "";
-        }
-
         public static final String hh_ls_setup = "";
         public String ac_ls_setup(Args args)
         {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            createSetup(pw);
+            _config.print(pw);
             pw.flush();
             sw.flush();
             return sw.getBuffer().toString();
@@ -732,18 +719,11 @@ public class LocationManager extends CellAdapter
         public String ac_ls_node_$_0_1(Args args)
         {
             if (args.argc() == 0) {
-                Iterator<NodeInfo> i = _nodeDb.values().iterator();
-                StringBuilder sb = new StringBuilder();
-                while (i.hasNext()) {
-                    sb.append(i.next().toString()).append("\n");
-                }
-                return sb.toString();
+                return _config.nodes().stream().map(Object::toString).collect(joining("\n"));
             } else {
-                NodeInfo info = getInfo(args.argv(0), false);
+                NodeInfo info = _config.get(args.argv(0));
                 if (info == null) {
-                    throw new
-                            IllegalArgumentException("Node not found : " + args
-                            .argv(0));
+                    throw new IllegalArgumentException("Node not found : " + args.argv(0));
                 }
                 return info.toString();
             }
@@ -752,17 +732,13 @@ public class LocationManager extends CellAdapter
         public static final String hh_set_address = "<domainname> <address>";
         public String ac_set_address_$_2(Args args)
         {
-            NodeInfo info = getInfo(args.argv(0), false);
+            NodeInfo info = _config.get(args.argv(0));
             if (info == null) {
-                throw new
-                        IllegalArgumentException("Domain not defined : " + args
-                        .argv(0));
+                throw new IllegalArgumentException("Domain not defined : " + args.argv(0));
             }
 
             if (!info.mustListen()) {
-                throw new
-                        IllegalArgumentException("Domain won't listen : " + args
-                        .argv(0));
+                throw new IllegalArgumentException("Domain won't listen : " + args.argv(0));
             }
 
             info.setAddress(args.argv(1));
@@ -776,11 +752,9 @@ public class LocationManager extends CellAdapter
         public static final String hh_unset_address = "<domainname>";
         public String ac_unset_address_$_1(Args args)
         {
-            NodeInfo info = getInfo(args.argv(0), false);
+            NodeInfo info = _config.get(args.argv(0));
             if (info == null) {
-                throw new
-                        IllegalArgumentException("Domain not defined : " + args
-                        .argv(0));
+                throw new IllegalArgumentException("Domain not defined : " + args.argv(0));
             }
 
             info.setAddress(null);
@@ -789,13 +763,6 @@ public class LocationManager extends CellAdapter
             } catch (Exception eee) {
             }
             return info.toString();
-        }
-
-        public static final String hh_clear_server = "";
-        public String ac_clear_server(Args args)
-        {
-            _nodeDb.clear();
-            return "";
         }
 
         public void start()
@@ -818,36 +785,31 @@ public class LocationManager extends CellAdapter
             public static final String hh_whatToDo = "<domainName>";
             public String ac_whatToDo_$_1(Args args)
             {
-                NodeInfo info = getInfo(args.argv(0), false);
+                NodeInfo info = _config.get(args.argv(0));
                 if (info == null) {
-                    if (_strict || ((info = getInfo("*", false)) == null)) {
-                        throw new
-                                IllegalArgumentException("Domain not defined : " + args
-                                .argv(0));
+                    if (_strict || ((info = _config.get("*")) == null)) {
+                        throw new IllegalArgumentException("Domain not defined : " + args.argv(0));
                     }
 
                 }
-                String tmp;
-                String serial = (tmp = args.getOpt("serial")) != null ?
-                                ("-serial=" + tmp) : "";
-                return "do " + serial + " " + info.toWhatToDoReply(true);
+                String serial = args.getOpt("serial");
+                return "do" + (serial != null ? " -serial=" + serial : "") + " " + info.toWhatToDoReply(true);
             }
 
             public static final String hh_whereIs = "<domainName>";
             public String ac_whereIs_$_1(Args args)
             {
-                NodeInfo info = getInfo(args.argv(0), false);
+                NodeInfo info = _config.get(args.argv(0));
                 if (info == null) {
-                    throw new
-                            IllegalArgumentException("Domain not defined : " + args
-                            .argv(0));
+                    throw new IllegalArgumentException("Domain not defined : " + args.argv(0));
                 }
-                String tmp;
-                String serial = (tmp = args.getOpt("serial")) != null ?
-                                ("-serial=" + tmp) : "";
-
                 StringBuilder sb = new StringBuilder();
-                sb.append("location ").append(serial).append(" ").append(info.getDomainName());
+                sb.append("location");
+                String serial = args.getOpt("serial");
+                if (serial != null) {
+                    sb.append(" -serial=").append(serial);
+                }
+                sb.append(" ").append(info.getDomainName());
                 String out = info.getAddress();
                 sb.append(" ").append(out == null ? "none" : out);
                 out = info.getSecurity();
@@ -862,24 +824,17 @@ public class LocationManager extends CellAdapter
             public String ac_listeningOn_$_2(Args args)
             {
                 String nodeName = args.argv(0);
-                NodeInfo info = getInfo(nodeName, false);
+                NodeInfo info = _strict ? _config.get(nodeName) : _config.createUndefinedIfAbsent(nodeName);
                 if (info == null) {
-                    if (_strict) {
-                        throw new
-                                IllegalArgumentException("Domain not defined : " + nodeName);
-                    }
-
-                    _nodeDb.put(nodeName, info = new NodeInfo(nodeName, false));
+                    throw new IllegalArgumentException("Domain not defined : " + nodeName);
                 }
                 info.setAddress(args.argv(1).equals("none") ? null : args.argv(1));
                 try {
                     savePersistentMap();
                 } catch (Exception eee) {
                 }
-                String tmp;
-                String serial = (tmp = args.getOpt("serial")) != null ?
-                                ("-serial=" + tmp) : "";
-                return "listenOn " + serial +
+                String serial = args.getOpt("serial");
+                return "listenOn" + (serial != null ? (" -serial=" + serial) : "") +
                        " " + info.getDomainName() +
                        " " + (info.getAddress() == null ? "none" : info.getAddress());
             }
