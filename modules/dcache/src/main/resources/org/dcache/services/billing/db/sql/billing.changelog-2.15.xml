@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet id="6.5.0" author="litvinse">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="fqan" tableName="doorinfo"/>
+            </not>
+        </preConditions>
+        <comment>add fqan column to doorinfo</comment>
+        <addColumn tableName="doorinfo"><column name="fqan" type="varchar(256)"/></addColumn>
+    </changeSet>
+
+    <changeSet id="6.5.1" author="litvinse">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="fqan" tableName="billinginfo"/>
+            </not>
+        </preConditions>
+        <comment>add fqan column to billinginfo</comment>
+        <addColumn tableName="billinginfo"><column name="fqan" type="varchar(256)"/></addColumn>
+    </changeSet>
+
+    <changeSet id="6.5.2" author="litvinse">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="mappeduid" tableName="billinginfo"/>
+            </not>
+        </preConditions>
+        <comment>add mappeduid column to billinginfo</comment>
+        <addColumn tableName="billinginfo"><column name="mappeduid" type="integer"/></addColumn>
+    </changeSet>
+
+    <changeSet id="6.5.3" author="litvinse">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="mappedgid" tableName="billinginfo"/>
+            </not>
+        </preConditions>
+        <comment>add mappedgid column to billinginfo</comment>
+        <addColumn tableName="billinginfo"><column name="mappedgid" type="integer"/></addColumn>
+    </changeSet>
+
+    <changeSet id="6.5.4" author="litvinse">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists columnName="owner" tableName="billinginfo"/>
+            </not>
+        </preConditions>
+        <comment>add owner column to billinginfo</comment>
+        <addColumn tableName="billinginfo"><column name="owner" type="varchar(256)"/></addColumn>
+    </changeSet>
+
+</databaseChangeLog>

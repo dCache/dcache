@@ -60,8 +60,13 @@ documents or software obtained from this server.
 package org.dcache.services.billing.db.data;
 
 import java.util.Map;
+import java.util.Objects;
 
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
+
+import org.dcache.auth.Subjects;
+
+import static com.google.common.base.Strings.nullToEmpty;
 
 /**
  * @author arossi
@@ -76,7 +81,8 @@ public final class DoorRequestData extends PnfsConnectInfo {
                         + owner + "," + mappedUID + "," + mappedGID + ","
                         + "," + client + "," + transaction + "," + pnfsID
                         + "," + connectionTime + "," + queuedTime + ","
-                        + errorCode + "," + errorMessage + "," + path + ")";
+                        + errorCode + "," + errorMessage + "," + path + ","
+                        + nullToEmpty(fqan) + ")";
     }
 
     private String owner;
@@ -85,6 +91,7 @@ public final class DoorRequestData extends PnfsConnectInfo {
     private String client;
     private String path;
     private Long queuedTime;
+    private String fqan;
 
     public DoorRequestData() {
         queuedTime = 0L;
@@ -98,6 +105,7 @@ public final class DoorRequestData extends PnfsConnectInfo {
         mappedGID = info.getGid();
         client = info.getClient();
         path = info.getBillingPath();
+        fqan = Objects.toString(Subjects.getPrimaryFqan(info.getSubject()),null);
     }
 
     public String getOwner() {
@@ -147,6 +155,15 @@ public final class DoorRequestData extends PnfsConnectInfo {
     public void setPath(String path) {
         this.path = path;
     }
+
+    public void setFqan(String fqan) {
+        this.fqan = fqan;
+    }
+
+    public String getFqan() {
+        return fqan;
+    }
+
 
     @Override
     public Map<String, Double> data() {

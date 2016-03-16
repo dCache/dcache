@@ -59,11 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
+import javax.security.auth.Subject;
+
 import java.util.Map;
+import java.util.Objects;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
+
+import org.dcache.auth.Subjects;
+
+import static com.google.common.base.Strings.nullToEmpty;
 
 /**
  * @author arossi
@@ -82,7 +89,9 @@ public final class MoverData extends PnfsStorageInfo {
                         + transferSize + "," + storageClass + "," + isNew
                         + "," + client + "," + connectionTime + ","
                         + errorCode + "," + errorMessage + "," + protocol
-                        + "," + initiator + "," + p2p + ")";
+                        + "," + initiator + "," + p2p + ","
+                        + owner + "," + mappedUID + "," + mappedGID +","
+                        + nullToEmpty(fqan) + ")";
     }
 
     private Long transferSize;
@@ -91,6 +100,10 @@ public final class MoverData extends PnfsStorageInfo {
     private String protocol;
     private String initiator;
     private Boolean p2p;
+    private String owner;
+    private Integer mappedUID;
+    private Integer mappedGID;
+    private String fqan;
 
     public MoverData() {
         transferSize = 0L;
@@ -124,6 +137,17 @@ public final class MoverData extends PnfsStorageInfo {
 
         initiator = info.getInitiator();
         p2p = info.isP2P();
+
+        Subject subject = info.getSubject();
+        owner = Subjects.getDn(subject);
+        if (owner == null) {
+            owner = Subjects.getUserName(subject);
+        }
+        long[] gids = Subjects.getGids(subject);
+        mappedGID = (gids.length > 0) ? (int) gids[0] : -1;
+        long[] uids = Subjects.getUids(subject);
+        mappedUID = (uids.length > 0) ? (int) uids[0] : -1;
+        fqan = Objects.toString(Subjects.getPrimaryFqan(info.getSubject()),null);
     }
 
     public Long getTransferSize() {
@@ -172,6 +196,38 @@ public final class MoverData extends PnfsStorageInfo {
 
     public void setInitiator(String initiator) {
         this.initiator = initiator;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public Integer getMappedUID() {
+        return mappedUID;
+    }
+
+    public void setMappedUID(Integer mappedUID) {
+        this.mappedUID = mappedUID;
+    }
+
+    public Integer getMappedGID() {
+        return mappedGID;
+    }
+
+    public void setMappedGID(Integer mappedGID) {
+        this.mappedGID = mappedGID;
+    }
+
+    public void setFqan(String fqan) {
+        this.fqan = fqan;
+    }
+
+    public String getFqan() {
+        return fqan;
     }
 
     @Override
