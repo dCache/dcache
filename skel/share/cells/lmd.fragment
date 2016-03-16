@@ -12,5 +12,5 @@ define context lmd.defaults endDefine
 endDefine
 
 create dmg.cells.services.LocationManager lmd \
-       "!lmd.defaults ${dcache.broker.port} -strict=no -noclient -setup=${dcache.broker.cells.config}"
+       "${dcache.broker.port} -defaults=lmd.defaults -strict=no -noclient -setup=${dcache.broker.cells.config}"
 #

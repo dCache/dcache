@@ -413,6 +413,11 @@ public class CellAdapter
         return _nucleus.invokeOnMessageThread(task);
     }
 
+    protected void invokeLater(Runnable task)
+    {
+        _nucleus.invokeLater(task);
+    }
+
     /**
      *  sends a <code>CellMessage</code> along the specified path.
      *

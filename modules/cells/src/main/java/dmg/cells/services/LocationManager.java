@@ -1,39 +1,70 @@
+/*
+ * dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package dmg.cells.services;
 
+import ch.qos.logback.core.util.CloseUtil;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteSource;
+import com.google.common.io.CharStreams;
+import com.google.common.net.HostAndPort;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.NodeCache;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.apache.curator.framework.recipes.nodes.PersistentNode;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
+import javax.annotation.concurrent.Immutable;
+
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import dmg.cells.network.LocationManagerConnector;
 import dmg.cells.nucleus.CellAdapter;
@@ -42,479 +73,664 @@ import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
 import dmg.cells.services.login.LoginManager;
+import dmg.util.CommandException;
+import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
+import dmg.util.command.Option;
 
 import org.dcache.util.Args;
+import org.dcache.util.ColumnWriter;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static dmg.cells.services.LocationManager.ServerSetup.*;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Iterables.filter;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 
+/**
+ * The location manager establishes the cell communication topology.
+ *
+ * In server mode it pushes configuration information to a ZooKeeper node, while
+ * in client mode it fetches this configuration and interprets it for the local
+ * domain. A domain instructed to listen for incoming connections registers itself
+ * with ZooKeeper such that other domains can locate it.
+ */
 public class LocationManager extends CellAdapter
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(LocationManager.class);
 
-    enum ServerSetup
+    private static final String ZK_LISTENERS = "/dcache/lm/listeners";
+    private static final String ZK_CONFIG = "/dcache/lm/config";
+
+    private final RemoteLocationManagerConfig config;
+    private final ListeningDomains listeningDomains;
+    private final Server server;
+    private final Client client;
+    private final Args args;
+    private final CellNucleus nucleus;
+
+    /**
+     * A configuration of the location manager.
+     *
+     * The configuration can be serialized as a sequence of shell commands. This class
+     * is a command interpreter for such a sequence of commands.
+     *
+     * Instances are created from a versioned UTF-8 encoded representation of this
+     * serialized form. Although the input data is versioned, instances of this class
+     * are mutable. The version is not changed when the configuration is modified -
+     * the version merely represent the configuration from which the instance was
+     * originally created (e.g. to be used for optimistic locking).
+     *
+     * The class is not thread safe when mutated. It is however clonable, so the typical
+     * pattern is to clone the configuration, apply modifications to the clone and then
+     * atomically replace the original configuration (typically through ZooKeeper).
+     */
+    public static class LocationManagerConfig extends CommandInterpreter implements Cloneable
     {
-        SETUP_NONE("none"), SETUP_ERROR("error"), SETUP_AUTO("auto"), SETUP_WRITE("rw"), SETUP_RDONLY("rdonly");
+        private final int version;
+        private final Date createdAt = new Date();
+        private Map<String, NodeInfo> nodes = new HashMap<>();
 
-        private final String name;
-
-        ServerSetup(String name)
+        LocationManagerConfig()
         {
-            this.name = name;
+            version = -1;
         }
 
-        public String getName()
+        LocationManagerConfig(int version, byte[] data) throws CommandExitException
         {
-            return name;
-        }
-
-        static ServerSetup fromString(String s)
-        {
-            if (s == null) {
-                return SETUP_AUTO;
-            }
-            for (ServerSetup setup : values()) {
-                if (setup.getName().equals(s)) {
-                    return setup;
+            this.version = version;
+            try {
+                for (String s : ByteSource.wrap(data).asCharSource(StandardCharsets.UTF_8).readLines()) {
+                    command(s);
                 }
+            } catch (IOException e) {
+                Throwables.propagate(e);
             }
-            return SETUP_ERROR;
-        }
-    }
-
-    private Server _server;
-    private Client _client;
-    private final Args _args;
-    private final CellNucleus _nucleus;
-
-    private static class NodeInfo
-    {
-        private final String _domainName;
-        private final HashSet<String> _connections = new HashSet<>();
-        private final boolean _defined;
-        private String _default;
-        private boolean _listen;
-        private String _address;
-        private int _port;
-        private String _sec;
-
-        public static NodeInfo createDefined(String domainName)
-        {
-            return new NodeInfo(domainName, true);
-        }
-
-        public static NodeInfo createUndefined(String domainName)
-        {
-            return new NodeInfo(domainName, false);
-        }
-
-        private NodeInfo(String domainName, boolean defined)
-        {
-            _domainName = domainName;
-            _defined = defined;
-        }
-
-        private boolean isDefined()
-        {
-            return _defined;
-        }
-
-        private String getDomainName()
-        {
-            return _domainName;
-        }
-
-        private synchronized void setDefault(String defaultNode)
-        {
-            _default = defaultNode;
-        }
-
-        private synchronized int getConnectionCount()
-        {
-            return _connections.size();
-        }
-
-        private synchronized void add(String nodeName)
-        {
-            _connections.add(nodeName);
-        }
-
-        private synchronized void remove(String nodeName)
-        {
-            _connections.remove(nodeName);
-        }
-
-        private synchronized void setListenPort(int port)
-        {
-            _port = port;
-        }
-
-        private synchronized void setSecurity(String sec)
-        {
-            _sec = sec;
-        }
-
-        private synchronized void setListen(boolean listen)
-        {
-            _listen = listen;
-        }
-
-        private synchronized void setAddress(String address)
-        {
-            _listen = true;
-            _address = address;
-        }
-
-        private synchronized String getAddress()
-        {
-            return _address;
-        }
-
-        private synchronized String getDefault()
-        {
-            return _default;
-        }
-
-        private synchronized Collection<String> connections()
-        {
-            return new ArrayList<>(_connections);
-        }
-
-        private synchronized boolean mustListen()
-        {
-            return _listen;
-        }
-
-        private synchronized String getSecurity()
-        {
-            return _sec;
-        }
-
-        public synchronized String toWhatToDoReply(boolean strict)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append(_domainName).append(" ");
-            if (_listen) {
-                sb.append("\"l:");
-                if (_port > 0) {
-                    sb.append(_port);
-                }
-                sb.append(":");
-                if (_sec != null) {
-                    sb.append(_sec);
-                }
-                sb.append(":");
-                sb.append('"');
-                if (!strict && _address != null) {
-                    sb.append(" (").append(_address).append(")");
-                }
-            } else {
-                sb.append("nl");
-            }
-            for (String node : connections()) {
-                sb.append(" c:").append(node);
-            }
-            if (_default != null) {
-                sb.append(" d:").append(_default);
-            }
-            return sb.toString();
         }
 
         @Override
-        public String toString()
+        protected LocationManagerConfig clone()
         {
-            return toWhatToDoReply(false);
+            try {
+                LocationManagerConfig clone = (LocationManagerConfig) super.clone();
+                clone.nodes = nodes.entrySet().stream().collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+                return clone;
+            } catch (CloneNotSupportedException e) {
+                throw Throwables.propagate(e);
+            }
         }
-    }
 
-    public static class LocationManagerConfig extends CommandInterpreter
-    {
-        private final ConcurrentMap<String, NodeInfo> _nodes = new ConcurrentHashMap<>();
+        /**
+         * Returns the UTF-8 encoded form of the serialized configuration.
+         */
+        byte[] getData()
+        {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PrintWriter pw = new PrintWriter(out);
+            print(pw);
+            pw.flush();
+            return out.toByteArray();
+        }
 
-        private void print(PrintWriter pw)
+        /**
+         * Returns the ZooKeeper node version number from which ths configuration was created.
+         */
+        int getVersion()
+        {
+            return version;
+        }
+
+        void print(PrintWriter pw)
         {
             pw.println("#");
-            pw.println("# This setup was created by the LocationManager at " + (new Date().toString()));
+            pw.println("# This setup was created by the LocationManager at " + createdAt);
             pw.println("#");
-            for (NodeInfo info : _nodes.values()) {
-                synchronized (info) {
-                    pw.println("define " + info.getDomainName());
-                    if (info.mustListen()) {
-                        pw.println("listen " + info.getDomainName());
-                    }
-                    String def = info.getDefault();
-                    if (def != null) {
-                        pw.println("defaultroute " + info.getDomainName() + " " + def);
-                    }
-                    for (String node : info.connections()) {
-                        pw.println("connect " + info.getDomainName() + " " + node);
-                    }
+            for (NodeInfo info : nodes.values()) {
+                info.print(pw);
+            }
+        }
+
+        NodeInfo get(String nodeName)
+        {
+            return nodes.get(nodeName);
+        }
+
+        Collection<NodeInfo> nodes()
+        {
+            return Collections.unmodifiableCollection(nodes.values());
+        }
+
+        void reset(List<String> lines) throws IOException, CommandException
+        {
+            nodes.clear();
+            for (String line : lines) {
+                if (line.length() >= 1 && line.charAt(0) != '#') {
+                    LOGGER.info("Exec : {}", line);
+                    command(new Args(line));
                 }
             }
         }
 
-        private NodeInfo get(String nodeName)
-        {
-            return _nodes.get(nodeName);
-        }
-
-        private NodeInfo createDefinedIfAbsent(String nodeName)
-        {
-            return _nodes.computeIfAbsent(nodeName, NodeInfo::createDefined);
-        }
-
-        private NodeInfo createUndefinedIfAbsent(String nodeName)
-        {
-            return _nodes.computeIfAbsent(nodeName, NodeInfo::createUndefined);
-        }
-
-        private Collection<NodeInfo> nodes()
-        {
-            return _nodes.values();
-        }
-
-        public static final String hh_define = "<domainName>";
         public String ac_define_$_1(Args args)
         {
-            createDefinedIfAbsent(args.argv(0));
+            nodes.computeIfAbsent(args.argv(0), NodeInfo::new);
             return "";
         }
 
-        public static final String hh_undefine = "<domainName>";
         public String ac_undefine_$_1(Args args)
         {
             String nodeName = args.argv(0);
-            _nodes.remove(nodeName);
-            for (NodeInfo nodeInfo : _nodes.values()) {
-                nodeInfo.remove(nodeName);
+            nodes.remove(nodeName);
+            for (Map.Entry<String, NodeInfo> entry : nodes.entrySet()) {
+                entry.setValue(entry.getValue().removeConnection(nodeName));
             }
             return "";
         }
 
-        public static final String hh_nodefaultroute = "<sourceDomainName>";
         public String ac_nodefaultroute_$_1(Args args)
         {
-            NodeInfo info = get(args.argv(0));
-            if (info != null) {
-                info.setDefault(null);
-            }
+            nodes.computeIfPresent(args.argv(0), (domain, info) -> info.setDefault(null));
             return "";
         }
 
-        public static final String hh_defaultroute = "<sourceDomainName> <destinationDomainName>";
         public String ac_defaultroute_$_2(Args args)
         {
-            createDefinedIfAbsent(args.argv(1));
-            createDefinedIfAbsent(args.argv(0)).setDefault(args.argv(1));
+            nodes.computeIfAbsent(args.argv(1), NodeInfo::new);
+            nodes.compute(args.argv(0), createOrUpdate(n -> n.setDefault(args.argv(1))));
             return "";
         }
 
-        public static final String hh_connect = "<sourceDomainName> <destinationDomainName>";
         public String ac_connect_$_2(Args args)
         {
-            NodeInfo dest = createDefinedIfAbsent(args.argv(1));
-            dest.setListen(true);
-            createDefinedIfAbsent(args.argv(0)).add(args.argv(1));
+            nodes.compute(args.argv(1), createOrUpdate(n -> n.setListen(true)));
+            nodes.compute(args.argv(0), createOrUpdate(n -> n.addConnection(args.argv(1))));
             return "";
         }
 
-        public static final String hh_disconnect = "<sourceDomainName> <destinationDomainName>";
         public String ac_disconnect_$_2(Args args)
         {
-            NodeInfo info = get(args.argv(0));
-            if (info != null) {
-                info.remove(args.argv(1));
-            }
+            nodes.computeIfPresent(args.argv(0), (domain, info) -> info.removeConnection(args.argv(1)));
             return "";
         }
 
-        public static final String hh_listen = "<listenDomainName> [...] [-port=<portNumber>] [-security=<security>]";
         public String ac_listen_$_1_99(Args args)
         {
             int port = args.getIntOption("port", 0);
             String security = args.getOpt("security");
             for (int i = 0; i < args.argc(); i++) {
-                NodeInfo info = createDefinedIfAbsent(args.argv(i));
-                info.setListen(true);
-                if (port > 0) {
-                    info.setListenPort(port);
-                }
-                if (security != null && security.length() > 0 && !security.equalsIgnoreCase("none")) {
-                    info.setSecurity(security);
-                }
+                nodes.compute(args.argv(i), createOrUpdate(
+                        info -> {
+                            if (port > 0) {
+                                info = info.setPort(port);
+                            }
+                            if (security != null && security.length() > 0 && !security.equalsIgnoreCase("none")) {
+                                info = info.setSecurity(security);
+                            }
+                            return info.setListen(true);
+                        }));
             }
             return "";
         }
 
-        public static final String hh_unlisten = "<listenDomainName> [...]";
         public String ac_unlisten_$_1_99(Args args)
         {
             for (int i = 0; i < args.argc(); i++) {
-                NodeInfo info = get(args.argv(i));
-                if (info != null) {
-                    info.setListen(false);
-                }
+                nodes.computeIfPresent(args.argv(i), (domain, info) -> info.setListen(false));
             }
             return "";
         }
 
-        public static final String hh_clear_server = "";
-        public String ac_clear_server(Args args)
+        private BiFunction<String, NodeInfo, NodeInfo> createOrUpdate(Function<NodeInfo, NodeInfo> f)
         {
-            _nodes.clear();
-            return "";
+            return (domain, node) -> f.apply((node == null) ? new NodeInfo(domain) : node);
+        }
+
+        @Immutable
+        static class NodeInfo
+        {
+            private final String domainName;
+            private final String defaultRoute;
+            private final boolean listen;
+            private final int port;
+            private final String sec;
+            private final ImmutableList<String> connections;
+
+            NodeInfo(String domainName)
+            {
+                this(domainName, null, false, 0, null, ImmutableList.of());
+            }
+
+            NodeInfo(String domainName, String defaultRoute, boolean listen, int port, String sec,
+                     ImmutableList<String> connections)
+            {
+                this.domainName = domainName;
+                this.defaultRoute = defaultRoute;
+                this.listen = listen;
+                this.port = port;
+                this.sec = sec;
+                this.connections = connections;
+            }
+
+            String getDomainName()
+            {
+                return domainName;
+            }
+
+            NodeInfo setDefault(String defaultRoute)
+            {
+                return Objects.equals(defaultRoute, this.defaultRoute) ? this : new NodeInfo(domainName, defaultRoute, listen, port, sec, connections);
+            }
+
+            String getDefault()
+            {
+                return defaultRoute;
+            }
+
+            int getConnectionCount()
+            {
+                return connections.size();
+            }
+
+            Collection<String> connections()
+            {
+                return connections;
+            }
+
+            NodeInfo addConnection(String connection)
+            {
+                if (!connections.contains(connection)) {
+                    return new NodeInfo(domainName, defaultRoute, listen, port, sec,
+                                        ImmutableList.copyOf(concat(connections, singletonList(connection))));
+                }
+                return this;
+            }
+
+            NodeInfo removeConnection(String connection)
+            {
+                if (connections.contains(connection)) {
+                    return new NodeInfo(domainName, defaultRoute, listen, port, sec,
+                                        ImmutableList.copyOf(filter(connections, c -> !c.equals(connection))));
+                }
+                return this;
+            }
+
+            NodeInfo setPort(int port)
+            {
+                return (port == this.port) ? this : new NodeInfo(domainName, defaultRoute, listen, port, sec, connections);
+            }
+
+            int getPort()
+            {
+                return port;
+            }
+
+            NodeInfo setSecurity(String sec)
+            {
+                return Objects.equals(sec, this.sec) ? this : new NodeInfo(domainName, defaultRoute, listen, port, sec, connections);
+            }
+
+            NodeInfo setListen(boolean listen)
+            {
+                return (listen == this.listen) ? this : new NodeInfo(domainName, defaultRoute, listen, port, sec, connections);
+            }
+
+            boolean mustListen()
+            {
+                return listen;
+            }
+
+            String getSecurity()
+            {
+                return sec;
+            }
+
+            String toWhatToDoReply()
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append(domainName).append(" ");
+                if (listen) {
+                    sb.append("\"l:");
+                    if (port > 0) {
+                        sb.append(port);
+                    }
+                    sb.append(":");
+                    if (sec != null) {
+                        sb.append(sec);
+                    }
+                    sb.append(":");
+                    sb.append('"');
+                } else {
+                    sb.append("nl");
+                }
+                for (String node : connections()) {
+                    sb.append(" c:").append(node);
+                }
+                if (defaultRoute != null) {
+                    sb.append(" d:").append(defaultRoute);
+                }
+                return sb.toString();
+            }
+
+            void print(PrintWriter pw)
+            {
+                String domainName = this.domainName;
+                pw.println("define " + domainName);
+                if (listen) {
+                    pw.println("listen " + domainName);
+                }
+                String def = defaultRoute;
+                if (def != null) {
+                    pw.println("defaultroute " + domainName + " " + def);
+                }
+                for (String node : connections) {
+                    pw.println("connect " + domainName + " " + node);
+                }
+            }
         }
     }
 
-    public class Server implements Runnable
+    /**
+     * Wraps a LocationManagerConfig and keeps it up to do date with configuration
+     * stored in a ZooKeeper node.
+     *
+     * The synchronization is only happening in one direction. Any modifications
+     * to the local modification are not pushed to ZooKeeper and will be overwritten
+     * the next time the ZooKeeper node gets updated.
+     */
+    private static class RemoteLocationManagerConfig implements Closeable
     {
-        private final int _port;
-        private final DatagramSocket _socket;
-        private final Thread _worker;
-        private final boolean _strict;
+        private final NodeCache remoteConfiguration;
+
+        volatile LocationManagerConfig localConfiguration;
+
+        RemoteLocationManagerConfig(CuratorFramework client)
+        {
+            localConfiguration = new LocationManagerConfig();
+            remoteConfiguration = new NodeCache(client, ZK_CONFIG);
+            remoteConfiguration.getListenable().addListener(() -> {
+                ChildData currentData = remoteConfiguration.getCurrentData();
+                if (currentData != null) {
+                    localConfiguration =
+                            new LocationManagerConfig(currentData.getStat().getVersion(), currentData.getData());
+                } else {
+                    localConfiguration = new LocationManagerConfig();
+                }
+            });
+        }
+
+        void start() throws Exception
+        {
+            remoteConfiguration.start();
+        }
+
+        @Override
+        public void close()
+        {
+            CloseUtil.closeQuietly(remoteConfiguration);
+        }
+
+        void print(PrintWriter pw)
+        {
+            localConfiguration.print(pw);
+        }
+
+        Collection<LocationManagerConfig.NodeInfo> nodes()
+        {
+            return localConfiguration.nodes();
+        }
+
+        LocationManagerConfig.NodeInfo get(String name)
+        {
+            return localConfiguration.get(name);
+        }
+
+        LocationManagerConfig copy()
+        {
+            return localConfiguration;
+        }
+    }
+
+    @FunctionalInterface
+    private interface Update<T>
+    {
+        T apply(LocationManagerConfig config) throws Exception;
+    }
+
+    /**
+     * Represents a group of listening domains in ZooKeeper. For each
+     * listening domain the socket address is registered. May be used
+     * by non-listening domains too to learn about listening domains.
+     */
+    private static class ListeningDomains implements Closeable
+    {
+        private final String domainName;
+        private final CuratorFramework client;
+        private final PathChildrenCache listeners;
+
+        /* Only created if the local domain is a listener. */
+        private PersistentNode _listener;
+
+        ListeningDomains(String domainName, CuratorFramework client)
+        {
+            this.domainName = domainName;
+            this.client = client;
+            listeners = new PathChildrenCache(client, ZK_LISTENERS, true);
+        }
+
+        void start() throws Exception
+        {
+            listeners.start();
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            CloseableUtils.closeQuietly(listeners);
+            if (_listener != null) {
+                CloseableUtils.closeQuietly(_listener);
+            }
+        }
+
+        synchronized HostAndPort getLocalAddress()
+        {
+            return (_listener == null) ? null : toHostAndPort(_listener.getData());
+        }
+
+        synchronized void setLocalAddress(HostAndPort address) throws Exception
+        {
+            if (_listener == null) {
+                PersistentNode node = new PersistentNode(client, CreateMode.EPHEMERAL, false, pathOf(domainName), toBytes(address));
+                node.start();
+                _listener = node;
+            } else {
+                _listener.setData(toBytes(address));
+            }
+        }
+
+        HostAndPort readAddressOf(String domainName)
+        {
+            ChildData data = listeners.getCurrentData(pathOf(domainName));
+            return (data == null) ? null : toHostAndPort(data.getData());
+        }
+
+        Map<String,HostAndPort> domains()
+        {
+            return listeners.getCurrentData().stream()
+                    .collect(toMap(d -> ZKPaths.getNodeFromPath(d.getPath()), d -> toHostAndPort(d.getData())));
+        }
+
+        String pathOf(String domainName)
+        {
+            return ZKPaths.makePath(ZK_LISTENERS, domainName);
+        }
+
+        byte[] toBytes(HostAndPort address)
+        {
+            return address.toString().getBytes(StandardCharsets.US_ASCII);
+        }
+
+        HostAndPort toHostAndPort(byte[] bytes)
+        {
+            return (bytes == null) ? null : HostAndPort.fromString(new String(bytes, StandardCharsets.US_ASCII));
+        }
+    }
+
+    /**
+     * Server component of the location manager, i.e. the location manager daemon.
+     *
+     * It's main task is to provide admin shell commands to manipulate the
+     * location manager configuration and to push this configuration to ZooKeeper.
+     *
+     * For backwards compatibility is also provides a UDP server on which pre-2.16 domains
+     * main discover the location manager configuration and message brokers. We do not
+     * support pre-2.16 message brokers (aka listening domains).
+     */
+    public class Server implements Runnable, Closeable
+    {
+        private final int port;
+        private final DatagramSocket socket;
+        private final Thread worker;
+        private final boolean isStrict;
+        private final RemoteCommands remoteCommands = new RemoteCommands();
+
+        private final CuratorFramework client;
+        private final LocationManagerConfig seedConfiguration;
+
+        private File setupFile;
+
+        public Server(int port, boolean isStrict, File setupFile, LocationManagerConfig seedConfiguration)
+                throws SocketException
+        {
+            this.client = getCuratorFramework();
+            this.port = port;
+            this.isStrict = isStrict;
+            this.setupFile = setupFile;
+            this.seedConfiguration = seedConfiguration;
+
+            socket = new DatagramSocket(this.port);
+            worker = nucleus.newThread(this, "Server");
+        }
+
+        public void start()
+        {
+            createNode();
+        }
 
         /**
-         * Server
-         * -strict=yes|no         # 'yes' allows any client to register
-         * -setup=<setupFile>     # full path of setupfile
-         * -setupmode=rdonly|rw|auto   # write back the setup [def=rw]
-         * -perm=<filename>       # store registry information
+         * Creates the node in ZooKeeper unless it is already present. Will retry until
+         * it succeeds. Admin shell commands are not registered until the node has been
+         * created or is confirmed to already exist.
          */
-
-        private ServerSetup _setupMode = SETUP_NONE;
-        private String _setupFileName;
-        private File _setupFile;
-        private final RemoteCommands _remoteCommands = new RemoteCommands();
-        private final LocationManagerConfig _config = new LocationManagerConfig();
-
-        private Server(int port, Args args) throws Exception
+        private void createNode()
         {
-            _port = port;
-            addCommandListener(this);
-            addCommandListener(_remoteCommands);
-            addCommandListener(_config);
-
-            String strict = args.getOpt("strict");
-            _strict = strict == null || !strict.equals("off") && !strict.equals("no");
-
-            prepareSetup(args.getOpt("setup"), args.getOpt("setupmode"));
-            if ((_setupMode == SETUP_WRITE) || (_setupMode == SETUP_RDONLY)) {
-                execSetupFile(_setupFile);
-            }
-
-            _socket = new DatagramSocket(_port);
-            _worker = _nucleus.newThread(this, "Server");
-        }
-
-        private void prepareSetup(String setupFile, String setupMode) throws Exception
-        {
-            if ((_setupFileName = setupFile) == null) {
-                _setupMode = SETUP_NONE;
-                return;
-            }
-
-            _setupMode = ServerSetup.fromString(setupMode);
-
-            if (_setupMode == SETUP_ERROR) {
-                throw new IllegalArgumentException(
-                        "Setup error, don't understand : " + setupMode);
-            }
-
-            _setupFile = new File(_setupFileName);
-
-            boolean fileExists = _setupFile.exists();
-            boolean canWrite = _setupFile.canWrite();
-            boolean canRead = _setupFile.canRead();
-            if (fileExists && !_setupFile.isFile()) {
-                throw new IllegalArgumentException("Not a file: " + _setupFileName);
-            }
-
-            if (_setupMode == SETUP_AUTO) {
-                if (fileExists) {
-                    _setupMode = canWrite ? SETUP_WRITE : SETUP_RDONLY;
-                } else {
-                    try {
-                        _setupFile.createNewFile();
-                        _setupMode = SETUP_WRITE;
-                    } catch (IOException e) {
-                     /* This is usually a permission error.
-                      */
-                        LOGGER.debug("Failed to create {}: {}", _setupFile, e);
-                        _setupMode = SETUP_NONE;
+            try {
+                client.create().creatingParentsIfNeeded().inBackground((client, event) -> {
+                    if (event.getResultCode() == KeeperException.Code.NODEEXISTS.intValue() ||
+                        event.getResultCode() == KeeperException.Code.OK.intValue()) {
+                        addCommandListener(this);
+                        worker.start();
+                    } else {
+                        LOGGER.warn("ZooKeeper failure during {} creation [{}]", ZK_CONFIG, event.getResultCode());
+                        invokeLater(this::createNode);
                     }
-                }
-            }
-
-            switch (_setupMode) {
-            case SETUP_WRITE:
-                if (fileExists) {
-                    if (!canWrite) {
-                        throw new IllegalArgumentException("File not writeable: " +
-                                                           _setupFileName);
-                    }
-                } else {
-                    _setupFile.createNewFile();
-                }
-                break;
-            case SETUP_RDONLY:
-                if (!fileExists) {
-                    _setupMode = SETUP_NONE;
-                } else if (!canRead) {
-                    throw new IllegalArgumentException("Setup file not readable: " +
-                                                       _setupFileName);
-                }
-                break;
-            }
-
-            if (_setupMode == SETUP_NONE) {
-                _setupFileName = null;
+                }).forPath(ZK_CONFIG, seedConfiguration.getData());
+            } catch (Exception e) {
+                Throwables.propagate(e);
             }
         }
 
-        private void execSetupFile(File setupFile) throws Exception
+        /**
+         * Shutdown the server. Notice that the method will not wait
+         * for the worker thread to shut down.
+         */
+        @Override
+        public void close()
         {
-            try (BufferedReader br = new BufferedReader(new FileReader(setupFile))) {
-                try {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        if (line.length() < 1) {
-                            continue;
+            worker.interrupt();
+            socket.close();
+        }
+
+        /**
+         * Apply an update to the configuration and provide the result through a delayed reply. The
+         * updated configuration is pushed to ZooKeeper.
+         *
+         * Takes care of recreating the node and detecting hidden updates.
+         */
+        private <T extends Serializable> Reply apply(DelayedReply reply, Update<T> f)
+        {
+            LocationManagerConfig config = LocationManager.this.config.copy();
+            try {
+                T result = f.apply(config);
+                byte[] data = config.getData();
+                int version = config.getVersion();
+
+                if (version == -1) {
+                    client.create().creatingParentsIfNeeded().inBackground((client, event) -> {
+                        if (event.getResultCode() == KeeperException.Code.NODEEXISTS.intValue()) {
+                            // ZooKeeper notification ordering rules assert that localConfiguration
+                            // will have been updated by now.
+                            apply(reply, f);
+                        } else if (event.getResultCode() == KeeperException.Code.OK.intValue()) {
+                            reply.reply(result);
+                        } else {
+                            reply.reply(new CommandException("ZooKeeper failure [" + event.getResultCode() + "]"));
                         }
-                        if (line.charAt(0) == '#') {
-                            continue;
+                    }).forPath(ZK_CONFIG, data);
+                } else {
+                    client.setData().withVersion(version).inBackground((client, event) -> {
+                        if (event.getResultCode() == KeeperException.Code.NONODE.intValue() ||
+                            event.getResultCode() == KeeperException.Code.BADVERSION.intValue()) {
+                            // ZooKeeper notification ordering rules assert that localConfiguration
+                            // will have been updated by now.
+                            apply(reply, f);
+                        } else if (event.getResultCode() == KeeperException.Code.OK.intValue()) {
+                            reply.reply(result);
+                        } else {
+                            reply.reply(new CommandException("ZooKeeper failure [" + event.getResultCode() + "]"));
                         }
-                        LOGGER.info("Exec : {}", line);
-                        _config.command(new Args(line));
-                    }
-                } catch (Exception ef) {
-                    LOGGER.warn("Ups: {}", ef);
+                    }).forPath(ZK_CONFIG, data);
                 }
+            } catch (Exception e) {
+                reply.reply(e);
             }
+            return reply;
+        }
+
+        private <T extends Serializable> Reply update(Update<T> f) throws Exception
+        {
+            return apply(new DelayedReply(), f);
         }
 
         public void getInfo(PrintWriter pw)
         {
-            pw.println("         Version : $Id: LocationManager.java,v 1.15 2007-10-22 12:30:38 behrmann Exp $");
-            pw.println("      # of nodes : " + _config.nodes().size());
+            pw.println("      # of nodes : " + config.nodes().size());
+            if (setupFile != null) {
+                pw.println("      Setup file : " + setupFile);
+            }
         }
 
         @Override
         public String toString()
         {
-            return "Server:Nodes=" + _config.nodes().size();
+            return "Server:Nodes=" + config.nodes().size();
         }
 
         @Override
         public void run()
         {
+            /* Legacy UDP location manager daemon.
+             */
             DatagramPacket packet;
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     packet = new DatagramPacket(new byte[1024], 1024);
-                    _socket.receive(packet);
+                    socket.receive(packet);
                 } catch (SocketException e) {
                     if (!Thread.currentThread().isInterrupted()) {
                         LOGGER.warn("Exception in Server receive loop (exiting)", e);
@@ -526,12 +742,12 @@ public class LocationManager extends CellAdapter
                 }
                 try {
                     process(packet);
-                    _socket.send(packet);
+                    socket.send(packet);
                 } catch (Exception se) {
                     LOGGER.warn("Exception in send ", se);
                 }
             }
-            _socket.close();
+            socket.close();
         }
 
         public void process(DatagramPacket packet) throws Exception
@@ -540,304 +756,366 @@ public class LocationManager extends CellAdapter
             int datalen = packet.getLength();
             InetAddress address = packet.getAddress();
             if (datalen <= 0) {
-                LOGGER.warn("Empty Packet arrived from " + packet.getAddress());
+                LOGGER.warn("Empty Packet arrived from {}", packet.getAddress());
                 return;
             }
             String message = new String(data, 0, datalen);
-            LOGGER.info("server query : [" + address + "] " + "(" + message.length() + ") " + message);
+            LOGGER.info("server query : [{}] ({}) {}", address, message.length(), message);
             Args args = new Args(message);
-            message = args.argc() == 0 ? "" : (String) _remoteCommands.command(args);
+            message = (args.argc() == 0) ? "" : (String) remoteCommands.command(args);
 
-            LOGGER.info("server reply : " + message);
+            LOGGER.info("server reply : {}", message);
             data = message.getBytes();
             packet.setData(data);
             packet.setLength(data.length);
         }
 
-        public static final String hh_setup_define = "<filename> [-mode=rw|rdonly|auto]";
-        public String ac_setup_define_$_1(Args args) throws Exception
+        @Command(name = "define", hint = "add domain configuration",
+                description = "Add configuration of a domain.")
+        class DefineCommand implements Callable<Reply>
         {
-            String filename = args.argv(0);
-            prepareSetup(filename, args.getOpt("mode"));
-            return "setupfile (mode=" + _setupMode.getName() + ") : " + filename;
+            @Argument(usage = "A dCache domain name. An asterix may be used to add a default " +
+                              "configuration that applies to domain that have not been explicitly " +
+                              "configured.")
+            String domainName;
+
+            @CommandLine
+            Args args;
+
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_define_$_1(args));
+            }
         }
 
-        public static final String hh_setup_read = "";
-        public String ac_setup_read(Args args) throws Exception
+        @Command(name = "undefine", hint = "remove domain configuration",
+                description = "Removes configuration of a domain.")
+        class UndefineCommand implements Callable<Reply>
         {
-            if (_setupFileName == null) {
-                throw new IllegalArgumentException("Setupfile not defined");
-            }
+            @Argument(usage = "A dCache domain name.")
+            String domainName;
 
-            try {
-                execSetupFile(_setupFile);
-            } catch (Exception ee) {
-                throw new
-                        Exception("Problem in setupFile : " + ee.getMessage());
-            }
-            return "";
+            @CommandLine
+            Args args;
 
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_undefine_$_1(args));
+            }
         }
 
-        public static final String hh_setup_write = "";
-        public String ac_setup_write(Args args) throws Exception
+        @Command(name = "nodefaultroute", hint = "clear default route",
+                description = "Configures a domain not to install a default route.")
+        class NoDefaultRouteCommand implements Callable<Reply>
         {
-            if (_setupMode != SETUP_WRITE) {
-                throw new IllegalArgumentException("Setupfile not in write mode");
-            }
+            @Argument(usage = "A dCache domain name.")
+            String domainName;
 
-            File tmpFile = new File(_setupFile.getParent(), "$-" + _setupFile.getName());
-            try (PrintWriter pw = new PrintWriter(new FileWriter(tmpFile))) {
-                _config.print(pw);
-            }
-            if (!tmpFile.renameTo(_setupFile)) {
-                throw new IOException("Failed to replace setupFile");
-            }
+            @CommandLine
+            Args args;
 
-            return "";
-
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_nodefaultroute_$_1(args));
+            }
         }
 
-        public static final String hh_ls_setup = "";
-        public String ac_ls_setup(Args args)
+        @Command(name = "defaultroute", hint = "set default route",
+                description = "Configures a domain to install a default route to another domain.")
+        class DefaultRouteCommand implements Callable<Reply>
         {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            _config.print(pw);
-            pw.flush();
-            sw.flush();
-            return sw.getBuffer().toString();
+            @Argument(index = 0, usage = "A dCache domain name.")
+            String domainName;
+
+            @Argument(index = 1, usage = "dCache domain name of the default route target.")
+            String upstream;
+
+            @CommandLine
+            Args args;
+
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_defaultroute_$_2(args));
+            }
         }
 
-        public static final String hh_ls_node = "[<domainName>]";
-        public String ac_ls_node_$_0_1(Args args)
+        @Command(name = "connect", hint = "connect to another domain",
+                description = "Configures a domain to connect to another domain.")
+        class ConnectCommand implements Callable<Reply>
         {
-            if (args.argc() == 0) {
-                return _config.nodes().stream().map(Object::toString).collect(joining("\n"));
-            } else {
-                NodeInfo info = _config.get(args.argv(0));
-                if (info == null) {
-                    throw new IllegalArgumentException("Node not found : " + args.argv(0));
+            @Argument(index = 0, usage = "A dCache domain name.")
+            String doainName;
+
+            @Argument(index = 1, usage = "The name of the dCache domain to connect to.")
+            String destinationDomain;
+
+            @CommandLine
+            Args args;
+
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_connect_$_2(args));
+            }
+        }
+
+        @Command(name = "disconnect", hint = "stop connecting to another domain",
+                description = "Configures a domain not to connect to another domain.")
+        class DisconnectCommand implements Callable<Reply>
+        {
+            @Argument(index = 0, usage = "A dCache domain name.")
+            String domainName;
+
+            @Argument(index = 1, usage = "The name of the dCache domain not to connect to.")
+            String destinationDomain;
+
+            @CommandLine
+            Args args;
+
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_disconnect_$_2(args));
+            }
+        }
+
+        @Command(name = "listen", hint = "listen for cell connections",
+                description = "Configures a domain to listen for incoming cell connections.")
+        class ListenCommand implements Callable<Reply>
+        {
+            @Argument(usage = "A dCache domain name.")
+            String domainName;
+
+            @Option(name = "port", usage = "A TCP port.")
+            Integer port;
+
+            @Option(name = "security", usage = "Security settings.")
+            String sec;
+
+            @CommandLine
+            Args args;
+
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_listen_$_1_99(args));
+            }
+        }
+
+        @Command(name = "unlisten", hint = "stop listening for cell connections",
+                description = "Configures domains not to listen for incoming cell connections.")
+        class UnlistenCommand implements Callable<Reply>
+        {
+            @Argument(usage = "A dCache domain name.")
+            String[] domainName;
+
+            @CommandLine
+            Args arg;
+
+            @Override
+            public Reply call() throws Exception
+            {
+                return update(c -> c.ac_unlisten_$_1_99(args));
+            }
+        }
+
+        @Command(name = "reload", hint = "load configuration",
+                description = "Loads the setup file and resets the location manager configuration. " +
+                              "Note that the configuration is persistent in ZooKeeper and except for " +
+                              "the first time the location manage starts, issuing this command is the " +
+                              "only way to load the setup file.")
+        class ReloadCommand implements Callable<String>
+        {
+            @Option(name = "yes", required = true,
+                    usage = "Confirms that the current setup should be destroyed and replaced " +
+                            "with the one on disk.")
+            boolean confirmed;
+
+            @Override
+            public String call() throws Exception
+            {
+                checkState(setupFile != null, "Setup file is undefined.");
+                checkState(setupFile.exists(), setupFile + " does not exist.");
+                checkArgument(confirmed, "Required option is missing.");
+                update(c -> {
+                    c.reset(Files.readAllLines(setupFile.toPath(), StandardCharsets.UTF_8));
+                    return null;
+                });
+                return "";
+            }
+        }
+
+        @Command(name = "save", hint = "save configuration",
+                description = "Saves the current location manager configuration to the setup file.")
+        class SaveCommand implements Callable<String>
+        {
+            @Override
+            public String call() throws Exception
+            {
+                if (setupFile == null) {
+                    throw new IllegalStateException("Setup file is undefined.");
                 }
-                return info.toString();
+
+                File tmpFile = new File(setupFile.getParent(), "$-" + setupFile.getName());
+                try (PrintWriter pw = new PrintWriter(new FileWriter(tmpFile))) {
+                    config.print(pw);
+                }
+                if (!tmpFile.renameTo(setupFile)) {
+                    throw new IOException("Failed to write setup.");
+                }
+                return "";
             }
         }
 
-        public static final String hh_set_address = "<domainname> <address>";
-        public String ac_set_address_$_2(Args args)
+        @Command(name = "show setup", hint = "show configuration",
+                description = "Outputs the current location manager configuration. The " +
+                              "information is similar to that provided by ls node, except " +
+                              "the configuration file format is used.")
+        class ShowSetupCommand implements Callable<String>
         {
-            NodeInfo info = _config.get(args.argv(0));
-            if (info == null) {
-                throw new IllegalArgumentException("Domain not defined : " + args.argv(0));
+            @Override
+            public String call() throws Exception
+            {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                config.print(pw);
+                pw.flush();
+                sw.flush();
+                return sw.getBuffer().toString();
             }
-
-            if (!info.mustListen()) {
-                throw new IllegalArgumentException("Domain won't listen : " + args.argv(0));
-            }
-
-            info.setAddress(args.argv(1));
-            return info.toString();
         }
 
-        public static final String hh_unset_address = "<domainname>";
-        public String ac_unset_address_$_1(Args args)
+        @Command(name = "ls", hint = "list node configurations",
+                description = "Provides information on how domains must be connected.")
+        class ListCommand implements Callable<String>
         {
-            NodeInfo info = _config.get(args.argv(0));
-            if (info == null) {
-                throw new IllegalArgumentException("Domain not defined : " + args.argv(0));
+            @Option(name = "listening", usage = "Show listening domains rather than configured domains.")
+            boolean mustShowListening;
+
+            @Option(name = "v", usage = "Show listening address in addition to static configuration.")
+            boolean isVerbose;
+
+            @Override
+            public String call() throws Exception
+            {
+                ColumnWriter writer;
+                if (mustShowListening) {
+                    writer = new ColumnWriter()
+                            .header("NAME").left("name").space()
+                            .header("ADDRESS").left("address");
+                    for (Map.Entry<String, HostAndPort> entry : listeningDomains.domains().entrySet()) {
+                        writer.row()
+                                .value("name", entry.getKey())
+                                .value("address", entry.getValue());
+
+                    }
+                } else {
+                    writer = new ColumnWriter()
+                            .header("NAME").left("name").space()
+                            .header("UPSTREAM").left("default").space()
+                            .header("SECURITY").left("sec").space()
+                            .header("LISTEN").left("listen").space();
+                    if (isVerbose) {
+                        writer.header("ADDRESS").left("address").space();
+                    }
+                    writer.header("CONNECT TO").left("connect");
+                    for (LocationManagerConfig.NodeInfo info : config.nodes()) {
+                        writer.row()
+                                .value("name", info.getDomainName())
+                                .value("default", info.getDefault())
+                                .value("sec", info.getSecurity())
+                                .value("listen", info.mustListen() ? (info.getPort() == 0 ? "true" : info.getPort()) : "")
+                                .value("address", listeningDomains.readAddressOf(info.getDomainName()))
+                                .value("connect", info.connections().stream().collect(joining(",")));
+                    }
+                }
+                return writer.toString();
             }
-
-            info.setAddress(null);
-            return info.toString();
-        }
-
-        public void start()
-        {
-            _worker.start();
         }
 
         /**
-         * Shutdown the server. Notice that the method will not wait
-         * for the worker thread to shut down.
+         * Legacy UDP remote commands used for backwards compatibility with pre 2.16 pools.
+         *
+         * Maps whatToDo and whereIs commands to equivalent ZooKeeper representations.
          */
-        public void shutdown()
-        {
-            _worker.interrupt();
-            _socket.close();
-        }
-
+        @Deprecated // drop in 2.17
         public class RemoteCommands extends CommandInterpreter
         {
             public static final String hh_whatToDo = "<domainName>";
             public String ac_whatToDo_$_1(Args args)
             {
-                NodeInfo info = _config.get(args.argv(0));
+                LocationManagerConfig.NodeInfo info = config.get(args.argv(0));
                 if (info == null) {
-                    if (_strict || ((info = _config.get("*")) == null)) {
+                    if (isStrict || ((info = config.get("*")) == null)) {
                         throw new IllegalArgumentException("Domain not defined : " + args.argv(0));
                     }
 
                 }
                 String serial = args.getOpt("serial");
-                return "do" + (serial != null ? " -serial=" + serial : "") + " " + info.toWhatToDoReply(true);
+                return "do" + (serial != null ? " -serial=" + serial : "") + " " + info.toWhatToDoReply();
             }
 
             public static final String hh_whereIs = "<domainName>";
             public String ac_whereIs_$_1(Args args)
             {
-                NodeInfo info = _config.get(args.argv(0));
-                if (info == null) {
-                    throw new IllegalArgumentException("Domain not defined : " + args.argv(0));
+                String domainName = args.argv(0);
+
+                HostAndPort address = listeningDomains.readAddressOf(domainName);
+                if (address == null) {
+                    throw new IllegalArgumentException("Domain not listening: " + domainName);
                 }
+
                 StringBuilder sb = new StringBuilder();
                 sb.append("location");
                 String serial = args.getOpt("serial");
                 if (serial != null) {
                     sb.append(" -serial=").append(serial);
                 }
-                sb.append(" ").append(info.getDomainName());
-                String out = info.getAddress();
-                sb.append(" ").append(out == null ? "none" : out);
-                out = info.getSecurity();
-                if (out != null) {
-                    sb.append(" -security=\"").append(out).append("\"");
+                sb.append(" ").append(domainName);
+                sb.append(" ").append(address);
+                LocationManagerConfig.NodeInfo info = config.get(domainName);
+                if (info != null) {
+                    String security = info.getSecurity();
+                    if (security != null) {
+                        sb.append(" -security=\"").append(security).append("\"");
+                    }
                 }
 
                 return sb.toString();
             }
-
-            public static final String hh_listeningOn = "<domainName> <address>";
-            public String ac_listeningOn_$_2(Args args)
-            {
-                String nodeName = args.argv(0);
-                NodeInfo info = _strict ? _config.get(nodeName) : _config.createUndefinedIfAbsent(nodeName);
-                if (info == null) {
-                    throw new IllegalArgumentException("Domain not defined : " + nodeName);
-                }
-                info.setAddress(args.argv(1).equals("none") ? null : args.argv(1));
-                String serial = args.getOpt("serial");
-                return "listenOn" + (serial != null ? (" -serial=" + serial) : "") +
-                       " " + info.getDomainName() +
-                       " " + (info.getAddress() == null ? "none" : info.getAddress());
-            }
         }
     }
 
-    private class LocationManagerHandler implements Runnable
+    /**
+     * Client component of the location manager.
+     *
+     * Its primary task is to fetch the location manager configuration from ZooKeeper and
+     * interpret it for the local domain. This includes creating listeners, connectors
+     * and installing default routes.
+     *
+     * It provides support for listeners and connectors to register the local address and
+     * to query the address of other listeners in ZooKeeper.
+     */
+    public class Client implements Runnable
     {
-        private final DatagramSocket _socket;
-        private final ConcurrentMap<Integer, BlockingQueue<String>> _map = new ConcurrentHashMap<>();
-        private final AtomicInteger _serial = new AtomicInteger();
-        private final InetAddress _address;
-        private final int _port;
-        private final Thread _thread;
-        private final LongAdder _requestsSent = new LongAdder();
-        private final LongAdder _repliesReceived = new LongAdder();
+        private final Thread whatToDo;
+        private String toDo;
+        private int state;
 
-        /**
-         * Create a client listening on the supplied UDP port
-         *
-         * @param localPort UDP port number to which the client will bind or 0
-         *                  for a random port.
-         * @param address   location of the server
-         * @param port      port number of the server
-         * @throws SocketException if a UDP socket couldn't be created
-         */
-        private LocationManagerHandler(int localPort, InetAddress address,
-                                       int port) throws SocketException
+        Client() throws CommandExitException
         {
-            _port = port;
-            _socket = new DatagramSocket(localPort);
-            _address = address;
-            _thread = _nucleus.newThread(this, "LocationManagerHandler");
+            addCommandListener(this);
+            whatToDo = nucleus.newThread(this, "WhatToDo");
         }
 
-        public void start()
+        synchronized void boot()
         {
-            _thread.start();
-        }
-
-        public long getRequestsSent()
-        {
-            return _requestsSent.longValue();
-        }
-
-        public long getRepliesReceived()
-        {
-            return _repliesReceived.longValue();
-        }
-
-        @Override
-        public void run()
-        {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    DatagramPacket packet = new DatagramPacket(new byte[1024], 1024);
-
-                    _socket.receive(packet);
-
-                    byte[] data = packet.getData();
-                    int packLen = packet.getLength();
-
-                    if ((data == null) || (packLen == 0)) {
-                        LOGGER.warn("Zero packet received");
-                        continue;
-                    }
-
-                    Args a = new Args(new String(data, 0, packLen));
-                    String tmp = a.getOpt("serial");
-                    if (tmp == null) {
-                        LOGGER.warn("Packet didn't provide a serial number");
-                        continue;
-                    }
-
-                    Integer s = Integer.valueOf(tmp);
-                    BlockingQueue<String> b = _map.get(s);
-                    if (b == null) {
-                        LOGGER.warn("Not waiting for " + s);
-                        continue;
-                    }
-
-                    LOGGER.info("Reasonable reply arrived (" + s + ") : " + b);
-
-                    b.offer(a.toString());
-                } catch (InterruptedIOException e) {
-                    Thread.currentThread().interrupt();
-                } catch (SocketException e) {
-                    if (!Thread.currentThread().isInterrupted()) {
-                        LOGGER.warn("Receiver socket problem : " + e.getMessage());
-                    }
-                } catch (IOException e) {
-                    LOGGER.warn("Receiver IO problem : " + e.getMessage());
-                }
-            }
-            LOGGER.info("Receiver thread finished");
-        }
-
-        private String askServer(String message, long waitTime)
-                throws IOException, InterruptedException
-        {
-            _requestsSent.increment();
-
-            int serial = _serial.getAndIncrement();
-
-            String request = message + " -serial=" + serial;
-
-            LOGGER.info("Sending to {}:{}: {}", _address, _port, request);
-
-            BlockingQueue<String> b = new ArrayBlockingQueue<>(1);
-            _map.put(serial, b);
-            try {
-                byte[] data = request.getBytes();
-                _socket.send(new DatagramPacket(data, data.length, _address, _port));
-                String poll = b.poll(waitTime, TimeUnit.MILLISECONDS);
-                if (poll == null) {
-                    throw new IOException("Request timed out");
-                }
-                _repliesReceived.increment();
-                return poll;
-            } finally {
-                _map.remove(serial);
+            if (!args.hasOption("noboot")) {
+                whatToDo.start();
             }
         }
 
@@ -845,116 +1123,54 @@ public class LocationManager extends CellAdapter
          * Shutdown the client. Notice that the method will not wait
          * for the worker thread to shut down.
          */
-        public void shutdown()
+        synchronized void halt()
         {
-            _thread.interrupt();
-            _socket.close();
-        }
-    }
-
-    public class Client implements Runnable
-    {
-        private Thread _whatToDo;
-        private String _toDo;
-        private String _registered;
-        private int _state;
-        private final LongAdder _requestsReceived = new LongAdder();
-        private final LongAdder _repliesSent = new LongAdder();
-        private final LongAdder _totalExceptions = new LongAdder();
-
-        private final LocationManagerHandler _lmHandler;
-
-        private Client(InetAddress address, int port, Args args)
-                throws SocketException
-        {
-            addCommandListener(this);
-            int clientPort = args.getIntOption("clientPort", 0);
-            _lmHandler = new LocationManagerHandler(clientPort, address, port);
+            whatToDo.interrupt();
         }
 
-        public void start()
+        synchronized void getInfo(PrintWriter pw)
         {
-            _lmHandler.start();
-
-            if (!_args.hasOption("noboot")) {
-                _whatToDo = _nucleus.newThread(this, "WhatToDo");
-                _whatToDo.start();
-            }
-        }
-
-        public void getInfo(PrintWriter pw)
-        {
-            pw.println("            ToDo : " + (_state > -1 ? ("Still Busy (" + _state + ")") : _toDo));
-            pw.println("      Registered : " + (_registered == null ? "no" : _registered));
-            pw.println("RequestsReceived : " + _requestsReceived);
-            pw.println("    RequestsSent : " + _lmHandler.getRequestsSent());
-            pw.println(" RepliesReceived : " + _lmHandler.getRepliesReceived());
-            pw.println("     RepliesSent : " + _repliesSent);
-            pw.println("     Exceptions  : " + _totalExceptions);
+            HostAndPort localAddress = listeningDomains.getLocalAddress();
+            pw.println("            ToDo : " + (state > -1 ? ("Still Busy (" + state + ")") : toDo));
+            pw.println("      Registered : " + (localAddress == null ? "no" : localAddress));
         }
 
         @Override
-        public String toString()
+        public synchronized String toString()
         {
-            return "" + (_state > -1 ? ("Client<init>(" + _state + ")") : "ClientReady");
+            return "" + (state > -1 ? ("Client<init>(" + state + ")") : "ClientReady");
         }
 
-        private class BackgroundServerRequest extends DelayedReply implements Runnable
+        public synchronized String ac_where_is_$_1(Args args)
         {
-            private final String _request;
+            String domain = args.argv(0);
 
-            private BackgroundServerRequest(String request)
-            {
-                _request = request;
+            HostAndPort address = listeningDomains.readAddressOf(domain);
+            if (address == null) {
+                throw new IllegalArgumentException("Domain not listening: " + domain);
             }
 
-            @Override
-            public void run()
-            {
-                try {
-                    reply(_lmHandler.askServer(_request, 4000));
-                    _repliesSent.increment();
-                } catch (IOException | InterruptedException ee) {
-                    LOGGER.warn("Problem in 'whereIs' request : " + ee);
-                    _totalExceptions.increment();
+            LocationManagerConfig.NodeInfo info = config.get(domain);
+            StringBuilder sb = new StringBuilder();
+            sb.append("location");
+            sb.append(" ").append(domain);
+            sb.append(" ").append(address);
+
+            if (info != null) {
+                String security = info.getSecurity();
+                if (security != null) {
+                    sb.append(" -security=\"").append(security).append("\"");
                 }
             }
+            return sb.toString();
         }
 
-        public Reply ac_where_is_$_1(Args args)
+        public synchronized String ac_listening_on_$_2(Args args) throws Exception
         {
-            _requestsReceived.increment();
-            String domainName = args.argv(0);
-            BackgroundServerRequest request = new BackgroundServerRequest("whereIs " + domainName);
-            _nucleus.newThread(request, "where-is").start();
-            return request;
-        }
-
-        //
-        //
-        //  create dmg.cells.services.LocationManager lm "11111"
-        //
-        //  create dmg.cells.network.LocationMgrTunnel connect "dCache lm"
-        //
-        //  create dmg.cells.services.login.LoginManager listen
-        //                    "0 dmg.cells.network.LocationMgrTunnel -prot=raw -lm=lm"
-        //
-        public Reply ac_listening_on_$_2(Args args)
-        {
-            String portString = args.argv(1);
-
-            try {
-                _registered = InetAddress.getLocalHost().getCanonicalHostName() + ":" + portString;
-            } catch (UnknownHostException uhe) {
-                LOGGER.warn("Couldn't resolve hostname: " + uhe);
-                return null;
-            }
-            _requestsReceived.increment();
-
-            BackgroundServerRequest request = new BackgroundServerRequest(
-                    "listeningOn " + getCellDomainName() + " " + _registered);
-            _nucleus.newThread(request).start();
-            return request;
+            int port = Integer.parseInt(args.argv(1));
+            HostAndPort address = HostAndPort.fromParts(InetAddress.getLocalHost().getCanonicalHostName(), port);
+            listeningDomains.setLocalAddress(address);
+            return "";
         }
 
         private void startListener(int port, String securityContext) throws Exception
@@ -970,7 +1186,7 @@ public class LocationManager extends CellAdapter
                 protocol = securityContext;
             }
             String cellArgs = port + " " + cellClass + " " + protocol + " -lm=" + getCellName();
-            LOGGER.info(" LocationManager starting acceptor with {}", cellArgs);
+            LOGGER.info("Starting acceptor with arguments: {}", cellArgs);
             LoginManager c = new LoginManager(cellName, cellArgs);
             c.start().get();
             LOGGER.info("Created : {}", c);
@@ -980,9 +1196,9 @@ public class LocationManager extends CellAdapter
                 throws Exception
         {
             String cellName = "c-" + remoteDomain + "*";
-            String clientKey = _args.getOpt("clientKey");
+            String clientKey = args.getOpt("clientKey");
             clientKey = (clientKey != null) && (clientKey.length() > 0) ? ("-clientKey=" + clientKey) : "";
-            String clientName = _args.getOpt("clientUserName");
+            String clientName = args.getOpt("clientUserName");
             clientName = (clientName != null) && (clientName.length() > 0) ? ("-clientUserName=" + clientName) : "";
 
             String cellArgs =
@@ -999,261 +1215,174 @@ public class LocationManager extends CellAdapter
 
         private void setDefaultRoute(String domain)
         {
-            _nucleus.routeAdd(new CellRoute(null, "*@" + domain, CellRoute.DEFAULT));
+            nucleus.routeAdd(new CellRoute(null, "*@" + domain, CellRoute.DEFAULT));
         }
 
         @Override
         public void run()
         {
-            if (Thread.currentThread() == _whatToDo) {
-                runWhatToDo();
-            }
-        }
-
-        /**
-         * loop until it gets a reasonable 'what to do' list.
-         */
-        private void runWhatToDo()
-        {
-            String request = "whatToDo " + getCellDomainName();
-
             while (true) {
-                _state++;
+                synchronized (this) {
+                    state++;
+                }
 
                 try {
-                    String reply = _lmHandler.askServer(request, 5000);
-                    LOGGER.info("whatToDo got : " + reply);
-
-                    Args args = new Args(reply);
-                    if (args.argc() < 2) {
-                        throw new IllegalArgumentException("No enough arg. : " + reply);
+                    LocationManagerConfig.NodeInfo info = config.get(getCellDomainName());
+                    if (info == null) {
+                        info = config.get("*");
                     }
+                    if (info != null) {
+                        synchronized (info) {
+                            if (info.mustListen()) {
+                                startListener(info.getPort(), info.getSecurity());
+                            }
+                            for (String domain : info.connections()) {
+                                startConnector(domain);
+                            }
+                            String defaultRoute = info.getDefault();
+                            if (defaultRoute != null) {
+                                setDefaultRoute(defaultRoute);
+                            }
+                        }
 
-                    if ((!args.argv(0).equals("do")) ||
-                        (!(args.argv(1).equals(getCellDomainName()) ||
-                           args.argv(1).equals("*")))) {
-                        throw new IllegalArgumentException("Not a 'do' or not for us : " + reply);
-                    }
+                        synchronized (this) {
+                            toDo = info.toWhatToDoReply();
+                            state = -1;
+                        }
 
-                    if (args.argc() == 2) {
-                        LOGGER.info("Nothing to do for us");
+                        LOGGER.info("whatToDo finished");
                         return;
                     }
 
-                    executeToDoList(args);
-
-                    _toDo = reply;
-                    _state = -1;
-
-                    LOGGER.info("whatToDo finished");
-                    return;
+                    LOGGER.info(toDo = "whatToDo : Domain not defined: " + getCellDomainName());
                 } catch (InterruptedException ie) {
-                    LOGGER.warn(_toDo = "whatToDo : interrupted");
+                    LOGGER.warn(toDo = "whatToDo : interrupted");
                     break;
                 } catch (InterruptedIOException ie) {
-                    LOGGER.warn(_toDo = "whatToDo : interrupted(io)");
+                    LOGGER.warn(toDo = "whatToDo : interrupted(io)");
                     break;
                 } catch (Exception ee) {
-                    LOGGER.warn(_toDo = "whatToDo : exception : " + ee);
+                    LOGGER.warn(toDo = "whatToDo : exception : " + ee);
                 }
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException iie) {
-                    LOGGER.warn(_toDo = "whatToDo : interrupted sleep");
+                    LOGGER.warn(toDo = "whatToDo : interrupted sleep");
                     break;
                 }
             }
-        }
-
-        /**
-         * Gets the reply from the 'server' and can
-         * i) create a connector
-         * ii) listens to a given port
-         * iii) sets a default route
-         * <p>
-         * or all of it.
-         */
-        private void executeToDoList(Args args) throws Exception
-        {
-            for (int i = 2; i < args.argc(); i++) {
-                String arg = args.argv(i);
-
-                try {
-                    //
-                    // expected formats
-                    //   l:[<portNumber>]:[<securityContext>]
-                    //   c:<DomainName>
-                    //   d:<DomainName>
-                    //
-                    if (arg.startsWith("l")) {
-                        int port = 0;
-                        StringTokenizer st = new StringTokenizer(arg, ":");
-                        //
-                        // get rid of the 'l'
-                        //
-                        st.nextToken();
-                        //
-                        // get the port if availble
-                        //
-                        if (st.hasMoreTokens()) {
-                            String tmp = st.nextToken();
-                            if (tmp.length() > 0) {
-                                try {
-                                    port = Integer.parseInt(tmp);
-                                } catch (Exception e) {
-                                    LOGGER.warn("Got illegal port numnber <" + arg + ">, using random");
-                                }
-                            }
-                        }
-                        //
-                        // get the security context
-                        //
-                        String securityContext = null;
-                        if (st.hasMoreTokens()) {
-                            securityContext = st.nextToken();
-                        }
-
-                        startListener(port, securityContext);
-                    } else if ((arg.length() > 2) && arg.startsWith("c:")) {
-
-                        startConnector(arg.substring(2));
-                    } else if ((arg.length() > 2) && arg.startsWith("d:")) {
-                        setDefaultRoute(arg.substring(2));
-                    }
-                } catch (InterruptedIOException | InterruptedException ioee) {
-                    throw ioee;
-                } catch (Exception ee) {
-                    LOGGER.warn("Command >" + arg + "< received : " + ee);
-                }
-            }
-
-        }
-
-        /**
-         * Shutdown the client. Notice that the method will not wait
-         * for the worker thread to shut down.
-         */
-        public void shutdown()
-        {
-            _lmHandler.shutdown();
         }
     }
 
     /**
-     * Usage : ... [<host>] <port> -noclient [-clientPort=<UDP port number> | random]
-     * Server Options : -strict=[yes|no] -perm=<helpFilename> -setup=<setupFile>
+     * Usage : ... [<port>] -noclient
+     * Server Options : -strict=[yes|no] -setup=<setupFile>
      */
-    public LocationManager(String name, String args)
+    public LocationManager(String name, String args) throws CommandException, IOException
     {
         super(name, "System", args);
-        _args = getArgs();
-        _nucleus = getNucleus();
+
+        this.args = getArgs();
+        nucleus = getNucleus();
+
+        checkArgument(this.args.argc() <= 1, "Usage : ... [<port>] [-noclient]");
+
+        config = new RemoteLocationManagerConfig(getCuratorFramework());
+        listeningDomains = new ListeningDomains(getCellDomainName(), getCuratorFramework());
+
+        if (this.args.argc() == 0) {
+            server = null;
+        } else {
+            // Determine setup mode
+            String setupFileName = this.args.getOpt("setup");
+            File setupFile = (setupFileName == null) ? null : new File(setupFileName);
+
+            // Load default configuration
+            LocationManagerConfig seedConfiguration = new LocationManagerConfig();
+            String defaults = this.args.getOption("defaults");
+            if (defaults != null) {
+                try {
+                    seedConfiguration.reset(CharStreams.readLines(getDomainContextReader(defaults)));
+                    LOGGER.info("Loaded default configuration from context {}.", defaults);
+                } catch (FileNotFoundException e) {
+                    LOGGER.error("Default context {} is undefined.", defaults);
+                }
+            }
+
+            // Load configuration file
+            if (setupFile != null && setupFile.exists()) {
+                seedConfiguration.reset(Files.readAllLines(setupFile.toPath(), StandardCharsets.UTF_8));
+                LOGGER.info("Loaded setup file {}.", setupFile);
+            }
+
+            // Create server
+            int port = Integer.parseInt(this.args.argv(0));
+            String strict = this.args.getOpt("strict");
+            boolean isStrict = strict == null || !strict.equals("off") && !strict.equals("no");
+
+            server = new Server(port, isStrict, setupFile, seedConfiguration);
+        }
+
+        client = this.args.hasOption("noclient") ? null : new Client();
     }
 
     @Override
     protected void startUp() throws Exception
     {
-        int port;
-        InetAddress host;
-        checkArgument(_args.argc() >= 1, "Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number>]");
-
-        if (_args.argc() == 1) {
-            //
-            // we are a server and a client
-            //
-            port = Integer.parseInt(_args.argv(0));
-            host = InetAddress.getLoopbackAddress();
-            _server = new Server(port, _args);
-            LOGGER.info("Server Setup Done");
-        } else {
-            port = Integer.parseInt(_args.argv(1));
-            host = InetAddress.getByName(_args.argv(0));
-        }
-        if (!_args.hasOption("noclient")) {
-            _client = new Client(host, port, _args);
-            LOGGER.info("Client started");
-        }
+        config.start();
+        listeningDomains.start();
     }
 
     @Override
     protected void started()
     {
-        if (_server != null) {
-            _server.start();
+        if (server != null) {
+            server.start();
+            LOGGER.info("Server Setup Done");
         }
-
-        if (_client != null) {
-            _client.start();
-        }
-    }
-
-    @Override
-    public void getInfo(PrintWriter pw)
-    {
-        if (_client != null) {
-            pw.println("Client\n--------");
-            _client.getInfo(pw);
-        }
-        if (_server != null) {
-            pw.println("Server\n--------");
-            _server.getInfo(pw);
+        if (client != null) {
+            client.boot();
+            LOGGER.info("Client started");
         }
     }
 
     @Override
     public void cleanUp()
     {
-        if (_server != null) {
-            _server.shutdown();
+        if (server != null) {
+            server.close();
         }
-        if (_client != null) {
-            _client.shutdown();
+        if (client != null) {
+            client.halt();
+        }
+        CloseableUtils.closeQuietly(listeningDomains);
+        CloseableUtils.closeQuietly(config);
+    }
+
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        if (client != null) {
+            pw.println("Client\n--------");
+            client.getInfo(pw);
+        }
+        if (server != null) {
+            pw.println("Server\n--------");
+            server.getInfo(pw);
         }
     }
 
     @Override
     public String toString()
     {
-        StringBuilder sb = new StringBuilder();
-        if (_client != null) {
-            sb.append(_client.toString()).
-                    append(_server != null ? ";" : "");
+        if (client != null && server != null) {
+            return client + ";" + server;
+        } else if (client != null) {
+            return client.toString();
+        } else if (server != null) {
+            return server.toString();
+        } else {
+            return "";
         }
-        if (_server != null) {
-            sb.append(_server.toString());
-        }
-        return sb.toString();
-    }
-
-    static class XXClient
-    {
-        XXClient(InetAddress address, int port, String message) throws Exception
-        {
-            byte[] data = message.getBytes();
-            DatagramPacket packet =
-                    new DatagramPacket(data, data.length, address, port);
-
-            DatagramSocket socket = new DatagramSocket();
-
-            socket.send(packet);
-            packet = new DatagramPacket(new byte[1024], 1024);
-            socket.receive(packet);
-            data = packet.getData();
-            System.out.println(new String(data, 0, data.length));
-        }
-    }
-
-    public static void main(String[] args) throws Exception
-    {
-        if (args.length < 3) {
-            throw new
-                    IllegalArgumentException("Usage : ... <host> <port> <message>");
-        }
-        InetAddress address = InetAddress.getByName(args[0]);
-        int port = Integer.parseInt(args[1]);
-        String message = args[2];
-
-        new XXClient(address, port, message);
-        System.exit(0);
     }
 }

@@ -1,5 +1,6 @@
 package dmg.cells.network;
 
+import com.google.common.net.HostAndPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,13 +101,9 @@ public class LocationManagerConnector
             throw new IOException("Invalid reply from location manager: " + reply);
         }
 
-        String[] s = reply.argv(2).split(":");
-        if (s.length != 2) {
-            throw new IOException("Invalid address: " + reply.argv(2));
-        }
+        HostAndPort hostAndPort = HostAndPort.fromString(reply.argv(2));
         InetSocketAddress address =
-            new InetSocketAddress(s[0], Integer.parseInt(s[1]));
-
+            new InetSocketAddress(hostAndPort.getHostText(), hostAndPort.getPort());
 
         setStatus("Connecting to " + address);
         Socket socket;

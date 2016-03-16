@@ -6,6 +6,5 @@ exec file:${dcache.paths.share}/cells/lmd.fragment -ifok
 onerror shutdown
 
 create dmg.cells.services.RoutingManager  RoutingMgr
-create dmg.cells.services.LocationManager lm \
-      "${dcache.broker.host} ${dcache.broker.port} -clientPort=${dcache.broker.client.port}"
+create dmg.cells.services.LocationManager lm
 
