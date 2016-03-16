@@ -356,7 +356,6 @@ public class LoginManager
     //
     private class AsynchronousLocationRegistrationTask implements CellMessageAnswerable, Runnable
     {
-        private final CellMessage _msg;
         private final int _port;
         private final CellPath _path;
 
@@ -364,14 +363,14 @@ public class LoginManager
         {
             _port = _listenThread.getListenPort();
             _path = new CellPath(dest);
-            _msg = new CellMessage(_path, "listening on " + getCellName() + " " + _port);
         }
 
         @Override
         public void run()
         {
             LOGGER.info("Sending 'listening on {} {}'", getCellName(), _port);
-            sendMessage(_msg, this, MoreExecutors.directExecutor(), 5000);
+            sendMessage(new CellMessage(_path, "listening on " + getCellName() + " " + _port),
+                        this, MoreExecutors.directExecutor(), 5000);
         }
 
         @Override
