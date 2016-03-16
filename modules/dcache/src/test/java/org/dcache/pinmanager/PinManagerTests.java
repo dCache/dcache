@@ -678,12 +678,6 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
     }
 
     @Override
-    public CellInfo getCellInfo()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Map<String,Object> getDomainContext()
     {
         throw new UnsupportedOperationException();

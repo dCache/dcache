@@ -65,13 +65,10 @@ import javax.security.auth.Subject;
 import javax.sql.DataSource;
 
 import java.net.InetSocketAddress;
+import java.security.AccessController;
 import java.util.EnumSet;
 import java.util.Set;
-import java.security.AccessController;
-
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellMessageSender;
+import java.util.function.Supplier;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -81,6 +78,9 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.ProtocolInfo;
+
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
@@ -98,12 +98,12 @@ import org.dcache.vehicles.FileAttributes;
  *
  * @author arossi
  */
-public class DCacheAwareJdbcFs extends JdbcFs implements CellMessageSender {
+public class DCacheAwareJdbcFs extends JdbcFs implements CellInfoAware {
     private CellStub poolManagerStub;
     private CellStub pinManagerStub;
     private CellStub billingStub;
     private PnfsHandler pnfsHandler;
-    private CellEndpoint endpoint;
+    private Supplier<CellInfo> infoSupplier;
 
     public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) throws ChimeraFsException
     {
@@ -132,8 +132,8 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellMessageSender {
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint) {
-        this.endpoint = endpoint;
+    public void setCellInfoSupplier(Supplier<CellInfo> supplier) {
+        infoSupplier = supplier;
     }
 
     @Override
@@ -179,7 +179,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellMessageSender {
     public void remove(FsInode directory, String name, FsInode inode) throws ChimeraFsException {
 
         super.remove(directory, name, inode);
-        CellInfo cellInfo = endpoint.getCellInfo();
+        CellInfo cellInfo = infoSupplier.get();
         Subject subject = Subject.getSubject(AccessController.getContext());
         DoorRequestInfoMessage infoRemove
                 = new DoorRequestInfoMessage(cellInfo.getCellName() + "@"

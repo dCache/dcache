@@ -11,12 +11,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
 
-import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.commons.util.NDC;
 import org.dcache.util.FireAndForgetTask;
 
@@ -25,7 +25,7 @@ import org.dcache.util.FireAndForgetTask;
  * StateUpdate objects independently of whichever Thread created them. It is
  * also responsible for purging those metrics that have expired.
  */
-public class StateMaintainer implements StateUpdateManager, CellMessageSender
+public class StateMaintainer implements StateUpdateManager, CellInfoAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(StateMaintainer.class);
 
@@ -64,9 +64,9 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
+    public void setCellInfoSupplier(Supplier<CellInfo> supplier)
     {
-        CellInfo info = endpoint.getCellInfo();
+        CellInfo info = supplier.get();
         _domainName = info.getDomainName();
         _cellName = info.getCellName();
     }

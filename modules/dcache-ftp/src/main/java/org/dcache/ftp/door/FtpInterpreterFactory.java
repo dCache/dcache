@@ -19,12 +19,14 @@ package org.dcache.ftp.door;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import diskCacheV111.doors.LineBasedInterpreter;
 import diskCacheV111.doors.LineBasedInterpreterFactory;
 import diskCacheV111.util.ConfigurationException;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -45,7 +47,8 @@ public abstract class FtpInterpreterFactory implements LineBasedInterpreterFacto
     }
 
     @Override
-    public LineBasedInterpreter create(CellEndpoint endpoint, StreamEngine engine, Executor executor) throws Exception
+    public LineBasedInterpreter create(CellEndpoint endpoint, Supplier<CellInfo> supplier,
+            StreamEngine engine, Executor executor) throws Exception
     {
         AbstractFtpDoorV1 interpreter = createInterpreter();
         interpreter.setSettings(settings);
@@ -54,6 +57,7 @@ public abstract class FtpInterpreterFactory implements LineBasedInterpreterFacto
         interpreter.setLocalSocketAddress((InetSocketAddress) engine.getSocket().getLocalSocketAddress());
         interpreter.setExecutor(executor);
         interpreter.setCellEndpoint(endpoint);
+        interpreter.setCellInfoSupplier(supplier);
         interpreter.init();
         return interpreter;
     }

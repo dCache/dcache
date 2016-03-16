@@ -2,6 +2,7 @@ package dmg.cells.nucleus;
 
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.dcache.util.Args;
 
@@ -9,10 +10,12 @@ public class AbstractCellComponent
     implements CellInfoProvider,
         CellSetupProvider,
         CellMessageSender,
-        CellLifeCycleAware
+        CellLifeCycleAware,
+        CellInfoAware
 {
     private CellEndpoint _endpoint;
     private CellAddressCore _cellAddress;
+    private Supplier<CellInfo> _cellInfoSupplier;
 
     /**
      * Implements CellInfoProvider interface.
@@ -66,8 +69,6 @@ public class AbstractCellComponent
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         _endpoint = endpoint;
-        CellInfo cellInfo = _endpoint.getCellInfo();
-        _cellAddress = new CellAddressCore(cellInfo.getCellName(), cellInfo.getDomainName());
     }
 
     /**
@@ -101,7 +102,7 @@ public class AbstractCellComponent
      */
     protected CellInfo getCellInfo()
     {
-        return _endpoint.getCellInfo();
+        return _cellInfoSupplier.get();
     }
 
     /**
@@ -145,5 +146,13 @@ public class AbstractCellComponent
     protected Args getArgs()
     {
         return _endpoint.getArgs();
+    }
+
+    @Override
+    public void setCellInfoSupplier(Supplier<CellInfo> supplier)
+    {
+        _cellInfoSupplier = supplier;
+        CellInfo cellInfo = supplier.get();
+        _cellAddress = new CellAddressCore(cellInfo.getCellName(), cellInfo.getDomainName());
     }
 }

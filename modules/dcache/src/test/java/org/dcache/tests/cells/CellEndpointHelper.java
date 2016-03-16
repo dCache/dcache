@@ -37,12 +37,6 @@ import static com.google.common.base.Preconditions.checkState;
 public class CellEndpointHelper implements CellEndpoint
 {
     private volatile CellStubHelper _test;
-    private final String _cellName;
-
-    public CellEndpointHelper(String cellName)
-    {
-        _cellName = cellName;
-    }
 
     public void execute(CellStubHelper test) throws Exception
     {
@@ -86,15 +80,6 @@ public class CellEndpointHelper implements CellEndpoint
             throws SerializationException
     {
         sendMessage(envelope, callback, executor, timeout);
-    }
-
-    @Override
-    public CellInfo getCellInfo()
-    {
-        CellInfo info = new CellInfo();
-        info.setDomainName("test");
-        info.setCellName(_cellName);
-        return info;
     }
 
     @Override

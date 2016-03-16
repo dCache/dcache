@@ -1498,6 +1498,7 @@ public final class Storage
                                            config.getPath(surl).toString(),
                                            removeFileCallback,
                                            _pnfsStub,
+                                           getCellInfo(),
                                            getCellEndpoint(),
                                            _executor);
         } catch (SRMAuthorizationException | SRMInvalidPathException e) {
@@ -1516,6 +1517,7 @@ public final class Storage
                                            config.getPath(surl).toString(),
                                            callbacks,
                                            _pnfsStub,
+                                           getCellInfo(),
                                            getCellEndpoint(),
                                            _executor);
         } catch (SRMInvalidPathException e) {

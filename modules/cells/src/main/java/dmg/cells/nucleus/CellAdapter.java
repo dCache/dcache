@@ -471,7 +471,6 @@ public class CellAdapter
         return _version;
     }
 
-    @Override
     public CellInfo getCellInfo() { return _nucleus.getCellInfo(); }
     /**
      * has to be overwritten to receive arriving messages.

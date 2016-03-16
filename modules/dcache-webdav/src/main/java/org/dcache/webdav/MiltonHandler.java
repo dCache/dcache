@@ -4,7 +4,9 @@ import io.milton.http.Auth;
 import io.milton.http.HttpManager;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
+
 import org.dcache.auth.Subjects;
+
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -18,12 +20,15 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
+import java.util.function.Supplier;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
 
 import dmg.cells.nucleus.CellMessageSender;
+
 import org.dcache.util.Transfer;
 
 /**
@@ -32,7 +37,7 @@ import org.dcache.util.Transfer;
  */
 public class MiltonHandler
     extends AbstractHandler
-    implements CellMessageSender
+    implements CellMessageSender, CellInfoAware
 {
     private HttpManager _httpManager;
     private String _cellName;
@@ -47,10 +52,15 @@ public class MiltonHandler
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
-        CellInfo info = endpoint.getCellInfo();
+        _isNameSiteUnique = endpoint.getArgs().getBooleanOption("export");
+    }
+
+    @Override
+    public void setCellInfoSupplier(Supplier<CellInfo> supplier)
+    {
+        CellInfo info = supplier.get();
         _cellName = info.getCellName();
         _domainName = info.getDomainName();
-        _isNameSiteUnique = endpoint.getArgs().getBooleanOption("export");
     }
 
     @Override

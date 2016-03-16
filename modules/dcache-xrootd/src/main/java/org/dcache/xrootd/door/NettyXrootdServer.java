@@ -28,12 +28,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import diskCacheV111.util.FsPath;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.util.TimebasedCounter;
 
@@ -49,7 +51,7 @@ import org.dcache.xrootd.protocol.XrootdProtocol;
  * Netty based xrootd redirector. Could possibly be replaced by pure
  * spring configuration once we move to Netty 3.1.
  */
-public class NettyXrootdServer implements CellMessageSender
+public class NettyXrootdServer implements CellMessageSender, CellInfoAware
 {
     private static final Logger _log =
         LoggerFactory.getLogger(NettyXrootdServer.class);
@@ -71,6 +73,8 @@ public class NettyXrootdServer implements CellMessageSender
     private EventLoopGroup _acceptGroup;
     private EventLoopGroup _socketGroup;
     private Map<String, String> _queryConfig;
+    private boolean _isNameSiteUnique;
+    private CellInfo _info;
 
     public int getPort()
     {
@@ -125,13 +129,13 @@ public class NettyXrootdServer implements CellMessageSender
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
-        CellInfo info = endpoint.getCellInfo();
-        boolean isNameSiteUnique = endpoint.getArgs().getBooleanOption("export");
-        if (isNameSiteUnique) {
-            sessionPrefix = "door:" + info.getCellName() + ":";
-        } else {
-            sessionPrefix = "door:" + info.getCellName() + "@" + info.getDomainName() + ":";
-        }
+        _isNameSiteUnique = endpoint.getArgs().getBooleanOption("export");
+    }
+
+    @Override
+    public void setCellInfoSupplier(Supplier<CellInfo> supplier)
+    {
+        _info = supplier.get();
     }
 
     @Required
@@ -178,6 +182,12 @@ public class NettyXrootdServer implements CellMessageSender
 
     public void start()
     {
+        if (_isNameSiteUnique) {
+            sessionPrefix = "door:" + _info.getCellName() + ":";
+        } else {
+            sessionPrefix = "door:" + _info.getCellName() + "@" + _info.getDomainName() + ":";
+        }
+
         _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-listen-%d").build()));
         _socketGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-net-%d").build()));
 

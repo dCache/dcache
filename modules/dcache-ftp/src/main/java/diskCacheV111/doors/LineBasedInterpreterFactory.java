@@ -18,10 +18,12 @@
 package diskCacheV111.doors;
 
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 import diskCacheV111.util.ConfigurationException;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -29,5 +31,6 @@ import org.dcache.util.Args;
 public interface LineBasedInterpreterFactory
 {
     void configure(Args args) throws ConfigurationException;
-    LineBasedInterpreter create(CellEndpoint endpoint, StreamEngine engine, Executor executor) throws Exception;
+    LineBasedInterpreter create(CellEndpoint endpoint, Supplier<CellInfo> supplier,
+            StreamEngine engine, Executor executor) throws Exception;
 }

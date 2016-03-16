@@ -89,16 +89,6 @@ public interface CellEndpoint
             throws SerializationException;
 
     /**
-     * Provides information about the host cell.
-     *
-     * Depending on the cell, a subclass of CellInfo with additional
-     * information may be returned instead.
-     *
-     * @return The cell information encapsulated in a CellInfo object.
-     */
-    CellInfo getCellInfo();
-
-    /**
      * Returns the domain context. The domain context is shared by all
      * cells in a domain.
      */

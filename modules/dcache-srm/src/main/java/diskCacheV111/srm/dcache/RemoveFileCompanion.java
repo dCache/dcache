@@ -111,15 +111,18 @@ public class RemoveFileCompanion
     private final RemoveFileCallback _callback;
     private final String _path;
     private final CellEndpoint _endpoint;
+    private final CellInfo _info;
 
     private RemoveFileCompanion(Subject subject,
                                 String path,
                                 RemoveFileCallback callbacks,
+                                CellInfo info,
                                 CellEndpoint endpoint)
     {
         _subject = subject;
         _path = path;
         _callback = callbacks;
+        _info = info;
         _endpoint = endpoint;
     }
 
@@ -127,11 +130,12 @@ public class RemoveFileCompanion
                                   String path,
                                   RemoveFileCallback callbacks,
                                   CellStub pnfsStub,
+                                  CellInfo info,
                                   CellEndpoint endpoint,
                                   Executor executor)
     {
         RemoveFileCompanion companion =
-            new RemoveFileCompanion(subject, path, callbacks, endpoint);
+            new RemoveFileCompanion(subject, path, callbacks, info, endpoint);
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
@@ -187,10 +191,9 @@ public class RemoveFileCompanion
 
     private void sendRemoveInfoToBilling(PnfsId pnfsid)
     {
-        CellInfo info = _endpoint.getCellInfo();
         DoorRequestInfoMessage msg =
-            new DoorRequestInfoMessage(info.getCellName() + "@" +
-                                       info.getDomainName(), "remove");
+            new DoorRequestInfoMessage(_info.getCellName() + "@" +
+                                       _info.getDomainName(), "remove");
         msg.setSubject(_subject);
         msg.setBillingPath(_path);
         msg.setPnfsId(pnfsid);

@@ -272,16 +272,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         return "SM="+_spaceMonitorHandler+";S="+_status;
     }
 
-    protected String getCellName()
-    {
-        return _cell.getCellInfo().getCellName();
-    }
-
-    protected String getCellDomainName()
-    {
-        return _cell.getCellInfo().getDomainName();
-    }
-
     @Override
     public void runIO(FileAttributes fileAttributes,
                       RepositoryChannel  fileChannel,

@@ -2,6 +2,8 @@ package diskCacheV111.vehicles;
 
 import javax.security.auth.Subject;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 import org.dcache.auth.Subjects;
 
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage
@@ -13,9 +15,19 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     private static final long serialVersionUID = 2469895982145157834L;
     private String _transferPath;
 
+    public DoorRequestInfoMessage(CellAddressCore address)
+    {
+        this(address.getCellName() + "@" + address.getCellDomainName());
+    }
+
     public DoorRequestInfoMessage(String cellName)
     {
         super("request", "door", cellName, null);
+    }
+
+    public DoorRequestInfoMessage(CellAddressCore address, String action)
+    {
+        this(address.getCellName() + "@" + address.getCellDomainName(), action);
     }
 
     public DoorRequestInfoMessage(String cellName, String action)

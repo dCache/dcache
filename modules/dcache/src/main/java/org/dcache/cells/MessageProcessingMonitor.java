@@ -9,7 +9,6 @@ import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageSender;
@@ -154,12 +153,6 @@ public class MessageProcessingMonitor
                 throws SerializationException
         {
             throw new UnsupportedOperationException("Cannot use callback for reply");
-        }
-
-        @Override
-        public CellInfo getCellInfo()
-        {
-            return _endpoint.getCellInfo();
         }
 
         @Override

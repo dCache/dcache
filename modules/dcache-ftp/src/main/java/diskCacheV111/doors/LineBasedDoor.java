@@ -77,7 +77,7 @@ public class LineBasedDoor
 
         LOGGER.debug("Client host: {}", engine.getInetAddress().getHostAddress());
 
-        interpreter = factory.create(this, engine, executor);
+        interpreter = factory.create(this, this::getCellInfo, engine, executor);
         if (interpreter instanceof CellCommandListener) {
             addCommandListener(interpreter);
         }

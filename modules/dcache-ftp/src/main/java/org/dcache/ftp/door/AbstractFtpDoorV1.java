@@ -123,6 +123,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -154,6 +155,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -284,7 +286,7 @@ class FTPCommandException extends Exception
 }
 
 public abstract class AbstractFtpDoorV1
-        implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener, CellInfoProvider, CellMessageSender
+        implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener, CellInfoProvider, CellMessageSender, CellInfoAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
@@ -1096,7 +1098,12 @@ public abstract class AbstractFtpDoorV1
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         _cellEndpoint = endpoint;
-        CellInfo cellInfo = _cellEndpoint.getCellInfo();
+    }
+
+    @Override
+    public void setCellInfoSupplier(Supplier<CellInfo> infoProvider)
+    {
+        CellInfo cellInfo = infoProvider.get();
         _cellAddress = new CellAddressCore(cellInfo.getCellName(), cellInfo.getDomainName());
     }
 

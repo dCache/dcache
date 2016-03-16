@@ -31,6 +31,7 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
+import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.namespace.FileAttribute;
@@ -102,6 +103,7 @@ public class RepositorySubsystemTest
         new LinkedBlockingQueue<>();
 
     private CellEndpointHelper cell;
+    private final CellInfo info = new CellInfo("pool", "test");
 
     private void createFile(File file, long size)
         throws IOException
@@ -185,6 +187,7 @@ public class RepositorySubsystemTest
 
         allocator.setAccount(account);
         repository.setCellEndpoint(cell);
+        repository.setCellInfoSupplier(() -> info);
         repository.setAllocator(allocator);
         repository.setPnfsHandler(pnfs);
         repository.setAccount(account);
@@ -235,7 +238,7 @@ public class RepositorySubsystemTest
             throw new IOException("Could not create meta dir");
         }
 
-        cell = new CellEndpointHelper("pool");
+        cell = new CellEndpointHelper();
         pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
         pnfs.setCellEndpoint(cell);
 

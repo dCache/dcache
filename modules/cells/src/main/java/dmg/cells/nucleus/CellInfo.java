@@ -28,6 +28,12 @@ public class CellInfo implements Serializable {
   private static final String [] _stateNames =
      { "Initial" , "Active" , "Removing" , "Dead" , "Unknown" } ;
   public CellInfo(){}
+
+  public CellInfo(String cellName, String domainName) {
+      _cellName = cellName;
+      _domainName = domainName;
+  }
+
   public CellInfo( CellInfo info ){
      _cellName       = info._cellName ;
      _cellType       = info._cellType ;

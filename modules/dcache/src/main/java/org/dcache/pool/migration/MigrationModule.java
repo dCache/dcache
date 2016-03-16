@@ -21,6 +21,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,7 +39,9 @@ import dmg.util.command.Option;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessageReceiver;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.repository.CacheEntry;
@@ -145,9 +148,9 @@ public class MigrationModule
     private int _counter = 1;
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
+    public void setCellInfoSupplier(Supplier<CellInfo> supplier)
     {
-        super.setCellEndpoint(endpoint);
+        super.setCellInfoSupplier(supplier);
         _context.setPoolName(getCellName());
     }
 

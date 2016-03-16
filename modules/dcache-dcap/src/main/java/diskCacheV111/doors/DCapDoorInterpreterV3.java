@@ -155,6 +155,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private final PrintWriter _out          ;
     private final CellEndpoint _cell        ;
+    private final CellAddressCore _cellAddress;
     private final Args        _args         ;
     private String      _ourName     = "server" ;
     private final ConcurrentMap<Integer,SessionHandler> _sessions =
@@ -243,11 +244,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private boolean _isRetentionPolicyOverwriteAllowed;
     private final Restriction _doorRestriction;
 
-    public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw,
+    public DCapDoorInterpreterV3(CellEndpoint cell, CellAddressCore address, PrintWriter pw,
             Subject subject, InetAddress clientAddress)
     {
         _out  = pw ;
         _cell = cell ;
+        _cellAddress = address;
         _args = cell.getArgs();
         _authenticatedSubject = new Subject(true,
                                             subject.getPrincipals(),
@@ -756,8 +758,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     public static final String hh_get_door_info = "[-binary]" ;
     public Object ac_get_door_info( Args args ){
-        IoDoorInfo info = new IoDoorInfo( _cell.getCellInfo().getCellName() ,
-        _cell.getCellInfo().getDomainName() ) ;
+        IoDoorInfo info = new IoDoorInfo(_cellAddress);
         info.setProtocol("dcap","3");
         info.setOwner(String.valueOf(_uid));
         info.setProcess(_pid);
@@ -834,9 +835,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _commandId = commandId ;
             _vargs     = args ;
 
-            _info      = new DoorRequestInfoMessage(
-            _cell.getCellInfo().getCellName()+"@"+
-            _cell.getCellInfo().getDomainName() ) ;
+            _info = new DoorRequestInfoMessage(DCapDoorInterpreterV3.this._cellAddress);
 
             _ioHandlerQueue = args.getOpt("io-queue") ;
             _ioHandlerQueue = (_ioHandlerQueue == null ) || ( _ioHandlerQueue.length() == 0 ) ?
@@ -1359,10 +1358,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         private void sendRemoveInfoToBilling(FileAttributes attributes, String path)
         {
-            CellInfo cellInfo = _cell.getCellInfo();
             DoorRequestInfoMessage infoRemove =
-                new DoorRequestInfoMessage(cellInfo.getCellName() + "@"
-                                           + cellInfo.getDomainName(), "remove");
+                new DoorRequestInfoMessage(DCapDoorInterpreterV3.this._cellAddress, "remove");
             infoRemove.setSubject(_subject);
             infoRemove.setPnfsId(attributes.getPnfsId());
             infoRemove.setFileSize(attributes.getSizeIfPresent().or(0L));
@@ -1600,8 +1597,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             super( sessionId , commandId , args, false, true ) ;
 
-            _info = new DoorRequestInfoMessage(
-                    _cell.getCellInfo().getCellName()+"@"+_cell.getCellInfo().getDomainName(), "check");
+            _info = new DoorRequestInfoMessage(DCapDoorInterpreterV3.this._cellAddress, "check");
             _destination      = args.getOpt( "location" ) ;
             String protocolName = args.getOpt( "protocol" ) ;
             if( protocolName == null) {
@@ -1802,8 +1798,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _accessLatency = args.getOpt("access-latency");
             _retentionPolicy = args.getOpt("retention-policy");
 
-            _protocolInfo.door( new CellPath(_cell.getCellInfo().getCellName(),
-                    _cell.getCellInfo().getDomainName()) ) ;
+            _protocolInfo.door(new CellPath(DCapDoorInterpreterV3.this._cellAddress));
 
             _attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
             if (_vargs.argv(1).equals("r")) {

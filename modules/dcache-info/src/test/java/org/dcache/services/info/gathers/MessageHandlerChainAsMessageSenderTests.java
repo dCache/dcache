@@ -66,12 +66,6 @@ public class MessageHandlerChainAsMessageSenderTests {
         }
 
         @Override
-        public CellInfo getCellInfo() {
-            fail( "call to getCellInfo");
-            return null;
-        }
-
-        @Override
         public Map<String, Object> getDomainContext() {
             fail( "call to getDomainContext");
             return null;

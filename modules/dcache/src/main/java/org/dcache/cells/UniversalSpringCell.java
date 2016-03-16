@@ -62,6 +62,7 @@ import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessage;
@@ -922,6 +923,14 @@ public class UniversalSpringCell
     }
 
     /**
+     * Add provider of CellInfo to a CellInfoAware bean.
+     */
+    public void addCellInfoAware(CellInfoAware bean)
+    {
+        bean.setCellInfoSupplier(this::getCellInfo);
+    }
+
+    /**
      * Registers a setup provider. Setup providers contribute to the
      * result of the <code>save</code> method.
      */
@@ -964,6 +973,10 @@ public class UniversalSpringCell
 
         if (bean instanceof CellMessageSender) {
             addMessageSender((CellMessageSender) bean);
+        }
+
+        if (bean instanceof CellInfoAware) {
+            addCellInfoAware((CellInfoAware) bean);
         }
 
         if (bean instanceof CellSetupProvider) {

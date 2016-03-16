@@ -3,6 +3,8 @@ package diskCacheV111.vehicles;
 import java.util.Arrays;
 import java.util.List;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 public class IoDoorInfo extends DoorInfo
 {
     private static final long serialVersionUID = 33390606479807121L;
@@ -10,6 +12,11 @@ public class IoDoorInfo extends DoorInfo
     public IoDoorInfo(String cellName, String cellDomainName)
     {
         super(cellName, cellDomainName);
+    }
+
+    public IoDoorInfo(CellAddressCore address)
+    {
+        super(address.getCellName(), address.getCellDomainName());
     }
 
     public void setIoDoorEntries(IoDoorEntry[] entries)

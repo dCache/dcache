@@ -121,12 +121,6 @@ public class MockCellEndpoint implements CellEndpoint
     }
 
     @Override
-    public CellInfo getCellInfo()
-    {
-        return info;
-    }
-
-    @Override
     public Map<String, Object> getDomainContext()
     {
         return Collections.emptyMap();
