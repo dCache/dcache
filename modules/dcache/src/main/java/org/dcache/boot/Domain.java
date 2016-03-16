@@ -123,7 +123,7 @@ public class Domain
         String domainName = getName();
         CDC.reset(SYSTEM_CELL_NAME, domainName);
         SystemCell systemCell = new SystemCell(domainName);
-        systemCell.start();
+        systemCell.start().get();
         _log.info("Starting {}", domainName);
 
         executePreload(systemCell);

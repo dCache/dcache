@@ -48,7 +48,7 @@ public class DomainConfigurationTest
 
     static {
         try {
-            system.start();
+            system.start().get();
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }

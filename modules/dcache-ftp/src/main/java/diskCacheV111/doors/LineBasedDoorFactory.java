@@ -39,7 +39,7 @@ public class LineBasedDoorFactory extends AbstractService implements LoginCellFa
     {
         LineBasedDoor door = new LineBasedDoor(parentCellName + "*", args, factory, engine, executor);
         try {
-            door.start();
+            door.start().get();
         } catch (ExecutionException | InterruptedException e) {
             throw new InvocationTargetException(e.getCause(), e.getMessage());
         }

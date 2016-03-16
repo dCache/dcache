@@ -1,12 +1,12 @@
 package org.dcache.util;
 
+import com.google.common.util.concurrent.AbstractListeningExecutorService;
 import com.google.common.util.concurrent.Monitor;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * will always create new threads up to the core size, even if allowing
  * core threads to time out.
  */
-public class BoundedExecutor extends AbstractExecutorService
+public class BoundedExecutor extends AbstractListeningExecutorService
 {
     private final Queue<Runnable> workQueue = new ArrayDeque<>();
     private final Executor executor;

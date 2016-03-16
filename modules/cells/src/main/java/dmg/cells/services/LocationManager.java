@@ -972,7 +972,7 @@ public class LocationManager extends CellAdapter
             String cellArgs = port + " " + cellClass + " " + protocol + " -lm=" + getCellName();
             LOGGER.info(" LocationManager starting acceptor with {}", cellArgs);
             LoginManager c = new LoginManager(cellName, cellArgs);
-            c.start();
+            c.start().get();
             LOGGER.info("Created : {}", c);
         }
 
@@ -993,7 +993,7 @@ public class LocationManager extends CellAdapter
 
             LOGGER.info("LocationManager starting connector with {}", cellArgs);
             LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs);
-            c.start();
+            c.start().get();
             LOGGER.info("Created : {}", c);
         }
 

@@ -3,6 +3,7 @@ package dmg.cells.nucleus;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -197,12 +198,9 @@ public class CellAdapter
      * executes the auto and defined Setup context.
      * (&lt;cellName&gt;Setup and "!&lt;setupContextName&gt;)
      */
-    public void start() throws ExecutionException, InterruptedException
+    public ListenableFuture<Void> start()
     {
-        // TODO: Temporary and imperfect workaround to tolerate duplucate start calls
-        if (!_startGate.isOpen()) {
-            _nucleus.start();
-        }
+        return _nucleus.start();
     }
 
     public void addCommandListener(Object commandListener)

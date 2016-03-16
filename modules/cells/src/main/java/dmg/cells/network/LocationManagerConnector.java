@@ -161,7 +161,7 @@ public class LocationManagerConnector
                     _retries++;
                     LocationMgrTunnel tunnel =
                         new LocationMgrTunnel(name, connect(_domain), args);
-                    tunnel.start();
+                    tunnel.start().get();
                     _retries = 0;
                     setStatus("Connected");
                     tunnel.join();

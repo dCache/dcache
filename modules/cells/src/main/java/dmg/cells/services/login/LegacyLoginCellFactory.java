@@ -32,7 +32,7 @@ public class LegacyLoginCellFactory extends AbstractService implements LoginCell
     {
         try {
             CellAdapter cell = _loginConstructor.newInstance(_cellName + "-" + userName + "*", engine);
-            cell.start();
+            cell.start().get();
             return cell;
         } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException("Failed to instantiate login cell: " + getName(), e);

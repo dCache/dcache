@@ -2,6 +2,8 @@ package dmg.cells.nucleus;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.Logger;
@@ -91,7 +93,7 @@ public class CellNucleus implements ThreadFactory
     /**
      * Task for calling the Cell nucleus message timeout mechanism.
      */
-    private TimerTask _timeoutTask;
+    private final TimerTask _timeoutTask;
 
     private Pinboard _pinboard;
     private FilterThresholdSet _loggingThresholds;
@@ -159,6 +161,21 @@ public class CellNucleus implements ThreadFactory
         _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(), _cellName + "-threads");
 
         _messageExecutor = (executor == null) ? new BoundedCachedExecutor(this, 1) : new BoundedExecutor(executor, 1);
+
+        _timeoutTask = new TimerTask() {
+            @Override
+            public void run()
+            {
+                try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                    try {
+                        executeMaintenanceTasks();
+                    } catch (Throwable e) {
+                        Thread t = Thread.currentThread();
+                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                    }
+                }
+            }
+        };
 
         LOGGER.info("Created {}", name);
     }
@@ -877,40 +894,27 @@ public class CellNucleus implements ThreadFactory
     }
 
     /**
-     * Starts the cell. This includes calling the startup callbacks of the cell, registering
-     * the cell with the cell glue and initiate cell message delivery. If startup fails, the
-     * cell is torn down.
+     * Starts the cell asynchronously.
+     *
+     * Calls the startup callbacks of the cell, registers the cell with the cell glue and
+     * initiates cell message delivery. If startup fails, the cell is torn down.
      *
      * Must only be called once.
      */
-    public void start() throws ExecutionException, InterruptedException
+    public ListenableFuture<Void> start()
     {
         checkState(_state.compareAndSet(INITIAL, ACTIVE));
-        try {
-            _messageExecutor.submit(wrapLoggingContext(this::doStart)).get();
-            _timeoutTask = new TimerTask() {
-                @Override
-                public void run()
-                {
-                    try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                        try {
-                            executeMaintenanceTasks();
-                        } catch (Throwable e) {
-                            Thread t = Thread.currentThread();
-                            t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                        }
-                    }
-                }
-            };
-            _timer.schedule(_timeoutTask, 20000, 20000);
-        } catch (InterruptedException | ExecutionException | RuntimeException e) {
-            shutdown(new KillEvent(new CellPath(_cellName), 0));
-            throw e;
-        }
+        return Futures.catchingAsync(
+                _messageExecutor.submit(wrapLoggingContext(this::doStart)), Exception.class,
+                e -> {
+                    shutdown(new KillEvent(new CellPath(_cellName), 0));
+                    throw e;
+                });
     }
 
     private Void doStart() throws Exception
     {
+        _timer.schedule(_timeoutTask, 20000, 20000);
         StartEvent event = new StartEvent(new CellPath(_cellName), 0);
         _cell.prepareStartup(event);
         __cellGlue.addCell(_cellName, this);

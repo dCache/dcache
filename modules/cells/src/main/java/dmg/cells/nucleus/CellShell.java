@@ -2,6 +2,9 @@ package dmg.cells.nucleus ;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import dmg.cells.network.PingMessage;
@@ -30,6 +33,8 @@ import org.dcache.util.Args;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -978,6 +983,9 @@ public class CellShell extends CommandInterpreter
                                                       "arguments are cell specific.")
        String cellArg = "";
 
+       @Option(name = "async")
+       boolean isAsync;
+
        @Override
        public String call() throws ClassNotFoundException, NoSuchMethodException,
                InstantiationException, IllegalAccessException, InvocationTargetException,
@@ -990,7 +998,26 @@ public class CellShell extends CommandInterpreter
                if (cell instanceof EnvironmentAware) {
                    ((EnvironmentAware) cell).setEnvironment(Collections.unmodifiableMap(_environment));
                }
-               cell.start();
+               ListenableFuture<Void> startup = cell.start();
+               if (!isAsync) {
+                   startup.get();
+               } else {
+                   Futures.addCallback(startup,
+                                       new FutureCallback<Void>()
+                                       {
+                                           @Override
+                                           public void onSuccess(@Nullable Void result)
+                                           {
+                                               _log.info("created: {}", cellName);
+                                           }
+
+                                           @Override
+                                           public void onFailure(Throwable t)
+                                           {
+                                               _log.error("failed create {}: {}", cellName, t.toString());
+                                           }
+                                       });
+               }
                return "created : " + cell;
            } catch (InvocationTargetException e) {
                throw Throwables.propagate(e.getTargetException());
