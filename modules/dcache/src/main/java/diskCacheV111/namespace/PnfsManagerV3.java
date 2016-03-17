@@ -2037,6 +2037,13 @@ public class PnfsManagerV3
                 }
             }
 
+            /*
+             * update ctime on atime update
+             */
+            if (attr.isDefined(ACCESS_TIME) && !attr.isDefined(CHANGE_TIME)) {
+                attr.setChangeTime(System.currentTimeMillis());
+            }
+
             FileAttributes updated = _nameSpaceProvider.
                     setFileAttributes(message.getSubject(),
                                       pnfsId,
