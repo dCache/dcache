@@ -1621,6 +1621,17 @@ class FsSqlDriver {
     private PreparedStatement generateAttributeUpdateStatement(Connection dbConnection, FsInode inode, Stat stat, int level)
 	    throws SQLException {
 
+        if (level == 0 && stat.isDefined(Stat.StatAttributes.ATIME) && stat.getDefinedAttributeses().size() == 1) {
+            /*
+             * ATIME only update. The CTIME must stay unchanged.
+             */
+            PreparedStatement preparedStatement = dbConnection.prepareStatement(
+                    "UPDATE t_inodes SET iatime=?,igeneration=igeneration+1 WHERE ipnfsid=?");
+            preparedStatement.setTimestamp(1, new Timestamp(stat.getATime()));
+            preparedStatement.setString(2, inode.toString());
+            return preparedStatement;
+        }
+
         final String attrUpdatePrefix = level == 0
                 ? "UPDATE t_inodes SET ictime=?,igeneration=igeneration+1"
                 : "UPDATE t_level_" + level + " SET ictime=?";
