@@ -83,7 +83,7 @@ public class      DCapDoor
         _out      = new PrintWriter(_engine.getWriter(), true);
         _subject = _engine.getSubject();
         _host     = _engine.getInetAddress().toString();
-        _interpreter = new DCapDoorInterpreterV3(this, _nucleus.getThisAddress(), _out, _subject, _engine.getInetAddress());
+        _interpreter = new DCapDoorInterpreterV3(this, _nucleus.getThisAddress(), getArgs(), _out, _subject, _engine.getInetAddress());
         addCommandListener(_interpreter);
 
         //

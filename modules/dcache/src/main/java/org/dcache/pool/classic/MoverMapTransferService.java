@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.EnvironmentAware;
@@ -18,6 +19,7 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
 import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.util.Args;
 
 public class MoverMapTransferService extends AbstractMoverProtocolTransferService
         implements CellCommandListener, EnvironmentAware
@@ -57,6 +59,9 @@ public class MoverMapTransferService extends AbstractMoverProtocolTransferServic
         MoverProtocol mover = moverCon.newInstance(getCellEndpoint());
         if (mover instanceof EnvironmentAware) {
             ((EnvironmentAware)mover).setEnvironment(_environment);
+        }
+        if (mover instanceof CellArgsAware) {
+            ((CellArgsAware)mover).setCellArgs(getArgs());
         }
         return mover;
     }

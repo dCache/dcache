@@ -24,6 +24,7 @@ import diskCacheV111.vehicles.GFtpProtocolInfo;
 import diskCacheV111.vehicles.GFtpTransferStartedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -57,7 +58,7 @@ import static com.google.common.base.Preconditions.checkState;
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.
  */
 public class GFtpProtocol_2_nio implements ConnectionMonitor,
-        MoverProtocol, ChecksumMover
+        MoverProtocol, ChecksumMover, CellArgsAware
 {
     private static final Logger _log =
             LoggerFactory.getLogger(GFtpProtocol_2_nio.class);
@@ -201,19 +202,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             _portRange = PortRange.valueOf(range);
         } else {
             _portRange = new PortRange(0);
-        }
-
-        if (_cell != null) {
-            Args args = _cell.getArgs();
-            if (args.hasOption("ftpAllowIncomingConnections")) {
-                _allowPassivePool =
-                        Boolean.parseBoolean(args.getOpt("ftpAllowIncomingConnections"));
-            }
-
-            if (args.hasOption("gsiftpBlockSize")) {
-                _blockSize =
-                        Integer.valueOf(args.getOpt("gsiftpBlockSize"));
-            }
         }
     }
 
@@ -787,6 +775,16 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
+        }
+    }
+
+    @Override
+    public void setCellArgs(Args args)
+    {
+        _allowPassivePool = args.getBooleanOption("ftpAllowIncomingConnections");
+
+        if (args.hasOption("gsiftpBlockSize")) {
+            _blockSize = args.getIntOption("gsiftpBlockSize");
         }
     }
 }

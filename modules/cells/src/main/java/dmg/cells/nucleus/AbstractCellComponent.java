@@ -11,11 +11,13 @@ public class AbstractCellComponent
         CellSetupProvider,
         CellMessageSender,
         CellLifeCycleAware,
-        CellInfoAware
+        CellInfoAware,
+        CellArgsAware
 {
     private CellEndpoint _endpoint;
     private CellAddressCore _cellAddress;
     private Supplier<CellInfo> _cellInfoSupplier;
+    private Args _cellArgs;
 
     /**
      * Implements CellInfoProvider interface.
@@ -145,7 +147,7 @@ public class AbstractCellComponent
      */
     protected Args getArgs()
     {
-        return _endpoint.getArgs();
+        return _cellArgs;
     }
 
     @Override
@@ -154,5 +156,11 @@ public class AbstractCellComponent
         _cellInfoSupplier = supplier;
         CellInfo cellInfo = supplier.get();
         _cellAddress = new CellAddressCore(cellInfo.getCellName(), cellInfo.getDomainName());
+    }
+
+    @Override
+    public void setCellArgs(Args args)
+    {
+        _cellArgs = args;
     }
 }

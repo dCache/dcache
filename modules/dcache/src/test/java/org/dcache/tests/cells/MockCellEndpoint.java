@@ -17,19 +17,14 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
 
-import org.dcache.util.Args;
-
 public class MockCellEndpoint implements CellEndpoint
 {
     private final Map<CellPath, Map<String, List<MessageEnvelope>>> messageQueue = new HashMap<>();
     private final Map<String, Map<Class<?>, MessageAction>> messageActions = new HashMap<>();
-    private final Args args;
     private final CellInfo info;
 
-    public MockCellEndpoint(String name, String args)
+    public MockCellEndpoint(String name)
     {
-        this.args = new Args(args);
-
         info = new CellInfo();
         info.setCellName(name);
         info.setDomainName("mockDomain");
@@ -124,12 +119,6 @@ public class MockCellEndpoint implements CellEndpoint
     public Map<String, Object> getDomainContext()
     {
         return Collections.emptyMap();
-    }
-
-    @Override
-    public Args getArgs()
-    {
-        return args;
     }
 
     public interface MessageAction

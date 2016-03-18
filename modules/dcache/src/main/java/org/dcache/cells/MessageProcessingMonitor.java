@@ -160,11 +160,5 @@ public class MessageProcessingMonitor
         {
             return _endpoint.getDomainContext();
         }
-
-        @Override
-        public Args getArgs()
-        {
-            return _endpoint.getArgs();
-        }
     }
 }

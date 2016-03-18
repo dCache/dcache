@@ -73,7 +73,7 @@ public class HsmRestoreTest {
     @Before
     public void setUp() throws Exception {
         _counter = _counter + 1;
-        _cell= new MockCellEndpoint("HsmRestoreTest" + _counter, "");
+        _cell= new MockCellEndpoint("HsmRestoreTest" + _counter);
 
          _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
             new InetSocketAddress("127.0.0.1", 17));

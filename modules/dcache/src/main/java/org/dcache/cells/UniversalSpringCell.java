@@ -59,6 +59,7 @@ import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
 
+import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellInfo;
@@ -989,6 +990,10 @@ public class UniversalSpringCell
 
         if (bean instanceof EnvironmentAware) {
             ((EnvironmentAware) bean).setEnvironment(_environment);
+        }
+
+        if (bean instanceof CellArgsAware) {
+            ((CellArgsAware)bean).setCellArgs(getArgs());
         }
 
         if (bean instanceof DomainContextAware) {

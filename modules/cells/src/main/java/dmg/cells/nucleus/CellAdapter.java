@@ -285,7 +285,6 @@ public class CellAdapter
      *
      * @see Args
      */
-    @Override
     public Args getArgs() { return _args; }
     /**
      *  enables or disables the return type of the buildin command interpreter.

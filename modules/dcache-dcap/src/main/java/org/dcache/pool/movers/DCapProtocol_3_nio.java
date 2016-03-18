@@ -27,6 +27,7 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
+import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -42,17 +43,17 @@ import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.FileAttributes;
 
 
-public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
-
+public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArgsAware
+{
     private static Logger _log = LoggerFactory.getLogger(DCapProtocol_3_nio.class);
     private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
     private static final Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
     private static final int INC_SPACE  =  (50*1024*1024);
 
-    private final Args          _args   ;
     private final Map<String,Object> _context;
     private final CellEndpoint     _cell;
 
+    private Args _args;
     private long _bytesTransferred   = -1;
     private long _transferStarted;
     private long _transferTime       = -1;
@@ -129,6 +130,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
         }
         return bufferSize;
+    }
+
+    @Override
+    public void setCellArgs(Args args)
+    {
+        _args = args;
     }
 
     private class SpaceMonitorHandler {
@@ -235,10 +242,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
     public DCapProtocol_3_nio(CellEndpoint cell){
 
         _cell    = cell;
-        _args    = _cell.getArgs();
         _context = _cell.getDomainContext();
         //
         _log.info("DCapProtocol_3 (nio) created $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $");
+    }
+
+    private void configureBufferSizes()
+    {
         //
         // we are created for each request. So our data
         // is not shared.
@@ -280,6 +290,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                       IoMode          access  )
         throws Exception
     {
+        configureBufferSizes();
         Exception ioException         = null;
 
         if(! (protocol instanceof DCapProtocolInfo)) {

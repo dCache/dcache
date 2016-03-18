@@ -23,12 +23,11 @@ import java.security.AccessController;
 import java.util.function.Supplier;
 
 import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
 
-import dmg.cells.nucleus.CellMessageSender;
-
+import org.dcache.util.Args;
 import org.dcache.util.Transfer;
 
 /**
@@ -37,7 +36,7 @@ import org.dcache.util.Transfer;
  */
 public class MiltonHandler
     extends AbstractHandler
-    implements CellMessageSender, CellInfoAware
+    implements CellInfoAware, CellArgsAware
 {
     private HttpManager _httpManager;
     private String _cellName;
@@ -50,9 +49,9 @@ public class MiltonHandler
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
+    public void setCellArgs(Args args)
     {
-        _isNameSiteUnique = endpoint.getArgs().getBooleanOption("export");
+        _isNameSiteUnique = args.getBooleanOption("export");
     }
 
     @Override

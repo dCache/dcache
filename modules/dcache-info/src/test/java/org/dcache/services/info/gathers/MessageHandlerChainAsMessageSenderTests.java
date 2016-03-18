@@ -60,12 +60,6 @@ public class MessageHandlerChainAsMessageSenderTests {
         List<CellMessage> _sendMessages = new ArrayList<>();
 
         @Override
-        public Args getArgs() {
-            fail( "call to getArgs");
-            return null;
-        }
-
-        @Override
         public Map<String, Object> getDomainContext() {
             fail( "call to getDomainContext");
             return null;

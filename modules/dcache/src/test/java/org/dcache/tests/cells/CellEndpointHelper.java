@@ -87,10 +87,4 @@ public class CellEndpointHelper implements CellEndpoint
     {
         return Collections.emptyMap();
     }
-
-    @Override
-    public Args getArgs()
-    {
-        return new Args("");
-    }
 }

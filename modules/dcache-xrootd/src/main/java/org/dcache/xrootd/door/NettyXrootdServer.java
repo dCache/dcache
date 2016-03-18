@@ -33,13 +33,13 @@ import java.util.function.Supplier;
 import diskCacheV111.util.FsPath;
 
 import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
-import dmg.cells.nucleus.CellMessageSender;
 import dmg.util.TimebasedCounter;
 
 import org.dcache.commons.util.NDC;
+import org.dcache.util.Args;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
@@ -51,7 +51,7 @@ import org.dcache.xrootd.protocol.XrootdProtocol;
  * Netty based xrootd redirector. Could possibly be replaced by pure
  * spring configuration once we move to Netty 3.1.
  */
-public class NettyXrootdServer implements CellMessageSender, CellInfoAware
+public class NettyXrootdServer implements CellInfoAware, CellArgsAware
 {
     private static final Logger _log =
         LoggerFactory.getLogger(NettyXrootdServer.class);
@@ -127,9 +127,9 @@ public class NettyXrootdServer implements CellMessageSender, CellInfoAware
     }
 
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint)
+    public void setCellArgs(Args args)
     {
-        _isNameSiteUnique = endpoint.getArgs().getBooleanOption("export");
+        _isNameSiteUnique = args.getBooleanOption("export");
     }
 
     @Override

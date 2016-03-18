@@ -682,12 +682,6 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
     {
         throw new UnsupportedOperationException();
     }
-
-    @Override
-    public Args getArgs()
-    {
-        throw new UnsupportedOperationException();
-    }
 }
 
 class TestStub extends CellStub implements CellMessageReceiver

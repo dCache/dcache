@@ -62,8 +62,8 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
@@ -156,7 +156,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private final PrintWriter _out          ;
     private final CellEndpoint _cell        ;
     private final CellAddressCore _cellAddress;
-    private final Args        _args         ;
     private String      _ourName     = "server" ;
     private final ConcurrentMap<Integer,SessionHandler> _sessions =
         new ConcurrentHashMap<>();
@@ -244,20 +243,19 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private boolean _isRetentionPolicyOverwriteAllowed;
     private final Restriction _doorRestriction;
 
-    public DCapDoorInterpreterV3(CellEndpoint cell, CellAddressCore address, PrintWriter pw,
-            Subject subject, InetAddress clientAddress)
+    public DCapDoorInterpreterV3(CellEndpoint cell, CellAddressCore address, Args args,
+            PrintWriter pw, Subject subject, InetAddress clientAddress)
     {
         _out  = pw ;
         _cell = cell ;
         _cellAddress = address;
-        _args = cell.getArgs();
         _authenticatedSubject = new Subject(true,
                                             subject.getPrincipals(),
                                             subject.getPublicCredentials(),
                                             subject.getPrivateCredentials());
 
         _clientAddress = clientAddress;
-        String auth = _args.getOpt("authorization") ;
+        String auth = args.getOpt("authorization") ;
         _authorizationStrong   = ( auth != null ) && auth.equals("strong") ;
         _authorizationRequired = ( auth != null ) &&
         ( auth.equals("strong") || auth.equals("required") ) ;
@@ -265,40 +263,40 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _log.debug("Authorization required:  {}", _authorizationRequired);
         _log.debug("Authorization strong: {}", _authorizationStrong);
 
-        String anon = _args.getOpt("anonymous-access");
+        String anon = args.getOpt("anonymous-access");
         _anonymousAccessLevel = ( anon != null ) ? UnionLoginStrategy.AccessLevel.valueOf(anon.toUpperCase()) :
             UnionLoginStrategy.AccessLevel.READONLY;
         _log.debug("Anonymous access level : {}", _anonymousAccessLevel);
 
-        _pnfsManagerName = _args.getOpt("pnfsManager");
-        _poolManagerName = _args.getOpt("poolManager");
-        _poolProxy = _args.getOpt("poolProxy");
+        _pnfsManagerName = args.getOpt("pnfsManager");
+        _poolManagerName = args.getOpt("poolManager");
+        _poolProxy = args.getOpt("poolProxy");
 
         if (_poolProxy != null) {
             _log.debug("Pool Proxy set to {}", _poolProxy);
         }
 
         // allow file truncating
-        String truncate = _args.getOpt("truncate");
+        String truncate = args.getOpt("truncate");
         _truncateAllowed = (truncate != null) && truncate.equals("true") ;
 
-        _isAccessLatencyOverwriteAllowed = _args.hasOption("allow-access-policy-overwrite") ;
+        _isAccessLatencyOverwriteAllowed = args.hasOption("allow-access-policy-overwrite") ;
         _log.debug("Allowed to overwrite AccessLatency: {}", _isAccessLatencyOverwriteAllowed);
 
-        _isRetentionPolicyOverwriteAllowed = _args.hasOption("allow-retention-policy-overwrite");
+        _isRetentionPolicyOverwriteAllowed = args.hasOption("allow-retention-policy-overwrite");
         _log.debug("Allowed to overwrite RetentionPolicy: {}", _isRetentionPolicyOverwriteAllowed);
 
         _poolMgrStub = new CellStub(cell, new CellPath(_poolManagerName), 20000);
-        _pinManagerStub = new CellStub(cell, new CellPath(_args.getOpt("pinManager")));
-        _gPlazmaStub = new CellStub(_cell, new CellPath(_args.getOpt("gplazma")), 30000);
-        _billingCellPath = new CellPath(_args.getOpt("billing"));
+        _pinManagerStub = new CellStub(cell, new CellPath(args.getOpt("pinManager")));
+        _gPlazmaStub = new CellStub(_cell, new CellPath(args.getOpt("gplazma")), 30000);
+        _billingCellPath = new CellPath(args.getOpt("billing"));
 
-        _checkStrict     = _args.hasOption("check") &&
-        ( _args.getOpt("check").equals("strict") ) ;
+        _checkStrict     = args.hasOption("check") &&
+        ( args.getOpt("check").equals("strict") ) ;
 
-        _strictSize      = _args.hasOption("strict-size") ;
+        _strictSize      = args.hasOption("strict-size") ;
 
-        _hsmManager      = _args.getOpt("hsm") ;
+        _hsmManager      = args.getOpt("hsm") ;
 
         _startedTS = new Date() ;
         //
@@ -306,13 +304,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         //
         String restriction = (String)_cell.getDomainContext().get("dCapDoor-clientVersion");
         installVersionRestrictions(
-        restriction==null?_args.getOpt("clientVersion"):restriction ) ;
+        restriction==null?args.getOpt("clientVersion"):restriction ) ;
 
         String poolRetryValue = (String)_cell.getDomainContext().get("dCapDoor-poolRetry") ;
         poolRetryValue = poolRetryValue == null ?
         (String)_cell.getDomainContext().get("poolRetry") :poolRetryValue;
         poolRetryValue = poolRetryValue == null ?
-        _args.getOpt("poolRetry") : poolRetryValue ;
+        args.getOpt("poolRetry") : poolRetryValue ;
 
         if( poolRetryValue != null ) {
             try {
@@ -323,12 +321,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         _log.debug("PoolRetry timer set to {} seconds", _poolRetry/1000L);
 
-        _ioQueueName = _args.getOpt("io-queue") ;
+        _ioQueueName = args.getOpt("io-queue") ;
         _ioQueueName = ( _ioQueueName == null ) || ( _ioQueueName.length() == 0 ) ? null : _ioQueueName ;
         _log.debug("IoQueueName = {}",
                    (_ioQueueName==null) ? "<undefined>" : _ioQueueName);
 
-        String tmp = _args.getOpt("io-queue-overwrite") ;
+        String tmp = args.getOpt("io-queue-overwrite") ;
         _ioQueueAllowOverwrite = ( tmp != null ) && tmp.equals("allowed" ) ;
         _log.debug("IoQueueName : overwrite : {}",
                    _ioQueueAllowOverwrite ? "allowed" : "denied");
@@ -338,7 +336,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _checkStrict = check.equals("strict");
         }
 
-        String ro = _args.getOpt("read-only");
+        String ro = args.getOpt("read-only");
         boolean isReadonly = Objects.equals(ro, "true");
         _doorRestriction = isReadonly ? Restrictions.readOnly() : Restrictions.none();
 
@@ -349,7 +347,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _log.debug("Door is configured as read/write");
         }
 
-        _stageConfigurationFilePath = _args.getOpt("stageConfigurationFilePath");
+        _stageConfigurationFilePath = args.getOpt("stageConfigurationFilePath");
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
         _log.debug("Check : {}", _checkStrict ? "Strict" : "Fuzzy");
 

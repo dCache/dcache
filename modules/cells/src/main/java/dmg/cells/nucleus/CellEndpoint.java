@@ -3,8 +3,6 @@ package dmg.cells.nucleus;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import org.dcache.util.Args;
-
 /**
  * Interface encapsulating a cell as seen by cell components.
  *
@@ -93,10 +91,4 @@ public interface CellEndpoint
      * cells in a domain.
      */
     Map<String,Object> getDomainContext();
-
-    /**
-     * Returns the cell command line arguments provided when the cell
-     * was created.
-     */
-    Args getArgs();
 }
