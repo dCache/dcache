@@ -197,7 +197,7 @@ public class LoginManager
             _loginBrokerPublisher.setExecutor(_scheduledExecutor);
             _loginBrokerPublisher.setTopic(topic);
             _loginBrokerPublisher.setCellEndpoint(this);
-            _loginBrokerPublisher.setCellInfoSupplier(this::getCellInfo);
+            _loginBrokerPublisher.setCellAddress(_nucleus.getThisAddress());
             _loginBrokerPublisher.setTags(byComma.splitToList(_args.getOption("brokerTags")));
             _loginBrokerPublisher.setProtocolEngine(_loginCellFactory.getName());
             _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", _protocol));

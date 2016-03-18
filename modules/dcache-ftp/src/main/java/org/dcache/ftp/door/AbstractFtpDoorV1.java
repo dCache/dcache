@@ -123,7 +123,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -154,8 +153,8 @@ import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -286,7 +285,8 @@ class FTPCommandException extends Exception
 }
 
 public abstract class AbstractFtpDoorV1
-        implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener, CellInfoProvider, CellMessageSender, CellInfoAware
+        implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener,
+        CellInfoProvider, CellMessageSender, CellIdentityAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
@@ -1101,10 +1101,9 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Override
-    public void setCellInfoSupplier(Supplier<CellInfo> infoProvider)
+    public void setCellAddress(CellAddressCore address)
     {
-        CellInfo cellInfo = infoProvider.get();
-        _cellAddress = new CellAddressCore(cellInfo.getCellName(), cellInfo.getDomainName());
+        _cellAddress = address;
     }
 
     public void setWriter(Writer writer)
@@ -1219,7 +1218,7 @@ public abstract class AbstractFtpDoorV1
     public static final String hh_get_door_info = "[-binary]";
     public Object ac_get_door_info(Args args)
     {
-        IoDoorInfo doorInfo = new IoDoorInfo(_cellAddress.getCellName(), _cellAddress.getCellDomainName());
+        IoDoorInfo doorInfo = new IoDoorInfo(_cellAddress);
         long[] uids = (_subject != null) ? Subjects.getUids(_subject) : new long[0];
         doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
         doorInfo.setProcess("0");
@@ -4122,8 +4121,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     private void sendRemoveInfoToBilling(PnfsId pnfsId, FsPath path) {
-        DoorRequestInfoMessage infoRemove =
-            new DoorRequestInfoMessage(_cellAddress.toString(), "remove");
+        DoorRequestInfoMessage infoRemove = new DoorRequestInfoMessage(_cellAddress, "remove");
         infoRemove.setSubject(_subject);
         infoRemove.setBillingPath(path.toString());
         infoRemove.setPnfsId(pnfsId);

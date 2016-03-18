@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolV2Mode;
@@ -34,7 +35,10 @@ import dmg.util.command.Option;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellMessageReceiver;
+
 import org.dcache.util.FireAndForgetTask;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -47,7 +51,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class HsmFlushController
         extends AbstractCellComponent
-        implements CellMessageReceiver, CellCommandListener
+        implements CellMessageReceiver, CellCommandListener, CellInfoAware
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(HsmFlushController.class);
@@ -62,6 +66,7 @@ public class HsmFlushController
     private long _retryDelayOnError = TimeUnit.MINUTES.toMillis(1);
     private int _maxActive = 1000;
     private PoolV2Mode _poolMode;
+    private Supplier<CellInfo> _cellInfoSupplier;
 
     public HsmFlushController(
             StorageClassContainer storageQueue)
@@ -69,10 +74,21 @@ public class HsmFlushController
         _storageQueue = storageQueue;
     }
 
+    @Override
+    public void setCellInfoSupplier(Supplier<CellInfo> supplier)
+    {
+        _cellInfoSupplier = supplier;
+    }
+
     @Required
     public void setPoolMode(PoolV2Mode mode)
     {
         _poolMode = mode;
+    }
+
+    private PoolCellInfo getCellInfo()
+    {
+        return (PoolCellInfo) _cellInfoSupplier.get();
     }
 
     private ScheduledThreadPoolExecutor createFlushExecutor()
@@ -157,7 +173,7 @@ public class HsmFlushController
             reschedule();
         }
         if (gain.getReplyRequired()) {
-            gain.setCellInfo((PoolCellInfo) getCellInfo());
+            gain.setCellInfo(getCellInfo());
             gain.setFlushInfos(_storageQueue.getFlushInfos());
         }
         return gain;
@@ -231,7 +247,7 @@ public class HsmFlushController
         {
             LOGGER.info("Flushed: {}  {}, id={};R={};f={}", hsm, storageClass, flushId, requests, failed);
             if (_flush.getReplyRequired()) {
-                _flush.setCellInfo((PoolCellInfo) getCellInfo());
+                _flush.setCellInfo(getCellInfo());
                 _flush.setFlushInfos(_storageQueue.getFlushInfos());
                 _flush.setResult(requests, failed);
                 reply(_flush);

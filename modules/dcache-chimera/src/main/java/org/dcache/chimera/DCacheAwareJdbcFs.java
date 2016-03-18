@@ -68,7 +68,6 @@ import java.net.InetSocketAddress;
 import java.security.AccessController;
 import java.util.EnumSet;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -79,8 +78,8 @@ import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.ProtocolInfo;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoAware;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
@@ -98,12 +97,12 @@ import org.dcache.vehicles.FileAttributes;
  *
  * @author arossi
  */
-public class DCacheAwareJdbcFs extends JdbcFs implements CellInfoAware {
+public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
     private CellStub poolManagerStub;
     private CellStub pinManagerStub;
     private CellStub billingStub;
     private PnfsHandler pnfsHandler;
-    private Supplier<CellInfo> infoSupplier;
+    private CellAddressCore myAddress;
 
     public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) throws ChimeraFsException
     {
@@ -132,8 +131,8 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellInfoAware {
     }
 
     @Override
-    public void setCellInfoSupplier(Supplier<CellInfo> supplier) {
-        infoSupplier = supplier;
+    public void setCellAddress(CellAddressCore address) {
+        myAddress = address;
     }
 
     @Override
@@ -179,11 +178,9 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellInfoAware {
     public void remove(FsInode directory, String name, FsInode inode) throws ChimeraFsException {
 
         super.remove(directory, name, inode);
-        CellInfo cellInfo = infoSupplier.get();
         Subject subject = Subject.getSubject(AccessController.getContext());
         DoorRequestInfoMessage infoRemove
-                = new DoorRequestInfoMessage(cellInfo.getCellName() + "@"
-                        + cellInfo.getDomainName(), "remove");
+                = new DoorRequestInfoMessage(myAddress, "remove");
 
         infoRemove.setSubject(subject);
         infoRemove.setPnfsId(new PnfsId(inode.getId()));

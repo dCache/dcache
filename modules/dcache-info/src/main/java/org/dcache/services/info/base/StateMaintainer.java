@@ -11,11 +11,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoAware;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
 
 import org.dcache.commons.util.NDC;
 import org.dcache.util.FireAndForgetTask;
@@ -25,7 +24,7 @@ import org.dcache.util.FireAndForgetTask;
  * StateUpdate objects independently of whichever Thread created them. It is
  * also responsible for purging those metrics that have expired.
  */
-public class StateMaintainer implements StateUpdateManager, CellInfoAware
+public class StateMaintainer implements StateUpdateManager, CellIdentityAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(StateMaintainer.class);
 
@@ -40,8 +39,7 @@ public class StateMaintainer implements StateUpdateManager, CellInfoAware
     /** Our link to the business logic for update dCache state */
     private volatile StateCaretaker _caretaker;
 
-    private String _cellName = "unknown";
-    private String _domainName = "unknown";
+    private CellAddressCore _myAddress = new CellAddressCore("unknown@unknown");
 
     /**
      * The Future for the next scheduled metric purge, or null if no such
@@ -64,11 +62,9 @@ public class StateMaintainer implements StateUpdateManager, CellInfoAware
     }
 
     @Override
-    public void setCellInfoSupplier(Supplier<CellInfo> supplier)
+    public void setCellAddress(CellAddressCore address)
     {
-        CellInfo info = supplier.get();
-        _domainName = info.getDomainName();
-        _cellName = info.getCellName();
+        _myAddress = address;
     }
 
     /**
@@ -96,7 +92,7 @@ public class StateMaintainer implements StateUpdateManager, CellInfoAware
 
         _pendingRequestCount.incrementAndGet();
         _scheduler.execute(new FireAndForgetTask(() -> {
-            CDC.reset(_cellName, _domainName);
+            CDC.reset(_myAddress);
             NDC.set(ndc);
             try {
                 LOGGER.trace("starting job to process update {}", pendingUpdate);

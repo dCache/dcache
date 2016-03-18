@@ -151,6 +151,11 @@ public class CDC implements AutoCloseable
         return reset(cell.getCellName(), cell.getCellDomainName());
     }
 
+    public static CDC reset(CellAddressCore address)
+    {
+        return reset(address.getCellName(), address.getCellDomainName());
+    }
+
     /**
      * Setup the cell diagnostic context of the calling
      * thread. Threads created from the calling thread automatically

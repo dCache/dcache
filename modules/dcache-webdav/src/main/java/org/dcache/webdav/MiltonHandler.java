@@ -20,12 +20,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
-import java.util.function.Supplier;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellArgsAware;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoAware;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
 
 import org.dcache.util.Args;
 import org.dcache.util.Transfer;
@@ -36,11 +35,10 @@ import org.dcache.util.Transfer;
  */
 public class MiltonHandler
     extends AbstractHandler
-    implements CellInfoAware, CellArgsAware
+    implements CellIdentityAware, CellArgsAware
 {
     private HttpManager _httpManager;
-    private String _cellName;
-    private String _domainName;
+    private CellAddressCore _myAddress;
     private boolean _isNameSiteUnique;
 
     public void setHttpManager(HttpManager httpManager)
@@ -55,11 +53,9 @@ public class MiltonHandler
     }
 
     @Override
-    public void setCellInfoSupplier(Supplier<CellInfo> supplier)
+    public void setCellAddress(CellAddressCore address)
     {
-        CellInfo info = supplier.get();
-        _cellName = info.getCellName();
-        _domainName = info.getDomainName();
+        _myAddress = address;
     }
 
     @Override
@@ -67,7 +63,7 @@ public class MiltonHandler
                        HttpServletRequest request,HttpServletResponse response)
         throws IOException, ServletException
     {
-        try (CDC ignored = CDC.reset(_cellName, _domainName)) {
+        try (CDC ignored = CDC.reset(_myAddress)) {
             Transfer.initSession(_isNameSiteUnique, false);
             ServletContext context = ContextHandler.getCurrentContext();
             switch (request.getMethod()) {

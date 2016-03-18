@@ -1189,7 +1189,7 @@ public final class Storage
             msg = _pnfsStub.sendAndWait(msg);
 
             DoorRequestInfoMessage infoMsg =
-                    new DoorRequestInfoMessage(getCellAddress().toString());
+                    new DoorRequestInfoMessage(getCellAddress());
             infoMsg.setSubject(subject);
             infoMsg.setBillingPath(fullPath.toString());
             infoMsg.setTransferPath(localTransferPath);
@@ -1270,7 +1270,7 @@ public final class Storage
                 _pnfsStub.sendAndWait(msg);
 
                 DoorRequestInfoMessage infoMsg =
-                        new DoorRequestInfoMessage(getCellAddress().toString());
+                        new DoorRequestInfoMessage(getCellAddress());
                 infoMsg.setSubject(subject);
                 infoMsg.setBillingPath(actualPnfsPath.toString());
                 infoMsg.setTransaction(CDC.getSession());
@@ -1498,7 +1498,7 @@ public final class Storage
                                            config.getPath(surl).toString(),
                                            removeFileCallback,
                                            _pnfsStub,
-                                           getCellInfo(),
+                                           getCellAddress(),
                                            getCellEndpoint(),
                                            _executor);
         } catch (SRMAuthorizationException | SRMInvalidPathException e) {
@@ -1517,7 +1517,7 @@ public final class Storage
                                            config.getPath(surl).toString(),
                                            callbacks,
                                            _pnfsStub,
-                                           getCellInfo(),
+                                           getCellAddress(),
                                            getCellEndpoint(),
                                            _executor);
         } catch (SRMInvalidPathException e) {

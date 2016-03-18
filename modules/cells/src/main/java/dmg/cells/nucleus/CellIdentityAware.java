@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,21 +15,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package diskCacheV111.doors;
+package dmg.cells.nucleus;
 
-import java.util.concurrent.Executor;
-
-import diskCacheV111.util.ConfigurationException;
-
-import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.util.StreamEngine;
-
-import org.dcache.util.Args;
-
-public interface LineBasedInterpreterFactory
+/**
+ * A class that implements this interface needs to know in which cell it is
+ * running.
+ */
+public interface CellIdentityAware
 {
-    void configure(Args args) throws ConfigurationException;
-    LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-            StreamEngine engine, Executor executor) throws Exception;
+    void setCellAddress(CellAddressCore address);
 }

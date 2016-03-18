@@ -86,8 +86,8 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
@@ -111,18 +111,18 @@ public class RemoveFileCompanion
     private final RemoveFileCallback _callback;
     private final String _path;
     private final CellEndpoint _endpoint;
-    private final CellInfo _info;
+    private final CellAddressCore _myAddress;
 
     private RemoveFileCompanion(Subject subject,
                                 String path,
                                 RemoveFileCallback callbacks,
-                                CellInfo info,
+                                CellAddressCore address,
                                 CellEndpoint endpoint)
     {
         _subject = subject;
         _path = path;
         _callback = callbacks;
-        _info = info;
+        _myAddress = address;
         _endpoint = endpoint;
     }
 
@@ -130,12 +130,12 @@ public class RemoveFileCompanion
                                   String path,
                                   RemoveFileCallback callbacks,
                                   CellStub pnfsStub,
-                                  CellInfo info,
+                                  CellAddressCore address,
                                   CellEndpoint endpoint,
                                   Executor executor)
     {
         RemoveFileCompanion companion =
-            new RemoveFileCompanion(subject, path, callbacks, info, endpoint);
+            new RemoveFileCompanion(subject, path, callbacks, address, endpoint);
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
@@ -192,8 +192,7 @@ public class RemoveFileCompanion
     private void sendRemoveInfoToBilling(PnfsId pnfsid)
     {
         DoorRequestInfoMessage msg =
-            new DoorRequestInfoMessage(_info.getCellName() + "@" +
-                                       _info.getDomainName(), "remove");
+            new DoorRequestInfoMessage(_myAddress, "remove");
         msg.setSubject(_subject);
         msg.setBillingPath(_path);
         msg.setPnfsId(pnfsid);

@@ -45,7 +45,6 @@ import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageReceiver;
