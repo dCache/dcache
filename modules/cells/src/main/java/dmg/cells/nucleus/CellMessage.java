@@ -125,9 +125,10 @@ public boolean equals( Object obj ){
   //
   boolean isStreamMode(){ return _mode == STREAM_MODE  ; }
   void touch(){
-    if( _destination.isFirstDestination() ){
-        _umid = new UOID() ;
-    }
+      if( _destination.isFirstDestination() ){
+          _umid = new UOID() ;
+          _receivedAt = System.currentTimeMillis();
+      }
   }
 
     public CellMessage()
