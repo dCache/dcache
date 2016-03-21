@@ -66,7 +66,7 @@ public class RedirectedTransfer<T> extends Transfer
         try {
             setStatus("Mover " + getPool() + "/" +
                       getMoverId() + ": Waiting for redirect");
-            long deadline = addWithInfinity(System.currentTimeMillis(), millis);
+            long deadline = addWithInfinity(System.currentTimeMillis(), Math.max(0, millis));
             while (hasMover() && !_isRedirected &&
                    System.currentTimeMillis() < deadline) {
                 wait(subWithInfinity(deadline, System.currentTimeMillis()));

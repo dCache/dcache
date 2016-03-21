@@ -7,6 +7,8 @@ import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.*;
 
 import static diskCacheV111.util.CacheException.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Utility class to convert {@link CacheException} into corresponding
@@ -34,6 +36,12 @@ public class ExceptionUtils {
             return (ChimeraNFSException)t;
         } else if (t instanceof CacheException) {
             return asNfsException((CacheException)t, defaultException);
+        } else if (t instanceof ExecutionException ) {
+            return asNfsException(t.getCause(), defaultException);
+        } else if (t instanceof TimeoutException) {
+            return new DelayException(t.getMessage(), t);
+        } else if (t instanceof RuntimeException) {
+            return new ServerFaultException(t.getMessage(), t);
         } else {
             return buildNfsException(defaultException, t);
         }
