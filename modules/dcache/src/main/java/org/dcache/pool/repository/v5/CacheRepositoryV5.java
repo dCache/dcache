@@ -1230,7 +1230,7 @@ public class CacheRepositoryV5
                             configuredPoolSize, used);
             }
 
-            newSize = Math.max(used, configuredPoolSize.orElse(maxPoolSize);
+            newSize = Math.max(used, configuredPoolSize.orElse(maxPoolSize));
             if (newSize != account.getTotal()) {
                 LOGGER.info("Adjusting pool size to {}", newSize);
                 account.setTotal(newSize);
