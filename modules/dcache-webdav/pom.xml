@@ -45,7 +45,7 @@
     </dependency>
       <dependency>
           <groupId>org.dcache</groupId>
-          <artifactId>dcache-webapi</artifactId>
+          <artifactId>dcache-restful-api</artifactId>
           <version>${project.version}</version>
       </dependency>
     <dependency>

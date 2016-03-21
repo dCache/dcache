@@ -8,10 +8,10 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>dcache-webapi</artifactId>
+    <artifactId>dcache-restful-api</artifactId>
     <packaging>jar</packaging>
 
-    <name>dCache RESTfull API&gt;</name>
+    <name>dCache RESTful API</name>
 
     <dependencies>
         <dependency>
@@ -22,7 +22,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>dcache-core</artifactId>
@@ -68,6 +67,11 @@
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>1.0.4</version>
         </dependency>
     </dependencies>
 </project>

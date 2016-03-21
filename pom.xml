@@ -1207,7 +1207,7 @@
         <module>modules/dcache-dcap</module>
         <module>modules/dcache-gplazma</module>
         <module>modules/dcache-webadmin</module>
-        <module>modules/dcache-webapi</module>
+        <module>modules/dcache-restful-api</module>
         <module>modules/dcache-nfs</module>
         <module>modules/dcache-srm</module>
         <module>modules/dcache-info</module>
