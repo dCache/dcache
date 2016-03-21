@@ -365,15 +365,15 @@ public class LoginManager
                 return;
             }
             CellPath path = new CellPath(dest);
-            CellMessage msg =
-                    new CellMessage(
-                            path,
-                            "listening on " + getCellName() + " " + listenPort);
 
             for (int i = 0; !Thread.interrupted(); i++) {
                 LOGGER.info("Sending ({}) 'listening on {} {}'", i, getCellName(), listenPort);
 
                 try {
+                    CellMessage msg =
+                            new CellMessage(
+                                    path,
+                                    "listening on " + getCellName() + " " + listenPort);
                     if (getNucleus().sendAndWait(msg, 5000) != null) {
                         LOGGER.info("Portnumber successfully sent to {}", dest);
                         _sending = false;
