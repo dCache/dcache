@@ -14,10 +14,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import diskCacheV111.vehicles.JobInfo;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
-import org.dcache.pool.movers.Mover;
 import org.dcache.util.IoPriority;
 
+import diskCacheV111.util.CacheException;
 import static com.google.common.collect.Iterables.concat;
 import static java.util.Arrays.asList;
 
@@ -26,12 +28,12 @@ public class IoQueueManager {
     private final static Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
 
     public static final String DEFAULT_QUEUE = "regular";
-    private final ImmutableList<IoScheduler> _queues;
-    private final ImmutableMap<String, IoScheduler> _queuesByName;
+    private final ImmutableList<MoverRequestScheduler> _queues;
+    private final ImmutableMap<String, MoverRequestScheduler> _queuesByName;
 
     public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] names) {
-        Map<String,IoScheduler> queuesByName = new HashMap<>();
-        List<IoScheduler> queues = new ArrayList<>();
+        Map<String,MoverRequestScheduler> queuesByName = new HashMap<>();
+        List<MoverRequestScheduler> queues = new ArrayList<>();
         for (String name : concat(asList(DEFAULT_QUEUE), asList(names))) {
             name = name.trim();
             if (!name.isEmpty()) {
@@ -41,7 +43,7 @@ public class IoQueueManager {
                 }
                 if (!queuesByName.containsKey(name)) {
                     _log.debug("Creating queue: {}", name);
-                    IoScheduler job = new SimpleIoScheduler(name, queues.size(), fifo);
+                    MoverRequestScheduler job = new MoverRequestScheduler(name, queues.size(), fifo);
                     queues.add(job);
                     queuesByName.put(name, job);
                     jobTimeoutManager.addScheduler(name, job);
@@ -55,19 +57,27 @@ public class IoQueueManager {
         _log.debug("Defined IO queues: {}", _queuesByName.keySet());
     }
 
-    public IoScheduler getDefaultQueue() {
+    public MoverRequestScheduler getDefaultQueue() {
         return _queues.get(0);
     }
 
-    public ImmutableCollection<IoScheduler> getQueues() {
+    public ImmutableCollection<MoverRequestScheduler> getQueues() {
         return _queues;
     }
 
-    public IoScheduler getQueue(String queueName) {
+    public MoverRequestScheduler getQueue(String queueName) {
         return _queuesByName.get(queueName);
     }
 
-    public IoScheduler getQueueByJobId(int id) {
+    private MoverRequestScheduler getQueueByNameOrDefault(String queueName) {
+        if (queueName == null) {
+            return getDefaultQueue();
+        }
+        MoverRequestScheduler queue = getQueue(queueName);
+        return queue == null ? getDefaultQueue() : queue;
+    }
+
+    public MoverRequestScheduler getQueueByJobId(int id) {
         int pos = id >> 24;
         if (pos >= _queues.size()) {
             throw new IllegalArgumentException("Invalid id (doesn't belong to any known scheduler)");
@@ -75,15 +85,9 @@ public class IoQueueManager {
         return _queues.get(pos);
     }
 
-    public int add(String queueName, Mover<?> transfer, IoPriority priority)
+    public int getOrCreateMover(String queueName, String doorUniqueId, MoverSupplier moverSupplier, IoPriority priority) throws CacheException
     {
-        IoScheduler js = (queueName == null) ? null : _queuesByName.get(queueName);
-        return (js == null) ? add(transfer, priority) : js.add(transfer, priority);
-    }
-
-    public int add(Mover<?> transfer, IoPriority priority)
-    {
-        return getDefaultQueue().add(transfer, priority);
+        return getQueueByNameOrDefault(queueName).getOrCreateMover(moverSupplier, doorUniqueId, priority);
     }
 
     public void cancel(int jobId) throws NoSuchElementException {
@@ -91,54 +95,45 @@ public class IoQueueManager {
     }
 
     public int getMaxActiveJobs() {
-        int sum = 0;
-        for (IoScheduler s : _queues) {
-            sum += s.getMaxActiveJobs();
-        }
-        return sum;
+        return _queues.stream()
+                .mapToInt(MoverRequestScheduler::getMaxActiveJobs).sum();
     }
 
     public int getActiveJobs() {
-        int sum = 0;
-        for (IoScheduler s : _queues) {
-            sum += s.getActiveJobs();
-        }
-        return sum;
+        return _queues.stream()
+                .mapToInt(MoverRequestScheduler::getActiveJobs).sum();
     }
 
     public int getQueueSize() {
-        int sum = 0;
-        for (IoScheduler s : _queues) {
-            sum += s.getQueueSize();
-        }
-        return sum;
+        return _queues.stream()
+                .mapToInt(MoverRequestScheduler::getQueueSize).sum();
     }
 
     public List<JobInfo> getJobInfos() {
-        List<JobInfo> list = new ArrayList<>();
-        for (IoScheduler s : _queues) {
-            list.addAll(s.getJobInfos());
-        }
-        return list;
+
+        return _queues.stream()
+                .map(MoverRequestScheduler::getJobInfos)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     public void printSetup(PrintWriter pw) {
-        for (IoScheduler s : _queues) {
+        _queues.forEach(s -> {
             pw.println("mover set max active -queue=" + s.getName() + " " + s.getMaxActiveJobs());
-        }
+        });
     }
 
     public JobInfo findJob(String client, long id) {
-        for (JobInfo info : getJobInfos()) {
-            if (client.equals(info.getClientName()) && id == info.getClientId()) {
-                return info;
-            }
-        }
-        return null;
+        return _queues.stream()
+                .map(MoverRequestScheduler::getJobInfos)
+                .flatMap(Collection::stream)
+                .filter(i -> client.equals(i.getClientName()))
+                .filter(i -> id == i.getClientId())
+                .findFirst().orElse(null);
     }
 
     public synchronized void shutdown() throws InterruptedException {
-        for (IoScheduler queue : _queues) {
+        for (MoverRequestScheduler queue : _queues) {
             queue.shutdown();
         }
     }
