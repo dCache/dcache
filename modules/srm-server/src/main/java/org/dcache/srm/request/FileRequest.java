@@ -92,6 +92,7 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.v2_2.TReturnStatus;
 
 import static com.google.common.base.Predicates.in;
@@ -305,6 +306,22 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
      */
 
     public abstract long extendLifetime(long newLifetime) throws SRMException ;
+
+    protected void reassessLifetime(long fileSize)
+    {
+        long currentLifetime = getLifetime();
+
+        Configuration config = SRM.getSRM().getConfiguration();
+        long newLifetime = Lifetimes.calculateRequestLifetimeWithWorkaround(currentLifetime,
+                fileSize, config.getMaximumClientAssumedBandwidth(), config.getGetLifetime());
+        try {
+            if (newLifetime > currentLifetime) {
+                extendLifetime(newLifetime);
+            }
+        } catch (SRMException e) {
+            logger.debug("Unable to adjust lifetime: {}", e.getMessage());
+        }
+    }
 
     @Override
     public JDC applyJdc()
