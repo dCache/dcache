@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -20,6 +19,7 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
@@ -110,7 +110,11 @@ public class SrmPrepareToPut
         }
         TPutFileRequest[] fileRequests = getFileRequests(request);
 
-        long lifetime = getLifetime(request, configuration.getPutLifetime());
+        // assume transfers will take place in parallel
+        long effectiveSize = largestFileOf(fileRequests);
+        long lifetime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(),
+                effectiveSize, configuration.getMaximumClientAssumedBandwidth(),
+                configuration.getPutLifetime());
         TOverwriteMode overwriteMode = getOverwriteMode(request);
 
         String[] supportedProtocols = storage.supportedPutProtocols();
@@ -182,6 +186,21 @@ public class SrmPrepareToPut
         }
     }
 
+
+    private long largestFileOf(TPutFileRequest[] requests)
+    {
+        long effectiveSize = 0;
+
+        for (TPutFileRequest request : requests) {
+            UnsignedLong size = request.getExpectedFileSize();
+            if (size != null && size.longValue() > effectiveSize) {
+                effectiveSize = size.longValue();
+            }
+        }
+
+        return effectiveSize;
+    }
+
     private static String getExtraInfo(SrmPrepareToPutRequest request, String key)
     {
         ArrayOfTExtraInfo storageSystemInfo = request.getStorageSystemInfo();
@@ -198,28 +217,6 @@ public class SrmPrepareToPut
             }
         }
         return null;
-    }
-
-    private static long getLifetime(SrmPrepareToPutRequest request, long max) throws SRMInvalidRequestException
-    {
-        long lifetimeInSeconds = 0;
-        if (request.getDesiredTotalRequestTime() != null) {
-            long reqLifetime = (long) request.getDesiredTotalRequestTime().intValue();
-            if (reqLifetime < 0) {
-                /* [ SRM 2.2, 5.5.2 ]
-                 * q)    If input parameter desiredTotalRequestTime is 0 (zero), each file
-                 *       request must be tried at least once. Negative value must be invalid.
-                 */
-                throw new SRMInvalidRequestException("Negative desiredTotalRequestTime is invalid.");
-            }
-            lifetimeInSeconds = reqLifetime;
-        }
-        if (lifetimeInSeconds <= 0) {
-            // Revisit: Behaviour doesn't match the SRM spec
-            return max;
-        }
-        long lifetime = TimeUnit.SECONDS.toMillis(lifetimeInSeconds);
-        return lifetime > max ? max : lifetime;
     }
 
     private static TOverwriteMode getOverwriteMode(SrmPrepareToPutRequest request)

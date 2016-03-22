@@ -255,7 +255,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-
     @Override
     public RequestFileStatus getRequestFileStatus(){
         RequestFileStatus rfs;
@@ -612,6 +611,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         } finally {
             wunlock();
         }
+
+        reassessLifetime(fileMetaData.size);
     }
 
     public TReturnStatus release()
