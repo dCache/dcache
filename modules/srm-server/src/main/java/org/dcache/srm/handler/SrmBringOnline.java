@@ -18,6 +18,7 @@ import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.util.Lifetimes;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmBringOnlineRequest;
@@ -83,7 +84,7 @@ public class SrmBringOnline
         String clientHost = getClientNetwork(request).or(this.clientHost);
         TGetFileRequest[] fileRequests = getFileRequests(request);
         URI[] surls = getSurls(fileRequests);
-        long requestTime = getRequestTime(request, configuration.getBringOnlineLifetime());
+        long requestTime = Lifetimes.calculateLifetime(request.getDesiredTotalRequestTime(), configuration.getBringOnlineLifetime());
         long desiredLifetimeInSeconds = getDesiredLifetime(request, requestTime);
 
         if (protocols != null && protocols.length > 0) {
@@ -128,26 +129,6 @@ public class SrmBringOnline
             return TimeUnit.MILLISECONDS.toSeconds(requestTime);
         }
         return (long) request.getDesiredLifeTime();
-    }
-
-    private static long getRequestTime(SrmBringOnlineRequest request, long max) throws SRMInvalidRequestException
-    {
-        long requestTime = 0;
-        if (request.getDesiredTotalRequestTime() != null) {
-            long time = request.getDesiredTotalRequestTime();
-            /* [ SRM 2.2, 5.3.2 ]
-             *
-             * o)    If input parameter desiredTotalRequestTime is 0 (zero), each file request must
-             *       be tried at least once. Negative value must be invalid.
-             */
-            if (time < 0) {
-                throw new SRMInvalidRequestException("destiredTotalRequestTime must not be negative.");
-            }
-            requestTime = time;
-        }
-        /* FIXME: The interpretation of 0 does not match the SRM spec.
-         */
-        return (requestTime > 0) ? TimeUnit.SECONDS.toMillis(requestTime) : max;
     }
 
     private static String getExtraInfo(SrmBringOnlineRequest request, String key)
