@@ -26,7 +26,11 @@
             "errormessage"   varchar(8000),
             "pnfsid"         varchar(36),
             "transaction"    varchar(256),
-            "p2p"            boolean
+            "p2p"            boolean,
+	    "fqan"           varchar(256),
+            "owner"          varchar(256),
+            "mappedgid"      integer,
+            "mappeduid"      integer
             );
 
             CREATE TABLE "storageinfo"
@@ -59,7 +63,8 @@
             "errorcode"      integer,
             "errormessage"   varchar(8000),
             "pnfsid"         varchar(36),
-            "transaction"    varchar(256)
+            "transaction"    varchar(256),
+	    "fqan"           varchar(256)
             );
 
             CREATE TABLE "hitinfo"
