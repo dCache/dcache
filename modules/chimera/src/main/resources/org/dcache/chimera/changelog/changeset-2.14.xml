@@ -9,16 +9,16 @@
         <createProcedure>
             CREATE TRIGGER tgs_insert_acl_dir AFTER INSERT ON t_dirs
               REFERENCING NEW ROW new
-              FOR EACH ROW WHEN (new.iname = '..' AND (SELECT itype FROM t_inodes WHERE ipnfsid = new.ipnfsid) = 16384)
+              FOR EACH ROW WHEN (new.iname = '..' AND EXISTS (SELECT 1 FROM t_inodes WHERE ipnfsid = new.ipnfsid AND itype = 16384))
                 INSERT INTO t_acl
-                  SELECT new.ipnfsid, 0, type, BITANDNOT(flags, 8), access_msk, who, who_id, address_msk, ace_order
+                  SELECT new.iparent, 0, type, BITANDNOT(flags, 8), access_msk, who, who_id, address_msk, ace_order
                   FROM t_acl
-                  WHERE rs_id = new.iparent AND BITAND(flags, 3) > 0;
+                  WHERE rs_id = new.ipnfsid AND BITAND(flags, 3) > 0;
         </createProcedure>
         <createProcedure>
             CREATE TRIGGER tgs_insert_acl_file AFTER INSERT ON t_dirs
               REFERENCING NEW ROW new
-              FOR EACH ROW WHEN (new.iname != '..' OR (SELECT itype FROM t_inodes WHERE ipnfsid = new.ipnfsid) != 16384)
+              FOR EACH ROW WHEN (EXISTS (SELECT 1 FROM t_inodes WHERE ipnfsid = new.ipnfsid AND itype = 32768))
                 INSERT INTO t_acl
                   SELECT new.ipnfsid, 1, type, BITANDNOT(flags, 11), access_msk, who, who_id, address_msk, ace_order
                   FROM t_acl
