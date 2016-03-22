@@ -557,10 +557,52 @@ public class CellNucleus implements ThreadFactory
             }
         }
     }
-    public void addCellEventListener(CellEventListener listener) {
-        __cellGlue.addCellEventListener(this, listener);
 
+    public void addCellEventListener(CellEventListener listener) {
+        __cellGlue.addCellEventListener(this, new CellEventListener()
+        {
+            @Override
+            public void cellCreated(CellEvent ce)
+            {
+                try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                    listener.cellCreated(ce);
+                }
+            }
+
+            @Override
+            public void cellDied(CellEvent ce)
+            {
+                try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                    listener.cellDied(ce);
+                }
+            }
+
+            @Override
+            public void cellExported(CellEvent ce)
+            {
+                try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                    listener.cellExported(ce);
+                }
+            }
+
+            @Override
+            public void routeAdded(CellEvent ce)
+            {
+                try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                    listener.routeAdded(ce);
+                }
+            }
+
+            @Override
+            public void routeDeleted(CellEvent ce)
+            {
+                try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                    listener.routeDeleted(ce);
+                }
+            }
+        });
     }
+
     public void export() { __cellGlue.export(this);  }
 
     public void subscribe(String topic) { __cellGlue.subscribe(this, topic); }
