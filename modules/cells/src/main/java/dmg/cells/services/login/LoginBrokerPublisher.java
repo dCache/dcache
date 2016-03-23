@@ -328,7 +328,7 @@ public class LoginBrokerPublisher
             if (address.isAnyLocalAddress()) {
                 setAddressSupplier(createAnyAddressSupplier());
             } else {
-                setAddressSupplier(createSingleAddressSupplier(address));
+                setAddressSupplier(createSingleAddressSupplier(NetworkUtils.withCanonicalAddress(address)));
             }
         } else {
             setAddressSupplier(createSingleAddressSupplier(InetAddress.getByName(host)));
@@ -540,7 +540,7 @@ public class LoginBrokerPublisher
 
     public static Supplier<List<InetAddress>> createSingleAddressSupplier(InetAddress address)
     {
-        return () -> Collections.singletonList(NetworkUtils.withCanonicalAddress(address));
+        return () -> Collections.singletonList(address);
     }
 
     public static Supplier<List<InetAddress>> createAnyAddressSupplier()
