@@ -17,7 +17,7 @@ public class CellTunnelInfo implements Serializable {
 
    private final CellDomainInfo _remote ;
    private final CellDomainInfo _local ;
-   final String _tunnelName ;
+   private final String _tunnelName ;
 
    public CellTunnelInfo( String tunnelName ,
                           CellDomainInfo local ,
@@ -29,6 +29,7 @@ public class CellTunnelInfo implements Serializable {
    }
    public CellDomainInfo getRemoteCellDomainInfo(){ return _remote ; }
    public CellDomainInfo getLocalCellDomainInfo(){  return _local ; }
+   public String getTunnelName() { return _tunnelName; }
    public String toString(){
       return _tunnelName+" L["+(_local!=null?_local.toString():"Unknown")+
              "];R["+(_remote!=null?_remote.toString():"Unknown")+"]" ;

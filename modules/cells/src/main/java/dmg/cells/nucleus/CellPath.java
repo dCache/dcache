@@ -42,6 +42,7 @@ public final class CellPath implements Cloneable, Serializable
 
     private CellPath(int position, List<CellAddressCore> list)
     {
+        checkArgument(position >= -1 && position < list.size());
         _position = position;
         _list = list;
     }
@@ -56,7 +57,7 @@ public final class CellPath implements Cloneable, Serializable
         this(0, streamOfPath(path).collect(toList()));
     }
 
-    public CellPath(CellAddressCore address)
+    public CellPath(CellAddressCore... address)
     {
         this(0, Lists.newArrayList(address));
     }

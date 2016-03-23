@@ -17,8 +17,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -80,10 +82,9 @@ public class RoutingManager
     private final Set<String> _topics = new HashSet<>();
 
     /**
-     * Whether a default route has been installed in our domain. We don't
-     * announce our routes until a default route has been installed.
+     * Upstream domains. Domains are added to this set when default routes are installed.
      */
-    private boolean _defaultInstalled;
+    private final Set<CellAddressCore> _upstreams = new CopyOnWriteArraySet<>();
 
     /**
      * Name of a tunnel cell that will be used as a default route if it appears. Usually
@@ -153,14 +154,9 @@ public class RoutingManager
         }
     }
 
-    private synchronized void setDefaultInstalled(boolean value)
+    private boolean isDefaultInstalled()
     {
-        _defaultInstalled = value;
-    }
-
-    private synchronized boolean isDefaultInstalled()
-    {
-        return _defaultInstalled;
+        return !_upstreams.isEmpty();
     }
 
     private void addRoute(CellPath dest, String domain)
@@ -197,10 +193,6 @@ public class RoutingManager
 
     private synchronized void updateUpstream()
     {
-        if (!isDefaultInstalled()) {
-            return;
-        }
-
         List<String> all = Lists.newArrayList();
         _log.info("update requested to upstream Domains");
         //
@@ -224,12 +216,13 @@ public class RoutingManager
         //
         _domainHash.forEach((domain, paths) -> all.add("*@" + domain));
 
-        String destinationManager = _nucleus.getCellName();
-        _log.info("Resending to {}: {}", destinationManager, all);
-        CellPath path = new CellPath(destinationManager);
+        CellAddressCore peer = new CellAddressCore(_nucleus.getCellName());
         String[] arr = all.toArray(new String[all.size()]);
-
-        _nucleus.sendMessage(new CellMessage(path, arr), false, true);
+        for (CellAddressCore upstream : _upstreams) {
+            CellPath address = new CellPath(upstream, peer);
+            _log.info("Resending to {}: {}", address, all);
+            _nucleus.sendMessage(new CellMessage(address, arr), false, true);
+        }
     }
 
     private synchronized void updateRoutingInfo(String[] info)
@@ -288,13 +281,15 @@ public class RoutingManager
 
     private synchronized void updateTopicsUpstream()
     {
-        if (!isDefaultInstalled()) {
-            return;
-        }
         String[] topics = _topics.toArray(new String[_topics.size()]);
-        CellMessage msg = new CellMessage(new CellAddressCore(_nucleus.getCellName()),
-                                          new TopicRouteUpdate(topics));
-        _nucleus.sendMessage(msg, false, true);
+
+        CellAddressCore peer = new CellAddressCore(_nucleus.getCellName());
+        for (CellAddressCore upstream : _upstreams) {
+            CellMessage msg =
+                    new CellMessage(new CellPath(upstream, peer),
+                                    new TopicRouteUpdate(topics));
+            _nucleus.sendMessage(msg, false, true);
+        }
     }
 
     private synchronized void topicRouteAdded(CellRoute cr)
@@ -377,7 +372,7 @@ public class RoutingManager
                 _executor.execute(() -> updateDownstreamTopics(domain, _topicUpdates.remove(domain)));
             }
         } else if (obj instanceof GetAllDomainsRequest) {
-            if (_defaultInstalled && !msg.getSourcePath().contains(_domainAddress)) {
+            if (isDefaultInstalled() && !msg.getSourcePath().contains(_domainAddress)) {
                 msg.getDestinationPath().insert(new CellPath(_nucleus.getCellName()));
                 msg.nextDestination();
                 _nucleus.sendMessage(msg, false, true);
@@ -418,8 +413,9 @@ public class RoutingManager
     {
         String name = (String) ce.getSource();
         _log.info("Cell died: {}", name);
-        _localExports.remove(name);
-        updateUpstream();
+        if (_localExports.remove(name)) {
+            updateUpstream();
+        }
     }
 
     @Override
@@ -439,6 +435,11 @@ public class RoutingManager
         _log.info("Got 'route added' event: {}", cr);
         switch (cr.getRouteType()) {
         case CellRoute.DOMAIN:
+            if (_upstreams.contains(new CellAddressCore("*", cr.getDomainName()))) {
+                updateUpstream();
+                updateTopicsUpstream();
+            }
+
             if ((_watchCell != null) && gate.getCellName().equals(_watchCell)) {
                 //
                 // the upstream route (we only support one)
@@ -450,19 +451,6 @@ public class RoutingManager
                 } catch (IllegalArgumentException e) {
                     _log.warn("Couldn't add default route: {}", e.getMessage());
                 }
-            } else {
-                //
-                // possible downstream routes
-                //
-                // _log.info("Downstream route added : "+ cr);
-                _log.info("Downstream route added to domain {}", cr.getDomainName());
-                //
-                // If the locationManager takes over control
-                // the default route may be installed before
-                // the actual domainRouted is added. Therefore
-                // we have to 'updateUpstream' for each route.
-                updateUpstream();
-                updateTopicsUpstream();
             }
             break;
         case CellRoute.TOPIC:
@@ -470,7 +458,16 @@ public class RoutingManager
             break;
         case CellRoute.DEFAULT:
             _log.info("Default route was added");
-            setDefaultInstalled(true);
+            CellAddressCore target = cr.getTarget();
+            if (target.getCellDomainName().equals(_nucleus.getCellDomainName())) {
+                /* Default route points to a local cell and not a domain. If the cell is a tunnel
+                 * then the upstream is at the other end of the tunnel.
+                 */
+                getRemoteDomain(target).ifPresent(_upstreams::add);
+            } else if (target.getCellName().equals("*")) {
+                _upstreams.add(target);
+            }
+
             updateUpstream();
             updateTopicsUpstream();
             break;
@@ -496,9 +493,19 @@ public class RoutingManager
             topicRouteRemoved(cr);
             break;
         case CellRoute.DEFAULT:
-            setDefaultInstalled(false);
+            CellAddressCore target = cr.getTarget();
+            _upstreams.remove(target);
+            getRemoteDomain(target).ifPresent(_upstreams::remove);
             break;
         }
+    }
+
+    private Optional<CellAddressCore> getRemoteDomain(CellAddressCore tunnel)
+    {
+        return _nucleus.getCellTunnelInfos().stream()
+                .filter(i -> i.getTunnelName().equals(tunnel.getCellName()))
+                .findAny()
+                .map(i -> new CellAddressCore("*", i.getRemoteCellDomainInfo().getCellDomainName()));
     }
 
     public String ac_update(Args args)
