@@ -31,13 +31,8 @@
     <property name="pnfsHandler" ref="pnfs"/>
   </bean>
 
-  <bean id="psu" class="${poolmanager.plugins.selection-unit}">
+  <bean id="psu" class="diskCacheV111.poolManager.PoolSelectionUnitV2">
     <description>Pool selection unit</description>
-  </bean>
-
-  <bean id="poolManagerCLI" class="diskCacheV111.poolManager.PoolSelectionUnitCommands">
-    <description>Provides commands for cell</description>
-    <property name="psuAccess" ref="psu"/>
   </bean>
 
   <bean id="cm" class="diskCacheV111.poolManager.CostModuleV1">
@@ -120,5 +115,15 @@
     </property>
   </bean>
 
+  <bean id="PsuAccess" class="org.dcache.resilience.util.PoolSelectionUnitDecorator">
+    <description>Implements interface to which the cell commands delegate</description>
+    <property name="delegate" ref="psu"/>
+    <property name="psu" ref="psu"/>
+    <property name="costModule" ref="cm"/>
+  </bean>
 
+  <bean id="poolManagerCLI" class="diskCacheV111.poolManager.PoolSelectionUnitCommands">
+    <description>Provides commands for cell</description>
+    <property name="psuAccess" ref="PsuAccess"/>
+  </bean>
 </beans>

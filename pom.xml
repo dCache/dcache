@@ -1196,6 +1196,7 @@
         <module>modules/dcache</module>
         <module>modules/dcache-chimera</module>
         <module>modules/dcache-ftp</module>
+        <module>modules/dcache-resilience</module>
         <module>modules/dcache-webdav</module>
         <module>modules/dcache-xrootd</module>
         <module>modules/dcache-dcap</module>

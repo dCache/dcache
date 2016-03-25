@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -26,19 +25,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.DiskSpace;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.DiskSpace;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
-
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -63,10 +60,14 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
-import static org.dcache.pool.repository.EntryState.*;
+import static org.dcache.pool.repository.EntryState.NEW;
+import static org.dcache.pool.repository.EntryState.PRECIOUS;
+import static org.dcache.pool.repository.EntryState.REMOVED;
 
 
 /**
@@ -325,6 +326,7 @@ public class CacheRepositoryV5
         try {
             checkUninitialized();
             _store = new MetaDataCache(store, new StateChangeListener()
+
             {
                 @Override
                 public void stateChanged(StateChangeEvent event)
@@ -578,11 +580,13 @@ public class CacheRepositoryV5
             MetaDataRecord entry = _store.create(id);
             synchronized (entry) {
                 entry.setFileAttributes(fileAttributes);
+
                 entry.setState(transferState);
 
                 try {
                     return new WriteHandleImpl(
-                            getPoolName(), _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords, flags);
+                            this, _allocator, _pnfs, entry, fileAttributes,
+                                    targetState, stickyRecords, flags);
                 } catch (IOException e) {
                     throw new DiskErrorCacheException("Failed to create file: " + entry.getDataFile(), e);
                 }

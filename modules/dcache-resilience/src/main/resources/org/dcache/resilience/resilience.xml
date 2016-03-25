@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:property-placeholder/>
+
+    <bean id="permission-handler"
+          class="org.dcache.namespace.ChainedPermissionHandler">
+        <description>Permission handler</description>
+        <property name="chain">
+            <list>
+                <bean class="org.dcache.namespace.ACLPermissionHandler"/>
+                <bean class="org.dcache.namespace.PosixPermissionHandler"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+        <description>Data source</description>
+        <constructor-arg value="${resilience.db.url}"/>
+        <constructor-arg value="ResilienceDb"/>
+        <constructor-arg ref="ConnectionPool"/>
+    </bean>
+
+    <bean id="ConnectionPool" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+      <description>Database connection pool</description>
+      <constructor-arg>
+        <bean class="com.zaxxer.hikari.HikariConfig">
+          <property name="jdbcUrl" value="${resilience.db.url}"/>
+          <property name="username" value="${resilience.db.user}"/>
+          <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${resilience.db.password.file}', '${resilience.db.url}', '${resilience.db.user}', '${resilience.db.password}') }"/>
+          <property name="minimumIdle" value="${resilience.db.connections.idle}"/>
+          <property name="maximumPoolSize" value="${resilience.db.connections.max}"/>
+          <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+        </bean>
+      </constructor-arg>
+  </bean>
+
+  <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <description>Database transaction manager</description>
+        <property name="dataSource" ref="data-source"/>
+    </bean>
+
+    <bean id="file-system" class="org.dcache.chimera.JdbcFs">
+      <description>Chimera</description>
+      <constructor-arg ref="data-source"/>
+      <constructor-arg ref="tx-manager"/>
+      <constructor-arg value="${resilience.db.dialect}"/>
+    </bean>
+
+    <bean id="extractor" class="${resilience.plugins.storage-info-extractor}">
+      <description>Storage info extractor</description>
+      <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('${resilience.default-access-latency}') }"/>
+      <constructor-arg value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${resilience.default-retention-policy}') }"/>
+    </bean>
+
+    <bean id="name-space-provider"
+          class="org.dcache.chimera.namespace.ChimeraNameSpaceProvider">
+      <description>Name space provider</description>
+      <property name="permissionHandler" ref="permission-handler"/>
+      <property name="inheritFileOwnership" value="${resilience.enable.inherit-file-ownership}"/>
+      <property name="verifyAllLookups" value="${resilience.enable.full-path-permission-check}"/>
+      <property name="fileSystem" ref="file-system"/>
+      <property name="extractor" ref="extractor"/>
+      <property name="aclEnabled" value="${resilience.enable.acl}"/>
+      <property name="uploadDirectory" value="${resilience.upload-directory}/%d"/>
+    </bean>
+
+    <bean id="NamespaceAccess" class="org.dcache.resilience.db.LocalNamespaceAccess">
+      <description>Specialized access for scanning resilient pools</description>
+      <property name="namespace" ref="name-space-provider"/>
+      <property name="connectionPool" ref="data-source"/>
+      <property name="fetchSize" value="${resilience.pnfs-fetch-size}"/>
+      <property name="handler" ref="PnfsOpHandler"/>
+    </bean>
+
+    <bean id="PinManager" class="org.dcache.cells.CellStub">
+      <description>Pinmanager endpoint</description>
+      <property name="destination" value="${resilience.service.pinmanager}"/>
+      <property name="timeout" value="${resilience.service.pinmanager.timeout}"/>
+      <property name="timeoutUnit" value="${resilience.service.pinmanager.timeout.unit}"/>
+      <property name="retryOnNoRouteToCell" value="true"/>
+    </bean>
+
+    <bean id="CellStubFactory" class="org.dcache.util.CellStubFactory">
+      <description>For dynamic generation of pool endpoints</description>
+      <property name="pinManager" ref="PinManager"/>
+      <property name="poolTimeout" value="${resilience.service.pool.timeout}"/>
+      <property name="poolTimeoutUnit" value="${resilience.service.pool.timeout.unit}"/>
+    </bean>
+
+    <bean id="SubmitExecutor" class="org.dcache.util.CDCBoundedTaskExecutor"
+          init-method="initialize" destroy-method="shutdownNow">
+      <description>Thread pool service for executing operation submissions</description>
+      <property name="numberOfThreads" value="${resilience.submit-threads}"/>
+    </bean>
+
+    <bean id="PnfsOpExecutor" class="org.dcache.util.CDCBoundedTaskExecutor"
+          init-method="initialize" destroy-method="shutdownNow">
+      <description>Thread pool service for executing verification of individual pnfs operations</description>
+      <property name="numberOfThreads" value="${resilience.pnfs-op-threads}"/>
+    </bean>
+
+    <bean id="PoolScanExecutor" class="org.dcache.util.CDCBoundedTaskExecutor"
+        init-method="initialize" destroy-method="shutdownNow">
+      <description>Thread pool service for executing pool scanning operations</description>
+      <property name="numberOfThreads" value="${resilience.pool-scan-threads}"/>
+    </bean>
+
+    <bean id="MigrationExecutor" class="org.dcache.util.CDCScheduledPoolTaskExecutor"
+          init-method="initialize" destroy-method="shutdownNow">
+      <description>Thread pool service for executing copy (migration) and remove tasks</description>
+      <property name="numberOfThreads" value="${resilience.file-copy-threads}"/>
+    </bean>
+
+    <bean id="InaccessibleFileHandler" class="org.dcache.resilience.util.InaccessibleFileAlarmSender">
+      <description>Handles resilient files discovered to have no copies on readable pools</description>
+      <property name="parentDir" value="${resilience.inaccessible-files.directory}"/>
+    </bean>
+
+    <bean id="Counters" class="org.dcache.resilience.util.OperationStatistics" init-method="initialize">
+      <description>Statistics gathering</description>
+      <property name="statisticsPath" value="${resilience.home}/pnfs-operation-statistics"/>
+    </bean>
+
+    <bean id="History" class="org.dcache.resilience.util.OperationHistory" init-method="initialize">
+      <description>Circular buffer recording recently completed operations</description>
+      <property name="capacity" value="${resilience.history.buffer-size}"/>
+    </bean>
+
+    <bean id="PoolSelectionStrategy" class="${resilience.pool-selection-strategy}">
+      <description>Strategy used to choose a target location from a set of valid pools in a resilient group</description>
+    </bean>
+
+    <bean id="PoolInfoMap" class="org.dcache.resilience.data.PoolInfoMap">
+      <description>Specialized class maintaining information derived from the Pool Monitor</description>
+    </bean>
+
+    <bean id="LocationSelector" class="org.dcache.resilience.util.LocationSelector">
+      <description>Encapsulates procedures for choosing source and target locations</description>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+      <property name="poolSelectionStrategy" ref="PoolSelectionStrategy"/>
+    </bean>
+
+    <bean id="PnfsTaskCompletionHandler" class="org.dcache.resilience.handlers.PnfsTaskCompletionHandler">
+        <description>Manages migration and resilient tasks which have terminated</description>
+        <property name="map" ref="PnfsOpMap"/>
+    </bean>
+
+    <bean id="PoolTaskCompletionHandler" class="org.dcache.resilience.handlers.PoolTaskCompletionHandler">
+      <description>Manages pool scan tasks which have terminated</description>
+      <property name="map" ref="PoolOpMap"/>
+    </bean>
+
+    <bean id="PnfsOpMap" class="org.dcache.resilience.data.PnfsOperationMap" destroy-method="shutdown">
+      <description>The central hub of information regarding resilient operations by pnfsid</description>
+      <property name="timeout" value="${resilience.pnfs-scan.period}"/>
+      <property name="timeoutUnit" value="${resilience.pnfs-scan.period.unit}"/>
+      <property name="completionHandler" ref="PnfsTaskCompletionHandler"/>
+      <property name="poolTaskCompletionHandler" ref="PoolTaskCompletionHandler"/>
+      <property name="counters" ref="Counters"/>
+      <property name="history" ref="History"/>
+      <property name="copyThreads" value="${resilience.file-copy-threads}"/>
+      <property name="maxRetries" value="${resilience.max-retries}"/>
+      <property name="maxAllocation" value="${resilience.pnfs-max-queue-allocation}"/>
+      <property name="operationHandler" ref="PnfsOpHandler"/>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+      <property name="checkpointExpiry" value="${resilience.checkpoint-expiry}"/>
+      <property name="checkpointExpiryUnit" value="${resilience.checkpoint-expiry.unit}"/>
+      <property name="checkpointFilePath" value="${resilience.home}/pnfs-operation-map"/>
+    </bean>
+
+    <bean id="PoolOpMap" class="org.dcache.resilience.data.PoolOperationMap" destroy-method="shutdown">
+      <description>The locus of information about current pool scan operations</description>
+      <property name="timeout" value="${resilience.pool-scan.period}"/>
+      <property name="timeoutUnit" value="${resilience.pool-scan.period.unit}"/>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+      <property name="pnfsOperationMap" ref="PnfsOpMap"/>
+      <property name="counters" ref="Counters"/>
+      <property name="downGracePeriod" value="${resilience.pool-down-grace-period}"/>
+      <property name="downGracePeriodUnit" value="${resilience.pool-down-grace-period.unit}"/>
+      <property name="handler" ref="PoolOpHandler"/>
+      <property name="inaccessibleFileHandler" ref="InaccessibleFileHandler"/>
+      <property name="maxConcurrentRunning" value="${resilience.pool-scan-threads}"/>
+      <property name="rescanWindow" value="${resilience.pool-scan.window}"/>
+      <property name="rescanWindowUnit" value="${resilience.pool-scan.window.unit}"/>
+      <property name="restartGracePeriod" value="${resilience.pool-restart-grace-period}"/>
+      <property name="restartGracePeriodUnit" value="${resilience.pool-restart-grace-period.unit}"/>
+      <property name="watchdog" value="${resilience.watchdog.enabled}"/>
+    </bean>
+
+    <bean id="PnfsOpHandler" class="org.dcache.resilience.handlers.PnfsOperationHandler">
+      <description>Encapsulates the logic determining what needs to be done for a given pnfsid</description>
+      <property name="completionHandler" ref="PnfsTaskCompletionHandler"/>
+      <property name="factory" ref="CellStubFactory"/>
+      <property name="inaccessibleFileHandler" ref="InaccessibleFileHandler"/>
+      <property name="namespace" ref="NamespaceAccess"/>
+      <property name="pnfsOpMap" ref="PnfsOpMap"/>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+      <property name="locationSelector" ref="LocationSelector"/>
+      <property name="scheduledService" ref="MigrationExecutor"/>
+      <property name="taskService" ref="PnfsOpExecutor"/>
+    </bean>
+
+    <bean id="PoolOpHandler" class="org.dcache.resilience.handlers.PoolOperationHandler">
+      <description>Encapsulates the logic determining what needs to be done for a given pool</description>
+      <property name="namespace" ref="NamespaceAccess"/>
+      <property name="completionHandler" ref="PoolTaskCompletionHandler"/>
+      <property name="operationMap" ref="PoolOpMap"/>
+      <property name="scanService" ref="PoolScanExecutor"/>
+      <property name="submitService" ref="SubmitExecutor"/>
+    </bean>
+
+    <bean id="BacklogHandler" class="org.dcache.resilience.util.SimplePersistentBacklogHandler"
+          init-method="initialize" destroy-method="shutdown">
+      <description>Persists incoming pnfsid messages when resilience is disabled, and reloads them when re-enabled.</description>
+      <constructor-arg value="${resilience.home}/pnfs-backlogged-messages"/>
+      <property name="messageHandler" ref="MessageHandler"/>
+    </bean>
+
+    <bean id="MessageGuard" class="org.dcache.resilience.util.MessageGuard">
+      <description>Validates incoming messages for action</description>
+      <property name="backlogHandler" ref="BacklogHandler"/>
+    </bean>
+
+    <bean id="MessageHandler" class="org.dcache.resilience.handlers.ResilienceMessageHandler">
+      <description>Locus for receiving external resilience-related messages as well as internally relayed pool status updates</description>
+      <property name="counters" ref="Counters"/>
+      <property name="messageGuard" ref="MessageGuard"/>
+      <property name="pnfsOperationHandler" ref="PnfsOpHandler"/>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+      <property name="poolOperationHandler" ref="PoolOpHandler"/>
+      <property name="updateService" ref="SubmitExecutor"/>
+    </bean>
+
+    <bean id="SchedulingService" class="java.util.concurrent.ScheduledThreadPoolExecutor"
+        destroy-method="shutdownNow">
+      <description>Used in conjunction with system initialization and pool monitor refresh timeouts</description>
+      <constructor-arg value="2"/>
+    </bean>
+
+    <bean id="MapInitializer" class="org.dcache.resilience.util.MapInitializer"
+        init-method="initialize">
+      <description>Controls the sequence of initializations internal to resilience</description>
+      <property name="initService" ref="SchedulingService"/>
+      <property name="messageGuard" ref="MessageGuard"/>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+      <property name="poolOperationMap" ref="PoolOpMap"/>
+      <property name="pnfsOperationMap" ref="PnfsOpMap"/>
+      <property name="poolInfoChangeHandler" ref="PoolMonitorChangeHandler"/>
+      <property name="initDelay" value="${resilience.startup-delay}"/>
+      <property name="initDelayUnit" value="${resilience.startup-delay.unit}"/>
+    </bean>
+
+    <bean id="PoolMonitorChangeHandler" class="org.dcache.resilience.handlers.PoolInfoChangeHandler"
+        destroy-method="stopWatchdog">
+      <description>Responsible for handling the pool monitor updates received from Pool Manager</description>
+      <property name="initializer" ref="MapInitializer"/>
+      <property name="resilienceMessageHandler" ref="MessageHandler"/>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+      <property name="poolOperationMap" ref="PoolOpMap"/>
+      <property name="pnfsOperationMap" ref="PnfsOpMap"/>
+      <property name="updateService">
+        <bean class="org.dcache.util.CDCFixedPoolTaskExecutor"
+            init-method="initialize" destroy-method="shutdownNow">
+          <property name="numberOfThreads" value="1"/>
+        </bean>
+      </property>
+      <property name="refreshService" ref="SchedulingService"/>
+      <property name="refreshTimeout" value="${resilience.pool-info-expiry}"/>
+      <property name="refreshTimeoutUnit" value="${resilience.pool-info-expiry.unit}"/>
+    </bean>
+
+    <bean id="AdminCommands" class="org.dcache.resilience.admin.StandaloneResilienceCommands">
+      <description>Encapsulates all commands exposed through the admin service</description>
+      <property name="counters" ref="Counters"/>
+      <property name="history" ref="History"/>
+      <property name="messageGuard" ref="MessageGuard"/>
+      <property name="initializer" ref="MapInitializer"/>
+      <property name="namespaceAccess" ref="NamespaceAccess"/>
+      <property name="pnfsOperationHandler" ref="PnfsOpHandler"/>
+      <property name="pnfsOperationMap" ref="PnfsOpMap"/>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+      <property name="poolOperationMap" ref="PoolOpMap"/>
+      <property name="executor">
+        <bean class="org.dcache.util.CDCFixedPoolTaskExecutor"
+              init-method="initialize" destroy-method="shutdownNow">
+          <property name="numberOfThreads" value="3"/>
+        </bean>
+      </property>
+      <property name="resilienceDir" value="${resilience.home}"/>
+    </bean>
+</beans>

@@ -388,7 +388,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             this.storage = storage;
         }
 
-        // Implements NearlineRequest#activate
+        // Implements NearlineRequest#setIncluded
         public UUID getId()
         {
             return uuid;

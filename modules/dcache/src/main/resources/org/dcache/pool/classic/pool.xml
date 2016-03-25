@@ -148,10 +148,10 @@
   <bean id="scanner" class="org.dcache.pool.classic.ChecksumScanner">
     <description>Implements background checksum verification</description>
     <property name="poolName" value="${pool.name}"/>
-    <property name="pnfs" ref="pnfs"/>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
     <property name="scrubberStateFile" value="${pool.path}/scrubber.state"/>
+    <property name="corruptFileTopic" ref="corrupt-file-topic"/>
   </bean>
 
   <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
@@ -202,6 +202,11 @@
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
       <description>Billing communication stub</description>
       <property name="destination" value="${pool.service.billing}"/>
+  </bean>
+
+  <bean id="corrupt-file-topic" class="org.dcache.cells.CellStub">
+        <description>Topic communication stub</description>
+        <property name="destination" value="${pool.destination.corrupt-file}"/>
   </bean>
 
   <bean id="pnfsStub" class="org.dcache.cells.CellStub">
@@ -445,6 +450,18 @@
   <bean id="custom-headers"
 	class="org.dcache.util.ConfigurationMapFactoryBean">
       <property name="prefix" value="pool.mover.http.custom-response-header"/>
+  </bean>
+
+  <bean id="resilience-message-handler" class="org.dcache.pool.resilience.ResilienceMessageHandler">
+    <description>For communication with the replica manager</description>
+    <property name="executionService">
+      <bean class="org.dcache.util.CDCFixedPoolTaskExecutor"
+            init-method="initialize" destroy-method="shutdownNow">
+        <property name="numberOfThreads" value="${pool.resilience.request-threads}"/>
+      </bean>
+    </property>
+    <property name="repository" ref="rep"/>
+    <property name="poolName" value="${pool.name}"/>
   </bean>
 
   <beans profile="healthcheck-true">

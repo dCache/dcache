@@ -17,7 +17,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
-
+import org.dcache.cells.CellStub;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.posix.Stat;
@@ -26,10 +26,21 @@ import org.dcache.tests.repository.MetaDataRepositoryHelper;
 import org.dcache.tests.repository.RepositoryHealerTestChimeraHelper;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.pool.repository.EntryState.*;
-import static org.hamcrest.Matchers.*;
+import static org.dcache.pool.repository.EntryState.BROKEN;
+import static org.dcache.pool.repository.EntryState.CACHED;
+import static org.dcache.pool.repository.EntryState.FROM_CLIENT;
+import static org.dcache.pool.repository.EntryState.FROM_STORE;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.never;
+import static org.mockito.BDDMockito.verify;
+import static org.mockito.BDDMockito.verifyNoMoreInteractions;
 
 public class ConsistentStoreTest
 {
@@ -41,17 +52,20 @@ public class ConsistentStoreTest
     private RepositoryHealerTestChimeraHelper _fileStore;
     private MetaDataStore _metaDataStore;
     private ConsistentStore _consistentStore;
+    private CellStub _broadcast;
 
     @Before
     public void setup() throws Exception
     {
         _pnfs = mock(PnfsHandler.class);
+        _broadcast = mock(CellStub.class);
         _fileStore = new RepositoryHealerTestChimeraHelper();
         _metaDataStore = new MetaDataRepositoryHelper(_fileStore);
         _consistentStore =
             new ConsistentStore(_pnfs, null, _metaDataStore,
                                 new ALRPReplicaStatePolicy());
         _consistentStore.setPoolName(POOL);
+        _consistentStore.setCorruptFileTopic(_broadcast);
     }
 
     @After

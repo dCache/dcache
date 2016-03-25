@@ -29,6 +29,11 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>dcache-resilience</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-ftp</artifactId>
         <version>${project.version}</version>

@@ -107,5 +107,4 @@
       <description>ACL command line</description>
       <property name="nameSpaceProvider" ref="name-space-provider"/>
   </bean>
-
 </beans>

@@ -1,0 +1,69 @@
+# Starts resilience with an independent Chimera provider
+
+onerror shutdown
+
+check -strong resilience.cell.name
+check -strong resilience.cell.export
+
+check -strong resilience.db.dialect
+check -strong resilience.db.user
+check -strong resilience.db.url
+check -strong resilience.db.connections.idle
+check -strong resilience.db.connections.max
+check -strong resilience.plugins.storage-info-extractor
+check -strong resilience.default-access-latency
+check -strong resilience.default-retention-policy
+check -strong resilience.enable.inherit-file-ownership
+check -strong resilience.enable.full-path-permission-check
+check -strong resilience.enable.acl
+check -strong resilience.upload-directory
+check resilience.db.schema.auto
+check resilience.db.password
+check resilience.db.password.file
+
+check -strong resilience.cell.subscribe
+check -strong resilience.cache-location.topic
+check -strong resilience.corrupt-file.topic
+check -strong resilience.pool-monitor.topic
+check -strong resilience.submit-threads
+check -strong resilience.pnfs-op-threads
+check -strong resilience.file-copy-threads
+check -strong resilience.pool-scan-threads
+
+check -strong resilience.home
+check -strong resilience.inaccessible-files.directory
+check -strong resilience.pnfs-fetch-size
+check -strong resilience.pnfs-max-queue-allocation
+check -strong resilience.pnfs-scan.period
+check -strong resilience.pnfs-scan.period.unit
+check -strong resilience.pool-info-expiry
+check -strong resilience.pool-info-expiry.unit
+check -strong resilience.history.buffer-size
+check -strong resilience.pool-down-grace-period
+check -strong resilience.pool-down-grace-period.unit
+check -strong resilience.pool-restart-grace-period
+check -strong resilience.pool-restart-grace-period.unit
+check -strong resilience.startup-delay
+check -strong resilience.startup-delay.unit
+check -strong resilience.watchdog.enabled
+check -strong resilience.pool-scan.period
+check -strong resilience.pool-scan.period.unit
+check -strong resilience.pool-scan.window
+check -strong resilience.pool-scan.window.unit
+check -strong resilience.pool-selection-strategy
+check -strong resilience.max-retries
+check -strong resilience.checkpoint-expiry
+check -strong resilience.checkpoint-expiry.unit
+
+check -strong resilience.service.pinmanager
+check -strong resilience.service.pinmanager.timeout
+check -strong resilience.service.pinmanager.timeout.unit
+check -strong resilience.service.pool.timeout
+check -strong resilience.service.pool.timeout.unit
+
+create org.dcache.cells.UniversalSpringCell ${resilience.cell.name} \
+    "classpath:org/dcache/resilience/resilience.xml \
+    -export=${resilience.cell.export} \
+    -subscribe=${resilience.cell.subscribe} \
+    -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+    "

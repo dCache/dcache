@@ -22,6 +22,10 @@ public class PoolManagerPoolInformation
         _cpuCost = cpuCost;
     }
 
+    public PoolManagerPoolInformation(String name, PoolCostInfo poolCostInfo) {
+        this(name, poolCostInfo, 0.0);
+    }
+
     public String getName()
     {
         return _name;

@@ -2,8 +2,6 @@ package org.dcache.pool.classic;
 
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,20 +23,22 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
-
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.util.Checksum;
+import org.dcache.vehicles.CorruptFileMessage;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -53,7 +53,7 @@ public class ChecksumScanner
     private final SingleScan _singleScan = new SingleScan();
 
     private Repository _repository;
-    private PnfsHandler _pnfs;
+    private CellStub _corruptFileTopic;
     private ChecksumModuleV1 _csm;
     private String poolName;
 
@@ -74,14 +74,13 @@ public class ChecksumScanner
         _scrubber.kill();
     }
 
+    public void setCorruptFileTopic(CellStub corruptFileTopic) {
+        _corruptFileTopic = corruptFileTopic;
+    }
+
     public void setRepository(Repository repository)
     {
         _repository = repository;
-    }
-
-    public void setPnfs(PnfsHandler pnfs)
-    {
-        _pnfs = pnfs;
     }
 
     public void setChecksumModule(ChecksumModuleV1 csm)
@@ -460,6 +459,7 @@ public class ChecksumScanner
                     } catch (IllegalTransitionException | CacheException f) {
                         _log.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
                     }
+                    _corruptFileTopic.send(new CorruptFileMessage(poolName, id));
                 } catch (IOException e) {
                     _unableCount++;
                     throw new IOException("Unable to read " + id + ": " + e.getMessage(), e);

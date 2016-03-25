@@ -258,7 +258,7 @@ public class StorageClassContainer
             append("\n");
     }
 
-    @Command(name = "queue activate",
+    @Command(name = "queue setIncluded",
             description = "Move a file from FAILED to ACTIVE.")
     class ActivateFileCommand implements Callable<String>
     {
@@ -277,7 +277,7 @@ public class StorageClassContainer
         }
     }
 
-    @Command(name = "queue activate class",
+    @Command(name = "queue setIncluded class",
             description = "Move files of a storage class from FAILED to ACTIVE.")
     class ActivateClassCommand implements Callable<String>
     {

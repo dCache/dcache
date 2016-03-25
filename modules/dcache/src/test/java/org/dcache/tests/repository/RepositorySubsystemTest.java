@@ -34,7 +34,6 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.FairQueueAllocation;
 import org.dcache.pool.classic.SpaceSweeper2;
@@ -59,8 +58,19 @@ import org.dcache.tests.cells.Message;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
-import static org.dcache.pool.repository.EntryState.*;
-import static org.junit.Assert.*;
+import static org.dcache.pool.repository.EntryState.BROKEN;
+import static org.dcache.pool.repository.EntryState.CACHED;
+import static org.dcache.pool.repository.EntryState.DESTROYED;
+import static org.dcache.pool.repository.EntryState.FROM_CLIENT;
+import static org.dcache.pool.repository.EntryState.FROM_STORE;
+import static org.dcache.pool.repository.EntryState.NEW;
+import static org.dcache.pool.repository.EntryState.PRECIOUS;
+import static org.dcache.pool.repository.EntryState.REMOVED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class RepositorySubsystemTest
     extends AbstractStateChangeListener
@@ -470,7 +480,6 @@ public class RepositorySubsystemTest
 
     @Test
     public void testCreateEntryFromStore() throws Throwable {
-
         repository.init();
         repository.load();
         stateChangeEvents.clear();

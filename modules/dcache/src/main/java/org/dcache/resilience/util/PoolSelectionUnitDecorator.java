@@ -57,37 +57,66 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.poolmanager.replication;
+package org.dcache.resilience.util;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
 
+import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolPreferenceLevel;
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitAccess;
+import diskCacheV111.poolManager.StorageUnit;
 
 /**
- * <p>
- * The purpose of this class is to be able to intercept changes from the
- * admin interface and react to them appropriately in terms of the replication
- * system, usually by initiating an update task on a pool or group of
- * pools.
- * </p><p>
- * Note that the interface extends {@link dmg.cells.nucleus.CellSetupProvider}.
- * This is in order to be able to deactivate the post-processing procedures
- * when the poolmanager.conf file is loaded.
- * </p>
- * Created by arossi on 2/20/15.
+ * <p>The purpose of this class is to enable the interception of changes
+ *      from the command line interface and to react to them appropriately
+ *      in terms of the resilience system.</p>
+ *
+ * <p>For some commands, validity checks are run.  In particular,
+ *      the replication constraints as established by storage units
+ *      are considered and links to resilient groups are followed
+ *      to make sure constraints can be satisified, and that
+ *      resilient storage groups are not linked to non-resilient pool groups.</p>
+ *
+ * <p>Note that the interface extends {@link dmg.cells.nucleus.CellSetupProvider}.
+ *      This is in order to be able to deactivate the pre-processing procedures
+ *      when the poolmanager.conf file is loaded.</p>
+ *
+ * <p>Changes will be handled on the resilience end via the reception of a
+ *      {@link org.dcache.poolmanager.SerializablePoolMonitor} from
+ *      the PoolManager.</p>
  */
-public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess {
+public final class PoolSelectionUnitDecorator
+                implements PoolSelectionUnitAccess {
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+                    PoolSelectionUnitDecorator.class);
+
+    public enum SelectionAction {
+        NONE,
+        ADD,
+        REMOVE,
+        MODIFY
+    }
 
     private PoolSelectionUnitAccess delegate;
+    private PoolSelectionUnit psu;
+    private CostModule module;
+
     private volatile boolean active;
 
     @Override
-    public void addLink(String linkName, String poolName) {
-        delegate.addLink(linkName, poolName);
+    public void addLink(String linkName, String name) {
+        delegate.addLink(linkName, name);
+
+        if (active) {
+            StorageUnitInfoExtractor.validateAllStorageUnits(psu);
+        }
     }
 
     @Override
@@ -104,18 +133,34 @@ public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess
     public void addToUnitGroup(String uGroupName, String unitName,
                     boolean isNet) {
         delegate.addToUnitGroup(uGroupName, unitName, isNet);
+
+        if (active) {
+            StorageUnit unit = psu.getStorageUnit(unitName);
+            if (unit != null) {
+                StorageUnitInfoExtractor.validateAllStorageUnits(psu);
+            }
+        }
     }
 
     @Override
     public void afterSetup() {
-        delegate.afterSetup();
+        /*
+         *  note that this method is already called by the UniversalSpringCell
+         *  on the delegate before the decorator's is invoked.
+         */
+
+        StorageUnitInfoExtractor.validateAllStorageUnits(psu);
+
         active = true;
     }
 
     @Override
     public void beforeSetup() {
         active = false;
-        delegate.beforeSetup();
+        /*
+         *  note that this method is already called by the UniversalSpringCell
+         *  on the delegate after the decorator's is invoked.
+         */
     }
 
     @Override
@@ -124,7 +169,7 @@ public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess
     }
 
     @Override
-    public void  createLink(String name, ImmutableList<String> unitGroup) {
+    public void createLink(String name, ImmutableList<String> unitGroup) {
         delegate.createLink(name, unitGroup);
     }
 
@@ -139,8 +184,8 @@ public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess
     }
 
     @Override
-    public void createPoolGroup(String name) {
-        delegate.createPoolGroup(name);
+    public void createPoolGroup(String name, boolean isResilient) {
+        delegate.createPoolGroup(name, isResilient);
     }
 
     @Override
@@ -182,14 +227,14 @@ public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess
     }
 
     @Override
-    public String listPoolGroups(boolean more, boolean detail,
-                    ImmutableList<String> groups) {
-        return delegate.listPoolGroups(more, detail, groups);
+    public Object listPoolGroupXml(String groupName) {
+        return delegate.listPoolGroupXml(groupName);
     }
 
     @Override
-    public Object listPoolGroupXml(String groupName) {
-        return delegate.listPoolGroupXml(groupName);
+    public String listPoolGroups(boolean more, boolean detail,
+                    ImmutableList<String> groups) {
+        return delegate.listPoolGroups(more, detail, groups);
     }
 
     @Override
@@ -204,25 +249,25 @@ public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess
     }
 
     @Override
+    public Object listUnitGroupXml(String groupName) {
+        return delegate.listUnitGroupXml(groupName);
+    }
+
+    @Override
     public String listUnitGroups(boolean more, boolean detail,
                     ImmutableList<String> unitGroups) {
         return delegate.listUnitGroups(more, detail, unitGroups);
     }
 
     @Override
-    public Object listUnitGroupXml(String groupName) {
-        return delegate.listUnitGroupXml(groupName);
+    public Object listUnitXml(String poolName) {
+        return delegate.listUnitXml(poolName);
     }
 
     @Override
     public String listUnits(boolean more, boolean detail,
                     ImmutableList<String> units) {
         return delegate.listUnits(more, detail, units);
-    }
-
-    @Override
-    public Object listUnitXml(String poolName) {
-        return delegate.listUnitXml(poolName);
     }
 
     @Override
@@ -246,8 +291,7 @@ public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess
     }
 
     @Override
-    public String netMatch(String hostAddress)
-                    throws UnknownHostException {
+    public String netMatch(String hostAddress) throws UnknownHostException {
         return delegate.netMatch(hostAddress);
     }
 
@@ -326,6 +370,10 @@ public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess
                         output, replica);
     }
 
+    public void setCostModule(CostModule module) {
+        this.module = module;
+    }
+
     @Override
     public String setPool(String glob, String mode) {
         return delegate.setPool(glob, mode);
@@ -346,9 +394,72 @@ public final class PoolSelectionUnitDecorator implements PoolSelectionUnitAccess
         return delegate.setPoolEnabled(poolName);
     }
 
+    public void setPsu(PoolSelectionUnit psu) {
+        this.psu = psu;
+    }
+
     @Override
     public String setRegex(String onOff) {
         return delegate.setRegex(onOff);
+    }
+
+    /**
+     * <p><b>A Note on altering storage units.</b>
+     *          How to make a resilient storage-group non-resilient:</p>
+     * <ol>
+     * <li>If you set minimum to 1, files currently in this unit will have
+     *          their replica count reduced to a single copy, and new files in
+     *          the unit will not be copied.  But notice that the files do
+     *          continue to get scanned as long as the unit is linked to the
+     *          resilient pool group.
+     * </li>
+     * <li>To completely deactivate those files, the unit must be removed
+     *          from its unit group.
+     * </li>
+     * </ol>
+     * <p>This call will run two verifications before allowing the change:
+     *          first, that a change making this unit resilient not be allowed
+     *          if this storage unit is linked to non-resilient groups; second,
+     *          a test to see that all pool groups to which it is linked can
+     *          satisfy the requirements for copies (including partitioning
+     *          by pool tags).</p>
+     */
+    @Override
+    public void setStorageUnit(String storageUnitKey, Integer required,
+                    String[] onlyOneCopyPer) {
+        final StorageUnit unit = psu.getStorageUnit(storageUnitKey);
+
+        if (unit == null) {
+            throw new IllegalArgumentException("Not found : " + storageUnitKey);
+        }
+
+        /*
+         * Cannot be done successfully on load, as all links are required
+         * to be present for verification purposes.
+         */
+        if (active) {
+            if (required != null) {
+                unit.setRequiredCopies(required);
+            }
+
+            if (onlyOneCopyPer != null) {
+                /*
+                 *  We need to anticipate the constraint check done in the
+                 *  delegate so as to avoid further validation work.
+                 */
+                Preconditions.checkArgument(unit.getRequiredCopies() >= 1,
+                                "required must be >= 1 in "
+                                                + "order to set partition tags, "
+                                                + "is currently set to %s.",
+                                unit.getRequiredCopies());
+                unit.setOnlyOneCopyPer(onlyOneCopyPer);
+            }
+
+            StorageUnitInfoExtractor.validate(unit, psu);
+            StorageUnitInfoExtractor.verifyCanBeSatisfied(unit, psu, module);
+        }
+
+        delegate.setStorageUnit(storageUnitKey, required, onlyOneCopyPer);
     }
 
     @Override

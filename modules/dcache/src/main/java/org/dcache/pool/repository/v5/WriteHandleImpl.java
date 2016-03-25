@@ -14,26 +14,30 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Iterables.isEmpty;
+import static com.google.common.collect.Iterables.unmodifiableIterable;
 import static java.util.Collections.singleton;
-import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
+import static org.dcache.namespace.FileAttribute.CHECKSUM;
+import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
+import static org.dcache.namespace.FileAttribute.SIZE;
 
 class WriteHandleImpl implements ReplicaDescriptor
 {
@@ -51,8 +55,8 @@ class WriteHandleImpl implements ReplicaDescriptor
      */
     private static final long HOLD_TIME = 5 * 60 * 1000; // 5 minutes
 
-    /** Name of local pool. */
-    private final String _poolName;
+    /** Callback for resilience handling.  Pool name can be accessed here */
+    private final CacheRepositoryV5 _repository;
 
     /** Space allocation is delegated to this allocator. */
     private final Allocator _allocator;
@@ -87,7 +91,7 @@ class WriteHandleImpl implements ReplicaDescriptor
     /** Last access time of new replica. */
     private Long _atime;
 
-    WriteHandleImpl(String poolName,
+    WriteHandleImpl(CacheRepositoryV5 repository,
                     Allocator allocator,
                     PnfsHandler pnfs,
                     MetaDataRecord entry,
@@ -96,7 +100,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                     List<StickyRecord> stickyRecords,
                     Set<Repository.OpenFlags> flags) throws IOException
     {
-        _poolName = checkNotNull(poolName);
+        _repository = checkNotNull(repository);
         _allocator = checkNotNull(allocator);
         _pnfs = checkNotNull(pnfs);
         _entry = checkNotNull(entry);
@@ -294,7 +298,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                 attributesToUpdate.setSize(_fileAttributes.getSize());
             }
         }
-        attributesToUpdate.setLocations(singleton(_poolName));
+        attributesToUpdate.setLocations(singleton(_repository.getPoolName()));
 
         _pnfs.setFileAttributes(_entry.getPnfsId(), attributesToUpdate);
     }
@@ -400,7 +404,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                  * failures in PNFS, and at the very least our cache location should
                  * be registered.
                  */
-                _pnfs.addCacheLocation(_entry.getPnfsId(), _poolName);
+                _pnfs.addCacheLocation(_entry.getPnfsId(), _repository.getPoolName());
                 registerFileAttributesInNameSpace();
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
@@ -422,10 +426,10 @@ class WriteHandleImpl implements ReplicaDescriptor
             PnfsId id = _entry.getPnfsId();
             _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                                    id.toString(),
-                                                   _poolName),
+                                                   _repository.getPoolName()),
                       "Marking pool entry {} on {} as BROKEN",
                       _entry.getPnfsId(),
-                      _poolName);
+                      _repository.getPoolName());
             try {
                 _entry.setState(EntryState.BROKEN);
             } catch (CacheException e) {

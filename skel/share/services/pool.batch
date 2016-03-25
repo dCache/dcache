@@ -63,6 +63,7 @@ check -strong pool.destination.heartbeat
 check pool.destination.replicate
 check pool.destination.replicate.ip
 check pool.check-health-command
+check pool.resilience.request-threads
 
 define context PoolDefaults endDefine
    set heartbeat 30
@@ -91,9 +92,12 @@ define context PoolDefaults endDefine
    movermap define GFtp-2  org.dcache.pool.movers.GFtpProtocol_2_nio
 endDefine
 
+onerror shutdown
+
 create org.dcache.cells.UniversalSpringCell "${pool.cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
-    -export=${pool.cell.export} -cellClass=Pool -profiles=healthcheck-${pool.enable.repository-check} \
+    -export=${pool.cell.export} -cellClass=Pool \
+    -profiles=healthcheck-${pool.enable.repository-check} \
     -cell.max-message-threads=${pool.cell.max-message-threads} -cell.max-messages-queued=${pool.cell.max-messages-queued} \
     -setupClass=pool -setupFile=\"${pool.path}/setup\" \
     -ftpAllowIncomingConnections=\"${pool.mover.ftp.allow-incoming-connections}\" \

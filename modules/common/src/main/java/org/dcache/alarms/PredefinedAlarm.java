@@ -77,7 +77,10 @@ public enum PredefinedAlarm implements Alarm {
    POOL_SIZE,
    POOL_FREE_SPACE,
    BROKEN_FILE,
-   CHECKSUM;
+   CHECKSUM,
+   INACCESSIBLE_FILE,
+   FAILED_REPLICATION,
+   RESILIENCE_SYNC_FAILURE;
 
    @Override
    public String getType() {

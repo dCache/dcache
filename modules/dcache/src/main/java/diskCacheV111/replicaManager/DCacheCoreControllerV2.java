@@ -1629,8 +1629,8 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
        return null;
      }
 
-     if ( r.length != 3 ) {
-       _log.info("getPoolGroup: The length of reply=" + r.length +" != 3");
+     if ( r.length < 3 ) {
+       _log.info("getPoolGroup: The length of reply=" + r.length +" < 3");
        return null;
      }else{
        String groupName = (String) r[0];

@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.UOID;
-
+import org.dcache.services.info.base.BooleanStateValue;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
@@ -29,21 +29,22 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel
         LOGGER.trace("processing new poolgroup information");
 
         if (!msgPayload.getClass().isArray()) {
-            LOGGER.error("received a message that isn't an array");
+            LOGGER.error("Pool group info, received a message that isn't an array");
             return;
         }
 
         Object array[] = (Object []) msgPayload;
 
-        if (array.length != 3) {
-            LOGGER.error("Unexpected array size: {}", array.length);
-            return;
-        }
+	    if (array.length != 4) {
+            LOGGER.error("Pool group info, unexpected array size: {}", array.length);
+		    return;
+	    }
 
         // Map the array into slightly more meaningful components.
         String poolgroupName = (String) array[0];
         Object poolNames[] = (Object []) array[1];
         Object linkNames[] = (Object []) array[2];
+        Boolean resilient = (Boolean) array[3];
 
         StateUpdate update = new StateUpdate();
 
@@ -55,6 +56,8 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel
         } else {
             addItems(update, thisPoolGroupPath.newChild("pools"), poolNames, metricLifetime);
             addItems(update, thisPoolGroupPath.newChild("links"), linkNames, metricLifetime);
+            update.appendUpdate(thisPoolGroupPath.newChild("resilient"),
+                                new BooleanStateValue(resilient, metricLifetime));
         }
 
         applyUpdates(update);

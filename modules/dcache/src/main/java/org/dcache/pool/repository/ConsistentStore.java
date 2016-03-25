@@ -20,10 +20,12 @@ import diskCacheV111.util.RetentionPolicy;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.ReplicaStatePolicy;
 import org.dcache.util.Checksum;
+import org.dcache.vehicles.CorruptFileMessage;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.concat;
@@ -77,6 +79,7 @@ public class ConsistentStore
     private final MetaDataStore _metaDataStore;
     private final ChecksumModule _checksumModule;
     private final ReplicaStatePolicy _replicaStatePolicy;
+    private CellStub _corruptFileTopic;
     private String _poolName;
 
     public ConsistentStore(PnfsHandler pnfsHandler,
@@ -88,6 +91,10 @@ public class ConsistentStore
         _checksumModule = checksumModule;
         _metaDataStore = metaDataStore;
         _replicaStatePolicy = replicaStatePolicy;
+    }
+
+    public void setCorruptFileTopic(CellStub corruptFileTopic) {
+        _corruptFileTopic = corruptFileTopic;
     }
 
     public void setPoolName(String poolName)
@@ -166,6 +173,8 @@ public class ConsistentStore
                                                             id.toString(),
                                                             _poolName),
                                String.format(BAD_MSG, id, e.getMessage()));
+                    _corruptFileTopic.send(
+                                    new CorruptFileMessage(_poolName, id));
                     break;
                 }
             } catch (NoSuchAlgorithmException e) {
@@ -174,6 +183,7 @@ public class ConsistentStore
                                                         id.toString(),
                                                         _poolName),
                                 String.format(BAD_MSG, id, e.getMessage()));
+                _corruptFileTopic.send(new CorruptFileMessage(_poolName, id));
             }
         }
 
@@ -250,15 +260,16 @@ public class ConsistentStore
                         String message = String.format(MISSING_ACCESS_LATENCY, id);
                         _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
                                                                 _poolName), message);
+                        _corruptFileTopic.send(new CorruptFileMessage(_poolName, id));
                         throw new CacheException(message);
                     }
 
                     AccessLatency accessLatency = attributesOnPool.getAccessLatency();
                     attributesToUpdate.setAccessLatency(accessLatency);
                     attributesInNameSpace.setAccessLatency(accessLatency);
-
                     _log.warn(String.format(UPDATE_ACCESS_LATENCY_MSG, id, accessLatency));
                 }
+
                 if (attributesInNameSpace.isUndefined(RETENTION_POLICY)) {
                     /* Retention policy must have been injected by space manager, so we hope we still
                      * got it stored on the pool.
@@ -268,6 +279,7 @@ public class ConsistentStore
                         String message = String.format(MISSING_RETENTION_POLICY, id);
                         _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
                                                                 _poolName), message);
+                        _corruptFileTopic.send(new CorruptFileMessage(_poolName, id));
                         throw new CacheException(message);
                     }
 
