@@ -678,7 +678,7 @@ public class PoolOperationMap extends RunnableModule {
      * <p>Called by the {@link PnfsOperationMap) when a child operation completes.</p>
      */
     public void update(String pool, PnfsId pnfsId) {
-        LOGGER.trace("Parent {}, child operation for {} has canceled.", pool,
+        LOGGER.trace("Parent {}, child operation for {} has completed.", pool,
                      pnfsId);
         lock.lock();
         try {

@@ -554,7 +554,13 @@ public class PoolInfoMap {
         if (info == null) {
             return ImmutableMap.of();
         }
-        return info.getTags();
+
+        Map<String, String> tags = info.getTags();
+        if (tags == null) {
+            return ImmutableMap.of();
+        }
+
+        return tags;
     }
 
     public Set<Integer> getValidLocations(Collection<Integer> locations,
