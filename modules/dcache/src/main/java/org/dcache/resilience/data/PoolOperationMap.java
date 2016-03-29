@@ -458,10 +458,21 @@ public class PoolOperationMap extends RunnableModule {
                 } else if (idle.containsKey(pool)) {
                     operation = idle.get(pool);
                 }
-                if (operation != null && filter.matches(pool, operation)) {
+
+                if (operation == null) {
+                    continue;
+                }
+
+                if (operation.currStatus == PoolStatusForResilience.UNINITIALIZED) {
+                    LOGGER.info("Cannot scan {} –– uninitialized", pool);
+                    continue;
+                }
+
+                if (filter.matches(pool, operation)) {
                     try {
-                        doScan(poolInfoMap.getPoolState(pool));
-                        reply.append("\t").append(pool).append("\n");
+                        if (doScan(poolInfoMap.getPoolState(pool))) {
+                            reply.append("\t").append(pool).append("\n");
+                        }
                     } catch (IllegalArgumentException e) {
                         errors.append("\t")
                               .append(String.format("%s, %s", pool,
@@ -473,60 +484,6 @@ public class PoolOperationMap extends RunnableModule {
         } finally {
             lock.unlock();
         }
-    }
-
-    /**
-     * <p>Ad hoc scan. Ignores the grace period timeouts.</p>
-     *
-     * <p>Will <i>not</i> override the behavior of normal task submission by
-     *      cancelling any outstanding task for this pool.</p>
-     *
-     * <p>Bypasses the transition checking of pool status to force
-     *      the task onto the waiting queue.</p>
-     *
-     * <p>Called after lock has been acquired.</p>
-     *
-     * @return true only if operation has been promoted from idle to waiting.
-     */
-    private boolean doScan(PoolStateUpdate update) {
-        if (running.containsKey(update.pool)) {
-            LOGGER.info("Scan of {} is already in progress", update.pool);
-            return false;
-        }
-
-        PoolOperation operation;
-
-        if (waiting.containsKey(update.pool)) {
-            LOGGER.info("Scan of {} is already in waiting state, setting its "
-                                        + "force flag to true.",
-                        update.pool);
-            waiting.get(update.pool).forceScan = true;
-            return false;
-        }
-
-        operation = idle.remove(update.pool);
-        if (operation == null) {
-            LOGGER.warn("No entry for {} in any queues; "
-                                        + "pool is not (yet) registered.",
-                        update.pool);
-            return false;
-        }
-
-        operation.forceScan = true;
-        operation.getNextAction(update.getStatus());
-        operation.lastUpdate = System.currentTimeMillis();
-        operation.state = State.WAITING;
-        operation.psuAction = update.action;
-        operation.group = update.group;
-
-        if (update.storageUnit != null) {
-            operation.unit = poolInfoMap.getGroupIndex(update.storageUnit);
-        }
-
-        operation.exception = null;
-        operation.task = null;
-        waiting.put(update.pool, operation);
-        return true;
     }
 
     public void setCounters(OperationStatistics counters) {
@@ -784,6 +741,60 @@ public class PoolOperationMap extends RunnableModule {
     }
 
     /**
+     * <p>Ad hoc scan. Ignores the grace period timeouts.</p>
+     *
+     * <p>Will <i>not</i> override the behavior of normal task submission by
+     *      cancelling any outstanding task for this pool.</p>
+     *
+     * <p>Bypasses the transition checking of pool status to force
+     *      the task onto the waiting queue.</p>
+     *
+     * <p>Called after lock has been acquired.</p>
+     *
+     * @return true only if operation has been promoted from idle to waiting.
+     */
+    private boolean doScan(PoolStateUpdate update) {
+        if (running.containsKey(update.pool)) {
+            LOGGER.info("Scan of {} is already in progress", update.pool);
+            return false;
+        }
+
+        PoolOperation operation;
+
+        if (waiting.containsKey(update.pool)) {
+            LOGGER.info("Scan of {} is already in waiting state, setting its "
+                                        + "force flag to true.",
+                        update.pool);
+            waiting.get(update.pool).forceScan = true;
+            return false;
+        }
+
+        operation = idle.remove(update.pool);
+        if (operation == null) {
+            LOGGER.warn("No entry for {} in any queues; "
+                                        + "pool is not (yet) registered.",
+                        update.pool);
+            return false;
+        }
+
+        operation.forceScan = true;
+        operation.getNextAction(update.getStatus());
+        operation.lastUpdate = System.currentTimeMillis();
+        operation.state = State.WAITING;
+        operation.psuAction = update.action;
+        operation.group = update.group;
+
+        if (update.storageUnit != null) {
+            operation.unit = poolInfoMap.getGroupIndex(update.storageUnit);
+        }
+
+        operation.exception = null;
+        operation.task = null;
+        waiting.put(update.pool, operation);
+        return true;
+    }
+
+    /**
      * @return operation, or <code>null</code> if not mapped.
      */
     private PoolOperation get(String pool) {
@@ -830,6 +841,10 @@ public class PoolOperationMap extends RunnableModule {
 
                 if (operation.state == State.EXCLUDED ||
                                 operation.state == State.INACTIVE) {
+                    continue;
+                }
+
+                if (operation.currStatus == PoolStatusForResilience.UNINITIALIZED) {
                     continue;
                 }
 
