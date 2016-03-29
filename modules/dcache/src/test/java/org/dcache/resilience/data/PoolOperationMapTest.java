@@ -99,6 +99,12 @@ public class PoolOperationMapTest extends TestBase {
         poolOperationMap.setRestartGracePeriod(0);
         poolOperationMap.loadPools();
         numberOfPools = poolOperationMap.idle.size();
+
+        poolInfoMap.getResilientPools().stream()
+                   .forEach((p) -> {
+                       PoolV2Mode mode = new PoolV2Mode(PoolV2Mode.ENABLED);
+                       poolOperationMap.update(new PoolStateUpdate(p, mode));
+                   });
     }
 
     @Test
