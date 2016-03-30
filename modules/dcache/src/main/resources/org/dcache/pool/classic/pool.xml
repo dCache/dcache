@@ -172,8 +172,9 @@
           <bean class="org.dcache.util.CDCListeningExecutorServiceDecorator"
                 destroy-method="shutdown">
               <constructor-arg>
-                  <bean class="java.util.concurrent.Executors"
-                        factory-method="newCachedThreadPool"/>
+                  <bean class="org.dcache.util.BoundedCachedExecutor">
+                      <constructor-arg value="${pool.limits.nearline-threads}"/>
+                  </bean>
               </constructor-arg>
           </bean>
       </property>
