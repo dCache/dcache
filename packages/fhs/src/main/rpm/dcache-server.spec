@@ -16,6 +16,7 @@ Requires(post): chkconfig
 Requires(preun): chkconfig
 # This is for /sbin/service
 Requires(preun): initscripts
+Requires: which
 
 License: Distributable
 Group: Applications/System
