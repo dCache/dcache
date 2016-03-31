@@ -75,6 +75,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellPath;
+import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.PoolSelectionStrategy;
 import org.dcache.pool.migration.Task;
@@ -96,7 +98,6 @@ import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.RemoveLocationExtractor;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.StaticSinglePoolList;
-import org.dcache.util.CellStubFactory;
 import org.dcache.util.ExceptionMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
@@ -137,7 +138,8 @@ public class PnfsOperationHandler {
     private NamespaceAccess           namespace;
     private LocationSelector          locationSelector;
 
-    private CellStubFactory           factory;
+    private CellStub                  pinManager;
+    private CellStub                  pools;
     private ExecutorService           taskService;
     private ScheduledExecutorService  scheduledService;
     private PnfsTaskCompletionHandler completionHandler;
@@ -298,7 +300,7 @@ public class PnfsOperationHandler {
         /*
          * Fire-and-forget best effort.
          */
-        operation.ensureSticky(poolInfoMap, factory);
+        operation.ensureSticky(poolInfoMap, pools);
 
         if (operation.getSelectionAction()
                         == SelectionAction.REMOVE.ordinal()) {
@@ -324,9 +326,9 @@ public class PnfsOperationHandler {
         String source = poolInfoMap.getPool(operation.getSource());
 
         TaskParameters taskParameters = new TaskParameters(
-                        factory.getPoolStub(source),
+                        pools,
                         null,   // PnfsManager cell stub not used
-                        factory.getPinManager(),
+                        pinManager,
                         scheduledService,
                         taskSelectionStrategy,
                         list,
@@ -485,10 +487,6 @@ public class PnfsOperationHandler {
         this.completionHandler = completionHandler;
     }
 
-    public void setFactory(CellStubFactory factory) {
-        this.factory = factory;
-    }
-
     public void setInaccessibleFileHandler(
                     InaccessibleFileHandler inaccessibleFileHandler) {
         this.inaccessibleFileHandler = inaccessibleFileHandler;
@@ -502,12 +500,20 @@ public class PnfsOperationHandler {
         this.namespace = namespace;
     }
 
+    public void setPinManagerStub(CellStub pinManager) {
+        this.pinManager = pinManager;
+    }
+
     public void setPnfsOpMap(PnfsOperationMap pnfsOpMap) {
         this.pnfsOpMap = pnfsOpMap;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
         this.poolInfoMap = poolInfoMap;
+    }
+
+    public void setPoolStub(CellStub pools) {
+        this.pools = pools;
     }
 
     public void setScheduledService(ScheduledExecutorService scheduledService) {
@@ -606,8 +612,7 @@ public class PnfsOperationHandler {
                                                             pnfsId);
 
         LOGGER.trace("Sending RemoveReplicasMessage {}.", msg);
-        Future<RemoveReplicaMessage> future = factory.getPoolStub(
-                        target).send(msg);
+        Future<RemoveReplicaMessage> future = pools.send(new CellPath(target), msg);
 
         try {
             msg = future.get();

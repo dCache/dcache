@@ -73,7 +73,6 @@ import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
-import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.ProportionalPoolSelectionStrategy;
 import org.dcache.poolmanager.PoolMonitor;
@@ -91,7 +90,6 @@ import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator;
-import org.dcache.util.CellStubFactory;
 import org.dcache.vehicles.FileAttributes;
 
 public abstract class TestBase implements Cancellable {
@@ -106,7 +104,6 @@ public abstract class TestBase implements Cancellable {
     /*
      *  Real instances.
      */
-    protected CellStubFactory       cellStubFactory;
     protected OperationStatistics   counters;
 
     /*
@@ -282,15 +279,6 @@ public abstract class TestBase implements Cancellable {
         if (testNamespaceAccess == null) {
             testNamespaceAccess = new TestNamespaceAccess();
         }
-    }
-
-    protected void createCellStubFactory() {
-        cellStubFactory = new CellStubFactory() {
-            @Override
-            public CellStub getPoolStub(String destination) {
-                return testPoolStub;
-            }
-        };
     }
 
     protected void createCellStubs() {
@@ -470,7 +458,6 @@ public abstract class TestBase implements Cancellable {
     protected void setUpBase() throws CacheException {
         createAccess();
         createCellStubs();
-        createCellStubFactory();
         createCostModule();
         createSelectionUnit();
         createPoolMonitor();
@@ -493,7 +480,6 @@ public abstract class TestBase implements Cancellable {
     protected void wirePnfsOperationHandler() {
         pnfsTaskCompletionHandler.setMap(pnfsOperationMap);
         pnfsOperationHandler.setCompletionHandler(pnfsTaskCompletionHandler);
-        pnfsOperationHandler.setFactory(cellStubFactory);
         pnfsOperationHandler.setInaccessibleFileHandler(
                         inaccessibleFileHandler);
         pnfsOperationHandler.setNamespace(testNamespaceAccess);
@@ -502,6 +488,7 @@ public abstract class TestBase implements Cancellable {
         pnfsOperationHandler.setPnfsOpMap(pnfsOperationMap);
         pnfsOperationHandler.setTaskService(longJobExecutor);
         pnfsOperationHandler.setScheduledService(scheduledExecutorService);
+        pnfsOperationHandler.setPoolStub(testPoolStub);
     }
 
     protected void wirePnfsOperationMap() {

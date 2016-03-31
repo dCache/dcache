@@ -87,11 +87,10 @@
       <property name="retryOnNoRouteToCell" value="true"/>
     </bean>
 
-    <bean id="CellStubFactory" class="org.dcache.util.CellStubFactory">
-      <description>For dynamic generation of pool endpoints</description>
-      <property name="pinManager" ref="PinManager"/>
-      <property name="poolTimeout" value="${resilience.service.pool.timeout}"/>
-      <property name="poolTimeoutUnit" value="${resilience.service.pool.timeout.unit}"/>
+    <bean id="Pools" class="org.dcache.cells.CellStub">
+      <description>For communication with pools</description>
+      <property name="timeout" value="${resilience.service.pool.timeout}"/>
+      <property name="timeoutUnit" value="${resilience.service.pool.timeout.unit}"/>
     </bean>
 
     <bean id="SubmitExecutor" class="org.dcache.util.CDCBoundedTaskExecutor"
@@ -197,8 +196,9 @@
     <bean id="PnfsOpHandler" class="org.dcache.resilience.handlers.PnfsOperationHandler">
       <description>Encapsulates the logic determining what needs to be done for a given pnfsid</description>
       <property name="completionHandler" ref="PnfsTaskCompletionHandler"/>
-      <property name="factory" ref="CellStubFactory"/>
       <property name="inaccessibleFileHandler" ref="InaccessibleFileHandler"/>
+      <property name="pinManagerStub" ref="PinManager"/>
+      <property name="poolStub" ref="Pools"/>
       <property name="namespace" ref="NamespaceAccess"/>
       <property name="pnfsOpMap" ref="PnfsOpMap"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>

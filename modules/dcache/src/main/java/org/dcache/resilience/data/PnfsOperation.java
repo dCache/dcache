@@ -72,11 +72,12 @@ import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellPath;
+import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.handlers.PnfsOperationHandler;
 import org.dcache.resilience.handlers.PnfsOperationHandler.Type;
 import org.dcache.resilience.util.ResilientFileTask;
-import org.dcache.util.CellStubFactory;
 import org.dcache.util.ExceptionMessage;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 
@@ -247,15 +248,15 @@ public final class PnfsOperation {
      * <p>Should the message/command fail for some reason, it will be
      *    recorded on the pool side.</p>
      */
-    public void ensureSticky(PoolInfoMap poolInfoMap, CellStubFactory factory) {
+    public void ensureSticky(PoolInfoMap poolInfoMap, CellStub pools) {
         if (!checkSticky) {
             return;
         }
 
         String pool = poolInfoMap.getPool(getNullForNil(source));
 
-        factory.getPoolStub(pool)
-               .send(new ForceSystemStickyBitMessage(pool, pnfsId));
+        pools.send(new CellPath(pool),
+                   new ForceSystemStickyBitMessage(pool, pnfsId));
     }
 
     public CacheException getException() {
