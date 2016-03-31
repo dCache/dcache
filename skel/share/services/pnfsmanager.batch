@@ -29,6 +29,5 @@ check pnfsmanager.db.password.file
 create org.dcache.cells.UniversalSpringCell ${pnfsmanager.cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \
         -export=${pnfsmanager.cell.export} \
-        -subscribe=${pnfsmanager.cell.subscribe} \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
        "
