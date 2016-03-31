@@ -420,16 +420,20 @@ public class LocationManager extends CellAdapter
             void print(PrintWriter pw)
             {
                 String domainName = this.domainName;
-                pw.println("define " + domainName);
+                pw.append("define ").append(domainName).println();
                 if (listen) {
-                    pw.println("listen " + domainName);
+                    pw.append("listen ").append(domainName);
+                    if (port > 0) {
+                        pw.append(" -port=").append(String.valueOf(port));
+                    }
+                    pw.println();
                 }
                 String def = defaultRoute;
                 if (def != null) {
-                    pw.println("defaultroute " + domainName + " " + def);
+                    pw.append("defaultroute ").append(domainName).append(' ').append(def).println();
                 }
                 for (String node : connections) {
-                    pw.println("connect " + domainName + " " + node);
+                    pw.append("connect ").append(domainName).append(" ").append(node).println();
                 }
             }
         }
