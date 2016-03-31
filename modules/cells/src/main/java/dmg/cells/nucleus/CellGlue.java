@@ -313,20 +313,29 @@ class CellGlue
 
     private void _kill(CellNucleus source, final CellNucleus destination, long to)
     {
+        /* Remove routes to this cell first to allow it to be drained cleanly.
+         */
+        for (CellRoute route : _routingTable.delete(destination.getThisAddress())) {
+            sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_DELETED_EVENT));
+        }
+
+        /* Mark the cell as being killed to prevent it from being killed more
+         * than once and to block certain operations while it is being killed.
+         */
         String cellToKill = destination.getCellName();
         if (!_killedCells.add(destination)) {
             LOGGER.trace("Cell is being killed: {}", cellToKill);
             return;
         }
 
+        /* Post the obituary.
+         */
         CellPath sourceAddr = new CellPath(source.getCellName(), getCellDomainName());
         KillEvent killEvent = new KillEvent(sourceAddr, to);
         sendToAll(new CellEvent(cellToKill, CellEvent.CELL_DIED_EVENT));
 
-        for (CellRoute route : _routingTable.delete(destination.getThisAddress())) {
-            sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_DELETED_EVENT));
-        }
-
+        /* Put out a contract.
+         */
         Runnable command = () -> destination.shutdown(killEvent);
         try {
             _killerExecutor.execute(command);

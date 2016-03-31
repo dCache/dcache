@@ -280,6 +280,9 @@ public class LocationMgrTunnel
          *
          * If another tunnel is already registered for the same
          * destination, then the other tunnel is killed.
+         *
+         * Routes are automatically removed by the CellGlue when this
+         * tunnel is killed.
          */
         public synchronized void add(LocationMgrTunnel tunnel)
                 throws InterruptedException
@@ -309,6 +312,21 @@ public class LocationMgrTunnel
                 nucleus.routeAdd(route);
             } catch (IllegalArgumentException e) {
                 _log.warn("Failed to add route: {}", e.getMessage());
+            }
+
+            CellTunnelInfo info = tunnel.getCellTunnelInfo();
+
+            /* If tunnel connects a satellite to a core domain, then add a default route.
+             */
+            if (info.getLocalCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
+                info.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE) {
+                CellRoute defaultRoute =
+                        new CellRoute(null, nucleus.getThisAddress().toString(), CellRoute.DEFAULT);
+                try {
+                    nucleus.routeAdd(defaultRoute);
+                } catch (IllegalArgumentException e) {
+                    _log.warn("Failed to add route: {}", e.getMessage());
+                }
             }
 
             /* Keep track of what we did.
