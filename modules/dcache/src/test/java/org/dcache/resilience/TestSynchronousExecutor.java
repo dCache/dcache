@@ -74,7 +74,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import org.dcache.util.ExceptionMessage;
+import org.dcache.resilience.util.ExceptionMessage;
 
 public final class TestSynchronousExecutor implements ScheduledExecutorService {
     public enum Mode {

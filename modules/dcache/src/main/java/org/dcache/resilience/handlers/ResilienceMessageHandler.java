@@ -78,7 +78,7 @@ import org.dcache.resilience.util.BrokenFileTask;
 import org.dcache.resilience.util.MessageGuard;
 import org.dcache.resilience.util.MessageGuard.Status;
 import org.dcache.resilience.util.OperationStatistics;
-import org.dcache.util.ExceptionMessage;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.vehicles.CorruptFileMessage;
 
 /**

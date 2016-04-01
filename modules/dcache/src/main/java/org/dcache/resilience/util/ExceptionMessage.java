@@ -57,28 +57,27 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.util;
+package org.dcache.resilience.util;
 
 /**
  * <p>Shared utility for reporting concise error information systematically.</p>
  */
 public final class ExceptionMessage {
-    private final String message;
+    private final Throwable exception;
 
     public ExceptionMessage(Throwable exception) {
-        if (exception == null) {
-            message = "";
-            return;
-        }
-
-        Throwable t = exception.getCause();
-        message = String.format("%s: %s%s",
-                        exception.getClass().getSimpleName(),
-                        exception.getMessage(),
-                        t == null ? "" : String.format(", cause: %s", t));
+        this.exception = exception;
     }
 
     public String toString() {
-        return message;
+        if (exception == null) {
+            return "";
+        }
+
+        Throwable t = exception.getCause();
+        return String.format("%s: %s%s",
+                        exception.getClass().getSimpleName(),
+                        exception.getMessage(),
+                        t == null ? "" : String.format(", cause: %s", t));
     }
 }

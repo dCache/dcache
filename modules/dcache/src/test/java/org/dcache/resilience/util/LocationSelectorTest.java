@@ -73,7 +73,6 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.data.PoolStateUpdate;
-import org.dcache.util.ExceptionMessage;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.junit.Assert.assertEquals;

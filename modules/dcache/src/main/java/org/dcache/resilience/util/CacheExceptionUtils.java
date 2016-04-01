@@ -67,7 +67,6 @@ import java.util.concurrent.ExecutionException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import org.dcache.util.CacheExceptionFactory;
-import org.dcache.util.ExceptionMessage;
 
 /**
  * <p>Wrapper methods for processing and handling {@link CacheException}s.</p>

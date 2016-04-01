@@ -88,7 +88,7 @@ import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.resilience.util.PoolScanTask;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
-import org.dcache.util.ExceptionMessage;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.util.RunnableModule;
 
 /**

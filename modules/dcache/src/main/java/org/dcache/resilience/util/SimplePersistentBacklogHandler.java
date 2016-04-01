@@ -80,7 +80,6 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
-import org.dcache.util.ExceptionMessage;
 import org.dcache.vehicles.CorruptFileMessage;
 
 /**

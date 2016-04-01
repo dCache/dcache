@@ -68,7 +68,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import diskCacheV111.util.PnfsId;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
-import org.dcache.util.ExceptionMessage;
 
 /**
  * <p>An implementation of the handler which (a) writes out the pnfsids to

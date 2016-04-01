@@ -62,7 +62,7 @@ package org.dcache.resilience.data;
 import diskCacheV111.util.CacheException;
 import org.dcache.resilience.util.PoolScanTask;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
-import org.dcache.util.ExceptionMessage;
+import org.dcache.resilience.util.ExceptionMessage;
 
 /**
  * <p>Object stored in the {@link PoolOperationMap}.</p>

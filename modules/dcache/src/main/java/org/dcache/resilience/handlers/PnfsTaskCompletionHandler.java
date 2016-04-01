@@ -72,7 +72,7 @@ import org.dcache.pool.migration.Task;
 import org.dcache.pool.migration.TaskCompletionHandler;
 import org.dcache.resilience.data.PnfsOperationMap;
 import org.dcache.resilience.util.CacheExceptionUtils;
-import org.dcache.util.ExceptionMessage;
+import org.dcache.resilience.util.ExceptionMessage;
 
 /**
  * <p>Implements the handling of pnfsid task termination.

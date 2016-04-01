@@ -98,7 +98,7 @@ import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.RemoveLocationExtractor;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.StaticSinglePoolList;
-import org.dcache.util.ExceptionMessage;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 

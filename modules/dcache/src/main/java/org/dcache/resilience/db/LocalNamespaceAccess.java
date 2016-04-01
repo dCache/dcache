@@ -83,7 +83,7 @@ import org.dcache.resilience.data.PnfsUpdate;
 import org.dcache.resilience.handlers.PnfsOperationHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
-import org.dcache.util.ExceptionMessage;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.commons.util.SqlHelper.tryToClose;
