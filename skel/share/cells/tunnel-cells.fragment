@@ -6,5 +6,6 @@ exec file:${dcache.paths.share}/cells/lmd.fragment -ifok
 onerror shutdown
 
 create dmg.cells.services.RoutingManager  RoutingMgr
+create dmg.cells.services.CoreRoutingManager  CoreRoutingMgr
 create dmg.cells.services.LocationManager lm
 
