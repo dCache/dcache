@@ -69,7 +69,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -101,14 +100,17 @@ import java.util.stream.Stream;
  *
  * <p>This list contains unique elements.  Adding the same element twice
  *      overwrites the previous index. Nulls cannot be added to the list.</p>
+ *
+ * <p>Not thread-safe.</p>
  */
 public final class NonReindexableList<E> implements List<E> {
     private static final String UNSUPPORTED_ERROR_MSG
                     = "This list can only be modified by appending or removing.";
 
-    private final AtomicInteger counter = new AtomicInteger(0);
     private final Map<E, Integer> index = new HashMap<>();
     private final Map<Integer, E> list = new HashMap<>();
+
+    private int counter = 0;
     private boolean includeNulls = false;
 
     @Override
@@ -164,8 +166,8 @@ public final class NonReindexableList<E> implements List<E> {
 
     @Override
     public E get(int index) {
-        if (index >= counter.get()) {
-            throw new IndexOutOfBoundsException(index + " >= " + counter.get());
+        if (index >= counter) {
+            throw new IndexOutOfBoundsException(index + " >= " + counter);
         }
         E element = list.get(index);
         if (element == null && !includeNulls) {
@@ -325,7 +327,7 @@ public final class NonReindexableList<E> implements List<E> {
             return false;
         }
 
-        int next = counter.getAndIncrement();
+        int next = counter++;
         list.put(next, element);
         index.put(element, next);
         return true;
@@ -343,9 +345,8 @@ public final class NonReindexableList<E> implements List<E> {
     }
 
     private List<E> realizeList() {
-        int maxIndex = counter.get();
         List<E> iterable = new ArrayList<>();
-        for (int i = 0; i < maxIndex; i++) {
+        for (int i = 0; i < counter; i++) {
             E element = list.get(i);
             if (element != null || includeNulls) {
                 iterable.add(element);
