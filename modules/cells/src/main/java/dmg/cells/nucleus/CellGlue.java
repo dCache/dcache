@@ -323,7 +323,9 @@ class CellGlue
         KillEvent killEvent = new KillEvent(sourceAddr, to);
         sendToAll(new CellEvent(cellToKill, CellEvent.CELL_DIED_EVENT));
 
-        _routingTable.delete(destination.getThisAddress());
+        for (CellRoute route : _routingTable.delete(destination.getThisAddress())) {
+            sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_DELETED_EVENT));
+        }
 
         Runnable command = () -> destination.shutdown(killEvent);
         try {
