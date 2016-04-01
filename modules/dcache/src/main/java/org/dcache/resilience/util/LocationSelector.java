@@ -224,8 +224,7 @@ public final class LocationSelector {
                         oneCopyPer, poolInfoMap);
         List<String> maximallyConstrained = extractor.getCandidateLocations(
                         possible);
-        String target = RandomSelectionStrategy.SELECTOR.select(
-                        maximallyConstrained);
+        String target = RandomSelectionStrategy.SELECTOR.apply(maximallyConstrained);
 
         if (target == null) {
             throw new Exception(String.format("Cannot satisfy remove request "
@@ -254,6 +253,6 @@ public final class LocationSelector {
                             readable, excluded));
         }
 
-        return RandomSelectionStrategy.SELECTOR.select(possible);
+        return RandomSelectionStrategy.SELECTOR.apply(possible);
     }
 }

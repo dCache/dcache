@@ -1018,8 +1018,7 @@ public class PoolInfoMap {
             if (candidates.isEmpty()) {
                 throw new IllegalStateException(getGroup(index));
             }
-            String selected = RandomSelectionStrategy.SELECTOR.select(
-                            candidates);
+            String selected = RandomSelectionStrategy.SELECTOR.apply(candidates);
             members.remove(selected);
             extractor.addSeenTagsFor(selected);
         }

@@ -59,11 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
+import com.google.common.collect.Iterables;
+
 import java.security.SecureRandom;
 import java.util.Collection;
-import java.util.Iterator;
-
-import org.dcache.util.CollectionElementSelectionStrategy;
+import java.util.function.Function;
 
 /**
  *  <p>A simple utility for selection of a string. Chooses randomly from the
@@ -71,28 +71,21 @@ import org.dcache.util.CollectionElementSelectionStrategy;
  *          the collection itself.</p>
  */
 public final class RandomSelectionStrategy
-                implements CollectionElementSelectionStrategy<String> {
-    public static final RandomSelectionStrategy SELECTOR
-                    = new RandomSelectionStrategy();
+                implements Function<Collection<String>, String> {
+
+    public static final RandomSelectionStrategy SELECTOR = new RandomSelectionStrategy();
 
     private SecureRandom random = new SecureRandom();
 
     private RandomSelectionStrategy() {
     }
 
-    public String select(Collection<String> collection) {
+    @Override
+    public String apply(Collection<String> collection) {
         if (collection.isEmpty()) {
             return null;
         }
 
-        int index = Math.abs(random.nextInt()) % collection.size();
-
-        Iterator<String> it = collection.iterator();
-
-        for (int i = 0; i < index - 1; i++) {
-            it.next();
-        }
-
-        return it.next();
+        return Iterables.get(collection, random.nextInt(collection.size()));
     }
 }

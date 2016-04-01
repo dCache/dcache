@@ -96,7 +96,7 @@ public final class RemoveLocationExtractorTest extends TestBase {
     }
 
     private void andThenAPoolIsRandomlySelectedAndRemoved() {
-        pool = RandomSelectionStrategy.SELECTOR.select(selected);
+        pool = RandomSelectionStrategy.SELECTOR.apply(selected);
         attributes.getLocations().remove(pool);
     }
 

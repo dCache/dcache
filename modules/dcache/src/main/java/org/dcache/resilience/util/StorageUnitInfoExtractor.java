@@ -226,6 +226,7 @@ public final class StorageUnitInfoExtractor {
                                  .collect(Collectors.toSet());
 
         for (int i = 0; i < required; i++) {
+
             Collection<String> candidates
                             = extractor.getCandidateLocations(members);
 
@@ -236,7 +237,7 @@ public final class StorageUnitInfoExtractor {
                 throw new IllegalStateException(message);
             }
 
-            String selected = RandomSelectionStrategy.SELECTOR.select(candidates);
+            String selected = RandomSelectionStrategy.SELECTOR.apply(candidates);
             members.remove(selected);
             extractor.addSeenTagsFor(selected);
         }
