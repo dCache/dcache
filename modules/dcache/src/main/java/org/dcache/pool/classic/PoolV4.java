@@ -4,6 +4,7 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,6 +87,7 @@ import dmg.util.command.Option;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
@@ -111,6 +113,9 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
+import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 
 public class PoolV4
     extends AbstractCellComponent
@@ -850,6 +855,14 @@ public class PoolV4
             FileAttributes attributes = new FileAttributes();
             attributes.setPnfsId(pnfsId);
             attributes.setStorageInfo(storageInfo);
+            attributes.setStorageClass(fileAttributes.getStorageClass());
+            if (fileAttributes.isDefined(CHECKSUM)) {
+                attributes.setChecksums(fileAttributes.getChecksums());
+            }
+            attributes.setSize(fileAttributes.getSize());
+            attributes.setCacheClass(fileAttributes.getCacheClass());
+            attributes.setHsm(fileAttributes.getHsm());
+            attributes.setFlags(fileAttributes.getFlags());
             attributes.setLocations(Collections.singleton(_poolName));
             attributes.setSize(fileAttributes.getSize());
             attributes.setAccessLatency(fileAttributes.getAccessLatency());
