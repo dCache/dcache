@@ -47,14 +47,8 @@ import static org.dcache.namespace.FileAttribute.*;
  */
 public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
 {
-    private static final EnumSet<FileAttribute> NEEDED_ATTRIBUTES;
-
-    static {
-        EnumSet<FileAttribute> attributes =
-                EnumSet.of(PNFSID, STORAGEINFO, STORAGECLASS, CACHECLASS, HSM, LOCATIONS, SIZE, ACCESS_LATENCY, RETENTION_POLICY);
-        attributes.addAll(Pool2PoolTransferMsg.NEEDED_ATTRIBUTES);
-        NEEDED_ATTRIBUTES = attributes;
-    }
+    private static final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =
+            EnumSet.of(PNFSID, STORAGEINFO, STORAGECLASS, CACHECLASS, HSM, LOCATIONS, SIZE, ACCESS_LATENCY, RETENTION_POLICY);
 
     private static final long serialVersionUID = -2126253028981131441L;
 
@@ -85,7 +79,9 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
 
     public static EnumSet<FileAttribute> getRequiredAttributes()
     {
-        return NEEDED_ATTRIBUTES.clone();
+        EnumSet<FileAttribute> attributes = REQUIRED_ATTRIBUTES.clone();
+        attributes.addAll(Pool2PoolTransferMsg.NEEDED_ATTRIBUTES);
+        return attributes;
     }
 
     public Context getContext()
