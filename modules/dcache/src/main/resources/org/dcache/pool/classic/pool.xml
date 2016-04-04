@@ -456,9 +456,13 @@
     init-method="initialize">
     <description>For communication with the replica manager</description>
     <property name="executionService">
-      <bean class="org.dcache.util.CDCFixedPoolTaskExecutor"
-            init-method="initialize" destroy-method="shutdownNow">
-        <property name="numberOfThreads" value="${pool.resilience.request-threads}"/>
+      <bean class="org.dcache.util.CDCExecutorServiceDecorator">
+        <constructor-arg>
+          <bean class="java.util.concurrent.Executors" factory-method="newFixedThreadPool"
+                destroy-method="shutdownNow">
+            <constructor-arg value="${pool.resilience.request-threads}"/>
+          </bean>
+        </constructor-arg>
       </bean>
     </property>
     <property name="repository" ref="rep"/>

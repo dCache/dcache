@@ -74,6 +74,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -98,7 +99,6 @@ import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.MessageGuard;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
-import org.dcache.util.CDCTaskExecutor;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.vehicles.FileAttributes;
 
@@ -1483,7 +1483,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
      */
     private final Map<String, Future<?>>      futureMap = new HashMap<>();
 
-    private CDCTaskExecutor      executor;
+    private ExecutorService      executor;
     private PoolInfoMap          poolInfoMap;
     private MessageGuard         messageGuard;
     private MapInitializer       initializer;
@@ -1499,7 +1499,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
         this.counters = counters;
     }
 
-    public void setExecutor(CDCTaskExecutor executor) {
+    public void setExecutor(ExecutorService executor) {
         this.executor = executor;
     }
 

@@ -93,28 +93,44 @@
       <property name="timeoutUnit" value="${resilience.service.pool.timeout.unit}"/>
     </bean>
 
-    <bean id="SubmitExecutor" class="org.dcache.util.CDCBoundedTaskExecutor"
-          init-method="initialize" destroy-method="shutdownNow">
+    <bean id="SubmitExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
       <description>Thread pool service for executing operation submissions</description>
-      <property name="numberOfThreads" value="${resilience.submit-threads}"/>
+      <constructor-arg>
+        <bean id="bounded-executor" class="org.dcache.util.BoundedCachedExecutor"
+              destroy-method="shutdownNow">
+          <constructor-arg value="${resilience.submit-threads}"/>
+        </bean>
+      </constructor-arg>
     </bean>
 
-    <bean id="PnfsOpExecutor" class="org.dcache.util.CDCBoundedTaskExecutor"
-          init-method="initialize" destroy-method="shutdownNow">
+    <bean id="PnfsOpExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
       <description>Thread pool service for executing verification of individual pnfs operations</description>
-      <property name="numberOfThreads" value="${resilience.pnfs-op-threads}"/>
+      <constructor-arg>
+        <bean id="bounded-executor" class="org.dcache.util.BoundedCachedExecutor"
+              destroy-method="shutdownNow">
+          <constructor-arg value="${resilience.pnfs-op-threads}"/>
+        </bean>
+      </constructor-arg>
     </bean>
 
-    <bean id="PoolScanExecutor" class="org.dcache.util.CDCBoundedTaskExecutor"
-        init-method="initialize" destroy-method="shutdownNow">
+    <bean id="PoolScanExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
       <description>Thread pool service for executing pool scanning operations</description>
-      <property name="numberOfThreads" value="${resilience.pool-scan-threads}"/>
+      <constructor-arg>
+        <bean id="bounded-executor" class="org.dcache.util.BoundedCachedExecutor"
+                                    destroy-method="shutdownNow">
+          <constructor-arg value="${resilience.pool-scan-threads}"/>
+        </bean>
+      </constructor-arg>
     </bean>
 
-    <bean id="MigrationExecutor" class="org.dcache.util.CDCScheduledPoolTaskExecutor"
-          init-method="initialize" destroy-method="shutdownNow">
+    <bean id="MigrationExecutor" class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
       <description>Thread pool service for executing copy (migration) and remove tasks</description>
-      <property name="numberOfThreads" value="${resilience.file-copy-threads}"/>
+      <constructor-arg>
+        <bean class="java.util.concurrent.Executors" factory-method="newScheduledThreadPool"
+                                                     destroy-method="shutdownNow">
+          <constructor-arg value="${resilience.file-copy-threads}"/>
+        </bean>
+      </constructor-arg>
     </bean>
 
     <bean id="InaccessibleFileHandler" class="org.dcache.resilience.util.InaccessibleFileAlarmSender">
@@ -266,9 +282,12 @@
       <property name="poolOperationMap" ref="PoolOpMap"/>
       <property name="pnfsOperationMap" ref="PnfsOpMap"/>
       <property name="updateService">
-        <bean class="org.dcache.util.CDCFixedPoolTaskExecutor"
-            init-method="initialize" destroy-method="shutdownNow">
-          <property name="numberOfThreads" value="1"/>
+        <bean class="org.dcache.util.CDCExecutorServiceDecorator">
+          <constructor-arg>
+            <bean class="java.util.concurrent.Executors" factory-method="newSingleThreadExecutor"
+                  destroy-method="shutdownNow">
+            </bean>
+          </constructor-arg>
         </bean>
       </property>
       <property name="refreshService" ref="SchedulingService"/>
@@ -288,9 +307,13 @@
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="poolOperationMap" ref="PoolOpMap"/>
       <property name="executor">
-        <bean class="org.dcache.util.CDCFixedPoolTaskExecutor"
-              init-method="initialize" destroy-method="shutdownNow">
-          <property name="numberOfThreads" value="3"/>
+        <bean class="org.dcache.util.CDCExecutorServiceDecorator">
+          <constructor-arg>
+            <bean class="java.util.concurrent.Executors" factory-method="newFixedThreadPool"
+                                                          destroy-method="shutdownNow">
+              <constructor-arg value="3"/>
+            </bean>
+          </constructor-arg>
         </bean>
       </property>
       <property name="resilienceDir" value="${resilience.home}"/>

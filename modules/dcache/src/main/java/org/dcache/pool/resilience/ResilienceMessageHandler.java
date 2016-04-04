@@ -62,6 +62,8 @@ package org.dcache.pool.resilience;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
+
 import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -70,7 +72,6 @@ import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.resilience.tasks.RemoveReplica;
 import org.dcache.pool.resilience.tasks.SetSystemSticky;
-import org.dcache.util.CDCFixedPoolTaskExecutor;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 
@@ -89,7 +90,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver,
     private String       pool;
     private BrokenFileListener brokenFileListener;
 
-    private CDCFixedPoolTaskExecutor executor;
+    private ExecutorService executor;
 
     public void initialize() {
     	repository.addListener(brokenFileListener);
@@ -130,7 +131,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver,
         this.endpoint = endpoint;
     }
 
-    public void setExecutionService(CDCFixedPoolTaskExecutor executor) {
+    public void setExecutionService(ExecutorService executor) {
         this.executor = executor;
     }
 
