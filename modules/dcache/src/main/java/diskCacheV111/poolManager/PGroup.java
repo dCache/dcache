@@ -23,7 +23,7 @@ class PGroup extends PoolCore implements SelectionPoolGroup {
 
     @Override
     public String toString() {
-        return super.toString() + " " + getName() + "(links=" + _linkList.size()
+        return getName() + "(links=" + _linkList.size()
             + "; pools=" + _poolList.size() + "; resilient=" +  resilient + ")";
     }
 
