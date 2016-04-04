@@ -5,6 +5,7 @@ import com.google.common.collect.SetMultimap;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -140,12 +141,14 @@ public class CellRoutingTable implements Serializable
         }
     }
 
-    public void delete(CellAddressCore target)
+    public Collection<CellRoute> delete(CellAddressCore target)
     {
+        Collection<CellRoute> deleted = new ArrayList<>();
+
         String addr = target.toString();
-        delete(_exact, addr);
-        delete(_wellknown, addr);
-        delete(_domain, addr);
+        delete(_exact, addr, deleted);
+        delete(_wellknown, addr, deleted);
+        delete(_domain, addr, deleted);
 
         synchronized (_topic) {
             /* We cannot use the regular delete method because a CopyOnWriteArraySet iterator
@@ -161,11 +164,14 @@ public class CellRoutingTable implements Serializable
                 if (routes.isEmpty()) {
                     iterator.remove();
                 }
+                deleted.addAll(toRemove);
             }
         }
+
+        return deleted;
     }
 
-    private void delete(SetMultimap<String,CellRoute> routes, String addr)
+    private void delete(SetMultimap<String,CellRoute> routes, String addr, Collection<CellRoute> deleted)
     {
         synchronized (routes) {
             Iterator<CellRoute> iterator = routes.values().iterator();
@@ -173,6 +179,7 @@ public class CellRoutingTable implements Serializable
                 CellRoute route = iterator.next();
                 if (route.getTargetName().equals(addr)) {
                     iterator.remove();
+                    deleted.add(route);
                 }
             }
         }

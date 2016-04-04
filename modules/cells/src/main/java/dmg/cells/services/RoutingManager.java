@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -489,12 +490,12 @@ public class RoutingManager
         CellAddressCore gate = new CellAddressCore(cr.getTargetName());
         switch (cr.getRouteType()) {
         case CellRoute.DOMAIN:
+            updateDownstreamTopics(cr.getDomainName(), Collections.emptyList());
+            removeRoutingInfo(cr.getDomainName());
             if ((_watchCell != null) && gate.getCellName().equals(_watchCell)) {
                 CellRoute defRoute =
                         new CellRoute("", "*@" + cr.getDomainName(), CellRoute.DEFAULT);
                 _nucleus.routeDelete(defRoute);
-            } else {
-                removeRoutingInfo(cr.getDomainName());
             }
             break;
         case CellRoute.TOPIC:
