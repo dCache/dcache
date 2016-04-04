@@ -506,16 +506,6 @@ public class FileAttributes implements Serializable {
                 Optional.<T>absent();
     }
 
-    private void writeObject(ObjectOutputStream stream)
-            throws IOException
-    {
-        boolean wasCacheClassDefined = _definedAttributes.remove(CACHECLASS); // For compatibility with pre-2.12 - remove after next golden
-        stream.defaultWriteObject();
-        if (wasCacheClassDefined) {
-            _definedAttributes.add(CACHECLASS);
-        }
-    }
-
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException
     {
@@ -528,7 +518,6 @@ public class FileAttributes implements Serializable {
         }
         if (_cacheClass != null) {
             _cacheClass = _cacheClass.intern();
-            _definedAttributes.add(CACHECLASS); // For compatibility with pre-2.12 - remove after next golden
         }
         if (_hsm != null) {
             _hsm = _hsm.intern();
