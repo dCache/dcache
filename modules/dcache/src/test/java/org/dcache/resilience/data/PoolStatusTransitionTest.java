@@ -121,12 +121,12 @@ public final class PoolStatusTransitionTest {
         oracles.add(new TestOracle(READ_ONLY, ENABLED, ENABLED, NOP));
         oracles.add(new TestOracle(ENABLED, DOWN, DOWN, UP_TO_DOWN));
         oracles.add(new TestOracle(UNINITIALIZED, DOWN_IGNORE, DOWN, DEACTIVATE));
-        oracles.add(new TestOracle(UNINITIALIZED, UP_IGNORE, READ_ONLY, DEACTIVATE));
+        oracles.add(new TestOracle(UNINITIALIZED, UP_IGNORE, ENABLED, DEACTIVATE));
         oracles.add(new TestOracle(ENABLED, READ_ONLY, READ_ONLY, NOP));
         oracles.add(new TestOracle(ENABLED, ENABLED, ENABLED, NOP));
         oracles.add(new TestOracle(UNINITIALIZED, DOWN, DOWN, UP_TO_DOWN));
         oracles.add(new TestOracle(UNINITIALIZED, DOWN_IGNORE, DOWN, DEACTIVATE));
-        oracles.add(new TestOracle(UNINITIALIZED, UP_IGNORE, READ_ONLY, DEACTIVATE));
+        oracles.add(new TestOracle(UNINITIALIZED, UP_IGNORE, UNINITIALIZED, DEACTIVATE));
         oracles.add(new TestOracle(UNINITIALIZED, READ_ONLY, READ_ONLY, NOP));
         oracles.add(new TestOracle(UNINITIALIZED, ENABLED, ENABLED, NOP));
     }

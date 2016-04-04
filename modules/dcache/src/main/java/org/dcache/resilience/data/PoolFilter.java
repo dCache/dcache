@@ -166,8 +166,8 @@ public final class PoolFilter implements PnfsMatcher, PoolMatcher {
                         || state.contains("IDLE")
                         || state.contains("FAILED")
                         || state.contains("CANCELED")
-                        || state.contains("DISABLED")
-                        || state.contains("EXCLUDED");
+                        || state.contains("EXCLUDED")
+                        || state.contains("INACTIVE");
     }
 
     public boolean matchesRunning() {

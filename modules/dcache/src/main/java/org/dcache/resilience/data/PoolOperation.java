@@ -141,7 +141,8 @@ final class PoolOperation {
                 return state == State.EXCLUDED ? NextAction.NOP :
                                 NextAction.DEACTIVATE;
             case UP_IGNORE:
-                currStatus = PoolStatusForResilience.READ_ONLY;
+                currStatus = currStatus == PoolStatusForResilience.DOWN ?
+                                PoolStatusForResilience.READ_ONLY : currStatus;
                 return state == State.EXCLUDED ? NextAction.NOP :
                                 NextAction.DEACTIVATE;
             default:

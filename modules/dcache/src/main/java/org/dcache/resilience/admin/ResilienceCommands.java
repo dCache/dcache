@@ -1359,12 +1359,14 @@ public abstract class ResilienceCommands implements CellCommandListener {
         String status;
 
         @Option(name = "state",
-                        valueSpec = "IDLE|WAITING|RUNNING|FAILED|CANCELED|DISABLED|EXCLUDED",
+                        valueSpec = "IDLE|WAITING|RUNNING|FAILED|CANCELED"
+                                        + "|EXCLUDED|INACTIVE",
                         separator = ",",
                         usage = "List only operations on pools matching this "
                                         + "comma-delimited set of operation states "
                                         + "(default is everything).")
-        String[] state = {"IDLE", "WAITING", "RUNNING", "FAILED", "CANCELED", "DISABLED", "EXCLUDED"};
+        String[] state = {"IDLE", "WAITING", "RUNNING", "FAILED",
+                          "CANCELED", "EXCLUDED", "INACTIVE"};
 
         @Option(name = "lastUpdateBefore",
                         valueSpec = FORMAT_STRING,

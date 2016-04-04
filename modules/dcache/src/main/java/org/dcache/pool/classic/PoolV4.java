@@ -458,7 +458,7 @@ public class PoolV4
     @Override
     public void afterStart()
     {
-        disablePool(PoolV2Mode.DISABLED_STRICT, true, 1, "Awaiting initialization");
+        disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Awaiting initialization");
         _pingThread.start();
         new Thread() {
             @Override
@@ -466,9 +466,9 @@ public class PoolV4
                 int mode;
                 try {
                     _repository.init();
-                    disablePool(PoolV2Mode.DISABLED_RDONLY, true, 1, "Loading...");
+                    disablePool(PoolV2Mode.DISABLED_RDONLY, 1, "Loading...");
                     _repository.load();
-                    enablePool(PoolV2Mode.ENABLED, true);
+                    enablePool(PoolV2Mode.ENABLED);
                     _flushingThread.start();
                 } catch (RuntimeException e) {
                     _log.error(AlarmMarkerFactory.getMarker
@@ -480,7 +480,7 @@ public class PoolV4
                     _log.warn("Pool not enabled {}", _poolName);
                     disablePool(PoolV2Mode.DISABLED_DEAD
                                     | PoolV2Mode.DISABLED_STRICT,
-                                    true, 666, "Init failed: " + e.getMessage());
+                                    666, "Init failed: " + e.getMessage());
                 } catch (Throwable e) {
                     _log.error(AlarmMarkerFactory.getMarker
                                     (PredefinedAlarm.POOL_DISABLED, _poolName),
@@ -490,7 +490,7 @@ public class PoolV4
                     _log.warn("Pool not enabled {}", _poolName);
                     disablePool(PoolV2Mode.DISABLED_DEAD
                                     | PoolV2Mode.DISABLED_STRICT,
-                                    true, 666, "Init failed: " + e.getMessage());
+                                    666, "Init failed: " + e.getMessage());
                 }
 
                 _log.info("Repository finished");
@@ -508,7 +508,7 @@ public class PoolV4
          * No need for alarm here.
          */
         disablePool(PoolV2Mode.DISABLED_DEAD
-                        | PoolV2Mode.DISABLED_STRICT, true, 666, "Shutdown");
+                        | PoolV2Mode.DISABLED_STRICT, 666, "Shutdown");
     }
 
     /**
@@ -523,19 +523,19 @@ public class PoolV4
         case READONLY:
             poolState = "Pool read-only: ";
             disablePool(PoolV2Mode.DISABLED_RDONLY,
-                            true, 99, poolState + event.getMessage());
+                            99, poolState + event.getMessage());
             break;
 
         case DISABLED:
             poolState = "Pool disabled: ";
-            disablePool(PoolV2Mode.DISABLED_STRICT, true, 99, poolState + event.getMessage());
+            disablePool(PoolV2Mode.DISABLED_STRICT, 99, poolState + event.getMessage());
             break;
 
         default:
             poolState = "Pool restart required: ";
             disablePool(PoolV2Mode.DISABLED_STRICT
                             | PoolV2Mode.DISABLED_DEAD,
-                            true, 666, poolState + event.getMessage());
+                            666, poolState + event.getMessage());
             break;
         }
 
@@ -915,8 +915,7 @@ public class PoolV4
                 case 41:
                 case 42:
                 case 43:
-                    disablePool(PoolV2Mode.DISABLED_STRICT, true,
-                                    errorCode, ce.getMessage());
+                    disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce.getMessage());
                     _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
                                                             _poolName),
                                     "Error encountered during fetch of {}",
@@ -1258,10 +1257,10 @@ public class PoolV4
         PoolV2Mode mode = msg.getPoolMode();
         if (mode != null) {
             if (mode.isEnabled()) {
-                enablePool(mode.getMode(), true);
+                enablePool(mode.getMode());
             } else {
-                disablePool(mode.getMode(), true,
-                            msg.getStatusCode(), msg.getStatusMessage());
+                disablePool(mode.getMode(), msg.getStatusCode(),
+                                            msg.getStatusMessage());
             }
         }
         msg.setSucceeded();
@@ -1373,14 +1372,13 @@ public class PoolV4
     /**
      * Partially or fully disables normal operation of this pool.
      */
-    private synchronized void disablePool(int mode, boolean resilienceEnabled,
+    private synchronized void disablePool(int mode,
                                           int errorCode, String errorString)
     {
         _poolStatusCode = errorCode;
         _poolStatusMessage =
             (errorString == null) ? "Requested by operator" : errorString;
-        _poolMode.setMode(getModeWithResilienceSuppression(mode,
-                        resilienceEnabled));
+        _poolMode.setMode(getModeWithResilienceSuppression(mode));
 
         _pingThread.sendPoolManagerMessage(true);
         _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
@@ -1390,10 +1388,9 @@ public class PoolV4
      * Fully enables this pool. The status code is set to 0 and the
      * status message is cleared.
      */
-    private synchronized void enablePool(int mode, boolean resilienceEnabled)
+    private synchronized void enablePool(int mode)
     {
-        _poolMode.setMode(getModeWithResilienceSuppression(mode,
-                        resilienceEnabled));
+        _poolMode.setMode(getModeWithResilienceSuppression(mode));
         _poolStatusCode = 0;
         _poolStatusMessage = "OK";
 
@@ -1401,9 +1398,9 @@ public class PoolV4
         _log.warn("Pool mode changed to " + _poolMode);
     }
 
-    private int getModeWithResilienceSuppression(int mode, boolean resilienceEnabled) {
+    private int getModeWithResilienceSuppression(int mode) {
         PoolV2Mode modified = new PoolV2Mode(mode);
-        modified.setResilienceEnabled(resilienceEnabled && !_suppressResilience);
+        modified.setResilienceEnabled(!_suppressResilience);
         return modified.getMode();
     }
 
@@ -1831,8 +1828,7 @@ public class PoolV4
         + "        -store    #  disallows store (transfer from client)\n"
         + "        -p2p-client\n"
         + "        -rdonly   #  := store,stage,p2p-client\n"
-        + "        -strict   #  := disallows everything\n"
-        + "        -nores    #  := do not trigger resilience handling on mode change\n";
+        + "        -strict   #  := disallows everything\n";
     public static final String hh_pool_disable = "[options] [<errorCode> [<errorMessage>]] # suspend sending 'up messages'";
     public String ac_pool_disable_$_0_2(Args args)
     {
@@ -1866,23 +1862,19 @@ public class PoolV4
             modeBits |= PoolV2Mode.DISABLED_RDONLY;
         }
 
-        /*
-         * No need for alarm here.
-         */
-
-        disablePool(modeBits, !args.hasOption("nores"), rc, rm);
+        disablePool(modeBits, rc, rm);
 
         return "Pool " + _poolName + " " + _poolMode;
     }
 
-    public static final String hh_pool_enable = "[-nores] # do not trigger resilience handling on mode change";
+    public static final String hh_pool_enable = "# start sending 'up messages' again";
     public String ac_pool_enable(Args args)
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
             return "The pool is dead and a restart is required to enable it";
         }
 
-        enablePool(PoolV2Mode.ENABLED, !args.hasOption("nores"));
+        enablePool(PoolV2Mode.ENABLED);
         return "Pool " + _poolName + " " + _poolMode;
     }
 
@@ -2175,5 +2167,6 @@ public class PoolV4
     private synchronized void suppressResilience(boolean on) {
         _suppressResilience = on;
         _poolMode.setResilienceEnabled(!on);
+        _pingThread.sendPoolManagerMessage(true);
     }
 }
