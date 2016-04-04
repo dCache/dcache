@@ -17,20 +17,21 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
-import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.ReplicaStatePolicy;
 import org.dcache.util.Checksum;
-import org.dcache.vehicles.CorruptFileMessage;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
-import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
+import static org.dcache.namespace.FileAttribute.CHECKSUM;
+import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 /**
  * Wrapper for a MetaDataStore which encapsulates the logic for
@@ -79,7 +80,6 @@ public class ConsistentStore
     private final MetaDataStore _metaDataStore;
     private final ChecksumModule _checksumModule;
     private final ReplicaStatePolicy _replicaStatePolicy;
-    private CellStub _corruptFileTopic;
     private String _poolName;
 
     public ConsistentStore(PnfsHandler pnfsHandler,
@@ -91,10 +91,6 @@ public class ConsistentStore
         _checksumModule = checksumModule;
         _metaDataStore = metaDataStore;
         _replicaStatePolicy = replicaStatePolicy;
-    }
-
-    public void setCorruptFileTopic(CellStub corruptFileTopic) {
-        _corruptFileTopic = corruptFileTopic;
     }
 
     public void setPoolName(String poolName)
@@ -170,20 +166,17 @@ public class ConsistentStore
                 default:
                     entry.setState(EntryState.BROKEN);
                     _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
-                                                            id.toString(),
-                                                            _poolName),
-                               String.format(BAD_MSG, id, e.getMessage()));
-                    _corruptFileTopic.send(
-                                    new CorruptFileMessage(_poolName, id));
+                                    id.toString(),
+                                    _poolName),
+                                    String.format(BAD_MSG, id, e.getMessage()));
                     break;
                 }
             } catch (NoSuchAlgorithmException e) {
                 entry.setState(EntryState.BROKEN);
                 _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
-                                                        id.toString(),
-                                                        _poolName),
+                                id.toString(),
+                                _poolName),
                                 String.format(BAD_MSG, id, e.getMessage()));
-                _corruptFileTopic.send(new CorruptFileMessage(_poolName, id));
             }
         }
 
@@ -259,8 +252,7 @@ public class ConsistentStore
                     if (attributesOnPool.isUndefined(ACCESS_LATENCY)) {
                         String message = String.format(MISSING_ACCESS_LATENCY, id);
                         _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
-                                                                _poolName), message);
-                        _corruptFileTopic.send(new CorruptFileMessage(_poolName, id));
+                                        _poolName), message);
                         throw new CacheException(message);
                     }
 
@@ -278,8 +270,7 @@ public class ConsistentStore
                     if (attributesOnPool.isUndefined(RETENTION_POLICY)) {
                         String message = String.format(MISSING_RETENTION_POLICY, id);
                         _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
-                                                                _poolName), message);
-                        _corruptFileTopic.send(new CorruptFileMessage(_poolName, id));
+                                        _poolName), message);
                         throw new CacheException(message);
                     }
 

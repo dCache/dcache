@@ -151,7 +151,6 @@
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
     <property name="scrubberStateFile" value="${pool.path}/scrubber.state"/>
-    <property name="corruptFileTopic" ref="corrupt-file-topic"/>
   </bean>
 
   <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
@@ -453,7 +452,8 @@
       <property name="prefix" value="pool.mover.http.custom-response-header"/>
   </bean>
 
-  <bean id="resilience-message-handler" class="org.dcache.pool.resilience.ResilienceMessageHandler">
+  <bean id="resilience-message-handler" class="org.dcache.pool.resilience.ResilienceMessageHandler"
+    init-method="initialize">
     <description>For communication with the replica manager</description>
     <property name="executionService">
       <bean class="org.dcache.util.CDCFixedPoolTaskExecutor"
@@ -463,6 +463,12 @@
     </property>
     <property name="repository" ref="rep"/>
     <property name="poolName" value="${pool.name}"/>
+    <property name="listener">
+      <bean class="org.dcache.pool.resilience.BrokenFileListener">
+        <constructor-arg ref="corrupt-file-topic"/>
+        <constructor-arg value="${pool.name}"/>
+      </bean>
+    </property>
   </bean>
 
   <beans profile="healthcheck-true">

@@ -65,7 +65,6 @@ public class ConsistentStoreTest
             new ConsistentStore(_pnfs, null, _metaDataStore,
                                 new ALRPReplicaStatePolicy());
         _consistentStore.setPoolName(POOL);
-        _consistentStore.setCorruptFileTopic(_broadcast);
     }
 
     @After

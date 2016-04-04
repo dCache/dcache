@@ -87,8 +87,13 @@ public final class ResilienceMessageHandler implements CellMessageReceiver,
     private CellEndpoint endpoint;
     private Repository   repository;
     private String       pool;
+    private BrokenFileListener brokenFileListener;
 
     private CDCFixedPoolTaskExecutor executor;
+
+    public void initialize() {
+    	repository.addListener(brokenFileListener);
+    }
 
     public void messageArrived(CellMessage message, RemoveReplicaMessage info)
                     throws CacheException, InterruptedException {
@@ -127,6 +132,10 @@ public final class ResilienceMessageHandler implements CellMessageReceiver,
 
     public void setExecutionService(CDCFixedPoolTaskExecutor executor) {
         this.executor = executor;
+    }
+
+    public void setListener(BrokenFileListener brokenFileListener) {
+        this.brokenFileListener = brokenFileListener;
     }
 
     public void setPoolName(String pool) {
