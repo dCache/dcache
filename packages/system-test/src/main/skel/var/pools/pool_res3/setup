@@ -1,0 +1,36 @@
+csm set checksumtype ADLER32
+csm set policy -scrub=off
+csm set policy -onread=off -onwrite=on -onflush=on -onrestore=on -ontransfer=on -enforcecrc=on -getcrcfromhsm=off
+#
+# Flushing Thread setup
+#
+flush set max active 100
+flush set interval 60
+flush set retry delay 60
+#
+# HsmStorageHandler2(org.dcache.pool.classic.HsmStorageHandler2)
+#
+rh set max active 0
+st set max active 0
+rm set max active 1
+rh set timeout 14400
+st set timeout 14400
+rm set timeout 14400
+jtm set timeout -queue=regular -lastAccess=0 -total=0
+jtm set timeout -queue=p2p -lastAccess=0 -total=0
+set heartbeat 30
+set report remove on
+set breakeven 0.7
+set mover cost factor 0.5
+set max diskspace 1G
+set duplicate request none
+mover set max active -queue=regular 100
+mover set max active -queue=p2p 10
+#
+# MigrationModule
+#
+#
+#  Pool to Pool (P2P)
+#
+pp set max active 10
+pp interface 127.0.0.1

@@ -58,10 +58,16 @@ mkdir /disk
 writetag /disk sGroup "disk"
 chown $uid:$gid /disk
 
+mkdir /replica
+writetag /replica sGroup "replica"
+chown $uid:$gid /replica
+writetag /replica RetentionPolicy CUSTODIAL
+
 mkdir /resilient
 writetag /resilient sGroup "resilient"
 chown $uid:$gid /resilient
-writetag /resilient RetentionPolicy CUSTODIAL
+writetag /resilient RetentionPolicy REPLICA
+writetag /resilient AccessLatency   ONLINE
 
 mkdir /reserved
 writetag /reserved sGroup "reserved"
