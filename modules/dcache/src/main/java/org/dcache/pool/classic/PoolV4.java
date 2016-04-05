@@ -112,6 +112,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.namespace.FileAttribute.CHECKSUM;
 
 public class PoolV4
     extends AbstractCellComponent
@@ -837,6 +838,14 @@ public class PoolV4
             FileAttributes attributes = new FileAttributes();
             attributes.setPnfsId(pnfsId);
             attributes.setStorageInfo(storageInfo);
+            attributes.setStorageClass(fileAttributes.getStorageClass());
+            if (fileAttributes.isDefined(CHECKSUM)) {
+                attributes.setChecksums(fileAttributes.getChecksums());
+            }
+            attributes.setSize(fileAttributes.getSize());
+            attributes.setCacheClass(fileAttributes.getCacheClass());
+            attributes.setHsm(fileAttributes.getHsm());
+            attributes.setFlags(fileAttributes.getFlags());
             attributes.setLocations(Collections.singleton(_poolName));
             attributes.setSize(fileAttributes.getSize());
             attributes.setAccessLatency(fileAttributes.getAccessLatency());
