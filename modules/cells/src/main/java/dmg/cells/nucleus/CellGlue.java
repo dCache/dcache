@@ -340,6 +340,14 @@ class CellGlue
 
     private static final int MAX_ROUTE_LEVELS = 16;
 
+    /**
+     * Send a message to another cell.
+     *
+     * @param msg The cell envelope
+     * @param resolveLocally Whether to deliver messages for @local addresses to local cells
+     * @param resolveRemotely Whether to deliver messages for @local addresses to remote cells
+     * @throws SerializationException
+     */
     void sendMessage(CellMessage msg, boolean resolveLocally, boolean resolveRemotely)
             throws SerializationException
     {
@@ -396,27 +404,33 @@ class CellGlue
                 if (resolveLocally && deliverLocally(msg, address)) {
                     return;
                 }
-                if (!resolveRemotely) {
-                    sendException(msg, address.toString());
-                    return;
-                }
 
                 /* Topic routes are special because they cause messages to be
                  * duplicated.
                  */
                 for (CellRoute route : _routingTable.findTopicRoutes(address)) {
-                    CellMessage m = msg.clone();
                     CellAddressCore target = route.getTarget();
-                    if (!target.getCellName().equals("*")) {
-                        m.getDestinationPath().replaceCurrent(target);
+                    boolean isLocalSubscriber = !target.getCellName().equals("*");
+                    if (isLocalSubscriber || resolveRemotely) {
+                        CellMessage m = msg.clone();
+                        if (isLocalSubscriber) {
+                            m.getDestinationPath().replaceCurrent(target);
+                        }
+                        sendMessage(m, target, true, resolveRemotely, steps - 1);
                     }
-                    sendMessage(m, target, true, true, steps - 1);
                     hasTopicRoutes = true;
+                }
+
+                if (!resolveRemotely) {
+                    if (!hasTopicRoutes) {
+                        sendException(msg, address.toString());
+                    }
+                    return;
                 }
             }
 
-            /* Unless we updated the destination path, there is no reason to send the message back from
-             * where we got it. Note that we cannot detect non-trivial loops, i.e. loops involving three
+            /* Unless we updated the destination path, there is no reason to send the message back to where
+             * we got it from. Note that we cannot detect non-trivial loops, i.e. loops involving three
              * or more domains: Such loops may have legitimate alias-routes rewriting the destination
              * and sending the message to where it has been before may be perfectly reasonable.
              */
