@@ -1,11 +1,13 @@
 onerror continue
-
 eval ${dcache.domain.name} ${dcache.broker.domain} ==
-exec file:${dcache.paths.share}/cells/lmd.fragment -ifok
-
+set env is_broker ${rc}
 onerror shutdown
 
-create dmg.cells.services.RoutingManager  RoutingMgr
-create dmg.cells.services.CoreRoutingManager  CoreRoutingMgr
-create dmg.cells.services.LocationManager lm
+exec file:${dcache.paths.share}/cells/tunnel-core.fragment -ifok=is_broker
+exec file:${dcache.paths.share}/cells/tunnel-satellite.fragment -ifnotok=is_broker
 
+define env start-legacy.exe end
+    create dmg.cells.services.LocationManager lmd -- "-legacy=${dcache.broker.port}"
+end
+
+exec env start-legacy.exe -ifok=is_broker

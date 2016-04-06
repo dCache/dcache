@@ -93,7 +93,7 @@ public class LocationMgrTunnel
         _rawOut = new BufferedOutputStream(engine.getOutputStream());
         _rawIn = new BufferedInputStream(engine.getInputStream());
         CellDomainRole role = args.hasOption("role") ? CellDomainRole.valueOf(
-                args.getOption("role")) : CellDomainRole.SATELLITE;
+                args.getOption("role").toUpperCase()) : CellDomainRole.SATELLITE;
         _localDomainInfo = new CellDomainInfo(_nucleus.getCellDomainName(),
                                               Version.of(LocationMgrTunnel.class).getVersion(), role);
     }

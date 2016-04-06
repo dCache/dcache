@@ -9,18 +9,10 @@ onerror shutdown
 check -strong topo.cell.name
 check -strong topo.cell.export
 
-define env topo-cells.exe end
-  check -strong topo.limits.refresh-period
-  check -strong topo.limits.refresh-period.unit
-  check -strong topo.service.system.timeout
-  check -strong topo.service.system.timeout.unit
+check -strong topo.limits.refresh-period
+check -strong topo.limits.refresh-period.unit
+check -strong topo.service.system.timeout
+check -strong topo.service.system.timeout.unit
 
-  create org.dcache.cells.UniversalSpringCell ${topo.cell.name} \
-     "classpath:org/dcache/services/topology/classic.xml -export=${topo.cell.export} -cellClass=TopoCell"
-end
-
-define env topo-none.exe end
-  exec env topo-cells.exe
-end
-
-exec env topo-${dcache.broker.scheme}.exe
+create org.dcache.cells.UniversalSpringCell ${topo.cell.name} \
+   "classpath:org/dcache/services/topology/classic.xml -export=${topo.cell.export} -cellClass=TopoCell"

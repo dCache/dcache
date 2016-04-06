@@ -2,3 +2,9 @@
 # Dummy NOP tunnel
 #
 create dmg.cells.services.RoutingManager  RoutingMgr
+
+#
+# Instantiate cell access control manager in broker domain
+##############################################################
+
+exec file:${dcache.paths.share}/cells/acm.fragment

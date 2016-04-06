@@ -1,0 +1,16 @@
+#
+# Instantiate cell communication services
+##############################################################
+
+check -strong dcache.broker.port
+
+create dmg.cells.services.RoutingManager  RoutingMgr
+create dmg.cells.services.CoreRoutingManager  CoreRoutingMgr
+create dmg.cells.services.LocationManager lm -- "-role=core -- ${dcache.broker.port}"
+
+
+#
+# Instantiate cell access control manager in broker domain
+##############################################################
+
+exec file:${dcache.paths.share}/cells/acm.fragment

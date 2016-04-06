@@ -1,0 +1,8 @@
+#
+# Instantiate cell communication services
+##############################################################
+
+create dmg.cells.services.RoutingManager  RoutingMgr
+create dmg.cells.services.CoreRoutingManager  CoreRoutingMgr
+create dmg.cells.services.LocationManager lm -- "-role=satellite"
+

@@ -5,19 +5,6 @@
 onerror shutdown
 exec file:${dcache.paths.share}/cells/tunnel-${dcache.broker.scheme}.fragment
 
-onerror continue
-eval ${dcache.domain.name} ${dcache.broker.domain} ==
-set env is_broker ${rc}
-onerror shutdown
-
-
-#
-# Instantiate cell access control manager in broker domain
-##############################################################
-
-exec file:${dcache.paths.share}/cells/acm.fragment -ifok=is_broker
-
-
 #
 # Instantiate any static information for info service
 ##############################################################
