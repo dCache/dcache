@@ -83,6 +83,9 @@ if [ ! -f /etc/dcache/admin/ssh_host_dsa_key ]; then
     chgrp dcache /etc/dcache/admin/ssh_host_dsa_key
 fi
 
+# fix file /var/lib/dcache directory ownership
+chown dcache:dcache /var/lib/dcache
+
 %preun
 if [ $1 -eq 0 ] ; then
     /sbin/service dcache-server stop >/dev/null 2>&1
@@ -106,8 +109,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man8/dcache-bootloader.8
 /usr/share/man/man8/dcache-billing-indexer.8
 /usr/share/man/man8/dcache.8
-/var/log/dcache
 
+%attr(-,dcache,dcache) /var/log/dcache
 %attr(-,dcache,dcache) /var/lib/dcache/alarms
 %attr(-,dcache,dcache) /var/lib/dcache/config
 %attr(-,dcache,dcache) /var/lib/dcache/billing
@@ -116,7 +119,6 @@ rm -rf $RPM_BUILD_ROOT
 %attr(-,dcache,dcache) /var/lib/dcache/resilience
 %attr(-,dcache,dcache) /var/lib/dcache/statistics
 %attr(-,dcache,dcache) /var/lib/dcache/star
-%attr(-,dcache,dcache) /var/log/dcache
 %attr(-,dcache,dcache) /var/spool/dcache/star
 %attr(700,dcache,dcache) /var/lib/dcache/credentials
 
