@@ -105,17 +105,24 @@ public class CredentialService
     {
         try {
             _delegationEndpoint = new URI("https", null, _host, _httpsPort, "/srm/delegation", null, null);
-            _task = _executor.scheduleAtFixedRate(this::publish, 0, 30, SECONDS);
         } catch (URISyntaxException e) {
             LOGGER.error("Failed to create delegation endpoint: {}", e);
             throw Throwables.propagate(e);
         }
     }
 
+    @Override
+    public void afterStart()
+    {
+        _task = _executor.scheduleAtFixedRate(this::publish, 0, 30, SECONDS);
+    }
+
     @PreDestroy
     public void stop()
     {
-        _task.cancel(false);
+        if (_task != null) {
+            _task.cancel(false);
+        }
     }
 
     public SrmRequestCredentialMessage messageArrived(SrmRequestCredentialMessage message)
