@@ -14,6 +14,7 @@ check -strong pool.cell.limits.message.threads.max-idle-time
 check -strong pool.cell.limits.message.threads.max-idle-time.unit
 check -strong pool.cell.limits.message.queue.max
 check -strong pool.limits.worker-threads
+check -strong pool.limits.nearline-threads
 check -strong pool.enable.repository-check
 check -strong pool.enable.remove-precious-files-on-delete
 check -strong pool.plugins.meta
