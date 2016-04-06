@@ -23,6 +23,7 @@ check -strong pool.authn.ocsp-mode
 check pool.authn.ciphers
 
 check -strong pool.limits.worker-threads
+check -strong pool.limits.nearline-threads
 check -strong pool.enable.repository-check
 check -strong pool.enable.remove-precious-files-on-delete
 check -strong pool.plugins.meta
