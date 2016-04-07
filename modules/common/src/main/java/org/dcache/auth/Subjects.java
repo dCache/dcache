@@ -5,7 +5,6 @@ import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
@@ -17,6 +16,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+
 public class Subjects
 {
     public static final String UNKNOWN = "<unknown>";
@@ -26,6 +26,7 @@ public class Subjects
      */
     private static final Class<? extends Principal>[] DISPLAYABLE = new Class[]
     {
+        FullNamePrincipal.class,
         UserNamePrincipal.class,
         GlobusPrincipal.class,
         KerberosPrincipal.class,
@@ -483,6 +484,12 @@ public class Subjects
                     break;
                 case "origin":
                     principal = new Origin(InetAddresses.forString(value));
+                    break;
+                case "oidc":
+                    principal = new OidcSubjectPrincipal(value);
+                    break;
+                case "email":
+                    principal = new EmailAddressPrincipal(value);
                     break;
                 default:
                     try {

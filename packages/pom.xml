@@ -98,6 +98,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>gplazma2-oidc</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>gplazma2-krb5</artifactId>
         <version>${project.version}</version>
     </dependency>
