@@ -69,6 +69,7 @@ public class LocationMgrTunnel
     private CellDomainInfo  _remoteDomainInfo;
     private boolean _allowForwardingOfRemoteMessages;
 
+    private Thread _thread;
     private final Socket _socket;
 
     private final OutputStream _rawOut;
@@ -76,8 +77,6 @@ public class LocationMgrTunnel
 
     private ObjectSource _input;
     private ObjectSink _output;
-
-    private boolean _down;
 
     //
     // some statistics
@@ -103,12 +102,71 @@ public class LocationMgrTunnel
     {
         _socket.setTcpNoDelay(true);
         handshake();
+        _tunnels.add(this);
     }
 
     @Override
     protected void started()
     {
-        _nucleus.newThread(this, "Tunnel").start();
+        installRoutes();
+        _thread = _nucleus.newThread(this, "Tunnel");
+        _thread.start();
+    }
+
+    @Override
+    public void cleanUp()
+    {
+        _log.info("Closing tunnel to {}", getRemoteDomainName());
+        _tunnels.remove(this);
+        try {
+            try {
+                _socket.shutdownOutput();
+                if (_thread != null) {
+                    _thread.join(800);
+                }
+            } catch (IOException e) {
+                _log.debug("Failed to shutdown socket: {}", e.getMessage());
+            } catch (InterruptedException ignored) {
+            }
+        } finally {
+            try {
+                _socket.close();
+            } catch (IOException e) {
+                _log.warn("Failed to close socket: {}", e.getMessage());
+            }
+        }
+    }
+
+    private void installRoutes()
+    {
+        String domain = getRemoteDomainName();
+        CellNucleus nucleus = getNucleus();
+
+        /* Add domain route.
+         */
+        CellRoute route = new CellRoute(domain,
+                                        nucleus.getThisAddress().toString(),
+                                        CellRoute.DOMAIN);
+        try {
+            nucleus.routeAdd(route);
+        } catch (IllegalArgumentException e) {
+            _log.warn("Failed to add route: {}", e.getMessage());
+        }
+
+        CellTunnelInfo info = getCellTunnelInfo();
+
+        /* If tunnel connects a satellite to a core domain, then add a default route.
+         */
+        if (info.getLocalCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
+            info.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE) {
+            CellRoute defaultRoute =
+                    new CellRoute(null, nucleus.getThisAddress().toString(), CellRoute.DEFAULT);
+            try {
+                nucleus.routeAdd(defaultRoute);
+            } catch (IllegalArgumentException e) {
+                _log.warn("Failed to add route: {}", e.getMessage());
+            }
+        }
     }
 
     private void handshake() throws IOException
@@ -136,42 +194,16 @@ public class LocationMgrTunnel
         _log.debug("Established tunnel to {}", getRemoteDomainName());
     }
 
-    private synchronized void setDown(boolean down)
-    {
-        _down = down;
-        notifyAll();
-    }
-
-    private synchronized boolean isDown()
-    {
-        return _down;
-    }
-
-    private void receive()
-        throws IOException, ClassNotFoundException
-    {
-        CellMessage msg;
-        while ((msg = _input.readObject()) != null) {
-            getNucleus().sendMessage(msg, true, _allowForwardingOfRemoteMessages);
-            _messagesToSystem++;
-        }
-    }
-
     @Override
     public void run()
     {
-        if (isDown()) {
-            throw new IllegalStateException("Tunnel has already been closed");
-        }
-
         try {
-            _tunnels.add(this);
-            try {
-                receive();
-            } finally {
-                _tunnels.remove(this);
+            CellMessage msg;
+            while ((msg = _input.readObject()) != null) {
+                getNucleus().sendMessage(msg, true, _allowForwardingOfRemoteMessages);
+                _messagesToSystem++;
             }
-        } catch (AsynchronousCloseException | EOFException | InterruptedException e) {
+        } catch (AsynchronousCloseException | EOFException ignored) {
         } catch (ClassNotFoundException e) {
             _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (IOException e) {
@@ -187,9 +219,6 @@ public class LocationMgrTunnel
         if (me instanceof RoutedMessageEvent) {
             CellMessage msg = me.getMessage();
             try {
-                if (isDown()) {
-                    throw new IOException("Tunnel has been shut down.");
-                }
                 _messagesToTunnel++;
                 _output.writeObject(msg);
             } catch (IOException e) {
@@ -211,13 +240,14 @@ public class LocationMgrTunnel
         return new CellTunnelInfo(getCellName(), _localDomainInfo, _remoteDomainInfo);
     }
 
-    protected String getRemoteDomainName()
+    private String getRemoteDomainName()
     {
         return (_remoteDomainInfo == null)
             ? ""
             : _remoteDomainInfo.getCellDomainName();
     }
 
+    @Override
     public String toString()
     {
         return "Connected to " + getRemoteDomainName();
@@ -238,26 +268,6 @@ public class LocationMgrTunnel
         pw.println("   Name       : " + _remoteDomainInfo.getCellDomainName());
         pw.println("   Version    : " + _remoteDomainInfo.getVersion());
         pw.println("   Role       : " + _remoteDomainInfo.getRole());
-    }
-
-    @Override
-    public void cleanUp()
-    {
-        _log.info("Closing tunnel to " + getRemoteDomainName());
-        setDown(true);
-        try {
-            _socket.shutdownInput();
-            _socket.close();
-        } catch (IOException e) {
-            _log.warn("Failed to close socket: " + e.getMessage());
-        }
-    }
-
-    public synchronized void join() throws InterruptedException
-    {
-        while (!isDown()) {
-            wait();
-        }
     }
 
     /**
@@ -287,8 +297,6 @@ public class LocationMgrTunnel
         public synchronized void add(LocationMgrTunnel tunnel)
                 throws InterruptedException
         {
-            CellNucleus nucleus = tunnel.getNucleus();
-
             if (_tunnels.containsValue(tunnel)) {
                 throw new IllegalArgumentException("Cannot register the same tunnel twice");
             }
@@ -301,32 +309,6 @@ public class LocationMgrTunnel
             while ((old = _tunnels.get(domain)) != null) {
                 old.kill();
                 wait();
-            }
-
-            /* Add new route.
-             */
-            CellRoute route = new CellRoute(domain,
-                    nucleus.getThisAddress().toString(),
-                    CellRoute.DOMAIN);
-            try {
-                nucleus.routeAdd(route);
-            } catch (IllegalArgumentException e) {
-                _log.warn("Failed to add route: {}", e.getMessage());
-            }
-
-            CellTunnelInfo info = tunnel.getCellTunnelInfo();
-
-            /* If tunnel connects a satellite to a core domain, then add a default route.
-             */
-            if (info.getLocalCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
-                info.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE) {
-                CellRoute defaultRoute =
-                        new CellRoute(null, nucleus.getThisAddress().toString(), CellRoute.DEFAULT);
-                try {
-                    nucleus.routeAdd(defaultRoute);
-                } catch (IllegalArgumentException e) {
-                    _log.warn("Failed to add route: {}", e.getMessage());
-                }
             }
 
             /* Keep track of what we did.

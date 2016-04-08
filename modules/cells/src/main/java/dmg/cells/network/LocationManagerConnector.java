@@ -102,7 +102,7 @@ public class LocationManagerConnector
                         tunnel.start().get();
                         _retries = 0;
                         setStatus("Connected");
-                        tunnel.join();
+                        getNucleus().join(tunnel.getCellName());
                     } finally {
                         try {
                             getNucleus().kill(tunnel.getCellName());
