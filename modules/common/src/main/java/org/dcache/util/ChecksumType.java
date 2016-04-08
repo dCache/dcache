@@ -90,4 +90,10 @@ public enum ChecksumType
     {
         return (bits + 3) / 4;
     }
+
+    @Override
+    public String toString()
+    {
+        return getName();
+    }
 }
