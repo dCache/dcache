@@ -33,6 +33,7 @@ import java.net.Socket;
 import java.nio.channels.AsynchronousCloseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.LongAdder;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellDomainInfo;
@@ -81,8 +82,8 @@ public class LocationMgrTunnel
     //
     // some statistics
     //
-    private int  _messagesToTunnel;
-    private int  _messagesToSystem;
+    private LongAdder _messagesToTunnel = new LongAdder();
+    private LongAdder _messagesToSystem = new LongAdder();
 
     public LocationMgrTunnel(String cellName, StreamEngine engine, Args args)
     {
@@ -139,6 +140,25 @@ public class LocationMgrTunnel
 
     private void installRoutes()
     {
+        installDomainRoute();
+
+        /* If connecting a satellite to a core domain, add a default route.
+         */
+        if (_localDomainInfo.getRole() == CellDomainRole.SATELLITE &&
+            _remoteDomainInfo.getRole() == CellDomainRole.CORE) {
+            /* If we already got a default route, then we delay a moment
+             * to allow all other domains to connect first.
+             */
+            if (getNucleus().getRoutingTable().hasDefaultRoute()) {
+                invokeLater(this::installDefaultRoute);
+            } else {
+                installDefaultRoute();
+            }
+        }
+    }
+
+    private void installDomainRoute()
+    {
         String domain = getRemoteDomainName();
         CellNucleus nucleus = getNucleus();
 
@@ -152,20 +172,17 @@ public class LocationMgrTunnel
         } catch (IllegalArgumentException e) {
             _log.warn("Failed to add route: {}", e.getMessage());
         }
+    }
 
-        CellTunnelInfo info = getCellTunnelInfo();
-
-        /* If tunnel connects a satellite to a core domain, then add a default route.
-         */
-        if (info.getLocalCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
-            info.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE) {
-            CellRoute defaultRoute =
-                    new CellRoute(null, nucleus.getThisAddress().toString(), CellRoute.DEFAULT);
-            try {
-                nucleus.routeAdd(defaultRoute);
-            } catch (IllegalArgumentException e) {
-                _log.warn("Failed to add route: {}", e.getMessage());
-            }
+    private void installDefaultRoute()
+    {
+        CellNucleus nucleus = getNucleus();
+        CellRoute defaultRoute =
+                new CellRoute(null, nucleus.getThisAddress().toString(), CellRoute.DEFAULT);
+        try {
+            nucleus.routeAdd(defaultRoute);
+        } catch (IllegalArgumentException e) {
+            _log.warn("Failed to add route: {}", e.getMessage());
         }
     }
 
@@ -201,7 +218,7 @@ public class LocationMgrTunnel
             CellMessage msg;
             while ((msg = _input.readObject()) != null) {
                 getNucleus().sendMessage(msg, true, _allowForwardingOfRemoteMessages);
-                _messagesToSystem++;
+                _messagesToSystem.increment();
             }
         } catch (AsynchronousCloseException | EOFException ignored) {
         } catch (ClassNotFoundException e) {
@@ -219,7 +236,7 @@ public class LocationMgrTunnel
         if (me instanceof RoutedMessageEvent) {
             CellMessage msg = me.getMessage();
             try {
-                _messagesToTunnel++;
+                _messagesToTunnel.increment();
                 _output.writeObject(msg);
             } catch (IOException e) {
                 _log.warn("Error while sending message: " + e.getMessage());

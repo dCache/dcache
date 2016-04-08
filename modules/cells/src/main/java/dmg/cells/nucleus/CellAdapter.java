@@ -412,7 +412,7 @@ public class CellAdapter
 
     protected void invokeLater(Runnable task)
     {
-        _nucleus.invokeLater(task);
+        _nucleus.invokeLater(() -> invokeOnMessageThread(task));
     }
 
     /**

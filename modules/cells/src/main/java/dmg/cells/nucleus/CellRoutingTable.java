@@ -304,4 +304,11 @@ public class CellRoutingTable implements Serializable
         }
         return routes.toArray(new CellRoute[routes.size()]);
     }
+
+    public boolean hasDefaultRoute()
+    {
+        synchronized (_default) {
+            return !_default.isEmpty();
+        }
+    }
 }

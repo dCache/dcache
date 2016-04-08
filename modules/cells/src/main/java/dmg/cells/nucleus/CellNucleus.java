@@ -987,8 +987,8 @@ public class CellNucleus implements ThreadFactory
     CellRoute routeFind(CellAddressCore addr) {
         return __cellGlue.getRoutingTable().find(addr);
     }
-    CellRoutingTable getRoutingTable() { return __cellGlue.getRoutingTable(); }
-    CellRoute [] getRoutingList() { return __cellGlue.getRoutingList(); }
+    public CellRoutingTable getRoutingTable() { return __cellGlue.getRoutingTable(); }
+    public CellRoute [] getRoutingList() { return __cellGlue.getRoutingList(); }
     //
     public List<CellTunnelInfo> getCellTunnelInfos() { return __cellGlue.getCellTunnelInfos(); }
 
