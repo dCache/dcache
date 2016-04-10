@@ -1,7 +1,7 @@
 #
 # Dummy NOP tunnel
 #
-create dmg.cells.services.RoutingManager  RoutingMgr
+create -- dmg.cells.services.CoreRoutingManager RoutingMgr "-role=core"
 
 #
 # Instantiate cell access control manager in broker domain

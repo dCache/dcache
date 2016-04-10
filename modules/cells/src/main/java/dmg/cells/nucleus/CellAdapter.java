@@ -22,7 +22,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 import dmg.cells.network.PingMessage;
-import dmg.cells.services.RoutingManager;
 import dmg.util.Authorizable;
 import dmg.util.AuthorizedArgs;
 import dmg.util.AuthorizedString;
@@ -361,8 +360,6 @@ public class CellAdapter
      * all relevent domains as soon as a
      * RoutingManager is
      * running.
-     *
-     * @see RoutingManager
      */
     public void   export() { _nucleus.export(); }
 
