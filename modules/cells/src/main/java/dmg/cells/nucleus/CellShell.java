@@ -856,6 +856,47 @@ public class CellShell extends CommandInterpreter
        }
    }
 
+    @Command(name = "traceroute", hint = "print the domains messages take",
+            description = "Prints the cell paths a cell message follows in both the outbound and inbound direction.")
+    class TracerouteCommand extends DelayedReply implements Callable<Serializable>, CellMessageAnswerable
+    {
+        @Argument(metaVar = "address", usage = "Colon separated path of cell addresses.")
+        CellPath address;
+
+        @Option(name = "nolocal", usage = "don't deliver locally")
+        boolean nolocal;
+
+        @Option(name = "noremote", usage = "don't deliver remotely")
+        boolean noremote;
+
+        @Override
+        public Serializable call()
+        {
+            CellMessage msg = new CellMessage(address, "xyzzy");
+            _nucleus.sendMessage(msg, !nolocal, !noremote, this, MoreExecutors.directExecutor(), 10000);
+            return this;
+        }
+
+        @Override
+        public void answerArrived(CellMessage request, CellMessage answer)
+        {
+            reply(answer.getDestinationPath().revert() + " -> " + answer.getSourcePath());
+        }
+
+        @Override
+        public void exceptionArrived(CellMessage request, Exception exception)
+        {
+            reply(exception);
+        }
+
+        @Override
+        public void answerTimedOut(CellMessage request)
+        {
+            reply("Timeout... ");
+        }
+
+    }
+
 
    ////////////////////////////////////////////////////////////
    //
