@@ -299,13 +299,6 @@ public final class PnfsUpdate {
         LOGGER.trace("validateForAction {} got unit from attributes {}.",
                      pnfsId, unitIndex);
 
-        if (unitIndex == null) {
-            LOGGER.debug("Storage unit not defined for {}. Default replica "
-                                         + "count is 1, nothing to do.",
-                         pnfsId);
-            return false;
-        }
-
         /*
          *  Check to see if this is from a reload of the checkpoint record.
          *  If so, the operation count should be non-null.
