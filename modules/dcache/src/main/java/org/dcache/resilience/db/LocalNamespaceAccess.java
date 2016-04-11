@@ -62,13 +62,13 @@ package org.dcache.resilience.db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
+import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -82,8 +82,8 @@ import org.dcache.resilience.data.PnfsOperationMap;
 import org.dcache.resilience.data.PnfsUpdate;
 import org.dcache.resilience.handlers.PnfsOperationHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.ExceptionMessage;
+import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.commons.util.SqlHelper.tryToClose;
@@ -311,9 +311,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
 
     private Connection getConnection() throws IOHimeraFsException {
         try {
-            Connection dbConnection = connectionPool.getConnection();
-            dbConnection.setAutoCommit(true);
-            return dbConnection;
+            return connectionPool.getConnection();
         } catch (SQLException e) {
             throw new BackEndErrorHimeraFsException(e.getMessage());
         }
@@ -337,7 +335,6 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         boolean full = scan.isForced();
 
         try {
-            connection.setAutoCommit(false);
             statement = connection.prepareStatement(SQL_GET_ONLINE_FOR_LOCATION);
             statement.setString(1, pool);
             statement.setFetchSize(fetchSize);
