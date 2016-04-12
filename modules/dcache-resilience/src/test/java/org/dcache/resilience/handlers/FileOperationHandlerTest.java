@@ -77,8 +77,8 @@ import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestMessageProcessor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PnfsOperation;
-import org.dcache.resilience.data.PnfsUpdate;
+import org.dcache.resilience.data.FileOperation;
+import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.StorageUnitConstraints;
 import org.dcache.resilience.util.InaccessibleFileHandler;
@@ -93,19 +93,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public final class PnfsOperationHandlerTest extends TestBase
+public final class FileOperationHandlerTest extends TestBase
                 implements InaccessibleFileHandler,
                 TestMessageProcessor {
     final Multimap<String, PnfsId> inaccessible = ArrayListMultimap.create();
 
-    PnfsUpdate update;
-    FileAttributes attributes;
+    FileUpdate           update;
+    FileAttributes       attributes;
     RemoveReplicaMessage repRmMessage;
-    ResilientFileTask task;
-    String verifyType;
-    String storageUnit;
-    Integer originalTarget;
-    Integer originalSource;
+    ResilientFileTask    task;
+    String               verifyType;
+    String               storageUnit;
+    Integer              originalTarget;
+    Integer              originalSource;
     boolean suppressAlarm = false;
     boolean rmMessageFailure = false;
 
@@ -134,7 +134,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldCreateMigrationTaskWhenVerifyResultIsCopy()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForANewFileOnAPoolWithHostAndRackTags();
+        givenAFileUpdateForANewFileOnAPoolWithHostAndRackTags();
         whenHandleUpdateIsCalled();
         whenSourceAndTargetAreSelected();
         whenTaskIsCreatedAndCalled();
@@ -145,18 +145,18 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldFailOnFatalFailure()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForANewFileOnAPoolWithNoTags();
+        givenAFileUpdateForANewFileOnAPoolWithNoTags();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         whenOperationFailsFatally();
-        assertNull(pnfsOperationMap.getOperation(update.pnfsId));
+        assertNull(fileOperationMap.getOperation(update.pnfsId));
     }
 
     @Test
     public void shouldFailOnNewLocFailureWhereThereIsNoOtherTarget()
                     throws CacheException, InterruptedException, IOException {
         setUpTest(false);
-        givenAPnfsUpdateForANewFileOnAPoolWithNoTags();
+        givenAFileUpdateForANewFileOnAPoolWithNoTags();
         givenUpdateHasBeenAddedToMapWithCountOf(1);
         whenVerifyIsRun();
         afterInspectingSourceAndTarget();
@@ -164,14 +164,14 @@ public final class PnfsOperationHandlerTest extends TestBase
         whenOperationFailsWithNewTargetError();
         whenVerifyIsRun();
         whenScanIsRun();
-        assertNull(pnfsOperationMap.getOperation(update.pnfsId));
+        assertNull(fileOperationMap.getOperation(update.pnfsId));
     }
 
     @Test
     public void shouldNotProcessUpdateWhenClearCacheLocationWithNoLocations()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateClearCacheLocationForAFileWithNoLocationsInNamespace();
+        givenAFileUpdateClearCacheLocationForAFileWithNoLocationsInNamespace();
         whenHandleUpdateIsCalled();
         assertTrue(noOperationHasBeenAdded());
     }
@@ -180,7 +180,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldNotProcessUpdateWhenFileDeletedFromNamespace()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileDeletedFromNamespace();
+        givenAFileUpdateForAFileDeletedFromNamespace();
         whenHandleUpdateIsCalled();
         assertTrue(noOperationHasBeenAdded());
     }
@@ -189,7 +189,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldNotProcessUpdateWhenPoolNotResilient()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForANewFileOnNonResilientPool();
+        givenAFileUpdateForANewFileOnNonResilientPool();
         whenHandleUpdateIsCalled();
         assertTrue(noOperationHasBeenAdded());
     }
@@ -198,7 +198,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldNotProcessUpdateWhenStorageGroupNotResilient()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForANewFileResilientPoolButRequiringASingleCopy();
+        givenAFileUpdateForANewFileResilientPoolButRequiringASingleCopy();
         whenHandleUpdateIsCalled();
         assertTrue(noOperationHasBeenAdded());
     }
@@ -207,8 +207,8 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldNotReportInaccessibleIfPoolRemovedFromGroup()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateFromAPoolScan();
-        givenAPnfsUpdateFromAPoolScanForPoolRemovedFromGroup();
+        givenAFileUpdateFromAPoolScan();
+        givenAFileUpdateFromAPoolScanForPoolRemovedFromGroup();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         assertFalse(inaccessible.containsEntry(update.pool, update.pnfsId));
@@ -218,7 +218,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldNotReportInaccessibleIfRetentionPolicyIsCustodial()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenACustodialPnfsUpdateFromAPoolScan();
+        givenACustodialFileUpdateFromAPoolScan();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         assertFalse(inaccessible.containsEntry(update.pool, update.pnfsId));
@@ -228,7 +228,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldNotSendSetStickyMessageOnScan()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateFromAPoolScan();
+        givenAFileUpdateFromAPoolScan();
         whenHandleUpdateIsCalled();
         assertFalse(update.shouldVerifySticky());
     }
@@ -237,7 +237,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldReportInaccessibleIfOnlyCopyOnDownPool()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateFromAPoolScan();
+        givenAFileUpdateFromAPoolScan();
         givenSourcePoolIsDown();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
@@ -248,7 +248,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldReturnCopyWhenRequiredCopyMissing()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForANewFileOnAPoolWithNoTags();
+        givenAFileUpdateForANewFileOnAPoolWithNoTags();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         assertEquals("COPY", verifyType);
@@ -258,7 +258,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldReturnRemoveWhenExcessCopiesExist()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileWithExcessLocations();
+        givenAFileUpdateForAFileWithExcessLocations();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         assertEquals("REMOVE", verifyType);
@@ -268,19 +268,19 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldReturnRemoveWhenTagChangeRequiresRedistribution()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileWithExcessLocations();
+        givenAFileUpdateForAFileWithExcessLocations();
         givenANewTagRequirementForFileStorageUnit();
         givenUpdateHasBeenAddedToMapWithCountOf(1);
         whenVerifyIsRun();
         assertEquals("REMOVE", verifyType);
-        assertEquals(2, pnfsOperationMap.getOperation(update.pnfsId).getOpCount());
+        assertEquals(2, fileOperationMap.getOperation(update.pnfsId).getOpCount());
     }
 
     @Test
     public void shouldReturnVoidWhenNothingToDo()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileWithRequiredLocations();
+        givenAFileUpdateForAFileWithRequiredLocations();
         givenUpdateHasBeenAddedToMapWithCountOf(1);
         whenVerifyIsRun();
         assertEquals("VOID", verifyType);
@@ -290,7 +290,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldSendRemoveRequestOnExcessLocation()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(true);
-        givenAPnfsUpdateForAFileWithExcessLocations();
+        givenAFileUpdateForAFileWithExcessLocations();
         whenHandleUpdateIsCalled();
         whenTaskIsCreatedAndCalled();
         assertNotNull(repRmMessage);
@@ -300,7 +300,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldSendSetStickyMessageOnNewLocation()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForANewFileOnAPoolWithHostAndRackTags();
+        givenAFileUpdateForANewFileOnAPoolWithHostAndRackTags();
         whenHandleUpdateIsCalled();
         assertTrue(update.shouldVerifySticky());
     }
@@ -309,7 +309,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldSendSetStickyMessageOnPoolAddedToGroup()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateFromAPoolScanForPoolAddedToGroup();
+        givenAFileUpdateFromAPoolScanForPoolAddedToGroup();
         whenHandleUpdateIsCalled();
         assertTrue(update.shouldVerifySticky());
     }
@@ -318,7 +318,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldTryAnotherSourceOnBrokenFile()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileWithOneLocationOffline();
+        givenAFileUpdateForAFileWithOneLocationOffline();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         afterInspectingSourceAndTarget();
@@ -331,7 +331,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldTryAnotherSourceOnSourceError()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileWithOneLocationOffline();
+        givenAFileUpdateForAFileWithOneLocationOffline();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         afterInspectingSourceAndTarget();
@@ -344,7 +344,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldTryAnotherTargetOnNewTargetFailure()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileWithOneLocationOffline();
+        givenAFileUpdateForAFileWithOneLocationOffline();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         afterInspectingSourceAndTarget();
@@ -357,7 +357,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldTryAnotherTargetOnRetryMaxReached()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileWithOneLocationOffline();
+        givenAFileUpdateForAFileWithOneLocationOffline();
         whenHandleUpdateIsCalled();
         whenVerifyIsRun();
         afterInspectingSourceAndTarget();
@@ -372,7 +372,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldUpdateCountWhenNewLocationArrives()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForANewFileOnAPoolWithHostAndRackTags();
+        givenAFileUpdateForANewFileOnAPoolWithHostAndRackTags();
         givenUpdateHasBeenAddedToMapWithCountOf(1);
         givenANewLocationForFile();
         whenHandleUpdateIsCalled();
@@ -383,7 +383,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldUpdateWhenLocationArrivesWithPredefinedGroup()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateFromAPoolScan();
+        givenAFileUpdateFromAPoolScan();
         whenHandleUpdateIsCalled();
         assertTrue(theOperationCountIs(1));
     }
@@ -392,13 +392,13 @@ public final class PnfsOperationHandlerTest extends TestBase
     public void shouldUpdateWhenNewLocationArrivesWithNoLocations()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
-        givenAPnfsUpdateForAFileWithNoLocationsYetInAttributes();
+        givenAFileUpdateForAFileWithNoLocationsYetInAttributes();
         whenHandleUpdateIsCalled();
         assertTrue(theOperationCountIs(1));
     }
 
     private void afterInspectingSourceAndTarget() {
-        PnfsOperation operation = pnfsOperationMap.getOperation(update.pnfsId);
+        FileOperation operation = fileOperationMap.getOperation(update.pnfsId);
         originalSource = operation.getSource();
         originalTarget = operation.getTarget();
     }
@@ -409,7 +409,7 @@ public final class PnfsOperationHandlerTest extends TestBase
         assertEquals(inner.getPnfsId(), update.pnfsId);
     }
 
-    private void givenACustodialPnfsUpdateFromAPoolScan()
+    private void givenACustodialFileUpdateFromAPoolScan()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdateWithGroup(aCustodialOnlineFile(), MessageType.POOL_STATUS_DOWN,
@@ -440,28 +440,28 @@ public final class PnfsOperationHandlerTest extends TestBase
 
     }
 
-    private void givenAPnfsUpdateClearCacheLocationForAFileWithNoLocationsInNamespace()
+    private void givenAFileUpdateClearCacheLocationForAFileWithNoLocationsInNamespace()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdate(aReplicaOnlineFileWithBothTagsButNoLocations(),
                   MessageType.CLEAR_CACHE_LOCATION);
     }
 
-    private void givenAPnfsUpdateForAFileDeletedFromNamespace()
+    private void givenAFileUpdateForAFileDeletedFromNamespace()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdate(aDeletedReplicaOnlineFileWithBothTags(),
                   MessageType.CLEAR_CACHE_LOCATION);
     }
 
-    private void givenAPnfsUpdateForAFileWithExcessLocations()
+    private void givenAFileUpdateForAFileWithExcessLocations()
                     throws CacheException {
         loadFilesWithExcessLocations();
         setUpdate(aFileWithAReplicaOnAllResilientPools(),
                         MessageType.POOL_STATUS_UP);
     }
 
-    private void givenAPnfsUpdateForAFileWithNoLocationsYetInAttributes()
+    private void givenAFileUpdateForAFileWithNoLocationsYetInAttributes()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdate(aReplicaOnlineFileWithBothTags(),
@@ -469,41 +469,41 @@ public final class PnfsOperationHandlerTest extends TestBase
         attributes.getLocations().clear();
     }
 
-    private void givenAPnfsUpdateForAFileWithOneLocationOffline()
+    private void givenAFileUpdateForAFileWithOneLocationOffline()
                     throws CacheException {
         loadFilesWithRequiredLocations();
         setUpdate(aReplicaOnlineFileWithNoTags(), MessageType.POOL_STATUS_DOWN);
         givenSourcePoolIsDown();
     }
 
-    private void givenAPnfsUpdateForAFileWithRequiredLocations()
+    private void givenAFileUpdateForAFileWithRequiredLocations()
                     throws CacheException {
         loadFilesWithRequiredLocations();
         setUpdate(aReplicaOnlineFileWithNoTags(),
                         MessageType.POOL_STATUS_UP);
     }
 
-    private void givenAPnfsUpdateForANewFileOnAPoolWithHostAndRackTags()
+    private void givenAFileUpdateForANewFileOnAPoolWithHostAndRackTags()
                     throws CacheException {
         loadNewFilesOnPoolsWithNoTags();
         setUpdate(aReplicaOnlineFileWithNoTags(),
                   MessageType.ADD_CACHE_LOCATION);
     }
 
-    private void givenAPnfsUpdateForANewFileOnAPoolWithNoTags()
+    private void givenAFileUpdateForANewFileOnAPoolWithNoTags()
                     throws CacheException {
         loadNewFilesOnPoolsWithNoTags();
         setUpdate(aReplicaOnlineFileWithNoTags(),
                   MessageType.ADD_CACHE_LOCATION);
     }
 
-    private void givenAPnfsUpdateForANewFileOnNonResilientPool()
+    private void givenAFileUpdateForANewFileOnNonResilientPool()
                     throws CacheException {
         loadNonResilientFiles();
         setUpdate(aCustodialNearlineFile(), MessageType.ADD_CACHE_LOCATION);
     }
 
-    private void givenAPnfsUpdateForANewFileResilientPoolButRequiringASingleCopy()
+    private void givenAFileUpdateForANewFileResilientPoolButRequiringASingleCopy()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdate(aReplicaOnlineFileWithBothTags(),
@@ -512,20 +512,20 @@ public final class PnfsOperationHandlerTest extends TestBase
         makeNonResilient(key);
     }
 
-    private void givenAPnfsUpdateFromAPoolScan() throws CacheException {
+    private void givenAFileUpdateFromAPoolScan() throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
                            MessageType.POOL_STATUS_DOWN, SelectionAction.NONE);
     }
 
-    private void givenAPnfsUpdateFromAPoolScanForPoolAddedToGroup()
+    private void givenAFileUpdateFromAPoolScanForPoolAddedToGroup()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
                            MessageType.POOL_STATUS_UP, SelectionAction.ADD);
     }
 
-    private void givenAPnfsUpdateFromAPoolScanForPoolRemovedFromGroup()
+    private void givenAFileUpdateFromAPoolScanForPoolRemovedFromGroup()
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
@@ -550,10 +550,10 @@ public final class PnfsOperationHandlerTest extends TestBase
             group = poolInfoMap.getResilientPoolGroup(pool);
         }
         Integer unit = poolInfoMap.getStorageUnitIndex(attributes);
-        update = new PnfsUpdate(update.pnfsId, update.pool, update.type,
+        update = new FileUpdate(update.pnfsId, update.pool, update.type,
                                 pool, group, unit, attributes);
         update.setCount(count);
-        pnfsOperationMap.register(update);
+        fileOperationMap.register(update);
     }
 
     private void givenSourcePoolIsDown() {
@@ -561,7 +561,7 @@ public final class PnfsOperationHandlerTest extends TestBase
     }
 
     private boolean noOperationHasBeenAdded() {
-        return pnfsOperationMap.getOperation(update.pnfsId) == null;
+        return fileOperationMap.getOperation(update.pnfsId) == null;
     }
 
     private void setUpTest(boolean remove)
@@ -579,19 +579,19 @@ public final class PnfsOperationHandlerTest extends TestBase
         createCounters();
         createPoolOperationHandler();
         createPoolOperationMap();
-        createPnfsOperationHandler();
-        createPnfsOperationMap();
+        createFileOperationHandler();
+        createFileOperationMap();
         initializeCounters();
         wirePoolOperationMap();
         wirePoolOperationHandler();
-        wirePnfsOperationMap();
-        wirePnfsOperationHandler();
-        testNamespaceAccess.setHandler(pnfsOperationHandler);
+        wireFileOperationMap();
+        wireFileOperationHandler();
+        testNamespaceAccess.setHandler(fileOperationHandler);
         poolOperationMap.setRescanWindow(Integer.MAX_VALUE);
         poolOperationMap.setDownGracePeriod(0);
         poolOperationMap.loadPools();
-        pnfsOperationMap.initialize(()-> {});
-        pnfsOperationMap.reload();
+        fileOperationMap.initialize(()-> {});
+        fileOperationMap.reload();
     }
 
     private void setUpdate(FileAttributes attributes, MessageType type) {
@@ -599,9 +599,9 @@ public final class PnfsOperationHandlerTest extends TestBase
         PnfsId pnfsId = attributes.getPnfsId();
         Iterator<String> iterator = attributes.getLocations().iterator();
         if (iterator.hasNext()) {
-            update = new PnfsUpdate(pnfsId, iterator.next(), type, true);
+            update = new FileUpdate(pnfsId, iterator.next(), type, true);
         } else {
-            update = new PnfsUpdate(pnfsId, null, type, true);
+            update = new FileUpdate(pnfsId, null, type, true);
         }
     }
 
@@ -614,9 +614,9 @@ public final class PnfsOperationHandlerTest extends TestBase
             String pool = iterator.next();
             Integer group = poolInfoMap.getResilientPoolGroup(
                             poolInfoMap.getPoolIndex(pool));
-            update = new PnfsUpdate(pnfsId, pool, type, action, group, false);
+            update = new FileUpdate(pnfsId, pool, type, action, group, false);
         } else {
-            update = new PnfsUpdate(pnfsId, null, type, false);
+            update = new FileUpdate(pnfsId, null, type, false);
         }
         suppressAlarm = action == SelectionAction.REMOVE;
     }
@@ -628,89 +628,89 @@ public final class PnfsOperationHandlerTest extends TestBase
     }
 
     private boolean theNewSourceIsDifferent() {
-        PnfsOperation operation = pnfsOperationMap.getOperation(update.pnfsId);
+        FileOperation operation = fileOperationMap.getOperation(update.pnfsId);
         return operation.getSource() != originalSource;
     }
 
     private boolean theNewTargetIsDifferent() {
-        PnfsOperation operation = pnfsOperationMap.getOperation(update.pnfsId);
+        FileOperation operation = fileOperationMap.getOperation(update.pnfsId);
         return operation.getTarget() != originalTarget;
     }
 
     private boolean theOperationCountIs(int count) {
-        PnfsOperation operation = pnfsOperationMap.getOperation(
+        FileOperation operation = fileOperationMap.getOperation(
                         attributes.getPnfsId());
         return operation != null && operation.getOpCount() == count;
     }
 
     private void whenHandleUpdateIsCalled() throws CacheException {
-        pnfsOperationHandler.handleLocationUpdate(update);
+        fileOperationHandler.handleLocationUpdate(update);
     }
 
     private void whenOperationFailsFatally() throws IOException {
-        pnfsOperationMap.scan();
-        pnfsOperationMap.updateOperation(update.pnfsId,
-                        new CacheException(CacheException.DEFAULT_ERROR_CODE,
+        fileOperationMap.scan();
+        fileOperationMap.updateOperation(update.pnfsId,
+                                         new CacheException(CacheException.DEFAULT_ERROR_CODE,
                                         FORCED_FAILURE.toString()));
-        pnfsOperationMap.scan();
+        fileOperationMap.scan();
     }
 
     private void whenOperationFailsWithBrokenFileError() throws IOException {
-        pnfsOperationMap.scan();
-        pnfsOperationMap.updateOperation(update.pnfsId,
-                        new CacheException(CacheException.BROKEN_ON_TAPE,
+        fileOperationMap.scan();
+        fileOperationMap.updateOperation(update.pnfsId,
+                                         new CacheException(CacheException.BROKEN_ON_TAPE,
                                         "broken"));
-        pnfsOperationMap.scan();
+        fileOperationMap.scan();
     }
 
     private void whenOperationFailsWithNewTargetError() throws IOException {
-        pnfsOperationMap.scan();
-        pnfsOperationMap.updateOperation(update.pnfsId,
-                        new CacheException(CacheException.FILE_NOT_FOUND,
+        fileOperationMap.scan();
+        fileOperationMap.updateOperation(update.pnfsId,
+                                         new CacheException(CacheException.FILE_NOT_FOUND,
                                         FORCED_FAILURE.toString()));
-        pnfsOperationMap.scan();
+        fileOperationMap.scan();
     }
 
     private void whenOperationFailsWithRetriableError() throws IOException {
-        pnfsOperationMap.scan();
-        pnfsOperationMap.updateOperation(update.pnfsId,
+        fileOperationMap.scan();
+        fileOperationMap.updateOperation(update.pnfsId,
                                          new CacheException(
                                                          CacheException.HSM_DELAY_ERROR,
                                                          FORCED_FAILURE.toString()));
-        pnfsOperationMap.scan();
+        fileOperationMap.scan();
     }
 
     private void whenOperationFailsWithSourceError() throws IOException {
-        pnfsOperationMap.scan();
-        pnfsOperationMap.updateOperation(update.pnfsId,
+        fileOperationMap.scan();
+        fileOperationMap.updateOperation(update.pnfsId,
                                          new CacheException(
                                                          CacheException.SELECTED_POOL_FAILED,
                                                          "Source pool failed"));
-        pnfsOperationMap.scan();
+        fileOperationMap.scan();
     }
 
     private void whenScanIsRun() throws IOException{
-        pnfsOperationMap.scan();
+        fileOperationMap.scan();
         /*
          *  Also force a save.
          */
-        pnfsOperationMap.runCheckpointNow();
+        fileOperationMap.runCheckpointNow();
     }
 
     private void whenSourceAndTargetAreSelected() {
-        PnfsOperation op = pnfsOperationMap.getOperation(update.pnfsId);
+        FileOperation op = fileOperationMap.getOperation(update.pnfsId);
         op.setSource(4);
         op.setTarget(5);
     }
 
     private void whenTaskIsCreatedAndCalled() {
         task = new ResilientFileTask(update.pnfsId, false,
-                                     pnfsOperationHandler);
+                                     fileOperationHandler);
         task.call();
     }
 
     private void whenVerifyIsRun() {
-        verifyType = pnfsOperationHandler.handleVerification(attributes,
-                        suppressAlarm).name();
+        verifyType = fileOperationHandler.handleVerification(attributes,
+                                                             suppressAlarm).name();
     }
 }

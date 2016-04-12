@@ -110,7 +110,7 @@ import org.dcache.vehicles.FileAttributes;
  *
  * <p>The reason for doing this is to be able to store most of the pool info
  *      associated with a given pnfs or pool operation in progress as index
- *      references, allowing the {@link PnfsOperation} to use 4-byte rather
+ *      references, allowing the {@link FileOperation} to use 4-byte rather
  *       than 8-byte 'references'.</p>
  *
  * <p>The relational tables represented by multimaps of indices

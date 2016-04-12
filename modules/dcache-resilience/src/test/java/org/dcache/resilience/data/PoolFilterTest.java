@@ -73,10 +73,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public final class PoolFilterTest extends TestBase {
-    PoolFilter filter;
+    PoolFilter    filter;
     PoolOperation poolOperation;
-    PnfsOperation pnfsOperation;
-    String pool;
+    FileOperation fileOperation;
+    String        pool;
 
     @Before
     public void setUp() throws CacheException {
@@ -90,7 +90,7 @@ public final class PoolFilterTest extends TestBase {
         givenFilterWith("resilient_pool-0", null, null, true, false, false, null, null,
                         null, null);
         givenPnfsOperationWith("resilient_pool-0", null, null);
-        assertTrue(filter.matches(pnfsOperation, poolInfoMap));
+        assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
@@ -99,7 +99,7 @@ public final class PoolFilterTest extends TestBase {
         givenFilterWith("resilient_pool-0", null, null, false, true, false, null, null,
                         null, null);
         givenPnfsOperationWith(null, "resilient_pool-0", null);
-        assertTrue(filter.matches(pnfsOperation, poolInfoMap));
+        assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
@@ -108,7 +108,7 @@ public final class PoolFilterTest extends TestBase {
         givenFilterWith("resilient_pool-0", null, null, false, false, true, null, null,
                         null, null);
         givenPnfsOperationWith(null, null, "resilient_pool-0");
-        assertTrue(filter.matches(pnfsOperation, poolInfoMap));
+        assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
@@ -117,7 +117,7 @@ public final class PoolFilterTest extends TestBase {
         givenFilterWith("resilient_pool-0", null, null, true, false, false, null, null,
                         null, null);
         givenPnfsOperationWith(null, null, null);
-        assertFalse(filter.matches(pnfsOperation, poolInfoMap));
+        assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
@@ -126,7 +126,7 @@ public final class PoolFilterTest extends TestBase {
         givenFilterWith("resilient_pool-0", null, null, false, true, false, null, null,
                         null, null);
         givenPnfsOperationWith(null, null, null);
-        assertFalse(filter.matches(pnfsOperation, poolInfoMap));
+        assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
@@ -135,7 +135,7 @@ public final class PoolFilterTest extends TestBase {
         givenFilterWith("resilient_pool-0", null, null, false, false, true, null, null,
                         null, null);
         givenPnfsOperationWith(null, null, null);
-        assertFalse(filter.matches(pnfsOperation, poolInfoMap));
+        assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
@@ -295,15 +295,15 @@ public final class PoolFilterTest extends TestBase {
 
     private void givenPnfsOperationWith(String parent, String source, String target)
                     throws CacheException {
-        pnfsOperation = new PnfsOperation(aReplicaOnlineFileWithNoTags().getPnfsId(), 1, 2L);
+        fileOperation = new FileOperation(aReplicaOnlineFileWithNoTags().getPnfsId(), 1, 2L);
 
         Integer p = parent != null ? poolInfoMap.getPoolIndex(parent) : null;
         Integer s = source != null ? poolInfoMap.getPoolIndex(source) : null;
         Integer t = target != null ? poolInfoMap.getPoolIndex(target) : null;
 
-        pnfsOperation.setParentOrSource(p, p != null);
-        pnfsOperation.setSource(s);
-        pnfsOperation.setTarget(t);
+        fileOperation.setParentOrSource(p, p != null);
+        fileOperation.setSource(s);
+        fileOperation.setTarget(t);
     }
 
     private void givenPoolOperationWith(Long lastScan, Long lastUpdate,

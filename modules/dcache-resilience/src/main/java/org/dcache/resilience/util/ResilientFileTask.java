@@ -72,14 +72,14 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.Task;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
-import org.dcache.resilience.handlers.PnfsOperationHandler.Type;
+import org.dcache.resilience.handlers.FileOperationHandler;
+import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * <p>Main wrapper task for calling {@link PnfsOperationHandler}.</p>
+ * <p>Main wrapper task for calling {@link FileOperationHandler}.</p>
  *
  * <p>First runs a verification on the pnfsId to see what kind of
  *      operation is required.  It then proceeds with either a single copy,
@@ -97,8 +97,8 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
                     = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
     private final PnfsId               pnfsId;
-    private final PnfsOperationHandler handler;
-    private final boolean suppressAlarm;
+    private final FileOperationHandler handler;
+    private final boolean              suppressAlarm;
 
     private Task   migrationTask;
     private Future future;
@@ -125,7 +125,7 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
     }
 
     public ResilientFileTask(PnfsId pnfsId, boolean suppressAlarm,
-                             PnfsOperationHandler handler) {
+                             FileOperationHandler handler) {
         this.pnfsId = pnfsId;
         this.handler = handler;
         this.suppressAlarm = suppressAlarm;

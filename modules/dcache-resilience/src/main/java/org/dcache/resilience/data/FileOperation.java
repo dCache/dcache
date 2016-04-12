@@ -75,14 +75,14 @@ import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
-import org.dcache.resilience.handlers.PnfsOperationHandler.Type;
+import org.dcache.resilience.handlers.FileOperationHandler;
+import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 
 /**
- * <p>Object stored in the {@link PnfsOperationMap}.</p>
+ * <p>Object stored in the {@link FileOperationMap}.</p>
  *
  * <p>Since this table may grow very large, two strategies have been
  *      adopted to try to reduce the memory footprint of each instance:</p>
@@ -103,8 +103,8 @@ import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
  *
  * <ol>
  *  <li>Between various threads on the entry point operations
- *      {@link PnfsOperationHandler#handleLocationUpdate(PnfsUpdate)}
- *      {@link PnfsOperationHandler#handleScannedLocation(PnfsUpdate, Integer)}</li>
+ *      {@link FileOperationHandler#handleLocationUpdate(FileUpdate)}
+ *      {@link FileOperationHandler#handleScannedLocation(FileUpdate, Integer)}</li>
  *  <li>The task thread or arriving completion message thread setting
  *      state and the consumer reading state.</li>
  *  <li>The admin thread and the consumer setting state/operation on cancel.</li>
@@ -121,7 +121,7 @@ import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
  *      (such as through the admin interface or the checkpointing operation)
  *      to be unsynchronized.</p>
  */
-public final class PnfsOperation {
+public final class FileOperation {
     /*
      * Stored state. Instead of using enum, to leave less of a memory footprint.
      * As above.
@@ -186,7 +186,7 @@ public final class PnfsOperation {
     private ResilientFileTask task;
     private CacheException    exception;
 
-    PnfsOperation(PnfsId pnfsId, int pgroup, Integer sunit, int action,
+    FileOperation(PnfsId pnfsId, int pgroup, Integer sunit, int action,
                   int opCount, long size) {
         this(pnfsId, opCount, size);
         selectionAction = action;
@@ -195,7 +195,7 @@ public final class PnfsOperation {
         state = UNINITIALIZED;
     }
 
-    PnfsOperation(PnfsId pnfsId, int opCount, long size) {
+    FileOperation(PnfsId pnfsId, int opCount, long size) {
         this.pnfsId = pnfsId;
         this.opCount = opCount;
         retried = 0;
@@ -210,7 +210,7 @@ public final class PnfsOperation {
     }
 
     @VisibleForTesting
-    public PnfsOperation(PnfsOperation operation) {
+    public FileOperation(FileOperation operation) {
         this(operation.pnfsId, operation.poolGroup, operation.storageUnit,
                         operation.selectionAction, operation.opCount,
                         operation.size);

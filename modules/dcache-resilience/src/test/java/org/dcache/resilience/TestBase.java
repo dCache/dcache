@@ -76,13 +76,13 @@ import diskCacheV111.vehicles.Message;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.ProportionalPoolSelectionStrategy;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.resilience.data.PnfsOperationMap;
+import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.PoolInfoDiff;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperationMap;
 import org.dcache.resilience.data.PoolStateUpdate;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
-import org.dcache.resilience.handlers.PnfsTaskCompletionHandler;
+import org.dcache.resilience.handlers.FileOperationHandler;
+import org.dcache.resilience.handlers.FileTaskCompletionHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
 import org.dcache.resilience.util.InaccessibleFileHandler;
@@ -109,9 +109,9 @@ public abstract class TestBase implements Cancellable {
     /*
      *  Used, but also tested separately.
      */
-    protected PnfsOperationHandler pnfsOperationHandler;
+    protected FileOperationHandler fileOperationHandler;
     protected PoolOperationHandler poolOperationHandler;
-    protected PnfsOperationMap     pnfsOperationMap;
+    protected FileOperationMap     fileOperationMap;
     protected PoolOperationMap     poolOperationMap;
     protected PoolInfoMap          poolInfoMap;
     protected LocationSelector     locationSelector;
@@ -122,7 +122,7 @@ public abstract class TestBase implements Cancellable {
     protected InaccessibleFileHandler    inaccessibleFileHandler;
     protected PoolSelectionUnitDecorator decorator;
 
-    protected PnfsTaskCompletionHandler pnfsTaskCompletionHandler;
+    protected FileTaskCompletionHandler fileTaskCompletionHandler;
     protected PoolTaskCompletionHandler poolTaskCompletionHandler;
 
     protected TestSynchronousExecutor shortJobExecutor;
@@ -250,9 +250,9 @@ public abstract class TestBase implements Cancellable {
 
     protected void clearInMemory() {
         counters = null;
-        if (pnfsOperationMap != null) {
-            pnfsOperationMap.shutdown();
-            pnfsOperationMap = null;
+        if (fileOperationMap != null) {
+            fileOperationMap.shutdown();
+            fileOperationMap = null;
         }
         if (poolOperationMap != null) {
             poolOperationMap.shutdown();
@@ -298,13 +298,13 @@ public abstract class TestBase implements Cancellable {
         locationSelector = new LocationSelector();
     }
 
-    protected void createPnfsOperationHandler() {
-        pnfsOperationHandler = new PnfsOperationHandler();
-        pnfsTaskCompletionHandler = new PnfsTaskCompletionHandler();
+    protected void createFileOperationHandler() {
+        fileOperationHandler = new FileOperationHandler();
+        fileTaskCompletionHandler = new FileTaskCompletionHandler();
     }
 
-    protected void createPnfsOperationMap() {
-        pnfsOperationMap = new PnfsOperationMap();
+    protected void createFileOperationMap() {
+        fileOperationMap = new FileOperationMap();
     }
 
     protected void createPoolInfoMap() {
@@ -477,35 +477,35 @@ public abstract class TestBase implements Cancellable {
          */
     }
 
-    protected void wirePnfsOperationHandler() {
-        pnfsTaskCompletionHandler.setMap(pnfsOperationMap);
-        pnfsOperationHandler.setCompletionHandler(pnfsTaskCompletionHandler);
-        pnfsOperationHandler.setInaccessibleFileHandler(
+    protected void wireFileOperationHandler() {
+        fileTaskCompletionHandler.setMap(fileOperationMap);
+        fileOperationHandler.setCompletionHandler(fileTaskCompletionHandler);
+        fileOperationHandler.setInaccessibleFileHandler(
                         inaccessibleFileHandler);
-        pnfsOperationHandler.setNamespace(testNamespaceAccess);
-        pnfsOperationHandler.setPoolInfoMap(poolInfoMap);
-        pnfsOperationHandler.setLocationSelector(locationSelector);
-        pnfsOperationHandler.setPnfsOpMap(pnfsOperationMap);
-        pnfsOperationHandler.setTaskService(longJobExecutor);
-        pnfsOperationHandler.setScheduledService(scheduledExecutorService);
-        pnfsOperationHandler.setPoolStub(testPoolStub);
+        fileOperationHandler.setNamespace(testNamespaceAccess);
+        fileOperationHandler.setPoolInfoMap(poolInfoMap);
+        fileOperationHandler.setLocationSelector(locationSelector);
+        fileOperationHandler.setFileOpMap(fileOperationMap);
+        fileOperationHandler.setTaskService(longJobExecutor);
+        fileOperationHandler.setScheduledService(scheduledExecutorService);
+        fileOperationHandler.setPoolStub(testPoolStub);
     }
 
-    protected void wirePnfsOperationMap() {
-        pnfsOperationMap.setCompletionHandler(pnfsTaskCompletionHandler);
-        pnfsOperationMap.setPoolTaskCompletionHandler(poolTaskCompletionHandler);
-        pnfsOperationMap.setCounters(counters);
+    protected void wireFileOperationMap() {
+        fileOperationMap.setCompletionHandler(fileTaskCompletionHandler);
+        fileOperationMap.setPoolTaskCompletionHandler(poolTaskCompletionHandler);
+        fileOperationMap.setCounters(counters);
         OperationHistory  history = new OperationHistory();
         history.setCapacity(1);
         history.initialize();
-        pnfsOperationMap.setHistory(history);
-        pnfsOperationMap.setCopyThreads(2);
-        pnfsOperationMap.setMaxRetries(2);
-        pnfsOperationMap.setOperationHandler(pnfsOperationHandler);
-        pnfsOperationMap.setPoolInfoMap(poolInfoMap);
-        pnfsOperationMap.setCheckpointExpiry(Long.MAX_VALUE);
-        pnfsOperationMap.setCheckpointExpiryUnit(TimeUnit.MILLISECONDS);
-        pnfsOperationMap.setCheckpointFilePath(CHKPTFILE);
+        fileOperationMap.setHistory(history);
+        fileOperationMap.setCopyThreads(2);
+        fileOperationMap.setMaxRetries(2);
+        fileOperationMap.setOperationHandler(fileOperationHandler);
+        fileOperationMap.setPoolInfoMap(poolInfoMap);
+        fileOperationMap.setCheckpointExpiry(Long.MAX_VALUE);
+        fileOperationMap.setCheckpointExpiryUnit(TimeUnit.MILLISECONDS);
+        fileOperationMap.setCheckpointFilePath(CHKPTFILE);
     }
 
     protected void wireLocationSelector() {

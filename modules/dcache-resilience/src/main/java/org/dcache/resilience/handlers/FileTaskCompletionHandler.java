@@ -70,7 +70,7 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.migration.Task;
 import org.dcache.pool.migration.TaskCompletionHandler;
-import org.dcache.resilience.data.PnfsOperationMap;
+import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.ExceptionMessage;
 
@@ -78,7 +78,7 @@ import org.dcache.resilience.util.ExceptionMessage;
  * <p>Implements the handling of pnfsid task termination.
  *      Also implements the migration task termination logic.</p>
  */
-public final class PnfsTaskCompletionHandler implements TaskCompletionHandler {
+public final class FileTaskCompletionHandler implements TaskCompletionHandler {
     static final String WILL_RETRY_LATER
                     = "A best effort at retry will be made "
                     + "during the next periodic scan.";
@@ -100,11 +100,11 @@ public final class PnfsTaskCompletionHandler implements TaskCompletionHandler {
                     + WILL_RETRY_LATER;
 
     private static final Logger LOGGER
-                    = LoggerFactory.getLogger(PnfsTaskCompletionHandler.class);
+                    = LoggerFactory.getLogger(FileTaskCompletionHandler.class);
 
-    private PnfsOperationMap map;
+    private FileOperationMap map;
 
-    public void setMap(PnfsOperationMap map) {
+    public void setMap(FileOperationMap map) {
         this.map = map;
     }
 

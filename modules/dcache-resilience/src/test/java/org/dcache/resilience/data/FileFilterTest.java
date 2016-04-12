@@ -73,9 +73,9 @@ import org.dcache.resilience.TestBase;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public final class PnfsFilterTest extends TestBase {
-    PnfsFilter filter;
-    PnfsOperation operation;
+public final class FileFilterTest extends TestBase {
+    FileFilter    filter;
+    FileOperation operation;
 
     @Before
     public void setUp() throws CacheException {
@@ -263,7 +263,7 @@ public final class PnfsFilterTest extends TestBase {
     private void givenFilterWith(String pnfsIds, String states,
                     String retentionPolicy, String storageUnit, Long after,
                     Long before, boolean force) {
-        filter = new PnfsFilter();
+        filter = new FileFilter();
         filter.setForceRemoval(force);
         filter.setLastUpdateAfter(after);
         filter.setLastUpdateBefore(before);
@@ -280,7 +280,7 @@ public final class PnfsFilterTest extends TestBase {
         Integer sunit = storageUnit != null ?
                         poolInfoMap.getGroupIndex(storageUnit) : null;
 
-        operation = new PnfsOperation(pnfsId, -1, sunit, 0, 1, 2L);
+        operation = new FileOperation(pnfsId, -1, sunit, 0, 1, 2L);
 
         if (retentionPolicy != null) {
             operation.setRetentionPolicy(retentionPolicy);

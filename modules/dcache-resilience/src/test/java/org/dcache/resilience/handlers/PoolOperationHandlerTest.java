@@ -67,7 +67,7 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
-import org.dcache.resilience.data.PnfsFilter;
+import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.PoolStatusForResilience;
 import org.dcache.resilience.util.InaccessibleFileHandler;
@@ -88,14 +88,14 @@ public class PoolOperationHandlerTest extends TestBase {
         createPoolOperationHandler();
         createPoolOperationMap();
         setMocks();
-        createPnfsOperationHandler();
-        createPnfsOperationMap();
+        createFileOperationHandler();
+        createFileOperationMap();
         initializeCounters();
         wirePoolOperationMap();
         wirePoolOperationHandler();
-        wirePnfsOperationMap();
-        wirePnfsOperationHandler();
-        testNamespaceAccess.setHandler(pnfsOperationHandler);
+        wireFileOperationMap();
+        wireFileOperationHandler();
+        testNamespaceAccess.setHandler(fileOperationHandler);
         poolOperationMap.setRescanWindow(Integer.MAX_VALUE);
         poolOperationMap.setDownGracePeriod(0);
         poolOperationMap.setRestartGracePeriod(0);
@@ -123,7 +123,7 @@ public class PoolOperationHandlerTest extends TestBase {
     }
 
     @Test
-    public void shouldProcess0PnfsIdsWhenPoolWithMinReplicasRestarts() {
+    public void shouldProcess0FilesWhenPoolWithMinReplicasRestarts() {
         givenMinimumReplicasOnPool();
         givenARestartStatusChangeFor(pool);
         whenPoolOpScanIsRun();
@@ -145,7 +145,7 @@ public class PoolOperationHandlerTest extends TestBase {
     }
 
     @Test
-    public void shouldProcess10PnfsIdsWhenPoolWithSingleReplicasRestarts() {
+    public void shouldProcess10FilesWhenPoolWithSingleReplicasRestarts() {
         givenSingleReplicasOnPool();
         givenADownStatusChangeFor(pool);
         givenARestartStatusChangeFor(pool);
@@ -157,7 +157,7 @@ public class PoolOperationHandlerTest extends TestBase {
     }
 
     @Test
-    public void shouldProcess4PnfsIdsWhenPoolWithExcessReplicasDown() {
+    public void shouldProcess4FilesWhenPoolWithExcessReplicasDown() {
         givenExcessReplicasOnPool();
         givenADownStatusChangeFor(pool);
         whenPoolOpScanIsRun();
@@ -169,7 +169,7 @@ public class PoolOperationHandlerTest extends TestBase {
     }
 
     @Test
-    public void shouldProcess4PnfsIdsWhenPoolWithMinReplicasDown() {
+    public void shouldProcess4FilesWhenPoolWithMinReplicasDown() {
         givenMinimumReplicasOnPool();
         givenADownStatusChangeFor(pool);
         whenPoolOpScanIsRun();
@@ -181,7 +181,7 @@ public class PoolOperationHandlerTest extends TestBase {
     }
 
     @Test
-    public void shouldProcess6PnfsIdsWhenPoolWithExcessReplicasRestarts() {
+    public void shouldProcess6FilesWhenPoolWithExcessReplicasRestarts() {
         givenExcessReplicasOnPool();
         givenADownStatusChangeFor(pool);
         givenARestartStatusChangeFor(pool);
@@ -286,9 +286,9 @@ public class PoolOperationHandlerTest extends TestBase {
     }
 
     private void theResultingNumberOfPnfsOperationsSubmittedWas(int submitted) {
-        PnfsFilter filter = new PnfsFilter();
+        FileFilter filter = new FileFilter();
         filter.setState(ImmutableSet.of("WAITING"));
-        assertEquals(submitted, pnfsOperationMap.count(filter, new StringBuilder()));
+        assertEquals(submitted, fileOperationMap.count(filter, new StringBuilder()));
     }
 
     private void whenPoolOpScanIsRun() {

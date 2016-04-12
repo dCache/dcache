@@ -66,7 +66,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.resilience.data.PnfsOperationMap;
+import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperationMap;
 import org.dcache.resilience.handlers.PoolInfoChangeHandler;
@@ -90,7 +90,7 @@ public final class MapInitializer implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger( MapInitializer.class);
 
     private PoolInfoMap              poolInfoMap;
-    private PnfsOperationMap         pnfsOperationMap;
+    private FileOperationMap         fileOperationMap;
     private PoolOperationMap         poolOperationMap;
     private MessageGuard             messageGuard;
     private PoolMonitor              poolMonitor;
@@ -120,9 +120,9 @@ public final class MapInitializer implements Runnable {
         poolInfoChangeHandler.setEnabled(false);
         poolInfoChangeHandler.stopWatchdog();
 
-        if (pnfsOperationMap.isRunning()) {
+        if (fileOperationMap.isRunning()) {
             LOGGER.info("Shutting down pnfs operation map.");
-            pnfsOperationMap.shutdown();
+            fileOperationMap.shutdown();
         }
 
         if (poolOperationMap.isRunning()) {
@@ -181,7 +181,7 @@ public final class MapInitializer implements Runnable {
         messageGuard.enable();
 
         LOGGER.info("Messages are now activated; starting pnfs consumer.");
-        pnfsOperationMap.initialize();
+        fileOperationMap.initialize();
 
         LOGGER.info("Pnfs consumer is running; activating admin commands.");
         synchronized (this) {
@@ -206,7 +206,7 @@ public final class MapInitializer implements Runnable {
          *  so we don't want to block the admin access.
          */
         LOGGER.info("Admin access enabled; reloading checkpoint file.");
-        pnfsOperationMap.reload();
+        fileOperationMap.reload();
 
         LOGGER.info("Checkpoint file finished reloading.");
     }
@@ -227,8 +227,8 @@ public final class MapInitializer implements Runnable {
         this.messageGuard = messageGuard;
     }
 
-    public void setPnfsOperationMap(PnfsOperationMap pnfsOperationMap) {
-        this.pnfsOperationMap = pnfsOperationMap;
+    public void setFileOperationMap(FileOperationMap fileOperationMap) {
+        this.fileOperationMap = fileOperationMap;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {

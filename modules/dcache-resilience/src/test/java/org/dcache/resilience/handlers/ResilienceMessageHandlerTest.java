@@ -94,7 +94,7 @@ public final class ResilienceMessageHandlerTest extends TestBase {
     ResilienceMessageHandler handler;
     MessageGuard             messageGuard;
     PoolInfoChangeHandler    helper;
-    PnfsOperationHandler     pnfsOperationHandler;
+    FileOperationHandler     fileOperationHandler;
     PoolOperationHandler     poolOperationHandler;
     PoolInfoMap              poolInfoMap;
     PoolOperationMap         poolOpMap;
@@ -104,7 +104,7 @@ public final class ResilienceMessageHandlerTest extends TestBase {
     @Before
     public void setUp() {
         messageGuard = mock(MessageGuard.class);
-        pnfsOperationHandler = mock(PnfsOperationHandler.class);
+        fileOperationHandler = mock(FileOperationHandler.class);
         poolOperationHandler = mock(PoolOperationHandler.class);
         poolInfoMap = mock(PoolInfoMap.class);
         poolOpMap = mock(PoolOperationMap.class);
@@ -114,7 +114,7 @@ public final class ResilienceMessageHandlerTest extends TestBase {
         handler = new ResilienceMessageHandler();
         handler.setCounters(counters);
         handler.setMessageGuard(messageGuard);
-        handler.setPnfsOperationHandler(pnfsOperationHandler);
+        handler.setFileOperationHandler(fileOperationHandler);
         handler.setPoolInfoMap(poolInfoMap);
         handler.setPoolOperationHandler(poolOperationHandler);
         handler.setUpdateService(new TestSynchronousExecutor(Mode.RUN));
@@ -171,6 +171,6 @@ public final class ResilienceMessageHandlerTest extends TestBase {
                         UUID.randomUUID(), "test-pool",
                         new PnfsId("0000000000000000BCD"));
         handler.messageArrived(message);
-        verify(pnfsOperationHandler).handleMigrationCopyFinished(message);
+        verify(fileOperationHandler).handleMigrationCopyFinished(message);
     }
 }

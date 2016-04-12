@@ -63,7 +63,7 @@ package org.dcache.resilience.data;
  * <p>Used by admin commands to select operations for cancellation or
  *      listing.</p>
  */
-public interface PnfsMatcher {
+public interface FileMatcher {
     /**
      * <p>Tells whether the matcher would potentially match all operations.</p>
      */
@@ -87,5 +87,5 @@ public interface PnfsMatcher {
      * @param map to translate references to names.
      * @return whether the operation matches or not.
      */
-    boolean matches(PnfsOperation operation, PoolInfoMap map);
+    boolean matches(FileOperation operation, PoolInfoMap map);
 }

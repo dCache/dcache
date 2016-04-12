@@ -74,7 +74,7 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.resilience.db.LocalNamespaceAccess;
 import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.db.ScanSummary;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
+import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
@@ -87,14 +87,14 @@ import org.dcache.vehicles.FileAttributes;
  * <p>Implements verification/validation methods to determine if the update
  *      should be registered in the operation map or not.</p>
  *
- * @see PnfsOperationMap#register(PnfsUpdate)
- * @see PnfsOperationHandler#handleLocationUpdate(PnfsUpdate)
- * @see ResilienceMessageHandler#updatePnfsLocation(PnfsUpdate)
+ * @see FileOperationMap#register(FileUpdate)
+ * @see FileOperationHandler#handleLocationUpdate(FileUpdate)
+ * @see ResilienceMessageHandler#updatePnfsLocation(FileUpdate)
  * @see LocalNamespaceAccess#handleQuery(Connection, ScanSummary)
  */
-public final class PnfsUpdate {
+public final class FileUpdate {
     private static final Logger LOGGER = LoggerFactory.getLogger(
-                    PnfsUpdate.class);
+                    FileUpdate.class);
 
     /**
      * @return <code>null</code> if AccessLatency is not ONLINE, or if the file
@@ -178,20 +178,20 @@ public final class PnfsUpdate {
     private boolean        fromReload;
 
     @VisibleForTesting
-    public PnfsUpdate(PnfsId pnfsId,
-                           String pool,
-                           MessageType type,
-                           Integer poolIndex,
-                           Integer groupIndex,
-                           Integer unitIndex,
-                           FileAttributes attributes) {
+    public FileUpdate(PnfsId pnfsId,
+                      String pool,
+                      MessageType type,
+                      Integer poolIndex,
+                      Integer groupIndex,
+                      Integer unitIndex,
+                      FileAttributes attributes) {
         this(pnfsId, pool, type, SelectionAction.NONE, groupIndex, true);
         this.poolIndex = poolIndex;
         this.unitIndex = unitIndex;
         this.attributes = attributes;
     }
 
-    public PnfsUpdate(PnfsId pnfsId, String pool, MessageType type, boolean full) {
+    public FileUpdate(PnfsId pnfsId, String pool, MessageType type, boolean full) {
         this(pnfsId, pool, type, SelectionAction.NONE, null, full);
     }
 
@@ -207,7 +207,7 @@ public final class PnfsUpdate {
      *               between required and readable; otherwise,
      *               set the op count to 1.
      */
-    public PnfsUpdate(PnfsId pnfsId, String pool, MessageType type,
+    public FileUpdate(PnfsId pnfsId, String pool, MessageType type,
                       SelectionAction action, Integer group, boolean full) {
         this.pnfsId = pnfsId;
         this.pool = pool;

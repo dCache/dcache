@@ -71,7 +71,7 @@ import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PnfsUpdate;
+import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.util.BrokenFileTask;
@@ -91,7 +91,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
                     ResilienceMessageHandler.class);
 
     private MessageGuard         messageGuard;
-    private PnfsOperationHandler pnfsOperationHandler;
+    private FileOperationHandler fileOperationHandler;
     private PoolOperationHandler poolOperationHandler;
     private PoolInfoMap          poolInfoMap;
     private OperationStatistics  counters;
@@ -146,7 +146,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
     }
 
     public void messageArrived(PoolMigrationCopyFinishedMessage message) {
-        pnfsOperationHandler.handleMigrationCopyFinished(message);
+        fileOperationHandler.handleMigrationCopyFinished(message);
     }
 
     public void processBackloggedMessage(Message message) {
@@ -167,9 +167,9 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
         this.messageGuard = messageGuard;
     }
 
-    public void setPnfsOperationHandler(
-                    PnfsOperationHandler pnfsOperationHandler) {
-        this.pnfsOperationHandler = pnfsOperationHandler;
+    public void setFileOperationHandler(
+                    FileOperationHandler fileOperationHandler) {
+        this.fileOperationHandler = fileOperationHandler;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
@@ -186,28 +186,28 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
 
     private void handleAddCacheLocation(PnfsAddCacheLocationMessage message) {
         counters.incrementMessage(MessageType.ADD_CACHE_LOCATION.name());
-        updatePnfsLocation(new PnfsUpdate(message.getPnfsId(), message.getPoolName(),
-                        MessageType.ADD_CACHE_LOCATION, true));
+        updatePnfsLocation(new FileUpdate(message.getPnfsId(), message.getPoolName(),
+                                          MessageType.ADD_CACHE_LOCATION, true));
     }
 
     private void handleBrokenFile(CorruptFileMessage message) {
         counters.incrementMessage(MessageType.CORRUPT_FILE.name());
         new BrokenFileTask(message.getPnfsId(), message.getPool(),
-                        pnfsOperationHandler).submit();
+                           fileOperationHandler).submit();
     }
 
     private void handleClearCacheLocation(PnfsClearCacheLocationMessage message) {
         counters.incrementMessage(MessageType.CLEAR_CACHE_LOCATION.name());
-        updatePnfsLocation(new PnfsUpdate(message.getPnfsId(),
-                        message.getPoolName(),
-                        MessageType.CLEAR_CACHE_LOCATION,
-                        false));
+        updatePnfsLocation(new FileUpdate(message.getPnfsId(),
+                                          message.getPoolName(),
+                                          MessageType.CLEAR_CACHE_LOCATION,
+                                          false));
     }
 
-    private void updatePnfsLocation(PnfsUpdate data) {
+    private void updatePnfsLocation(FileUpdate data) {
         updateService.submit(() -> {
             try {
-                pnfsOperationHandler.handleLocationUpdate(data);
+                fileOperationHandler.handleLocationUpdate(data);
             } catch (CacheException e) {
                 LOGGER.error("Error in verification of location update data {}: {}",
                              data, new ExceptionMessage(e));

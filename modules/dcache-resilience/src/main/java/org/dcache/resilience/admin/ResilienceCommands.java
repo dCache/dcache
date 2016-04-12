@@ -85,16 +85,16 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Option;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PnfsFilter;
-import org.dcache.resilience.data.PnfsOperation;
-import org.dcache.resilience.data.PnfsOperationMap;
-import org.dcache.resilience.data.PnfsUpdate;
+import org.dcache.resilience.data.FileFilter;
+import org.dcache.resilience.data.FileOperation;
+import org.dcache.resilience.data.FileOperationMap;
+import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.PoolFilter;
 import org.dcache.resilience.data.PoolInfoFilter;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperationMap;
 import org.dcache.resilience.db.NamespaceAccess;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
+import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.MessageGuard;
@@ -540,11 +540,11 @@ public abstract class ResilienceCommands implements CellCommandListener {
                     return pnfsid + " does not seem to have any locations.";
                 }
                 String pool = it.next();
-                PnfsUpdate update
-                                = new PnfsUpdate(pnfsId, pool,
+                FileUpdate update
+                                = new FileUpdate(pnfsId, pool,
                                                  MessageType.ADD_CACHE_LOCATION,
                                                  true);
-                pnfsOperationHandler.handleLocationUpdate(update);
+                fileOperationHandler.handleLocationUpdate(update);
             }
             return "An adjustment activity has been started for " + pnfsids + ".";
         }
@@ -593,65 +593,65 @@ public abstract class ResilienceCommands implements CellCommandListener {
 
             switch (mode) {
                 case START:
-                    if (pnfsOperationMap.isRunning()) {
+                    if (fileOperationMap.isRunning()) {
                         return "Consumer is already running.";
                     }
                     new Thread(() -> {
-                        pnfsOperationMap.initialize();
-                        pnfsOperationMap.reload();
+                        fileOperationMap.initialize();
+                        fileOperationMap.reload();
                     }).start();
                     return "Consumer initialization "
                                     + "and reload of checkpoint file started.";
                 case SHUTDOWN:
-                    if (!pnfsOperationMap.isRunning()) {
+                    if (!fileOperationMap.isRunning()) {
                         return "Consumer is not running.";
                     }
-                    pnfsOperationMap.shutdown();
+                    fileOperationMap.shutdown();
                     return "Consumer has been shutdown.";
                 case OFF:
-                    if (pnfsOperationMap.isCheckpointingOn()) {
-                        pnfsOperationMap.stopCheckpointer();
+                    if (fileOperationMap.isCheckpointingOn()) {
+                        fileOperationMap.stopCheckpointer();
                         return "Shut down checkpointing.";
                     }
                     return "Checkpointing already off.";
                 case ON:
-                    if (!pnfsOperationMap.isCheckpointingOn()) {
-                        pnfsOperationMap.startCheckpointer();
+                    if (!fileOperationMap.isCheckpointingOn()) {
+                        fileOperationMap.startCheckpointer();
                         return infoMessage();
                     }
                     return "Checkpointing already on.";
                 case RUN:
-                    if (!pnfsOperationMap.isCheckpointingOn()) {
+                    if (!fileOperationMap.isCheckpointingOn()) {
                         return "Checkpointing is off; please turn it on first.";
                     }
-                    pnfsOperationMap.runCheckpointNow();
+                    fileOperationMap.runCheckpointNow();
                     return "Forced checkpoint.";
                 case RESET:
-                    if (!pnfsOperationMap.isCheckpointingOn()) {
+                    if (!fileOperationMap.isCheckpointingOn()) {
                         return "Checkpointing is off; please turn it on first.";
                     }
 
                     if (checkpoint != null) {
-                        pnfsOperationMap.setCheckpointExpiry(checkpoint);
+                        fileOperationMap.setCheckpointExpiry(checkpoint);
                         if (unit != null) {
-                            pnfsOperationMap.setCheckpointExpiryUnit(unit);
+                            fileOperationMap.setCheckpointExpiryUnit(unit);
                         }
                     } else if (sweep != null) {
-                        pnfsOperationMap.setTimeout(sweep);
+                        fileOperationMap.setTimeout(sweep);
                         if (unit != null) {
-                            pnfsOperationMap.setTimeoutUnit(unit);
+                            fileOperationMap.setTimeoutUnit(unit);
                         }
                     }
 
                     if (retries != null) {
-                        pnfsOperationMap.setMaxRetries(retries);
+                        fileOperationMap.setMaxRetries(retries);
                     }
 
                     if (file != null) {
-                        pnfsOperationMap.setCheckpointFilePath(file);
+                        fileOperationMap.setCheckpointFilePath(file);
                     }
 
-                    pnfsOperationMap.reset();
+                    fileOperationMap.reset();
                     // fall through here
                 case INFO:
                 default:
@@ -663,16 +663,16 @@ public abstract class ResilienceCommands implements CellCommandListener {
             StringBuilder info = new StringBuilder();
             info.append(String.format("maximum concurrent operations %s.\n"
                                             + "maximum retries on failure %s\n",
-                            pnfsOperationMap.getMaxRunning(),
-                            pnfsOperationMap.getMaxRetries()));
+                                      fileOperationMap.getMaxRunning(),
+                                      fileOperationMap.getMaxRetries()));
             info.append(String.format("sweep interval %s %s\n",
-                            pnfsOperationMap.getTimeout(),
-                            pnfsOperationMap.getTimeoutUnit()));
+                                      fileOperationMap.getTimeout(),
+                                      fileOperationMap.getTimeoutUnit()));
             info.append(String.format("checkpoint interval %s %s\n"
                                             + "checkpoint file path %s\n",
-                            pnfsOperationMap.getCheckpointExpiry(),
-                            pnfsOperationMap.getCheckpointExpiryUnit(),
-                            pnfsOperationMap.getCheckpointFilePath()));
+                                      fileOperationMap.getCheckpointExpiry(),
+                                      fileOperationMap.getCheckpointExpiryUnit(),
+                                      fileOperationMap.getCheckpointFilePath()));
             counters.getPnfsSweepInfo(info);
             counters.getCheckpointInfo(info);
             return info.toString();
@@ -746,7 +746,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
                 return "Please provide a non-empty string value for state.";
             }
 
-            PnfsFilter filter = new PnfsFilter();
+            FileFilter filter = new FileFilter();
 
             if (!"*".equals(pnfsids)) {
                 filter.setLastUpdateBefore(getTimestamp(lastUpdateBefore));
@@ -768,7 +768,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
                 }
 
                 if (filter.isSimplePnfsMatch()) {
-                    pnfsOperationMap.cancel(new PnfsId(pnfsids), forceRemoval);
+                    fileOperationMap.cancel(new PnfsId(pnfsids), forceRemoval);
                     return String.format("Issued cancel command for %s.", pnfsids);
                 }
             }
@@ -782,7 +782,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
             filter.setForceRemoval(forceRemoval);
             filter.setState(stateSet);
 
-            pnfsOperationMap.cancel(filter);
+            fileOperationMap.cancel(filter);
 
             return "Issued cancel command to cancel pnfs operations.";
         }
@@ -903,7 +903,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
             boolean count = "$".equals(pnfsids) || "$@".equals(pnfsids);
             Set<String> stateSet = ImmutableSet.copyOf(state);
 
-            PnfsFilter filter = new PnfsFilter();
+            FileFilter filter = new FileFilter();
             filter.setLastUpdateBefore(getTimestamp(lastUpdateBefore));
             filter.setLastUpdateAfter(getTimestamp(lastUpdateAfter));
             filter.setState(stateSet);
@@ -919,7 +919,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
             } else {
                 StringBuilder builder =
                                 pnfsids.contains("@") ? new StringBuilder() : null;
-                long total = pnfsOperationMap.count(filter, builder);
+                long total = fileOperationMap.count(filter, builder);
 
                 if (builder == null) {
                     return total + " matching pnfsids";
@@ -931,7 +931,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
             }
 
             if (filter.isSimplePnfsMatch()) {
-                PnfsOperation op = pnfsOperationMap.getOperation(new PnfsId(pnfsids));
+                FileOperation op = fileOperationMap.getOperation(new PnfsId(pnfsids));
                 if (op == null) {
                     return String.format("No operation currently registered for %s.",
                                     pnfsids);
@@ -939,7 +939,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
                 return op.toString() + "\n";
             }
 
-            long size = pnfsOperationMap.size();
+            long size = fileOperationMap.size();
             int limitValue = (int)size;
 
             if (limit == null) {
@@ -950,7 +950,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
                 limitValue = limit;
             }
 
-            return pnfsOperationMap.list(filter, limitValue);
+            return fileOperationMap.list(filter, limitValue);
         }
     }
 
@@ -1331,7 +1331,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
                             .append(" pool operations.");
 
             if (includeChildren) {
-                pnfsOperationMap.cancel(filter);
+                fileOperationMap.cancel(filter);
                 sb.append("  Also issued cancel command to pnfsId operations.");
             }
 
@@ -1490,8 +1490,8 @@ public abstract class ResilienceCommands implements CellCommandListener {
     private MessageGuard         messageGuard;
     private MapInitializer       initializer;
     private PoolOperationMap     poolOperationMap;
-    private PnfsOperationHandler pnfsOperationHandler;
-    private PnfsOperationMap     pnfsOperationMap;
+    private FileOperationHandler fileOperationHandler;
+    private FileOperationMap     fileOperationMap;
     private NamespaceAccess      namespaceAccess;
     private OperationStatistics  counters;
     private OperationHistory     history;
@@ -1521,13 +1521,13 @@ public abstract class ResilienceCommands implements CellCommandListener {
         this.namespaceAccess = namespaceAccess;
     }
 
-    public void setPnfsOperationHandler(
-                    PnfsOperationHandler pnfsOperationHandler) {
-        this.pnfsOperationHandler = pnfsOperationHandler;
+    public void setFileOperationHandler(
+                    FileOperationHandler fileOperationHandler) {
+        this.fileOperationHandler = fileOperationHandler;
     }
 
-    public void setPnfsOperationMap(PnfsOperationMap pnfsOperationMap) {
-        this.pnfsOperationMap = pnfsOperationMap;
+    public void setFileOperationMap(FileOperationMap fileOperationMap) {
+        this.fileOperationMap = fileOperationMap;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {

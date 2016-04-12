@@ -83,7 +83,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.handlers.PnfsOperationHandler.Type;
+import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 
 /**
@@ -135,7 +135,7 @@ public final class OperationStatistics {
                     MessageType.POOL_STATUS_UP.name() };
 
     private static final String[] OPS       = {
-                    Operation.PNFSID.name(),
+                    Operation.FILE.name(),
                     Operation.POOL_SCAN_DOWN.name(),
                     Operation.POOL_SCAN_ACTIVE.name() };
 
@@ -515,7 +515,7 @@ public final class OperationStatistics {
                               CounterType.CHCKPT.name()};
 
         String[] type = {MessageType.ADD_CACHE_LOCATION.name(),
-                        Operation.PNFSID.name()};
+                        Operation.FILE.name()};
 
         String[] tag = { TagType.TOTAL.name(),
                          TagType.CURRENT.name(),

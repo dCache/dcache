@@ -71,7 +71,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-import org.dcache.resilience.data.PnfsUpdate;
+import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.db.LocalNamespaceAccess;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.vehicles.FileAttributes;
@@ -118,7 +118,7 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
     public void handlePnfsidsForPool(ScanSummary scan)
                     throws CacheException {
         for (FileAttributes attributes : locationsToFiles.get(scan.getPool())) {
-            PnfsUpdate data = new PnfsUpdate(attributes.getPnfsId(),
+            FileUpdate data = new FileUpdate(attributes.getPnfsId(),
                                              scan.getPool(),
                                              scan.getType(),
                                              scan.getAction(),

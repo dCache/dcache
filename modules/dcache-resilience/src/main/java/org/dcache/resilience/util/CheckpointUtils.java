@@ -75,11 +75,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PnfsOperation;
-import org.dcache.resilience.data.PnfsOperationMap;
-import org.dcache.resilience.data.PnfsUpdate;
+import org.dcache.resilience.data.FileOperation;
+import org.dcache.resilience.data.FileOperationMap;
+import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.PoolInfoMap;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
+import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 
 /**
@@ -110,8 +110,8 @@ public final class CheckpointUtils {
 
     /**
      * <p>Read back in from the checkpoint file operation records.
-     *    These are converted to {@link PnfsUpdate} objects and passed
-     *    to {@link PnfsOperationHandler#handleBrokenFileLocation(PnfsId, String)}
+     *    These are converted to {@link FileUpdate} objects and passed
+     *    to {@link FileOperationHandler#handleBrokenFileLocation(PnfsId, String)}
      *    for registration.</p>
      *
      * <p>The file to be reloaded is renamed, so that any checkpointing
@@ -125,8 +125,8 @@ public final class CheckpointUtils {
      */
     public static void load(String checkpointFilePath,
                     PoolInfoMap poolInfoMap,
-                    PnfsOperationMap pnfsMap,
-                    PnfsOperationHandler handler) {
+                    FileOperationMap pnfsMap,
+                    FileOperationHandler handler) {
         if (!new File(checkpointFilePath).exists()) {
             return;
         }
@@ -142,7 +142,7 @@ public final class CheckpointUtils {
                     break;
                 }
                 try {
-                    PnfsUpdate update = fromString(line, poolInfoMap);
+                    FileUpdate update = fromString(line, poolInfoMap);
                     if (update != null) {
                         handler.handleLocationUpdate(update);
                     }
@@ -171,7 +171,7 @@ public final class CheckpointUtils {
      * @return number of records written
      */
     public static long save(String checkpointFilePath, PoolInfoMap poolInfoMap,
-                            Iterator<PnfsOperation> iterator) {
+                            Iterator<FileOperation> iterator) {
         File current = new File(checkpointFilePath);
         File old = new File(checkpointFilePath + "-old");
         if (current.exists()) {
@@ -183,7 +183,7 @@ public final class CheckpointUtils {
 
         try (PrintWriter fw = new PrintWriter(new FileWriter(checkpointFilePath, false))) {
             while (iterator.hasNext()) {
-                PnfsOperation operation = iterator.next();
+                FileOperation operation = iterator.next();
                 if (toString(operation, builder, poolInfoMap)) {
                     fw.println(builder.toString());
                     count.incrementAndGet();
@@ -206,7 +206,7 @@ public final class CheckpointUtils {
      *  <p>See the comments to the class for explanation of why checkpointed
      *          operations are "orphaned".</p>
      */
-    private static boolean toString(PnfsOperation operation,
+    private static boolean toString(FileOperation operation,
                                     StringBuilder builder,
                                     PoolInfoMap map) {
         Integer parent = operation.getParent();
@@ -236,7 +236,7 @@ public final class CheckpointUtils {
      *
      * @return update object constructed from the parsed line.
      */
-    private static PnfsUpdate fromString(String line, PoolInfoMap map) {
+    private static FileUpdate fromString(String line, PoolInfoMap map) {
         String[] parts = line.split("[,]");
         if (parts.length != 5) {
             return null;
@@ -245,8 +245,8 @@ public final class CheckpointUtils {
         SelectionAction action = SelectionAction.values()[Integer.parseInt(parts[1])];
         int opCount = Integer.parseInt(parts[2]);
         Integer gindex = map.getGroupIndex(parts[3]);
-        PnfsUpdate update = new PnfsUpdate(pnfsId, parts[4],
-                        MessageType.ADD_CACHE_LOCATION, action, gindex, true);
+        FileUpdate update = new FileUpdate(pnfsId, parts[4],
+                                           MessageType.ADD_CACHE_LOCATION, action, gindex, true);
         update.setCount(opCount);
         update.setFromReload(true);
         return update;

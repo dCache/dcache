@@ -71,7 +71,7 @@ import java.util.Set;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import org.dcache.pool.migration.PoolSelectionStrategy;
-import org.dcache.resilience.data.PnfsOperation;
+import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.PoolInfoMap;
 
 /**
@@ -92,7 +92,7 @@ public final class LocationSelector {
         return poolInfoMap.getMemberPools(gindex, locations, false);
     }
 
-    public String selectCopySource(PnfsOperation operation,
+    public String selectCopySource(FileOperation operation,
                     Set<String> locations) throws Exception {
         LOGGER.trace("selecting source for {}", operation);
         if (locations.size() == 1) {
@@ -102,14 +102,14 @@ public final class LocationSelector {
         }
     }
 
-    public String selectCopyTarget(PnfsOperation operation, Integer gindex,
-                    Collection<String> locations, Collection<String> tags)
+    public String selectCopyTarget(FileOperation operation, Integer gindex,
+                                   Collection<String> locations, Collection<String> tags)
                     throws Exception {
         LOGGER.trace("selecting target for {}", operation);
         return selectCopyTarget(gindex, locations, operation.getTried(), tags);
     }
 
-    public String selectRemoveTarget(PnfsOperation operation,
+    public String selectRemoveTarget(FileOperation operation,
                     Collection<String> locations, Collection<String> tags)
                     throws Exception {
         LOGGER.trace("selecting target for {}", operation);

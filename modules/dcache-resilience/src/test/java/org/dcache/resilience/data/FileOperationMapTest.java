@@ -80,10 +80,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 
-public final class PnfsOperationMapTest extends TestBase {
-    PnfsId pnfsId;
+public final class FileOperationMapTest extends TestBase {
+    PnfsId         pnfsId;
     FileAttributes attributes;
-    PnfsOperation operation;
+    FileOperation  operation;
     File checkpoint = new File("checkpoint");
 
     @Before
@@ -91,16 +91,16 @@ public final class PnfsOperationMapTest extends TestBase {
         setUpBase();
         setMocks();
         createCounters();
-        createPnfsOperationHandler();
-        createPnfsOperationMap();
+        createFileOperationHandler();
+        createFileOperationMap();
         poolTaskCompletionHandler = new PoolTaskCompletionHandler();
         poolTaskCompletionHandler.setMap(poolOperationMap);
-        wirePnfsOperationMap();
-        wirePnfsOperationHandler();
+        wireFileOperationMap();
+        wireFileOperationHandler();
         initializeCounters();
-        pnfsOperationMap.initialize(() -> {
+        fileOperationMap.initialize(() -> {
         });
-        pnfsOperationMap.setCopyThreads(1);
+        fileOperationMap.setCopyThreads(1);
     }
 
     @Test
@@ -111,7 +111,7 @@ public final class PnfsOperationMapTest extends TestBase {
         whenScanIsRun();
         whenOperationIsVoided();
         whenScanIsRun();
-        assertNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
     @Test
@@ -129,7 +129,7 @@ public final class PnfsOperationMapTest extends TestBase {
          * Another source exists.  Should not fail terminally.
          */
         whenScanIsRun();
-        assertNotNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
     @Test
@@ -142,7 +142,7 @@ public final class PnfsOperationMapTest extends TestBase {
                         "resilient_pool-12");
         whenOperationFailsWithRetriableError();
         whenScanIsRun();
-        assertNotNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
     @Test
@@ -155,8 +155,8 @@ public final class PnfsOperationMapTest extends TestBase {
                         "resilient_pool-12");
         whenOperationSucceedsFor(operation.getPnfsId());
         whenScanIsRun();
-        assertNotNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
-        assertEquals(1, pnfsOperationMap.getOperation(
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
+        assertEquals(1, fileOperationMap.getOperation(
                         operation.getPnfsId()).getOpCount());
     }
 
@@ -171,8 +171,8 @@ public final class PnfsOperationMapTest extends TestBase {
         whenOperationSucceedsFor(operation.getPnfsId());
         givenAnotherLocationForPnfsId();
         whenScanIsRun();
-        assertNotNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
-        assertEquals(1, pnfsOperationMap.getOperation(
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
+        assertEquals(1, fileOperationMap.getOperation(
                         operation.getPnfsId()).getOpCount());
     }
 
@@ -187,8 +187,8 @@ public final class PnfsOperationMapTest extends TestBase {
         whenScanIsRun();
         whenRunningOperationIsCancelled();
         whenScanIsRun();
-        assertNotNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
-        assertEquals(2, pnfsOperationMap.getOperation(
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
+        assertEquals(2, fileOperationMap.getOperation(
                         operation.getPnfsId()).getOpCount());
     }
 
@@ -224,7 +224,7 @@ public final class PnfsOperationMapTest extends TestBase {
          * No other source exists.  Should fail terminally.
          */
         whenScanIsRun();
-        assertNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
     @Test
@@ -238,7 +238,7 @@ public final class PnfsOperationMapTest extends TestBase {
         whenScanIsRun();
         whenOperationFailsWithFatalError();
         whenScanIsRun();
-        assertNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
     @Test
@@ -252,7 +252,7 @@ public final class PnfsOperationMapTest extends TestBase {
         whenScanIsRun();
         whenOperationSucceedsFor(operation.getPnfsId());
         whenScanIsRun();
-        assertNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
     @Test
@@ -266,7 +266,7 @@ public final class PnfsOperationMapTest extends TestBase {
         whenScanIsRun();
         whenEntireOperationIsCancelled();
         whenScanIsRun();
-        assertNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
+        assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
     @Test
@@ -296,8 +296,8 @@ public final class PnfsOperationMapTest extends TestBase {
                         "resilient_pool-12");
         whenOperationFailsWithNewLocationError();
         whenScanIsRun();
-        assertNotNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
-        assertEquals(0, pnfsOperationMap.getOperation(
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
+        assertEquals(0, fileOperationMap.getOperation(
                         operation.getPnfsId()).getRetried());
     }
 
@@ -308,7 +308,7 @@ public final class PnfsOperationMapTest extends TestBase {
         afterOperationAdded(3);
         whenSaveIsCalled();
         whenLoadIsCalled();
-        assertNotNull(pnfsOperationMap.getOperation(operation.getPnfsId()));
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
 
     @After
@@ -323,27 +323,27 @@ public final class PnfsOperationMapTest extends TestBase {
         String pool = attributes.getLocations().iterator().next();
         Integer pindex = poolInfoMap.getPoolIndex(pool);
         Integer gindex = poolInfoMap.getResilientPoolGroup(pindex);
-        PnfsUpdate update = new PnfsUpdate(pnfsId, pool,
-                        MessageType.ADD_CACHE_LOCATION, pindex, gindex, null,
-                        attributes);
+        FileUpdate update = new FileUpdate(pnfsId, pool,
+                                           MessageType.ADD_CACHE_LOCATION, pindex, gindex, null,
+                                           attributes);
         update.setCount(count);
-        pnfsOperationMap.register(update);
-        operation = new PnfsOperation(
-                        pnfsOperationMap.getOperation(attributes.getPnfsId()));
+        fileOperationMap.register(update);
+        operation = new FileOperation(
+                        fileOperationMap.getOperation(attributes.getPnfsId()));
     }
 
     private void afterSourceAndTargetAreUpdatedTo(String source,
                     String target) {
-        pnfsOperationMap.updateOperation(attributes.getPnfsId(), source,
-                        target);
+        fileOperationMap.updateOperation(attributes.getPnfsId(), source,
+                                         target);
     }
 
     private void assertThatOperationIsNotRunning(PnfsId pnfsId) {
-        assertNotEquals(pnfsId, pnfsOperationMap.running.peek().getPnfsId());
+        assertNotEquals(pnfsId, fileOperationMap.running.peek().getPnfsId());
     }
 
     private void assertThatOperationIsRunning(PnfsId pnfsId) {
-        assertEquals(pnfsId, pnfsOperationMap.running.peek().getPnfsId());
+        assertEquals(pnfsId, fileOperationMap.running.peek().getPnfsId());
     }
 
     private void givenANewPnfsId() throws CacheException {
@@ -362,7 +362,7 @@ public final class PnfsOperationMapTest extends TestBase {
     }
 
     private void givenAnotherLocationForPnfsId() {
-        pnfsOperationMap.updateCount(operation.getPnfsId());
+        fileOperationMap.updateCount(operation.getPnfsId());
     }
 
     private void setMocks() {
@@ -372,52 +372,52 @@ public final class PnfsOperationMapTest extends TestBase {
     }
 
     private void whenEntireOperationIsCancelled() {
-        pnfsOperationMap.cancel(operation.getPnfsId(), true);
+        fileOperationMap.cancel(operation.getPnfsId(), true);
     }
 
     private void whenLoadIsCalled() throws IOException {
-        pnfsOperationMap.reload();
+        fileOperationMap.reload();
     }
 
     private void whenOperationFailsWithFatalError() {
-        pnfsOperationMap.updateOperation(operation.getPnfsId(),
-                        new CacheException(CacheException.DEFAULT_ERROR_CODE,
+        fileOperationMap.updateOperation(operation.getPnfsId(),
+                                         new CacheException(CacheException.DEFAULT_ERROR_CODE,
                                         FORCED_FAILURE.toString()));
     }
 
     private void whenOperationFailsWithNewLocationError() {
-        pnfsOperationMap.updateOperation(operation.getPnfsId(),
-                        new CacheException(CacheException.FILE_NOT_FOUND,
+        fileOperationMap.updateOperation(operation.getPnfsId(),
+                                         new CacheException(CacheException.FILE_NOT_FOUND,
                                         FORCED_FAILURE.toString()));
     }
 
     private void whenOperationFailsWithRetriableError() {
-        pnfsOperationMap.updateOperation(operation.getPnfsId(),
-                        new CacheException(CacheException.HSM_DELAY_ERROR,
+        fileOperationMap.updateOperation(operation.getPnfsId(),
+                                         new CacheException(CacheException.HSM_DELAY_ERROR,
                                         FORCED_FAILURE.toString()));
     }
 
     private void whenOperationIsVoided() {
-        pnfsOperationMap.voidOperation(operation.getPnfsId());
+        fileOperationMap.voidOperation(operation.getPnfsId());
     }
 
     private void whenOperationSucceedsFor(PnfsId pnfsId) {
         /*
          *  Simulate previous launch without doing a full scan.
          */
-        pnfsOperationMap.updateOperation(pnfsId, null);
+        fileOperationMap.updateOperation(pnfsId, null);
     }
 
     private void whenRunningOperationIsCancelled() {
-        pnfsOperationMap.cancel(operation.getPnfsId(), false);
+        fileOperationMap.cancel(operation.getPnfsId(), false);
     }
 
     private void whenSaveIsCalled() throws IOException {
-        pnfsOperationMap.setCheckpointFilePath(checkpoint.getAbsolutePath());
-        pnfsOperationMap.checkpointer.save();
+        fileOperationMap.setCheckpointFilePath(checkpoint.getAbsolutePath());
+        fileOperationMap.checkpointer.save();
     }
 
     private void whenScanIsRun() throws IOException {
-        pnfsOperationMap.scan();
+        fileOperationMap.scan();
     }
 }

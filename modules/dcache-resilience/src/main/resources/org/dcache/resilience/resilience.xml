@@ -76,7 +76,7 @@
       <property name="namespace" ref="name-space-provider"/>
       <property name="connectionPool" ref="data-source"/>
       <property name="fetchSize" value="${resilience.pnfs-fetch-size}"/>
-      <property name="handler" ref="PnfsOpHandler"/>
+      <property name="handler" ref="FileOpHandler"/>
     </bean>
 
     <bean id="PinManager" class="org.dcache.cells.CellStub">
@@ -103,7 +103,7 @@
       </constructor-arg>
     </bean>
 
-    <bean id="PnfsOpExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
+    <bean id="FileOpExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
       <description>Thread pool service for executing verification of individual pnfs operations</description>
       <constructor-arg>
         <bean id="bounded-executor" class="org.dcache.util.BoundedCachedExecutor"
@@ -162,9 +162,9 @@
       <property name="poolSelectionStrategy" ref="PoolSelectionStrategy"/>
     </bean>
 
-    <bean id="PnfsTaskCompletionHandler" class="org.dcache.resilience.handlers.PnfsTaskCompletionHandler">
+    <bean id="FileTaskCompletionHandler" class="org.dcache.resilience.handlers.FileTaskCompletionHandler">
         <description>Manages migration and resilient tasks which have terminated</description>
-        <property name="map" ref="PnfsOpMap"/>
+        <property name="map" ref="FileOpMap"/>
     </bean>
 
     <bean id="PoolTaskCompletionHandler" class="org.dcache.resilience.handlers.PoolTaskCompletionHandler">
@@ -172,18 +172,18 @@
       <property name="map" ref="PoolOpMap"/>
     </bean>
 
-    <bean id="PnfsOpMap" class="org.dcache.resilience.data.PnfsOperationMap" destroy-method="shutdown">
+    <bean id="FileOpMap" class="org.dcache.resilience.data.FileOperationMap" destroy-method="shutdown">
       <description>The central hub of information regarding resilient operations by pnfsid</description>
       <property name="timeout" value="${resilience.pnfs-scan.period}"/>
       <property name="timeoutUnit" value="${resilience.pnfs-scan.period.unit}"/>
-      <property name="completionHandler" ref="PnfsTaskCompletionHandler"/>
+      <property name="completionHandler" ref="FileTaskCompletionHandler"/>
       <property name="poolTaskCompletionHandler" ref="PoolTaskCompletionHandler"/>
       <property name="counters" ref="Counters"/>
       <property name="history" ref="History"/>
       <property name="copyThreads" value="${resilience.file-copy-threads}"/>
       <property name="maxRetries" value="${resilience.max-retries}"/>
       <property name="maxAllocation" value="${resilience.pnfs-max-queue-allocation}"/>
-      <property name="operationHandler" ref="PnfsOpHandler"/>
+      <property name="operationHandler" ref="FileOpHandler"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="checkpointExpiry" value="${resilience.checkpoint-expiry}"/>
       <property name="checkpointExpiryUnit" value="${resilience.checkpoint-expiry.unit}"/>
@@ -195,7 +195,7 @@
       <property name="timeout" value="${resilience.pool-scan.period}"/>
       <property name="timeoutUnit" value="${resilience.pool-scan.period.unit}"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
-      <property name="pnfsOperationMap" ref="PnfsOpMap"/>
+      <property name="fileOperationMap" ref="FileOpMap"/>
       <property name="counters" ref="Counters"/>
       <property name="downGracePeriod" value="${resilience.pool-down-grace-period}"/>
       <property name="downGracePeriodUnit" value="${resilience.pool-down-grace-period.unit}"/>
@@ -209,18 +209,18 @@
       <property name="watchdog" value="${resilience.watchdog.enabled}"/>
     </bean>
 
-    <bean id="PnfsOpHandler" class="org.dcache.resilience.handlers.PnfsOperationHandler">
+    <bean id="FileOpHandler" class="org.dcache.resilience.handlers.FileOperationHandler">
       <description>Encapsulates the logic determining what needs to be done for a given pnfsid</description>
-      <property name="completionHandler" ref="PnfsTaskCompletionHandler"/>
+      <property name="completionHandler" ref="FileTaskCompletionHandler"/>
       <property name="inaccessibleFileHandler" ref="InaccessibleFileHandler"/>
       <property name="pinManagerStub" ref="PinManager"/>
       <property name="poolStub" ref="Pools"/>
       <property name="namespace" ref="NamespaceAccess"/>
-      <property name="pnfsOpMap" ref="PnfsOpMap"/>
+      <property name="fileOpMap" ref="FileOpMap"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="locationSelector" ref="LocationSelector"/>
       <property name="scheduledService" ref="MigrationExecutor"/>
-      <property name="taskService" ref="PnfsOpExecutor"/>
+      <property name="taskService" ref="FileOpExecutor"/>
     </bean>
 
     <bean id="PoolOpHandler" class="org.dcache.resilience.handlers.PoolOperationHandler">
@@ -248,7 +248,7 @@
       <description>Locus for receiving external resilience-related messages as well as internally relayed pool status updates</description>
       <property name="counters" ref="Counters"/>
       <property name="messageGuard" ref="MessageGuard"/>
-      <property name="pnfsOperationHandler" ref="PnfsOpHandler"/>
+      <property name="fileOperationHandler" ref="FileOpHandler"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="poolOperationHandler" ref="PoolOpHandler"/>
       <property name="updateService" ref="SubmitExecutor"/>
@@ -267,7 +267,7 @@
       <property name="messageGuard" ref="MessageGuard"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="poolOperationMap" ref="PoolOpMap"/>
-      <property name="pnfsOperationMap" ref="PnfsOpMap"/>
+      <property name="fileOperationMap" ref="FileOpMap"/>
       <property name="poolInfoChangeHandler" ref="PoolMonitorChangeHandler"/>
       <property name="initDelay" value="${resilience.startup-delay}"/>
       <property name="initDelayUnit" value="${resilience.startup-delay.unit}"/>
@@ -280,7 +280,7 @@
       <property name="resilienceMessageHandler" ref="MessageHandler"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="poolOperationMap" ref="PoolOpMap"/>
-      <property name="pnfsOperationMap" ref="PnfsOpMap"/>
+      <property name="fileOperationMap" ref="FileOpMap"/>
       <property name="updateService">
         <bean class="org.dcache.util.CDCExecutorServiceDecorator">
           <constructor-arg>
@@ -302,8 +302,8 @@
       <property name="messageGuard" ref="MessageGuard"/>
       <property name="initializer" ref="MapInitializer"/>
       <property name="namespaceAccess" ref="NamespaceAccess"/>
-      <property name="pnfsOperationHandler" ref="PnfsOpHandler"/>
-      <property name="pnfsOperationMap" ref="PnfsOpMap"/>
+      <property name="fileOperationHandler" ref="FileOpHandler"/>
+      <property name="fileOperationMap" ref="FileOpMap"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="poolOperationMap" ref="PoolOpMap"/>
       <property name="executor">

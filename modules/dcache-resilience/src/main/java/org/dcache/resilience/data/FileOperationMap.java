@@ -80,8 +80,8 @@ import java.util.stream.Collectors;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
-import org.dcache.resilience.handlers.PnfsTaskCompletionHandler;
+import org.dcache.resilience.handlers.FileOperationHandler;
+import org.dcache.resilience.handlers.FileTaskCompletionHandler;
 import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
@@ -99,7 +99,7 @@ import org.dcache.vehicles.FileAttributes;
  * <p>The main locus of operations for resilience.</p>
  *
  * <p>Tracks all operations on individual files via an instance of
- *      {@link PnfsOperation}, whose lifecycle is initiated by the the arrival
+ *      {@link FileOperation}, whose lifecycle is initiated by the the arrival
  *      of a message or scan update, and which terminates when all work on
  *      the associated pnfsid has completed or has been aborted/cancelled.</p>
  *
@@ -149,7 +149,7 @@ import org.dcache.vehicles.FileAttributes;
  *
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
-public class PnfsOperationMap extends RunnableModule {
+public class FileOperationMap extends RunnableModule {
     private static final String MISSING_ENTRY =
                     "Entry for %s + was removed from map before completion of "
                                     + "outstanding operation.";
@@ -220,7 +220,7 @@ public class PnfsOperationMap extends RunnableModule {
      *      removed or needs to be requeued.</p>
      */
     class TerminalOperationProcessor {
-        private Collection<PnfsOperation> toProcess = new ArrayList<>();
+        private Collection<FileOperation> toProcess = new ArrayList<>();
 
         void processTerminated() {
             appendIncoming();
@@ -243,7 +243,7 @@ public class PnfsOperationMap extends RunnableModule {
             synchronized (incoming) {
                 while (true) {
                     try {
-                        PnfsOperation operation = incoming.remove();
+                        FileOperation operation = incoming.remove();
                         if (operation.isBackground()) {
                             background.addLast(operation);
                         } else {
@@ -260,12 +260,12 @@ public class PnfsOperationMap extends RunnableModule {
          *  <p>This is a potentially expensive operation (O[n] in the
          *     queue size), but should be called relatively infrequently.</p>
          */
-        private void cancel(Queue<PnfsOperation> queue,
-                            Collection<PnfsMatcher> filters,
-                            Collection<PnfsOperation> toProcess) {
-            for (Iterator<PnfsOperation> i = queue.iterator(); i.hasNext();) {
-                PnfsOperation operation = i.next();
-                for (PnfsMatcher filter : filters) {
+        private void cancel(Queue<FileOperation> queue,
+                            Collection<FileMatcher> filters,
+                            Collection<FileOperation> toProcess) {
+            for (Iterator<FileOperation> i = queue.iterator(); i.hasNext();) {
+                FileOperation operation = i.next();
+                for (FileMatcher filter : filters) {
                     if (filter.matches(operation, poolInfoMap)
                             && cancel(operation, filter.isForceRemoval())) {
                         i.remove();
@@ -276,7 +276,7 @@ public class PnfsOperationMap extends RunnableModule {
             }
         }
 
-        private boolean cancel(PnfsOperation operation, boolean remove) {
+        private boolean cancel(FileOperation operation, boolean remove) {
             if (operation.cancelCurrent()) {
                 if (remove) {
                     operation.setOpCount(0); // force removal
@@ -287,7 +287,7 @@ public class PnfsOperationMap extends RunnableModule {
         }
 
         private void gatherCanceled() {
-            Collection<PnfsMatcher> filters = new ArrayList<>();
+            Collection<FileMatcher> filters = new ArrayList<>();
 
             synchronized (cancelFilters) {
                 filters.addAll(cancelFilters);
@@ -300,9 +300,9 @@ public class PnfsOperationMap extends RunnableModule {
         }
 
         private void gatherTerminated() {
-            for (Iterator<PnfsOperation> i = running.iterator(); i.hasNext(); ) {
-                PnfsOperation operation = i.next();
-                if (operation.getState() == PnfsOperation.RUNNING) {
+            for (Iterator<FileOperation> i = running.iterator(); i.hasNext(); ) {
+                FileOperation operation = i.next();
+                if (operation.getState() == FileOperation.RUNNING) {
                     continue;
                 }
                 i.remove();
@@ -316,7 +316,7 @@ public class PnfsOperationMap extends RunnableModule {
          *      counts > 0 are reset to waiting; otherwise, the operation record
          *      will be removed when this method returns.</p>
          */
-        private void postProcess(PnfsOperation operation) {
+        private void postProcess(FileOperation operation) {
             operation.setLastType();
             String pool = operation.getPrincipalPool(poolInfoMap);
             Integer sindex = operation.getSource();
@@ -327,7 +327,7 @@ public class PnfsOperationMap extends RunnableModule {
             boolean retry = false;
             boolean abort = false;
 
-            if (operation.getState() == PnfsOperation.FAILED) {
+            if (operation.getState() == FileOperation.FAILED) {
                 FailureType type =
                     CacheExceptionUtils.getFailureType(operation.getException());
 
@@ -379,7 +379,7 @@ public class PnfsOperationMap extends RunnableModule {
                         /*
                          * Only fatal errors count as operation failures.
                          */
-                        counters.incrementOperationFailed(Operation.PNFSID.name());
+                        counters.incrementOperationFailed(Operation.FILE.name());
                         counters.incrementFailed(pool, operation.getType());
                         break;
                     default:
@@ -392,8 +392,8 @@ public class PnfsOperationMap extends RunnableModule {
                                 operation.getStateName(), type,
                                 operation.getParent() == null ? null : pool,
                                 source, target);
-            } else if (operation.getState() == PnfsOperation.DONE) {
-                counters.incrementOperation(Operation.PNFSID.name());
+            } else if (operation.getState() == FileOperation.DONE) {
+                counters.incrementOperation(Operation.FILE.name());
                 counters.increment(source, target, operation.getType(),
                                 operation.getSize());
                 counters.recordTaskStatistics(operation.getTask(),
@@ -418,7 +418,7 @@ public class PnfsOperationMap extends RunnableModule {
             }
         }
 
-        private void restore(PnfsOperation operation, boolean retry) {
+        private void restore(FileOperation operation, boolean retry) {
             if (operation.isBackground()) {
                 if (retry) {
                     background.addFirst(operation);
@@ -510,9 +510,9 @@ public class PnfsOperationMap extends RunnableModule {
          * <p>Dequeues up to the indicated number of operations and submits
          *      them.</p>
          */
-        private long promoteToRunning(Queue<PnfsOperation> queue, long limit) {
+        private long promoteToRunning(Queue<FileOperation> queue, long limit) {
             for (int i = 0; i < limit; i++) {
-                PnfsOperation operation = queue.poll();
+                FileOperation operation = queue.poll();
                 if (operation == null) {
                     return limit - i;
                 }
@@ -529,12 +529,12 @@ public class PnfsOperationMap extends RunnableModule {
         /**
          * <p>Task is submitted to an appropriate executor service.</p>
          */
-        private void submit(PnfsOperation operation) {
+        private void submit(FileOperation operation) {
             int remove = SelectionAction.REMOVE.ordinal();
             operation.setTask(new ResilientFileTask(operation.getPnfsId(),
                             operation.getSelectionAction() == remove,
                             operationHandler));
-            operation.setState(PnfsOperation.RUNNING);
+            operation.setState(FileOperation.RUNNING);
             running.add(operation);
             operation.submit();
         }
@@ -549,7 +549,7 @@ public class PnfsOperationMap extends RunnableModule {
      *      even with a large copyThreads value, so we have not specified the
      *      constructor parameters.</p>
      */
-    final Map<PnfsId, PnfsOperation> index = new ConcurrentHashMap<>();
+    final Map<PnfsId, FileOperation> index = new ConcurrentHashMap<>();
 
     /**
      *  <p>These queues are entirely used by the consumer thread. Hence
@@ -562,9 +562,9 @@ public class PnfsOperationMap extends RunnableModule {
      *      is to be done, but to restoring it to the head of the
      *      queue if there is a retriable failure.</p>
      */
-    final Deque<PnfsOperation> foreground = new LinkedList<>();
-    final Deque<PnfsOperation> background = new LinkedList<>();
-    final Queue<PnfsOperation> running = new LinkedList<>();
+    final Deque<FileOperation> foreground = new LinkedList<>();
+    final Deque<FileOperation> background = new LinkedList<>();
+    final Queue<FileOperation> running    = new LinkedList<>();
 
     /**
      *  <p>Queue of incoming/ready operations.  This buffer is
@@ -572,7 +572,7 @@ public class PnfsOperationMap extends RunnableModule {
      *       synchronizing the internal queues.  The incoming operations
      *       are appended to the latter during the consumer scan.</p>
      */
-    final Queue<PnfsOperation> incoming = new LinkedList<>();
+    final Queue<FileOperation> incoming = new LinkedList<>();
 
     /**
      *  <p>List of filters for cancelling operations.  This buffer is
@@ -581,7 +581,7 @@ public class PnfsOperationMap extends RunnableModule {
      *       as it would have to be atomic anyway.  This avoids once again any
      *       extra locking on the internal queues.</p>
      */
-    final Collection<PnfsMatcher> cancelFilters = new ArrayList<>();
+    final Collection<FileMatcher> cancelFilters = new ArrayList<>();
 
     /**
      * <p>For recovery.</p>
@@ -610,8 +610,8 @@ public class PnfsOperationMap extends RunnableModule {
     double maxAllocation = 0.8;
 
     private PoolInfoMap               poolInfoMap;
-    private PnfsOperationHandler      operationHandler;
-    private PnfsTaskCompletionHandler completionHandler;
+    private FileOperationHandler      operationHandler;
+    private FileTaskCompletionHandler completionHandler;
     private PoolTaskCompletionHandler poolTaskCompletionHandler;
 
     /**
@@ -640,7 +640,7 @@ public class PnfsOperationMap extends RunnableModule {
     /**
      * <p>Only used by admin command.</p>
      *
-     * <p>Degenerate call to {@link #cancel(PnfsMatcher)}.</p>
+     * <p>Degenerate call to {@link #cancel(FileMatcher)}.</p>
      *
      * @param pnfsId single operation to cancel.
      * @param remove true if the entire entry is to be removed from the
@@ -648,7 +648,7 @@ public class PnfsOperationMap extends RunnableModule {
      *               only to the current (running) operation.
      */
     public void cancel(PnfsId pnfsId, boolean remove) {
-        PnfsFilter filter = new PnfsFilter();
+        FileFilter filter = new FileFilter();
         filter.setPnfsIds(pnfsId.toString());
         filter.setForceRemoval(remove);
         cancel(filter);
@@ -661,7 +661,7 @@ public class PnfsOperationMap extends RunnableModule {
      *
      * <p>The actual scan is conducted by the consumer thread.</p>
      */
-    public void cancel(PnfsMatcher filter) {
+    public void cancel(FileMatcher filter) {
         synchronized (cancelFilters) {
             cancelFilters.add(filter);
         }
@@ -671,15 +671,15 @@ public class PnfsOperationMap extends RunnableModule {
     /**
      * @return number of operations matching the filter.
      */
-    public long count(PnfsMatcher filter, StringBuilder builder) {
+    public long count(FileMatcher filter, StringBuilder builder) {
         long total = 0;
-        Iterator<PnfsOperation> iterator = index.values().iterator();
+        Iterator<FileOperation> iterator = index.values().iterator();
 
         Map<String, AtomicLong> summary =
                         builder == null ? null : new HashMap<>();
 
         while (iterator.hasNext()) {
-            PnfsOperation operation = iterator.next();
+            FileOperation operation = iterator.next();
             if (filter.matches(operation, poolInfoMap)) {
                 ++total;
 
@@ -726,7 +726,7 @@ public class PnfsOperationMap extends RunnableModule {
         return copyThreads;
     }
 
-    public PnfsOperation getOperation(PnfsId pnfsId) {
+    public FileOperation getOperation(PnfsId pnfsId) {
         return index.get(pnfsId);
     }
 
@@ -743,14 +743,14 @@ public class PnfsOperationMap extends RunnableModule {
     /**
      *  <p>Used by the admin command.</p>
      */
-    public String list(PnfsMatcher filter, int limit) {
+    public String list(FileMatcher filter, int limit) {
         StringBuilder builder = new StringBuilder();
-        Iterator<PnfsOperation> iterator = index.values().iterator();
+        Iterator<FileOperation> iterator = index.values().iterator();
 
         int total = 0;
 
         while (iterator.hasNext()) {
-            PnfsOperation operation = iterator.next();
+            FileOperation operation = iterator.next();
             if (filter.matches(operation, poolInfoMap)) {
                 ++total;
                 builder.append(operation).append("\n");
@@ -770,13 +770,13 @@ public class PnfsOperationMap extends RunnableModule {
     }
 
     /**
-     * <p>Called by the {@link PnfsOperationHandler}.
+     * <p>Called by the {@link FileOperationHandler}.
      *      Adds essential information to a new entry.</p>
      *
      * @return true if add returns true.
      */
-    public boolean register(PnfsUpdate data) {
-        PnfsOperation operation = new PnfsOperation(data.pnfsId,
+    public boolean register(FileUpdate data) {
+        FileOperation operation = new FileOperation(data.pnfsId,
                                                     data.getGroup(),
                                                     data.getUnitIndex(),
                                                     data.getSelectionAction(),
@@ -793,8 +793,8 @@ public class PnfsOperationMap extends RunnableModule {
 
     /**
      * <p>Reads in the checkpoint file.  Creates one if it does not exist.
-     *      For each entry read, creates a {@link PnfsUpdate} and calls
-     *      {@link PnfsOperationHandler#handleLocationUpdate(PnfsUpdate)}.</p>
+     *      For each entry read, creates a {@link FileUpdate} and calls
+     *      {@link FileOperationHandler#handleLocationUpdate(FileUpdate)}.</p>
      */
     public void reload() {
         CheckpointUtils.load(checkpointer.path, poolInfoMap, this, operationHandler);
@@ -905,7 +905,7 @@ public class PnfsOperationMap extends RunnableModule {
     }
 
     public void setCompletionHandler(
-                    PnfsTaskCompletionHandler completionHandler) {
+                    FileTaskCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
     }
 
@@ -929,7 +929,7 @@ public class PnfsOperationMap extends RunnableModule {
         this.maxRetries = maxRetries;
     }
 
-    public void setOperationHandler(PnfsOperationHandler operationHandler) {
+    public void setOperationHandler(FileOperationHandler operationHandler) {
         this.operationHandler = operationHandler;
     }
 
@@ -970,7 +970,7 @@ public class PnfsOperationMap extends RunnableModule {
      * @return true if the pnfsId is already registered, false if it is new entry.
      */
     public boolean updateCount(PnfsId pnfsId) {
-        PnfsOperation operation = index.get(pnfsId);
+        FileOperation operation = index.get(pnfsId);
 
         if (operation == null) {
             return false;
@@ -986,7 +986,7 @@ public class PnfsOperationMap extends RunnableModule {
      * <p>Records the selected source and/or target. No state change is involved.</p>
      */
     public void updateOperation(PnfsId pnfsId, String source, String target) {
-        PnfsOperation operation = index.get(pnfsId);
+        FileOperation operation = index.get(pnfsId);
 
         if (operation == null) {
             throw new IllegalStateException(
@@ -1011,7 +1011,7 @@ public class PnfsOperationMap extends RunnableModule {
      *      as the consumer sweeps the running list during its scan.</p>
      */
     public void updateOperation(PnfsId pnfsId, CacheException error) {
-        PnfsOperation operation = index.get(pnfsId);
+        FileOperation operation = index.get(pnfsId);
 
         if (operation == null) {
             throw new IllegalStateException(
@@ -1029,7 +1029,7 @@ public class PnfsOperationMap extends RunnableModule {
     public void updateOperation(PoolMigrationCopyFinishedMessage message) {
         PnfsId pnfsId = message.getPnfsId();
 
-        PnfsOperation operation = index.get(pnfsId);
+        FileOperation operation = index.get(pnfsId);
 
         if (operation == null) {
             throw new IllegalStateException(
@@ -1048,7 +1048,7 @@ public class PnfsOperationMap extends RunnableModule {
      *      as the consumer sweeps the running list during its scan.</p>
      */
     public void voidOperation(PnfsId pnfsId) {
-        PnfsOperation operation = index.get(pnfsId);
+        FileOperation operation = index.get(pnfsId);
 
         if (operation == null) {
             return;
@@ -1059,8 +1059,8 @@ public class PnfsOperationMap extends RunnableModule {
         }
     }
 
-    private boolean add(PnfsId pnfsId, PnfsOperation operation) {
-        PnfsOperation present = index.get(pnfsId);
+    private boolean add(PnfsId pnfsId, FileOperation operation) {
+        FileOperation present = index.get(pnfsId);
 
         if (present != null) {
             present.incrementCount();
@@ -1094,7 +1094,7 @@ public class PnfsOperationMap extends RunnableModule {
     }
 
     private void remove(PnfsId pnfsId, boolean failed) {
-        PnfsOperation operation = index.remove(pnfsId);
+        FileOperation operation = index.remove(pnfsId);
 
         if (operation == null) {
             return;

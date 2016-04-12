@@ -78,9 +78,9 @@ import org.dcache.chimera.BackEndErrorHimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PnfsOperationMap;
-import org.dcache.resilience.data.PnfsUpdate;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
+import org.dcache.resilience.data.FileOperationMap;
+import org.dcache.resilience.data.FileUpdate;
+import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
@@ -94,7 +94,7 @@ import static org.dcache.commons.util.SqlHelper.tryToClose;
  *      for a given location, and counts representing the total number
  *      of replicas.</p>
  *
- * <p>The former uses a callback to the {@link PnfsOperationHandler} to add
+ * <p>The former uses a callback to the {@link FileOperationHandler} to add
  *      an entry in the pnfsid operation tables for each pnfsid.</p>
  *
  * <p>Class is not marked final so that a test version can be
@@ -190,7 +190,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     /**
      * <p>Handler for processing pnfs operations.</p>
      */
-    protected PnfsOperationHandler handler;
+    protected FileOperationHandler handler;
 
     /**
      * <p>Database connection pool for queries returning multiple pnfsid
@@ -300,7 +300,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
         this.fetchSize = fetchSize;
     }
 
-    public void setHandler(PnfsOperationHandler handler) {
+    public void setHandler(FileOperationHandler handler) {
         this.handler = handler;
     }
 
@@ -320,8 +320,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     /**
      * <p>The query processes all pnfsids for the given location which
      *      have access latency = ONLINE.  These are sent one-by-one to the
-     *      {@link PnfsOperationHandler} to either create or update a
-     *      corresponding entry in the {@link PnfsOperationMap}.</p>
+     *      {@link FileOperationHandler} to either create or update a
+     *      corresponding entry in the {@link FileOperationMap}.</p>
      */
     private void handleQuery(Connection connection, ScanSummary scan)
                     throws SQLException, CacheException {
@@ -346,7 +346,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
 
             while (resultSet.next() && !scan.isCancelled()) {
                 PnfsId pnfsId = new PnfsId(resultSet.getString(1));
-                PnfsUpdate data = new PnfsUpdate(pnfsId, pool, type, action,
+                FileUpdate data = new FileUpdate(pnfsId, pool, type, action,
                                                  group, full);
                 try {
                     if (handler.handleScannedLocation(data, storageUnit)) {

@@ -67,7 +67,7 @@ import java.util.Set;
 /**
  * <p>Simple implementation of matcher.</p>
  */
-public final class PnfsFilter implements PnfsMatcher {
+public final class FileFilter implements FileMatcher {
     private Set<String> state;
     private Set<String> pnfsids;
     private String      retentionPolicy;
@@ -107,7 +107,7 @@ public final class PnfsFilter implements PnfsMatcher {
      * <p>Filter components are treated as parts of an AND statement.</p>
      */
     @Override
-    public boolean matches(PnfsOperation operation, PoolInfoMap map) {
+    public boolean matches(FileOperation operation, PoolInfoMap map) {
         if (state != null && !state.contains(operation.getStateName())) {
             return false;
         }

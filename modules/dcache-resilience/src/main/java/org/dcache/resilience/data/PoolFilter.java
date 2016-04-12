@@ -67,7 +67,7 @@ import java.util.regex.Pattern;
  *      because a pools operation cancellation may cancel all its
  *      running children (pnfsid) operations.</p>
  */
-public final class PoolFilter implements PnfsMatcher, PoolMatcher {
+public final class PoolFilter implements FileMatcher, PoolMatcher {
     private Set<String> state;
     private Pattern     pools;
     private boolean     parent;
@@ -99,7 +99,7 @@ public final class PoolFilter implements PnfsMatcher, PoolMatcher {
         return false;
     }
 
-    public boolean matches(PnfsOperation operation, PoolInfoMap map) {
+    public boolean matches(FileOperation operation, PoolInfoMap map) {
         if (pools == null) {
             return true;
         }

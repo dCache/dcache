@@ -73,7 +73,7 @@ import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestSynchronousExecutor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.PoolOperation.State;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
+import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.PoolInfoChangeHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.resilience.util.BackloggedMessageHandler;
@@ -107,8 +107,8 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         createCounters();
         createPoolOperationHandler();
         createPoolOperationMap();
-        pnfsOperationHandler = mock(PnfsOperationHandler.class);
-        pnfsOperationMap = mock(PnfsOperationMap.class);
+        fileOperationHandler = mock(FileOperationHandler.class);
+        fileOperationMap = mock(FileOperationMap.class);
         initializeCounters();
         wirePoolOperationMap();
         wirePoolOperationHandler();
@@ -116,7 +116,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
 
         ResilienceMessageHandler handler = new ResilienceMessageHandler();
         handler.setCounters(counters);
-        handler.setPnfsOperationHandler(pnfsOperationHandler);
+        handler.setFileOperationHandler(fileOperationHandler);
         handler.setPoolInfoMap(poolInfoMap);
         handler.setPoolOperationHandler(poolOperationHandler);
         handler.setUpdateService(shortJobExecutor);
@@ -127,7 +127,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
 
         poolMonitorChangeHandler = new PoolInfoChangeHandler();
         poolMonitorChangeHandler.setPoolInfoMap(poolInfoMap);
-        poolMonitorChangeHandler.setPnfsOperationMap(pnfsOperationMap);
+        poolMonitorChangeHandler.setFileOperationMap(fileOperationMap);
         poolMonitorChangeHandler.setPoolOperationMap(poolOperationMap);
         poolMonitorChangeHandler.setResilienceMessageHandler(handler);
         poolMonitorChangeHandler.setUpdateService(new TestSynchronousExecutor(Mode.RUN));
@@ -284,7 +284,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void assertThatCancelScanHasBeenCalled() {
-        verify(pnfsOperationMap, times(3)).cancel(any(PnfsFilter.class));
+        verify(fileOperationMap, times(3)).cancel(any(FileFilter.class));
     }
 
     private void assertThatNoScanCalledFor(String pool) {

@@ -74,8 +74,8 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.SerializablePoolMonitor;
-import org.dcache.resilience.data.PnfsFilter;
-import org.dcache.resilience.data.PnfsOperationMap;
+import org.dcache.resilience.data.FileFilter;
+import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.PoolFilter;
 import org.dcache.resilience.data.PoolInfoDiff;
 import org.dcache.resilience.data.PoolInfoMap;
@@ -99,10 +99,10 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
                                     + "greater than %s %s; resilience is "
                                     + "out of sync with pool monitor.";
 
-    private MapInitializer initializer;
-    private PoolInfoMap poolInfoMap;
+    private MapInitializer   initializer;
+    private PoolInfoMap      poolInfoMap;
     private PoolOperationMap poolOperationMap;
-    private PnfsOperationMap pnfsOperationMap;
+    private FileOperationMap fileOperationMap;
 
     private ResilienceMessageHandler resilienceMessageHandler;
     private ExecutorService updateService;
@@ -229,8 +229,8 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         this.initializer = initializer;
     }
 
-    public void setPnfsOperationMap(PnfsOperationMap pnfsOperationMap) {
-        this.pnfsOperationMap = pnfsOperationMap;
+    public void setFileOperationMap(FileOperationMap fileOperationMap) {
+        this.fileOperationMap = fileOperationMap;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
@@ -289,16 +289,16 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         PoolFilter poolFilter = new PoolFilter();
         poolFilter.setPools(pool);
         poolOperationMap.cancel(poolFilter);
-        PnfsFilter pnfsFilter = new PnfsFilter();
-        pnfsFilter.setParent(pool);
-        pnfsFilter.setForceRemoval(true);
-        pnfsOperationMap.cancel(pnfsFilter);
-        pnfsFilter = new PnfsFilter();
-        pnfsFilter.setSource(pool);
-        pnfsOperationMap.cancel(pnfsFilter);
-        pnfsFilter = new PnfsFilter();
-        pnfsFilter.setTarget(pool);
-        pnfsOperationMap.cancel(pnfsFilter);
+        FileFilter fileFilter = new FileFilter();
+        fileFilter.setParent(pool);
+        fileFilter.setForceRemoval(true);
+        fileOperationMap.cancel(fileFilter);
+        fileFilter = new FileFilter();
+        fileFilter.setSource(pool);
+        fileOperationMap.cancel(fileFilter);
+        fileFilter = new FileFilter();
+        fileFilter.setTarget(pool);
+        fileOperationMap.cancel(fileFilter);
     }
 
     /** Called under synchronization **/

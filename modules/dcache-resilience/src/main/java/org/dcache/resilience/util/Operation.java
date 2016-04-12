@@ -66,7 +66,7 @@ import org.dcache.resilience.data.PoolStatusForResilience;
  *
  * <table>
  *      <tr>
- *          <td>PNFSID</td>
+ *          <td>FILE</td>
  *          <td>
  *              Operation to create the necessary number of replicas of a single file.
  *          </td>
@@ -88,13 +88,13 @@ import org.dcache.resilience.data.PoolStatusForResilience;
  * </table>
  */
 public enum Operation {
-    PNFSID,
+    FILE,
     POOL_SCAN_DOWN,
     POOL_SCAN_ACTIVE;
 
     public static Operation get(PoolStatusForResilience status) {
         if (status == null) {
-            return PNFSID;
+            return FILE;
         }
 
         switch(status) {

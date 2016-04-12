@@ -119,13 +119,13 @@ final class PoolOperation {
 
     public String toString() {
         return String.format(TO_STRING,
-                        completed,
-                        children == 0 && completed > 0 ? "?" : children,
-                        getFormattedPercentDone(),
-                        PnfsOperation.getFormattedDateFromMillis(lastUpdate),
-                        PnfsOperation.getFormattedDateFromMillis(lastScan),
-                        lastStatus, currStatus, state,
-                        exception == null ? "" : new ExceptionMessage(exception));
+                             completed,
+                             children == 0 && completed > 0 ? "?" : children,
+                             getFormattedPercentDone(),
+                             FileOperation.getFormattedDateFromMillis(lastUpdate),
+                             FileOperation.getFormattedDateFromMillis(lastScan),
+                             lastStatus, currStatus, state,
+                             exception == null ? "" : new ExceptionMessage(exception));
     }
 
     /**

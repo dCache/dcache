@@ -154,7 +154,7 @@ public class PoolOperationMap extends RunnableModule {
 
     private PoolInfoMap             poolInfoMap;
     private PoolOperationHandler    handler;
-    private PnfsOperationMap        pnfsOperationMap; // needed for cancellation
+    private FileOperationMap        fileOperationMap; // needed for cancellation
     private InaccessibleFileHandler inaccessibleFileHandler;
 
     private int                 downGracePeriod;
@@ -510,8 +510,8 @@ public class PoolOperationMap extends RunnableModule {
         this.maxConcurrentRunning = maxConcurrentRunning;
     }
 
-    public void setPnfsOperationMap(PnfsOperationMap pnfsOperationMap) {
-        this.pnfsOperationMap = pnfsOperationMap;
+    public void setFileOperationMap(FileOperationMap fileOperationMap) {
+        this.fileOperationMap = fileOperationMap;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
@@ -582,10 +582,10 @@ public class PoolOperationMap extends RunnableModule {
                  *  the second operation will complete successfully.
                  */
                 operation.task.cancel();
-                PnfsFilter pnfsFilter = new PnfsFilter();
-                pnfsFilter.setForceRemoval(true);
-                pnfsFilter.setParent(update.pool);
-                pnfsOperationMap.cancel(pnfsFilter);
+                FileFilter fileFilter = new FileFilter();
+                fileFilter.setForceRemoval(true);
+                fileFilter.setParent(update.pool);
+                fileOperationMap.cancel(fileFilter);
             }
 
             switch (nextAction) {
@@ -632,7 +632,7 @@ public class PoolOperationMap extends RunnableModule {
     }
 
     /**
-     * <p>Called by the {@link PnfsOperationMap) when a child operation completes.</p>
+     * <p>Called by the {@link FileOperationMap ) when a child operation completes.</p>
      */
     public void update(String pool, PnfsId pnfsId) {
         LOGGER.trace("Parent {}, child operation for {} has completed.", pool,

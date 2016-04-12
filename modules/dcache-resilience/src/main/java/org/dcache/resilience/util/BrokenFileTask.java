@@ -63,17 +63,17 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import diskCacheV111.util.PnfsId;
-import org.dcache.resilience.handlers.PnfsOperationHandler;
+import org.dcache.resilience.handlers.FileOperationHandler;
 
 /**
- * <p>Simple wrapper for calling the {@link PnfsOperationHandler) method.</p>
+ * <p>Simple wrapper for calling the {@link FileOperationHandler ) method.</p>
  */
 public final class BrokenFileTask implements Callable<Void> {
-    private final PnfsId pnfsId;
-    private final String pool;
-    private final PnfsOperationHandler handler;
+    private final PnfsId               pnfsId;
+    private final String               pool;
+    private final FileOperationHandler handler;
 
-    public BrokenFileTask(PnfsId pnfsId, String pool, PnfsOperationHandler handler) {
+    public BrokenFileTask(PnfsId pnfsId, String pool, FileOperationHandler handler) {
         this.pnfsId = pnfsId;
         this.pool = pool;
         this.handler = handler;

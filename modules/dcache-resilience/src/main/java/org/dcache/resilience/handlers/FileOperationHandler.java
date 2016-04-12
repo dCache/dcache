@@ -84,9 +84,9 @@ import org.dcache.pool.migration.TaskParameters;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.data.PnfsOperation;
-import org.dcache.resilience.data.PnfsOperationMap;
-import org.dcache.resilience.data.PnfsUpdate;
+import org.dcache.resilience.data.FileOperation;
+import org.dcache.resilience.data.FileOperationMap;
+import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.StorageUnitConstraints;
 import org.dcache.resilience.db.NamespaceAccess;
@@ -113,9 +113,9 @@ import org.dcache.vehicles.resilience.RemoveReplicaMessage;
  *
  * <p>Class is not marked final for stubbing/mocking purposes.</p>
  */
-public class PnfsOperationHandler {
+public class FileOperationHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(
-                    PnfsOperationHandler.class);
+                    FileOperationHandler.class);
 
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
                     = ImmutableList.of(
@@ -133,16 +133,16 @@ public class PnfsOperationHandler {
     private final PoolSelectionStrategy taskSelectionStrategy
                     = new DegenerateSelectionStrategy();
 
-    private PnfsOperationMap          pnfsOpMap;
-    private PoolInfoMap               poolInfoMap;
-    private NamespaceAccess           namespace;
-    private LocationSelector          locationSelector;
+    private FileOperationMap fileOpMap;
+    private PoolInfoMap      poolInfoMap;
+    private NamespaceAccess  namespace;
+    private LocationSelector locationSelector;
 
     private CellStub                  pinManager;
     private CellStub                  pools;
     private ExecutorService           taskService;
     private ScheduledExecutorService  scheduledService;
-    private PnfsTaskCompletionHandler completionHandler;
+    private FileTaskCompletionHandler completionHandler;
     private InaccessibleFileHandler   inaccessibleFileHandler;
 
     public ExecutorService getTaskService() {
@@ -156,7 +156,7 @@ public class PnfsOperationHandler {
     public void handleBrokenFileLocation(PnfsId pnfsId, String pool) {
         try {
             FileAttributes attributes
-                            = PnfsUpdate.getAttributes(pnfsId, pool,
+                            = FileUpdate.getAttributes(pnfsId, pool,
                                                        MessageType.CORRUPT_FILE,
                                                        namespace);
             if (attributes == null || attributes.getLocations().size() < 2) {
@@ -169,7 +169,7 @@ public class PnfsOperationHandler {
             }
 
             removeTarget(pnfsId, pool);
-            PnfsUpdate update = new PnfsUpdate(pnfsId, pool,
+            FileUpdate update = new FileUpdate(pnfsId, pool,
                                                MessageType.CLEAR_CACHE_LOCATION, false);
 
             /*
@@ -194,15 +194,15 @@ public class PnfsOperationHandler {
      * <p>All attributes of the file that are necessary for resilience
      *      processing are then fetched.  Thereafter a series of preliminary
      *      checks are run for other disqualifying conditions.  If the pnfsId
-     *      does qualify, an entry is added to the {@link PnfsOperationMap}.</p>
+     *      does qualify, an entry is added to the {@link FileOperationMap}.</p>
      *
      * @return true if a new operation is added to the map.
      */
-    public boolean handleLocationUpdate(PnfsUpdate data)
+    public boolean handleLocationUpdate(FileUpdate data)
                     throws CacheException {
         LOGGER.trace("handleLocationUpdate {}", data);
 
-        if (pnfsOpMap.updateCount(data.pnfsId)) {
+        if (fileOpMap.updateCount(data.pnfsId)) {
             LOGGER.debug("Update of {}: operation already registered, "
                                          + "count incremented.",
                          data.pnfsId);
@@ -243,7 +243,7 @@ public class PnfsOperationHandler {
         }
 
         LOGGER.trace("handleLocationUpdate, update to be registered: {}", data);
-        return pnfsOpMap.register(data);
+        return fileOpMap.register(data);
     }
 
     /**
@@ -256,15 +256,15 @@ public class PnfsOperationHandler {
      *      conditions here include whether this is a storage unit modification,
      *      in which case the task is registered if the file has the storage unit
      *      in question. Otherwise, verification proceeds as in the
-     *      {@link #handleLocationUpdate(PnfsUpdate)} method.</p>
+     *      {@link #handleLocationUpdate(FileUpdate)} method.</p>
      *
      * @return true if a new operation is added to the map.
      */
-    public boolean handleScannedLocation(PnfsUpdate data, Integer storageUnit)
+    public boolean handleScannedLocation(FileUpdate data, Integer storageUnit)
                     throws CacheException {
         LOGGER.trace("handleScannedLocation {}", data);
 
-        if (pnfsOpMap.updateCount(data.pnfsId)) {
+        if (fileOpMap.updateCount(data.pnfsId)) {
             LOGGER.trace("Update of {}: operation already registered, "
                                          + "count incremented.",
                          data.pnfsId);
@@ -285,7 +285,7 @@ public class PnfsOperationHandler {
         }
 
         LOGGER.trace("handleLocationUpdate, update to be registered: {}", data);
-        return pnfsOpMap.register(data);
+        return fileOpMap.register(data);
     }
 
     /**
@@ -295,7 +295,7 @@ public class PnfsOperationHandler {
      */
     public Task handleMakeOneCopy(FileAttributes attributes) {
         PnfsId pnfsId = attributes.getPnfsId();
-        PnfsOperation operation = pnfsOpMap.getOperation(pnfsId);
+        FileOperation operation = fileOpMap.getOperation(pnfsId);
 
         /*
          * Fire-and-forget best effort.
@@ -356,7 +356,7 @@ public class PnfsOperationHandler {
                     PoolMigrationCopyFinishedMessage message) {
         LOGGER.trace("Migration copy finished {}", message);
         try {
-            pnfsOpMap.updateOperation(message);
+            fileOpMap.updateOperation(message);
         } catch (IllegalStateException e) {
             /*
              *  We treat the missing entry benignly, as it is
@@ -373,7 +373,7 @@ public class PnfsOperationHandler {
      */
     public void handleRemoveOneCopy(FileAttributes attributes) {
         PnfsId pnfsId = attributes.getPnfsId();
-        PnfsOperation operation = pnfsOpMap.getOperation(pnfsId);
+        FileOperation operation = fileOpMap.getOperation(pnfsId);
 
         try {
             String target = poolInfoMap.getPool(operation.getTarget());
@@ -398,7 +398,7 @@ public class PnfsOperationHandler {
     public Type handleVerification(FileAttributes attributes,
                                    boolean suppressAlarm) {
         PnfsId pnfsId = attributes.getPnfsId();
-        PnfsOperation operation = pnfsOpMap.getOperation(pnfsId);
+        FileOperation operation = fileOpMap.getOperation(pnfsId);
 
         int gindex = operation.getPoolGroup();
 
@@ -412,7 +412,7 @@ public class PnfsOperationHandler {
         } catch (CacheException e) {
             CacheException exception = CacheExceptionUtils.getCacheException(
                             CacheException.DEFAULT_ERROR_CODE,
-                            PnfsTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+                            FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
                             pnfsId, null, e.getCause());
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
@@ -452,7 +452,7 @@ public class PnfsOperationHandler {
          */
         if (readableLocations.size() == 0
                         && operation.getRetentionPolicy()
-                        != PnfsOperation.CUSTODIAL
+                        != FileOperation.CUSTODIAL
                         && !suppressAlarm) {
             Integer pindex = operation.getParent();
             if (pindex == null) {
@@ -471,7 +471,7 @@ public class PnfsOperationHandler {
             CacheException exception
                             = CacheExceptionUtils.getCacheException(
                             CacheException.PANIC,
-                            PnfsTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+                            FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
                             pnfsId, error, null);
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
@@ -483,7 +483,7 @@ public class PnfsOperationHandler {
     }
 
     public void setCompletionHandler(
-                    PnfsTaskCompletionHandler completionHandler) {
+                    FileTaskCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
     }
 
@@ -504,8 +504,8 @@ public class PnfsOperationHandler {
         this.pinManager = pinManager;
     }
 
-    public void setPnfsOpMap(PnfsOperationMap pnfsOpMap) {
-        this.pnfsOpMap = pnfsOpMap;
+    public void setFileOpMap(FileOperationMap pnfsOpMap) {
+        this.fileOpMap = pnfsOpMap;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {
@@ -531,7 +531,7 @@ public class PnfsOperationHandler {
      *
      * @return the type of operation which should take place, if any.
      */
-    private Type determineTypeFromConstraints(PnfsOperation operation,
+    private Type determineTypeFromConstraints(FileOperation operation,
                                               Collection<String> locations,
                                               Set<String> readableLocations) {
         PnfsId pnfsId = operation.getPnfsId();
@@ -584,19 +584,19 @@ public class PnfsOperationHandler {
                 LOGGER.trace("target to copy: {}", target);
             } else {
                 LOGGER.trace("Nothing to do, VOID operation for {}", pnfsId);
-                pnfsOpMap.voidOperation(pnfsId);
+                fileOpMap.voidOperation(pnfsId);
                 return Type.VOID;
             }
         } catch (Exception e) {
             CacheException exception = CacheExceptionUtils.getCacheException(
                             CacheException.DEFAULT_ERROR_CODE,
-                            PnfsTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+                            FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
                             pnfsId, null, e);
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
         }
 
-        pnfsOpMap.updateOperation(pnfsId, source, target);
+        fileOpMap.updateOperation(pnfsId, source, target);
 
         return type;
     }
@@ -620,7 +620,7 @@ public class PnfsOperationHandler {
         } catch (InterruptedException | ExecutionException e) {
             throw CacheExceptionUtils.getCacheException(
                             CacheException.SELECTED_POOL_FAILED,
-                            PnfsTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
+                            FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
                             pnfsId, target, e);
         }
 
@@ -628,7 +628,7 @@ public class PnfsOperationHandler {
         if (exception != null && !CacheExceptionUtils.fileNotFound(exception)) {
             throw CacheExceptionUtils.getCacheException(
                             CacheException.SELECTED_POOL_FAILED,
-                            PnfsTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
+                            FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
                             pnfsId, target, (Exception) exception);
         }
     }
@@ -640,7 +640,7 @@ public class PnfsOperationHandler {
      *      and will increment the operation count so that there will
      *      be a chance to repeat the operation in order to make a new copy.</p>
      */
-    private boolean shouldEvictALocation(PnfsOperation operation,
+    private boolean shouldEvictALocation(FileOperation operation,
                                          Collection<String> locations) {
         Integer sunit = operation.getStorageUnit();
         if (sunit == null) {
