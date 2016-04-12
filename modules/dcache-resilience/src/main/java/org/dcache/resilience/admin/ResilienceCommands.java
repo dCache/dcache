@@ -120,34 +120,34 @@ public abstract class ResilienceCommands implements CellCommandListener {
     static final String HINT_COUNTS    = "list pnfsids and replica counts for a pool";
     static final String HINT_DIAG      = "print diagnostic statistics";
     static final String HINT_DIAG_HIST = "print diagnostic history";
-    static final String HINT_DISABLE   = "turn off replication handling";
-    static final String HINT_ENABLE    = "turn on replication handling";
-    static final String HINT_HIST      =
+    static final String HINT_DISABLE     = "turn off replication handling";
+    static final String HINT_ENABLE      = "turn on replication handling";
+    static final String HINT_HIST        =
                     "display a history of the most recent terminated "
-                                    + "pnfs operations";
-    static final String HINT_PNFSCNCL = "cancel pnfs operations";
-    static final String HINT_PNFS_CTRL = "control checkpointing or handling of pnfs operations";
-    static final String HINT_PNFSLS = "list entries in the pnfs operation table";
-    static final String HINT_POOLCNCL = "cancel pool operations";
-    static final String HINT_POOL_CTRL =
+                                    + "file operations";
+    static final String HINT_FILE_CNCL   = "cancel file operations";
+    static final String HINT_FILE_CTRL   = "control checkpointing or handling of file operations";
+    static final String HINT_FILE_LS     = "list entries in the file operation table";
+    static final String HINT_POOL_CNCL   = "cancel pool operations";
+    static final String HINT_POOL_CTRL   =
                     "control the periodic check of active resilient pools "
                                     + "or processing of pool state changes";
-    static final String HINT_POOLEXCL = "exclude pool operations";
-    static final String HINT_POOLINCL = "include pool operations";
+    static final String HINT_POOL_EXCL   = "exclude pool operations";
+    static final String HINT_POOL_INCL   = "include pool operations";
     static final String HINT_PGROUP_INFO =
                     "list the storage units linked to a pool group "
                                     + "and confirm resilience constraints "
                                     + "can be met by the member pools";
-    static final String HINT_POOLINFO = "list tags and mode for a pool or pools";
-    static final String HINT_POOLLS = "list entries in the pool operation table";
-    static final String HINT_SCAN = "launch a scan of one or more pools";
+    static final String HINT_POOL_INFO   = "list tags and mode for a pool or pools";
+    static final String HINT_POOL_LS     = "list entries in the pool operation table";
+    static final String HINT_SCAN        = "launch a scan of one or more pools";
 
     static final String DESC_CHECK     =
                     "For each pnfsid, runs a check to see that the number of "
                                     + "replicas is properly constrained, creating "
                                     + "new copies or removing redundant ones "
                                     + "as necessary.";
-    static final String DESC_PNFS_CTRL =
+    static final String DESC_FILE_CTRL =
                     "Runs checkpointing, resets checkpoint "
                                     + "properties, resets operation properties, "
                                     + "turn processing of operations on or off "
@@ -163,7 +163,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
                                     + "of the resilience system.  Rate/sec is "
                                     + "sampled over the interval since the last "
                                     + "checkpoint. These values for new "
-                                    + "location messages and pnfsid "
+                                    + "location messages and file "
                                     + "operations are recorded "
                                     + "to a stastistics file located in the "
                                     + "resilience home directory, and which "
@@ -180,30 +180,30 @@ public abstract class ResilienceCommands implements CellCommandListener {
                                     + "To disable all internal operations, use "
                                     + "the 'strict' argument to this command; "
                                     + "this option will also cancel all pool and "
-                                    + "pnfs operations.";
-    static final String DESC_ENABLE =
+                                    + "file operations.";
+    static final String DESC_ENABLE    =
                     "Allows messages to be processed by "
                                     + "the replication system. Will also "
                                     + "(re-)enable all internal operations if they "
                                     + "are not running.  Executed asynchronously.";
-    static final String DESC_HIST =
-                    "When pnfs operations complete or are aborted, their "
+    static final String DESC_HIST      =
+                    "When file operations complete or are aborted, their "
                                     + "string representations are added to a "
                                     + "circular buffer whose capacity is set "
                                     + "by the property "
-                                    + "'pnfsmanager.resilience.history.buffer-size'.";
-    static final String DESC_PNFSCNCL =
-                    "Scans the pnfs table and cancels "
+                                    + "'resilience.limits.file.operation-history'.";
+    static final String DESC_FILE_CNCL =
+                    "Scans the file table and cancels "
                                     + "operations matching the filter parameters.";
-    static final String DESC_PNFSLS =
+    static final String DESC_PNFSLS         =
                     "Scans the table and returns operations matching "
                                     + "the filter parameters.";
-    static final String DESC_POOLCNCL =
+    static final String DESC_POOL_CNCL      =
                     "Scans the pool table and cancels "
                                     + "operations matching the filter parameters; "
-                                    + "if 'includeParents' is true, also "
-                                    + "scans the pnfs table.";
-    static final String DESC_POOLEXCLINCL =
+                                    + "if 'includeChildren' is true, also "
+                                    + "scans the file table.";
+    static final String DESC_POOL_EXCL_INCL =
                     "Scans the pool table and excludes or includes "
                                     + "operations for the matching pools; "
                                     + "exclusion will cancel any running "
@@ -229,11 +229,11 @@ public abstract class ResilienceCommands implements CellCommandListener {
                                     + "attempting to assign the required number "
                                     + "of locations for a hypothetical file "
                                     + "belonging to each unit.";
-    static final String DESC_POOLINFO = "Lists pool key, name, mode, "
+    static final String DESC_POOL_INFO   = "Lists pool key, name, mode, "
                                     + "status, tags and last update time.";
-    static final String DESC_POOLLS = "Scans the table and returns "
+    static final String DESC_POOL_LS     = "Scans the table and returns "
                                     + "operations matching the filter parameters.";
-    static final String DESC_SCAN =
+    static final String DESC_SCAN        =
                     "A check will be initiated to see that the "
                                     + "number of replicas on the pool is "
                                     + "properly constrained, creating new "
@@ -523,7 +523,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PnfsCheckCommand extends ResilienceCommand {
+    abstract class FileCheckCommand extends ResilienceCommand {
         @Argument(usage = "Comma-delimited list of pnfsids "
                                         + "for which to run the adjustment.")
         String pnfsids;
@@ -550,7 +550,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PnfsControlCommand extends ResilienceCommand {
+    abstract class FileControlCommand extends ResilienceCommand {
         @Argument(valueSpec = "ON|OFF|START|SHUTDOWN|RESET|RUN|INFO",
                         required = false,
                         usage = "off = turn checkpointing off; "
@@ -679,7 +679,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PnfsOpCancelCommand extends ResilienceCommand {
+    abstract class FileOpCancelCommand extends ResilienceCommand {
         @Option(name = "state",
                         valueSpec = "WAITING|RUNNING",
                         separator = ",",
@@ -788,7 +788,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PnfsOpHistoryCommand extends ResilienceCommand {
+    abstract class FileOpHistoryCommand extends ResilienceCommand {
         @Argument(required = false,
                         valueSpec = "errors",
                         usage = "Display just the failures")
@@ -832,7 +832,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PnfsOpLsCommand extends ResilienceCommand {
+    abstract class FileOpLsCommand extends ResilienceCommand {
         @Option(name = "retentionPolicy",
                         valueSpec = "REPLICA|CUSTODIAL",
                         usage = "List only operations for pnfsids with this "

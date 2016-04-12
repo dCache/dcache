@@ -81,39 +81,39 @@ public final class StandaloneResilienceCommands extends ResilienceCommands {
     class EnableCommand extends ResilienceCommands.EnableCommand {}
 
     @Command(name = "history", hint = HINT_HIST, description = DESC_HIST)
-    class PnfsOpHistoryCommand extends ResilienceCommands.PnfsOpHistoryCommand {}
+    class FileOpHistoryCommand extends ResilienceCommands.FileOpHistoryCommand {}
 
-    @Command(name = "pnfs cancel", hint = HINT_PNFSCNCL, description = DESC_PNFSCNCL)
-    class PnfsOpCancelCommand extends ResilienceCommands.PnfsOpCancelCommand {}
+    @Command(name = "file cancel", hint = HINT_FILE_CNCL, description = DESC_FILE_CNCL)
+    class FileOpCancelCommand extends ResilienceCommands.FileOpCancelCommand {}
 
-    @Command(name = "pnfs check", hint = HINT_CHECK, description = DESC_CHECK)
-    class PnfsCheckCommand extends ResilienceCommands.PnfsCheckCommand {}
+    @Command(name = "file check", hint = HINT_CHECK, description = DESC_CHECK)
+    class FileCheckCommand extends ResilienceCommands.FileCheckCommand {}
 
-    @Command(name = "pnfs ctrl", hint = HINT_PNFS_CTRL, description = DESC_PNFS_CTRL)
-    class PnfsControlCommand extends ResilienceCommands.PnfsControlCommand {}
+    @Command(name = "file ctrl", hint = HINT_FILE_CTRL, description = DESC_FILE_CTRL)
+    class FileControlCommand extends ResilienceCommands.FileControlCommand {}
 
-    @Command(name = "pnfs ls", hint =  HINT_PNFSLS, description = DESC_PNFSLS)
-    class PnfsOpLsCommand extends ResilienceCommands.PnfsOpLsCommand {}
+    @Command(name = "file ls", hint = HINT_FILE_LS, description = DESC_PNFSLS)
+    class FileOpLsCommand extends ResilienceCommands.FileOpLsCommand {}
 
-    @Command(name = "pool cancel", hint = HINT_POOLCNCL, description = DESC_POOLCNCL)
+    @Command(name = "pool cancel", hint = HINT_POOL_CNCL, description = DESC_POOL_CNCL)
     class PoolOpCancelCommand extends ResilienceCommands.PoolOpCancelCommand {}
 
     @Command(name = "pool ctrl", hint= HINT_POOL_CTRL,  description = DESC_POOL_CTRL)
     class PoolControlCommand extends ResilienceCommands.PoolControlCommand {}
 
-    @Command(name = "pool exclude", hint = HINT_POOLEXCL, description = DESC_POOLEXCLINCL)
+    @Command(name = "pool exclude", hint = HINT_POOL_EXCL, description = DESC_POOL_EXCL_INCL)
     class PoolOpExcludeCommand extends ResilienceCommands.PoolOpExcludeCommand {}
 
     @Command(name = "pool group info", hint = HINT_PGROUP_INFO, description = DESC_PGROUP_INFO)
     class PoolGroupInfoCommand extends ResilienceCommands.PoolGroupInfoCommand {}
 
-    @Command(name = "pool include", hint = HINT_POOLINCL, description = DESC_POOLEXCLINCL)
+    @Command(name = "pool include", hint = HINT_POOL_INCL, description = DESC_POOL_EXCL_INCL)
     class PoolOpIncludeCommand extends ResilienceCommands.PoolOpIncludeCommand {}
 
-    @Command(name = "pool info", hint = HINT_POOLINFO, description = DESC_POOLINFO)
+    @Command(name = "pool info", hint = HINT_POOL_INFO, description = DESC_POOL_INFO)
     class PoolInfoCommand extends ResilienceCommands.PoolInfoCommand {}
 
-    @Command(name = "pool ls", hint = HINT_POOLLS, description = DESC_POOLLS)
+    @Command(name = "pool ls", hint = HINT_POOL_LS, description = DESC_POOL_LS)
     class PoolOpLsCommand extends ResilienceCommands.PoolOpLsCommand {}
 
     @Command(name = "pool scan", hint = HINT_SCAN, description = DESC_SCAN)
