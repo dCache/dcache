@@ -94,6 +94,7 @@ import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.resilience.handlers.PoolInfoChangeHandler;
 import org.dcache.resilience.util.CopyLocationExtractor;
+import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.RandomSelectionStrategy;
 import org.dcache.resilience.util.StorageUnitInfoExtractor;
 import org.dcache.util.NonReindexableList;
@@ -127,7 +128,7 @@ import org.dcache.vehicles.FileAttributes;
  *      empties and rebuilds pool-related information based on a diff obtained
  *      from {@link #compare(PoolMonitor)}.  An empty diff is equivalent to
  *      a load operation (at initialization). These methods are called by
- *      the {@link org.dcache.resilience.util.MapInitializer} at startup, and
+ *      the {@link MapInitializer} at startup, and
  *      thereafter by the {@link PoolInfoChangeHandler}</p>
  *
  * <p>This class benefits from read-write synchronization, since there will

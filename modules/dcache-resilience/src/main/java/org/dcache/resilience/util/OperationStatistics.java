@@ -408,7 +408,7 @@ public final class OperationStatistics {
         counterMap.computeIfAbsent(pool, (p) -> {
             Map<String, AtomicLong> categories = new HashMap<>();
             categories.put(CounterType.CPSRC.name() + TagType.TOTAL,
-                                                             new AtomicLong(0));
+                           new AtomicLong(0));
             categories.put(CounterType.CPTGT.name() + TagType.TOTAL,
                            new AtomicLong(0));
             categories.put(CounterType.CPTGT.name() + TagType.FAILED,
@@ -510,17 +510,17 @@ public final class OperationStatistics {
     }
 
     private void printOperationStats() {
-        String[] category = {CounterType.MESSAGE.name(),
-                        CounterType.OPERATION.name(),
-                        CounterType.CHCKPT.name()};
+        String[] category = { CounterType.MESSAGE.name(),
+                              CounterType.OPERATION.name(),
+                              CounterType.CHCKPT.name()};
 
         String[] type = {MessageType.ADD_CACHE_LOCATION.name(),
                         Operation.PNFSID.name()};
 
-        String[] tag = {TagType.TOTAL.name(),
-                        TagType.CURRENT.name(),
-                        TagType.LAST.name(),
-                        TagType.FAILED.name()};
+        String[] tag = { TagType.TOTAL.name(),
+                         TagType.CURRENT.name(),
+                         TagType.LAST.name(),
+                         TagType.FAILED.name()};
 
         long[] received = { getCounter(category[0], type[0], tag[0]).get(),
                         getCounter(category[1], type[1], tag[0]).get()};
@@ -697,19 +697,19 @@ public final class OperationStatistics {
         Map<String, AtomicLong> map =
                         counterMap.computeIfAbsent(CounterType.MESSAGE.name(),
                                                    (m) -> new HashMap<>());
-        map.computeIfAbsent(type+TagType.TOTAL.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+TagType.CURRENT.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+TagType.LAST.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type+ TagType.TOTAL.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type+ TagType.CURRENT.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type+ TagType.LAST.name(), (t) -> new AtomicLong(0));
     }
 
     private void registerOperation(String type) {
         Map<String, AtomicLong> map =
                         counterMap.computeIfAbsent(CounterType.OPERATION.name(),
                                                    (m) -> new HashMap<>());
-        map.computeIfAbsent(type+TagType.TOTAL.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+TagType.FAILED.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+TagType.CURRENT.name(), (t) -> new AtomicLong(0));
-        map.computeIfAbsent(type+TagType.LAST.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type+ TagType.TOTAL.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type+ TagType.FAILED.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type+ TagType.CURRENT.name(), (t) -> new AtomicLong(0));
+        map.computeIfAbsent(type+ TagType.LAST.name(), (t) -> new AtomicLong(0));
     }
 
     private void resetLatestCounts() {

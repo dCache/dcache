@@ -59,8 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.util;
 
-import java.util.List;
 import javax.annotation.Nullable;
+import java.util.List;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import org.dcache.pool.migration.PoolSelectionStrategy;

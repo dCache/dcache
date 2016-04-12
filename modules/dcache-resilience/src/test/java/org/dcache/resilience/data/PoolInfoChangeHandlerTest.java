@@ -74,8 +74,8 @@ import org.dcache.resilience.TestSynchronousExecutor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.PoolOperation.State;
 import org.dcache.resilience.handlers.PnfsOperationHandler;
-import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.resilience.handlers.PoolInfoChangeHandler;
+import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.resilience.util.BackloggedMessageHandler;
 import org.dcache.resilience.util.MessageGuard;
 

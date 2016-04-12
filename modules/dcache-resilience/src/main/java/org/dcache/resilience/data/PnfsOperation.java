@@ -77,8 +77,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.resilience.handlers.PnfsOperationHandler;
 import org.dcache.resilience.handlers.PnfsOperationHandler.Type;
-import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.ExceptionMessage;
+import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 
 /**

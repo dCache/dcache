@@ -62,13 +62,13 @@ package org.dcache.resilience.db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
-import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;

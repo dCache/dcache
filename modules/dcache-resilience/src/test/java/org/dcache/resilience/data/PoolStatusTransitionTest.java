@@ -74,10 +74,10 @@ import static org.dcache.resilience.data.PoolOperation.NextAction.NOP;
 import static org.dcache.resilience.data.PoolOperation.NextAction.UP_TO_DOWN;
 import static org.dcache.resilience.data.PoolStatusForResilience.DOWN;
 import static org.dcache.resilience.data.PoolStatusForResilience.DOWN_IGNORE;
+import static org.dcache.resilience.data.PoolStatusForResilience.ENABLED;
 import static org.dcache.resilience.data.PoolStatusForResilience.READ_ONLY;
 import static org.dcache.resilience.data.PoolStatusForResilience.UNINITIALIZED;
 import static org.dcache.resilience.data.PoolStatusForResilience.UP_IGNORE;
-import static org.dcache.resilience.data.PoolStatusForResilience.ENABLED;
 import static org.junit.Assert.assertEquals;
 
 /**

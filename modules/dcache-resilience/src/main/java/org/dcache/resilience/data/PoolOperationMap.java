@@ -82,13 +82,13 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.resilience.data.PoolOperation.NextAction;
 import org.dcache.resilience.data.PoolOperation.State;
 import org.dcache.resilience.handlers.PoolOperationHandler;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.InaccessibleFileHandler;
 import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.resilience.util.PoolScanTask;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
-import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.util.RunnableModule;
 
 /**

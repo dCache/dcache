@@ -86,12 +86,12 @@ import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 import org.dcache.resilience.util.CheckpointUtils;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.ResilientFileTask;
-import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.util.RunnableModule;
 import org.dcache.vehicles.FileAttributes;
 

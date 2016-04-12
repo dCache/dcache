@@ -92,13 +92,13 @@ import org.dcache.resilience.data.StorageUnitConstraints;
 import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.DegenerateSelectionStrategy;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.InaccessibleFileHandler;
 import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.RemoveLocationExtractor;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.StaticSinglePoolList;
-import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 

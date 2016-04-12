@@ -85,7 +85,7 @@ import org.dcache.vehicles.CorruptFileMessage;
 /**
  * <p>Persists backlogged messages to a file.  When reactivated, the
  *      file is read back in and the messages sent back to the
- *      {@link org.dcache.resilience.handlers.ResilienceMessageHandler}.</p>
+ *      {@link ResilienceMessageHandler}.</p>
  *
  * <p>Pool-based messages are not saved.</p>
  *

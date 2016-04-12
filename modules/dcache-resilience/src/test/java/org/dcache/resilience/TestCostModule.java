@@ -62,13 +62,13 @@ package org.dcache.resilience;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nullable;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo;

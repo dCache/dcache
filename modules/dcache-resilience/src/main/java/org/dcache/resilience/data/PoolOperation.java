@@ -60,9 +60,9 @@ documents or software obtained from this server.
 package org.dcache.resilience.data;
 
 import diskCacheV111.util.CacheException;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.PoolScanTask;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
-import org.dcache.resilience.util.ExceptionMessage;
 
 /**
  * <p>Object stored in the {@link PoolOperationMap}.</p>

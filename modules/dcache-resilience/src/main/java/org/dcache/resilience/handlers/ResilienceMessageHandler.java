@@ -75,10 +75,10 @@ import org.dcache.resilience.data.PnfsUpdate;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.util.BrokenFileTask;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.MessageGuard;
 import org.dcache.resilience.util.MessageGuard.Status;
 import org.dcache.resilience.util.OperationStatistics;
-import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.vehicles.CorruptFileMessage;
 
 /**

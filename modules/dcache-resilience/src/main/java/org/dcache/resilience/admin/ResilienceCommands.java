@@ -95,11 +95,11 @@ import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperationMap;
 import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.handlers.PnfsOperationHandler;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.MessageGuard;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
-import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.vehicles.FileAttributes;
 
 /**
