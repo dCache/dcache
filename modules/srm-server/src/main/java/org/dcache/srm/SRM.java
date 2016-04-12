@@ -97,6 +97,9 @@ import java.util.regex.Pattern;
 import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestStatus;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellLifeCycleAware;
+
 import org.dcache.commons.stats.MonitoringProxy;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -140,7 +143,8 @@ import static java.util.Arrays.asList;
  *
  * @author  timur
  */
-public class SRM {
+public class SRM implements CellLifeCycleAware
+{
     private static final Logger logger = LoggerFactory.getLogger(SRM.class);
     private final InetAddress host;
     private final Configuration configuration;
@@ -306,7 +310,6 @@ public class SRM {
         try {
             JobStorageFactory.initJobStorageFactory(databaseFactory);
             databaseFactory.init();
-            databaseFactory.restoreJobsOnSrmStart(schedulers);
         } catch (RuntimeException e) {
             try {
                 databaseFactory.shutdown();
@@ -315,6 +318,17 @@ public class SRM {
             }
             throw e;
         }
+    }
+
+    @Override
+    public void afterStart()
+    {
+        databaseFactory.restoreJobsOnSrmStart(schedulers);
+    }
+
+    @Override
+    public void beforeStop()
+    {
     }
 
     public void stop() throws InterruptedException
