@@ -63,6 +63,7 @@ import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.util.NDC;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.FsExport;
@@ -94,8 +95,8 @@ import org.dcache.nfs.v4.xdr.layouttype4;
 import org.dcache.nfs.v4.xdr.multipath_list4;
 import org.dcache.nfs.v4.xdr.netaddr4;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
-import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
+import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
@@ -103,6 +104,7 @@ import org.dcache.nfs.vfs.VfsCacheConfig;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
+import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.OncRpcProgram;
@@ -475,13 +477,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                         transfer.setPoolManagerStub(_poolManagerStub);
                         transfer.setPnfsId(pnfsId);
                         transfer.setClientAddress(remote);
-                        transfer.readNameSpaceEntry(ioMode != layoutiomode4.LAYOUTIOMODE4_READ);
-
-                        if (transfer.isWrite()) {
-                            _log.debug("looking for write pool for {}", transfer.getPnfsId());
-                        } else {
-                            _log.debug("looking for read pool for {}", transfer.getPnfsId());
-                        }
 
                         /*
                          * Bind transfer to open-state.
@@ -495,6 +490,31 @@ public class NFSv41Door extends AbstractCellComponent implements
                         });
 
                          _ioMessages.put(stateid, transfer);
+                    }
+
+                    if (!transfer.getFileAttributes().isDefined(FileAttribute.LOCATIONS)) {
+                        // REVISIT: ideally we want location update only, if other attributes are available
+                        transfer.readNameSpaceEntry(ioMode != layoutiomode4.LAYOUTIOMODE4_READ);
+                    }
+
+                    /*
+                     * If file is on a tape only, tell the client right away
+                     * that it will take some time.
+                     */
+                    FileAttributes attr = transfer.getFileAttributes();
+                    if ((ioMode == layoutiomode4.LAYOUTIOMODE4_READ) && attr.getLocations().isEmpty()) {
+
+                        if (attr.getStorageInfo().isStored()) {
+                            transfer.selectPoolAsync(TimeUnit.SECONDS.toMillis(90));
+
+                            // clear file location to enforce re-fetcing from the namespace
+                            // REVISIT: ideally we want to subscribe for location update on this file
+                            transfer.getFileAttributes().undefine(FileAttribute.LOCATIONS);
+
+                            throw new LayoutTryLaterException("Triggering stage for " + inode.getId());
+                        }
+
+                        throw new NfsIoException("lost file " + inode.getId());
                     }
 
                     PoolDS ds = transfer.getPoolDataServer(_ioQueue, NFS_REQUEST_BLOCKING);
@@ -864,6 +884,9 @@ public class NFSv41Door extends AbstractCellComponent implements
                  */
                 if (getPool() == null) {
                     // we did not select a pool
+
+                    _log.debug("looking for {} pool for {}", (isWrite() ? "write" : "read"), getPnfsId());
+
                     redirectFuture = selectPoolAndStartMoverAsync(queue, RETRY_POLICY);
                 } else {
                     // we may re-send the request, but pool will handle it
