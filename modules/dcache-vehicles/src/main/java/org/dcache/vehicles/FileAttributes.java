@@ -178,6 +178,11 @@ public class FileAttributes implements Serializable {
         _definedAttributes.add(attribute);
     }
 
+    public void undefine(FileAttribute attribute)
+    {
+        _definedAttributes.remove(attribute);
+    }
+
     public boolean isUndefined(FileAttribute attribute)
     {
         return !_definedAttributes.contains(attribute);
