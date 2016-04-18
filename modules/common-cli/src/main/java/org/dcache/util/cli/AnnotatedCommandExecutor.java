@@ -68,6 +68,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
     private final Command _command;
     private final Constructor<? extends Callable<? extends Serializable>> _constructor;
     private final List<Handler> _handlers;
+    private final boolean _isDeprecated;
 
     public AnnotatedCommandExecutor(Object parent, Command command,
                                     Constructor<? extends Callable<? extends Serializable>> constructor)
@@ -75,7 +76,15 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         _parent = parent;
         _command = command;
         _constructor = constructor;
-        _handlers = createFieldHandlers(command, _constructor.getDeclaringClass());
+        Class<? extends Callable<? extends Serializable>> commandClass = _constructor.getDeclaringClass();
+        _handlers = createFieldHandlers(command, commandClass);
+        _isDeprecated = commandClass.getDeclaredAnnotation(Deprecated.class) != null;
+    }
+
+    @Override
+    public boolean isDeprecated()
+    {
+        return _isDeprecated;
     }
 
     @Override

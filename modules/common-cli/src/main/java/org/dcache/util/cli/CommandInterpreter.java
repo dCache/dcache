@@ -246,7 +246,7 @@ public class CommandInterpreter
 
         public void dumpHelpHint(String top, StringBuilder sb, HelpFormat format)
         {
-            if (_commandExecutor != null) {
+            if (_commandExecutor != null && !_commandExecutor.isDeprecated()) {
                 String hint = _commandExecutor.getHelpHint(format);
                 if (hint != null) {
                     sb.append(top).append(hint).append("\n");
