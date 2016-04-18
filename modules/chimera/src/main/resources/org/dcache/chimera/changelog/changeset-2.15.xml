@@ -1846,8 +1846,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="24" author="behrmann" dbms="postgresql">
-        <comment>Update enstore procedures for inumber changes</comment>
+    <changeSet author="litvinse" id="24.1" dbms="postgresql">
+      <comment>Fix trigger on insert or update on t_level_4</comment>
 
         <createProcedure>
           --
@@ -1915,13 +1915,13 @@
                 INSERT INTO t_storageinfo
                VALUES (NEW.inumber,'enstore','enstore',l_entries[4]);
                   END IF;
-               --
+                   --
                    -- we assume all files coming through level4 to be CUSTODIAL-NEARLINE
-               --
+                   --
                    -- the block below is needed for files written directly by encp
                    --
               BEGIN
-                    UPDATE t_inodes SET iaccesslatency = 0, iretentionpolicy = 0 WHERE inumber = NEW.inumber;
+                    UPDATE t_inodes SET iaccess_latency = 0, iretention_policy = 0 WHERE inumber = NEW.inumber;
               END;
             ELSEIF (TG_OP = 'UPDATE')  THEN
               file_data := encode(NEW.ifiledata, 'escape');
@@ -2014,13 +2014,13 @@
                     INSERT INTO t_storageinfo
                    VALUES (NEW.ipnfsid,'enstore','enstore',l_entries[4]);
                       END IF;
-                   --
+                       --
                        -- we assume all files coming through level4 to be CUSTODIAL-NEARLINE
-                   --
+                       --
                        -- the block below is needed for files written directly by encp
                        --
                   BEGIN
-                        UPDATE t_inodes SET iaccesslatency = 0, iretentionpolicy = 0 WHERE ipnfsid = NEW.ipnfsid;
+                        UPDATE t_inodes SET iaccess_latency = 0, iretention_policy = 0 WHERE ipnfsid = NEW.ipnfsid;
                   END;
                 ELSEIF (TG_OP = 'UPDATE')  THEN
                   file_data := encode(NEW.ifiledata, 'escape');
