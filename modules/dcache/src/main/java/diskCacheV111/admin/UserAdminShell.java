@@ -45,6 +45,8 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
+import dmg.cells.network.PingMessage;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -99,12 +101,6 @@ public class UserAdminShell
 {
     private static final Logger _log =
             LoggerFactory.getLogger(UserAdminShell.class);
-
-    /**
-     * The {@literal xyzzy} is a command sent to cells when connecting to them. It has no effect
-     * and its only purpose is to verify that the cell is present.
-     */
-    private static final String CONNECT_PROBE_MESSAGE = "xyzzy";
 
     /**
      * Timeout is milliseconds for the {@literal xyzzy} message sent to cells when connecting
@@ -595,16 +591,16 @@ public class UserAdminShell
 
         private Position resolve(String cell) throws InterruptedException
         {
-            CellPath address = new CellPath(cell);
+            CellPath path = new CellPath(cell);
             try {
-                SettableFuture<CellPath> future = SettableFuture.create();
-                _cellEndpoint.sendMessage(new CellMessage(address, CONNECT_PROBE_MESSAGE),
+                SettableFuture<CellAddressCore> future = SettableFuture.create();
+                _cellEndpoint.sendMessage(new CellMessage(path, new PingMessage()),
                                           new CellMessageAnswerable()
                                           {
                                               @Override
                                               public void answerArrived(CellMessage request, CellMessage answer)
                                               {
-                                                  future.set(answer.getSourcePath());
+                                                  future.set(answer.getSourceAddress());
                                               }
 
                                               @Override
@@ -619,11 +615,11 @@ public class UserAdminShell
                                                   future.setException(new NoRouteToCellException(request, "No reply"));
                                               }
                                           }, MoreExecutors.directExecutor(), CONNECT_PROBE_MESSAGE_TIMEOUT_MS);
-                CellPath returnPath = future.get();
-                if (address.hops() == 1 && address.getCellDomainName().equals("local")) {
-                    return new Position(returnPath.getSourceAddress().toString(), returnPath.revert());
+                CellAddressCore remote = future.get();
+                if (path.hops() == 1 && path.getDestinationAddress().isLocalAddress()) {
+                    return new Position(remote.toString(), path);
                 } else {
-                    return new Position(cell, returnPath.revert());
+                    return new Position(cell, path);
                 }
             } catch (ExecutionException e) {
                 if (e.getCause() instanceof NoRouteToCellException) {
@@ -631,7 +627,7 @@ public class UserAdminShell
                 }
                 // Some other failure, but apparently the cell exists
                 _log.info("Cell probe failed: {}", e.getCause().toString());
-                return new Position(cell, address);
+                return new Position(cell, path);
             }
         }
     }

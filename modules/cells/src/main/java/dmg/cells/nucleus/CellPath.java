@@ -1,10 +1,13 @@
 package dmg.cells.nucleus;
 
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -127,15 +130,29 @@ public final class CellPath implements Cloneable, Serializable
         return true;
     }
 
+    /**
+     * Returns a new path that is the reverse of this path.
+     *
+     * The new path will have been collapsed such that only cells are
+     * addressed. Domain addresses will have been stripped, except if
+     * followed by a local (not fully qualified) address.
+     */
     public synchronized CellPath revert()
     {
-        if (_list.isEmpty()) {
-            return new CellPath();
-        } else {
-            List<CellAddressCore> copy = new ArrayList<>(_list);
-            Collections.reverse(copy);
-            return new CellPath(0, copy);
+        CellPath path = new CellPath();
+        Iterator<CellAddressCore> iterator = Lists.reverse(_list).iterator();
+        if (iterator.hasNext()) {
+            CellAddressCore address = iterator.next();
+            while (iterator.hasNext()) {
+                CellAddressCore next = iterator.next();
+                if (!address.isDomainAddress() || next.isLocalAddress()) {
+                    path.add(address);
+                }
+                address = next;
+            }
+            path.add(address);
         }
+        return path;
     }
 
     public synchronized boolean isFinalDestination()

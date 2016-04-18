@@ -866,6 +866,7 @@ public class CellAdapter
                     return;
                 }
                 ping.setWayBack();
+                ping.setOutboundPath(msg.getSourcePath());
                 msg.revertDirection();
                 _nucleus.sendMessage(msg, true, true);
             } else {

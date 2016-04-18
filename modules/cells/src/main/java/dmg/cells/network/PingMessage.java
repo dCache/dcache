@@ -2,6 +2,8 @@ package  dmg.cells.network ;
 
 import java.io.Serializable;
 
+import dmg.cells.nucleus.CellPath;
+
 /**
   *
   *
@@ -15,6 +17,7 @@ public class PingMessage implements Serializable {
    private final byte [] _payload ;
 
    private boolean _wayback;
+   private CellPath _outboundPath;
 
    public PingMessage(){
 	   this(0);
@@ -25,6 +28,17 @@ public class PingMessage implements Serializable {
    }
    public void    setWayBack(){ _wayback = true ; }
    public boolean isWayBack(){ return _wayback ; }
+
+   public void setOutboundPath(CellPath path)
+   {
+      _outboundPath = path.clone();
+   }
+
+   public CellPath getOutboundPath()
+   {
+      return _outboundPath;
+   }
+
    public long getTransferTime(){
      return System.currentTimeMillis() - _millis ;
    }

@@ -872,7 +872,7 @@ public class CellShell extends CommandInterpreter
         @Override
         public Serializable call()
         {
-            CellMessage msg = new CellMessage(address, "xyzzy");
+            CellMessage msg = new CellMessage(address, new PingMessage());
             _nucleus.sendMessage(msg, !nolocal, !noremote, this, MoreExecutors.directExecutor(), 10000);
             return this;
         }
@@ -880,7 +880,7 @@ public class CellShell extends CommandInterpreter
         @Override
         public void answerArrived(CellMessage request, CellMessage answer)
         {
-            reply(answer.getDestinationPath().revert() + " -> " + answer.getSourcePath());
+            reply(((PingMessage) answer.getMessageObject()).getOutboundPath() + " -> " + answer.getSourcePath());
         }
 
         @Override
