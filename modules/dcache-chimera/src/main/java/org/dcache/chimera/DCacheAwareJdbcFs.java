@@ -186,7 +186,8 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
         infoRemove.setPnfsId(new PnfsId(inode.getId()));
         infoRemove.setFileSize(0L);
         infoRemove.setBillingPath("parent:[" + directory.getId() + "]/" + name);
-        infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
+        // FIXME: in some cases subject is not set
+        infoRemove.setClient(subject == null? "0.0.0.0" : Subjects.getOrigin(subject).getAddress().getHostAddress());
         infoRemove.setClientChain(infoRemove.getClient());
 
         billingStub.notify(infoRemove);
