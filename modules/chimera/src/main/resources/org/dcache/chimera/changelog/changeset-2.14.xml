@@ -188,8 +188,8 @@
         </rollback>
     </changeSet>
 
-    <changeSet author="tigran" id="24" dbms="postgresql">
-
+    <changeSet author="litvinse" id="24.1" dbms="postgresql">
+      <comment>Fix trigger on insert or update on t_level_4</comment>
 	<createProcedure>
 	  DROP TRIGGER IF EXISTS tgr_enstore_location ON t_level_4;
 
@@ -220,7 +220,7 @@
                -- the block below is needed for files written directly by encp
                --
 	      BEGIN
-                UPDATE t_inodes SET iaccesslatency = 0, iretentionpolicy = 0 WHERE ipnfsid = NEW.ipnfsid;
+                UPDATE t_inodes SET iaccess_latency = 0, iretention_policy = 0 WHERE ipnfsid = NEW.ipnfsid;
 	      END;
 	    ELSEIF (TG_OP = 'UPDATE')  THEN
 	      file_data := encode(NEW.ifiledata, 'escape');
