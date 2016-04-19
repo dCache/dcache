@@ -114,7 +114,12 @@ public class LoginManager
      */
     public LoginManager(String name, String argString)
     {
-        super(name, argString);
+        this(name, "Generic", argString);
+    }
+
+    public LoginManager(String name, String cellType, String argString)
+    {
+        super(name, cellType, argString);
         _nucleus = getNucleus();
         _args = getArgs();
     }
@@ -708,7 +713,10 @@ public class LoginManager
         {
             for (Object child : _children.values()) {
                 if (child instanceof CellAdapter) {
-                    getNucleus().kill(((CellAdapter) child).getCellName());
+                    try {
+                        getNucleus().kill(((CellAdapter) child).getCellName());
+                    } catch (IllegalArgumentException ignored) {
+                    }
                 }
             }
         }
