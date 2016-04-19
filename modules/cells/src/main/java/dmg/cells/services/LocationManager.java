@@ -1007,7 +1007,7 @@ public class LocationManager extends CellAdapter {
 
       private void startListener( int port , String securityContext ) throws Exception {
          String cellName  = "l*" ;
-         String inetClass = "dmg.cells.services.login.LoginManager" ;
+         String inetClass = "dmg.cells.services.login.SystemLoginManager" ;
          String cellClass = "dmg.cells.network.LocationMgrTunnel" ;
          String protocol;
          if( ( securityContext          == null ) ||
