@@ -127,6 +127,7 @@ public boolean equals( Object obj ){
   }
 
   public void        revertDirection(){
+      checkState(!_source.getSourceAddress().isDomainAddress(), "Cannot return envelope to a domain address.");
      _destination = _source.revert();
      _source      = new CellPath() ;
      _lastUmid    = _umid ;
