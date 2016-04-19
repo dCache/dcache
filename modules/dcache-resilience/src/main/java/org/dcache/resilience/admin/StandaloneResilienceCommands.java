@@ -65,8 +65,6 @@ import dmg.util.command.Command;
  * <p>Version of the commands to export in standalone mode.</p>
  */
 public final class StandaloneResilienceCommands extends ResilienceCommands {
-    @Command(name = "counts", hint = HINT_COUNTS, description = DESC_COUNTS)
-    class CountsCommand extends ResilienceCommands.CountsCommand {}
 
     @Command(name = "diag", hint = HINT_DIAG, description = DESC_DIAG)
     class DiagCommand extends ResilienceCommands.DiagCommand {}

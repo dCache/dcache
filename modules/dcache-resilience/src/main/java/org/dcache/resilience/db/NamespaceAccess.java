@@ -59,12 +59,10 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.db;
 
-import javax.sql.DataSource;
-import java.io.PrintWriter;
-import java.text.ParseException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -91,25 +89,6 @@ public interface NamespaceAccess {
                     = Collections.unmodifiableSet(
                     EnumSet.of(FileAttribute.ACCESS_TIME,
                                FileAttribute.LOCATIONS));
-
-    /**
-     * <p>Used by the admin command but not internally.</p>
-     *
-     * @param location pool name.
-     * @param writer to write the results to.
-     */
-    void getPnfsidCountsFor(String location, PrintWriter writer)
-                    throws CacheException;
-
-    /**
-     * <p>Used by the admin command but not internally.</p>
-     *
-     * @param location pool name.
-     * @param filter   integer inequality such as &gt;= 3, &lt; 2, = 1.
-     * @param writer to write the results to.
-     */
-    void getPnfsidCountsFor(String location, String filter, PrintWriter writer)
-                    throws CacheException, ParseException;
 
     /**
      * <p>Pass-through to namespace.</p>

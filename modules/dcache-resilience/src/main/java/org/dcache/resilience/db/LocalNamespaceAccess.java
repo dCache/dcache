@@ -62,13 +62,11 @@ package org.dcache.resilience.db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
+import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -77,9 +75,9 @@ import org.dcache.auth.Subjects;
 import org.dcache.chimera.BackEndErrorHimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.commons.util.SqlHelper;
-import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
+import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.ExceptionMessage;
@@ -109,83 +107,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                                     + "AND l.itype = 1 AND n.iaccess_latency = 1 "
                                     + "AND l.ilocation = ?";
 
-    static final String SQL_ADMIN_GET_COUNTS
-                    = "SELECT n.ipnfsid, count(*) "
-                    + "FROM t_locationinfo t1, t_locationinfo t2, t_inodes n "
-                    + "WHERE t1.inumber = t2.inumber "
-                    + "AND t1.inumber = n.inumber "
-                    + "AND t1.itype = 1 AND t2.itype = 1 "
-                    + "AND t2.ilocation = ? "
-                    + "GROUP BY n.ipnfsid ";
-
-    static final String SQL_ADMIN_GET_COUNTS_ORDERED
-                    = SQL_ADMIN_GET_COUNTS
-                    + "ORDER BY count(*)";
-
-    static final String SQL_ADMIN_GET_COUNTS_HAVING
-                    = SQL_ADMIN_GET_COUNTS
-                    + "HAVING count(*) %s ORDER BY count(*)";
-
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNamespaceAccess.class);
-
-    private static final String SQL_INVALID_INEQUALITY
-                    = "%s is not a valid inequality.";
-
-    /**
-     * <p>Checks that the expression represents a valid inequality for use
-     *      with the count queries.</p>
-     *
-     * @return the expression if valid.
-     * @throws ParseException if the expression is invalid.
-     */
-    private static String validateInequality(String expression)
-                    throws ParseException {
-        if (expression.startsWith("\\")) {
-            expression = expression.substring(1);
-        }
-
-        String validate = expression.trim();
-
-        if (validate.length() < 1) {
-            throw new ParseException(String.format(SQL_INVALID_INEQUALITY,
-                                                   expression), 0);
-        }
-
-        switch (validate.charAt(0)) {
-            case '=':
-            case '<':
-            case '>':
-                validate = validate.substring(1).trim();
-                break;
-
-            default:
-                throw new ParseException(String.format(SQL_INVALID_INEQUALITY,
-                                                       expression), 0);
-        }
-
-        if (validate.length() < 1) {
-            throw new ParseException(String.format(SQL_INVALID_INEQUALITY,
-                                                   expression), 1);
-        }
-
-        if (validate.charAt(0) == '=') {
-            validate = validate.substring(1).trim();
-        }
-
-        if (validate.length() < 1) {
-            throw new ParseException(String.format(SQL_INVALID_INEQUALITY,
-                                                   expression), 2);
-        }
-
-        try {
-            Integer.parseInt(validate);
-        } catch (NumberFormatException e) {
-            throw new ParseException(String.format("%s is not an integer.",
-                                                   expression), 2);
-        }
-
-        return expression;
-    }
 
     /**
      * <p>Handler for processing pnfs operations.</p>
@@ -209,45 +131,6 @@ public class LocalNamespaceAccess implements NamespaceAccess {
      * <p>Round-trip buffer used when running pool-based queries.</p>
      */
     private int fetchSize;
-
-    @Override
-    public void getPnfsidCountsFor(String location,
-                                                   PrintWriter writer)
-                    throws CacheException {
-        try {
-            getPnfsidCountsFor(location, null, writer);
-        } catch (ParseException e) {
-            // should not happen
-            throw new RuntimeException("parse error: should not occur. "
-                            + "This is a bug.", e);
-        }
-    }
-
-    @Override
-    public void getPnfsidCountsFor(String location,
-                                   String filter,
-                                   PrintWriter writer)
-                    throws CacheException, ParseException {
-        String sql = filter == null ? SQL_ADMIN_GET_COUNTS_ORDERED :
-                        String.format(SQL_ADMIN_GET_COUNTS_HAVING,
-                                    validateInequality(filter));
-
-        try {
-            Connection dbConnection = getConnection();
-            try {
-                printResults(dbConnection, sql, location, writer);
-            } catch (SQLException e) {
-                throw new IOHimeraFsException(e.getMessage());
-            } finally {
-                tryToClose(dbConnection);
-            }
-        } catch (IOHimeraFsException e) {
-            throw new CacheException(CacheException.RESOURCE,
-                                     String.format("Could not load cache "
-                                                     + "locations for %s.",
-                                                   location), e);
-        }
-    }
 
     @Override
     public FileAttributes getRequiredAttributes(PnfsId pnfsId)
@@ -360,47 +243,5 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             SqlHelper.tryToClose(resultSet);
             SqlHelper.tryToClose(statement);
         }
-    }
-
-    /**
-     * <p>Used by the queries which print replica counts.</p>
-     *
-     * <p>Log at info level so that progress is visible in pinboard.</p>
-     */
-    private void printResults(Connection connection,
-                              String query,
-                              String location,
-                              PrintWriter writer)
-                    throws SQLException {
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        try {
-            statement = connection.prepareStatement(query);
-            statement.setString(1, location);
-            if (Thread.currentThread().isInterrupted()) {
-                LOGGER.info("Printing counts for {} interrupted.", location);
-                return;
-            }
-            LOGGER.info("Fetching counts for {}.", location);
-            resultSet = statement.executeQuery();
-            boolean addCounts = resultSet.getMetaData().getColumnCount() == 2;
-            LOGGER.info("Printing counts for {}.", location);
-            while (resultSet.next()) {
-                if (Thread.currentThread().isInterrupted()) {
-                    LOGGER.info("Printing counts for {} interrupted.", location);
-                    break;
-                }
-                writer.print(resultSet.getString(1));
-                if (addCounts) {
-                    writer.print(":\t");
-                    writer.print(resultSet.getInt(2));
-                }
-                writer.println();
-            }
-        } finally {
-            SqlHelper.tryToClose(resultSet);
-            SqlHelper.tryToClose(statement);
-        }
-        LOGGER.info("Printing counts for {} completed.", location);
     }
 }

@@ -61,10 +61,6 @@ package org.dcache.resilience.admin;
 
 import com.google.common.collect.ImmutableSet;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -77,18 +73,16 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Option;
-import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
+import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolFilter;
 import org.dcache.resilience.data.PoolInfoFilter;
 import org.dcache.resilience.data.PoolInfoMap;
@@ -117,7 +111,6 @@ public abstract class ResilienceCommands implements CellCommandListener {
     static final String HINT_CHECK     =
                     "launch an operation to adjust replicas for "
                                     + "one or more pnfsids";
-    static final String HINT_COUNTS    = "list pnfsids and replica counts for a pool";
     static final String HINT_DIAG      = "print diagnostic statistics";
     static final String HINT_DIAG_HIST = "print diagnostic history";
     static final String HINT_DISABLE     = "turn off replication handling";
@@ -153,10 +146,6 @@ public abstract class ResilienceCommands implements CellCommandListener {
                                     + "turn processing of operations on or off "
                                     + "(start/shutdown), or displays info relevant "
                                     + "to operation processing and checkpointing.";
-    static final String DESC_COUNTS    =
-                    "Issues a query to the namespace; "
-                                    + "results are written to a file.  "
-                                    + "Executed asynchronously.";
     static final String DESC_DIAG      =
                     "Lists the total number of messages received  "
                                     + "and operations performed since last start "
@@ -294,118 +283,6 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
 
         protected abstract String doCall() throws Exception;
-    }
-
-    abstract class CountsCommand extends ResilienceCommand {
-        @Option(name = "eq",  usage = "Filter on '=' this value.")
-        Integer eq;
-
-        @Option(name = "gt",  usage = "Filter on '>' this value.")
-        Integer gt;
-
-        @Option(name = "lt",  usage = "Filter on '<' this value.")
-        Integer lt;
-
-        @Option(name = "cancel", usage = "Cancel the running job (default is false).")
-        boolean cancel = false;
-
-        @Argument(usage = "Specify a regular expression for pool names.")
-        String expression;
-
-        @Override
-        protected String doCall() throws Exception {
-            try {
-                StringBuilder builder = new StringBuilder();
-                Pattern pattern = Pattern.compile(expression);
-                String inequality;
-
-                if (eq != null) {
-                    inequality = "=" + eq;
-                } else if (gt != null) {
-                    inequality = ">" + gt;
-                } else if (lt != null) {
-                    inequality = "<" + lt;
-                } else {
-                    inequality = null;
-                }
-
-                poolInfoMap.getResilientPools().stream().forEach((pool) -> {
-                    if (pattern.matcher(pool).find()) {
-                        if (cancel) {
-                            synchronized(futureMap) {
-                                Future<?> future = futureMap.remove(pool);
-                                if (future != null) {
-                                    future.cancel(true);
-                                }
-                            }
-
-                            builder.append("cancelled job for ")
-                                   .append(pool).append("\n");
-                        } else {
-                            File file = printToFile(pool,
-                                                    resilienceDir,
-                                                    inequality);
-                            builder.append("   ")
-                                   .append(file.getAbsolutePath()).append("\n");
-                        }
-                    }
-                });
-
-                builder.insert(0, "Started jobs to write the lists "
-                                + "to the following files:\n\n");
-                builder.append("Check pinboard for progress.\n");
-
-                return builder.toString();
-            } catch (Exception e) {
-                return new ExceptionMessage(e).toString();
-            }
-        }
-
-        private File printToFile(String pool, String dir, String inequality) {
-            File file = new File(dir, pool);
-
-            Future<?> future = executor.submit(() -> {
-                synchronized(futureMap) {
-                    while (!futureMap.containsKey(pool)) {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            break;
-                        }
-                    }
-                }
-
-                if (!Thread.currentThread().isInterrupted()) {
-                    try (PrintWriter pw = new PrintWriter(new FileWriter(file,
-                                                                         false))) {
-                        try {
-                            if (inequality != null) {
-                                namespaceAccess.getPnfsidCountsFor(pool,
-                                                                   inequality,
-                                                                   pw);
-                            } else {
-                                namespaceAccess.getPnfsidCountsFor(pool, pw);
-                            }
-                        } catch (CacheException | ParseException e) {
-                            // write out the error to the file
-                            e.printStackTrace(pw);
-                        }
-                    } catch (IOException e) {
-                        // let it go ...
-                    }
-                }
-
-                synchronized(futureMap) {
-                    futureMap.remove(pool);
-                }
-            });
-
-            synchronized(futureMap) {
-                futureMap.put(pool, future);
-            }
-
-            return file;
-        }
     }
 
     abstract class DiagCommand extends ResilienceCommand {
