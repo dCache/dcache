@@ -181,8 +181,7 @@ public class      SystemCell
            try {
                _nucleus.kill(cellName);
            } catch (IllegalArgumentException e) {
-               _log.info("Problem killing : {} -> {}",
-                         cellName, e.getMessage());
+               _log.trace("Problem killing : {} -> {}", cellName, e.getMessage());
            }
        }
 
