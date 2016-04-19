@@ -133,11 +133,6 @@
       </constructor-arg>
     </bean>
 
-    <bean id="InaccessibleFileHandler" class="org.dcache.resilience.util.InaccessibleFileAlarmSender">
-      <description>Handles resilient files discovered to have no copies on readable pools</description>
-      <property name="parentDir" value="${resilience.inaccessible-files.directory}"/>
-    </bean>
-
     <bean id="Counters" class="org.dcache.resilience.util.OperationStatistics" init-method="initialize">
       <description>Statistics gathering</description>
       <property name="statisticsPath" value="${resilience.home}/pnfs-operation-statistics"/>
@@ -200,7 +195,6 @@
       <property name="downGracePeriod" value="${resilience.pool-down-grace-period}"/>
       <property name="downGracePeriodUnit" value="${resilience.pool-down-grace-period.unit}"/>
       <property name="handler" ref="PoolOpHandler"/>
-      <property name="inaccessibleFileHandler" ref="InaccessibleFileHandler"/>
       <property name="maxConcurrentRunning" value="${resilience.pool-scan-threads}"/>
       <property name="rescanWindow" value="${resilience.pool-scan.window}"/>
       <property name="rescanWindowUnit" value="${resilience.pool-scan.window.unit}"/>
@@ -212,7 +206,6 @@
     <bean id="FileOpHandler" class="org.dcache.resilience.handlers.FileOperationHandler">
       <description>Encapsulates the logic determining what needs to be done for a given pnfsid</description>
       <property name="completionHandler" ref="FileTaskCompletionHandler"/>
-      <property name="inaccessibleFileHandler" ref="InaccessibleFileHandler"/>
       <property name="pinManagerStub" ref="PinManager"/>
       <property name="poolStub" ref="Pools"/>
       <property name="namespace" ref="NamespaceAccess"/>

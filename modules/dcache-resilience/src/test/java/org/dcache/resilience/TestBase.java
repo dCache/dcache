@@ -85,11 +85,9 @@ import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.FileTaskCompletionHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
-import org.dcache.resilience.util.InaccessibleFileHandler;
 import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator;
 import org.dcache.vehicles.FileAttributes;
 
 public abstract class TestBase implements Cancellable {
@@ -119,9 +117,6 @@ public abstract class TestBase implements Cancellable {
     /*
      *  Injected or created by individual tests.
      */
-    protected InaccessibleFileHandler    inaccessibleFileHandler;
-    protected PoolSelectionUnitDecorator decorator;
-
     protected FileTaskCompletionHandler fileTaskCompletionHandler;
     protected PoolTaskCompletionHandler poolTaskCompletionHandler;
 
@@ -430,10 +425,6 @@ public abstract class TestBase implements Cancellable {
         }
     }
 
-    protected void setInaccessibleFileHandler(InaccessibleFileHandler handler) {
-        inaccessibleFileHandler = handler;
-    }
-
     protected void setLongExecutionMode(TestSynchronousExecutor.Mode mode) {
         longTaskExecutionMode = mode;
         setLongTaskExecutor();
@@ -480,8 +471,6 @@ public abstract class TestBase implements Cancellable {
     protected void wireFileOperationHandler() {
         fileTaskCompletionHandler.setMap(fileOperationMap);
         fileOperationHandler.setCompletionHandler(fileTaskCompletionHandler);
-        fileOperationHandler.setInaccessibleFileHandler(
-                        inaccessibleFileHandler);
         fileOperationHandler.setNamespace(testNamespaceAccess);
         fileOperationHandler.setPoolInfoMap(poolInfoMap);
         fileOperationHandler.setLocationSelector(locationSelector);

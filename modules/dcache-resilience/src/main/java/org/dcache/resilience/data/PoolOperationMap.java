@@ -83,7 +83,6 @@ import org.dcache.resilience.data.PoolOperation.NextAction;
 import org.dcache.resilience.data.PoolOperation.State;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.ExceptionMessage;
-import org.dcache.resilience.util.InaccessibleFileHandler;
 import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationStatistics;
@@ -155,7 +154,6 @@ public class PoolOperationMap extends RunnableModule {
     private PoolInfoMap             poolInfoMap;
     private PoolOperationHandler    handler;
     private FileOperationMap        fileOperationMap; // needed for cancellation
-    private InaccessibleFileHandler inaccessibleFileHandler;
 
     private int                 downGracePeriod;
     private TimeUnit            downGracePeriodUnit;
@@ -502,10 +500,6 @@ public class PoolOperationMap extends RunnableModule {
         this.handler = handler;
     }
 
-    public void setInaccessibleFileHandler(InaccessibleFileHandler handler) {
-        this.inaccessibleFileHandler = handler;
-    }
-
     public void setMaxConcurrentRunning(int maxConcurrentRunning) {
         this.maxConcurrentRunning = maxConcurrentRunning;
     }
@@ -664,10 +658,6 @@ public class PoolOperationMap extends RunnableModule {
             operation.setChildren(children);
             operation.lastScan = System.currentTimeMillis();
             operation.lastUpdate = operation.lastScan;
-
-            if (operation.currStatus == PoolStatusForResilience.DOWN) {
-                inaccessibleFileHandler.handleInaccessibleFilesIfExistOn(pool);
-            }
 
             if (children == 0 || operation.isComplete()) {
                 terminate(pool, operation);

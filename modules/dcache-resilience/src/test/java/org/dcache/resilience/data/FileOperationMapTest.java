@@ -71,14 +71,12 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
-import org.dcache.resilience.util.InaccessibleFileHandler;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.mock;
 
 public final class FileOperationMapTest extends TestBase {
     PnfsId         pnfsId;
@@ -98,8 +96,7 @@ public final class FileOperationMapTest extends TestBase {
         wireFileOperationMap();
         wireFileOperationHandler();
         initializeCounters();
-        fileOperationMap.initialize(() -> {
-        });
+        fileOperationMap.initialize(() -> {});
         fileOperationMap.setCopyThreads(1);
     }
 
@@ -366,7 +363,6 @@ public final class FileOperationMapTest extends TestBase {
     }
 
     private void setMocks() {
-        setInaccessibleFileHandler(mock(InaccessibleFileHandler.class));
         setShortExecutionMode(Mode.NOP);
         setLongExecutionMode(Mode.NOP);
     }

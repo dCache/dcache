@@ -70,11 +70,9 @@ import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.PoolStatusForResilience;
-import org.dcache.resilience.util.InaccessibleFileHandler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.mock;
 
 public class PoolOperationHandlerTest extends TestBase {
     String pool;
@@ -87,7 +85,6 @@ public class PoolOperationHandlerTest extends TestBase {
         createCounters();
         createPoolOperationHandler();
         createPoolOperationMap();
-        setMocks();
         createFileOperationHandler();
         createFileOperationMap();
         initializeCounters();
@@ -279,10 +276,6 @@ public class PoolOperationHandlerTest extends TestBase {
                 = new PoolStateUpdate(p, new PoolV2Mode(PoolV2Mode.ENABLED));
             poolInfoMap.updatePoolStatus(update);
         });
-    }
-
-    private void setMocks() {
-        setInaccessibleFileHandler(mock(InaccessibleFileHandler.class));
     }
 
     private void theResultingNumberOfPnfsOperationsSubmittedWas(int submitted) {

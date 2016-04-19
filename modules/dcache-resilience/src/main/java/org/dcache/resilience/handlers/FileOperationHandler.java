@@ -76,6 +76,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellPath;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.PoolSelectionStrategy;
@@ -83,17 +85,16 @@ import org.dcache.pool.migration.Task;
 import org.dcache.pool.migration.TaskParameters;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
+import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.StorageUnitConstraints;
 import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.DegenerateSelectionStrategy;
 import org.dcache.resilience.util.ExceptionMessage;
-import org.dcache.resilience.util.InaccessibleFileHandler;
 import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.RemoveLocationExtractor;
@@ -101,6 +102,8 @@ import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.StaticSinglePoolList;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
+
+//import org.dcache.resilience.util.InaccessibleFileHandler;
 
 /**
  * <p>Principal resilience logic component.</p>
@@ -120,6 +123,12 @@ public class FileOperationHandler {
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
                     = ImmutableList.of(
                     new StickyRecord("system", StickyRecord.NON_EXPIRING));
+
+    private static final String INACCESSIBLE_FILE_MESSAGE
+                    = "Resilient pool {} is inaccessible but it contains  "
+                    + "one or more files with no currently readable locations. "
+                    + "Administrator intervention is required.  Run the command "
+                    + "'inaccessible {}' to produce a list of orphaned pnfsids.";
 
     /**
      * <p>For communication with the {@link ResilientFileTask}.</p>
@@ -143,7 +152,6 @@ public class FileOperationHandler {
     private ExecutorService           taskService;
     private ScheduledExecutorService  scheduledService;
     private FileTaskCompletionHandler completionHandler;
-    private InaccessibleFileHandler   inaccessibleFileHandler;
 
     public ExecutorService getTaskService() {
         return taskService;
@@ -163,8 +171,6 @@ public class FileOperationHandler {
                 /*
                  * This is the only copy.  Do not remove.
                  */
-                inaccessibleFileHandler.registerInaccessibleFile(pool, pnfsId);
-                inaccessibleFileHandler.handleInaccessibleFilesIfExistOn(pool);
                 return;
             }
 
@@ -460,9 +466,13 @@ public class FileOperationHandler {
             }
 
             if (pindex != null) {
-                inaccessibleFileHandler.registerInaccessibleFile(
-                                poolInfoMap.getPool(pindex),
-                                pnfsId);
+                String pool = poolInfoMap.getPool(pindex);
+                /*
+                 * Send alarm keyed to pool;
+                 * this will increment the count on the alarm
+                 */
+                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+                                pool), INACCESSIBLE_FILE_MESSAGE, pool, pool);
             }
 
             String error = String.format(
@@ -485,11 +495,6 @@ public class FileOperationHandler {
     public void setCompletionHandler(
                     FileTaskCompletionHandler completionHandler) {
         this.completionHandler = completionHandler;
-    }
-
-    public void setInaccessibleFileHandler(
-                    InaccessibleFileHandler inaccessibleFileHandler) {
-        this.inaccessibleFileHandler = inaccessibleFileHandler;
     }
 
     public void setLocationSelector(LocationSelector locationSelector) {

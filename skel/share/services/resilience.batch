@@ -31,7 +31,6 @@ check -strong resilience.file-copy-threads
 check -strong resilience.pool-scan-threads
 
 check -strong resilience.home
-check -strong resilience.inaccessible-files.directory
 check -strong resilience.pnfs-fetch-size
 check -strong resilience.pnfs-max-queue-allocation
 check -strong resilience.pnfs-scan.period

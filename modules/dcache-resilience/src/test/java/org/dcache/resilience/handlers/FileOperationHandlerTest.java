@@ -59,9 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.handlers;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -76,12 +74,11 @@ import org.dcache.pool.migration.Task;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestMessageProcessor;
 import org.dcache.resilience.TestSynchronousExecutor.Mode;
-import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileUpdate;
+import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.StorageUnitConstraints;
-import org.dcache.resilience.util.InaccessibleFileHandler;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.vehicles.FileAttributes;
@@ -94,10 +91,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public final class FileOperationHandlerTest extends TestBase
-                implements InaccessibleFileHandler,
-                TestMessageProcessor {
-    final Multimap<String, PnfsId> inaccessible = ArrayListMultimap.create();
-
+                implements TestMessageProcessor {
     FileUpdate           update;
     FileAttributes       attributes;
     RemoveReplicaMessage repRmMessage;
@@ -108,16 +102,6 @@ public final class FileOperationHandlerTest extends TestBase
     Integer              originalSource;
     boolean suppressAlarm = false;
     boolean rmMessageFailure = false;
-
-    @Override
-    public void registerInaccessibleFile(String pool, PnfsId pnfsId) {
-        inaccessible.put(pool, pnfsId);
-    }
-
-    @Override
-    public void handleInaccessibleFilesIfExistOn(String pool) {
-        // NOP
-    }
 
     @Override
     public void processMessage(Message message) throws Exception {
@@ -204,44 +188,12 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     @Test
-    public void shouldNotReportInaccessibleIfPoolRemovedFromGroup()
-                    throws CacheException, IOException, InterruptedException {
-        setUpTest(false);
-        givenAFileUpdateFromAPoolScan();
-        givenAFileUpdateFromAPoolScanForPoolRemovedFromGroup();
-        whenHandleUpdateIsCalled();
-        whenVerifyIsRun();
-        assertFalse(inaccessible.containsEntry(update.pool, update.pnfsId));
-    }
-
-    @Test
-    public void shouldNotReportInaccessibleIfRetentionPolicyIsCustodial()
-                    throws CacheException, IOException, InterruptedException {
-        setUpTest(false);
-        givenACustodialFileUpdateFromAPoolScan();
-        whenHandleUpdateIsCalled();
-        whenVerifyIsRun();
-        assertFalse(inaccessible.containsEntry(update.pool, update.pnfsId));
-    }
-
-    @Test
     public void shouldNotSendSetStickyMessageOnScan()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
         givenAFileUpdateFromAPoolScan();
         whenHandleUpdateIsCalled();
         assertFalse(update.shouldVerifySticky());
-    }
-
-    @Test
-    public void shouldReportInaccessibleIfOnlyCopyOnDownPool()
-                    throws CacheException, IOException, InterruptedException {
-        setUpTest(false);
-        givenAFileUpdateFromAPoolScan();
-        givenSourcePoolIsDown();
-        whenHandleUpdateIsCalled();
-        whenVerifyIsRun();
-        assertTrue(inaccessible.containsEntry(update.pool, update.pnfsId));
     }
 
     @Test
@@ -575,7 +527,6 @@ public final class FileOperationHandlerTest extends TestBase
         } else {
             setScheduledExecutionMode(Mode.NOP);
         }
-        setInaccessibleFileHandler(this);
         createCounters();
         createPoolOperationHandler();
         createPoolOperationMap();
