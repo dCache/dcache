@@ -20,20 +20,21 @@ package org.dcache.services.httpd.handlers;
 import org.eclipse.jetty.plus.jndi.EnvEntry;
 import org.eclipse.jetty.webapp.WebAppContext;
 
-import javax.naming.NamingException;
-
 import java.util.Map;
 import java.util.Properties;
+import javax.naming.NamingException;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.EnvironmentAware;
+import org.dcache.poolmanager.RemotePoolMonitor;
 
 public class WebAppHandler extends WebAppContext
     implements EnvironmentAware, CellMessageSender
 {
     public static final String CELL_ENDPOINT = "serviceCellEndpoint";
     public static final String JNDI_ARGS = "jndiArgs";
+    public static final String POOL_MONITOR = "poolMonitor";
 
     private static final String[] CONFIGURATION_CLASSES = {
             "org.eclipse.jetty.webapp.WebInfConfiguration",
@@ -47,6 +48,7 @@ public class WebAppHandler extends WebAppContext
 
     private Map<String, Object> environment;
     private CellEndpoint endpoint;
+    private RemotePoolMonitor remotePoolMonitor;
 
     public WebAppHandler()
     {
@@ -65,6 +67,10 @@ public class WebAppHandler extends WebAppContext
         this.endpoint = endpoint;
     }
 
+    public void setPoolMonitor(RemotePoolMonitor remotePoolMonitor) {
+        this.remotePoolMonitor = remotePoolMonitor;
+    }
+
     @Override
     protected void doStart() throws Exception
     {
@@ -78,6 +84,7 @@ public class WebAppHandler extends WebAppContext
          * and env entries are scoped to the webapp context
          */
         new EnvEntry(this, CELL_ENDPOINT, endpoint, true);
+        new EnvEntry(this, POOL_MONITOR, remotePoolMonitor, true);
 
         Properties properties = new Properties();
         for (String key : environment.keySet()) {

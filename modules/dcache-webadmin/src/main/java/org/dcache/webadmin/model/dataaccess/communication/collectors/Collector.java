@@ -94,7 +94,6 @@ public abstract class Collector implements Runnable,
         this.factory = factory;
     }
 
-    @Required
     public void setCellStub(CellStub cellstub) {
         _cellStub = cellstub;
     }

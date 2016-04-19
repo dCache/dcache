@@ -30,6 +30,7 @@ check -strong httpd.service.poolmanager
 check -strong httpd.service.spacemanager
 check httpd.loginbroker.update-topic
 check httpd.loginbroker.request-topic
+check httpd.pool-monitor-topic
 check -strong httpd.limits.idle-time
 check -strong httpd.limits.idle-time.unit
 check -strong httpd.limits.threads

@@ -29,11 +29,18 @@
         <property name="name" value="${httpd.cell.name}-jetty"/>
     </bean>
 
+    <bean id="pool-manager" class="org.dcache.cells.CellStub"/>
+
+    <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
+        <property name="poolManagerStub" ref="pool-manager"/>
+    </bean>
+
     <bean id="delegator" class="org.dcache.services.httpd.handlers.HandlerDelegator"/>
 
     <bean id="webapp-handler" class="org.dcache.services.httpd.handlers.WebAppHandler" scope="prototype">
         <property name="defaultsDescriptor" value="${httpd.container.default-webapp}"/>
         <property name="extractWAR" value="false"/>
+        <property name="poolMonitor" ref="pool-monitor"/>
     </bean>
 
     <bean id="jetty" class="org.dcache.services.httpd.Server">

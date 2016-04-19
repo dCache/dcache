@@ -18,6 +18,7 @@
     <context:annotation-config/>
 
     <jee:jndi-lookup id="ServiceCellEndpoint" jndi-name="java:comp/env/serviceCellEndpoint"/>
+    <jee:jndi-lookup id="PoolMonitor" jndi-name="java:comp/env/poolMonitor"/>
 
     <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
@@ -37,13 +38,6 @@
         <property name="destination" value="${httpd.service.billing}"/>
         <property name="timeout" value="${httpd.service.billing.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.billing.timeout.unit}"/>
-    </bean>
-
-    <bean id="PoolMonitorCollectorCellStub" class="org.dcache.cells.CellStub">
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
-        <property name="destination" value="${httpd.service.poolmanager}"/>
-        <property name="timeout" value="${httpd.service.poolmonitor-collector.timeout}"/>
-        <property name="timeoutUnit" value="${httpd.service.poolmonitor-collector.timeout.unit}"/>
     </bean>
 
     <bean id="ActiveTransfersCollectorCellStub" class="org.dcache.cells.CellStub">
@@ -187,13 +181,13 @@
                 </bean>
                 <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector"
                     init-method="initialize">
-                    <property name="cellStub" ref="PoolMonitorCollectorCellStub"/>
                     <property name="name" value="PoolMonitor Collector"/>
                     <property name="sleepInterval" value="${httpd.service.poolmonitor-collector.period}"/>
                     <property name="sleepIntervalUnit" value="${httpd.service.poolmonitor-collector.period.unit}"/>
                     <property name="algorithmFactory" ref="ExponentialBackoff"/>
                     <property name="plottingEnabled" value="${httpd.enable.plots.pool-queue}"/>
                     <property name="rrdAgent" ref="RrdPoolInfoAgent"/>
+                    <property name="poolMonitor" ref="PoolMonitor"/>
                 </bean>
                 <bean id="SpaceTokenCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.SpaceTokenCollector"
                     init-method="initialize">
