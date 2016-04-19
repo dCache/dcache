@@ -110,6 +110,12 @@ public class CellRoute implements Serializable
                 getTypeOf(args));
     }
 
+    public CellRoute(String dest, CellAddressCore gateway, int type)
+            throws IllegalArgumentException
+    {
+        this(dest, gateway.toString(), type);
+    }
+
     public CellRoute(String dest, String gateway, String type)
             throws IllegalArgumentException
     {

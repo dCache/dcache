@@ -978,9 +978,19 @@ public class CellNucleus implements ThreadFactory
     //
     // the routing stuff
     //
-    public void routeAdd(CellRoute  route) throws IllegalArgumentException {
+
+    /**
+     * Installs a new route in the routing table.
+     *
+     * @param route The route to add
+     * @throws IllegalArgumentException If the route is a duplicate or if it routes through
+     *                                  a non-existing local cell.
+     */
+    public void routeAdd(CellRoute route) throws IllegalArgumentException
+    {
         __cellGlue.routeAdd(route);
     }
+
     public void routeDelete(CellRoute  route) throws IllegalArgumentException {
         __cellGlue.routeDelete(route);
     }

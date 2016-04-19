@@ -115,7 +115,7 @@ class CellGlue
 
     void subscribe(CellNucleus cell, String topic)
     {
-        routeAdd(new CellRoute(topic, cell.getThisAddress().toString(), CellRoute.TOPIC));
+        routeAdd(new CellRoute(topic, cell.getThisAddress(), CellRoute.TOPIC));
     }
 
     Map<String, Object> getCellContext()
@@ -130,6 +130,10 @@ class CellGlue
 
     public void routeAdd(CellRoute route)
     {
+        CellAddressCore target = route.getTarget();
+        if (target.getCellDomainName().equals(getCellDomainName()) && !_cellList.containsKey(target.getCellName())) {
+            throw new IllegalArgumentException("No such cell: " + target);
+        }
         _routingTable.add(route);
         sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_ADDED_EVENT));
     }

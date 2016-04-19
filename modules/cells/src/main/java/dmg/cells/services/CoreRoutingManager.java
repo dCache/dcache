@@ -24,6 +24,9 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +44,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -56,6 +60,7 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.CellTunnelInfo;
+import dmg.cells.nucleus.FutureCellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.Args;
@@ -122,16 +127,33 @@ public class CoreRoutingManager
     /**
      * Tunnels to core domains.
      */
-    private final Map<String,CellTunnelInfo> coreTunnels = new HashMap<>();
+    private final Map<CellAddressCore,CellTunnelInfo> coreTunnels = new HashMap<>();
 
     /**
      * Tunnels to satellite domains.
      */
-    private final Map<String,CellTunnelInfo> satelliteTunnels = new HashMap<>();
+    private final Map<CellAddressCore,CellTunnelInfo> satelliteTunnels = new HashMap<>();
+
+    /**
+     * Default routes that still have to be added.
+     *
+     * Routing manager when running in a satellite domain adds default routes whenever
+     * it sees a new domain route to a core domain. To give other domains time to connect
+     * to a newly created core domain, the installation of all but the first default route
+     * is delayed for a moment.
+     */
+    private final List<CellRoute> delayedDefaultRoutes = new ArrayList<>();
+
+    /**
+     * A non-system cell that acts as an early warning if the domain is shutting down. Upon shutdown
+     * we inform all downstream routing managers to remove their default routes pointing to this
+     * domain. That way we can achieve a clean shutdown.
+     */
+    private volatile CellAdapter canary;
 
     public CoreRoutingManager(String name, String arguments)
     {
-        super(name,"System", arguments);
+        super(name, "System", arguments);
         nucleus = getNucleus();
         nucleus.addCellEventListener(this);
         role = getArgs().hasOption("role")
@@ -140,8 +162,48 @@ public class CoreRoutingManager
     }
 
     @Override
-    public void cleanUp()
+    protected void startUp() throws ExecutionException, InterruptedException
     {
+        if (role == CellDomainRole.CORE) {
+            canary = new CellAdapter(getCellName() + "-canary", "Generic", "") {
+                @Override
+                protected void cleanUp()
+                {
+                    notifyDownstreamOfDomainDeath();
+                }
+
+                @Override
+                public void getInfo(PrintWriter pw)
+                {
+                    pw.println("If I die, downstream domains will drop their default routes to my domain.");
+                }
+            };
+            canary.start().get();
+        }
+    }
+
+    private synchronized void notifyDownstreamOfDomainDeath()
+    {
+        canary = null;
+        try {
+            sendToPeers(
+                    new PeerShutdownNotification(getCellDomainName()), satelliteTunnels.values(), 1000).get();
+        } catch (ExecutionException e) {
+            LOG.info("Failed to notify downstream of shutdown: {}", e.toString());
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    @Override
+    public synchronized void cleanUp()
+    {
+        CellAdapter canary = this.canary;
+        if (canary != null) {
+            try {
+                getNucleus().kill(canary.getCellName());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
         executor.shutdown();
     }
 
@@ -170,21 +232,35 @@ public class CoreRoutingManager
 
     private synchronized void sendToCoreDomains()
     {
-        sendCoreUpdate(new CoreRouteUpdate(localExports, localSubscriptions.values()), coreTunnels.values());
+        sendToPeers(new CoreRouteUpdate(localExports, localSubscriptions.values()), coreTunnels.values());
     }
 
     private synchronized void sendToSatelliteDomains()
     {
-        sendCoreUpdate(new CoreRouteUpdate(localExports), satelliteTunnels.values());
+        sendToPeers(new CoreRouteUpdate(localExports), satelliteTunnels.values());
     }
 
-    private void sendCoreUpdate(CoreRouteUpdate msg, Collection<CellTunnelInfo> tunnels)
+    private void sendToPeers(Serializable msg, Collection<CellTunnelInfo> tunnels)
     {
         CellAddressCore peer = new CellAddressCore(nucleus.getCellName());
         for (CellTunnelInfo tunnel : tunnels) {
             CellAddressCore domain = new CellAddressCore("*", tunnel.getRemoteCellDomainInfo().getCellDomainName());
             nucleus.sendMessage(new CellMessage(new CellPath(domain, peer), msg), false, true);
         }
+    }
+
+    private ListenableFuture<List<CellMessage>> sendToPeers(Serializable msg, Collection<CellTunnelInfo> tunnels, long timeout)
+    {
+        List<FutureCellMessageAnswerable> futures = new ArrayList<>();
+        CellAddressCore peer = new CellAddressCore(nucleus.getCellName());
+        for (CellTunnelInfo tunnel : tunnels) {
+            CellAddressCore domain = new CellAddressCore("*", tunnel.getRemoteCellDomainInfo().getCellDomainName());
+            FutureCellMessageAnswerable future = new FutureCellMessageAnswerable();
+            futures.add(future);
+            nucleus.sendMessage(new CellMessage(new CellPath(domain, peer), msg), false, true,
+                                future, MoreExecutors.directExecutor(), timeout);
+        }
+        return Futures.allAsList(futures);
     }
 
     private void updateRoutes(String domain, Collection<String> destinations, Multimap<String, String> routes, int type)
@@ -277,6 +353,26 @@ public class CoreRoutingManager
             if (legacyTopicUpdates.put(domain, ((TopicRouteUpdate) obj).getTopics()) == null) {
                 executor.execute(() -> updateTopicRoutes(domain, legacyTopicUpdates.remove(domain)));
             }
+        } else if (obj instanceof PeerShutdownNotification) {
+            PeerShutdownNotification notification = (PeerShutdownNotification) obj;
+            String remoteDomain = notification.getDomainName();
+            synchronized (this) {
+                coreTunnels.values().stream()
+                        .filter(i -> i.getRemoteCellDomainInfo().getCellDomainName().equals(remoteDomain))
+                        .forEach(i -> {
+                            CellRoute route = new CellRoute(null, i.getTunnel(), CellRoute.DEFAULT);
+                            delayedDefaultRoutes.remove(route);
+                            if (!hasAlternativeDefaultRoute(route)) {
+                                installDefaultRoute();
+                            }
+                            try {
+                                nucleus.routeDelete(route);
+                            } catch (IllegalArgumentException ignored) {
+                            }
+                        });
+            }
+            msg.revertDirection();
+            sendMessage(msg);
         } else {
             LOG.warn("Unidentified message ignored: {}", obj);
         }
@@ -320,10 +416,21 @@ public class CoreRoutingManager
             Optional<CellTunnelInfo> tunnelInfo = getTunnelInfo(cr.getTarget());
             tunnelInfo
                     .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE)
-                    .ifPresent(i -> { coreTunnels.put(i.getTunnelName(), i); sendToCoreDomains(); });
+                    .ifPresent(i -> { coreTunnels.put(i.getTunnel(), i); sendToCoreDomains(); });
             tunnelInfo
                     .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.SATELLITE)
-                    .ifPresent(i -> { satelliteTunnels.put(i.getTunnelName(), i); sendToSatelliteDomains(); });
+                    .ifPresent(i -> { satelliteTunnels.put(i.getTunnel(), i); sendToSatelliteDomains(); });
+            tunnelInfo
+                    .filter(i -> i.getLocalCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
+                                 i.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE)
+                    .ifPresent(i -> {
+                        delayedDefaultRoutes.add(new CellRoute(null, i.getTunnel(), CellRoute.DEFAULT));
+                        if (nucleus.getRoutingTable().hasDefaultRoute()) {
+                            invokeLater(this::installDefaultRoute);
+                        } else {
+                            installDefaultRoute();
+                        }
+                    });
             break;
         case CellRoute.TOPIC:
             String topic = cr.getCellName();
@@ -334,7 +441,7 @@ public class CoreRoutingManager
             }
             break;
         case CellRoute.DEFAULT:
-            LOG.info("Default route was added");
+            LOG.info("Default route {} was added", cr);
             break;
         }
     }
@@ -348,7 +455,7 @@ public class CoreRoutingManager
             updateTopicRoutes(cr.getDomainName(), Collections.emptyList());
             updateWellknownRoutes(cr.getDomainName(), Collections.emptyList());
             getTunnelInfo(cr.getTarget())
-                    .map(CellTunnelInfo::getTunnelName)
+                    .map(CellTunnelInfo::getTunnel)
                     .ifPresent(name -> { coreTunnels.remove(name); satelliteTunnels.remove(name); });
             break;
         case CellRoute.TOPIC:
@@ -363,10 +470,29 @@ public class CoreRoutingManager
         }
     }
 
+    private synchronized void installDefaultRoute()
+    {
+        for (CellRoute route : delayedDefaultRoutes) {
+            try {
+                nucleus.routeAdd(route);
+            } catch (IllegalArgumentException e) {
+                LOG.info("Failed to add route: {}", e.getMessage());
+            }
+        }
+        delayedDefaultRoutes.clear();
+    }
+
+    private boolean hasAlternativeDefaultRoute(CellRoute route)
+    {
+        return asList(nucleus.getRoutingList()).stream()
+                .filter(r -> r.getRouteType() == CellRoute.DEFAULT)
+                .anyMatch(r -> !r.equals(route));
+    }
+
     private Optional<CellTunnelInfo> getTunnelInfo(CellAddressCore tunnel)
     {
         return nucleus.getCellTunnelInfos().stream()
-                .filter(i -> i.getTunnelName().equals(tunnel.getCellName()))
+                .filter(i -> i.getTunnel().equals(tunnel))
                 .findAny();
     }
 
@@ -392,4 +518,5 @@ public class CoreRoutingManager
                         toMap(Map.Entry::getKey, e -> Sets.newHashSet(e.getValue())))
         };
     }
+
 }

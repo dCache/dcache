@@ -140,47 +140,14 @@ public class LocationMgrTunnel
 
     private void installRoutes()
     {
-        installDomainRoute();
-
-        /* If connecting a satellite to a core domain, add a default route.
-         */
-        if (_localDomainInfo.getRole() == CellDomainRole.SATELLITE &&
-            _remoteDomainInfo.getRole() == CellDomainRole.CORE) {
-            /* If we already got a default route, then we delay a moment
-             * to allow all other domains to connect first.
-             */
-            if (getNucleus().getRoutingTable().hasDefaultRoute()) {
-                invokeLater(this::installDefaultRoute);
-            } else {
-                installDefaultRoute();
-            }
-        }
-    }
-
-    private void installDomainRoute()
-    {
         String domain = getRemoteDomainName();
         CellNucleus nucleus = getNucleus();
 
         /* Add domain route.
          */
-        CellRoute route = new CellRoute(domain,
-                                        nucleus.getThisAddress().toString(),
-                                        CellRoute.DOMAIN);
+        CellRoute route = new CellRoute(domain, nucleus.getThisAddress(), CellRoute.DOMAIN);
         try {
             nucleus.routeAdd(route);
-        } catch (IllegalArgumentException e) {
-            _log.warn("Failed to add route: {}", e.getMessage());
-        }
-    }
-
-    private void installDefaultRoute()
-    {
-        CellNucleus nucleus = getNucleus();
-        CellRoute defaultRoute =
-                new CellRoute(null, nucleus.getThisAddress().toString(), CellRoute.DEFAULT);
-        try {
-            nucleus.routeAdd(defaultRoute);
         } catch (IllegalArgumentException e) {
             _log.warn("Failed to add route: {}", e.getMessage());
         }
@@ -254,7 +221,7 @@ public class LocationMgrTunnel
     @Override
     public CellTunnelInfo getCellTunnelInfo()
     {
-        return new CellTunnelInfo(getCellName(), _localDomainInfo, _remoteDomainInfo);
+        return new CellTunnelInfo(getNucleus().getThisAddress(), _localDomainInfo, _remoteDomainInfo);
     }
 
     private String getRemoteDomainName()
