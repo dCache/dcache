@@ -264,8 +264,6 @@
         <property name="readOnly" value="${webdav.authz.readonly}"/>
         <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
         <property name="realm" value="${webdav.authn.realm}"/>
-        <property name="pathMapper" ref="path-mapper"/>
-        <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
     </bean>
 
     <bean id="webdavhandlers" class="org.eclipse.jetty.server.handler.HandlerList">
@@ -319,6 +317,10 @@
                             </constructor-arg>
                         </bean>
                     </property>
+                </bean>
+                <bean class="org.dcache.webdav.RedirectPathHandler">
+                    <property name="pathMapper" ref="path-mapper"/>
+                    <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
                 </bean>
                 <bean class="org.dcache.webdav.MiltonHandler">
                     <property name="httpManager" ref="http-manager"/>
