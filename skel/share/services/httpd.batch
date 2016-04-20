@@ -40,6 +40,8 @@ check httpd.html.dcache-instance-name
 
 check -strong httpd.service.pool.timeout
 check -strong httpd.service.pool.timeout.unit
+check -strong httpd.service.poolmanager.timeout
+check -strong httpd.service.poolmanager.timeout.unit
 check -strong httpd.service.billing.timeout
 check -strong httpd.service.billing.timeout.unit
 check -strong httpd.service.poolmonitor-collector.timeout

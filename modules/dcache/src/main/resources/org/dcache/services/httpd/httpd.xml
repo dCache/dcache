@@ -29,7 +29,11 @@
         <property name="name" value="${httpd.cell.name}-jetty"/>
     </bean>
 
-    <bean id="pool-manager" class="org.dcache.cells.CellStub"/>
+    <bean id="pool-manager" class="org.dcache.cells.CellStub">
+        <property name="destination" value="${httpd.service.poolmanager}"/>
+        <property name="timeout" value="${httpd.service.poolmanager.timeout}"/>
+        <property name="timeoutUnit" value="${httpd.service.poolmanager.timeout.unit}"/>
+    </bean>
 
     <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
         <property name="poolManagerStub" ref="pool-manager"/>
