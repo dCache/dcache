@@ -102,8 +102,7 @@
       <description>Processes login requests</description>
       <property name="loginStrategies">
 	  <list>
-          <bean id="remote-identity-strategy" class="org.dcache.services.login.RemoteLoginStrategy">
-              <description>Processes mapping requests</description>
+          <bean class="org.dcache.services.login.RemoteLoginStrategy">
               <property name="cellStub" ref="login-stub"/>
           </bean>
 	  </list>
