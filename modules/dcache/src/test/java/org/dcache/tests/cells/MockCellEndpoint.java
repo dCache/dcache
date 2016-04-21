@@ -10,6 +10,7 @@ import java.util.concurrent.Executor;
 
 import diskCacheV111.vehicles.Message;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -22,9 +23,11 @@ public class MockCellEndpoint implements CellEndpoint
     private final Map<CellPath, Map<String, List<MessageEnvelope>>> messageQueue = new HashMap<>();
     private final Map<String, Map<Class<?>, MessageAction>> messageActions = new HashMap<>();
     private final CellInfo info;
+    private final CellAddressCore address;
 
     public MockCellEndpoint(String name)
     {
+        address = new CellAddressCore(name);
         info = new CellInfo();
         info.setCellName(name);
         info.setDomainName("mockDomain");
@@ -83,6 +86,7 @@ public class MockCellEndpoint implements CellEndpoint
     public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout)
             throws SerializationException
     {
+        envelope.addSourceAddress(address);
         Map<String, List<MessageEnvelope>> messages = messageQueue.get(envelope.getDestinationPath());
         List<MessageEnvelope> envelopes = messages.get(envelope.getMessageObject().getClass().getName());
         MessageEnvelope m = envelopes.get(0);
@@ -95,6 +99,7 @@ public class MockCellEndpoint implements CellEndpoint
     @Override
     public void sendMessage(CellMessage envelope)
     {
+        envelope.addSourceAddress(address);
         String destinations = envelope.getDestinationPath().getCellName();
 
         Map<Class<?>, MessageAction> actions = messageActions.get(destinations);

@@ -249,7 +249,7 @@ public class RepositorySubsystemTest
             throw new IOException("Could not create meta dir");
         }
 
-        cell = new CellEndpointHelper();
+        cell = new CellEndpointHelper(address);
         pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
         pnfs.setCellEndpoint(cell);
 

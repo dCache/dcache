@@ -21,12 +21,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.SerializationException;
-
-import org.dcache.util.Args;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -36,6 +35,12 @@ import static com.google.common.base.Preconditions.checkState;
 public class CellEndpointHelper implements CellEndpoint
 {
     private volatile CellStubHelper _test;
+    private CellAddressCore _address;
+
+    public CellEndpointHelper(CellAddressCore address)
+    {
+        _address = address;
+    }
 
     public void execute(CellStubHelper test) throws Exception
     {
@@ -57,6 +62,7 @@ public class CellEndpointHelper implements CellEndpoint
     public void sendMessage(CellMessage envelope)
             throws SerializationException
     {
+        envelope.addSourceAddress(_address);
         currentTest().messageArrived(envelope);
     }
 
@@ -64,6 +70,7 @@ public class CellEndpointHelper implements CellEndpoint
     public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout)
             throws SerializationException
     {
+        envelope.addSourceAddress(_address);
         CellMessage answer = currentTest().messageArrived(envelope);
         Object obj = answer.getMessageObject();
         if (obj instanceof Exception) {

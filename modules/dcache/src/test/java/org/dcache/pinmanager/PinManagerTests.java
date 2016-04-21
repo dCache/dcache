@@ -57,7 +57,6 @@ import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
-import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.pinmanager.model.Pin.State.PINNED;
@@ -120,13 +119,13 @@ public class PinManagerTests
         processor.setScheduledExecutor(new TestExecutor());
         processor.setExecutor(MoreExecutors.directExecutor());
         processor.setDao(dao);
-        processor.setPoolStub(new TestStub() {
+        processor.setPoolStub(new TestStub(new CellAddressCore("PinManager")) {
                 public PoolSetStickyMessage messageArrived(PoolSetStickyMessage msg)
                 {
                     return msg;
                 }
             });
-        processor.setPoolManagerStub(new TestStub() {
+        processor.setPoolManagerStub(new TestStub(new CellAddressCore("PinManager")) {
                 public PoolMgrSelectReadPoolMsg messageArrived(PoolMgrSelectReadPoolMsg msg)
                 {
                     msg.setPoolName(POOL1);
@@ -193,7 +192,7 @@ public class PinManagerTests
 
         MovePinRequestProcessor processor = new MovePinRequestProcessor();
         processor.setDao(dao);
-        processor.setPoolStub(new TestStub() {
+        processor.setPoolStub(new TestStub(new CellAddressCore("PinManager")) {
                 public PoolSetStickyMessage messageArrived(PoolSetStickyMessage msg)
                 {
                     return msg;
@@ -598,17 +597,19 @@ class TestExecutor
 
 class TestEndpoint implements CellEndpoint, CellMessageReceiver
 {
+    private final CellAddressCore _address;
     protected CellMessageDispatcher _dispatcher =
         new CellMessageDispatcher("messageArrived");
 
-    public TestEndpoint()
+    public TestEndpoint(CellAddressCore address)
     {
+        _address = address;
         _dispatcher.addMessageListener(this);
     }
 
-    public TestEndpoint(CellMessageReceiver o)
+    public TestEndpoint(CellAddressCore address, CellMessageReceiver o)
     {
-        this();
+        this(address);
         _dispatcher.addMessageListener(o);
     }
 
@@ -650,6 +651,7 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
     public void sendMessage(CellMessage envelope)
         throws SerializationException
     {
+        envelope.addSourceAddress(_address);
         process(envelope);
     }
 
@@ -660,6 +662,7 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
                             long timeout)
         throws SerializationException
     {
+        envelope.addSourceAddress(_address);
         CellMessage answer = process(envelope);
         if (answer != null) {
             callback.answerArrived(envelope, answer);
@@ -685,9 +688,9 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
 
 class TestStub extends CellStub implements CellMessageReceiver
 {
-    public TestStub()
+    public TestStub(CellAddressCore address)
     {
         setDestination("dummy");
-        setCellEndpoint(new TestEndpoint(this));
+        setCellEndpoint(new TestEndpoint(address, this));
     }
 }
