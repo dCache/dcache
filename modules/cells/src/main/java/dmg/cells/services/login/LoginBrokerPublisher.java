@@ -264,11 +264,6 @@ public class LoginBrokerPublisher
     }
 
     @Override
-    public void cellExported(CellEvent ce)
-    {
-    }
-
-    @Override
     public synchronized void routeAdded(CellEvent ce)
     {
         CellRoute route = (CellRoute) ce.getSource();

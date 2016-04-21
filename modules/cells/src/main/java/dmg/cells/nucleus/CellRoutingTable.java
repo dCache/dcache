@@ -1,6 +1,8 @@
 package dmg.cells.nucleus;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.math.IntMath;
 
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,12 +30,13 @@ public class CellRoutingTable implements Serializable
 {
     private static final long serialVersionUID = -1456280129622980563L;
 
-    private final SetMultimap<String, CellRoute> _wellknown = LinkedHashMultimap.create();
+    private final ListMultimap<String, CellRoute> _queue = ArrayListMultimap.create();
     private final SetMultimap<String, CellRoute> _domain = LinkedHashMultimap.create();
     private final SetMultimap<String, CellRoute> _exact = LinkedHashMultimap.create();
     private final Map<String, CopyOnWriteArraySet<CellRoute>> _topic = new HashMap<>();
     private final AtomicReference<CellRoute> _dumpster = new AtomicReference<>();
     private final List<CellRoute> _default = new ArrayList<>();
+    private final Random _random = new Random();
 
     public void add(CellRoute route)
             throws IllegalArgumentException
@@ -48,12 +52,13 @@ public class CellRoutingTable implements Serializable
                 }
             }
             break;
-        case CellRoute.WELLKNOWN:
+        case CellRoute.QUEUE:
             dest = route.getCellName();
-            synchronized (_wellknown) {
-                if (!_wellknown.put(dest, route)) {
+            synchronized (_queue) {
+                if (_queue.containsEntry(dest, route)) {
                     throw new IllegalArgumentException("Duplicated route entry for : " + dest);
                 }
+                _queue.put(dest, route);
             }
             break;
         case CellRoute.TOPIC:
@@ -101,10 +106,10 @@ public class CellRoutingTable implements Serializable
                 }
             }
             break;
-        case CellRoute.WELLKNOWN:
+        case CellRoute.QUEUE:
             dest = route.getCellName();
-            synchronized (_wellknown) {
-                if (!_wellknown.remove(dest, route)) {
+            synchronized (_queue) {
+                if (!_queue.remove(dest, route)) {
                     throw new IllegalArgumentException("Route entry not found for : " + dest);
                 }
             }
@@ -153,8 +158,8 @@ public class CellRoutingTable implements Serializable
         synchronized (_exact) {
             delete(_exact.values(), addr, deleted);
         }
-        synchronized (_wellknown) {
-            delete(_wellknown.values(), addr, deleted);
+        synchronized (_queue) {
+            delete(_queue.values(), addr, deleted);
         }
         synchronized (_domain) {
             delete(_domain.values(), addr, deleted);
@@ -210,11 +215,11 @@ public class CellRoutingTable implements Serializable
             // this is not really local but wellknown
             // we checked for local before we called this.
             //
-            synchronized (_wellknown) {
-                route = _wellknown.get(cellName).stream().findFirst();
-            }
-            if (route.isPresent()) {
-                return route.get();
+            synchronized (_queue) {
+                List<CellRoute> routes = _queue.get(cellName);
+                if (!routes.isEmpty()) {
+                    return routes.get(_random.nextInt(routes.size()));
+                }
             }
         } else {
             synchronized (_domain) {
@@ -264,8 +269,8 @@ public class CellRoutingTable implements Serializable
         synchronized (_exact) {
             _exact.values().forEach(append);
         }
-        synchronized (_wellknown) {
-            _wellknown.values().forEach(append);
+        synchronized (_queue) {
+            _queue.values().forEach(append);
         }
         synchronized (_domain) {
             _domain.values().forEach(append);
@@ -289,8 +294,8 @@ public class CellRoutingTable implements Serializable
         synchronized (_exact) {
             routes.addAll(_exact.values());
         }
-        synchronized (_wellknown) {
-            routes.addAll(_wellknown.values());
+        synchronized (_queue) {
+            routes.addAll(_queue.values());
         }
         synchronized (_domain) {
             routes.addAll(_domain.values());

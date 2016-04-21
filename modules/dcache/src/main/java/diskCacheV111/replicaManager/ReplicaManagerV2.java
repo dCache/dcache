@@ -466,11 +466,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     _log.debug("=== cellDied called ===, ce=" +ce);
   }
   @Override
-  public void cellExported( CellEvent ce ) {
-    super.cellExported(ce);
-    _log.debug("=== cellExported called ===, ce=" +ce);
-  }
-  @Override
   public void routeAdded( CellEvent ce ) {
     super.routeAdded(ce);
     _log.debug("=== routeAdded called ===, ce=" +ce);

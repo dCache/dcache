@@ -29,7 +29,7 @@ public class CellRoute implements Serializable
 
     public static final int AUTO = 0;
     public static final int EXACT = 1;
-    public static final int WELLKNOWN = 2;
+    public static final int QUEUE = 2;
     public static final int DOMAIN = 3;
     public static final int DEFAULT = 4;
     public static final int DUMPSTER = 5;
@@ -37,7 +37,7 @@ public class CellRoute implements Serializable
     public static final int TOPIC = 7;
 
     private static final String[] TYPE_NAMES =
-            {"Auto", "Exact", "Wellknown", "Domain",
+            {"Auto", "Exact", "Queue", "Domain",
                     "Default", "Dumpster", "Alias", "Topic"};
 
     private static int getTypeOf(Args args)
@@ -56,7 +56,8 @@ public class CellRoute implements Serializable
             type = DOMAIN;
             break;
         case "wellknown":
-            type = WELLKNOWN;
+        case "queue":
+            type = QUEUE;
             break;
         case "exact":
             type = EXACT;
@@ -154,9 +155,9 @@ public class CellRoute implements Serializable
             _destDomain = (domain == null) ? "local" : domain;
             _type = type;
             break;
-        case WELLKNOWN:
+        case QUEUE:
             checkArgument(cell != null, "No destination cell spec.");
-            checkArgument(domain == null, "WELLKNOWN doesn't accept domain");
+            checkArgument(domain == null, "QUEUE doesn't accept domain");
             _destCell = cell;
             _destDomain = "*";
             _type = type;
@@ -196,7 +197,7 @@ public class CellRoute implements Serializable
                 } else if (cell.equals("*")) {
                     _type = DOMAIN;
                 } else if (domain.equals("*")) {
-                    _type = WELLKNOWN;
+                    _type = QUEUE;
                 } else {
                     _type = EXACT;
                 }
@@ -209,7 +210,7 @@ public class CellRoute implements Serializable
             } else if (cell != null) {
                 _destCell = cell;
                 _destDomain = "*";
-                _type = WELLKNOWN;
+                _type = QUEUE;
             } else {
                 _destCell = "*";
                 _destDomain = "*";

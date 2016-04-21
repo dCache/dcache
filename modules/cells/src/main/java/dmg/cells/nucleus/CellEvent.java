@@ -40,7 +40,6 @@ public class  CellEvent {
       String m;
       switch( _type ){
         case CELL_CREATED_EVENT : m = "CELL_CREATED_EVENT"; break;
-        case CELL_EXPORTED_EVENT : m = "CELL_EXPORTED_EVENT"; break;
         case CELL_DIED_EVENT : m = "CELL_DIED_EVENT"; break;
         case CELL_ROUTE_ADDED_EVENT : m = "CELL_ROUTE_ADDED_EVENT"; break;
         case CELL_ROUTE_DELETED_EVENT : m = "CELL_ROUTE_DELETED_EVENT"; break;

@@ -98,11 +98,6 @@ public class RemotePoolMonitor
     }
 
     @Override
-    public void cellExported(CellEvent ce)
-    {
-    }
-
-    @Override
     public void routeDeleted(CellEvent ce)
     {
     }

@@ -361,7 +361,7 @@ public class CellAdapter
      * RoutingManager is
      * running.
      */
-    public void   export() { _nucleus.export(); }
+    public void   export() { _nucleus.consume(getCellName()); }
 
     /**
      * Subscribes this cell to a specific publish-subscribe topic. Messages posted to
@@ -589,11 +589,6 @@ public class CellAdapter
      */
     @Override
     public void cellDied(CellEvent ce) {}
-    /**
-     *   belongs to the CellEventListener Interface
-     */
-    @Override
-    public void cellExported(CellEvent ce) {}
     /**
      *   belongs to the CellEventListener Interface
      */

@@ -88,7 +88,7 @@ public class FileHoppingManager extends CellAdapter {
      @Override
      protected void started()
      {
-         _nucleus.export();
+         export();
      }
 
      private void runSetupFile(File setupFile ) throws Exception {

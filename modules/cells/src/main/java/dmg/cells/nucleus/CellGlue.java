@@ -108,9 +108,9 @@ class CellGlue
         return _systemNucleus;
     }
 
-    void export(CellNucleus cell)
+    void consume(CellNucleus cell, String queue)
     {
-        sendToAll(new CellEvent(cell.getCellName(), CellEvent.CELL_EXPORTED_EVENT));
+        routeAdd(new CellRoute(queue, cell.getThisAddress(), CellRoute.QUEUE));
     }
 
     void subscribe(CellNucleus cell, String topic)
@@ -206,9 +206,6 @@ class CellGlue
                     switch (event.getEventType()) {
                     case CellEvent.CELL_CREATED_EVENT:
                         hallo.cellCreated(event);
-                        break;
-                    case CellEvent.CELL_EXPORTED_EVENT:
-                        hallo.cellExported(event);
                         break;
                     case CellEvent.CELL_DIED_EVENT:
                         hallo.cellDied(event);

@@ -9,7 +9,6 @@ package dmg.cells.nucleus ;
 public interface CellEventListener {
   void cellCreated( CellEvent ce ) ;
   void cellDied( CellEvent ce ) ;
-  void cellExported( CellEvent ce ) ;
   void routeAdded( CellEvent ce ) ;
   void routeDeleted( CellEvent ce ) ;
 }

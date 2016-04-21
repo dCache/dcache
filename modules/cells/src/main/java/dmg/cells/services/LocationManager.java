@@ -362,11 +362,6 @@ public class LocationManager extends CellAdapter
         }
 
         @Override
-        public void cellExported(CellEvent ce)
-        {
-        }
-
-        @Override
         public void routeAdded(CellEvent ce)
         {
         }

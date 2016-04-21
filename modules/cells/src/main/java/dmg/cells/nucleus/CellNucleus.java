@@ -578,14 +578,6 @@ public class CellNucleus implements ThreadFactory
             }
 
             @Override
-            public void cellExported(CellEvent ce)
-            {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    listener.cellExported(ce);
-                }
-            }
-
-            @Override
             public void routeAdded(CellEvent ce)
             {
                 try (CDC ignored = CDC.reset(CellNucleus.this)) {
@@ -603,7 +595,7 @@ public class CellNucleus implements ThreadFactory
         });
     }
 
-    public void export() { __cellGlue.export(this);  }
+    public void consume(String queue) { __cellGlue.consume(this, queue);  }
 
     public void subscribe(String topic) { __cellGlue.subscribe(this, topic); }
 

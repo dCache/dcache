@@ -71,7 +71,7 @@ import static java.util.stream.Collectors.toMap;
 
 /**
  * Routing manager to publish exported cells and topics to peers. The routing manager receives
- * its own updates from its peers and manages WELLKNOWN and TOPIC routes to other domains.
+ * its own updates from its peers and manages QUEUE and TOPIC routes to other domains.
  *
  * Local exports are published to connected satellite domains, while both local exports and
  * local subscriptions are published to connected core domains.
@@ -85,8 +85,8 @@ public class CoreRoutingManager
 
     private final CellNucleus nucleus;
 
-    /** Names of local cells that have been exported. */
-    private final Set<String> localExports = new HashSet<>();
+    /** Local cells that consume from named queues. */
+    private final Multimap<String, String> localConsumers = HashMultimap.create();
 
     /** Local cells that subscribed to topics. */
     private final Multimap<String, String> localSubscriptions = HashMultimap.create();
@@ -123,7 +123,7 @@ public class CoreRoutingManager
     /**
      * Well known routes installed by routing manager.
      */
-    private final Multimap<String, String> wellknownRoutes = HashMultimap.create();
+    private final Multimap<String, String> queueRoutes = HashMultimap.create();
 
     /**
      * Tunnels to core domains.
@@ -216,34 +216,37 @@ public class CoreRoutingManager
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.append("Local exports: ").println(localExports);
+        pw.println("Local consumers: ");
+        println(pw, localConsumers);
         pw.println();
 
         pw.println("Local subscriptions:");
-        for (Map.Entry<String, Collection<String>> e : localSubscriptions.asMap().entrySet()) {
-            pw.append(" ").append(e.getKey()).append(" : ").println(e.getValue());
-        }
+        println(pw, localSubscriptions);
+        pw.println();
 
-        pw.println();
         pw.println("Managed topic routes:");
-        for (Map.Entry<String,Collection<String>> e : topicRoutes.asMap().entrySet()) {
-            pw.append(" ").append(e.getKey()).append(" : ").println(e.getValue());
-        }
+        println(pw, topicRoutes);
         pw.println();
+
         pw.println("Managed well-known routes:");
-        for (Map.Entry<String,Collection<String>> e : wellknownRoutes.asMap().entrySet()) {
+        println(pw, queueRoutes);
+    }
+
+    private void println(PrintWriter pw, Multimap<String, String> map)
+    {
+        for (Map.Entry<String, Collection<String>> e : map.asMap().entrySet()) {
             pw.append(" ").append(e.getKey()).append(" : ").println(e.getValue());
         }
     }
 
     private synchronized void sendToCoreDomains()
     {
-        sendToPeers(new CoreRouteUpdate(localExports, localSubscriptions.values()), coreTunnels.values());
+        sendToPeers(new CoreRouteUpdate(localConsumers.values(), localSubscriptions.values()), coreTunnels.values());
     }
 
     private synchronized void sendToSatelliteDomains()
     {
-        sendToPeers(new CoreRouteUpdate(localExports), satelliteTunnels.values());
+        sendToPeers(new CoreRouteUpdate(localConsumers.values()), satelliteTunnels.values());
     }
 
     private void sendToPeers(Serializable msg, Collection<CellTunnelInfo> tunnels)
@@ -299,9 +302,9 @@ public class CoreRoutingManager
         updateRoutes(domain, topics, topicRoutes, CellRoute.TOPIC);
     }
 
-    private synchronized void updateWellknownRoutes(String domain, Collection<String> cells)
+    private synchronized void updateQueueRoutes(String domain, Collection<String> cells)
     {
-        updateRoutes(domain, cells, wellknownRoutes, CellRoute.WELLKNOWN);
+        updateRoutes(domain, cells, queueRoutes, CellRoute.QUEUE);
     }
 
     @Override
@@ -314,7 +317,7 @@ public class CoreRoutingManager
                 executor.execute(() -> {
                     CoreRouteUpdate update = updates.remove(domain);
                     updateTopicRoutes(domain, update.getTopics());
-                    updateWellknownRoutes(domain, update.getExports());
+                    updateQueueRoutes(domain, update.getExports());
                 });
             }
         } else if (obj instanceof GetAllDomainsRequest) {
@@ -327,14 +330,14 @@ public class CoreRoutingManager
             } else {
                 Map<String, Collection<String>> domains = new HashMap<>();
                 synchronized (this) {
-                    domains.put(getCellDomainName(), new ArrayList<>(localExports));
+                    domains.put(getCellDomainName(), new ArrayList<>(localConsumers.values()));
                     asList(coreTunnels, satelliteTunnels, legacyTunnels)
                             .stream()
                             .flatMap(map -> map.values().stream())
                             .map(CellTunnelInfo::getRemoteCellDomainInfo)
                             .map(CellDomainInfo::getCellDomainName)
                             .forEach(domain -> domains.put(domain, new ArrayList<>()));
-                    wellknownRoutes.asMap().forEach(
+                    queueRoutes.asMap().forEach(
                             (domain, cells) -> domains.put(domain, Lists.newArrayList(cells)));
                 }
                 msg.revertDirection();
@@ -354,7 +357,7 @@ public class CoreRoutingManager
             LOG.info("Routing info arrived for domain {}", domain);
 
             if (legacyWellknownUpdates.put(domain, asList(info).subList(1, info.length)) == null) {
-                executor.execute(() -> updateWellknownRoutes(domain, legacyWellknownUpdates.remove(domain)));
+                executor.execute(() -> updateQueueRoutes(domain, legacyWellknownUpdates.remove(domain)));
             }
         } else if (obj instanceof TopicRouteUpdate) {
             String domain = msg.getSourceAddress().getCellDomainName();
@@ -394,34 +397,21 @@ public class CoreRoutingManager
     }
 
     @Override
-    public synchronized void cellExported(CellEvent ce)
-    {
-        String name = (String)ce.getSource();
-        LOG.info("Cell exported: {}", name);
-        localExports.add(name);
-        sendToCoreDomains();
-        sendToSatelliteDomains();
-    }
-
-    @Override
     public synchronized void cellDied(CellEvent ce)
     {
         String name = (String) ce.getSource();
         LOG.info("Cell died: {}", name);
-        if (localExports.remove(name)) {
-            sendToSatelliteDomains();
-            sendToCoreDomains();
-        }
     }
 
     @Override
     public synchronized void routeAdded(CellEvent ce)
     {
         CellRoute cr = (CellRoute) ce.getSource();
+        CellAddressCore target = cr.getTarget();
         LOG.info("Got 'route added' event: {}", cr);
         switch (cr.getRouteType()) {
         case CellRoute.DOMAIN:
-            Optional<CellTunnelInfo> tunnelInfo = getTunnelInfo(cr.getTarget());
+            Optional<CellTunnelInfo> tunnelInfo = getTunnelInfo(target);
             tunnelInfo
                     .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE)
                     .ifPresent(i -> { coreTunnels.put(i.getTunnel(), i); sendToCoreDomains(); });
@@ -447,10 +437,17 @@ public class CoreRoutingManager
             break;
         case CellRoute.TOPIC:
             String topic = cr.getCellName();
-            CellAddressCore target = cr.getTarget();
             if (target.getCellDomainName().equals(nucleus.getCellDomainName())) {
                 localSubscriptions.put(target.getCellName(), topic);
                 sendToCoreDomains();
+            }
+            break;
+        case CellRoute.QUEUE:
+            String queue = cr.getCellName();
+            if (target.getCellDomainName().equals(nucleus.getCellDomainName())) {
+                localConsumers.put(target.getCellName(), queue);
+                sendToCoreDomains();
+                sendToSatelliteDomains();
             }
             break;
         case CellRoute.DEFAULT:
@@ -463,11 +460,12 @@ public class CoreRoutingManager
     public synchronized void routeDeleted(CellEvent ce)
     {
         CellRoute cr = (CellRoute) ce.getSource();
+        CellAddressCore target = cr.getTarget();
         switch (cr.getRouteType()) {
         case CellRoute.DOMAIN:
             updateTopicRoutes(cr.getDomainName(), Collections.emptyList());
-            updateWellknownRoutes(cr.getDomainName(), Collections.emptyList());
-            getTunnelInfo(cr.getTarget())
+            updateQueueRoutes(cr.getDomainName(), Collections.emptyList());
+            getTunnelInfo(target)
                     .map(CellTunnelInfo::getTunnel)
                     .ifPresent(name -> {
                         coreTunnels.remove(name);
@@ -477,10 +475,18 @@ public class CoreRoutingManager
             break;
         case CellRoute.TOPIC:
             String topic = cr.getCellName();
-            CellAddressCore target = cr.getTarget();
             if (target.getCellDomainName().equals(nucleus.getCellDomainName())) {
                 if (localSubscriptions.remove(target.getCellName(), topic)) {
                     sendToCoreDomains();
+                }
+            }
+            break;
+        case CellRoute.QUEUE:
+            String queue = cr.getCellName();
+            if (target.getCellDomainName().equals(nucleus.getCellDomainName())) {
+                if (localSubscriptions.remove(target.getCellName(), queue)) {
+                    sendToCoreDomains();
+                    sendToSatelliteDomains();
                 }
             }
             break;
@@ -530,8 +536,8 @@ public class CoreRoutingManager
     {
         return new Object[] {
                 getCellDomainName(),
-                Sets.newHashSet(localExports),
-                wellknownRoutes.asMap().entrySet().stream().collect(
+                Sets.newHashSet(localConsumers.values()),
+                queueRoutes.asMap().entrySet().stream().collect(
                         toMap(Map.Entry::getKey, e -> Sets.newHashSet(e.getValue())))
         };
     }

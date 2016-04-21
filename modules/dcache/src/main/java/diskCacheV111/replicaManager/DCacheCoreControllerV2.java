@@ -53,6 +53,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.StartEvent;
 import dmg.cells.nucleus.UOID;
 import dmg.util.CommandSyntaxException;
 
@@ -163,9 +164,13 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
        messageProcessingThread =
                _nucleus.newThread(new MessageProcessThread(), "DCacheCoreController-MessageProcessing");
        messageProcessingThread.start();
-
-      _nucleus.export() ;
    }
+
+    @Override
+    protected void started()
+    {
+        export();
+    }
 
     @Override
     public void cleanUp()
@@ -1133,12 +1138,6 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
    public void cellDied(CellEvent ce) {
        super.cellDied(ce);
        _log.debug("DCCC cellDied called, ce=" + ce);
-   }
-
-   @Override
-   public void cellExported(CellEvent ce) {
-       super.cellExported(ce);
-       _log.debug("DCCC cellExported called, ce=" + ce);
    }
 
    @Override

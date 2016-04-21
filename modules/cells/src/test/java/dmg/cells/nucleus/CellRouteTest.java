@@ -41,18 +41,18 @@ public class CellRouteTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void wellKnownRouteShouldRejectDomain() throws Exception
+    public void queueRouteShouldRejectDomain() throws Exception
     {
-        CellRoute route = new CellRoute(new Args("-wellknown a@b gateway"));
+        CellRoute route = new CellRoute(new Args("-queue a@b gateway"));
     }
 
     @Test
-    public void wellKnownRouteShouldHaveStarDomain() throws Exception
+    public void queueRouteShouldHaveStarDomain() throws Exception
     {
-        CellRoute route = new CellRoute(new Args("-wellknown a gateway"));
+        CellRoute route = new CellRoute(new Args("-queue a gateway"));
         assertThat(route.getCellName(), is("a"));
         assertThat(route.getDomainName(), is("*"));
-        assertThat(route.getRouteType(), is(CellRoute.WELLKNOWN));
+        assertThat(route.getRouteType(), is(CellRoute.QUEUE));
         assertThat(route.getTargetName(), is("gateway"));
     }
 
@@ -103,22 +103,22 @@ public class CellRouteTest
     }
 
     @Test
-    public void shouldDetectWellKnownRoute() throws Exception
+    public void shouldDetectQueueRoute() throws Exception
     {
         CellRoute route = new CellRoute(new Args("a@* gateway"));
         assertThat(route.getCellName(), is("a"));
         assertThat(route.getDomainName(), is("*"));
-        assertThat(route.getRouteType(), is(CellRoute.WELLKNOWN));
+        assertThat(route.getRouteType(), is(CellRoute.QUEUE));
         assertThat(route.getTargetName(), is("gateway"));
     }
 
     @Test
-    public void shouldDetectWellKnownRouteForAbsentDomain() throws Exception
+    public void shouldDetectQueueRouteForAbsentDomain() throws Exception
     {
         CellRoute route = new CellRoute(new Args("a gateway"));
         assertThat(route.getCellName(), is("a"));
         assertThat(route.getDomainName(), is("*"));
-        assertThat(route.getRouteType(), is(CellRoute.WELLKNOWN));
+        assertThat(route.getRouteType(), is(CellRoute.QUEUE));
         assertThat(route.getTargetName(), is("gateway"));
     }
 
