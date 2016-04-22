@@ -1025,7 +1025,7 @@ public class LocationManager extends CellAdapter {
           }
           String cellArgs = port + " " + cellClass + " " + protocol + " -lm=" + getCellName();
           _log.info(" LocationManager starting acceptor with {}", cellArgs);
-          LoginManager c = new LoginManager(cellName, cellArgs);
+          LoginManager c = new LoginManager(cellName, "System", cellArgs);
           c.start();
           _log.info("Created : {}", c);
       }
