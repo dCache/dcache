@@ -32,7 +32,7 @@
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
       <property name="excludedDestinations"
-                value="${srm.loginbroker.update-topic},${srm.credential-service.topic}"/>
+                value="${srm.loginbroker.update-topic},${srm.loginbroker.request-topic},${srm.credential-service.topic}"/>
   </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
