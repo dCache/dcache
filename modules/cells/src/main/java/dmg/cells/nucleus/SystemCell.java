@@ -271,8 +271,7 @@ public class      SystemCell
             return ;
         }
         Object obj  = msg.getMessageObject() ;
-        Serializable reply = null; // dummy value needed for Java, not used.
-        boolean processed = false;
+        Serializable reply;
 
         if(obj instanceof String) {
            String command = (String) obj;
@@ -285,7 +284,6 @@ public class      SystemCell
            } else {
                reply = _cellShell.objectCommand2(command);
            }
-           processed = true;
         }else if( obj instanceof AuthorizedString ){
            AuthorizedString as = (AuthorizedString)obj ;
            String command = as.toString() ;
@@ -294,22 +292,19 @@ public class      SystemCell
            }
            _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
            reply = _cellShell.objectCommand2( command ) ;
-           processed = true;
+        } else {
+            return;
         }
 
-        if(processed) {
-            _log.debug("Reply : {}", reply);
-            _packetsAnswered++;
-        }
+       _log.debug("Reply : {}", reply);
+       _packetsAnswered++;
 
         try {
-            if (processed && reply instanceof Reply) {
-                ((Reply)reply).deliver(this, msg);
+            if (reply instanceof Reply) {
+                ((Reply) reply).deliver(this, msg);
             } else {
                 msg.revertDirection();
-                if(processed) {
-                    msg.setMessageObject(reply);
-                }
+                msg.setMessageObject(reply);
                 sendMessage(msg);
                 _log.debug("Sending : {}", msg);
             }
