@@ -74,6 +74,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class RrdSettings {
     public static final String FILE_SUFFIX = "_queue";
+    public static final String RRD_SUFFIX = ".rrd";
     public static final String ALL_POOLS = "all";
     public static final String GROUP_DIR = "group_";
 

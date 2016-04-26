@@ -69,11 +69,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.CostModule;
@@ -97,6 +101,13 @@ import static org.rrd4j.DsType.GAUGE;
  * @author arossi
  */
 public class RrdPoolInfoAgent implements Runnable {
+    private static final FilenameFilter FILES = (dir, name) ->
+                    name.contains(RrdSettings.FILE_SUFFIX)
+                                    || name.endsWith(RrdSettings.RRD_SUFFIX);
+
+    private static final FileFilter GROUP_DIRS = (file) ->
+                    file.isDirectory() && file.getName()
+                                              .contains(RrdSettings.GROUP_DIR);
 
     private static final Logger logger
         = LoggerFactory.getLogger(RrdPoolInfoAgent.class);
@@ -121,11 +132,13 @@ public class RrdPoolInfoAgent implements Runnable {
      * state
      */
     private PoolSelectionUnit poolSelectionUnit;
-    private CostModule costModule;
-    private long lastRefresh;
-    private Thread refresher;
+    private CostModule        costModule;
+    private Set<String>       current;
+    private long              lastRefresh;
+    private Thread            refresher;
 
     public void initialize() {
+        current = new HashSet<>();
         settings.initialize();
         logger.info(settings.toString());
     }
@@ -175,6 +188,8 @@ public class RrdPoolInfoAgent implements Runnable {
                                               .map(SelectionPool::getName)
                                               .forEach((p) ->createPlot(group, p));
                          });
+
+        removeStale();
     }
 
     public void setSettings(RrdSettings settings) {
@@ -210,9 +225,10 @@ public class RrdPoolInfoAgent implements Runnable {
      * not, constructs a new one from the settings.
      */
     private RrdDb getDatabase(String name, boolean readOnly) throws IOException {
-        String rrdPath = new File(settings.baseDirectory, name + ".rrd")
+        String rrdPath = new File(settings.baseDirectory,
+                                    name + RrdSettings.RRD_SUFFIX)
                                     .getAbsolutePath();
-
+        current.add(rrdPath);
         File rrd = new File(rrdPath);
         if (rrd.exists()) {
             return new RrdDb(rrdPath, readOnly);
@@ -246,6 +262,7 @@ public class RrdPoolInfoAgent implements Runnable {
     private RrdGraphDef getGraphDef(File dir, String name) throws IOException {
         String imgPath = RrdSettings.getImagePath(settings.imgType, dir, name)
                                     .getAbsolutePath();
+        current.add(imgPath);
         RrdDb rrdDb = getDatabase(name, true);
         RrdGraphDef gDef = new RrdGraphDef();
         String rrdPath = rrdDb.getPath();
@@ -332,6 +349,49 @@ public class RrdPoolInfoAgent implements Runnable {
             storeToRRD(all, now);
             logger.debug("successfully wrote pool queue data for {}",
                             RrdSettings.ALL_POOLS);
+        }
+    }
+
+    /**
+     * If the plots and database files do not appear in the current
+     * list based on the most recent pool selection unit values, remove
+     * them.
+     */
+    private void removeStale() {
+        File top = new File(settings.baseDirectory);
+        removeStale(top);
+
+        /*
+         *  Depth is only 1 (base has all the database files and groups,
+         *  the group directories contain the plots).
+         */
+        File[] groupDirs = top.listFiles(GROUP_DIRS);
+        for (File dir: groupDirs) {
+            removeStale(dir);
+            File[] children = dir.listFiles();
+            /*
+             * Children cannot be null here, since the IO issue would already
+             * have been detected.
+             */
+            if (children.length == 0) {
+                dir.delete();
+            }
+        }
+
+        current.clear();
+    }
+
+    /*
+     *  Removes the stale db files, and the stale group queue plots (when
+     *  applied to top level) or the stale pool queue plots (when applied to
+     *  group directories).
+     */
+    private void removeStale(File dir) {
+        File[] files = dir.listFiles(FILES);
+        for (File file: files) {
+            if (!current.contains(file.getAbsolutePath())) {
+                file.delete();
+            }
         }
     }
 

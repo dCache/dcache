@@ -91,7 +91,7 @@ public final class ThumbnailPanelProvider extends
 
     private static final FilenameFilter FILENAME_FILTER = (dir, name) ->
                     name.contains(RrdSettings.FILE_SUFFIX)
-			&& !name.contains(RrdSettings.ALL_POOLS);
+			        && !name.contains(RrdSettings.ALL_POOLS);
 
     private static final int MAX_COLS = 8;
 
@@ -181,7 +181,7 @@ public final class ThumbnailPanelProvider extends
                 files = new File[]{all};
         }
 
-	panels.clear();
+	    panels.clear();
 
         if (files == null || files.length == 0) {
             return;
