@@ -384,7 +384,7 @@ case "$1" in
             rc_0=0
             rc_1=0
             rc_3=0
-            printf "DOMAIN\tSTATUS\tPID\tUSER\n"
+            printf "DOMAIN\tSTATUS\tPID\tUSER\tLOG\n"
                 for domain in $(getProperty dcache.domains); do
                     count=$((${count}+1))
                     rc=0
@@ -392,7 +392,8 @@ case "$1" in
                     eval rc_$rc=$((rc_$rc+1))
                     pid=$(printJavaPid "$domain") || :
                     user=$(userForProcessOrDomain "$pid" "$domain") || :
-                    printf "${domain}\t${status}\t${pid}\t${user}\n"
+                    log=$(getProperty dcache.log.file "$domain")
+                    printf "${domain}\t${status}\t${pid}\t${user}\t${log}\n"
                 done
 
                 # Derive common exit status
@@ -419,12 +420,16 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         (
-            printf "DOMAIN\tSERVICE\tCELL\tLOG\n"
+            printf "DOMAIN\tSERVICE\tCELL\tREPLICABLE\n"
             for domain in $(getProperty dcache.domains); do
                 for cell in $(getProperty dcache.domain.cells "$domain"); do
                     service=$(getProperty dcache.domain.service "$domain" "$cell")
-                    log=$(getProperty dcache.log.file "$domain" "$cell")
-                    printf "${domain}\t${service}\t${cell}\t${log}\n"
+                    if [ "$(getScopedProperty cell.replicable "$domain" "$cell")" = "true" ]; then
+                        replicable=Yes
+                    else
+                        replicable=No
+                    fi
+                    printf "${domain}\t${service}\t${cell}\t${replicable:-true}\n"
                 done
             done
         ) | column
