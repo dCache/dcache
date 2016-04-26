@@ -87,6 +87,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import dmg.util.command.Option;
 import org.dcache.resilience.data.FileFilter;
 import org.dcache.resilience.data.FileOperation;
@@ -109,150 +110,10 @@ import org.dcache.vehicles.FileAttributes;
 /**
  * <p>Collects all admin shell commands for convenience.  See further individual
  *      command annotations for details.</p>
- *
- * <p>In order to be able to change the name of the commands via the annotation,
- *      this class, which contains the actual command code, is abstract. This
- *      is done in anticipation of a possibly embedded version of resilience
- *      (running inside another service, such as PnfsManager).</p>
- *
- * @see StandaloneResilienceCommands
  */
-public abstract class ResilienceCommands implements CellCommandListener {
+
+public final class ResilienceCommands implements CellCommandListener {
     static final String INACCESSIBLE_PREFIX = "inaccessible_files-";
-
-    static final String HINT_CHECK     =
-                    "launch an operation to adjust replicas for "
-                                    + "one or more pnfsids";
-    static final String HINT_DIAG      = "print diagnostic statistics";
-    static final String HINT_DIAG_HIST = "print diagnostic history";
-    static final String HINT_DISABLE     = "turn off replication handling";
-    static final String HINT_ENABLE      = "turn on replication handling";
-    static final String HINT_HIST        =
-                    "display a history of the most recent terminated "
-                                    + "file operations";
-    static final String HINT_INACCESSIBLE = "list pnfsids for a pool which "
-                    + "currently have no readable locations";
-    static final String HINT_FILE_CNCL   = "cancel file operations";
-    static final String HINT_FILE_CTRL   = "control checkpointing or handling of file operations";
-    static final String HINT_FILE_LS     = "list entries in the file operation table";
-    static final String HINT_POOL_CNCL   = "cancel pool operations";
-    static final String HINT_POOL_CTRL   =
-                    "control the periodic check of active resilient pools "
-                                    + "or processing of pool state changes";
-    static final String HINT_POOL_EXCL   = "exclude pool operations";
-    static final String HINT_POOL_INCL   = "include pool operations";
-    static final String HINT_PGROUP_INFO =
-                    "list the storage units linked to a pool group "
-                                    + "and confirm resilience constraints "
-                                    + "can be met by the member pools";
-    static final String HINT_POOL_INFO   = "list tags and mode for a pool or pools";
-    static final String HINT_POOL_LS     = "list entries in the pool operation table";
-    static final String HINT_SCAN        = "launch a scan of one or more pools";
-
-    static final String DESC_CHECK     =
-                    "For each pnfsid, runs a check to see that the number of "
-                                    + "replicas is properly constrained, creating "
-                                    + "new copies or removing redundant ones "
-                                    + "as necessary.";
-    static final String DESC_FILE_CTRL =
-                    "Runs checkpointing, resets checkpoint "
-                                    + "properties, resets operation properties, "
-                                    + "turn processing of operations on or off "
-                                    + "(start/shutdown), or displays info relevant "
-                                    + "to operation processing and checkpointing.";
-    static final String DESC_DIAG      =
-                    "Lists the total number of messages received  "
-                                    + "and operations performed since last start "
-                                    + "of the resilience system.  Rate/sec is "
-                                    + "sampled over the interval since the last "
-                                    + "checkpoint. These values for new "
-                                    + "location messages and file "
-                                    + "operations are recorded "
-                                    + "to a stastistics file located in the "
-                                    + "resilience home directory, and which "
-                                    + "can be displayed using the history option";
-    static final String DESC_DIAG_HIST =
-                    "Reads in the contents of the diagnostic history file "
-                                    + "recording periodic statics "
-                                    + "(see diag command).";
-    static final String DESC_DISABLE =
-                    "Prevents messages from being processed by "
-                                    + "the replication system (this is useful  "
-                                    + "for instance if rebalance is run on "
-                                    + "a resilient group). "
-                                    + "To disable all internal operations, use "
-                                    + "the 'strict' argument to this command; "
-                                    + "this option will also cancel all pool and "
-                                    + "file operations.";
-    static final String DESC_ENABLE    =
-                    "Allows messages to be processed by "
-                                    + "the replication system. Will also "
-                                    + "(re-)enable all internal operations if they "
-                                    + "are not running.  Executed asynchronously.";
-    static final String DESC_HIST      =
-                    "When file operations complete or are aborted, their "
-                                    + "string representations are added to a "
-                                    + "circular buffer whose capacity is set "
-                                    + "by the property "
-                                    + "'resilience.limits.file.operation-history'.";
-    static final String DESC_INACCESSIBLE    =
-                    "Issues a query to the namespace to scan the pool, "
-                                    + "checking locations of each file with online "
-                                    + "access latency; results are written to a file "
-                                    + "in resilience home named '"
-                                    + INACCESSIBLE_PREFIX
-                                    + "' + pool. Executed asynchronously.";
-    static final String DESC_FILE_CNCL =
-                    "Scans the file table and cancels "
-                                    + "operations matching the filter parameters.";
-    static final String DESC_PNFSLS         =
-                    "Scans the table and returns operations matching "
-                                    + "the filter parameters.";
-    static final String DESC_POOL_CNCL      =
-                    "Scans the pool table and cancels "
-                                    + "operations matching the filter parameters; "
-                                    + "if 'includeChildren' is true, also "
-                                    + "scans the file table.";
-    static final String DESC_POOL_EXCL_INCL =
-                    "Scans the pool table and excludes or includes "
-                                    + "operations for the matching pools; "
-                                    + "exclusion will cancel any running "
-                                    + "operations; include "
-                                    + "will only affect pool operations "
-                                    + "that are currently excluded.  "
-                                    + "When a pool is excluded (for the purposes "
-                                    + "of operations), it will not be included "
-                                    + "in periodic, forced, or status-change "
-                                    + "scans, though the pool will still "
-                                    + "appear to its pool group as a member "
-                                    + "in whatever state the pool manager "
-                                    + "knows about.";
-    static final String DESC_POOL_CTRL =
-                    "Activates, deactivates, or resets the periodic checking "
-                                    + "of active pools; turns all pool state "
-                                    + "handling on or off (start/shutdown)";
-    static final String DESC_PGROUP_INFO =
-                    "Lists name, key and storage units linked to the pool group."
-                                    + "Tries to satisfy the constraints on replica "
-                                    + "count and exclusivity tags for all the "
-                                    + "storage units in the pool group by "
-                                    + "attempting to assign the required number "
-                                    + "of locations for a hypothetical file "
-                                    + "belonging to each unit.";
-    static final String DESC_POOL_INFO   = "Lists pool key, name, mode, "
-                                    + "status, tags and last update time.";
-    static final String DESC_POOL_LS     = "Scans the table and returns "
-                                    + "operations matching the filter parameters.";
-    static final String DESC_SCAN        =
-                    "A check will be initiated to see that the "
-                                    + "number of replicas on the pool is "
-                                    + "properly constrained, creating new "
-                                    + "copies or removing redundant ones "
-                                    + "as necessary. Note: will not override "
-                                    + "a currently running operation; matching "
-                                    + "operations in the waiting state will "
-                                    + "be guaranteed to run at the next available "
-                                    + "slot opening.";
 
     private static final String FORMAT_STRING = "yyyy/MM/dd-HH:mm:ss";
 
@@ -306,7 +167,48 @@ public abstract class ResilienceCommands implements CellCommandListener {
         protected abstract String doCall() throws Exception;
     }
 
-    abstract class DiagCommand extends ResilienceCommand {
+    abstract class PoolOpActivateCommand extends ResilienceCommand {
+        @Option(name = "status",
+                        valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
+                        usage = "Apply only on operations matching this "
+                                        + "pool status.")
+        String status;
+
+        @Argument(required = false,
+                        usage = "Apply only to pools matching "
+                                        + "this regular expression.")
+        String pools;
+
+        private final boolean activate;
+
+        PoolOpActivateCommand(boolean activate) {
+            this.activate = activate;
+        }
+
+        @Override
+        protected String doCall() throws Exception {
+            PoolFilter filter = new PoolFilter();
+            filter.setPools(pools);
+            filter.setPoolStatus(status);
+            return String.format(
+                            "Issued command to %s pool operations.",
+                            poolOperationMap.setIncluded(filter, activate));
+        }
+    }
+
+    @Command(name = "diag",
+                    hint = "print diagnostic statistics",
+                    description = "Lists the total number of messages received  "
+                                    + "and operations performed since last start "
+                                    + "of the resilience system.  Rate/sec is "
+                                    + "sampled over the interval since the last "
+                                    + "checkpoint. These values for new "
+                                    + "location messages and file "
+                                    + "operations are recorded "
+                                    + "to a stastistics file located in the "
+                                    + "resilience home directory, and which "
+                                    + "can be displayed using the history option")
+    class DiagCommand extends ResilienceCommand {
         @Argument(required = false,
                   usage = "Include pools matching this regular expression; "
                                   + "default prints only summary info.")
@@ -318,7 +220,12 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class DiagHistoryCommand extends ResilienceCommand {
+    @Command(name = "diag history",
+                    hint = "print diagnostic history",
+                    description = "Reads in the contents of the diagnostic "
+                                    + "history file recording periodic statistics "
+                                    + "(see diag command).")
+    class DiagHistoryCommand extends ResilienceCommand {
         @Option(name = "limit",
                         usage = "Display up to this number of lines "
                                         + "(default is 24 * 60).")
@@ -348,7 +255,17 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class DisableCommand extends ResilienceCommand {
+    @Command(name = "disable",
+                    hint = "turn off replication handling",
+                    description = "Prevents messages from being processed by "
+                                    + "the replication system (this is useful  "
+                                    + "for instance if rebalance is run on "
+                                    + "a resilient group). "
+                                    + "To disable all internal operations, use "
+                                    + "the 'strict' argument to this command; "
+                                    + "this option will also cancel all pool and "
+                                    + "file operations.")
+    class DisableCommand extends ResilienceCommand {
         @Option(name="drop",
                         valueSpec = "true|false",
                         usage = "If true, do not store backlogged messages "
@@ -398,7 +315,13 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class EnableCommand implements Callable<String>  {
+    @Command(name = "enable",
+                    hint = "turn on replication handling",
+                    description = "Allows messages to be processed by "
+                                    + "the replication system. Will also "
+                                    + "(re-)enable all internal operations if they "
+                                    + "are not running.  Executed asynchronously.")
+    class EnableCommand implements Callable<String>  {
         @Override
         public String call() throws Exception {
             if (!messageGuard.isEnabled()) {
@@ -421,7 +344,14 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class FileCheckCommand extends ResilienceCommand {
+    @Command(name = "file check",
+                    hint = "launch an operation to adjust replicas for "
+                                    + "one or more pnfsids",
+                    description = "For each pnfsid, runs a check to see that "
+                                    + "the number of replicas is properly "
+                                    + "constrained, creating new copies or "
+                                    + "removing redundant ones as necessary.")
+    class FileCheckCommand extends ResilienceCommand {
         @Argument(usage = "Comma-delimited list of pnfsids "
                                         + "for which to run the adjustment.")
         String pnfsids;
@@ -448,7 +378,15 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class FileControlCommand extends ResilienceCommand {
+    @Command(name = "file ctrl",
+                    hint = "control checkpointing or "
+                                    + "handling of file operations",
+                    description = "Runs checkpointing, resets checkpoint "
+                                    + "properties, resets operation properties, "
+                                    + "turn processing of operations on or off "
+                                    + "(start/shutdown), or displays info relevant "
+                                    + "to operation processing and checkpointing.")
+    class FileControlCommand extends ResilienceCommand {
         @Argument(valueSpec = "ON|OFF|START|SHUTDOWN|RESET|RUN|INFO",
                         required = false,
                         usage = "off = turn checkpointing off; "
@@ -474,8 +412,7 @@ public abstract class ResilienceCommands implements CellCommandListener {
 
         @Option(name = "unit",
                         valueSpec = "SECONDS|MINUTES|HOURS",
-                        usage = "Checkpoint or sweep interval unit.")
-        TimeUnit unit;
+                        usage = "Checkpoint or sweep interval unit.") TimeUnit unit;
 
         @Option(name = "retries",
                         usage = "Maximum number of retries on a failed operation.")
@@ -577,7 +514,12 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class FileOpCancelCommand extends ResilienceCommand {
+    @Command(name = "file cancel",
+                    hint = "cancel file operations",
+                    description = "Scans the file table and cancels "
+                                    + "operations matching the filter "
+                                    + "parameters.")
+    class FileOpCancelCommand extends ResilienceCommand {
         @Option(name = "state",
                         valueSpec = "WAITING|RUNNING",
                         separator = ",",
@@ -686,7 +628,15 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class FileOpHistoryCommand extends ResilienceCommand {
+    @Command(name = "history",
+                    hint = "display a history of the most recent terminated "
+                                    + "file operations",
+                    description = "When file operations complete or are aborted, "
+                                    + "their string representations are added "
+                                    + "to a circular buffer whose capacity is set "
+                                    + "by the property "
+                                    + "'resilience.limits.file.operation-history'.")
+    class FileOpHistoryCommand extends ResilienceCommand {
         @Argument(required = false,
                         valueSpec = "errors",
                         usage = "Display just the failures")
@@ -730,7 +680,11 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class FileOpLsCommand extends ResilienceCommand {
+    @Command(name = "file ls",
+                    hint = "list entries in the file operation table",
+                    description = "Scans the table and returns operations  "
+                                    + "matching the filter parameters.")
+    class FileOpLsCommand extends ResilienceCommand {
         @Option(name = "retentionPolicy",
                         valueSpec = "REPLICA|CUSTODIAL",
                         usage = "List only operations for pnfsids with this "
@@ -852,7 +806,16 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class InaccessibleFilesCommand extends ResilienceCommand {
+    @Command(name = "inaccessible",
+                    hint = "list pnfsids for a pool which "
+                                    + "currently have no readable locations",
+                    description = "Issues a query to the namespace to scan the pool, "
+                                    + "checking locations of each file with online "
+                                    + "access latency; results are written to a  "
+                                    + "file in resilience home named '"
+                                    + INACCESSIBLE_PREFIX
+                                    + "' + pool. Executed asynchronously.")
+    class InaccessibleFilesCommand extends ResilienceCommand {
         @Option(name = "cancel", usage = "Cancel the running job.")
         boolean cancel = false;
 
@@ -933,7 +896,13 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PoolControlCommand extends ResilienceCommand {
+    @Command(name = "pool ctrl",
+                    hint= "control the periodic check of active resilient pools "
+                                    + "or processing of pool state changes",
+                    description = "Activates, deactivates, or resets the periodic  "
+                                    + "checking of active pools; turns all pool  "
+                                    + "state handling on or off (start/shutdown)")
+    class PoolControlCommand extends ResilienceCommand {
         @Argument(valueSpec = "ON|OFF|START|SHUTDOWN|RESET|RUN|INFO",
                         required = false,
                         usage = "off = turn scanning off; on = turn scanning on; "
@@ -1068,7 +1037,19 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PoolGroupInfoCommand extends ResilienceCommand {
+    @Command(name = "pool group info",
+                    hint = "list the storage units linked to a pool group "
+                                    + "and confirm resilience constraints "
+                                    + "can be met by the member pools",
+                    description = "Lists name, key and storage units linked to "
+                                    + "the pool group. Tries to satisfy the "
+                                    + "constraints on replica count and "
+                                    + "exclusivity tags for all the storage "
+                                    + "units in the pool group by attempting "
+                                    + "to assign the required number "
+                                    + "of locations for a hypothetical file "
+                                    + "belonging to each unit.")
+    class PoolGroupInfoCommand extends ResilienceCommand {
         @Option(name = "key",
                         usage = "List pool group info for this group key.")
         Integer key;
@@ -1148,7 +1129,11 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PoolInfoCommand extends ResilienceCommand {
+    @Command(name = "pool info",
+                    hint = "list tags and mode for a pool or pools",
+                    description = "Lists pool key, name, mode, "
+                                        + "status, tags and last update time.")
+    class PoolInfoCommand extends ResilienceCommand {
         @Option(name = "status",
                         valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
                         separator = ",",
@@ -1196,36 +1181,13 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PoolOpActivateCommand extends ResilienceCommand {
-        @Option(name = "status",
-                        valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
-                        usage = "Apply only on operations matching this "
-                                        + "pool status.")
-        String status;
-
-        @Argument(required = false,
-                        usage = "Apply only to pools matching "
-                                        + "this regular expression.")
-        String pools;
-
-        private final boolean activate;
-
-        PoolOpActivateCommand(boolean activate) {
-            this.activate = activate;
-        }
-
-        @Override
-        protected String doCall() throws Exception {
-            PoolFilter filter = new PoolFilter();
-            filter.setPools(pools);
-            filter.setPoolStatus(status);
-            return String.format(
-                            "Issued command to %s pool operations.",
-                            poolOperationMap.setIncluded(filter, activate));
-        }
-    }
-
-    abstract class PoolOpCancelCommand extends ResilienceCommand {
+    @Command(name = "pool cancel",
+                    hint = "cancel pool operations",
+                    description = "Scans the pool table and cancels "
+                                    + "operations matching the filter parameters; "
+                                    + "if 'includeChildren' is true, also "
+                                    + "scans the file table.")
+    class PoolOpCancelCommand extends ResilienceCommand {
         @Option(name = "status",
                         valueSpec = "DOWN|READ_ONLY|ENABLED",
                         usage = "Cancel only operations on pools matching this "
@@ -1318,19 +1280,39 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PoolOpExcludeCommand extends PoolOpActivateCommand {
+    @Command(name = "pool exclude",
+                    hint = "exclude pool operations",
+                    description = "Scans the pool table and excludes "
+                                    + "operations for the matching pools; "
+                                    + "exclusion will cancel any running "
+                                    + "operations.  The pool will not be included "
+                                    + "in periodic, forced, or status-change "
+                                    + "scans, though it will still "
+                                    + "appear to its pool group as a member "
+                                    + "in whatever state the pool manager "
+                                    + "knows about.")
+    class PoolOpExcludeCommand extends PoolOpActivateCommand {
         PoolOpExcludeCommand() {
             super(false);
         }
     }
 
-    abstract class PoolOpIncludeCommand extends PoolOpActivateCommand {
+    @Command(name = "pool include",
+                    hint = "include pool operations",
+                    description = "Scans the pool table and includes "
+                                    + "operations for the matching pools; "
+                                    + "include will only affect pool operations "
+                                    + "that are currently excluded.")
+    class PoolOpIncludeCommand extends PoolOpActivateCommand {
         PoolOpIncludeCommand() {
             super(true);
         }
     }
 
-    abstract class PoolOpLsCommand extends ResilienceCommand {
+    @Command(name = "pool ls", hint = "list entries in the pool operation table",
+                    description = "Scans the table and returns "
+                        + "operations matching the filter parameters.")
+    class PoolOpLsCommand extends ResilienceCommand {
         @Option(name = "status",
                         valueSpec = "DOWN|READ_ONLY|ENABLED|UNINITIALIZED",
                         usage = "List only operations on pools matching this "
@@ -1391,7 +1373,18 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
-    abstract class PoolScanCommand extends ResilienceCommand {
+    @Command(name = "pool scan",
+                    hint = "launch a scan of one or more pools",
+                    description = "A check will be initiated to see that the "
+                                        + "number of replicas on the pool is "
+                                        + "properly constrained, creating new "
+                                        + "copies or removing redundant ones "
+                                        + "as necessary. Note: will not override "
+                                        + "a currently running operation; matching "
+                                        + "operations in the waiting state will "
+                                        + "be guaranteed to run at the next  "
+                                        + "available slot opening.")
+    class PoolScanCommand extends ResilienceCommand {
         @Option(name = "status",
                         valueSpec = "DOWN|READ_ONLY|ENABLED",
                         usage = "Scan only pools matching this "
@@ -1467,15 +1460,15 @@ public abstract class ResilienceCommands implements CellCommandListener {
                     = Collections.synchronizedMap(new HashMap<>());
 
     private ExecutorService      executor;
-    private PoolInfoMap          poolInfoMap;
-    private MessageGuard         messageGuard;
-    private MapInitializer       initializer;
-    private PoolOperationMap     poolOperationMap;
+    private PoolInfoMap poolInfoMap;
+    private MessageGuard messageGuard;
+    private MapInitializer initializer;
+    private PoolOperationMap poolOperationMap;
     private FileOperationHandler fileOperationHandler;
-    private FileOperationMap     fileOperationMap;
-    private NamespaceAccess      namespaceAccess;
-    private OperationStatistics  counters;
-    private OperationHistory     history;
+    private FileOperationMap fileOperationMap;
+    private NamespaceAccess namespaceAccess;
+    private OperationStatistics counters;
+    private OperationHistory history;
     private String               resilienceDir;
 
     public void setCounters(OperationStatistics counters) {

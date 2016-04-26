@@ -288,7 +288,7 @@
       <property name="refreshTimeoutUnit" value="${resilience.pool-info-expiry.unit}"/>
     </bean>
 
-    <bean id="AdminCommands" class="org.dcache.resilience.admin.StandaloneResilienceCommands">
+    <bean id="AdminCommands" class="org.dcache.resilience.admin.ResilienceCommands">
       <description>Encapsulates all commands exposed through the admin service</description>
       <property name="counters" ref="Counters"/>
       <property name="history" ref="History"/>
