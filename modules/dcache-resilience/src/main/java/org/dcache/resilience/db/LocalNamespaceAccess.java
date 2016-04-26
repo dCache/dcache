@@ -62,10 +62,12 @@ package org.dcache.resilience.db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -78,6 +80,7 @@ import org.dcache.commons.util.SqlHelper;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
+import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.ExceptionMessage;
@@ -88,11 +91,10 @@ import static org.dcache.commons.util.SqlHelper.tryToClose;
 
 /**
  * <p>Provides handling of specialized resilience-related queries which require
- *      direct access to the underlying database. These return pnfsids
- *      for a given location, and counts representing the total number
- *      of replicas.</p>
+ *      direct access to the underlying database. </p>
  *
- * <p>The former uses a callback to the {@link FileOperationHandler} to add
+ * <p>The {@link #handlePnfsidsForPool} uses a callback to
+ *      the {@link FileOperationHandler} to add
  *      an entry in the pnfsid operation tables for each pnfsid.</p>
  *
  * <p>Class is not marked final so that a test version can be
@@ -131,6 +133,27 @@ public class LocalNamespaceAccess implements NamespaceAccess {
      * <p>Round-trip buffer used when running pool-based queries.</p>
      */
     private int fetchSize;
+
+    @Override
+    public void printInaccessibleFiles(String location,
+                                       PoolInfoMap poolInfoMap,
+                                       PrintWriter printWriter)
+                    throws CacheException, InterruptedException {
+        try {
+            Connection connection = getConnection();
+            try {
+                printResults(connection, location, poolInfoMap, printWriter);
+            } catch (SQLException e) {
+                throw new IOHimeraFsException(e.getMessage());
+            } finally {
+                tryToClose(connection);
+            }
+        } catch (IOHimeraFsException e) {
+            throw new CacheException(CacheException.RESOURCE,
+                            String.format("Could not handle pnfsids for %s",
+                                            location), e);
+        }
+    }
 
     @Override
     public FileAttributes getRequiredAttributes(PnfsId pnfsId)
@@ -243,5 +266,53 @@ public class LocalNamespaceAccess implements NamespaceAccess {
             SqlHelper.tryToClose(resultSet);
             SqlHelper.tryToClose(statement);
         }
+    }
+
+    /**
+     * <p>Used by the inaccessible file query.</p>
+     *
+     * <p>Log at info level so that progress is visible in pinboard.</p>
+     */
+    private void printResults(Connection connection,
+                    String location,
+                    PoolInfoMap poolInfoMap,
+                    PrintWriter writer)
+                    throws SQLException, InterruptedException {
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            statement = connection.prepareStatement(SQL_GET_ONLINE_FOR_LOCATION);
+            statement.setString(1, location);
+            statement.setFetchSize(fetchSize);
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+
+            resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+
+                PnfsId pnfsId = new PnfsId(resultSet.getString(1));
+                try {
+                    if (getRequiredAttributes(pnfsId).getLocations().stream()
+                                    .map(poolInfoMap::getPoolIndex)
+                                    .filter((i) -> poolInfoMap.isPoolViable(i, false))
+                                    .collect(Collectors.toList()).isEmpty()) {
+                        writer.println(pnfsId);
+                    }
+                } catch (CacheException e) {
+                    LOGGER.debug("{}: {}", pnfsId, new ExceptionMessage(e));
+                }
+            }
+        } finally {
+            SqlHelper.tryToClose(resultSet);
+            SqlHelper.tryToClose(statement);
+        }
+
+        LOGGER.info("Printing of inaccessible files for {} completed.", location);
     }
 }

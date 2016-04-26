@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.db;
 
+import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
@@ -68,6 +69,7 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -101,6 +103,20 @@ public interface NamespaceAccess {
      * <p>The workhorse query.
      */
     void handlePnfsidsForPool(ScanSummary scan) throws CacheException;
+
+
+    /**
+     * <p>Used by the admin command to create a file of all the pnfsids
+     *    on a pool which currently have no readable locations.</p>
+     *
+     * @param location pool name.
+     * @param poolInfoMap for checking location readability.
+     * @param printWriter to write the results to.
+     */
+    void printInaccessibleFiles(String location,
+                                PoolInfoMap poolInfoMap,
+                                PrintWriter printWriter)
+                    throws CacheException, InterruptedException;
 
     /**
      * <p>Pass-through to namespace.</p>

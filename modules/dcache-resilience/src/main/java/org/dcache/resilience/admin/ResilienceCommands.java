@@ -60,10 +60,18 @@ documents or software obtained from this server.
 package org.dcache.resilience.admin;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -73,7 +81,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
@@ -108,6 +118,8 @@ import org.dcache.vehicles.FileAttributes;
  * @see StandaloneResilienceCommands
  */
 public abstract class ResilienceCommands implements CellCommandListener {
+    static final String INACCESSIBLE_PREFIX = "inaccessible_files-";
+
     static final String HINT_CHECK     =
                     "launch an operation to adjust replicas for "
                                     + "one or more pnfsids";
@@ -118,6 +130,8 @@ public abstract class ResilienceCommands implements CellCommandListener {
     static final String HINT_HIST        =
                     "display a history of the most recent terminated "
                                     + "file operations";
+    static final String HINT_INACCESSIBLE = "list pnfsids for a pool which "
+                    + "currently have no readable locations";
     static final String HINT_FILE_CNCL   = "cancel file operations";
     static final String HINT_FILE_CTRL   = "control checkpointing or handling of file operations";
     static final String HINT_FILE_LS     = "list entries in the file operation table";
@@ -181,6 +195,13 @@ public abstract class ResilienceCommands implements CellCommandListener {
                                     + "circular buffer whose capacity is set "
                                     + "by the property "
                                     + "'resilience.limits.file.operation-history'.";
+    static final String DESC_INACCESSIBLE    =
+                    "Issues a query to the namespace to scan the pool, "
+                                    + "checking locations of each file with online "
+                                    + "access latency; results are written to a file "
+                                    + "in resilience home named '"
+                                    + INACCESSIBLE_PREFIX
+                                    + "' + pool. Executed asynchronously.";
     static final String DESC_FILE_CNCL =
                     "Scans the file table and cancels "
                                     + "operations matching the filter parameters.";
@@ -831,6 +852,87 @@ public abstract class ResilienceCommands implements CellCommandListener {
         }
     }
 
+    abstract class InaccessibleFilesCommand extends ResilienceCommand {
+        @Option(name = "cancel", usage = "Cancel the running job.")
+        boolean cancel = false;
+
+        @Argument(usage = "A regular expression for pool names.")
+        String expression;
+
+        @Override
+        protected String doCall() throws Exception {
+            try {
+                StringBuilder builder = new StringBuilder();
+                Pattern pattern = Pattern.compile(expression);
+
+                poolInfoMap.getResilientPools()
+                           .stream()
+                           .filter((pool) -> pattern.matcher(pool).find())
+                           .forEach((pool) -> handleOption(cancel, pool, builder));
+
+                builder.insert(0, "Started jobs to write the lists "
+                                + "of inaccessible pnfsids "
+                                + "to the following files:\n\n");
+                builder.append("Check pinboard for progress.\n");
+
+                return builder.toString();
+            } catch (Exception e) {
+                return new ExceptionMessage(e).toString();
+            }
+        }
+
+        private void handleOption(boolean cancel,
+                                  String pool,
+                                  StringBuilder builder) {
+            if (cancel) {
+                Future<?> future = futureMap.remove(pool);
+                if (future != null) {
+                    future.cancel(true);
+                }
+
+                builder.append("cancelled job for ")
+                                .append(pool).append("\n");
+            } else {
+                File file = printToFile(pool,
+                                resilienceDir);
+                builder.append("   ")
+                                .append(file.getAbsolutePath())
+                                .append("\n");
+            }
+        }
+
+        private File printToFile(String pool, String dir) {
+            File file = new File(dir, INACCESSIBLE_PREFIX + pool);
+            ListeningExecutorService decoratedExecutor
+                            = MoreExecutors.listeningDecorator(executor);
+
+            ListenableFuture<?> future = decoratedExecutor.submit(() -> {
+                try {
+                    try (PrintWriter pw = new PrintWriter(
+                                    new FileWriter(file, false))) {
+                        try {
+                            namespaceAccess.printInaccessibleFiles(pool,
+                                                                   poolInfoMap,
+                                                                   pw);
+                        } catch (CacheException e) {
+                            // write out the error to the file
+                            e.printStackTrace(pw);
+                        }
+                    } catch (IOException e) {
+                        // let it go ...
+                    }
+                } catch (InterruptedException e) {
+                    // job was cancelled
+                }
+            });
+
+            futureMap.put(pool, future);
+            future.addListener(() -> futureMap.remove(pool),
+                                     MoreExecutors.directExecutor());
+            return file;
+        }
+    }
+
     abstract class PoolControlCommand extends ResilienceCommand {
         @Argument(valueSpec = "ON|OFF|START|SHUTDOWN|RESET|RUN|INFO",
                         required = false,
@@ -1358,9 +1460,11 @@ public abstract class ResilienceCommands implements CellCommandListener {
 
     /**
      * Used for potentially long database queries.  Executing them
-     * synchronously can bind the command interpreter.
+     * synchronously can bind the command interpreter.  We store
+     * the future in case of cancellation.
      */
-    private final Map<String, Future<?>>      futureMap = new HashMap<>();
+    private final Map<String, Future<?>>  futureMap
+                    = Collections.synchronizedMap(new HashMap<>());
 
     private ExecutorService      executor;
     private PoolInfoMap          poolInfoMap;

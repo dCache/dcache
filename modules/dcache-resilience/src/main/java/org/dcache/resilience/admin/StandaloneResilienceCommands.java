@@ -78,6 +78,9 @@ public final class StandaloneResilienceCommands extends ResilienceCommands {
     @Command(name = "enable", hint = HINT_ENABLE, description = DESC_ENABLE)
     class EnableCommand extends ResilienceCommands.EnableCommand {}
 
+    @Command(name = "inaccessible", hint = HINT_INACCESSIBLE, description = DESC_INACCESSIBLE)
+    class InaccessibleFilesCommand extends ResilienceCommands.InaccessibleFilesCommand {}
+
     @Command(name = "history", hint = HINT_HIST, description = DESC_HIST)
     class FileOpHistoryCommand extends ResilienceCommands.FileOpHistoryCommand {}
 
