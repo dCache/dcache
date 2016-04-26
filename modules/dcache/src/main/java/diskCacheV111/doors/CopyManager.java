@@ -65,8 +65,8 @@ public class CopyManager extends AbstractCellComponent
         _localAddr = new InetSocketAddress(InetAddress.getLocalHost(), 0);
     }
 
-    public static final String hh_set_max_transfers = "<#max transfers>";
-    public String ac_set_max_transfers_$_1(Args args)
+    public static final String hh_set_max_transfers_internal = "<#max transfers>";
+    public String ac_set_max_transfers_internal_$_1(Args args)
     {
         int max = Integer.parseInt(args.argv(0));
         if (max <= 0) {
@@ -76,44 +76,8 @@ public class CopyManager extends AbstractCellComponent
         return "set maximum number of active transfers to " + max;
     }
 
-    public static final String hh_set_mover_timeout = "<#seconds>";
-    public String ac_set_mover_timeout_$_1(Args args)
-    {
-        int timeout = Integer.parseInt(args.argv(0));
-        if (timeout <= 0) {
-            return "Error, mover timeout should be greater than 0";
-        }
-        _moverTimeout = timeout;
-        _moverTimeoutUnit = TimeUnit.SECONDS;
-        return "set mover timeout to " + timeout +  " seconds";
-    }
-
-    public static final String hh_set_pool_timeout = "<#seconds>";
-    public String ac_set_pool_timeout_$_1(Args args)
-    {
-        int timeout = Integer.parseInt(args.argv(0));
-        if (timeout <= 0) {
-            return "Error, pool timeout should be greater than 0";
-        }
-        _poolStub.setTimeout(timeout);
-        _poolStub.setTimeoutUnit(TimeUnit.SECONDS);
-        return "set pool timeout to " + timeout +  " seconds";
-    }
-
-    public static final String hh_set_pool_manager_timeout = "<#seconds>";
-    public String ac_set_pool_manager_timeout_$_1(Args args)
-    {
-        int timeout = Integer.parseInt(args.argv(0));
-        if (timeout <= 0) {
-            return "Error, pool manger timeout should be greater than 0";
-        }
-        _poolManager.setTimeout(timeout);
-        _poolManager.setTimeoutUnit(TimeUnit.SECONDS);
-        return "set pool manager timeout to "+ timeout +  " seconds";
-    }
-
-    public static final String hh_ls = "[-l] [<#transferId>]";
-    public String ac_ls_$_0_1(Args args)
+    public static final String hh_ls_internal = "[-l] [<#transferId>]";
+    public String ac_ls_internal_$_0_1(Args args)
     {
         boolean long_format = args.hasOption("l");
         if (args.argc() > 0) {

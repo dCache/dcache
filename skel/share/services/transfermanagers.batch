@@ -38,7 +38,3 @@ create org.dcache.cells.UniversalSpringCell ${transfermanagers.cell.name} \
         "classpath:diskCacheV111/services/transfer-manager.xml \
         -export=${transfermanagers.cell.export} \
         -profiles=db.enabled-${transfermanagers.enable.db}"
-
-create org.dcache.cells.UniversalSpringCell CopyManager \
-        "classpath:diskCacheV111/doors/copy-manager.xml \
-        -export=${transfermanagers.cell.export}"

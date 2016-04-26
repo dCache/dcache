@@ -40,6 +40,20 @@
     <property name="timeoutUnit" value="${transfermanagers.service.pool.timeout.unit}"/>
   </bean>
 
+  <bean id="copyManager" class="diskCacheV111.doors.CopyManager"
+        init-method="init">
+      <property name="poolManager" ref="poolmanager"/>
+      <property name="pool" ref="pool"/>
+      <property name="pnfsHandler">
+          <bean class="diskCacheV111.util.PnfsHandler">
+              <constructor-arg ref="pnfsmanager"/>
+          </bean>
+      </property>
+      <property name="moverTimeout" value="${transfermanagers.limits.transfer-time}"/>
+      <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
+      <property name="maxTransfers" value="${transfermanagers.limits.internal-transfers}"/>
+  </bean>
+
   <beans profile="db.enabled-false">
     <bean id="transferManager" class="diskCacheV111.services.RemoteTransferManager"
             destroy-method="cleanUp">

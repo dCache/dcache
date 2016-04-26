@@ -133,9 +133,9 @@ public abstract class TransferManager extends AbstractCellComponent
         return "remote ftp transactions will be logged to " + _tLogRoot;
     }
 
-    public static final String hh_set_max_transfers = "<#max transfers>";
+    public static final String hh_set_max_transfers_external = "<#max transfers>";
 
-    public String ac_set_max_transfers_$_1(Args args)
+    public String ac_set_max_transfers_external_$_1(Args args)
     {
         int max = Integer.parseInt(args.argv(0));
         if (max <= 0) {
@@ -145,48 +145,9 @@ public abstract class TransferManager extends AbstractCellComponent
         return "set maximum number of active transfers to " + max;
     }
 
-    public static final String hh_set_pool_timeout = "<#seconds>";
+    public static final String hh_ls_external = "[-l] [<#transferId>]";
 
-    public String ac_set_pool_timeout_$_1(Args args)
-    {
-        int timeout = Integer.parseInt(args.argv(0));
-        if (timeout <= 0) {
-            return "Error, pool timeout should be greater then 0 ";
-        }
-        _poolStub.setTimeout(timeout);
-        _poolStub.setTimeoutUnit(SECONDS);
-        return "set pool timeout to " + timeout + " seconds";
-    }
-
-    public static final String hh_set_pool_manager_timeout = "<#seconds>";
-
-    public String ac_set_pool_manager_timeout_$_1(Args args)
-    {
-        int timeout = Integer.parseInt(args.argv(0));
-        if (timeout <= 0) {
-            return "Error, pool manger timeout should be greater then 0 ";
-        }
-        _poolManager.setTimeout(timeout);
-        _poolManager.setTimeoutUnit(SECONDS);
-        return "set pool manager timeout to " + timeout + " seconds";
-    }
-
-    public static final String hh_set_pnfs_manager_timeout = "<#seconds>";
-
-    public String ac_set_pnfs_manager_timeout_$_1(Args args)
-    {
-        int timeout = Integer.parseInt(args.argv(0));
-        if (timeout <= 0) {
-            return "Error, pnfs manger timeout should be greater then 0 ";
-        }
-        _pnfsManager.setTimeout(timeout);
-        _pnfsManager.setTimeoutUnit(SECONDS);
-        return "set pnfs manager timeout to " + timeout + " seconds";
-    }
-
-    public static final String hh_ls = "[-l] [<#transferId>]";
-
-    public String ac_ls_$_0_1(Args args)
+    public String ac_ls_external_$_0_1(Args args)
     {
         boolean long_format = args.hasOption("l");
         if (args.argc() > 0) {
@@ -265,31 +226,16 @@ public abstract class TransferManager extends AbstractCellComponent
         }
     }
 
-    public static final String hh_set_io_queue = "<io-queue name >";
-
-    public String ac_set_io_queue_$_1(Args args)
-    {
-        String newIoQueueName = args.argv(0);
-        if (newIoQueueName.equals("null")) {
-            _ioQueueName = null;
-            return "io-queue is set to null";
-        }
-        _ioQueueName = newIoQueueName;
-        return "io_queue was set to " + _ioQueueName;
-    }
-
-    public void messageArrived(CellMessage envelope, DoorTransferFinishedMessage message)
+    public void messageArrived(DoorTransferFinishedMessage message)
     {
         long id = message.getId();
         TransferManagerHandler h = getHandler(id);
         if (h != null) {
             h.poolDoorMessageArrived(message);
-        } else {
-            log.error("cannot find handler with id={} for DoorTransferFinishedMessage", id);
         }
     }
 
-    public CancelTransferMessage messageArrived(CellMessage envelope, CancelTransferMessage message)
+    public CancelTransferMessage messageArrived(CancelTransferMessage message)
     {
         long id = message.getId();
         TransferManagerHandler h = getHandler(id);
@@ -313,7 +259,7 @@ public abstract class TransferManager extends AbstractCellComponent
         return message;
     }
 
-    public Object messageArrived(CellMessage envelope, TransferStatusQueryMessage message)
+    public Object messageArrived(TransferStatusQueryMessage message)
     {
         TransferManagerHandler handler = getHandler(message.getId());
 

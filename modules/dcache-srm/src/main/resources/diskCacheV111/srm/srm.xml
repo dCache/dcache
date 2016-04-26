@@ -77,13 +77,6 @@
     <property name="timeoutUnit" value="${srm.service.transfermanager.timeout.unit}" />
   </bean>
 
-  <bean id="copy-manager-stub" class="org.dcache.cells.CellStub">
-    <description>Copy manager communication stub</description>
-    <property name="destination" value="${srm.service.copymanager}" />
-    <property name="timeout" value="${srm.service.copymanager.timeout}" />
-    <property name="timeoutUnit" value="${srm.service.copymanager.timeout.unit}" />
-  </bean>
-
   <bean id="pin-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pin manager communication stub</description>
     <property name="destination" value="${srm.service.pinmanager}" />
@@ -228,7 +221,6 @@
     <property name="poolMonitor" ref="pool-monitor"/>
     <property name="spaceManagerStub" ref="space-manager-stub"/>
     <property name="transferManagerStub" ref="transfer-manager-stub"/>
-    <property name="copyManagerStub" ref="copy-manager-stub"/>
     <property name="pinManagerStub" ref="pin-manager-stub"/>
     <property name="billingStub" ref="billing-stub"/>
     <property name="isSpaceManagerEnabled"

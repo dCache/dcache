@@ -272,7 +272,6 @@ public final class Storage
     private CellStub _pnfsStub;
     private CellStub _poolManagerStub;
     private CellStub _spaceManagerStub;
-    private CellStub _copyManagerStub;
     private CellStub _transferManagerStub;
     private CellStub _pinManagerStub;
     private CellStub _billingStub;
@@ -459,12 +458,6 @@ public final class Storage
     public void setTransferManagerStub(CellStub transferManagerStub)
     {
         _transferManagerStub = transferManagerStub;
-    }
-
-    @Required
-    public void setCopyManagerStub(CellStub copyManagerStub)
-    {
-        _copyManagerStub = copyManagerStub;
     }
 
     @Required
@@ -1431,7 +1424,7 @@ public final class Storage
                                        config.getBuffer_size(),
                                        config.getTcp_buffer_size());
             copyRequest.setSubject(asDcacheUser(user).getSubject());
-            _copyManagerStub.sendAndWait(copyRequest);
+            _transferManagerStub.sendAndWait(copyRequest);
         } catch (TimeoutCacheException e) {
             _log.error("CopyManager is unavailable");
             throw new SRMInternalErrorException("CopyManager is unavailable: " +
