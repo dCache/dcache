@@ -182,7 +182,7 @@ define context ${httpd.cell.name}Setup endDefine
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
    set alias api class org.dcache.services.httpd.probe.ProbeResponseEngine
    ${set_alias_statistics}
-   set alias info class org.dcache.services.info.InfoHttpEngine
+   set alias info class org.dcache.services.info.InfoHttpEngine -- -cell=${httpd.service.info}
 endDefine
 
 # Page to show for missing content

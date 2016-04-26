@@ -32,6 +32,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.services.info.serialisation.JsonSerialiser;
 import org.dcache.services.info.serialisation.PrettyPrintTextSerialiser;
 import org.dcache.services.info.serialisation.XmlSerialiser;
+import org.dcache.util.Args;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
 import static com.google.common.base.Predicates.notNull;
@@ -59,7 +60,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpResponseEngine.class);
-    private static final String INFO_CELL_NAME = "info";
 
     private static final List<String> ENTIRE_TREE = new ArrayList<>();
 
@@ -86,6 +86,7 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
             put("json", jsonSerialiser).
             put("pretty", prettyPrintSerialiser).
             build();
+    private final String _infoCellName;
 
     private CellStub _info;
 
@@ -158,12 +159,13 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
      */
     public InfoHttpEngine(String[] args)
     {
+        _infoCellName = new Args(args).getOption("cell");
     }
 
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
-        _info = new CellStub(endpoint, new CellPath(INFO_CELL_NAME), 4000, MILLISECONDS);
+        _info = new CellStub(endpoint, new CellPath(_infoCellName), 4000, MILLISECONDS);
     }
 
     /**

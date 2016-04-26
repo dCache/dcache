@@ -81,8 +81,14 @@ by the wrapper script.
 .TP
 .B services
 Provides a list of configured services. This list includes the domain
-hosting the service, the service type, the cell name and the path of
-the log file.
+hosting the service, the service type, the cell name and whether the
+service is replicable.
+
+Any service in dCache can have more than one instance if those instances
+represent different logical services. Replicable services on the other
+hand can have multiple instances representing the same logical service,
+i.e. other services see them as a single service. This provides some degree
+of fault tolerance and load balancing.
 
 .TP
 .B version
