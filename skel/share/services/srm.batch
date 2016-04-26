@@ -5,7 +5,7 @@
 onerror shutdown
 
 check -strong srm.cell.name
-check -strong srm.cell.export
+check srm.cell.consume
 check srm.cell.subscribe
 check -strong srm.cell.max-message-threads
 check srm.cell.max-messages-queued
@@ -245,7 +245,7 @@ onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${srm.cell.name} \
    "classpath:diskCacheV111/srm/srm.xml \
-       -export=${srm.cell.export} \
+       -consume=${srm.cell.consume} \
         -cell.max-message-threads=${srm.cell.max-message-threads} -cell.max-messages-queued=${srm.cell.max-messages-queued} \
        -subscribe=${srm.cell.subscribe} \
    "

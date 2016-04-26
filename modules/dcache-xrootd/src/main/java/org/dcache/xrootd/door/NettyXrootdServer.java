@@ -32,13 +32,11 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.FsPath;
 
 import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
 import dmg.util.TimebasedCounter;
 
 import org.dcache.commons.util.NDC;
-import org.dcache.util.Args;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
@@ -50,7 +48,7 @@ import org.dcache.xrootd.protocol.XrootdProtocol;
  * Netty based xrootd redirector. Could possibly be replaced by pure
  * spring configuration once we move to Netty 3.1.
  */
-public class NettyXrootdServer implements CellIdentityAware, CellArgsAware
+public class NettyXrootdServer implements CellIdentityAware
 {
     private static final Logger _log =
         LoggerFactory.getLogger(NettyXrootdServer.class);
@@ -72,7 +70,6 @@ public class NettyXrootdServer implements CellIdentityAware, CellArgsAware
     private EventLoopGroup _acceptGroup;
     private EventLoopGroup _socketGroup;
     private Map<String, String> _queryConfig;
-    private boolean _isNameSiteUnique;
     private CellAddressCore _myAddress;
 
     public int getPort()
@@ -126,12 +123,6 @@ public class NettyXrootdServer implements CellIdentityAware, CellArgsAware
     }
 
     @Override
-    public void setCellArgs(Args args)
-    {
-        _isNameSiteUnique = args.getBooleanOption("export");
-    }
-
-    @Override
     public void setCellAddress(CellAddressCore address)
     {
         _myAddress = address;
@@ -181,11 +172,7 @@ public class NettyXrootdServer implements CellIdentityAware, CellArgsAware
 
     public void start()
     {
-        if (_isNameSiteUnique) {
-            sessionPrefix = "door:" + _myAddress.getCellName() + ":";
-        } else {
-            sessionPrefix = "door:" + _myAddress.getCellName() + "@" + _myAddress.getCellDomainName() + ":";
-        }
+        sessionPrefix = "door:" + _myAddress.getCellName() + "@" + _myAddress.getCellDomainName() + ":";
 
         _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-listen-%d").build()));
         _socketGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-net-%d").build()));

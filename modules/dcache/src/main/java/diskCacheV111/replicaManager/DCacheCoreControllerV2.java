@@ -148,7 +148,6 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
 
    public DCacheCoreControllerV2( String cellName , String args )
    {
-
       super(cellName, args);
 
       _cellName = cellName ;
@@ -165,12 +164,6 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
                _nucleus.newThread(new MessageProcessThread(), "DCacheCoreController-MessageProcessing");
        messageProcessingThread.start();
    }
-
-    @Override
-    protected void started()
-    {
-        export();
-    }
 
     @Override
     public void cleanUp()

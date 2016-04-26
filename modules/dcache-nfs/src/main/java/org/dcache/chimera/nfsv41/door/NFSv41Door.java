@@ -208,11 +208,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private VfsCacheConfig _vfsCacheConfig;
 
-    /**
-     * indicates is this cell a well-known cell or not
-     */
-    private boolean _isWellKnown;
-
     public void setEnableRpcsecGss(boolean enable) {
         _enableRpcsecGss = enable;
     }
@@ -268,8 +263,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     public void init() throws Exception {
-
-        _isWellKnown = getArgs().getBooleanOption("export");
 
         _vfs = new VfsCache(new ChimeraVfs(_fileFileSystemProvider, _idMapper), _vfsCacheConfig);
         MountServer ms = new MountServer(_exportFile, _vfs);
@@ -425,7 +418,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         FsInode inode = _fileFileSystemProvider.inodeFromBytes(nfsInode.getFileId());
         PnfsId pnfsId = new PnfsId(inode.getId());
-        Transfer.initSession(_isWellKnown, false);
+        Transfer.initSession(false, false);
         NDC.push(pnfsId.toString());
         NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {

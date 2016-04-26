@@ -72,7 +72,7 @@ public class LineBasedDoor
     protected void startUp()
         throws Exception
     {
-        Transfer.initSession(getArgs().getBooleanOption("hasSiteUniqueName"), true);
+        Transfer.initSession(false, true);
         super.startUp();
 
         LOGGER.debug("Client host: {}", engine.getInetAddress().getHostAddress());

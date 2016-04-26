@@ -161,12 +161,6 @@ public class PAMAuthentificator  extends CellAdapter {
         useInterpreter(true);
     }
 
-    @Override
-    protected void started()
-    {
-        export();
-    }
-
     private UserMetaDataProvider initUserServiceProvider(String className )
       throws Exception {
 

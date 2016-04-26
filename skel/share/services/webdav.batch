@@ -4,7 +4,7 @@
 
 onerror shutdown
 check -strong webdav.cell.name
-check -strong webdav.cell.export
+check webdav.cell.consume
 check webdav.cell.subscribe
 check -strong webdav.net.port
 check -strong webdav.net.listen
@@ -116,6 +116,6 @@ onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${webdav.cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
     -profiles=connector-${webdav.authn.profile},missing-files-${webdav.enable.missing-files},owncloud-${webdav.enable.owncloud} \
-    -export=${webdav.cell.export} \
+    -consume=${webdav.cell.consume} \
     -subscribe=${webdav.cell.subscribe} \
     -cellClass=WebDAVDoor"

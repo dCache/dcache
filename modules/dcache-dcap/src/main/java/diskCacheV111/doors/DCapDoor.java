@@ -121,7 +121,7 @@ public class      DCapDoor
         // check for lock
         //
 
-        Transfer.initSession(getArgs().getBooleanOption("hasSiteUniqueName"), true);
+        Transfer.initSession(false, true);
 
         _log.info("Checking DCap lock");
         try {

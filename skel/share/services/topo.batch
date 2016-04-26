@@ -7,7 +7,7 @@
 onerror shutdown
 
 check -strong topo.cell.name
-check -strong topo.cell.export
+check topo.cell.consume
 
 check -strong topo.limits.refresh-period
 check -strong topo.limits.refresh-period.unit
@@ -15,4 +15,4 @@ check -strong topo.service.system.timeout
 check -strong topo.service.system.timeout.unit
 
 create org.dcache.cells.UniversalSpringCell ${topo.cell.name} \
-   "classpath:org/dcache/services/topology/classic.xml -export=${topo.cell.export} -cellClass=TopoCell"
+   "classpath:org/dcache/services/topology/classic.xml -consume=${topo.cell.consume} -cellClass=TopoCell"

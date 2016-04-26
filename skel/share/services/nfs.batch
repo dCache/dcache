@@ -4,7 +4,7 @@
 
 onerror shutdown
 check -strong nfs.cell.name
-check -strong nfs.cell.export
+check nfs.cell.consume
 check -strong nfs.cell.max-message-threads
 check nfs.cell.max-messages-queued
 check -strong nfs.net.port
@@ -53,7 +53,7 @@ check nfs.mover.queue
 
 create org.dcache.cells.UniversalSpringCell ${nfs.cell.name} \
         "classpath:org/dcache/chimera/nfsv41/door/nfsv41-common.xml \
-            -export=${nfs.cell.export} \
+            -consume=${nfs.cell.consume} \
             -cell.max-message-threads=${nfs.cell.max-message-threads} -cell.max-messages-queued=${nfs.cell.max-messages-queued} \
             -profiles=portmap-${nfs.enable.portmap}"
 

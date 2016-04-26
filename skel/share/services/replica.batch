@@ -5,7 +5,7 @@
 onerror shutdown
 
 check -strong replica.cell.name
-check -strong replica.cell.export
+check replica.cell.consume
 check replica.cell.subscribe
 check -strong replica.db.user
 check replica.db.password
@@ -33,7 +33,7 @@ check -strong replica.enable.same-host-replica
 
 create diskCacheV111.replicaManager.ReplicaManagerV2 ${replica.cell.name} \
         "default \
-        -export=${replica.cell.export} \
+        -consume=${replica.cell.consume} \
         -subscribe=${replica.cell.subscribe} \
         -dbClass=diskCacheV111.replicaManager.ReplicaDbV1 \
         -coldStart \

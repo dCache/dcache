@@ -1,2 +1,2 @@
 create dmg.cells.services.login.user.AclCell acm \
-          "${dcache.paths.admin}/users -export -egpassword=${dcache.paths.config}/passwd"
+          "${dcache.paths.admin}/users -consume=acm -egpassword=${dcache.paths.config}/passwd"

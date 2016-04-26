@@ -1,7 +1,7 @@
 onerror shutdown
 
 check -strong pool.cell.name
-check -strong pool.cell.export
+check pool.cell.consume
 check -strong pool.cell.max-message-threads
 check pool.cell.max-messages-queued
 check -strong pool.name
@@ -97,7 +97,7 @@ onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell "${pool.cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
-    -export=${pool.cell.export} -cellClass=Pool \
+    -consume=${pool.cell.consume} -cellClass=Pool \
     -profiles=healthcheck-${pool.enable.repository-check} \
     -cell.max-message-threads=${pool.cell.max-message-threads} -cell.max-messages-queued=${pool.cell.max-messages-queued} \
     -setupClass=pool -setupFile=\"${pool.path}/setup\" \

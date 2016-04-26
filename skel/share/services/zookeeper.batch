@@ -8,7 +8,7 @@
 #
 
 check -strong zookeeper.cell.name
-check -strong zookeeper.cell.export
+check zookeeper.cell.consume
 check -strong zookeeper.net.listen
 check -strong zookeeper.net.port
 check -strong zookeeper.data-dir
@@ -22,7 +22,8 @@ check -strong zookeeper.max-session-timeout.unit
 check -strong zookeeper.max-client-connections
 
 create org.dcache.zookeeper.service.ZooKeeperCell ${zookeeper.cell.name} \
-          "-data-log-dir=\"${zookeeper.data-log-dir}\" \
+          "-consume=${zookeeper.cell.consume} \
+           -data-log-dir=\"${zookeeper.data-log-dir}\" \
            -data-dir=\"${zookeeper.data-dir}\" \
            -tick-time=${zookeeper.tick-time} \
            -tick-time-unit=${zookeeper.tick-time.unit} \

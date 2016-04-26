@@ -4,9 +4,6 @@ import io.milton.http.Auth;
 import io.milton.http.HttpManager;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
-
-import org.dcache.auth.Subjects;
-
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -22,11 +19,10 @@ import java.io.InputStream;
 import java.security.AccessController;
 
 import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
 
-import org.dcache.util.Args;
+import org.dcache.auth.Subjects;
 import org.dcache.util.Transfer;
 
 /**
@@ -35,21 +31,14 @@ import org.dcache.util.Transfer;
  */
 public class MiltonHandler
     extends AbstractHandler
-    implements CellIdentityAware, CellArgsAware
+    implements CellIdentityAware
 {
     private HttpManager _httpManager;
     private CellAddressCore _myAddress;
-    private boolean _isNameSiteUnique;
 
     public void setHttpManager(HttpManager httpManager)
     {
         _httpManager = httpManager;
-    }
-
-    @Override
-    public void setCellArgs(Args args)
-    {
-        _isNameSiteUnique = args.getBooleanOption("export");
     }
 
     @Override
@@ -64,7 +53,7 @@ public class MiltonHandler
         throws IOException, ServletException
     {
         try (CDC ignored = CDC.reset(_myAddress)) {
-            Transfer.initSession(_isNameSiteUnique, false);
+            Transfer.initSession(false, false);
             ServletContext context = ContextHandler.getCurrentContext();
             switch (request.getMethod()) {
             case "USERINFO":

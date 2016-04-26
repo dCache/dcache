@@ -3,8 +3,8 @@
 onerror shutdown
 
 check -strong cleaner.cell.name
-check -strong cleaner.cell.export
-check -strong cleaner.cell.subscribe
+check cleaner.cell.consume
+check cleaner.cell.subscribe
 check -strong cleaner.service.pool.retry-period
 check -strong cleaner.service.pool.retry-period.unit
 check -strong cleaner.service.pool.timeout
@@ -27,7 +27,7 @@ check -strong cleaner.db.url
 check cleaner.db.password
 
 create org.dcache.chimera.namespace.ChimeraCleaner ${cleaner.cell.name} \
-        "-export=${cleaner.cell.export} \
+        "-consume=${cleaner.cell.consume} \
          -subscribe=${cleaner.cell.subscribe} \
          -refresh=${cleaner.limits.period} \
          -refreshUnit=${cleaner.limits.period.unit} \

@@ -1,7 +1,7 @@
 onerror shutdown
 check -strong hoppingmanager.cell.name
 check -strong hoppingmanager.config
-check -strong hoppingmanager.cell.export
+check hoppingmanager.cell.consume
 
 create diskCacheV111.services.FileHoppingManager "${hoppingmanager.cell.name}" \
- "\"${hoppingmanager.config}\" -export=${hoppingmanager.cell.export}"
+ "\"${hoppingmanager.config}\" -consume=${hoppingmanager.cell.consume}"

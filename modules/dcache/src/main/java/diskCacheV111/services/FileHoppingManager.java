@@ -85,12 +85,6 @@ public class FileHoppingManager extends CellAdapter {
          runSetupFile(_configFile);
      }
 
-     @Override
-     protected void started()
-     {
-         export();
-     }
-
      private void runSetupFile(File setupFile ) throws Exception {
 
       if( ! setupFile.exists() ) {

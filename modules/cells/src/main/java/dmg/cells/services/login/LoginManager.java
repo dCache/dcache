@@ -142,7 +142,7 @@ public class LoginManager
         String loginCell = _args.argv(1);
 
         Args childArgs = new Args(_args.toString()
-                                          .replaceFirst("(^|\\s)-export(=true|=false)?($|\\s)", " -hasSiteUniqueName$2 ")
+                                          .replaceFirst("(^|\\s)-consume=\\S*", "")
                                           .replaceFirst("(^|\\s)-subscribe=\\S*", ""));
         childArgs.shift();
         childArgs.shift();

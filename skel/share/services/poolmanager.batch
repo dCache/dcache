@@ -3,7 +3,7 @@
 onerror shutdown
 
 check -strong poolmanager.cell.name
-check -strong poolmanager.cell.export
+check poolmanager.cell.consume
 check poolmanager.cell.subscribe
 check -strong poolmanager.plugins.quota-manager
 check -strong poolmanager.service.pnfsmanager
@@ -70,7 +70,7 @@ create org.dcache.cells.UniversalSpringCell ${poolmanager.cell.name} \
    "!poolmanager.defaults \
     classpath:diskCacheV111/poolManager/poolmanager.xml \
     -setupFile=${poolmanager.setup.file} \
-    -export=${poolmanager.cell.export} \
+    -consume=${poolmanager.cell.consume} \
     -subscribe=${poolmanager.cell.subscribe} \
     -cellClass=PoolManager \
     -replyObject \

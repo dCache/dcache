@@ -352,22 +352,24 @@ public class CellAdapter
     {
         return _nucleus.getCuratorFramework();
     }
+
     /**
-     * marks this cell to be exportable. This call triggers an
-     * CellExported event to be delivered to all CellEventListeners.
-     * The call should only be used for cells with a
-     * wellknown name because this name is distributed to
-     * all relevent domains as soon as a
-     * RoutingManager is
-     * running.
+     * Let's this cell consume messages from a particular named queue. Messages posted to
+     * the queue will be delivered to the cell like any other message.
      */
-    public void   export() { _nucleus.consume(getCellName()); }
+    public void consume(String queue)
+    {
+        _nucleus.consume(queue);
+    }
 
     /**
      * Subscribes this cell to a specific publish-subscribe topic. Messages posted to
-     * the topic will be delievered to the cell like any other message.
+     * the topic will be delivered to the cell like any other message.
      */
-    public void subscribe(String topic) { _nucleus.subscribe(topic); }
+    public void subscribe(String topic)
+    {
+        _nucleus.subscribe(topic);
+    }
 
     /**
      * Defines a pinboard for this CellAdapter.
@@ -723,8 +725,8 @@ public class CellAdapter
     @Override
     public void postStartup(StartEvent event)
     {
-        if (_args.getBooleanOption("export")) {
-            export();
+        for (String queue : Splitter.on(",").omitEmptyStrings().split(_args.getOption("consume", ""))) {
+            consume(queue);
         }
         for (String topic : Splitter.on(",").omitEmptyStrings().split(_args.getOption("subscribe", ""))) {
             subscribe(topic);

@@ -6,7 +6,7 @@
 onerror shutdown
 
 check -strong transfermanagers.cell.name
-check -strong transfermanagers.cell.export
+check transfermanagers.cell.consume
 
 check -strong transfermanagers.service.poolmanager
 check -strong transfermanagers.service.poolmanager.timeout
@@ -36,5 +36,5 @@ check transfermanagers.mover.queue
 
 create org.dcache.cells.UniversalSpringCell ${transfermanagers.cell.name} \
         "classpath:diskCacheV111/services/transfer-manager.xml \
-        -export=${transfermanagers.cell.export} \
+        -consume=${transfermanagers.cell.consume} \
         -profiles=db.enabled-${transfermanagers.enable.db}"

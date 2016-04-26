@@ -60,12 +60,6 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     }
 
     @Override
-    protected void started()
-    {
-        export();
-    }
-
-    @Override
     public void getInfo( PrintWriter pw ){
        pw.println("HsmControlOsm : [$Id: HsmControlOsm.java,v 1.4 2005-01-17 16:21:33 patrick Exp $]" ) ;
        pw.println("Requests    : "+_requests ) ;

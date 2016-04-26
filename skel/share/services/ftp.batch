@@ -5,7 +5,7 @@
 onerror shutdown
 
 check -strong ftp.cell.name
-check -strong ftp.cell.export
+check ftp.cell.consume
 check ftp.cell.subscribe
 check -strong ftp.implementation
 check -strong ftp.net.port
@@ -64,7 +64,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
   "${ftp.net.port} ${ftp.implementation} \
    -listen=${ftp.net.listen} \
    -prot=raw \
-   -export=${ftp.cell.export} \
+   -consume=${ftp.cell.consume} \
    -subscribe=${ftp.cell.subscribe} \
    -root=\"${ftp.root}\" \
    -upload=\"${ftp.authz.upload-directory}\" \

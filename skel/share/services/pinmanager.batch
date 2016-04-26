@@ -1,7 +1,7 @@
 onerror shutdown
 
 check -strong pinmanager.cell.name
-check -strong pinmanager.cell.export
+check pinmanager.cell.consume
 check pinmanager.cell.subscribe
 check -strong pinmanager.cell.max-message-threads
 check pinmanager.cell.max-messages-queued
@@ -27,7 +27,7 @@ exec file:${dcache.paths.share}/cells/stage.fragment pinmanager doors
 
 create org.dcache.cells.UniversalSpringCell ${pinmanager.cell.name} \
        "classpath:org/dcache/pinmanager/pinmanager.xml \
-        -export=${pinmanager.cell.export} \
+        -consume=${pinmanager.cell.consume} \
         -subscribe=${pinmanager.cell.subscribe} \
         -cell.max-message-threads=${pinmanager.cell.max-message-threads} -cell.max-messages-queued=${pinmanager.cell.max-messages-queued} \
        "

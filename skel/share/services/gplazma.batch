@@ -6,7 +6,8 @@ check -strong gplazma.cell.max-message-threads
 check gplazma.cell.max-messages-queued
 check -strong gplazma.configuration.file
 check -strong gplazma.service.pnfsmanager
+check gplazma.cell.consume
 
 create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
    "classpath:org/dcache/services/login/gplazma.xml \
-     -export=${gplazma.cell.export} -monitor -cell.max-message-threads=${gplazma.cell.max-message-threads} -cell.max-messages-queued=${gplazma.cell.max-messages-queued}"
+     -consume=${gplazma.cell.consume} -monitor -cell.max-message-threads=${gplazma.cell.max-message-threads} -cell.max-messages-queued=${gplazma.cell.max-messages-queued}"

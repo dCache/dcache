@@ -5,7 +5,7 @@
 onerror shutdown
 
 check -strong xrootd.cell.name
-check -strong xrootd.cell.export
+check xrootd.cell.consume
 check xrootd.cell.subscribe
 check -strong xrootd.net.port
 check -strong xrootd.net.listen
@@ -42,7 +42,7 @@ onerror continue
 
 create org.dcache.cells.UniversalSpringCell ${xrootd.cell.name} \
        "classpath:org/dcache/xrootd/door/xrootd.xml \
-        -export=${xrootd.cell.export} \
+        -consume=${xrootd.cell.consume} \
         -subscribe=${xrootd.cell.subscribe} \
         -cellClass=XrootdDoor"
 
