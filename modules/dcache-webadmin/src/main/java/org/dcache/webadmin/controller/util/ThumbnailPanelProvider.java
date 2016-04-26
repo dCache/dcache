@@ -1,4 +1,4 @@
-/*
+  /*
 COPYRIGHT STATUS:
 Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
 software are sponsored by the U.S. Department of Energy under Contract No.
@@ -61,10 +61,11 @@ package org.dcache.webadmin.controller.util;
 
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -80,28 +81,61 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Provider for the view displaying thumbnail links (see
  * {@link PoolQueuePlotsDisplayPanel}) to popup displays.
- *
- * @author arossi
  */
 public final class ThumbnailPanelProvider extends
                 AbstractRegexFilteringProvider<ThumbnailPanelBean, String> {
+    private static final Logger LOGGER
+                    = LoggerFactory.getLogger(ThumbnailPanelProvider.class);
 
     private static final long serialVersionUID = 9211014459588122003L;
 
-    private static final FilenameFilter filter = (dir, name) -> name.contains(RrdSettings.FILE_SUFFIX);
+    private static final FilenameFilter FILENAME_FILTER = (dir, name) ->
+                    name.contains(RrdSettings.FILE_SUFFIX)
+			&& !name.contains(RrdSettings.ALL_POOLS);
 
     private static final int MAX_COLS = 8;
 
+    public enum Level {
+        ALL_POOLS,
+        POOL_GROUPS,
+        POOLS_OF_GROUP
+    }
+
     private final File dir;
+    private final File all;
     private final int imgWidth;
     private final int imgHeight;
+    private final String imgType;
 
     public ThumbnailPanelProvider(String plotsDirectoryPath, String imgHeight,
-                    String imgWidth) {
+                    String imgWidth, String imgType) {
         checkNotNull(plotsDirectoryPath);
         dir = new File(plotsDirectoryPath);
         this.imgHeight = Integer.parseInt(imgHeight);
         this.imgWidth = Integer.parseInt(imgWidth);
+        this.imgType = imgType;
+        all = RrdSettings.getImagePath(imgType, dir, RrdSettings.ALL_POOLS);
+    }
+
+    public Level getLevel() {
+        return getPoolPlotBean().getLevel();
+    }
+
+    public String getLevelTitle() {
+        switch (getLevel()) {
+            case ALL_POOLS:
+                return "Pool Summary";
+            case POOL_GROUPS:
+                return "Pool Groups";
+            case POOLS_OF_GROUP:
+                return getName();
+            default:
+                return "Error!";
+        }
+    }
+
+    public String getName() {
+        return getPoolPlotBean().getName();
     }
 
     public int getNumCols() {
@@ -119,13 +153,53 @@ public final class ThumbnailPanelProvider extends
         return getPoolPlotBean().getSort();
     }
 
+    /**
+     * This method should be called before rendering.
+     */
     public void refresh() {
-        List<ThumbnailPanelBean> panels = getPoolPlotBean().getPanels();
-        panels.clear();
-        File[] files = dir.listFiles(filter);
+        LOGGER.trace("refresh called");
+
+        PoolPlotOptionBean options = getPoolPlotBean();
+        LOGGER.debug("current options: {}", options);
+
+        List<ThumbnailPanelBean> panels = options.getPanels();
+        File subdir;
+        File[] files;
+
+        switch (options.getLevel()) {
+            case POOLS_OF_GROUP:
+                subdir = new File(dir, RrdSettings.GROUP_DIR + options.getName());
+                files = subdir.listFiles(FILENAME_FILTER);
+                break;
+            case POOL_GROUPS:
+                subdir = dir;
+                files = subdir.listFiles(FILENAME_FILTER);
+                break;
+            case ALL_POOLS:
+            default:
+                subdir = dir;
+                files = new File[]{all};
+        }
+
+	panels.clear();
+
+        if (files == null || files.length == 0) {
+            return;
+        }
+
         for (File file : files) {
             panels.add(new ThumbnailPanelBean(file, imgHeight, imgWidth));
         }
+
+        LOGGER.debug("panels are now: {}", panels);
+    }
+
+    public void setLevel(Level level) {
+        getPoolPlotBean().setLevel(level);
+    }
+
+    public void setName(String name) {
+        getPoolPlotBean().setName(name);
     }
 
     public void setOrder(String order) {
@@ -165,17 +239,16 @@ public final class ThumbnailPanelProvider extends
     @Override
     protected List<ThumbnailPanelBean> getFiltered() {
         List<ThumbnailPanelBean> panels = getPoolPlotBean().getPanels();
-        List<ThumbnailPanelBean> filtered = new ArrayList<>(panels);
-        filterOnExpression(filtered);
-        return filtered;
+        filterOnExpression(panels);
+        return panels;
+    }
+
+    protected PoolPlotOptionBean getPoolPlotBean() {
+        return WebAdminInterfaceSession.getPoolPlotBean();
     }
 
     @Override
     protected AbstractRegexFilterBean<ThumbnailPanelBean> getRegexBean() {
-        return WebAdminInterfaceSession.getPoolPlotBean();
-    }
-
-    protected PoolPlotOptionBean getPoolPlotBean() {
         return WebAdminInterfaceSession.getPoolPlotBean();
     }
 }

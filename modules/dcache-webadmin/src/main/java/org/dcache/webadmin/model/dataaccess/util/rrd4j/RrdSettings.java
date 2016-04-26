@@ -63,6 +63,7 @@ import org.rrd4j.graph.RrdGraphConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -73,6 +74,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class RrdSettings {
     public static final String FILE_SUFFIX = "_queue";
+    public static final String ALL_POOLS = "all";
+    public static final String GROUP_DIR = "group_";
 
     public static int getRrdGraphConstant(TimeUnit unit) {
         if (TimeUnit.DAYS.equals(unit)) {
@@ -88,6 +91,10 @@ public class RrdSettings {
             return RrdGraphConstants.SECOND;
         }
         return 0;
+    }
+
+    public static File getImagePath(String type, File dir, String name) {
+        return new File(dir, name + FILE_SUFFIX + "." + type);
     }
 
     /*

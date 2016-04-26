@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.webadmin.view.pages.poolqueues;
 
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.request.http.WebResponse;
 
 import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
@@ -73,23 +74,31 @@ import org.dcache.webadmin.view.panels.poolqueues.PoolQueuePlotsDisplayPanel;
  * @author arossi
  */
 public class PoolQueuePlots extends BasePage {
-
     private static final long serialVersionUID = -1267479540778078027L;
 
-    private final ThumbnailPanelProvider provider;
+    private PoolQueuePlotsDisplayPanel displayPanel;
 
     public PoolQueuePlots() {
-        provider = getWebadminApplication().getThumbnailPanelProvider();
-        provider.refresh();
-
+        ThumbnailPanelProvider provider
+                        = getWebadminApplication().getThumbnailPanelProvider();
         Form<?> form = getAutoRefreshingForm("poolQueuePlotsForm");
+        displayPanel = new PoolQueuePlotsDisplayPanel("displayPanel", provider);
         form.add(new PoolQueuePlotsControlPanel("controlPanel", provider));
-        form.add(new PoolQueuePlotsDisplayPanel("displayPanel", provider));
+        form.add(displayPanel);
         add(form);
     }
 
+    /**
+     * Called before rendering.
+     */
     @Override
     protected void refresh(){
-        provider.refresh();
+        displayPanel.refresh();
+    }
+
+    @Override
+    protected void setHeaders(WebResponse response) {
+        response.disableCaching();
+        super.setHeaders(response);
     }
 }

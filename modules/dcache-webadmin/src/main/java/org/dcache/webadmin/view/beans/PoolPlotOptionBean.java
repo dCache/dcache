@@ -67,29 +67,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
+import org.dcache.webadmin.controller.util.ThumbnailPanelProvider.Level;
 
 /**
  * Session data bean, for use with {@link ThumbnailPanelProvider}.
- *
- * @author arossi
  */
-public class PoolPlotOptionBean extends
-                AbstractRegexFilterBean<ThumbnailPanelBean> {
+public class PoolPlotOptionBean
+                extends AbstractRegexFilterBean<ThumbnailPanelBean> {
 
     private static final long serialVersionUID = 4006531168978523898L;
 
-    private final List<ThumbnailPanelBean> panels
-        = new ArrayList<ThumbnailPanelBean>();
+    private final List<ThumbnailPanelBean> panels = new ArrayList<>();
+    private final SingleSortState          state  = new SingleSortState();
 
     private String order = SortOrder.ASCENDING.toString();
-    private final SingleSortState state = new SingleSortState();
+    private Level level = Level.ALL_POOLS;
+    private String name = null;
+
+    public Level getLevel() {
+        return level;
+    }
+
+    public String getName() {
+        return name;
+    }
 
     public String getOrder() {
         return order;
-    }
-
-    public void setSort(final String property, final SortOrder order) {
-        state.setPropertySortOrder(property, order);
     }
 
     public List<ThumbnailPanelBean> getPanels() {
@@ -100,11 +104,28 @@ public class PoolPlotOptionBean extends
         return state.getSort();
     }
 
+    public void setLevel(Level level) {
+        this.level = level;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void setOrder(String order) {
         this.order = order;
     }
 
+    public void setSort(final String property, final SortOrder order) {
+        state.setPropertySortOrder(property, order);
+    }
+
     public void setSort(final SortParam param) {
         state.setSort(param);
+    }
+
+    public String toString() {
+        return "(level " + level + ")(name " + name + ")(sort " + getSort()
+                        + ")(order " + order + ")(panels " + panels + ")";
     }
 }

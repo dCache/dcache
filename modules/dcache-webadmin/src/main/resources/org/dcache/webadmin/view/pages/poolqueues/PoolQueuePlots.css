@@ -1,18 +1,19 @@
 @CHARSET "UTF-8";
 
 h2 {
-    text-align: center;
+    text-align: left;
 }
 
 h3 {
     text-align: left;
 }
 
-p {
-    text-align: left;
+h4 {
+    text-align: center;
+    font-style: normal;
 }
 
-.control td {
+tr td {
     text-align: center;
 }
 
@@ -29,10 +30,6 @@ p {
     margin-right: auto;
 }
 
-.display td {
-    text-align: center;
-}
-
 .display tr:nth-child(even) {
     background: #ffffff;
 }
@@ -41,23 +38,28 @@ p {
     background: #ffffff;
 }
 
-.thumbnail table {
-    width: 100%
-}
-
-.thumbnail td {
-    text-align: center;
-    width: 100%
-}
-
 .thumbnail tr:nth-child(even) {
-    background: #789498;
+    background: #d2dddd;
+    color: #789498;
+    font-style: italic;
 }
 
 .thumbnail tr:nth-child(odd) {
-    background: #d2dddd;
+    background: #789498;
+    color: #d2dddd;
+    font-style: italic;
 }
 
-.thumbnail img {
-    width: 80%
+img.plot {
+    width: 85%;
 }
+
+img.arrow {
+    border: 0px;
+    margin: 0px;
+    width: 20px;
+    max-width: 20px;
+    height: 20px;
+    max-height: 20px;
+}
+

@@ -64,9 +64,9 @@ import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.link.PopupSettings;
 import org.apache.wicket.markup.html.link.ResourceLink;
-import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.request.resource.ResourceStreamResource;
 import org.apache.wicket.util.resource.FileResourceStream;
+import org.apache.wicket.util.time.Duration;
 
 import java.io.File;
 import java.io.Serializable;
@@ -94,7 +94,8 @@ public class ThumbnailPanelBean implements IRegexFilterable,
         UrlResourceStream stream
             = new UrlResourceStream(Thread.currentThread().getContextClassLoader()
                                           .getResource(PLACEHOLDER));
-        IResource resource = new ResourceStreamResource(stream);
+        ResourceStreamResource resource = new ResourceStreamResource(stream);
+        resource.setCacheDuration(Duration.NONE);
         Image image = new Image("thumbnail", resource);
         link = new Link<String>("plotlink") {
             private static final long serialVersionUID = 4245101719065647956L;
@@ -110,8 +111,9 @@ public class ThumbnailPanelBean implements IRegexFilterable,
         String name = file.getName();
         int end = name.indexOf(RrdSettings.FILE_SUFFIX);
         this.name = name.substring(0, end);
-        IResource resource = new ResourceStreamResource(new FileResourceStream(
-                        file));
+        ResourceStreamResource resource
+                        = new ResourceStreamResource(new FileResourceStream(file));
+        resource.setCacheDuration(Duration.NONE);
         Image image = new Image("thumbnail", resource);
         PopupSettings popupSettings = new PopupSettings(PopupSettings.RESIZABLE
                         | PopupSettings.SCROLLBARS).setHeight(height).setWidth(
@@ -143,4 +145,6 @@ public class ThumbnailPanelBean implements IRegexFilterable,
     public String toFilterableString() {
         return name;
     }
+
+    public String toString() { return name + ":" + link.get("plotlink"); }
 }

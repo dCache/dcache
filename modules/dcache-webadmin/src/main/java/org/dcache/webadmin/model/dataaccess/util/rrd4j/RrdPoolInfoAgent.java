@@ -72,14 +72,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.CostModule;
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
-
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.webadmin.model.businessobjects.rrd4j.PoolQueuePlotData;
 import org.dcache.webadmin.model.businessobjects.rrd4j.PoolQueuePlotData.PoolQueueHistogram;
@@ -99,7 +101,16 @@ public class RrdPoolInfoAgent implements Runnable {
     private static final Logger logger
         = LoggerFactory.getLogger(RrdPoolInfoAgent.class);
 
-    private static final String ALL_POOLS = "all";
+    private static void updatePoolGroupData(String group,
+                    Map<String, PoolQueuePlotData> dataMap,
+                    PoolCostInfo costInfo) {
+        PoolQueuePlotData data = dataMap.get(group);
+        if (data == null) {
+            data = new PoolQueuePlotData(group);
+            dataMap.put(group, data);
+        }
+        data.addValues(costInfo);
+    }
 
     /**
      * injected
@@ -109,7 +120,7 @@ public class RrdPoolInfoAgent implements Runnable {
     /**
      * state
      */
-    private Collection<SelectionPool> pools;
+    private PoolSelectionUnit poolSelectionUnit;
     private CostModule costModule;
     private long lastRefresh;
     private Thread refresher;
@@ -124,8 +135,7 @@ public class RrdPoolInfoAgent implements Runnable {
         synchronized (this) {
             if (now - lastRefresh >= settings.stepInMillis) {
                 if (refresher == null || !refresher.isAlive()) {
-                    pools = monitor.getPoolSelectionUnit()
-                                   .getAllDefinedPools(false);
+                    poolSelectionUnit = monitor.getPoolSelectionUnit();
                     costModule = monitor.getCostModule();
                     lastRefresh = now;
                     refresher = new Thread(this);
@@ -143,32 +153,45 @@ public class RrdPoolInfoAgent implements Runnable {
             logger.error("pool queue plot update interrupted ...");
             return;
         } catch (CacheException t) {
-            logger.error("problem updating pool queue plots: {}", t.getMessage());
+            logger.error("problem updating pool queue plots: {}",
+                            t.getMessage());
             return;
         }
 
-        for (SelectionPool pool : pools) {
-            try {
-                new RrdGraph(getGraphDef(pool.getName()));
-                logger.debug("created plot for {}", pool.getName());
-            } catch (IOException t) {
-                logger.error("problem during plot creation for {}: {}",
-                                pool.getName(), t.getMessage());
-                return;
-            }
-        }
+        File base = new File(settings.baseDirectory);
 
-        try {
-            new RrdGraph(getGraphDef(ALL_POOLS));
-            logger.debug("created plot for {}", ALL_POOLS);
-        } catch (IOException t) {
-            logger.error("problem during plot creation for {}: {}",
-                            ALL_POOLS, t.getMessage());
-        }
+        createPlot(base, RrdSettings.ALL_POOLS);
+
+        poolSelectionUnit.getPoolGroups().values()
+                         .stream()
+                         .map(SelectionPoolGroup::getName)
+                         .forEach((g) ->
+                         {
+                             createPlot(base, g);
+                             File group = new File(base, RrdSettings.GROUP_DIR + g);
+                             group.mkdirs();
+                             poolSelectionUnit.getPoolsByPoolGroup(g)
+                                              .stream()
+                                              .map(SelectionPool::getName)
+                                              .forEach((p) ->createPlot(group, p));
+                         });
     }
 
     public void setSettings(RrdSettings settings) {
         this.settings = settings;
+    }
+
+    /**
+     * Generate the graph from the database.
+     */
+    private void createPlot(File dir, String name) {
+        try {
+            new RrdGraph(getGraphDef(dir, name));
+            logger.debug("created plot for {}", name);
+        } catch (IOException t) {
+            logger.error("problem during plot creation for {}: {}",
+                            name, t.getMessage());
+        }
     }
 
     /**
@@ -186,8 +209,9 @@ public class RrdPoolInfoAgent implements Runnable {
      * Returns database constructed from the binary .rrd file if it exists; if
      * not, constructs a new one from the settings.
      */
-    private RrdDb getDatabase(String pool, boolean readOnly) throws IOException {
-        String rrdPath = new File(settings.baseDirectory, pool + ".rrd").getAbsolutePath();
+    private RrdDb getDatabase(String name, boolean readOnly) throws IOException {
+        String rrdPath = new File(settings.baseDirectory, name + ".rrd")
+                                    .getAbsolutePath();
 
         File rrd = new File(rrdPath);
         if (rrd.exists()) {
@@ -219,11 +243,10 @@ public class RrdPoolInfoAgent implements Runnable {
      * Currently set to use only one archive (actual values) for each histogram.
      * Creates a stacked area graph.
      */
-    private RrdGraphDef getGraphDef(String pool) throws IOException {
-        String imgPath = new File(settings.baseDirectory, pool
-                        + RrdSettings.FILE_SUFFIX + "."
-                        + settings.imgType).getAbsolutePath();
-        RrdDb rrdDb = getDatabase(pool, true);
+    private RrdGraphDef getGraphDef(File dir, String name) throws IOException {
+        String imgPath = RrdSettings.getImagePath(settings.imgType, dir, name)
+                                    .getAbsolutePath();
+        RrdDb rrdDb = getDatabase(name, true);
         RrdGraphDef gDef = new RrdGraphDef();
         String rrdPath = rrdDb.getPath();
 
@@ -236,7 +259,7 @@ public class RrdPoolInfoAgent implements Runnable {
         gDef.setStartTime(graphStart);
         gDef.setEndTime(graphStart + settings.spanInSeconds);
         gDef.setStep(settings.stepInSeconds);
-        gDef.setTitle(pool);
+        gDef.setTitle(name);
         gDef.setVerticalLabel(settings.yLabel);
         gDef.setImageQuality(1F);
         gDef.setMinValue(0);
@@ -262,7 +285,7 @@ public class RrdPoolInfoAgent implements Runnable {
         gDef.setPoolUsed(false);
         gDef.setImageFormat(settings.imgType);
 
-        logger.debug("got graph definition for {}", pool);
+        logger.debug("got graph definition for {}", name);
         rrdDb.close();
 
         return gDef;
@@ -270,31 +293,45 @@ public class RrdPoolInfoAgent implements Runnable {
 
     /**
      * Creates storage objects from the pool cost info and then calls
-     * {@link #storeToRRD(PoolQueuePlotData)} to record the data in the
+     * {@link #storeToRRD(PoolQueuePlotData, long)} to record the data in the
      * round-robin database.
      */
     private void processPools() throws InterruptedException, CacheException {
-        PoolQueuePlotData all = new PoolQueuePlotData(ALL_POOLS);
+        PoolQueuePlotData all = new PoolQueuePlotData(RrdSettings.ALL_POOLS);
 
         long now = getAlignedCurrentTimeInSecs();
-        boolean updateAll = false;
+
+        Collection<SelectionPool> pools
+                        = poolSelectionUnit.getAllDefinedPools(false);
+        Map<String, PoolQueuePlotData> groupData = new HashMap<>();
 
         for (SelectionPool selectionPool : pools) {
-            PoolCostInfo costInfo
-                = costModule.getPoolCostInfo(selectionPool.getName());
+            String poolName = selectionPool.getName();
+
+            PoolCostInfo costInfo = costModule.getPoolCostInfo(poolName);
             if (costInfo == null) {
                 continue;
             }
+
             storeToRRD(new PoolQueuePlotData(costInfo), now);
             logger.debug("successfully wrote pool queue data for {}",
                             selectionPool.getName());
+
+            poolSelectionUnit.getPoolGroupsOfPool(poolName).stream()
+                             .forEach((g) -> updatePoolGroupData(g.getName(),
+                                                                 groupData,
+                                                                 costInfo));
+
             all.addValues(costInfo);
-            updateAll = true;
         }
 
-        if (updateAll) {
+        if (!groupData.isEmpty()) {
+            groupData.values().stream().forEach((d) -> storeToRRD(d, now));
+            logger.debug("successfully wrote pool queue data for groups");
+
             storeToRRD(all, now);
-            logger.debug("successfully wrote pool queue data for {}", ALL_POOLS);
+            logger.debug("successfully wrote pool queue data for {}",
+                            RrdSettings.ALL_POOLS);
         }
     }
 
@@ -303,13 +340,13 @@ public class RrdPoolInfoAgent implements Runnable {
      * stores and restores).
      */
     private void storeToRRD(PoolQueuePlotData data, long now) {
-        String pool = data.getPoolName();
+        String name = data.getPoolName();
         RrdDb rrdDb;
         try {
-            rrdDb = getDatabase(pool, false);
+            rrdDb = getDatabase(name, false);
         } catch (IOException t) {
             logger.error("could not open RrdDb file for {}: {}",
-                            pool, t.getMessage());
+                            name, t.getMessage());
             return;
         }
 

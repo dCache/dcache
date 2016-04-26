@@ -109,7 +109,7 @@
         <property name="stepSize" value="${httpd.plots.pool-queue.min-time-step}"/>
         <property name="stepUnit" value="${httpd.plots.pool-queue.min-time-step.unit}"/>
         <property name="version" value="${httpd.pool-queue.db.version}"/>
-        <property name="yLabel" value="${httpd.plots.pool-queue.y-label}"/>
+        <property name="YLabel" value="${httpd.plots.pool-queue.y-label}"/>
         <property name="heartbeatFactor" value="${httpd.pool-queue.db.heartbeat-factor}"/>
     </bean>
 
@@ -300,6 +300,7 @@
         <constructor-arg value="${httpd.static-content.plots}"/>
         <constructor-arg value="${httpd.plots.pool-queue.height}"/>
         <constructor-arg value="${httpd.plots.pool-queue.width}"/>
+        <constructor-arg value="${httpd.plots.pool-queue.type}"/>
     </bean>
 
     <bean id="WebAdminInterface" class="org.dcache.webadmin.view.WebAdminInterface">

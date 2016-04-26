@@ -1,33 +1,47 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
 </head>
 <body>
     <wicket:panel>
-        <h1>
-            <wicket:message key="title"></wicket:message>
-        </h1>
         <p />
-        <table class="display">
-            <tr
-                class="display"
-                wicket:id="PoolQueuePlotsGridView">
-                <td
-                    class="display"
+        <h2>
+            <span wicket:id="level"></span>
+        </h2>
+        <p />
+        <table class="display" wicket:id="PoolQueuePlotsGridView">
+            <tr class="display">
+                <td class="display"
                     wicket:id="cols">
                     <table class="thumbnail">
                         <tr class="thumbnail">
                             <td class="thumbnail">
-                            <a
-                                href="#"
-                                wicket:id="plotlink">
-                                <img
-                                    class="thumbnail"
-                                    wicket:id="thumbnail" /></a></td>
+                                <a href="#" wicket:id="upLink">
+                                    <img class="arrow" wicket:id="up"/>
+                                </a>
+                                <br/>
+                                <span wicket:id="upLinkTitle"></span>
+                            </td>
                         </tr>
                         <tr class="thumbnail">
                             <td class="thumbnail">
-                            <b><span wicket:id="poolname"></span></b></td>
+                                <a href="#" wicket:id="plotlink">
+                                    <img class="plot" wicket:id="thumbnail" />
+                                </a>
+                            </td>
+                        </tr>
+                        <tr class="thumbnail">
+                            <td class="thumbnail">
+                                <h4><span wicket:id="name"></span></h4>
+                            </td>
+                        </tr>
+                        <tr class="thumbnail">
+                            <td class="thumbnail">
+                                <span wicket:id="downLinkTitle"></span>
+                                <br/>
+                                <a href="#" wicket:id="downLink">
+                                    <img class="arrow" wicket:id="down"/>
+                                </a>
+                            </td>
                         </tr>
                     </table>
                 </td>
