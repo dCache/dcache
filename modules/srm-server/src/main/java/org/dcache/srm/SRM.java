@@ -1,5 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
 /*
 COPYRIGHT STATUS:
 Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -66,15 +64,9 @@ obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
 
-/*
- * SRM.java
- *
- * Created on January 10, 2003, 12:34 PM
- */
 package org.dcache.srm;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
@@ -94,10 +86,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import diskCacheV111.srm.FileMetaData;
-import diskCacheV111.srm.RequestStatus;
-
-import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellLifeCycleAware;
 
 import org.dcache.commons.stats.MonitoringProxy;
@@ -130,7 +118,6 @@ import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
-import org.dcache.srm.v2_2.TFileStorageType;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -151,16 +138,12 @@ public class SRM implements CellLifeCycleAware
     private RequestCredentialStorage requestCredentialStorage;
     private final AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerV2Counters;
-    private final RequestCounters<String> srmServerV1Counters;
     private final RequestCounters<Method> abstractStorageElementCounters;
     private RrdRequestCounters<?> rrdSrmServerV2Counters;
-    private RrdRequestCounters<?> rrdSrmServerV1Counters;
     private RrdRequestCounters<?> rrdAstractStorageElementCounters;
     private final RequestExecutionTimeGauges<Class<?>> srmServerV2Gauges;
-    private final RequestExecutionTimeGauges<String> srmServerV1Gauges;
     private final RequestExecutionTimeGauges<Method> abstractStorageElementGauges;
     private RrdRequestExecutionTimeGauges<?> rrdSrmServerV2Gauges;
-    private RrdRequestExecutionTimeGauges<?> rrdSrmServerV1Gauges;
     private RrdRequestExecutionTimeGauges<?> rrdAstractStorageElementGauges;
     private SchedulerContainer schedulers;
     private DatabaseJobStorageFactory databaseFactory;
@@ -195,14 +178,9 @@ public class SRM implements CellLifeCycleAware
                 abstractStorageElementGauges);
 
         srmServerV2Counters = new RequestCounters<>("SRMServerV2");
-        srmServerV1Counters = new RequestCounters<>("SRMServerV1");
         if (configuration.getCounterRrdDirectory() != null) {
             String rrddir = configuration.getCounterRrdDirectory() +
                     File.separatorChar + "srmv1";
-            rrdSrmServerV1Counters =
-                    new RrdRequestCounters<>(srmServerV1Counters, rrddir);
-            rrdSrmServerV1Counters.startRrdUpdates();
-            rrdSrmServerV1Counters.startRrdGraphPlots();
             rrddir = configuration.getCounterRrdDirectory() +
                     File.separatorChar + "srmv2";
             rrdSrmServerV2Counters =
@@ -220,15 +198,8 @@ public class SRM implements CellLifeCycleAware
 
         }
         srmServerV2Gauges = new RequestExecutionTimeGauges<>("SRMServerV2");
-        srmServerV1Gauges = new RequestExecutionTimeGauges<>("SRMServerV1");
         if (configuration.getGaugeRrdDirectory() != null) {
             File rrddir = new File(configuration.getGaugeRrdDirectory() +
-                    File.separatorChar + "srmv1");
-            rrdSrmServerV1Gauges =
-                    new RrdRequestExecutionTimeGauges<>(srmServerV1Gauges, rrddir);
-            rrdSrmServerV1Gauges.startRrdUpdates();
-            rrdSrmServerV1Gauges.startRrdGraphPlots();
-            rrddir = new File(configuration.getGaugeRrdDirectory() +
                     File.separatorChar + "srmv2");
             rrdSrmServerV2Gauges =
                     new RrdRequestExecutionTimeGauges<>(srmServerV2Gauges, rrddir);
@@ -358,24 +329,10 @@ public class SRM implements CellLifeCycleAware
     }
 
     /**
-     * @return the srmServerV1Counters
-     */
-    public RequestCounters<String> getSrmServerV1Counters() {
-        return srmServerV1Counters;
-    }
-
-    /**
      * @return the srmServerV2Gauges
      */
     public RequestExecutionTimeGauges<Class<?>> getSrmServerV2Gauges() {
         return srmServerV2Gauges;
-    }
-
-    /**
-     * @return the srmServerV1Gauges
-     */
-    public RequestExecutionTimeGauges<String> getSrmServerV1Gauges() {
-        return srmServerV1Gauges;
     }
 
     /**
@@ -400,362 +357,6 @@ public class SRM implements CellLifeCycleAware
         return abstractStorageElementGauges;
     }
 
-    private class TheAdvisoryDeleteCallbacks implements AdvisoryDeleteCallbacks {
-
-        private boolean done;
-        private boolean success = true;
-        final SRMUser user;
-        final URI surl;
-        String error;
-
-        public TheAdvisoryDeleteCallbacks(SRMUser user, URI surl) {
-            this.user = user;
-            this.surl = surl;
-        }
-
-        @Override
-        public void AdvisoryDeleteFailed(String reason) {
-            error = " advisoryDelete(" + user + "," + surl + ") AdvisoryDeleteFailed: " + reason;
-            success = false;
-            logger.error(error);
-            done();
-        }
-
-        @Override
-        public void AdvisoryDeleteSuccesseded() {
-            logger.debug(" advisoryDelete(" + user + "," + surl + ") AdvisoryDeleteSuccesseded");
-            done();
-        }
-
-        @Override
-        public void Exception(Exception e) {
-            error = " advisoryDelete(" + user + "," + surl + ") Exception :" + e;
-            logger.error(error);
-            success = false;
-            done();
-        }
-
-        @Override
-        public void Timeout() {
-            error = " advisoryDelete(" + user + "," + surl + ") Timeout ";
-            logger.error(error);
-            success = false;
-            done();
-        }
-
-        @Override
-        public void Error(String error) {
-            this.error = " advisoryDelete(" + user + "," + surl + ") Error " + error;
-            logger.error(this.error);
-            success = false;
-            done();
-        }
-
-        public boolean waitCompleteion(long timeout) throws InterruptedException {
-            long starttime = System.currentTimeMillis();
-            while (true) {
-                synchronized (this) {
-                    wait(1000);
-                    if (done) {
-                        return success;
-                    } else {
-                        if ((System.currentTimeMillis() - starttime) > timeout) {
-                            error = " advisoryDelete(" + user + "," + surl + ") Timeout";
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-
-        public synchronized void done() {
-            done = true;
-            notifyAll();
-        }
-
-        public String getError() {
-            return error;
-        }
-    }
-
-    public void advisoryDelete(final SRMUser user, String[] SURLS) {
-        logger.debug("SRM.advisoryDelete");
-        if (user == null) {
-            String error = "advisoryDelete: user is unknown," +
-                    " user needs authorization to delete ";
-            logger.error(error);
-            throw new IllegalArgumentException(error);
-        }
-
-        TheAdvisoryDeleteCallbacks callabacks_array[] =
-                new TheAdvisoryDeleteCallbacks[SURLS.length];
-        for (int i = 0; i < SURLS.length; ++i) {
-            try {
-                URI surl = new URI(SURLS[i]);
-                callabacks_array[i] = new TheAdvisoryDeleteCallbacks(user, surl);
-                storage.advisoryDelete(user, surl, callabacks_array[i]);
-
-            } catch (RuntimeException re) {
-                logger.error(re.toString());
-                throw re;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        boolean failed = false;
-        StringBuilder errorsb = new StringBuilder();
-        try {
-            for (int i = 0; i < SURLS.length; ++i) {
-                if (!callabacks_array[i].waitCompleteion(3 * 60 * 1000)) {
-                    failed = true;
-                    errorsb.append(callabacks_array[i].getError()).append('\n');
-                }
-
-            }
-        } catch (InterruptedException ie) {
-            throw new RuntimeException(ie);
-
-        }
-
-        if (failed) {
-            throw new RuntimeException(errorsb.toString());
-        }
-    }
-
-    /**
-     * The implementation of SRM Copy method.
-     *
-     * @param user
-     *         an instance of the ReSRMUserr null if unknown
-     * @param srcSURLS
-     *         array of source SURL (Site specific URL) strings
-     * @param destSURLS
-     *         array of destination SURL (Site specific URL) strings
-     * @param wantPerm
-     *         array of boolean values indicating if permonent copies are
-     *         desired
-     * @return request status assosiated with this request
-     */
-    public RequestStatus copy(SRMUser user,
-            RequestCredential credential,
-            String[] srcSURLS,
-            String[] destSURLS,
-            boolean[] wantPerm,
-            String client_host) {
-        try {
-            //require at least 10 minutes
-            long cred_lifetime =
-                    credential.getDelegatedCredentialRemainingLifetime() - 600000;
-            if (cred_lifetime < 0) {
-                return createFailedRequestStatus(
-                        "delegated credentials lifetime is too short:" + credential.getDelegatedCredentialRemainingLifetime() + " ms");
-
-            }
-            if (srcSURLS == null || srcSURLS.length == 0) {
-                String error = "number of source SURLs is zero";
-                logger.error(error);
-                return createFailedRequestStatus(error);
-            }
-            if (destSURLS == null || destSURLS.length == 0) {
-                String error = "number of destination SURLs is zero";
-                logger.error(error);
-                return createFailedRequestStatus(error);
-            }
-            URI[] from_urls = new URI[srcSURLS.length];
-            for (int i = 0; i < from_urls.length; i++) {
-                from_urls[i] = new URI(srcSURLS[i]);
-            }
-            URI[] to_urls = new URI[destSURLS.length];
-            for (int i = 0; i < to_urls.length; i++) {
-                to_urls[i] = new URI(destSURLS[i]);
-            }
-            int src_num = from_urls.length;
-            int dst_num = to_urls.length;
-            // this is for loggin
-            StringBuilder sb = new StringBuilder(" copy (");
-            for (int j = 0; j < src_num; j++) {
-                sb.append("from_urls[").append(j).append("]=").append(from_urls[j]).append(",");
-            }
-            for (int j = 0; j < dst_num; j++) {
-                sb.append("to_urls[").append(j).append("]=").append(to_urls[j]).append(",");
-            }
-            sb.append(")");
-            logger.debug(sb.toString());
-
-            if (src_num != dst_num) {
-                return createFailedRequestStatus(
-                        "number of from and to urls do not match");
-            }
-
-            for (int i = 0; i < dst_num; ++i) {
-                for (int j = 0; j < dst_num; ++j) {
-                    if (i != j) {
-                        if (to_urls[i].equals(to_urls[j])) {
-                            return createFailedRequestStatus(
-                                    "list of sources contains the same url twice " +
-                                            "url#" + i + " is " + to_urls[i] +
-                                            " and url#" + j + " is " + to_urls[j]);
-                        }
-                    }
-                }
-            }
-            long lifetime = configuration.getCopyLifetime();
-            if (cred_lifetime < lifetime) {
-                logger.debug("credential lifetime is less than default lifetime, using credential lifetime =" + cred_lifetime);
-                lifetime = cred_lifetime;
-            }
-            // create a request object
-            logger.debug("calling Request.createCopyRequest()");
-            CopyRequest r = new CopyRequest(
-                    user,
-                    credential.getId(),
-                    from_urls,
-                    to_urls,
-                    null, // no space reservation in v1
-                    lifetime,
-                    configuration.getCopyMaxPollPeriod(),
-                    TFileStorageType.PERMANENT,
-                    null,
-                    null, null,
-                    client_host,
-                    null,
-                    ImmutableMap.<String,String>of());
-            logger.debug(" Copy Request = " + r);
-            schedulers.schedule(r);
-
-            // Return the request status
-            RequestStatus rs = r.getRequestStatus();
-            logger.debug(" copy returns RequestStatus = " + rs);
-            return rs;
-        } catch (Exception e) {
-            logger.error(e.toString());
-            return createFailedRequestStatus("copy request generated error : " + e);
-        }
-    }
-
-    /**
-     * The implementation of SRM get method.
-     * Checks the protocols, if it contains at least one supported then it
-     * creates the request and places it in a request repository
-     * and starts request handler
-     *
-     * @param user
-     *         an instance of the ReSRMUserr null if unknown
-     * @param surls
-     *         array of SURL (Site specific URL) strings
-     * @param protocols
-     *         array of protocols understood by SRM client
-     * @return request status assosiated with this request
-     */
-    public RequestStatus get(SRMUser user,
-            RequestCredential credential,
-            String[] surls,
-            String[] protocols,
-            String client_host) {
-        // create a request object
-        try {
-            logger.debug("get(): user = " + user);
-            String[] supportedProtocols = storage.supportedGetProtocols();
-            boolean foundMatchedProtocol = false;
-            for (String supportedProtocol : supportedProtocols) {
-                for (String protocol : protocols) {
-                    if (supportedProtocol.equals(protocol)) {
-                        foundMatchedProtocol = true;
-                        break;
-                    }
-                }
-            }
-            if (!foundMatchedProtocol) {
-                StringBuilder errorsb =
-                        new StringBuilder("Protocol(s) specified not supported: [ ");
-                for (String protocol : protocols) {
-                    errorsb.append(protocol).append(' ');
-                }
-                errorsb.append(']');
-                return createFailedRequestStatus(errorsb.toString());
-            }
-            URI[] uris = new URI[surls.length];
-            for (int i = 0; i < surls.length; i++) {
-                uris[i] = new URI(surls[i]);
-            }
-            GetRequest r =
-                    new GetRequest(user, uris, protocols,
-                            configuration.getGetLifetime(),
-                            configuration.getGetMaxPollPeriod(),
-                            null,
-                            client_host);
-            schedule(r);
-            // RequestScheduler will take care of the rest
-            //getGetRequestScheduler().add(r);
-            // Return the request status
-            RequestStatus rs = r.getRequestStatus();
-            logger.debug("get() initial RequestStatus = " + rs);
-            return rs;
-        } catch (Exception e) {
-            logger.error(e.toString());
-            return createFailedRequestStatus("get error " + e);
-        }
-
-    }
-
-    /**
-     * this srm method is not implemented
-     */
-    public RequestStatus getEstGetTime() {
-        return createFailedRequestStatus("time is unknown");
-    }
-
-    /**
-     * this srm method is not implemented
-     */
-    public RequestStatus getEstPutTime() {
-        return createFailedRequestStatus("time is unknown");
-    }
-    /**
-     * The implementation of SRM getFileMetaData method.
-     * Not really used by anyone.
-     *
-     * @param user
-     *         an instance of the ReSRMUserr null if unknown
-     * @param SURLS
-     *         the array of SURLs of files of interest
-     * @return FileMetaData array assosiated with these SURLs
-     */
-    public FileMetaData[] getFileMetaData(SRMUser user, String[] SURLS) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("getFileMetaData(");
-        if (SURLS == null) {
-            sb.append("SURLS are null)");
-            logger.debug(sb.toString());
-            throw new IllegalArgumentException(sb.toString());
-        }
-
-        int len = SURLS.length;
-        for (String surl : SURLS) {
-            sb.append(surl).append(",");
-        }
-        sb.append(")");
-        logger.debug(sb.toString());
-
-        FileMetaData[] fmds = new FileMetaData[len];
-        // call getFileMetaData(String path) for each SURL in array
-        for (int i = 0; i < len; ++i) {
-            try {
-                URI surl = new URI(SURLS[i]);
-                logger.debug("getFileMetaData(String[]) calling FileMetaData({})", surl);
-                FileMetaData fmd = storage.getFileMetaData(user, surl, false);
-                fmd.SURL = SURLS[i];
-                fmds[i] = new FileMetaData(fmd);
-                logger.debug("FileMetaData[" + i + "]=" + fmds[i]);
-            } catch (Exception e) {
-                logger.error("getFileMetaData failed to parse SURL: " + e);
-                throw new IllegalArgumentException("getFileMetaData failed to parse SURL: " + e);
-            }
-        }
-
-        return fmds;
-    }
-
     public String[] getProtocols() throws SRMInternalErrorException
     {
         List<String> getProtocols = asList(storage.supportedGetProtocols());
@@ -765,238 +366,9 @@ public class SRM implements CellLifeCycleAware
         return protocols.toArray(new String[protocols.size()]);
     }
 
-    /**
-     * The implementation of SRM getRequestStatus method.
-     *
-     * @param user
-     *         an instance of the ReSRMUserr null if unknown
-     * @param requestId
-     *         the id of the previously issued request
-     * @return request status assosiated with this request
-     */
-    public RequestStatus getRequestStatus(SRMUser user, int requestId) {
-        logger.trace("getRequestStatus({},{})", user, requestId);
-        try {
-            // Try to get the request with such id
-            ContainerRequest<?> r = Job.getJob((long) requestId, ContainerRequest.class);
-            if (!user.hasAccessTo(r)) {
-                return createFailedRequestStatus("getRequestStatus(): request #" + requestId +
-                        " owned by "+ r.getUser() +" does not belong to user " + user, requestId);
-            }
-            RequestStatus rs = r.getRequestStatus();
-            logger.debug("obtained request status, returning rs for request id={}", requestId);
-            return rs;
-        } catch (Exception e) {
-            logger.error(e.toString());
-            return createFailedRequestStatus("getting request #" + requestId +
-                    " generated error : " + e, requestId);
-        }
-    }
-
-    public RequestStatus mkPermanent() {
-        return createFailedRequestStatus("not supported, all files are already permanent");
-    }
-
-    /**
-     * The implementation of SRM pin method.
-     * Currenly Not Implemented
-     *
-     * @param user
-     *         an instance of the ReSRMUserr null if unknown
-     * @param TURLS
-     *         array of TURL (Transfer URL) strings
-     * @return request status assosiated with this request
-     */
-    public RequestStatus pin() {
-        return createFailedRequestStatus("pins by users are not supported, use get instead");
-    }
-
-    /**
-     * used for testing only
-     *
-     * @param user
-     *         an instance of the RSRMUseror null if unknown
-     */
-    public boolean ping() {
-        return true;
-    }
-
-    /**
-     * The implementation of SRM put method.
-     * @return request status assosiated with this request
-     */
-    public RequestStatus put(SRMUser user,
-            RequestCredential credential,
-            String[] sources,
-            String[] dests,
-            Long[] sizes,
-            boolean[] wantPerm,
-            String[] protocols,
-            String clientHost) {
-        int len = dests.length;
-        URI[] dests_urls = new URI[len];
-
-        String srmprefix;
-        // we do this to support implementations that
-        // supply paths instead of the whole urls
-        // this is not part of the spec
-
-        for (int i = 0; i < len; ++i) {
-            for (int j = 0; j < len; ++j) {
-                if (i != j) {
-                    if (dests[i].equals(dests[j])) {
-                        return createFailedRequestStatus(
-                                "put(): list of sources contains the same url twice " +
-                                        "url#" + i + " is " + dests[i] +
-                                        " and url#" + j + " is " + dests[j]);
-                    }
-                }
-            }
-        }
-
-        srmprefix = "srm://" + configuration.getSrmHost() +
-                ":" + configuration.getPort() + "/";
-
-        try {
-            for (int i = 0; i < len; ++i) {
-                if (dests[i].startsWith("srm://")) {
-                    dests_urls[i] = new URI(dests[i]);
-                } else {
-                    dests_urls[i] = new URI(srmprefix + dests[i]);
-                }
-            }
-
-            String[] supportedProtocols = storage.supportedPutProtocols();
-            boolean foundMatchedProtocol = false;
-            for (String supportedProtocol : supportedProtocols) {
-                for (String protocol : protocols) {
-                    if (supportedProtocol.equals(protocol)) {
-                        foundMatchedProtocol = true;
-                        break;
-                    }
-                }
-            }
-            if (!foundMatchedProtocol) {
-                StringBuilder errorsb =
-                        new StringBuilder("Protocol(s) specified not supported: [ ");
-                for (String protocol : protocols) {
-                    errorsb.append(protocol).append(' ');
-                }
-                errorsb.append(']');
-                return createFailedRequestStatus(errorsb.toString());
-            }
-            // create a new put request
-            PutRequest r = new PutRequest(user, dests_urls, sizes,
-                    wantPerm, protocols, configuration.getPutLifetime(),
-                    configuration.getPutMaxPollPeriod(),
-                    clientHost,
-                    null,
-                    null,
-                    null,
-                    null);
-            schedule(r);
-            // return status
-            return r.getRequestStatus();
-        } catch (Exception e) {
-            logger.error(e.toString());
-            return createFailedRequestStatus("put(): error " + e);
-        }
-    }
-
     public void schedule(Job job) throws InterruptedException, IllegalStateException, IllegalStateTransition
     {
         schedulers.schedule(job);
-    }
-
-    /**
-     * The implementation of SRM setFileStatus method.
-     *  the only status that user can set file request into
-     *  is "Done" status
-     *
-     * @param user
-     *         an instance of the ReSRMUserr null if unknown
-     * @param requestId
-     *         the id of the previously issued pin request
-     * @param fileRequestId
-     *         the id of the file within pin request
-     * @param state
-     *         the new state of the request
-     * @return request status assosiated with this request
-     */
-    public RequestStatus setFileStatus(SRMUser user, int requestId,
-            int fileRequestId, String state) {
-        try {
-            logger.debug(" setFileStatus(" + requestId + "," + fileRequestId + "," + state + ");");
-            if (!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running") && !state.equalsIgnoreCase("failed")) {
-                return createFailedRequestStatus("setFileStatus(): incorrect state " + state);
-            }
-
-            //try to get the request
-            ContainerRequest<?> r = Job.getJob((long)requestId, ContainerRequest.class);
-
-            // check that user is the same
-            if (!user.hasAccessTo(r)) {
-                return createFailedRequestStatus(
-                        "request #" + requestId + " owned by "+r.getUser() +" does not belong to user " + user);
-            }
-            // get file request from request
-            FileRequest<?> fr = r.getFileRequest(fileRequestId);
-            if (fr == null) {
-                return createFailedRequestStatus("request #" + requestId +
-                        " does not contain file request #" + fileRequestId);
-            }
-            synchronized (fr) {
-                State s = fr.getState();
-                if (s.isFinal()) {
-                    logger.debug("can not set status, the file status is already " + s);
-                } else {
-                    logger.debug(" calling fr.setStatus(\"" + state + "\")");
-                    fr.setStatus(user, state);
-                }
-            }
-
-            // return request status
-            return r.getRequestStatus();
-        } catch(SRMInvalidRequestException e) {
-            return createFailedRequestStatus(e.getMessage());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    /**
-     * The implementation of SRM unPin method.
-     * Currently unimplemented
-     *
-     * @param user
-     *         an instance of the ReSRMUserr null if unknown
-     * @param TURLS
-     *         array of TURL (Transfer URL) strings
-     * @param requestId
-     *         the id of the previously issued pin request
-     * @return request status assosiated with this request
-     */
-    public RequestStatus unPin() {
-        return createFailedRequestStatus("pins by users are not supported, use get instead");
-    }
-
-    private RequestStatus createFailedRequestStatus(String error) {
-        logger.error("creating a failed request status with a message: " + error);
-        RequestStatus rs = new RequestStatus();
-        rs.requestId = -1;
-        rs.errorMessage = error;
-        rs.state = "Failed";
-        return rs;
-    }
-
-    private RequestStatus createFailedRequestStatus(String error, int requestId) {
-        logger.error("creating a failed request status with a message: " + error);
-        RequestStatus rs = new RequestStatus();
-        rs.requestId = requestId;
-        rs.errorMessage = error;
-        rs.state = "Failed";
-        return rs;
     }
 
     public Set<Long> getGetRequestIds(SRMUser user, String description) throws DataAccessException {

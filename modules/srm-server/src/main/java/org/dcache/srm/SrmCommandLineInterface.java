@@ -656,36 +656,13 @@ public class SrmCommandLineInterface
     public String ac_print_srm_counters_$_0(Args args)
     {
         List<String> versions = asList(config.getVersions());
-        boolean isVersion1Enabled = versions.contains("1");
         boolean isVersion2Enabled = versions.contains("2");
-        if (isVersion2Enabled && isVersion1Enabled) {
-            return srm.getSrmServerV1Counters().toString() +
-                   '\n' +
-                   srm.getSrmServerV2Counters().toString() +
-                   '\n' +
-                   srm.getAbstractStorageElementCounters().toString() +
-                   '\n' +
-                   srm.getSrmServerV1Gauges().toString() +
-                   '\n' +
-                   srm.getSrmServerV2Gauges().toString() +
-                   '\n' +
-                   srm.getAbstractStorageElementGauges().toString();
-        }
-        if (isVersion2Enabled && !isVersion1Enabled) {
+        if (isVersion2Enabled) {
             return srm.getSrmServerV2Counters().toString() +
                    '\n' +
                    srm.getAbstractStorageElementCounters().toString() +
                    '\n' +
                    srm.getSrmServerV2Gauges().toString() +
-                   '\n' +
-                   srm.getAbstractStorageElementGauges().toString();
-        }
-        if (!isVersion2Enabled && isVersion1Enabled) {
-            return srm.getSrmServerV1Counters().toString() +
-                   '\n' +
-                   srm.getAbstractStorageElementCounters().toString() +
-                   '\n' +
-                   srm.getSrmServerV1Gauges().toString() +
                    '\n' +
                    srm.getAbstractStorageElementGauges().toString();
         }

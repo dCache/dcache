@@ -311,8 +311,7 @@ def OptionParser.parse(args)
     :xrootd => [ [ :xrootd ] ],
     :dcap => [ [ :dcap ] ],
     :gsidcap => [ [ :gsidcap ] ],
-    :srmcp => [ [ :srmcp, '-1' ],
-                [ :srmcp, '-2' ]
+    :srmcp => [ [ :srmcp, '-2' ]
               ],
     :arc => [ [ :arcSrm ],
               [ :arcHttps ] ],
