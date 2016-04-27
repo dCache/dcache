@@ -183,10 +183,9 @@ public class PerformanceTest extends Thread
         }
 
         String jdbc = args.argv(0);
-        String dialect = args.argv(1);
-        String user = args.argv(2);
-        String password = args.argv(3);
-        String fileName = args.argv(4);
+        String user = args.argv(1);
+        String password = args.argv(2);
+        String fileName = args.argv(3);
         args.shift(5);
 
         ops = getOps(args);
@@ -200,7 +199,7 @@ public class PerformanceTest extends Thread
         System.out.println("Starting chimera... ");
         HikariDataSource dataSource = FsFactory.getDataSource(jdbc, user, password);
         PlatformTransactionManager txManager = new DataSourceTransactionManager(dataSource);
-        FileSystemProvider fileSystem = new JdbcFs(dataSource, txManager, dialect);
+        FileSystemProvider fileSystem = new JdbcFs(dataSource, txManager);
         provider = new ChimeraNameSpaceProvider();
         provider.setAclEnabled(false);
         provider.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY,

@@ -66,6 +66,7 @@ import javax.sql.DataSource;
 
 import java.net.InetSocketAddress;
 import java.security.AccessController;
+import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -104,14 +105,14 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
     private PnfsHandler pnfsHandler;
     private CellAddressCore myAddress;
 
-    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) throws ChimeraFsException
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager) throws ChimeraFsException, SQLException
     {
-        super(dataSource, txManager, dialect);
+        super(dataSource, txManager);
     }
 
-    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect, int id) throws ChimeraFsException
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id) throws ChimeraFsException, SQLException
     {
-        super(dataSource, txManager, dialect, id);
+        super(dataSource, txManager, id);
     }
 
     public void setPnfsHandler(PnfsHandler pnfsHandler) {

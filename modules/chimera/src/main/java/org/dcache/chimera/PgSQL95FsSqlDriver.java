@@ -31,7 +31,7 @@ import org.dcache.chimera.store.InodeStorageInformation;
  *
  *
  */
-class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
+public class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
 
     /**
      * logger
@@ -42,7 +42,7 @@ class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
      *  this is a utility class which is issues SQL queries on database
      *
      */
-    protected PgSQL95FsSqlDriver(DataSource dataSource) throws ChimeraFsException
+    public PgSQL95FsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
         _log.info("Running PostgreSQL >= 9.5 specific Driver");

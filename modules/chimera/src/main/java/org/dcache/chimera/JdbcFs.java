@@ -170,12 +170,12 @@ public class JdbcFs implements FileSystemProvider {
      */
     private static final int MAX_NAME_LEN = 255;
 
-    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) throws ChimeraFsException
+    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager) throws SQLException, ChimeraFsException
     {
-        this(dataSource, txManager, dialect, 0);
+        this(dataSource, txManager, 0);
     }
 
-    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect, int id) throws ChimeraFsException
+    public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager, int id) throws SQLException, ChimeraFsException
     {
         _dbConnectionsPool = dataSource;
         _fsId = id;
@@ -183,7 +183,7 @@ public class JdbcFs implements FileSystemProvider {
         _tx = txManager;
 
         // try to get database dialect specific query engine
-        _sqlDriver = FsSqlDriver.getDriverInstance(dialect, dataSource);
+        _sqlDriver = FsSqlDriver.getDriverInstance(dataSource);
     }
 
     private FsInode getWormID() throws ChimeraFsException {

@@ -34,7 +34,6 @@ check -strong nfs.idmap.cache.size
 check -strong nfs.idmap.cache.timeout
 check -strong nfs.idmap.cache.timeout.unit
 check -strong nfs.idmap.legacy
-check -strong nfs.db.dialect
 check -strong nfs.db.user
 check -strong nfs.db.url
 check -strong nfs.db.schema.changelog

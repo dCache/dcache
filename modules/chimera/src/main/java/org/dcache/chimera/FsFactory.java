@@ -22,16 +22,17 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 import org.dcache.db.AlarmEnabledDataSource;
 
 public class FsFactory
 {
-    public static FileSystemProvider createFileSystem(String url, String user, String password, String dialect) throws ChimeraFsException
+    public static FileSystemProvider createFileSystem(String url, String user, String password) throws SQLException, ChimeraFsException
     {
         AlarmEnabledDataSource dataSource = new AlarmEnabledDataSource(url, FsFactory.class.getSimpleName(), getDataSource(url, user, password));
         PlatformTransactionManager txManager =  new DataSourceTransactionManager(dataSource);
-        return new JdbcFs(dataSource, txManager, dialect) {
+        return new JdbcFs(dataSource, txManager) {
             @Override
             public void close() throws IOException
             {

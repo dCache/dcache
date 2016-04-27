@@ -72,22 +72,22 @@ public class Shell extends ShellApplication
 
     public static void main(String[] arguments) throws Throwable
     {
-        if (arguments.length < 4) {
-            System.err.println("Usage: chimera <jdbcUrl> <dbDialect> <dbUser> <dbPass>");
+        if (arguments.length < 3) {
+            System.err.println("Usage: chimera <jdbcUrl> <dbUser> <dbPass>");
             System.exit(4);
         }
 
         Args args = new Args(arguments);
-        args.shift(4);
+        args.shift(3);
 
-        try (Shell shell = new Shell(arguments[0], arguments[1], arguments[2], arguments[3])) {
+        try (Shell shell = new Shell(arguments[0], arguments[1], arguments[2])) {
             shell.start(args);
         }
     }
 
-    public Shell(String url, String dialect, String user, String password) throws Exception
+    public Shell(String url, String user, String password) throws Exception
     {
-        fs = FsFactory.createFileSystem(url, user, password, dialect);
+        fs = FsFactory.createFileSystem(url, user, password);
         pwd = fs.path2inode(path);
     }
 

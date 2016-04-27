@@ -1,0 +1,3 @@
+org.dcache.chimera.spi.PgSQLDrivertProvider
+org.dcache.chimera.spi.HsqlDBDriverProvider
+org.dcache.chimera.spi.H2DBDriverProvider

@@ -39,7 +39,7 @@ import org.dcache.chimera.posix.Stat;
  *
  *
  */
-class PgSQLFsSqlDriver extends FsSqlDriver {
+public class PgSQLFsSqlDriver extends FsSqlDriver {
 
     /**
      * logger
@@ -50,7 +50,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
      *  this is a utility class which is issues SQL queries on database
      *
      */
-    protected PgSQLFsSqlDriver(DataSource dataSource) throws ChimeraFsException
+    public PgSQLFsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
         _log.info("Running PostgreSQL specific Driver");

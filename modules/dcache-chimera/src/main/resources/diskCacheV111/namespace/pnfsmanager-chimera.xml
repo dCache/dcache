@@ -81,7 +81,6 @@
       <description>Chimera</description>
       <constructor-arg ref="data-source"/>
       <constructor-arg ref="tx-manager"/>
-      <constructor-arg value="${pnfsmanager.db.dialect}"/>
   </bean>
 
   <bean id="extractor" class="${pnfsmanager.plugins.storage-info-extractor}">

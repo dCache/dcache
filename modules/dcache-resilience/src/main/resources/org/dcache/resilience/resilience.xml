@@ -50,7 +50,6 @@
       <description>Chimera</description>
       <constructor-arg ref="data-source"/>
       <constructor-arg ref="tx-manager"/>
-      <constructor-arg value="${resilience.db.dialect}"/>
     </bean>
 
     <bean id="extractor" class="${resilience.plugins.storage-info-extractor}">

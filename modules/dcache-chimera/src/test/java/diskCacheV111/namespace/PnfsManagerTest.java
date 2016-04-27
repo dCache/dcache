@@ -105,8 +105,7 @@ public class PnfsManagerTest
         _fs = FsFactory.createFileSystem(
                 dbProperties.getProperty("chimera.db.url"),
                 dbProperties.getProperty("chimera.db.user"),
-                dbProperties.getProperty("chimera.db.password"),
-                dbProperties.getProperty("chimera.db.dialect"));
+                dbProperties.getProperty("chimera.db.password"));
 
         ChimeraNameSpaceProvider chimera = new ChimeraNameSpaceProvider();
         chimera.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY,

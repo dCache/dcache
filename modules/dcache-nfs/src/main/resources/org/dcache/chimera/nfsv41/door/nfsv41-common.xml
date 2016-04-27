@@ -96,7 +96,6 @@
         <description>Chimera Filesystem</description>
         <constructor-arg ref="dataSource" />
         <constructor-arg ref="tx-manager" />
-        <constructor-arg value="${nfs.db.dialect}" />
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="poolManagerStub" ref="poolManagerStub"/>
         <property name="pinManagerStub" ref="pinManagerStub"/>

@@ -39,7 +39,7 @@ import org.dcache.chimera.posix.Stat;
  */
 public class H2FsSqlDriver extends FsSqlDriver {
 
-    protected H2FsSqlDriver(DataSource dataSource) throws ChimeraFsException
+    public H2FsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
     }

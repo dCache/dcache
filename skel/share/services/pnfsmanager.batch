@@ -18,7 +18,6 @@ check -strong pnfsmanager.limits.log-slow-threshold
 check -strong pnfsmanager.limits.queue-length
 check -strong pnfsmanager.cell.name
 check pnfsmanager.cell.consume
-check -strong pnfsmanager.db.dialect
 check -strong pnfsmanager.db.user
 check -strong pnfsmanager.db.url
 check -strong pnfsmanager.db.connections.idle

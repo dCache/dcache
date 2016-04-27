@@ -17,7 +17,6 @@ CLASSPATH="$(getProperty dcache.paths.classpath)" java \
    -Dlog=${DCACHE_LOG:-warn} \
    org.dcache.chimera.PerformanceTest \
     "$(getProperty chimera.db.url)" \
-    "$(getProperty chimera.db.dialect)" \
     "$(getProperty chimera.db.user)" \
     "$(getProperty chimera.db.password)" \
     "$@"

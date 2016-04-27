@@ -26,7 +26,7 @@ import org.dcache.acl.enums.RsType;
 
 public class HsqlDBFsSqlDriver extends FsSqlDriver {
 
-    protected HsqlDBFsSqlDriver(DataSource dataSource) throws ChimeraFsException
+    public HsqlDBFsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
     }
