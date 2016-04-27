@@ -57,11 +57,11 @@ public class FileResources {
      * The method offer to list the content of a directory or return metadata of
      * a specified file or directory.
      *
-     * @param children optional boolean parameter, set to false by default.
+     * @param isList optional boolean parameter, set to false by default.
      *                 When set to true (e.g. /?children=true) the file attributes(e.g.  file size, locality, creation time... )
      *                 of the children (files/directories) of
      *                 the specified directory will be displayed.
-     * @param locality optional boolean parameter, set to false by default.
+     * @param isLocality optional boolean parameter, set to false by default.
      *                 When set to true the locality of file (ONLINE/NEARLINE) is displayed as a part of FileAttributes.
      * @return JsonFileAttributes  Json Object
      * <p>
@@ -104,7 +104,7 @@ public class FileResources {
      * }
      */
     @GET
-    @Path("{value: [a-zA-Z0-9_/]*}/")
+    @Path("{value : .*}")
     @Produces(MediaType.APPLICATION_JSON)
     public JsonFileAttributes getFileAttributes(@PathParam("value") String value,
                                                 @DefaultValue("false")
@@ -115,13 +115,18 @@ public class FileResources {
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
 
-        FsPath path = FsPath.create(FsPath.ROOT + value);
+        FsPath path;
+        if (value == null || value.isEmpty()) {
+            path = FsPath.ROOT;
+        } else {
+            path = FsPath.create(FsPath.ROOT + value);
+        }
 
 
         try {
 
             FileAttributes namespaceAttrributes = handler.getFileAttributes(path, attributes);
-            chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, handler, isLocality);
+            chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, isLocality);
 
 
             // fill children list id it's a directory and listing is requested
@@ -144,7 +149,7 @@ public class FileResources {
 
                     JsonFileAttributes childrenAttributes = new JsonFileAttributes();
 
-                    chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), handler, isLocality);
+                    chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), isLocality);
                     childrenAttributes.setFileName(fName);
                     children.add(childrenAttributes);
                 }
@@ -172,7 +177,6 @@ public class FileResources {
      */
     private void chimeraToJsonAttributes(JsonFileAttributes fileAttributes,
                                          FileAttributes namespaceAttrributes,
-                                         PnfsHandler handler,
                                          boolean isLocality) throws CacheException {
         fileAttributes.setMtime(namespaceAttrributes.getModificationTime());
         fileAttributes.setCreationTime(namespaceAttrributes.getCreationTime());
