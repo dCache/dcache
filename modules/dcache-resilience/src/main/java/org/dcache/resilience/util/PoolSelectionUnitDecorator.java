@@ -297,7 +297,11 @@ public final class PoolSelectionUnitDecorator
 
     @Override
     public void printSetup(PrintWriter pw) {
-        delegate.printSetup(pw);
+        /*
+         *  Called by UniversalSpring cell on beans implementing
+         *  CellSetupProvider.  Since the delegate also implements that
+         *  interface, there is no need to do anything here.
+         */
     }
 
     @Override
