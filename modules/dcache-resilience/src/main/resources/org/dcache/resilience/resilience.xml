@@ -75,7 +75,7 @@
       <description>Specialized access for scanning resilient pools</description>
       <property name="namespace" ref="name-space-provider"/>
       <property name="connectionPool" ref="data-source"/>
-      <property name="fetchSize" value="${resilience.pnfs-fetch-size}"/>
+      <property name="fetchSize" value="${resilience.db.fetch-size}"/>
       <property name="handler" ref="FileOpHandler"/>
     </bean>
 
@@ -96,9 +96,9 @@
     <bean id="SubmitExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
       <description>Thread pool service for executing operation submissions</description>
       <constructor-arg>
-        <bean id="bounded-executor" class="org.dcache.util.BoundedCachedExecutor"
+        <bean class="org.dcache.util.BoundedCachedExecutor"
               destroy-method="shutdownNow">
-          <constructor-arg value="${resilience.submit-threads}"/>
+          <constructor-arg value="${resilience.limits.file.submit-threads}"/>
         </bean>
       </constructor-arg>
     </bean>
@@ -106,9 +106,9 @@
     <bean id="FileOpExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
       <description>Thread pool service for executing verification of individual pnfs operations</description>
       <constructor-arg>
-        <bean id="bounded-executor" class="org.dcache.util.BoundedCachedExecutor"
+        <bean class="org.dcache.util.BoundedCachedExecutor"
               destroy-method="shutdownNow">
-          <constructor-arg value="${resilience.pnfs-op-threads}"/>
+          <constructor-arg value="${resilience.limits.file.operation-threads}"/>
         </bean>
       </constructor-arg>
     </bean>
@@ -116,9 +116,9 @@
     <bean id="PoolScanExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
       <description>Thread pool service for executing pool scanning operations</description>
       <constructor-arg>
-        <bean id="bounded-executor" class="org.dcache.util.BoundedCachedExecutor"
+        <bean class="org.dcache.util.BoundedCachedExecutor"
                                     destroy-method="shutdownNow">
-          <constructor-arg value="${resilience.pool-scan-threads}"/>
+          <constructor-arg value="${resilience.limits.pool.scan-threads}"/>
         </bean>
       </constructor-arg>
     </bean>
@@ -128,7 +128,7 @@
       <constructor-arg>
         <bean class="java.util.concurrent.Executors" factory-method="newScheduledThreadPool"
                                                      destroy-method="shutdownNow">
-          <constructor-arg value="${resilience.file-copy-threads}"/>
+          <constructor-arg value="${resilience.limits.file.copy-threads}"/>
         </bean>
       </constructor-arg>
     </bean>
@@ -140,7 +140,7 @@
 
     <bean id="History" class="org.dcache.resilience.util.OperationHistory" init-method="initialize">
       <description>Circular buffer recording recently completed operations</description>
-      <property name="capacity" value="${resilience.history.buffer-size}"/>
+      <property name="capacity" value="${resilience.limits.file.operation-history}"/>
     </bean>
 
     <bean id="PoolSelectionStrategy" class="${resilience.pool-selection-strategy}">
@@ -169,38 +169,38 @@
 
     <bean id="FileOpMap" class="org.dcache.resilience.data.FileOperationMap" destroy-method="shutdown">
       <description>The central hub of information regarding resilient operations by pnfsid</description>
-      <property name="timeout" value="${resilience.pnfs-scan.period}"/>
-      <property name="timeoutUnit" value="${resilience.pnfs-scan.period.unit}"/>
+      <property name="timeout" value="${resilience.limits.file.scan-period}"/>
+      <property name="timeoutUnit" value="${resilience.limits.file.scan-period.unit}"/>
       <property name="completionHandler" ref="FileTaskCompletionHandler"/>
       <property name="poolTaskCompletionHandler" ref="PoolTaskCompletionHandler"/>
       <property name="counters" ref="Counters"/>
       <property name="history" ref="History"/>
-      <property name="copyThreads" value="${resilience.file-copy-threads}"/>
-      <property name="maxRetries" value="${resilience.max-retries}"/>
-      <property name="maxAllocation" value="${resilience.pnfs-max-queue-allocation}"/>
+      <property name="copyThreads" value="${resilience.limits.file.copy-threads}"/>
+      <property name="maxRetries" value="${resilience.limits.file.operation-retries}"/>
+      <property name="maxAllocation" value="${resilience.limits.file.operation-max-allocation}"/>
       <property name="operationHandler" ref="FileOpHandler"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
-      <property name="checkpointExpiry" value="${resilience.checkpoint-expiry}"/>
-      <property name="checkpointExpiryUnit" value="${resilience.checkpoint-expiry.unit}"/>
+      <property name="checkpointExpiry" value="${resilience.limits.checkpoint-expiry}"/>
+      <property name="checkpointExpiryUnit" value="${resilience.limits.checkpoint-expiry.unit}"/>
       <property name="checkpointFilePath" value="${resilience.home}/pnfs-operation-map"/>
     </bean>
 
     <bean id="PoolOpMap" class="org.dcache.resilience.data.PoolOperationMap" destroy-method="shutdown">
       <description>The locus of information about current pool scan operations</description>
-      <property name="timeout" value="${resilience.pool-scan.period}"/>
-      <property name="timeoutUnit" value="${resilience.pool-scan.period.unit}"/>
+      <property name="timeout" value="${resilience.watchdog.scan.period}"/>
+      <property name="timeoutUnit" value="${resilience.watchdog.scan.period.unit}"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="fileOperationMap" ref="FileOpMap"/>
       <property name="counters" ref="Counters"/>
-      <property name="downGracePeriod" value="${resilience.pool-down-grace-period}"/>
-      <property name="downGracePeriodUnit" value="${resilience.pool-down-grace-period.unit}"/>
+      <property name="downGracePeriod" value="${resilience.limits.pool.down-grace-period}"/>
+      <property name="downGracePeriodUnit" value="${resilience.limits.pool.down-grace-period.unit}"/>
       <property name="handler" ref="PoolOpHandler"/>
-      <property name="maxConcurrentRunning" value="${resilience.pool-scan-threads}"/>
-      <property name="rescanWindow" value="${resilience.pool-scan.window}"/>
-      <property name="rescanWindowUnit" value="${resilience.pool-scan.window.unit}"/>
-      <property name="restartGracePeriod" value="${resilience.pool-restart-grace-period}"/>
-      <property name="restartGracePeriodUnit" value="${resilience.pool-restart-grace-period.unit}"/>
-      <property name="watchdog" value="${resilience.watchdog.enabled}"/>
+      <property name="maxConcurrentRunning" value="${resilience.limits.pool.scan-threads}"/>
+      <property name="rescanWindow" value="${resilience.watchdog.scan.window}"/>
+      <property name="rescanWindowUnit" value="${resilience.watchdog.scan.window.unit}"/>
+      <property name="restartGracePeriod" value="${resilience.limits.pool.restart-grace-period}"/>
+      <property name="restartGracePeriodUnit" value="${resilience.limits.pool.restart-grace-period.unit}"/>
+      <property name="watchdog" value="${resilience.enable.watchdog}"/>
     </bean>
 
     <bean id="FileOpHandler" class="org.dcache.resilience.handlers.FileOperationHandler">
@@ -262,8 +262,8 @@
       <property name="poolOperationMap" ref="PoolOpMap"/>
       <property name="fileOperationMap" ref="FileOpMap"/>
       <property name="poolInfoChangeHandler" ref="PoolMonitorChangeHandler"/>
-      <property name="initDelay" value="${resilience.startup-delay}"/>
-      <property name="initDelayUnit" value="${resilience.startup-delay.unit}"/>
+      <property name="initDelay" value="${resilience.limits.startup-delay}"/>
+      <property name="initDelayUnit" value="${resilience.limits.startup-delay.unit}"/>
     </bean>
 
     <bean id="PoolMonitorChangeHandler" class="org.dcache.resilience.handlers.PoolInfoChangeHandler"
@@ -284,8 +284,8 @@
         </bean>
       </property>
       <property name="refreshService" ref="SchedulingService"/>
-      <property name="refreshTimeout" value="${resilience.pool-info-expiry}"/>
-      <property name="refreshTimeoutUnit" value="${resilience.pool-info-expiry.unit}"/>
+      <property name="refreshTimeout" value="${resilience.limits.pool-info-expiry}"/>
+      <property name="refreshTimeoutUnit" value="${resilience.limits.pool-info-expiry.unit}"/>
     </bean>
 
     <bean id="AdminCommands" class="org.dcache.resilience.admin.ResilienceCommands">
