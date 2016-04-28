@@ -497,7 +497,7 @@ class CellGlue
                 try {
                     destNucleus.addToEventQueue(new MessageEvent(msg.decode()));
                 } catch (SerializationException e) {
-                    LOGGER.error("Received malformed message from %s with UOID %s and session [%s]: %s",
+                    LOGGER.error("Received malformed message from {} with UOID {} and session [{}]: {}",
                                  msg.getSourcePath(), msg.getUOID(), msg.getSession(), e.getMessage());
                     sendException(msg, address.toString());
                 }
