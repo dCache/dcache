@@ -19,6 +19,8 @@ package dmg.cells.nucleus;
 
 import java.io.Serializable;
 
+import dmg.util.Releases;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CellDomainInfo implements Serializable
@@ -38,6 +40,11 @@ public class CellDomainInfo implements Serializable
     public String getVersion()
     {
         return _version;
+    }
+
+    public short getRelease()
+    {
+        return Releases.getRelease(_version);
     }
 
     public String getCellDomainName()

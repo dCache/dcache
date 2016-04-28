@@ -62,6 +62,7 @@ import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.FutureCellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Releases;
 
 import org.dcache.util.Args;
 
@@ -133,6 +134,11 @@ public class CoreRoutingManager
      * Tunnels to satellite domains.
      */
     private final Map<CellAddressCore,CellTunnelInfo> satelliteTunnels = new HashMap<>();
+
+    /**
+     * Tunnels to legacy domains.
+     */
+    private final Map<CellAddressCore,CellTunnelInfo> legacyTunnels = new HashMap<>();
 
     /**
      * Default routes that still have to be added.
@@ -322,7 +328,9 @@ public class CoreRoutingManager
                 Map<String, Collection<String>> domains = new HashMap<>();
                 synchronized (this) {
                     domains.put(getCellDomainName(), new ArrayList<>(localExports));
-                    Stream.concat(coreTunnels.values().stream(), satelliteTunnels.values().stream())
+                    asList(coreTunnels, satelliteTunnels, legacyTunnels)
+                            .stream()
+                            .flatMap(map -> map.values().stream())
                             .map(CellTunnelInfo::getRemoteCellDomainInfo)
                             .map(CellDomainInfo::getCellDomainName)
                             .forEach(domain -> domains.put(domain, new ArrayList<>()));
@@ -418,8 +426,13 @@ public class CoreRoutingManager
                     .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE)
                     .ifPresent(i -> { coreTunnels.put(i.getTunnel(), i); sendToCoreDomains(); });
             tunnelInfo
-                    .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.SATELLITE)
+                    .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
+                                 i.getRemoteCellDomainInfo().getRelease() >= Releases.RELEASE_2_16)
                     .ifPresent(i -> { satelliteTunnels.put(i.getTunnel(), i); sendToSatelliteDomains(); });
+            tunnelInfo
+                    .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
+                                 i.getRemoteCellDomainInfo().getRelease() < Releases.RELEASE_2_16)
+                    .ifPresent(i -> legacyTunnels.put(i.getTunnel(), i));
             tunnelInfo
                     .filter(i -> i.getLocalCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
                                  i.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE)
@@ -456,7 +469,11 @@ public class CoreRoutingManager
             updateWellknownRoutes(cr.getDomainName(), Collections.emptyList());
             getTunnelInfo(cr.getTarget())
                     .map(CellTunnelInfo::getTunnel)
-                    .ifPresent(name -> { coreTunnels.remove(name); satelliteTunnels.remove(name); });
+                    .ifPresent(name -> {
+                        coreTunnels.remove(name);
+                        satelliteTunnels.remove(name);
+                        legacyTunnels.remove(name);
+                    });
             break;
         case CellRoute.TOPIC:
             String topic = cr.getCellName();
