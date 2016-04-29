@@ -224,42 +224,58 @@ stringToGiB() # in $1 = size, out $2 = size in GiB
     local gib
     case $1 in
         *k)
+            checkInt "${1%?}"
             gib=$((${1%?}/(1024*1024)))
             ;;
 
         *K)
+            checkInt "${1%?}"
             gib=$((${1%?}/(1024*1024)))
             ;;
 
         *m)
+            checkInt "${1%?}"
             gib=$((${1%?}/1024))
             ;;
 
         *M)
+            checkInt "${1%?}"
             gib=$((${1%?}/1024))
             ;;
 
         *g)
+            checkInt "${1%?}"
             gib=$((${1%?}))
             ;;
 
         *G)
+            checkInt "${1%?}"
             gib=$((${1%?}))
             ;;
 
         *t)
+            checkInt "${1%?}"
             gib=$((${1%?}*1024))
             ;;
 
         *T)
+            checkInt "${1%?}"
             gib=$((${1%?}*1024))
             ;;
 
         *)
+            checkInt "${1%?}"
             gib=$(($1/(1024*1024*1024)))
             ;;
     esac
     eval $2=\"$gib\"
+}
+
+checkInt() # in $1 = string
+{
+   if ! [ "$1" -eq "$1" ] 2> /dev/null; then
+      fail 1 "$1 is not an integer."
+   fi
 }
 
 # Extracts the amount of free space in GiB.
