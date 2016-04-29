@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.retry.RetryOneTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -553,5 +554,10 @@ class CellGlue
     public CuratorFramework getCuratorFramework()
     {
         return _curatorFramework;
+    }
+
+    public void shutdown()
+    {
+        _curatorFramework.close();
     }
 }

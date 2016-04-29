@@ -105,6 +105,7 @@ public class      SystemCell
     public void cleanUp()
     {
         shutdownSystem();
+        CellNucleus.shutdownCellGlue();
         _log.info("Opening shutdown lock");
         _shutdownLock.open();
         System.exit(0);

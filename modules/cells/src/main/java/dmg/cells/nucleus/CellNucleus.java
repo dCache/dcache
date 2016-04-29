@@ -195,6 +195,14 @@ public class CellNucleus implements ThreadFactory
         __cellGlue = new CellGlue(cellDomainName, curatorFramework);
     }
 
+    public static void shutdownCellGlue()
+    {
+        if (__cellGlue != null) {
+            __cellGlue.shutdown();
+            __cellGlue = null;
+        }
+    }
+
     boolean isSystemNucleus() {
         return this == __cellGlue.getSystemNucleus();
     }
