@@ -23,9 +23,9 @@
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
-    <property name="destination" value="${srm.service.poolmanager}"/>
-    <property name="timeout" value="${srm.service.poolmanager.timeout}"/>
-    <property name="timeoutUnit" value="${srm.service.poolmanager.timeout.unit}"/>
+    <property name="destination" value="${spacemanager.service.poolmanager}"/>
+    <property name="timeout" value="${spacemanager.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${spacemanager.service.poolmanager.timeout.unit}"/>
   </bean>
 
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
@@ -35,9 +35,9 @@
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
     <description>PNFS manager communication stub</description>
-    <property name="destination" value="${srm.service.pnfsmanager}"/>
-    <property name="timeout" value="${srm.service.pnfsmanager.timeout}"/>
-    <property name="timeoutUnit" value="${srm.service.pnfsmanager.timeout.unit}"/>
+    <property name="destination" value="${spacemanager.service.pnfsmanager}"/>
+    <property name="timeout" value="${spacemanager.service.pnfsmanager.timeout}"/>
+    <property name="timeoutUnit" value="${spacemanager.service.pnfsmanager.timeout.unit}"/>
     <property name="retryOnNoRouteToCell" value="true"/>
   </bean>
 

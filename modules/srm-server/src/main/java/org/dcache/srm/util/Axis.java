@@ -6,7 +6,6 @@ import eu.emi.security.authn.x509.impl.OpensslNameUtils;
 import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
-import org.italiangrid.voms.ac.VOMSACValidator;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
@@ -16,24 +15,20 @@ import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
+import org.dcache.delegation.gridsite2.Delegation;
 import org.dcache.gsi.ServerGsiEngine;
-import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.SRM;
-import org.dcache.srm.SRMAuthorization;
+import org.dcache.srm.v2_2.ISRM;
 
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLET;
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
-import static org.dcache.gridsite.ServletDelegation.ATTRIBUTE_NAME_VOMS_VALIDATOR;
 
 /**
  * Utility class with methods for working with Axis
  */
 public class Axis
 {
-    public static final String ATTRIBUTE_NAME_SRM= "org.dcache.srm.srm";
-    public static final String ATTRIBUTE_NAME_STORAGE = "org.dcache.srm.storage";
-    public static final String ATTRIBUTE_NAME_CONFIG = "org.dcache.srm.config";
-    public static final String ATTRIBUTE_NAME_AUTHORIZATION = "org.dcache.srm.authorization";
+    public static final String ATTRIBUTE_NAME_SRM_SERVER_V2 = "org.dcache.srm.v2";
+    public static final String ATTRIBUTE_NAME_DELEGATION = "org.dcache.gridsite.delegation";
 
     /**
      * Obtain an object from the set of attributes in the ServletContext.
@@ -135,28 +130,13 @@ public class Axis
         return type.cast(item);
     }
 
-    public static SRM getSRM()
+    public static ISRM getSrmService()
     {
-        return getAttribute(ATTRIBUTE_NAME_SRM, SRM.class);
+        return getAttribute(ATTRIBUTE_NAME_SRM_SERVER_V2, ISRM.class);
     }
 
-    public static AbstractStorageElement getStorage()
+    public static Delegation getDelegationService()
     {
-        return getAttribute(ATTRIBUTE_NAME_STORAGE, AbstractStorageElement.class);
-    }
-
-    public static Configuration getConfiguration()
-    {
-        return getAttribute(ATTRIBUTE_NAME_CONFIG, Configuration.class);
-    }
-
-    public static SRMAuthorization getSrmAuthorization()
-    {
-        return getAttribute(ATTRIBUTE_NAME_AUTHORIZATION, SRMAuthorization.class);
-    }
-
-    public static VOMSACValidator getVomsAcValidator()
-    {
-        return getAttribute(ATTRIBUTE_NAME_VOMS_VALIDATOR, VOMSACValidator.class);
+        return getAttribute(ATTRIBUTE_NAME_DELEGATION, Delegation.class);
     }
 }

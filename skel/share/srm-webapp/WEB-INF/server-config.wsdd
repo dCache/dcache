@@ -48,7 +48,7 @@
       <parameter name="wsdlTargetNamespace" value="http://www.gridsite.org/namespaces/delegation-2"/>
       <parameter name="wsdlServiceElement" value="DelegationService"/>
       <parameter name="schemaQualified" value="http://www.gridsite.org/namespaces/delegation-2"/>
-      <parameter name="className" value="org.dcache.gridsite.ServletDelegation"/>
+      <parameter name="className" value="org.dcache.gridsite.AxisDelegationDelegator"/>
       <parameter name="wsdlServicePort" value="gridsite-delegation"/>
       <parameter name="wsdlPortType" value="Delegation"/>
       <parameter name="typeMappingVersion" value="1.1"/>
@@ -253,7 +253,7 @@
       <parameter name="srmPingRequest" type="ns39:srmPingRequest"/>
     </operation>
     <parameter name="wsdlServicePort" value="managerv2"/>
-    <parameter name="className" value="org.dcache.srm.server.SRMServerV2"/>
+    <parameter name="className" value="org.dcache.srm.server.AxisSrmDelegator"/>
     <parameter name="typeMappingVersion" value="1.2"/>
     <parameter name="allowedMethods" value="srmReleaseFiles srmGetSpaceMetaData srmStatusOfUpdateSpaceRequest srmAbortRequest srmMv srmGetRequestSummary srmExtendFileLifeTimeInSpace srmGetTransferProtocols srmChangeSpaceForFiles srmStatusOfLsRequest srmGetSpaceTokens srmUpdateSpace srmStatusOfCopyRequest srmPrepareToGet srmPutDone srmAbortFiles srmGetRequestTokens srmStatusOfPutRequest srmStatusOfReserveSpaceRequest srmReserveSpace srmSuspendRequest srmCopy srmSetPermission srmStatusOfBringOnlineRequest srmBringOnline srmExtendFileLifeTime srmStatusOfChangeSpaceForFilesRequest srmMkdir srmCheckPermission srmPurgeFromSpace srmStatusOfGetRequest srmRmdir srmReleaseSpace srmGetPermission srmRm srmResumeRequest srmLs srmPrepareToPut srmPing"/>
     <parameter name="wsdlServiceElement" value="SRMService"/>

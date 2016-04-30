@@ -137,13 +137,9 @@ public class SRM implements CellLifeCycleAware
     private final Configuration configuration;
     private RequestCredentialStorage requestCredentialStorage;
     private final AbstractStorageElement storage;
-    private final RequestCounters<Class<?>> srmServerV2Counters;
     private final RequestCounters<Method> abstractStorageElementCounters;
-    private RrdRequestCounters<?> rrdSrmServerV2Counters;
     private RrdRequestCounters<?> rrdAstractStorageElementCounters;
-    private final RequestExecutionTimeGauges<Class<?>> srmServerV2Gauges;
     private final RequestExecutionTimeGauges<Method> abstractStorageElementGauges;
-    private RrdRequestExecutionTimeGauges<?> rrdSrmServerV2Gauges;
     private RrdRequestExecutionTimeGauges<?> rrdAstractStorageElementGauges;
     private SchedulerContainer schedulers;
     private DatabaseJobStorageFactory databaseFactory;
@@ -177,17 +173,8 @@ public class SRM implements CellLifeCycleAware
                 abstractStorageElementCounters,
                 abstractStorageElementGauges);
 
-        srmServerV2Counters = new RequestCounters<>("SRMServerV2");
         if (configuration.getCounterRrdDirectory() != null) {
-            String rrddir = configuration.getCounterRrdDirectory() +
-                    File.separatorChar + "srmv1";
-            rrddir = configuration.getCounterRrdDirectory() +
-                    File.separatorChar + "srmv2";
-            rrdSrmServerV2Counters =
-                    new RrdRequestCounters<>(srmServerV2Counters, rrddir);
-            rrdSrmServerV2Counters.startRrdUpdates();
-            rrdSrmServerV2Counters.startRrdGraphPlots();
-            rrddir =  configuration.getCounterRrdDirectory() +
+            String rrddir =  configuration.getCounterRrdDirectory() +
                     File.separatorChar + "storage";
 
             rrdAstractStorageElementCounters =
@@ -197,15 +184,8 @@ public class SRM implements CellLifeCycleAware
 
 
         }
-        srmServerV2Gauges = new RequestExecutionTimeGauges<>("SRMServerV2");
         if (configuration.getGaugeRrdDirectory() != null) {
-            File rrddir = new File(configuration.getGaugeRrdDirectory() +
-                    File.separatorChar + "srmv2");
-            rrdSrmServerV2Gauges =
-                    new RrdRequestExecutionTimeGauges<>(srmServerV2Gauges, rrddir);
-            rrdSrmServerV2Gauges.startRrdUpdates();
-            rrdSrmServerV2Gauges.startRrdGraphPlots();
-            rrddir = new File (configuration.getGaugeRrdDirectory() +
+            File rrddir = new File (configuration.getGaugeRrdDirectory() +
                     File.separatorChar + "storage");
 
             rrdAstractStorageElementGauges =
@@ -319,20 +299,6 @@ public class SRM implements CellLifeCycleAware
      */
     public int getPort() {
         return configuration.getPort();
-    }
-
-    /**
-     * @return the srmServerCounters
-     */
-    public RequestCounters<Class<?>> getSrmServerV2Counters() {
-        return srmServerV2Counters;
-    }
-
-    /**
-     * @return the srmServerV2Gauges
-     */
-    public RequestExecutionTimeGauges<Class<?>> getSrmServerV2Gauges() {
-        return srmServerV2Gauges;
     }
 
     /**

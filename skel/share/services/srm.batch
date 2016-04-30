@@ -1,5 +1,5 @@
 #
-# SRM service
+# SRM frontend service
 #
 
 onerror shutdown
@@ -9,15 +9,11 @@ check srm.cell.consume
 check srm.cell.subscribe
 check -strong srm.cell.max-message-threads
 check srm.cell.max-messages-queued
-check srm.version
 
 check -strong srm.net.port
 check -strong srm.net.ssl-port
-check -strong srm.net.host
-check -strong srm.net.local-hosts
 check srm.net.listen
 
-check -strong srm.authn.vomsdir
 check -strong srm.authn.capath
 check -strong srm.authn.capath.refresh
 check -strong srm.authn.capath.refresh.unit
@@ -34,34 +30,9 @@ check -strong srm.authn.ocsp-mode
 check -strong srm.authn.gsi.delegation.cache.lifetime
 check -strong srm.authn.gsi.delegation.cache.lifetime.unit
 
-check -strong srm.client-transport
-
-check -strong srm.db.schema.auto
-check -strong srm.db.schema.changelog
-check -strong srm.db.connections.idle
-check -strong srm.db.connections.max
-check -strong srm.db.url
-check -strong srm.db.user
-check srm.db.password
-check srm.db.password.file
-
 check -strong srm.service.gplazma.cache.size
 check -strong srm.service.gplazma.cache.timeout
 check -strong srm.service.gplazma.cache.timeout.unit
-
-check -strong srm.plugins.scheduler
-check -strong srm.plugins.transfer
-
-check -strong srm.limits.db.threads
-check -strong srm.limits.db.queue
-
-check -strong srm.limits.parallel-streams
-
-check -strong srm.limits.external-copy-script.timeout
-check -strong srm.limits.external-copy-script.timeout.unit
-check -strong srm.limits.transfer-buffer.size
-check -strong srm.limits.transfer-tcp-buffer.size
-check -strong srm.enable.external-copy-script.debug
 
 check -strong srm.limits.jetty-connector.acceptors
 check -strong srm.limits.jetty-connector.idle-time.max
@@ -75,108 +46,6 @@ check -strong srm.limits.jetty.threads.min
 check -strong srm.limits.jetty.threads.idle-time.max
 check -strong srm.limits.jetty.threads.idle-time.max.unit
 check -strong srm.limits.jetty.threads.queued.max
-
-check -strong srm.request.bring-online.max-requests
-check -strong srm.request.bring-online.max-inprogress
-check -strong srm.request.bring-online.switch-to-async-mode-delay
-check -strong srm.request.bring-online.switch-to-async-mode-delay.unit
-check -strong srm.request.bring-online.max-poll-period
-check -strong srm.request.bring-online.max-poll-period.unit
-check -strong srm.persistence.bring-online.enable
-check -strong srm.persistence.bring-online.enable.clean-pending-on-restart
-check -strong srm.persistence.bring-online.enable.store-transient-state
-check -strong srm.persistence.bring-online.enable.history
-check -strong srm.persistence.bring-online.keep-history-period
-check -strong srm.persistence.bring-online.keep-history-period.unit
-check -strong srm.persistence.bring-online.remove-expired-period
-check -strong srm.persistence.bring-online.remove-expired-period.unit
-check -strong srm.request.bring-online.lifetime
-check -strong srm.request.bring-online.lifetime.unit
-
-check -strong srm.request.copy.max-requests
-check -strong srm.request.copy.max-inprogress
-check -strong srm.request.copy.max-poll-period
-check -strong srm.request.copy.max-poll-period.unit
-check -strong srm.persistence.copy.enable
-check -strong srm.persistence.copy.enable.clean-pending-on-restart
-check -strong srm.persistence.copy.enable.store-transient-state
-check -strong srm.persistence.copy.enable.history
-check -strong srm.persistence.copy.keep-history-period
-check -strong srm.persistence.copy.keep-history-period.unit
-check -strong srm.persistence.copy.remove-expired-period
-check -strong srm.persistence.copy.remove-expired-period.unit
-check -strong srm.request.copy.lifetime
-check -strong srm.request.copy.lifetime.unit
-
-check -strong srm.request.get.max-requests
-check -strong srm.request.get.max-inprogress
-check -strong srm.request.get.max-transfers
-check -strong srm.request.get.switch-to-async-mode-delay
-check -strong srm.request.get.switch-to-async-mode-delay.unit
-check -strong srm.request.get.max-poll-period
-check -strong srm.request.get.max-poll-period.unit
-check -strong srm.persistence.get.enable
-check -strong srm.persistence.get.enable.clean-pending-on-restart
-check -strong srm.persistence.get.enable.store-transient-state
-check -strong srm.persistence.get.enable.history
-check -strong srm.persistence.get.keep-history-period
-check -strong srm.persistence.get.keep-history-period.unit
-check -strong srm.persistence.get.remove-expired-period
-check -strong srm.persistence.get.remove-expired-period.unit
-check -strong srm.request.get.lifetime
-check -strong srm.request.get.lifetime.unit
-
-check -strong srm.request.ls.max-requests
-check -strong srm.request.ls.max-inprogress
-check -strong srm.request.ls.switch-to-async-mode-delay
-check -strong srm.request.ls.switch-to-async-mode-delay.unit
-check -strong srm.request.ls.max-poll-period
-check -strong srm.request.ls.max-poll-period.unit
-check -strong srm.persistence.ls.enable
-check -strong srm.persistence.ls.enable.clean-pending-on-restart
-check -strong srm.persistence.ls.enable.store-transient-state
-check -strong srm.persistence.ls.enable.history
-check -strong srm.persistence.ls.keep-history-period
-check -strong srm.persistence.ls.keep-history-period.unit
-check -strong srm.persistence.ls.remove-expired-period
-check -strong srm.persistence.ls.remove-expired-period.unit
-check -strong srm.limits.ls.entries
-check -strong srm.limits.ls.levels
-
-check -strong srm.request.put.max-requests
-check -strong srm.request.put.max-inprogress
-check -strong srm.request.put.max-transfers
-check -strong srm.request.put.switch-to-async-mode-delay
-check -strong srm.request.put.switch-to-async-mode-delay.unit
-check -strong srm.request.put.max-poll-period
-check -strong srm.request.put.max-poll-period.unit
-check -strong srm.persistence.put.enable
-check -strong srm.persistence.put.enable.clean-pending-on-restart
-check -strong srm.persistence.put.enable.store-transient-state
-check -strong srm.persistence.put.enable.history
-check -strong srm.persistence.put.keep-history-period
-check -strong srm.persistence.put.keep-history-period.unit
-check -strong srm.persistence.put.remove-expired-period
-check -strong srm.persistence.put.remove-expired-period.unit
-check -strong srm.request.put.lifetime
-check -strong srm.request.put.lifetime.unit
-
-check -strong srm.request.reserve-space.max-requests
-check -strong srm.request.reserve-space.max-inprogress
-check -strong srm.request.reserve-space.max-poll-period
-check -strong srm.request.reserve-space.max-poll-period.unit
-check -strong srm.persistence.reserve-space.enable
-check -strong srm.persistence.reserve-space.enable.clean-pending-on-restart
-check -strong srm.persistence.reserve-space.enable.store-transient-state
-check -strong srm.persistence.reserve-space.enable.history
-check -strong srm.persistence.reserve-space.keep-history-period
-check -strong srm.persistence.reserve-space.keep-history-period.unit
-check -strong srm.persistence.reserve-space.remove-expired-period
-check -strong srm.persistence.reserve-space.remove-expired-period.unit
-
-check -strong srm.limits.remove-batch-size
-
-check -strong srm.root
 
 check -strong srm.service.gplazma
 check -strong srm.service.gplazma.timeout
@@ -192,56 +61,14 @@ check -strong srm.loginbroker.update-period.unit
 check -strong srm.loginbroker.update-threshold
 check -strong srm.loginbroker.version
 check -strong srm.loginbroker.family
+check -strong srm.loginbroker.root
 
-check -strong srm.service.pnfsmanager
-check -strong srm.service.pnfsmanager.timeout
-check -strong srm.service.pnfsmanager.timeout.unit
-
-check -strong srm.service.poolmanager
-check -strong srm.service.poolmanager.timeout
-check -strong srm.service.poolmanager.timeout.unit
-
-check -strong srm.service.billing
-
-check -strong srm.enable.advisory-delete
 check -strong srm.enable.client-dns-lookup
-check -strong srm.enable.custom-get-host-by-address
-check -strong srm.enable.overwrite
-check -strong srm.enable.overwrite-by-default
-check -strong srm.enable.pin-online-files
-check -strong srm.enable.recursive-directory-creation
-check -strong srm.enable.space-reservation
 check -strong srm.enable.legacy-close
-
-check -strong srm.user.credentials.directory
-
-check srm.plugins.qos.class
-check srm.plugins.qos.config.file
-
-check srm.protocols.tags
-check srm.protocols.disallowed.get
-check srm.protocols.disallowed.put
-check srm.protocols.preferred
-check -strong srm.protocols.population-size
-
 
 check srm.authn.ciphers
 
 check -strong dcache.paths.share
-
-#
-# Force space manager related settings to off if space manager is
-# disabled.
-#
-define env srmSpaceManagerOff.exe endExe
-  set env srm.enable.space-reservation.strict false
-  set env srm.enable.space-reservation false
-endExe
-
-onerror continue
-eval ${srm.enable.space-reservation} true ==
-exec env srmSpaceManagerOff.exe -ifnotok
-onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${srm.cell.name} \
    "classpath:diskCacheV111/srm/srm.xml \

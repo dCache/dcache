@@ -18,15 +18,12 @@
 package org.dcache.gridsite;
 
 import eu.emi.security.authn.x509.X509Credential;
-import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.ac.VOMSACValidator;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -45,12 +42,6 @@ import static org.dcache.gridsite.Utilities.assertThat;
 public class SrmCredentialStore implements CredentialStore
 {
     private RequestCredentialStorage _store;
-    private VOMSACValidator validator;
-
-    public void setVomsValidator(VOMSACValidator validator)
-    {
-        this.validator = validator;
-    }
 
     @Required
     public void setRequestCredentialStorage(RequestCredentialStorage store)
@@ -68,23 +59,16 @@ public class SrmCredentialStore implements CredentialStore
     }
 
     @Override
-    public void put(DelegationIdentity id, X509Credential credential)
+    public void put(DelegationIdentity id, X509Credential credential, FQAN primaryFqan)
             throws DelegationException
     {
         try {
-            X509Certificate[] chain = credential.getCertificateChain();
-            FQAN primaryFqan = getPrimary(validator.validate(chain));
             RequestCredential srmCredential =
                     new RequestCredential(nameFromId(id), Objects.toString(primaryFqan, null), credential, _store);
             _store.saveRequestCredential(srmCredential);
         } catch (RuntimeException e) {
             throw new DelegationException("failed to save credential: " + e.getMessage());
         }
-    }
-
-    private static FQAN getPrimary(List<VOMSAttribute> attributes)
-    {
-        return attributes.stream().flatMap(a -> a.getFQANs().stream()).findFirst().map(FQAN::new).orElse(null);
     }
 
     @Override

@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ dCache - http://www.dcache.org/
+  ~
+  ~ Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as
+  ~ published by the Free Software Foundation, either version 3 of the
+  ~ License, or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+              http://www.springframework.org/schema/beans/spring-beans.xsd
+              http://www.springframework.org/schema/context
+              http://www.springframework.org/schema/context/spring-context.xsd
+              http://www.springframework.org/schema/util
+              http://www.springframework.org/schema/util/spring-util.xsd
+              http://www.springframework.org/schema/task
+              http://www.springframework.org/schema/task/spring-task.xsd">
+
+    <context:property-placeholder/>
+    <context:annotation-config/>
+
+    <task:scheduled-tasks scheduler="scheduler">
+        <task:scheduled ref="user-manager" method="gc" cron="0 47 * * * *"/>
+    </task:scheduled-tasks>
+
+    <!-- Convert properties with multiple values separated by comma into an array of strings:
+         key=value1,value2,value3 : String[] {value1, value2, value3}
+      -->
+    <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+        <property name="customEditors">
+            <map>
+                <entry key="java.lang.String[]"
+                       value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor"/>
+            </map>
+        </property>
+    </bean>
+
+    <!--
+         DCACHE CELL COMMUNICATION
+         =====================================================================================
+      -->
+
+    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <description>Undeliverable message logger</description>
+        <property name="excludedDestinations"
+                  value="${srmmanager.loginbroker.request-topic},${srmmanager.credential-service.topic}"/>
+    </bean>
+
+    <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+        <description>Pool manager communication stub</description>
+        <property name="destination" value="${srmmanager.service.poolmanager}"/>
+        <property name="timeout" value="${srmmanager.service.poolmanager.timeout}"/>
+        <property name="timeoutUnit" value="${srmmanager.service.poolmanager.timeout.unit}"/>
+        <property name="retryOnNoRouteToCell" value="true"/>
+    </bean>
+
+    <bean id="gplazma-stub" class="org.dcache.cells.CellStub">
+        <description>gPlazma communication stub</description>
+        <property name="destination" value="${srmmanager.service.gplazma}"/>
+        <property name="timeout" value="${srmmanager.service.gplazma.timeout}" />
+        <property name="timeoutUnit" value="${srmmanager.service.gplazma.timeout.unit}" />
+    </bean>
+
+    <bean id="billing-stub" class="org.dcache.cells.CellStub">
+        <description>Billing communication stub</description>
+        <property name="destination" value="${srmmanager.service.billing}"/>
+    </bean>
+
+    <bean id="space-manager-stub" class="org.dcache.cells.CellStub">
+        <description>Space manager communication stub</description>
+        <property name="destination" value="${srmmanager.service.spacemanager}" />
+        <property name="timeout" value="${srmmanager.service.spacemanager.timeout}"  />
+        <property name="timeoutUnit" value="${srmmanager.service.spacemanager.timeout.unit}"  />
+    </bean>
+
+    <bean id="transfer-manager-stub" class="org.dcache.cells.CellStub">
+        <description>Transfer manager communication stub</description>
+        <property name="destination" value="${srmmanager.service.transfermanager}" />
+        <property name="timeout" value="${srmmanager.service.transfermanager.timeout}" />
+        <property name="timeoutUnit" value="${srmmanager.service.transfermanager.timeout.unit}" />
+    </bean>
+
+    <bean id="pin-manager-stub" class="org.dcache.cells.CellStub">
+        <description>Pin manager communication stub</description>
+        <property name="destination" value="${srmmanager.service.pinmanager}" />
+        <property name="timeout" value="${srmmanager.service.pinmanager.timeout}" />
+        <property name="timeoutUnit" value="${srmmanager.service.pinmanager.timeout.unit}" />
+    </bean>
+
+    <bean id="credential-topic-stub" class="org.dcache.cells.CellStub">
+        <description>Credential topic communication stub</description>
+        <property name="destination" value="${srmmanager.credential-service.topic}"/>
+    </bean>
+
+    <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+        <description>PNFS manager communication stub</description>
+        <property name="destination" value="${srmmanager.service.pnfsmanager}"/>
+        <property name="timeout" value="${srmmanager.service.pnfsmanager.timeout}"/>
+        <property name="timeoutUnit" value="${srmmanager.service.pnfsmanager.timeout.unit}"/>
+        <property name="retryOnNoRouteToCell" value="true"/>
+    </bean>
+
+    <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+        <description>PNFS manager client module</description>
+        <constructor-arg ref="pnfs-stub"/>
+    </bean>
+
+    <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
+        <description>Client stub for directory listing</description>
+        <constructor-arg ref="pnfs"/>
+    </bean>
+
+    <bean id="scheduledExecutor" class="java.util.concurrent.Executors"
+          factory-method="newSingleThreadScheduledExecutor"
+          destroy-method="shutdown">
+        <description>Thread pool for scheduled activities</description>
+    </bean>
+
+    <bean id="scheduler" class="org.springframework.scheduling.concurrent.ConcurrentTaskScheduler">
+        <description>Scheduler for periodic activities</description>
+        <property name="scheduledExecutor" ref="scheduledExecutor"/>
+    </bean>
+
+    <bean id="login-broker-source" class="dmg.cells.services.login.LoginBrokerSubscriber">
+        <property name="topic" value="${srmmanager.loginbroker.request-topic}"/>
+        <property name="tags" value="${srmmanager.protocols.tags}"/>
+    </bean>
+
+    <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
+        <description>Maintains runtime information about all pools</description>
+        <property name="poolManagerStub" ref="pool-manager-stub"/>
+    </bean>
+
+    <!--
+         AUTHORIZATION
+         =====================================================================================
+      -->
+
+    <bean id="login-strategy" class="org.dcache.auth.CachingLoginStrategy">
+        <description>Caching gPlazma client</description>
+        <constructor-arg>
+            <bean class="org.dcache.services.login.RemoteLoginStrategy">
+                <property name="cellStub" ref="gplazma-stub"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg value="${srmmanager.service.gplazma.cache.size}"/> <!-- Cache size -->
+        <constructor-arg value="${srmmanager.service.gplazma.cache.timeout}"/>
+        <constructor-arg value="${srmmanager.service.gplazma.cache.timeout.unit}"/>
+    </bean>
+
+    <bean id="user-manager" class="diskCacheV111.srm.dcache.PersistentLoginUserManager">
+        <description>gPlazma plugin for SRM</description>
+        <constructor-arg ref="login-strategy"/>
+        <constructor-arg ref="data-source"/>
+    </bean>
+
+    <bean id="srm-credential-store"
+          class="org.dcache.srm.request.sql.DatabaseRequestCredentialStorage">
+        <description>SRM credential store</description>
+
+        <constructor-arg ref="config"/>
+    </bean>
+
+    <!--
+         CORE SRM
+         =====================================================================================
+      -->
+
+    <bean id="storage" class="diskCacheV111.srm.dcache.Storage">
+        <description>dCache plugin for SRM</description>
+        <property name="executor">
+            <bean class="org.dcache.util.CDCExecutorServiceDecorator"
+                  destroy-method="shutdown">
+                <constructor-arg>
+                    <bean class="java.util.concurrent.Executors"
+                          factory-method="newCachedThreadPool"/>
+                </constructor-arg>
+            </bean>
+        </property>
+        <property name="directoryListSource" ref="list-handler"/>
+        <property name="loginBrokerSource" ref="login-broker-source"/>
+        <property name="pnfsStub" ref="pnfs-stub"/>
+        <property name="pnfsHandler" ref="pnfs"/>
+        <property name="poolManagerStub" ref="pool-manager-stub"/>
+        <property name="poolMonitor" ref="pool-monitor"/>
+        <property name="spaceManagerStub" ref="space-manager-stub"/>
+        <property name="transferManagerStub" ref="transfer-manager-stub"/>
+        <property name="pinManagerStub" ref="pin-manager-stub"/>
+        <property name="billingStub" ref="billing-stub"/>
+        <property name="isSpaceManagerEnabled"
+                  value="${srmmanager.enable.space-reservation}"/>
+        <property name="numberOfDoorsInRandomSelection"
+                  value="${srmmanager.protocols.population-size}"/>
+        <property name="useCustomGetHostByAddress"
+                  value="${srmmanager.enable.custom-get-host-by-address}"/>
+        <property name="configuration" ref="config"/>
+        <property name="pinOnlineFiles" value="${srmmanager.enable.pin-online-files}"/>
+        <property name="srmPutNotSupportedProtocols" value="${srmmanager.protocols.disallowed.put}"/>
+        <property name="srmGetNotSupportedProtocols" value="${srmmanager.protocols.disallowed.get}"/>
+        <property name="srmPreferredProtocols" value="${srmmanager.protocols.preferred}"/>
+        <property name="verificationRequired" value="${srmmanager.enable.third-party.requiring-verification-by-default}"/>
+    </bean>
+
+    <bean id="config" class="diskCacheV111.srm.dcache.Configuration" depends-on="liquibase">
+        <description>SRM configuration</description>
+        <property name="port" value="${srmmanager.net.port}"/>
+        <property name="timeout"
+                  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                     ${srmmanager.limits.external-copy-script.timeout},
+                     '${srmmanager.limits.external-copy-script.timeout.unit}')}" />
+        <property name="srmHost" value="${srmmanager.net.host}"/>
+        <property name="srmHostsAsArray" value="${srmmanager.net.local-hosts}"/>
+        <property name="caCertificatePath" value="${srmmanager.authn.capath}"/>
+        <property name="sizeOfSingleRemoveBatch"
+                  value="${srmmanager.limits.remove-batch-size}"/>
+        <property name="maxNumberOfLsEntries"
+                  value="#{T(org.dcache.commons.util.Strings).parseInt('${srmmanager.limits.ls.entries}')}"/>
+        <property name="maxNumberOfLsLevels"
+                  value="#{T(org.dcache.commons.util.Strings).parseInt('${srmmanager.limits.ls.levels}')}"/>
+        <property name="authzCacheLifetime"
+                  value="#{T(java.util.concurrent.TimeUnit).
+                     SECONDS.convert(
+                     ${srmmanager.service.gplazma.cache.timeout},
+                     '${srmmanager.service.gplazma.cache.timeout.unit}')}" />
+        <property name="srm_root" value="${srmmanager.root}"/>
+        <property name="buffer_size" value="${srmmanager.limits.transfer-buffer.size}"/>
+        <property name="tcp_buffer_size" value="${srmmanager.limits.transfer-tcp-buffer.size}"/>
+        <property name="parallel_streams" value="${srmmanager.limits.parallel-streams}"/>
+        <property name="debug" value="${srmmanager.enable.external-copy-script.debug}"/>
+        <property name="gsiftpclinet" value="globus-url-copy"/>
+        <property name="getLifetime"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.get.lifetime},
+                     '${srmmanager.request.get.lifetime.unit}')}" />
+        <property name="bringOnlineLifetime"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.bring-online.lifetime},
+                     '${srmmanager.request.bring-online.lifetime.unit}')}" />
+        <property name="putLifetime"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.put.lifetime},
+                     '${srmmanager.request.put.lifetime.unit}')}" />
+        <property name="copyLifetime"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.copy.lifetime},
+                     '${srmmanager.request.copy.lifetime.unit}')}" />
+        <property name="recursiveDirectoryCreation"
+                  value="${srmmanager.enable.recursive-directory-creation}"/>
+
+        <property name="getMaxPollPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.get.max-poll-period},
+                     '${srmmanager.request.get.max-poll-period.unit}')}" />
+        <property name="getSwitchToAsynchronousModeDelay"
+                  value="#{T(org.dcache.commons.util.Strings).parseTime(
+                     '${srmmanager.request.get.switch-to-async-mode-delay}',
+                     '${srmmanager.request.get.switch-to-async-mode-delay.unit}')}"/>
+        <property name="bringOnlineMaxPollPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.bring-online.max-poll-period},
+                     '${srmmanager.request.bring-online.max-poll-period.unit}')}" />
+        <property name="bringOnlineSwitchToAsynchronousModeDelay"
+                  value="#{T(org.dcache.commons.util.Strings).parseTime(
+                     '${srmmanager.request.bring-online.switch-to-async-mode-delay}',
+                     '${srmmanager.request.bring-online.switch-to-async-mode-delay.unit}')}"/>
+        <property name="lsMaxPollPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.ls.max-poll-period},
+                     '${srmmanager.request.ls.max-poll-period.unit}')}" />
+        <property name="lsSwitchToAsynchronousModeDelay"
+                  value="#{T(org.dcache.commons.util.Strings).parseTime(
+                     '${srmmanager.request.ls.switch-to-async-mode-delay}',
+                     '${srmmanager.request.ls.switch-to-async-mode-delay.unit}')}"/>
+        <property name="putMaxPollPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.put.max-poll-period},
+                     '${srmmanager.request.put.max-poll-period.unit}')}" />
+        <property name="putSwitchToAsynchronousModeDelay"
+                  value="#{T(org.dcache.commons.util.Strings).parseTime(
+                     '${srmmanager.request.put.switch-to-async-mode-delay}',
+                     '${srmmanager.request.put.switch-to-async-mode-delay.unit}')}"/>
+        <property name="copyMaxPollPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.copy.max-poll-period},
+                     '${srmmanager.request.copy.max-poll-period.unit}')}" />
+        <property name="reserveSpaceMaxPollPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${srmmanager.request.reserve-space.max-poll-period},
+                     '${srmmanager.request.reserve-space.max-poll-period.unit}')}" />
+
+        <property name="maxQueuedJdbcTasksNum"
+                  value="${srmmanager.limits.db.queue}"/>
+        <property name="jdbcExecutionThreadNum"
+                  value="${srmmanager.limits.db.threads}"/>
+        <property name="credentialsDirectory"
+                  value="${srmmanager.user.credentials.directory}"/>
+        <property name="overwrite" value="${srmmanager.enable.overwrite}"/>
+        <property name="overwrite_by_default" value="${srmmanager.enable.overwrite-by-default}"/>
+        <property name="gsissl" value="true"/>
+        <property name="clientTransportByName" value="${srmmanager.client-transport}"/>
+        <property name="qosPluginClass" value="${srmmanager.plugins.qos.class}"/>
+        <property name="qosConfigFile" value="${srmmanager.plugins.qos.config.file}"/>
+        <property name="dataSource" ref="data-source"/>
+        <property name="transactionManager" ref="tx-manager"/>
+
+        <property name="databaseParametersForList.databaseEnabled"
+                  value="${srmmanager.persistence.ls.enable}"/>
+        <property name="databaseParametersForList.expiredRequestRemovalPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                     ${srmmanager.persistence.ls.remove-expired-period},
+                     '${srmmanager.persistence.ls.remove-expired-period.unit}')}" />
+        <property name="databaseParametersForList.keepRequestHistoryPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+                     ${srmmanager.persistence.ls.keep-history-period},
+                     '${srmmanager.persistence.ls.keep-history-period.unit}')}" />
+        <property name="databaseParametersForList.requestHistoryDatabaseEnabled"
+                  value="${srmmanager.persistence.ls.enable.history}"/>
+        <property name="databaseParametersForList.cleanPendingRequestsOnRestart"
+                  value="${srmmanager.persistence.ls.enable.clean-pending-on-restart}"/>
+        <property name="databaseParametersForList.storeCompletedRequestsOnly"
+                  value="#{ '${srmmanager.persistence.ls.enable.store-transient-state}'.equals('false') ? true : false }"/>
+
+        <property name="databaseParametersForGet.databaseEnabled"
+                  value="${srmmanager.persistence.get.enable}"/>
+        <property name="databaseParametersForGet.expiredRequestRemovalPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                     ${srmmanager.persistence.get.remove-expired-period},
+                     '${srmmanager.persistence.get.remove-expired-period.unit}')}" />
+        <property name="databaseParametersForGet.keepRequestHistoryPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+                     ${srmmanager.persistence.get.keep-history-period},
+                     '${srmmanager.persistence.get.keep-history-period.unit}')}" />
+        <property name="databaseParametersForGet.requestHistoryDatabaseEnabled"
+                  value="${srmmanager.persistence.get.enable.history}"/>
+        <property name="databaseParametersForGet.cleanPendingRequestsOnRestart"
+                  value="${srmmanager.persistence.get.enable.clean-pending-on-restart}"/>
+        <property name="databaseParametersForGet.storeCompletedRequestsOnly"
+                  value="#{ '${srmmanager.persistence.get.enable.store-transient-state}'.equals('false') ? true : false }"/>
+
+        <property name="databaseParametersForPut.databaseEnabled"
+                  value="${srmmanager.persistence.put.enable}"/>
+        <property name="databaseParametersForPut.expiredRequestRemovalPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                     ${srmmanager.persistence.put.remove-expired-period},
+                     '${srmmanager.persistence.put.remove-expired-period.unit}')}" />
+        <property name="databaseParametersForPut.keepRequestHistoryPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+                     ${srmmanager.persistence.put.keep-history-period},
+                     '${srmmanager.persistence.put.keep-history-period.unit}')}" />
+        <property name="databaseParametersForPut.requestHistoryDatabaseEnabled"
+                  value="${srmmanager.persistence.put.enable.history}"/>
+        <property name="databaseParametersForPut.cleanPendingRequestsOnRestart"
+                  value="${srmmanager.persistence.put.enable.clean-pending-on-restart}"/>
+        <property name="databaseParametersForPut.storeCompletedRequestsOnly"
+                  value="#{ '${srmmanager.persistence.put.enable.store-transient-state}'.equals('false') ? true : false }"/>
+
+        <property name="databaseParametersForCopy.databaseEnabled"
+                  value="${srmmanager.persistence.copy.enable}"/>
+        <property name="databaseParametersForCopy.expiredRequestRemovalPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                     ${srmmanager.persistence.copy.remove-expired-period},
+                     '${srmmanager.persistence.copy.remove-expired-period.unit}')}" />
+        <property name="databaseParametersForCopy.keepRequestHistoryPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+                     ${srmmanager.persistence.copy.keep-history-period},
+                     '${srmmanager.persistence.copy.keep-history-period.unit}')}" />
+        <property name="databaseParametersForCopy.requestHistoryDatabaseEnabled"
+                  value="${srmmanager.persistence.copy.enable.history}"/>
+        <property name="databaseParametersForCopy.cleanPendingRequestsOnRestart"
+                  value="${srmmanager.persistence.copy.enable.clean-pending-on-restart}"/>
+        <property name="databaseParametersForCopy.storeCompletedRequestsOnly"
+                  value="#{ '${srmmanager.persistence.copy.enable.store-transient-state}'.equals('false') ? true : false }"/>
+
+        <property name="databaseParametersForBringOnline.databaseEnabled"
+                  value="${srmmanager.persistence.bring-online.enable}"/>
+        <property name="databaseParametersForBringOnline.expiredRequestRemovalPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                     ${srmmanager.persistence.bring-online.remove-expired-period},
+                     '${srmmanager.persistence.bring-online.remove-expired-period.unit}')}"/>
+        <property name="databaseParametersForBringOnline.keepRequestHistoryPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+                     ${srmmanager.persistence.bring-online.keep-history-period},
+                     '${srmmanager.persistence.bring-online.keep-history-period.unit}')}" />
+        <property name="databaseParametersForBringOnline.requestHistoryDatabaseEnabled"
+                  value="${srmmanager.persistence.bring-online.enable.history}"/>
+        <property name="databaseParametersForBringOnline.cleanPendingRequestsOnRestart"
+                  value="${srmmanager.persistence.bring-online.enable.clean-pending-on-restart}"/>
+        <property name="databaseParametersForBringOnline.storeCompletedRequestsOnly"
+                  value="#{ '${srmmanager.persistence.bring-online.enable.store-transient-state}'.equals('false') ? true : false }"/>
+
+        <property name="databaseParametersForReserve.databaseEnabled"
+                  value="${srmmanager.persistence.reserve-space.enable}"/>
+        <property name="databaseParametersForReserve.expiredRequestRemovalPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+                     ${srmmanager.persistence.reserve-space.remove-expired-period},
+                     '${srmmanager.persistence.reserve-space.remove-expired-period.unit}')}" />
+        <property name="databaseParametersForReserve.keepRequestHistoryPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).DAYS.convert(
+                     ${srmmanager.persistence.reserve-space.keep-history-period},
+                     '${srmmanager.persistence.reserve-space.keep-history-period.unit}')}" />
+        <property name="databaseParametersForReserve.requestHistoryDatabaseEnabled"
+                  value="${srmmanager.persistence.reserve-space.enable.history}"/>
+        <property name="databaseParametersForReserve.cleanPendingRequestsOnRestart"
+                  value="${srmmanager.persistence.reserve-space.enable.clean-pending-on-restart}"/>
+        <property name="databaseParametersForReserve.storeCompletedRequestsOnly"
+                  value="#{ '${srmmanager.persistence.reserve-space.enable.store-transient-state}'.equals('false') ? true : false }"/>
+        <property name="pingExtraInfo">
+            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+                <property name="prefix" value="srm.ping-extra-info"/>
+            </bean>
+        </property>
+        <property name="maximumClientAssumedBandwidth" value="${srmmanager.request.maximum-client-assumed-bandwidth}"/>
+    </bean>
+
+    <bean id="scheduling-strategy-provider" class="org.dcache.srm.scheduler.SchedulingStrategyFactoryBean">
+        <property name="name" value="${srmmanager.plugins.scheduler}"/>
+        <property name="configuration">
+            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+                <property name="prefix" value="srmmanager.scheduler.${srmmanager.plugins.scheduler}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="transfer-strategy-provider" class="org.dcache.srm.scheduler.TransferStrategyFactoryBean">
+        <property name="name" value="${srmmanager.plugins.transfer}"/>
+        <property name="configuration">
+            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+                <property name="prefix" value="srmmanager.transfer.${srmmanager.plugins.transfer}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="scheduler-get" class="diskCacheV111.srm.dcache.Scheduler"
+          init-method="start" destroy-method="stop">
+        <description>Scheduler for GET operations</description>
+
+        <constructor-arg value="get_${srmmanager.cell.name}"/>
+        <constructor-arg value="org.dcache.srm.request.GetFileRequest"/>
+
+        <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+        <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
+        <property name="maxRequests" value="${srmmanager.request.get.max-requests}"/>
+        <property name="maxInprogress" value="${srmmanager.request.get.max-inprogress}"/>
+        <property name="maxReadyJobs" value="${srmmanager.request.get.max-transfers}"/>
+    </bean>
+
+
+    <bean id="scheduler-ls" class="diskCacheV111.srm.dcache.Scheduler"
+          init-method="start" destroy-method="stop">
+        <description>Scheduler for LS operations</description>
+
+        <constructor-arg value="ls_${srmmanager.cell.name}"/>
+        <constructor-arg value="org.dcache.srm.request.LsFileRequest"/>
+
+        <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+        <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
+        <property name="maxRequests" value="${srmmanager.request.ls.max-requests}"/>
+        <property name="maxInprogress" value="${srmmanager.request.ls.max-inprogress}"/>
+    </bean>
+
+
+    <bean id="scheduler-bringonline" class="diskCacheV111.srm.dcache.Scheduler"
+          init-method="start" destroy-method="stop">
+        <description>Scheduler for BRING-ONLINE operations</description>
+
+        <constructor-arg value="bring_online_${srmmanager.cell.name}"/>
+        <constructor-arg value="org.dcache.srm.request.BringOnlineFileRequest"/>
+
+        <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+        <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
+        <property name="maxRequests" value="${srmmanager.request.bring-online.max-requests}"/>
+        <property name="maxInprogress" value="${srmmanager.request.bring-online.max-inprogress}"/>
+    </bean>
+
+
+    <bean id="scheduler-put" class="diskCacheV111.srm.dcache.Scheduler"
+          init-method="start" destroy-method="stop">
+        <description>Scheduler for PUT operations</description>
+
+        <constructor-arg value="put_${srmmanager.cell.name}"/>
+        <constructor-arg value="org.dcache.srm.request.PutFileRequest"/>
+
+        <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+        <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
+        <property name="maxRequests" value="${srmmanager.request.put.max-requests}"/>
+        <property name="maxInprogress" value="${srmmanager.request.put.max-inprogress}"/>
+        <property name="maxReadyJobs" value="${srmmanager.request.put.max-transfers}"/>
+    </bean>
+
+    <bean id="scheduler-copy" class="diskCacheV111.srm.dcache.Scheduler"
+          init-method="start" destroy-method="stop">
+        <description>Scheduler for COPY operations</description>
+
+        <constructor-arg value="copy_${srmmanager.cell.name}"/>
+        <constructor-arg value="org.dcache.srm.request.Job"/>
+
+        <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+        <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
+        <property name="maxRequests" value="${srmmanager.request.copy.max-requests}"/>
+        <property name="maxInprogress" value="${srmmanager.request.copy.max-inprogress}"/>
+    </bean>
+
+    <bean id="scheduler-reserve-space" class="diskCacheV111.srm.dcache.Scheduler"
+          init-method="start" destroy-method="stop">
+        <description>Scheduler for RESERVE-SPACE operations</description>
+
+        <constructor-arg value="reserve_space_${srmmanager.cell.name}"/>
+        <constructor-arg value="org.dcache.srm.request.ReserveSpaceRequest"/>
+
+        <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+        <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
+        <property name="maxRequests" value="${srmmanager.request.reserve-space.max-requests}"/>
+        <property name="maxInprogress" value="${srmmanager.request.reserve-space.max-inprogress}"/>
+    </bean>
+
+
+    <bean id="schedulers" class="org.dcache.srm.scheduler.SchedulerContainer">
+        <description>Collection of schedulers</description>
+
+        <property name="schedulers">
+            <list>
+                <ref bean="scheduler-get"/>
+                <ref bean="scheduler-ls"/>
+                <ref bean="scheduler-put"/>
+                <ref bean="scheduler-bringonline"/>
+                <ref bean="scheduler-reserve-space"/>
+                <!-- COPY scheduler must be last in list as it has type Job.class -->
+                <ref bean="scheduler-copy"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="srm" class="org.dcache.srm.SRM" init-method="start" destroy-method="stop">
+        <description>SRM engine</description>
+        <constructor-arg ref="config"/>
+        <constructor-arg ref="storage"/>
+        <property name="schedulers" ref="schedulers"/>
+        <property name="requestCredentialStorage" ref="srm-credential-store"/>
+        <property name="srmUserPersistenceManager" ref="user-manager"/>
+    </bean>
+
+    <bean id="srm-cli" class="org.dcache.srm.SrmCommandLineInterface">
+        <property name="configuration" ref="config"/>
+        <property name="srm" ref="srm"/>
+    </bean>
+
+    <bean id="srmService" class="diskCacheV111.srm.SrmService">
+        <property name="userManager" ref="user-manager"/>
+        <property name="storage" ref="storage"/>
+        <property name="requestCredentialStorage" ref="srm-credential-store"/>
+        <property name="srm" ref="srm"/>
+    </bean>
+
+    <bean id="delegationService" class="org.dcache.gridsite.DelegationService">
+        <property name="factory" ref="gridsite-credential-delegation-factory"/>
+        <property name="credentials" ref="gridsite-credential-store"/>
+        <property name="delegations" ref="gridsite-credential-delegation-store"/>
+        <property name="serviceMetadata" ref="gridsite-service-metadata"/>
+    </bean>
+
+    <!--
+         DATABASE
+         =====================================================================================
+      -->
+
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+        <description>Database connection pool</description>
+        <constructor-arg value="${srmmanager.db.url}"/>
+        <constructor-arg value="Srm"/>
+        <constructor-arg>
+            <bean class="com.zaxxer.hikari.HikariDataSource">
+                <constructor-arg>
+                    <bean class="com.zaxxer.hikari.HikariConfig">
+                        <property name="jdbcUrl" value="${srmmanager.db.url}"/>
+                        <property name="username" value="${srmmanager.db.user}"/>
+                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srmmanager.db.password.file}', '${srmmanager.db.url}', '${srmmanager.db.user}', '${srmmanager.db.password}') }"/>
+                        <property name="minimumIdle" value="${srmmanager.db.connections.idle}"/>
+                        <property name="maximumPoolSize" value="${srmmanager.db.connections.max}"/>
+                        <property name="autoCommit" value="true"/>
+                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema manager</description>
+        <property name="dataSource" ref="data-source"/>
+        <property name="changeLog" value="classpath:${srmmanager.db.schema.changelog}"/>
+        <property name="shouldUpdate" value="${srmmanager.db.schema.auto}"/>
+    </bean>
+
+    <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+          depends-on="liquibase">
+        <description>Database transaction manager</description>
+        <property name="dataSource" ref="data-source"/>
+    </bean>
+
+
+    <!--
+         GRIDSITE DELEGATION
+         =====================================================================================
+     -->
+
+    <bean id="gridsite-credential-delegation-store"
+          class="org.dcache.gridsite.InMemoryCredentialDelegationStore"
+          init-method="start">
+        <description>Store for on-going GridSite delegations</description>
+
+        <property name="expireAfter"
+                  value="#{T(java.util.concurrent.TimeUnit).MINUTES.toMillis(10)}"/>
+        <property name="maxOngoing"
+                  value="10000"/>
+    </bean>
+
+    <bean id="gridsite-credential-store"
+          class="org.dcache.gridsite.SrmCredentialStore">
+        <description>Bridge between GridSite- and SRM- credential storage</description>
+
+        <property name="requestCredentialStorage" ref="srm-credential-store"/>
+    </bean>
+
+    <bean id="gridsite-credential-delegation-factory"
+          class="org.dcache.gridsite.BouncyCastleCredentialDelegationFactory">
+        <description>Generation of GridSite delegated credentials that uses BouncyCastle</description>
+
+        <property name="keyPairCache" ref="keypair-cache"/>
+    </bean>
+
+    <bean id="gridsite-credential-service" class="diskCacheV111.srm.CredentialService">
+        <description>GridSite delegation service providing delegated credentials to other dCache services</description>
+        <property name="credentialStore" ref="gridsite-credential-store"/>
+        <property name="httpsPort" value="${srmmanager.net.ssl-port}"/>
+        <property name="host" value="${srmmanager.net.host}"/>
+        <property name="executor" ref="scheduledExecutor"/>
+        <property name="topicStub" ref="credential-topic-stub"/>
+    </bean>
+
+    <bean id="keypair-cache" class="org.dcache.gsi.KeyPairCache">
+        <description>Cache of key-pairs to reduce delegation overhead</description>
+        <constructor-arg value="${srmmanager.authn.gsi.delegation.cache.lifetime}"/>
+        <constructor-arg value="${srmmanager.authn.gsi.delegation.cache.lifetime.unit}"/>
+    </bean>
+
+    <util:map id="gridsite-service-metadata">
+        <description>Static key-value pairs provided through GridSite interface</description>
+
+        <entry key="implementation" value="dCache"/>
+    </util:map>
+</beans>

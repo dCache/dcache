@@ -172,7 +172,6 @@ public class Configuration {
     protected boolean useHttpForSrmCopy=true;
     protected boolean useFtpForSrmCopy=true;
     protected boolean recursiveDirectoryCreation=false;
-    protected boolean advisoryDelete=false;
     protected long storage_info_update_period = TimeUnit.SECONDS.toMillis(30);
     protected String qosPluginClass = null;
     protected String qosConfigFile = null;
@@ -194,10 +193,8 @@ public class Configuration {
     private final Map<String,DatabaseParameters> databaseParameters =
         new HashMap<>();
     private String caCertificatePath;
-    private String vomsdir;
 
     private ImmutableMap<String,String> pingExtraInfo = ImmutableMap.of();
-    private String[] versions;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -668,22 +665,6 @@ public class Configuration {
         this.recursiveDirectoryCreation = recursiveDirectoryCreation;
     }
 
-    /** Getter for property advisoryDelete.
-     * @return Value of property advisoryDelete.
-     *
-     */
-    public boolean isAdvisoryDelete() {
-        return advisoryDelete;
-    }
-
-    /** Setter for property advisoryDelete.
-     * @param advisoryDelete New value of property advisoryDelete.
-     *
-     */
-    public void setAdvisoryDelete(boolean advisoryDelete) {
-        this.advisoryDelete = advisoryDelete;
-    }
-
     public void setDataSource(DataSource ds) {
         this.dataSource = ds;
     }
@@ -956,20 +937,6 @@ public class Configuration {
     }
 
     /**
-     * @return the clientDNSLookup
-     */
-    public boolean isClientDNSLookup() {
-        return clientDNSLookup;
-    }
-
-    /**
-     * @param clientDNSLookup the clientDNSLookup to set
-     */
-    public void setClientDNSLookup(boolean clientDNSLookup) {
-        this.clientDNSLookup = clientDNSLookup;
-    }
-
-    /**
      * @return the rrdDirectory
      */
     public String getCounterRrdDirectory() {
@@ -1059,26 +1026,6 @@ public class Configuration {
     public String getCaCertificatePath()
     {
         return caCertificatePath;
-    }
-
-    public void setVomsdir(String vomsdir)
-    {
-        this.vomsdir = vomsdir;
-    }
-
-    public String getVomsdir()
-    {
-        return vomsdir;
-    }
-
-    public String[] getVersions()
-    {
-        return versions;
-    }
-
-    public void setVersions(String[] versions)
-    {
-        this.versions = versions;
     }
 
     public class DatabaseParameters

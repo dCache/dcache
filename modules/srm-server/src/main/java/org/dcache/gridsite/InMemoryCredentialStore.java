@@ -77,7 +77,7 @@ public class InMemoryCredentialStore implements CredentialStore
     }
 
     @Override
-    public void put(DelegationIdentity id, X509Credential credential)
+    public void put(DelegationIdentity id, X509Credential credential, FQAN primary)
     {
         _storage.put(id, credential);
     }

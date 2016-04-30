@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015-2016 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -109,11 +109,16 @@ public abstract class DcacheUserManager implements SRMUserManager
         try {
             CertPath path = cf.generateCertPath(asList(chain));
             LoginReply login = login(path, remoteIP);
-            byte[] encoded = encode(path, login);
-            return new DcacheUser(persistence.toToken(encoded), login);
+            return persist(path, login);
         } catch (CertificateException e) {
             throw new SRMInternalErrorException("Failed to process certificate chain.", e);
         }
+    }
+
+    public SRMUser persist(CertPath path, LoginReply login) throws CertificateEncodingException
+    {
+        byte[] encoded = encode(path, login);
+        return new DcacheUser(persistence.toToken(encoded), login);
     }
 
     @Override

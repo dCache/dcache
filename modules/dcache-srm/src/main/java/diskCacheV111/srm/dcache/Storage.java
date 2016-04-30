@@ -1440,66 +1440,6 @@ public final class Storage
     }
 
     @Override
-    public void advisoryDelete(final SRMUser user, final URI surl,
-                               final AdvisoryDeleteCallbacks callback)
-    {
-        _log.debug("Storage.advisoryDelete");
-
-        /* If not enabled, we are allowed to silently ignore the call.
-         */
-        if (!config.isAdvisoryDelete()) {
-            if (callback != null) {
-                callback.AdvisoryDeleteSuccesseded();
-            }
-            return;
-        }
-
-        RemoveFileCallback removeFileCallback = new RemoveFileCallback() {
-                @Override
-                public void success()
-                {
-                    callback.AdvisoryDeleteSuccesseded();
-                }
-
-                @Override
-                public void failure(String reason)
-                {
-                    callback.AdvisoryDeleteFailed(reason);
-                }
-
-                @Override
-                public void notFound(String error)
-                {
-                    callback.AdvisoryDeleteFailed(error);
-                }
-
-                @Override
-                public void timeout()
-                {
-                    callback.Timeout();
-                }
-
-                @Override
-                public void permissionDenied()
-                {
-                    callback.AdvisoryDeleteFailed("Permission denied");
-                }
-            };
-
-        try {
-            RemoveFileCompanion.removeFile(asDcacheUser(user).getSubject(),
-                                           config.getPath(surl).toString(),
-                                           removeFileCallback,
-                                           _pnfsStub,
-                                           getCellAddress(),
-                                           getCellEndpoint(),
-                                           _executor);
-        } catch (SRMAuthorizationException | SRMInvalidPathException e) {
-            callback.AdvisoryDeleteFailed(e.getMessage());
-        }
-    }
-
-    @Override
     public void removeFile(final SRMUser user,
                            final URI surl,
                            RemoveFileCallback callbacks)

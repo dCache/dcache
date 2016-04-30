@@ -21,6 +21,7 @@ import eu.emi.security.authn.x509.X509Credential;
 
 import java.util.Calendar;
 
+import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
 
 /**
@@ -40,7 +41,7 @@ public interface CredentialStore
      * Store a delegated credential against this DelegationIdentity.  Silently
      * replace any delegated credential already stored against this id.
      */
-    void put(DelegationIdentity id, X509Credential credential)
+    void put(DelegationIdentity id, X509Credential credential, FQAN primary)
             throws DelegationException;
 
     /**

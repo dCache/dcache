@@ -381,15 +381,6 @@ public interface AbstractStorageElement {
     CheckedFuture<String, ? extends SRMException> unPinFile(
             SRMUser user, String fileId);
 
-    /** This method tells SE that the specified file can be removed from the storage.
-     * This is up to SE to decide when the file will be deleted
-     * @param user User ID
-     * @param surl
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to remove file from the storage
-     */
-    void advisoryDelete(SRMUser user, URI surl, AdvisoryDeleteCallbacks callbacks);
-
     /**
      *
      * @param user User ID
