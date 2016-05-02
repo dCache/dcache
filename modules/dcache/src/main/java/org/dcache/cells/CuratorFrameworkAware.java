@@ -16,32 +16,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.srm;
 
-import java.io.Serializable;
+package org.dcache.cells;
 
-/**
- * SRM 2.2 response between frontend and backend.
- */
-public class SrmResponse implements Serializable
+import org.apache.curator.framework.CuratorFramework;
+
+public interface CuratorFrameworkAware
 {
-    private static final long serialVersionUID = -6879368676630818805L;
-    private final String id;
-    private final Object response;
-
-    public SrmResponse(String id, Object response)
-    {
-        this.id = id;
-        this.response = response;
-    }
-
-    public String getId()
-    {
-        return id;
-    }
-
-    public Object getResponse()
-    {
-        return response;
-    }
+    void setCuratorFramework(CuratorFramework client);
 }

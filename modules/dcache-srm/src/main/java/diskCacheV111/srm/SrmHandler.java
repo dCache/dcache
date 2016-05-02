@@ -21,21 +21,30 @@ package diskCacheV111.srm;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
+import com.google.common.util.concurrent.ListenableFuture;
 import eu.emi.security.authn.x509.X509Credential;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.security.auth.Subject;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
@@ -43,6 +52,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
@@ -51,22 +61,24 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.stats.rrd.RrdRequestCounters;
 import org.dcache.commons.stats.rrd.RrdRequestExecutionTimeGauges;
-import org.dcache.srm.SrmRequest;
-import org.dcache.srm.SrmResponse;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SrmRequest;
+import org.dcache.srm.SrmResponse;
 import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
@@ -77,13 +89,14 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.NetLoggerBuilder;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.Arrays.asList;
 import static org.dcache.srm.v2_2.TStatusCode.*;
 
 /**
  * Utility class to submit requests to the SRM backend service.
  */
-public class SrmHandler implements CellInfoProvider
+public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SrmHandler.class);
 
@@ -103,6 +116,24 @@ public class SrmHandler implements CellInfoProvider
 
     private final CertificateFactory cf = CertificateFactories.newX509CertificateFactory();
 
+    private final LoadingCache<Class, Optional<Field>> requestTokenFieldCache = CacheBuilder.newBuilder()
+            .build(new CacheLoader<Class, Optional<Field>>()
+            {
+                @Override
+                public Optional<Field> load(Class clazz)
+                {
+                    try {
+                        Field field = clazz.getDeclaredField("requestToken");
+                        field.setAccessible(true);
+                        return Optional.of(field);
+                    } catch (NoSuchFieldException e) {
+                        return Optional.empty();
+                    }
+                }
+            });
+
+    private PathChildrenCache backends;
+
     private String counterRrdDirectory;
 
     private String gaugeRrdDirectory;
@@ -114,6 +145,13 @@ public class SrmHandler implements CellInfoProvider
     private CellStub srmManagerStub;
 
     private ArrayOfTExtraInfo pingExtraInfo;
+    private CuratorFramework client;
+
+    @Override
+    public void setCuratorFramework(CuratorFramework client)
+    {
+        this.client = client;
+    }
 
     public void setCounterRrdDirectory(String counterRrdDirectory)
     {
@@ -149,7 +187,7 @@ public class SrmHandler implements CellInfoProvider
     }
 
     @PostConstruct
-    public void init() throws IOException
+    public void init() throws Exception
     {
         if (!Strings.isNullOrEmpty(counterRrdDirectory)) {
             String rrddir = counterRrdDirectory + File.separatorChar + "srmv2";
@@ -165,6 +203,17 @@ public class SrmHandler implements CellInfoProvider
                     new RrdRequestExecutionTimeGauges<>(srmServerGauges, rrddir);
             rrdSrmServerGauges.startRrdUpdates();
             rrdSrmServerGauges.startRrdGraphPlots();
+        }
+
+        backends = new PathChildrenCache(client, "/dcache/srm/backends", true);
+        backends.start();
+    }
+
+    @PreDestroy
+    public void shutdown() throws IOException
+    {
+        if (backends != null) {
+            backends.close();
         }
     }
 
@@ -245,8 +294,9 @@ public class SrmHandler implements CellInfoProvider
                 } catch (InterruptedException e) {
                     response = getFailedResponse(requestName, TStatusCode.SRM_FATAL_INTERNAL_ERROR, "Server shutdown.");
                 } catch (NoRouteToCellException e) {
+                    LOGGER.error(e.getMessage());
                     response = getFailedResponse(requestName, TStatusCode.SRM_INTERNAL_ERROR,
-                                                 "Internal communication failure.");
+                                                 "SRM backend serving this request is currently offline.");
                 }
             }
             long time = System.currentTimeMillis() - startTimeStamp;
@@ -279,13 +329,56 @@ public class SrmHandler implements CellInfoProvider
                 new SrmRequest(login.getSubject(), login.getLoginAttributes(), credential, remoteHost,
                                requestName, request);
         try {
-            return srmManagerStub.send(msg, SrmResponse.class).get().getResponse();
+            CellPath address = mapRequest(request);
+            ListenableFuture<SrmResponse> future =
+                    (address == null)
+                    ? srmManagerStub.send(msg, SrmResponse.class)
+                    : srmManagerStub.send(address, msg, SrmResponse.class);
+            return mapResponse(future.get());
         } catch (ExecutionException e) {
             Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
             throw Throwables.propagate(e.getCause());
         }
+    }
+
+    private CellPath mapRequest(Object request) throws SRMInternalErrorException
+    {
+        Optional<Field> field = requestTokenFieldCache.getUnchecked(request.getClass());
+        if (field.isPresent()) {
+            try {
+                Field f = field.get();
+                String token = (String) f.get(request);
+                if (token != null && token.length() > 8) {
+                    f.set(request, token.substring(8));
+
+                    String path = SrmService.getZooKeeperBackendPath(token.substring(0, 8));
+                    ChildData data = backends.getCurrentData(path);
+                    if (data == null) {
+                        throw new SRMInternalErrorException("SRM backend serving this request token is currently offline.");
+                    }
+                    return new CellPath(new String(data.getData(), US_ASCII));
+                }
+            } catch (IllegalAccessException e) {
+                Throwables.propagate(e);
+            }
+        }
+        return null;
+    }
+
+    private Object mapResponse(SrmResponse response)
+    {
+        Object o = response.getResponse();
+        Optional<Field> field = requestTokenFieldCache.getUnchecked(o.getClass());
+        field.ifPresent(f -> {
+            try {
+                f.set(o, response.getId() + f.get(o));
+            } catch (IllegalAccessException e) {
+                Throwables.propagate(e);
+            }
+        });
+        return o;
     }
 
     private Object getFailedResponse(String requestName, TStatusCode statusCode, String errorMessage)

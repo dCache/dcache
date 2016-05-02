@@ -63,7 +63,13 @@ exporting documents or software obtained from this server.
  */
 package diskCacheV111.srm;
 
+import com.google.common.hash.Hashing;
 import eu.emi.security.authn.x509.X509Credential;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.nodes.PersistentNode;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.CreateMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -80,11 +86,15 @@ import java.util.Objects;
 
 import diskCacheV111.srm.dcache.DcacheUserManager;
 
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.Subjects;
+import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SrmRequest;
@@ -98,13 +108,14 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 
 import static com.google.common.collect.Iterables.getFirst;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * SRM 2.2 backend message processor.
  *
  * Receives requests from SRM frontends.
  */
-public class SrmService implements CellMessageReceiver
+public class SrmService implements CellMessageReceiver, CuratorFrameworkAware, CellIdentityAware, CellLifeCycleAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SrmService.class);
 
@@ -112,6 +123,23 @@ public class SrmService implements CellMessageReceiver
     private AbstractStorageElement storage;
     private RequestCredentialStorage requestCredentialStorage;
     private DcacheUserManager userManager;
+    private CuratorFramework client;
+    private PersistentNode node;
+    private CellAddressCore address;
+    private String id;
+
+    @Override
+    public void setCuratorFramework(CuratorFramework client)
+    {
+        this.client = client;
+    }
+
+    @Override
+    public void setCellAddress(CellAddressCore address)
+    {
+        this.address = address;
+        this.id = Hashing.murmur3_32().hashString(address.toString(), US_ASCII).toString();
+    }
 
     @Required
     public void setStorage(AbstractStorageElement storage)
@@ -135,6 +163,23 @@ public class SrmService implements CellMessageReceiver
     public void setUserManager(DcacheUserManager userManager)
     {
         this.userManager = userManager;
+    }
+
+    @Override
+    public void afterStart()
+    {
+        String path = getZooKeeperBackendPath(this.id);
+        byte[] data =  address.toString().getBytes(US_ASCII);
+        node = new PersistentNode(client, CreateMode.EPHEMERAL, false, path, data);
+        node.start();
+    }
+
+    @Override
+    public void beforeStop()
+    {
+        if (node != null) {
+            CloseableUtils.closeQuietly(node);
+        }
     }
 
     public SrmResponse messageArrived(SrmRequest request) throws SRMException
@@ -185,7 +230,7 @@ public class SrmService implements CellMessageReceiver
                 throw new SRMNotSupportedException(requestName + " is unsupported");
             }
             Object result = handleGetResponseMethod.invoke(handler);
-            return new SrmResponse(result);
+            return new SrmResponse(id, result);
         } catch (CertificateEncodingException | KeyStoreException e) {
             throw new SRMInternalErrorException("Failed to process certificate chain.", e);
         } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException | RuntimeException e) {
@@ -203,5 +248,10 @@ public class SrmService implements CellMessageReceiver
         requestCredential.keepBestDelegatedCredential(credential);
         requestCredential.saveCredential();
         return requestCredential;
+    }
+
+    public static String getZooKeeperBackendPath(String id)
+    {
+        return ZKPaths.makePath("/dcache/srm/backends", id);
     }
 }

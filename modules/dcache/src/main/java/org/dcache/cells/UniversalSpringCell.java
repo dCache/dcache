@@ -75,6 +75,7 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.services.SetupInfoMessage;
+import dmg.cells.zookeeper.CellCuratorFramework;
 import dmg.util.CommandException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
@@ -1015,6 +1016,10 @@ public class UniversalSpringCell
 
         if (bean instanceof CellEventListener) {
             addCellEventListener((CellEventListener) bean);
+        }
+
+        if (bean instanceof CuratorFrameworkAware) {
+            ((CuratorFrameworkAware) bean).setCuratorFramework(getCuratorFramework());
         }
 
         return bean;
