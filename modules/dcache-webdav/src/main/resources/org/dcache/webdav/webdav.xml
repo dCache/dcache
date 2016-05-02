@@ -341,11 +341,11 @@
       <property name="protocolEngine" value="org.dcache.webdav.DcacheResourceFactory"/>
       <property name="protocolVersion" value="${webdav.loginbroker.version}"/>
       <property name="protocolFamily" value="${webdav.loginbroker.family}"/>
-      <property name="address" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
-      <property name="port" value="${webdav.net.port}"/>
+      <property name="address" value="#{ T(com.google.common.base.Strings).emptyToNull('${webdav.loginbroker.address}') }"/>
+      <property name="port" value="${webdav.loginbroker.port}"/>
       <property name="topic" value="${webdav.loginbroker.update-topic}"/>
       <property name="tags" value="#{ T(com.google.common.base.Splitter).on(',').omitEmptyStrings().splitToList('${webdav.loginbroker.tags}') }"/>
-      <property name="root" value="${webdav.root}"/>
+      <property name="root" value="${webdav.loginbroker.root}"/>
       <property name="readPaths" value="#{ T(java.util.Arrays).asList('/') }"/>
       <property name="writePaths" value="#{ '${webdav.authz.readonly}'.equals('true') ? T(java.util.Collections).emptyList() : T(java.util.Arrays).asList('/') }"/>
   </bean>
@@ -429,7 +429,7 @@
             <constructor-arg value="${webdav.limits.acceptors}"/>
             <constructor-arg value="-1"/>
 
-            <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
+            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${webdav.net.listen}') }"/>
             <property name="port" value="${webdav.net.port}"/>
             <property name="acceptQueueSize" value="${webdav.limits.backlog}"/>
             <property name="idleTimeout"
@@ -445,7 +445,7 @@
 
             <property name="server" ref="jetty"/>
 
-            <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
+            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${webdav.net.listen}') }"/>
             <property name="port" value="${webdav.net.port}"/>
             <property name="backlog" value="${webdav.limits.backlog}"/>
             <property name="idleTimeout" value="${webdav.limits.idle-time}"/>

@@ -155,7 +155,8 @@
         <property name="protocolEngine" value="org.dcache.chimera.nfsv41.door.NFSv41Door"/>
         <property name="protocolVersion" value="${nfs.loginbroker.version}"/>
         <property name="protocolFamily" value="${nfs.loginbroker.family}"/>
-        <property name="port" value="${nfs.net.port}"/>
+        <property name="address" value="#{ T(com.google.common.base.Strings).emptyToNull('${nfs.loginbroker.address}') }"/>
+        <property name="port" value="${nfs.loginbroker.port}"/>
         <property name="topic" value="${nfs.loginbroker.update-topic}"/>
         <property name="tags" value="#{ T(com.google.common.base.Splitter).on(',').omitEmptyStrings().splitToList('${nfs.loginbroker.tags}') }"/>
         <property name="root" value="/"/>

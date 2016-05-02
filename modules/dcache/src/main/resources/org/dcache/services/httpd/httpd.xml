@@ -58,7 +58,7 @@
         <description>HTTP connector</description>
         <constructor-arg ref="jetty"/>
 
-        <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
+        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${httpd.net.listen}') }"/>
         <property name="port" value="${httpd.net.port}"/>
         <property name="idleTimeout"
                   value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
@@ -94,7 +94,7 @@
         <bean id="ssl-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
             <property name="server" ref="jetty"/>
 
-            <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
+            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${httpd.net.listen}') }"/>
             <property name="port" value="${httpd.net.https-port}"/>
 
             <property name="idleTimeout" value="${httpd.limits.idle-time}"/>

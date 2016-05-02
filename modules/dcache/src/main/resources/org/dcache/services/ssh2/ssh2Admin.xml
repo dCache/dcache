@@ -96,7 +96,7 @@
     </bean>
 
     <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
-        <property name="host" value="#{ '${admin.net.listen}'.equals('any') ? null : '${admin.net.listen}' }"/>
+        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${admin.net.listen}') }"/>
         <property name="port"               value="${admin.net.port}"/>
         <property name="hostKeyPrivate"     value="${admin.paths.dsa-host-key.private}"/>
         <property name="hostKeyPublic"      value="${admin.paths.dsa-host-key.public}"/>

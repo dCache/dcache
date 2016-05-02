@@ -62,8 +62,8 @@
         <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
         <property name="protocolVersion" value="${srm.loginbroker.version}"/>
         <property name="protocolFamily" value="${srm.loginbroker.family}"/>
-        <property name="address" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
-        <property name="port" value="${srm.net.port}"/>
+        <property name="address" value="#{ T(com.google.common.base.Strings).emptyToNull('${srm.loginbroker.address}') }"/>
+        <property name="port" value="${srm.loginbroker.port}"/>
         <property name="topic" value="${srm.loginbroker.update-topic}"/>
         <property name="tags" value="#{ T(com.google.common.base.Splitter).on(',').omitEmptyStrings().splitToList('${srm.loginbroker.tags}') }"/>
         <property name="root" value="${srm.loginbroker.root}"/>
@@ -108,7 +108,7 @@
     <bean abstract="true" id="globus-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
         <property name="server" ref="server"/>
 
-        <property name="host" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
+        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${srm.net.listen}') }"/>
         <property name="backlog" value="${srm.limits.jetty-connector.backlog}"/>
         <property name="idleTimeout" value="${srm.limits.jetty-connector.idle-time.max}"/>
         <property name="idleTimeoutUnit" value="${srm.limits.jetty-connector.idle-time.max.unit}"/>

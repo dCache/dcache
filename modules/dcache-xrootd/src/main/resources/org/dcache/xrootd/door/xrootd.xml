@@ -81,7 +81,7 @@
         init-method="start" destroy-method="stop">
     <description>Netty based Xrootd service</description>
     <property name="port" value="${xrootd.net.port}"/>
-    <property name="address" value="#{ '${xrootd.net.listen}'.equals('any') ? null : '${xrootd.net.listen}' }"/>
+    <property name="address" value="#{ T(com.google.common.base.Strings).emptyToNull('${xrootd.net.listen}') }"/>
     <property name="backlog" value="${xrootd.net.backlog}"/>
     <property name="requestExecutor" ref="request-thread-pool"/>
     <property name="connectionTracker" ref="connection-tracker"/>
@@ -147,11 +147,11 @@
     <property name="protocolEngine" value="org.dcache.xrootd.door.XrootdDoor"/>
     <property name="protocolVersion" value="${xrootd.loginbroker.version}"/>
     <property name="protocolFamily" value="${xrootd.loginbroker.family}"/>
-    <property name="port" value="${xrootd.net.port}"/>
-    <property name="address" value="#{ '${xrootd.net.listen}'.equals('any') ? null : '${xrootd.net.listen}' }"/>
+    <property name="port" value="${xrootd.loginbroker.port}"/>
+    <property name="address" value="#{ T(com.google.common.base.Strings).emptyToNull('${xrootd.loginbroker.address}') }"/>
     <property name="topic" value="${xrootd.loginbroker.update-topic}"/>
     <property name="tags" value="#{ T(com.google.common.base.Splitter).on(',').omitEmptyStrings().splitToList('${xrootd.loginbroker.tags}') }"/>
-    <property name="root" value="${xrootd.root}"/>
+    <property name="root" value="${xrootd.loginbroker.root}"/>
     <property name="readPaths" value="#{ T(com.google.common.base.Splitter).on(':').omitEmptyStrings().splitToList('${xrootd.authz.read-paths}') }"/>
     <property name="writePaths" value="#{ T(com.google.common.base.Splitter).on(':').omitEmptyStrings().splitToList('${xrootd.authz.write-paths}') }"/>
   </bean>

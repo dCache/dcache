@@ -540,7 +540,7 @@ public class LoginManager
             _acceptErrorTimeout = timeout;
 
             String listen = _args.getOpt("listen");
-            if (listen == null || listen.equals("any")) {
+            if (Strings.isNullOrEmpty(listen)) {
                 _socketAddress = new InetSocketAddress(listenPort);
             } else {
                 _socketAddress = new InetSocketAddress(InetAddress.getByName(listen), listenPort);
