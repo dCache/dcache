@@ -64,166 +64,132 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.dcache.services.billing.db.data.DoorRequestData;
-import org.dcache.services.billing.db.data.MoverData;
-import org.dcache.services.billing.db.data.PoolHitData;
-import org.dcache.services.billing.db.data.StorageData;
+import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.RetryException;
 import org.dcache.services.billing.histograms.data.IHistogramData;
 
-import static com.google.common.base.Preconditions.checkState;
-
 /**
- * Abstraction for handling insert logic. Each type of object is given a
- * separate queue and mover. Allows the put() method to do special processing
- * (for instance, to front-end the database insert with a temporary file).
- * Provides hooks for monitoring.
+ * Framework for database access; uses a blocking queue and N consumer
+ * threads to process requests; consumer drains the queue up to max,
+ * for batching.  Commit is implemented by the store.
  *
  * @author arossi
  */
-public abstract class QueueDelegate {
-    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    protected int maxBatchSize;
-    protected int maxQueueSize;
-    protected boolean dropMessagesAtLimit;
-    protected final AtomicLong dropped = new AtomicLong(0);
-    protected final AtomicLong committed = new AtomicLong(0);
-
-    protected BlockingQueue moverQueue;
-    protected BlockingQueue doorQueue;
-    protected BlockingQueue storageQueue;
-    protected BlockingQueue hitQueue;
-
-    private Thread moverConsumer;
-    private Thread doorConsumer;
-    private Thread storageConsumer;
-    private Thread hitConsumer;
-
-    private BaseBillingInfoAccess callback;
-
-    private boolean running;
-
-    private class Consumer extends Thread {
-        private final BlockingQueue queue;
-
-        private Consumer(String name, BlockingQueue queue) {
+public abstract class AbstractBillingInfoAccess implements IBillingInfoAccess {
+    class Consumer extends Thread {
+        private Consumer(String name) {
             super(name);
-            this.queue = queue;
         }
 
         public void run() {
-            while (isRunning()) {
-                try {
+            try {
+                while (!isInterrupted()) {
                     Collection<IHistogramData> data = new ArrayList<>();
 
                     /*
-                     * blocks until non-empty
+                     * take() blocks until non-empty
+                     * and throws an InterruptedException
                      */
                     logger.trace("calling queue.take()");
-                    data.add((IHistogramData) queue.take());
+                    data.add(queue.take());
 
                     /*
                      * add to data and remove from queue any accumulated entries
                      */
                     logger.trace("calling queue.drainTo(), queue size {}",
-                                    queue.size());
+                                 queue.size());
                     queue.drainTo(data, maxBatchSize);
+
+                    if (isInterrupted()) {
+                        break;
+                    }
 
                     try {
                         logger.trace("calling commit");
-                        callback.commit(data);
+                        commit(data);
                         committed.addAndGet(data.size());
                     } catch (RetryException t) {
                         logger.warn("commit failed; retrying once ...");
                         try {
-                            callback.commit(data);
+                            commit(data);
+                            committed.addAndGet(data.size());
                         } catch (RetryException t1) {
-                            logger.error("commit retry failed, "
-                                            + "{} inserts have been lost",
-                                            data.size());
+                            logger.error("commit retry failed, {} inserts have "
+                                                         + "been lost",
+                                         data.size());
                             logger.debug("exception in run(), commit", t1);
                         }
                     }
-                } catch (InterruptedException ignored) {
                 }
+            } catch (InterruptedException ignored) {
+                logger.trace("Consumer interrupted.");
             }
         }
     }
 
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    private final AtomicLong dropped   = new AtomicLong(0);
+    private final AtomicLong committed = new AtomicLong(0);
+
+    private BlockingQueue<IHistogramData> queue;
+    private List<Consumer>                consumers;
+    private int                           maxQueueSize;
+    private int                           maxBatchSize;
+    private int                           numberOfConsumers;
+    private boolean                       dropMessagesAtLimit;
+
     public void close() {
-        checkState(isRunning());
-
-        setRunning(false);
-
-        moverConsumer.interrupt();
-        doorConsumer.interrupt();
-        storageConsumer.interrupt();
-        hitConsumer.interrupt();
-        try {
-            moverConsumer.join();
-            doorConsumer.join();
-            storageConsumer.join();
-            hitConsumer.join();
-        } catch (InterruptedException e) {
-            logger.trace("join on consumers interrupted");
+        if (consumers != null) {
+            consumers.stream().forEach(Consumer::interrupt);
+            consumers.stream().forEach((consumer) -> {
+                try {
+                    consumer.join();
+                } catch (InterruptedException e) {
+                    logger.trace("join on consumers interrupted");
+                }
+            });
         }
-
         logger.trace("{} close exiting", this);
     }
 
-    public long getCommitted() {
+    public long getCommittedMessages() {
         return committed.get();
     }
 
-    public long getDropped() {
+    public long getDroppedMessages() {
         return dropped.get();
     }
 
-    public long getQueueSize() {
-        return moverQueue.size() + doorQueue.size() + storageQueue.size()
-                        + hitQueue.size();
-    }
-
-    public void handlePut(IHistogramData data) {
-        if (data instanceof MoverData) {
-            handlePut((MoverData) data);
-        } else if (data instanceof StorageData) {
-            handlePut((StorageData) data);
-        } else if (data instanceof DoorRequestData) {
-            handlePut((DoorRequestData) data);
-        } else if (data instanceof PoolHitData) {
-            handlePut((PoolHitData) data);
-        }
+    public long getInsertQueueSize() {
+        return queue.size();
     }
 
     public void initialize() {
-        initializeInternal();
-
-        moverQueue = new LinkedBlockingQueue(maxQueueSize);
-        doorQueue = new LinkedBlockingQueue(maxQueueSize);
-        storageQueue = new LinkedBlockingQueue(maxQueueSize);
-        hitQueue = new LinkedBlockingQueue(maxQueueSize);
-
-        moverConsumer = new Consumer("mover data consumer", moverQueue);
-        doorConsumer = new Consumer("door request data consumer", doorQueue);
-        storageConsumer = new Consumer("storage data consumer", storageQueue);
-        hitConsumer = new Consumer("cache hit data consumer", hitQueue);
-
-        setRunning(true);
-
-        moverConsumer.start();
-        doorConsumer.start();
-        storageConsumer.start();
-        hitConsumer.start();
+        logger.debug("access type: {}", this.getClass().getName());
+        queue = new LinkedBlockingQueue<>(maxQueueSize);
+        consumers = new ArrayList<>();
+        for (int i = 0; i < numberOfConsumers; i++) {
+            consumers.add(new Consumer("histogram data consumer " + i));
+        }
+        consumers.stream().forEach(Consumer::start);
     }
 
-    public void setCallback(BaseBillingInfoAccess callback) {
-        this.callback = callback;
+    public void put(IHistogramData data) {
+        if (!dropMessagesAtLimit) {
+            try {
+                queue.put(data);
+            } catch (InterruptedException t) {
+                processInterrupted(data);
+            }
+        } else if (!queue.offer(data)) {
+            processDroppedData(data);
+        }
     }
 
     public void setDropMessagesAtLimit(boolean dropMessagesAtLimit) {
@@ -238,21 +204,29 @@ public abstract class QueueDelegate {
         this.maxQueueSize = maxQueueSize;
     }
 
-    protected abstract void handlePut(DoorRequestData data);
-
-    protected abstract void handlePut(MoverData data);
-
-    protected abstract void handlePut(PoolHitData data);
-
-    protected abstract void handlePut(StorageData data);
-
-    protected abstract void initializeInternal();
-
-    protected synchronized boolean isRunning() {
-        return running;
+    public void setNumberOfConsumers(int numberOfConsumers) {
+        this.numberOfConsumers = numberOfConsumers;
     }
 
-    protected synchronized void setRunning(boolean running) {
-        this.running = running;
+    /**
+     * Storage-implementation dependent.
+     */
+    public abstract void commit(Collection<IHistogramData> data)
+                    throws RetryException;
+
+    private void processDroppedData(IHistogramData data) {
+        dropped.incrementAndGet();
+        logger.info("encountered max queue limit; "
+                                    + "{} entries have been dropped",
+                    dropped.get());
+        logger.debug("queue limit prevented storage of {}", data);
+    }
+
+    private void processInterrupted(IHistogramData data) {
+        dropped.incrementAndGet();
+        logger.warn("queueing of data was interrupted; "
+                                    + "{} entries have been dropped",
+                    dropped.get());
+        logger.debug("failed to store {}", data);
     }
 }

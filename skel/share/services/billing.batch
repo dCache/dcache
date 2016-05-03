@@ -23,8 +23,8 @@ define env billingToDb.exe endExe
   check -strong billing.db.schema.auto
   check -strong billing.db.inserts.max-queue-size
   check -strong billing.db.inserts.max-batch-size
-  check -strong billing.db.inserts.queue-delegate.type
   check -strong billing.db.inserts.drop-messages-at-limit
+  check -strong billing.db.consumers
   check billing.db.name
   check billing.db.password
   check billing.db.password.file

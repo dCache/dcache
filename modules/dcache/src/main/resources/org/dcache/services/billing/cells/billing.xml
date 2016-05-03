@@ -76,11 +76,11 @@
 
     <bean id="jdbc-billing-info-access" class="org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo"
           init-method="initialize" destroy-method="close">
-      <property name="delegateType" value="${billing.db.inserts.queue-delegate.type}"/>
       <property name="maxQueueSize" value="${billing.db.inserts.max-queue-size}"/>
       <property name="maxBatchSize" value="${billing.db.inserts.max-batch-size}"/>
       <property name="dropMessagesAtLimit" value="${billing.db.inserts.drop-messages-at-limit}"/>
       <property name="persistenceManagerFactory" ref="pmf"/>
+      <property name="numberOfConsumers" value="${billing.db.consumers}"/>
     </bean>
 
     <bean id="histogram-service" class="org.dcache.services.billing.histograms.data.JDOTimeFrameHistogramDataService">
