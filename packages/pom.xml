@@ -103,6 +103,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>gplazma2-multimap</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>gplazma2-krb5</artifactId>
         <version>${project.version}</version>
     </dependency>

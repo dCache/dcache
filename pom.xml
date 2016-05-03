@@ -1201,6 +1201,7 @@
         <module>modules/gplazma2-ldap</module>
         <module>modules/gplazma2-htpasswd</module>
         <module>modules/gplazma2-oidc</module>
+        <module>modules/gplazma2-multimap</module>
         <module>modules/dcache-vehicles</module>
         <module>modules/dcache-nearline-spi</module>
         <module>modules/dcache</module>

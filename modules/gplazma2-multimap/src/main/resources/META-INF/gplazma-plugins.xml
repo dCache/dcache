@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>multimap</name>
+        <class>org.dcache.gplazma.plugins.GplazmaMultiMapPlugin</class>
+    </plugin>
+</plugins>
