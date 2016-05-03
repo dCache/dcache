@@ -16,7 +16,6 @@ check resilience.db.schema.auto
 check resilience.db.password
 check resilience.db.password.file
 
-check -strong resilience.db.dialect
 check -strong resilience.db.user
 check -strong resilience.db.url
 check -strong resilience.db.connections.idle
