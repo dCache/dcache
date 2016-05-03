@@ -81,14 +81,7 @@ public class UnpinProcessor implements Runnable
     private boolean upin(Semaphore idle, Executor executor, Pin pin)
     {
         try {
-            /**
-             * For purposes of migrating from the previous
-             * PinManager we need to deal with sticky flags
-             * shared by multiple pins. We will not remove a
-             * sticky flag as long as there are other pins
-             * using it.
-             */
-            if (pin.getPool() == null || _dao.hasSharedSticky(pin)) {
+            if (pin.getPool() == null) {
                 _dao.deletePin(pin);
             } else {
                 clearStickyFlag(idle, pin, executor);

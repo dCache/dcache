@@ -27,7 +27,5 @@ public interface PinDao
 
     void expirePins();
 
-    boolean hasSharedSticky(Pin pin);
-
     boolean all(Pin.State state, Predicate<Pin> f);
 }

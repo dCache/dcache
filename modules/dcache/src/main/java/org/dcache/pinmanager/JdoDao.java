@@ -128,16 +128,6 @@ public class JdoDao implements PinDao
         return pm.detachCopyAll(pins);
     }
 
-    @Override @Transactional(readOnly=true)
-    public boolean hasSharedSticky(Pin pin)
-    {
-        PersistenceManager pm = _pmf.getPersistenceManager();
-        Query query = pm.newQuery(Pin.class, "_pnfsId == :pnfsId && _id != :id && _pool == :pool && _sticky == :sticky && _state != 'UNPINNING'");
-        query.setResult("count(this)");
-        return ((Long) query.executeWithArray(pin.getPnfsId().toString(), pin.getPinId(),
-                                              pin.getPool(), pin.getSticky())) > 0;
-    }
-
     @Override @Transactional
     public void deletePin(PnfsId pnfsId)
     {

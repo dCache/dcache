@@ -466,16 +466,6 @@ class TestDao implements PinDao
         }
     }
 
-    @Override
-    public boolean hasSharedSticky(Pin aPin)
-    {
-        for (Pin pin: _pins.values()) {
-            if (Objects.equal(pin.getPnfsId(), aPin.getPnfsId()) && pin.getPinId() != aPin.getPinId() && Objects.equal(pin.getPool(), aPin.getPool()) && Objects.equal(pin.getSticky(), aPin.getSticky()) && pin.getState() != UNPINNING) {
-                return true;
-            }
-        }
-        return false;
-    }
 }
 
 class TestExecutor

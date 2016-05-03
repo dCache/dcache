@@ -220,20 +220,12 @@ public class MovePinRequestProcessor
         for (Pin pin: pins) {
             Pin tmpPin = move(pin, target, pin.getExpirationTime());
 
-            /**
-             * For purposes of migrating from the previous PinManager
-             * we need to deal with sticky flags shared by multiple
-             * pins. We will not remove a sticky flag as long as there
-             * are other pins using it.
-             */
-            if (!_dao.hasSharedSticky(tmpPin)) {
-                setSticky(tmpPin.getPool(),
-                          tmpPin.getPnfsId(),
-                          false,
-                          tmpPin.getSticky(),
-                          0);
-                _dao.deletePin(tmpPin);
-            }
+            setSticky(tmpPin.getPool(),
+                      tmpPin.getPnfsId(),
+                      false,
+                      tmpPin.getSticky(),
+                      0);
+            _dao.deletePin(tmpPin);
         }
 
         _log.info("Moved pins for {} from {} to {}", pnfsId, source, target);
