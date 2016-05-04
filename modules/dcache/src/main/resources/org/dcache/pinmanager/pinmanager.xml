@@ -140,40 +140,18 @@
         <property name="shouldUpdate" value="${pinmanager.db.schema.auto}"/>
     </bean>
 
-  <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory" depends-on="liquibase">
-      <description>Database persistence manager</description>
-      <constructor-arg>
-          <props>
-              <prop key="datanucleus.PersistenceUnitName">PinManager</prop>
-              <prop key="datanucleus.connectionPoolingType">None</prop>
-              <prop key="datanucleus.cache.level2.type">none</prop>
-          </props>
-      </constructor-arg>
-      <property name="connectionFactory" ref="data-source"/>
-  </bean>
+    <bean id="dao" class="org.dcache.pinmanager.JdbcDao">
+        <description>Data access object</description>
+        <property name="dataSource" ref="data-source"/>
+    </bean>
 
-  <bean id="tx-manager" class="org.springframework.orm.jdo.JdoTransactionManager">
-    <description>JDO transaction manager</description>
-    <property name="persistenceManagerFactory" ref="pmf"/>
-    <property name="jdoDialect">
-        <bean class="org.dcache.util.Jdo3Dialect"/>
-    </property>
-  </bean>
+    <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <description>Database transaction manager</description>
+        <property name="dataSource" ref="data-source"/>
+    </bean>
 
-  <bean id="pmf-proxy"
-      class="org.springframework.orm.jdo.TransactionAwarePersistenceManagerFactoryProxy">
-    <description>Transaction aware JDO connection</description>
-    <property name="targetPersistenceManagerFactory" ref="pmf"/>
-    <property name="allowCreate" value="false"/>
-  </bean>
-
-  <bean id="dao" class="org.dcache.pinmanager.JdoDao">
-    <description>Data access object</description>
-    <property name="persistenceManagerFactory" ref="pmf-proxy"/>
-  </bean>
-
-  <bean id="tx-annotation-processor" class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
-      <description>Annotated transaction demarcation processor</description>
-      <property name="transactionManager" ref="tx-manager"/>
-  </bean>
+    <bean id="tx-annotation-processor" class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+        <description>Annotated transaction demarcation processor</description>
+        <property name="transactionManager" ref="tx-manager"/>
+    </bean>
 </beans>

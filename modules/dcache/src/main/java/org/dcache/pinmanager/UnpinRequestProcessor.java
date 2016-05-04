@@ -46,16 +46,14 @@ public class UnpinRequestProcessor
     {
         PnfsId pnfsId = message.getPnfsId();
         if (message.getPinId() != null) {
-            unpin(message, _dao.getPin(pnfsId, message.getPinId()));
+            unpin(message, _dao.get(_dao.where().pnfsId(pnfsId).id(message.getPinId())));
         } else if (message.getRequestId() != null) {
-            unpin(message, _dao.getPin(pnfsId, message.getRequestId()));
+            unpin(message, _dao.get(_dao.where().pnfsId(pnfsId).requestId(message.getRequestId())));
         } else {
-            for (Pin pin: _dao.getPins(pnfsId)) {
+            for (Pin pin: _dao.get(_dao.where().pnfsId(pnfsId))) {
                 if (_pdp.canUnpin(message.getSubject(), pin)) {
-                    pin.setState(Pin.State.UNPINNING);
+                    _dao.update(pin, _dao.set().state(Pin.State.UNPINNING));
                 }
-                _log.info("Unpinned {} ({})", pin.getPnfsId(), pin.getPinId());
-                _dao.storePin(pin);
             }
         }
         return message;
@@ -68,13 +66,13 @@ public class UnpinRequestProcessor
             if (!_pdp.canUnpin(message.getSubject(), pin)) {
                 throw new PermissionDeniedCacheException("Access denied");
             }
-            pin.setState(Pin.State.UNPINNING);
-            pin = _dao.storePin(pin);
+            pin = _dao.update(pin, _dao.set().state(Pin.State.UNPINNING));
+            if (pin != null) {
+                message.setPinId(pin.getPinId());
+                message.setRequestId(pin.getRequestId());
 
-            message.setPinId(pin.getPinId());
-            message.setRequestId(pin.getRequestId());
-
-            _log.info("Unpinned {} ({})", pin.getPnfsId(), pin.getPinId());
+                _log.info("Unpinned {} ({})", pin.getPnfsId(), pin.getPinId());
+            }
         }
     }
 }

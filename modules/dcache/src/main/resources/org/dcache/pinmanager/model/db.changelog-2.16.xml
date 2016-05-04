@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ dCache - http://www.dcache.org/
+  ~
+  ~ Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as
+  ~ published by the Free Software Foundation, either version 3 of the
+  ~ License, or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="behrmann" id="1">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="pinsv3"/>
+        </preConditions>
+        <dropTable tableName="pinsv3"/>
+        <rollback/>
+    </changeSet>
+
+    <changeSet author="behrmann" id="2">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="pins"/>
+        </preConditions>
+
+        <addAutoIncrement tableName="pins" columnName="id" columnDataType="bigint"/>
+        <rollback/>
+    </changeSet>
+
+    <changeSet author="behrmann" id="3" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="pins"/>
+        </preConditions>
+        <sql>
+            SELECT setval('pins_id_seq', (SELECT greatest(max(id), 1) FROM pins));
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP SEQUENCE pins_id_seq CASCADE;
+                SELECT setval('pin_sequence', (SELECT greatest(max(id), 1) FROM pins));
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet author="behrmann" id="4">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="pins"/>
+        </preConditions>
+        <dropSequence sequenceName="pin_sequence"/>
+        <rollback>
+            <createSequence sequenceName="pin_sequence"
+                            startValue="1" incrementBy="10"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet author="behrmann" id="5">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="pins"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="pins">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="pnfsid" type="varchar(256)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="request_id" type="varchar(256)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="uid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="state" type="varchar(256)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pool" type="varchar(256)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="sticky" type="varchar(256)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="pins"
+                     indexName="idx_pnfsid_id"
+                     unique="true">
+            <column name="pnfsid"/>
+            <column name="request_id"/>
+        </createIndex>
+
+        <createIndex tableName="pins"
+                     indexName="idx_state">
+            <column name="state"/>
+        </createIndex>
+
+        <createIndex tableName="pins"
+                     indexName="idx_expires_at">
+            <column name="expires_at"/>
+        </createIndex>
+
+        <rollback/>
+    </changeSet>
+</databaseChangeLog>

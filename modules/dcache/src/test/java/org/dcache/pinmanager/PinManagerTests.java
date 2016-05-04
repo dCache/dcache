@@ -1,22 +1,23 @@
 package org.dcache.pinmanager;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Test;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+import javax.security.auth.Subject;
+
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
@@ -27,6 +28,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import diskCacheV111.poolManager.Pool;
 import diskCacheV111.poolManager.PoolMonitorV5;
@@ -50,6 +53,7 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.SerializationException;
 
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellMessageDispatcher;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.model.Pin;
@@ -59,6 +63,7 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
 
+import static java.util.stream.Collectors.toList;
 import static org.dcache.pinmanager.model.Pin.State.PINNED;
 import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
 import static org.junit.Assert.*;
@@ -84,11 +89,6 @@ public class PinManagerTests
     final static String POOL1 = "pool1";
 
     final static String STICKY1 = "PinManager-1";
-
-    final static Pin PIN1 =
-        new TestPin(0, 0, 0, REQUEST_ID1,
-                    new Date(), new Date(now() + 30),
-                    PNFS_ID1, POOL1, STICKY1, PINNED);
 
     private FileAttributes getAttributes(PnfsId pnfsId)
     {
@@ -165,7 +165,7 @@ public class PinManagerTests
         assertEquals(0, message.getReturnCode());
         assertFalse(message.getExpirationTime().before(expiration));
 
-        Pin pin = dao.getPin(message.getPinId());
+        Pin pin = dao.get(dao.where().id(message.getPinId()));
         assertEquals(PNFS_ID1, pin.getPnfsId());
         assertBetween(start, stop, pin.getCreationTime());
         assertEquals(message.getExpirationTime(), pin.getExpirationTime());
@@ -182,7 +182,14 @@ public class PinManagerTests
         throws CacheException, InterruptedException, ExecutionException
     {
         TestDao dao = new TestDao();
-        Pin pin = dao.storePin(PIN1);
+        Pin pin = dao.create(dao.set()
+                                     .subject(Subjects.ROOT)
+                                     .requestId(REQUEST_ID1)
+                                     .expirationTime(new Date(now() + 30))
+                                     .pnfsId(PNFS_ID1)
+                                     .pool(POOL1)
+                                     .sticky(STICKY1)
+                                     .state(PINNED));
 
         Pool pool = new Pool(POOL1);
         pool.setActive(true);
@@ -211,7 +218,7 @@ public class PinManagerTests
         assertEquals(0, message.getReturnCode());
         assertFalse(message.getExpirationTime().before(expiration));
 
-        Pin newPin = dao.getPin(pin.getPinId());
+        Pin newPin = dao.get(dao.where().id(pin.getPinId()));
         assertEquals(PNFS_ID1, newPin.getPnfsId());
         assertEquals(pin.getCreationTime(), newPin.getCreationTime());
         assertEquals(message.getExpirationTime(), newPin.getExpirationTime());
@@ -228,7 +235,14 @@ public class PinManagerTests
         throws CacheException, InterruptedException, ExecutionException
     {
         TestDao dao = new TestDao();
-        Pin pin = dao.storePin(PIN1);
+        Pin pin = dao.create(dao.set()
+                                     .subject(Subjects.ROOT)
+                                     .requestId(REQUEST_ID1)
+                                     .expirationTime(new Date(now() + 30))
+                                     .pnfsId(PNFS_ID1)
+                                     .pool(POOL1)
+                                     .sticky(STICKY1)
+                                     .state(PINNED));
 
         UnpinRequestProcessor processor = new UnpinRequestProcessor();
         processor.setDao(dao);
@@ -243,7 +257,7 @@ public class PinManagerTests
         assertEquals(pin.getPinId(), (long) message.getPinId());
         assertEquals(pin.getRequestId(), message.getRequestId());
 
-        Pin newPin = dao.getPin(pin.getPinId());
+        Pin newPin = dao.get(dao.where().id(pin.getPinId()));
         assertEquals(PNFS_ID1, newPin.getPnfsId());
         assertEquals(pin.getPool(), newPin.getPool());
         assertEquals(UNPINNING, newPin.getState());
@@ -255,7 +269,14 @@ public class PinManagerTests
         throws CacheException, InterruptedException, ExecutionException
     {
         TestDao dao = new TestDao();
-        Pin pin = dao.storePin(PIN1);
+        Pin pin = dao.create(dao.set()
+                                     .subject(Subjects.ROOT)
+                                     .requestId(REQUEST_ID1)
+                                     .expirationTime(new Date(now() + 30))
+                                     .pnfsId(PNFS_ID1)
+                                     .pool(POOL1)
+                                     .sticky(STICKY1)
+                                     .state(PINNED));
 
         UnpinRequestProcessor processor = new UnpinRequestProcessor();
         processor.setDao(dao);
@@ -270,7 +291,7 @@ public class PinManagerTests
         assertEquals(pin.getPinId(), (long) message.getPinId());
         assertEquals(pin.getRequestId(), message.getRequestId());
 
-        Pin newPin = dao.getPin(pin.getPinId());
+        Pin newPin = dao.get(dao.where().id(pin.getPinId()));
         assertEquals(PNFS_ID1, newPin.getPnfsId());
         assertEquals(pin.getPool(), newPin.getPool());
         assertEquals(UNPINNING, newPin.getState());
@@ -300,172 +321,270 @@ public class PinManagerTests
     }
 }
 
-class TestPin extends Pin
-{
-    public TestPin(long id, Pin pin)
-    {
-        this(id, pin.getUid(), pin.getGid(), pin.getRequestId(),
-             pin.getCreationTime(), pin.getExpirationTime(),
-             pin.getPnfsId(), pin.getPool(), pin.getSticky(), pin.getState());
-    }
-
-    public TestPin(long id, long uid, long gid, String requestId,
-                   Date creationTime, Date expirationTime,
-                   PnfsId pnfsId, String pool, String sticky,
-                   Pin.State state)
-    {
-        _id = id;
-        _uid = uid;
-        _gid = gid;
-        _requestId = requestId;
-        _creationTime = creationTime;
-        _expirationTime = expirationTime;
-        _pnfsId = (pnfsId == null) ? null : pnfsId.toString();
-        _pool = pool;
-        _sticky = sticky;
-        _state = state;
-    }
-}
-
+@ParametersAreNonnullByDefault
 class TestDao implements PinDao
 {
     long _counter;
-    Map<Long,TestPin> _pins = new HashMap<>();
+    Map<Long,Pin> _pins = new HashMap<>();
 
-    protected TestPin clone(Pin pin)
+    @Override
+    public PinCriterion where()
     {
-        return (pin == null) ? null : new TestPin(pin.getPinId(), pin);
+        return new TestCriterion();
     }
 
     @Override
-    public Pin storePin(Pin pin)
+    public PinUpdate set()
     {
-        long id = (pin.getPinId() == 0) ? ++_counter : pin.getPinId();
-        TestPin testPin = new TestPin(id, pin);
-        _pins.put(id, testPin);
-        return clone(testPin);
+        return new TestUpdate();
     }
 
     @Override
-    public Pin getPin(long id)
+    public Pin create(PinUpdate update)
     {
-        return clone(_pins.get(id));
+        Pin pin = ((TestUpdate) update).createPin(_counter++);
+        _pins.put(pin.getPinId(), pin);
+        return pin;
     }
 
     @Override
-    public Pin getPin(PnfsId pnfsId, long id)
+    public List<Pin> get(PinCriterion criterion)
     {
-        Pin pin = _pins.get(id);
-        return (pin != null && pnfsId.equals(pin.getPnfsId())) ? clone(pin) : null;
+        return _pins.values().stream().filter(((TestCriterion) criterion)::matches).collect(toList());
     }
 
     @Override
-    public Pin getPin(PnfsId pnfsId, String requestId)
+    public List<Pin> get(PinCriterion criterion, int limit)
     {
-        for (Pin pin: _pins.values()) {
-            if (pnfsId.equals(pin.getPnfsId()) && requestId.equals(pin.getRequestId())) {
-                return clone(pin);
+        return _pins.values().stream().filter(((TestCriterion) criterion)::matches).limit(limit).collect(toList());
+    }
+
+    @Override
+    public Pin get(UniquePinCriterion criterion)
+    {
+        return _pins.values().stream().filter(((TestCriterion) criterion)::matches).findFirst().orElse(null);
+    }
+
+    @Override
+    public int count(PinCriterion criterion)
+    {
+        return (int) _pins.values().stream().filter(((TestCriterion) criterion)::matches).count();
+    }
+
+    @Override
+    public Pin update(UniquePinCriterion criterion, PinUpdate update)
+    {
+        Pin pin = get(criterion);
+        if (pin == null) {
+            return null;
+        }
+        update((PinCriterion) criterion, update);
+        return ((TestUpdate) update).apply(pin);
+    }
+
+    @Override
+    public int update(PinCriterion criterion, PinUpdate update)
+    {
+        TestUpdate u = (TestUpdate) update;
+        int cnt = 0;
+        for (Map.Entry<Long, Pin> e : _pins.entrySet()) {
+            if (((TestCriterion) criterion).matches(e.getValue())) {
+                cnt++;
+                e.setValue(u.apply(e.getValue()));
             }
         }
-        return null;
+        return cnt;
     }
 
     @Override
-    public Pin getPin(long id, String sticky, Pin.State state)
+    public int delete(PinCriterion criterion)
     {
-        Pin pin = _pins.get(id);
-        return (pin != null &&
-                Objects.equal(sticky, pin.getSticky()) &&
-                state == pin.getState()) ? clone(pin) : null;
-    }
-
-    @Override
-    public void deletePin(PnfsId pnfsId)
-    {
-        Iterator<TestPin> i = _pins.values().iterator();
-        while (i.hasNext()) {
-            if (pnfsId.equals(i.next().getPnfsId())) {
-                i.remove();
+        int cnt = 0;
+        Iterator<Pin> iterator = _pins.values().iterator();
+        while (iterator.hasNext()) {
+            Pin pin = iterator.next();
+            if (((TestCriterion) criterion).matches(pin)) {
+                iterator.remove();
+                cnt++;
             }
         }
+        return cnt;
     }
 
     @Override
-    public void deletePin(Pin pin)
+    public void foreach(PinCriterion criterion, InterruptibleConsumer<Pin> f) throws InterruptedException
     {
-        _pins.remove(pin.getPinId());
-    }
-
-    @Override
-    public Collection<Pin> getPins()
-    {
-        Collection<Pin> pins = new ArrayList();
-        for (Pin pin: _pins.values()) {
-            pins.add(clone(pin));
-        }
-        return pins;
-    }
-
-    @Override
-    public Collection<Pin> getPins(PnfsId pnfsId)
-    {
-        Collection<Pin> pins = new ArrayList();
-        for (Pin pin: _pins.values()) {
-            if (pnfsId.equals(pin.getPnfsId())) {
-                pins.add(clone(pin));
-            }
-        }
-        return pins;
-    }
-
-    @Override
-    public Collection<Pin> getPins(Pin.State state)
-    {
-        Collection<Pin> pins = new ArrayList();
-        for (Pin pin: _pins.values()) {
-            if (state == pin.getState()) {
-                pins.add(clone(pin));
-            }
-        }
-        return pins;
-    }
-
-    @Override
-    public boolean all(Pin.State state, Predicate<Pin> f)
-    {
-        for (Pin pin: _pins.values()) {
-            if (state == pin.getState()) {
-                if (!f.apply(pin)) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public Collection<Pin> getPins(PnfsId pnfsId, String pool)
-    {
-        Collection<Pin> pins = new ArrayList();
-        for (Pin pin: _pins.values()) {
-            if (pnfsId.equals(pin.getPnfsId()) && pool.equals(pin.getPool())) {
-                pins.add(clone(pin));
-            }
-        }
-        return pins;
-    }
-
-    @Override
-    public void expirePins()
-    {
-        Date now = new Date();
-        for (Pin pin: _pins.values()) {
-            if (pin.getExpirationTime() != null && pin.getExpirationTime().before(now)) {
-                pin.setState(UNPINNING);
+        for (Pin pin : _pins.values()) {
+            if (((TestCriterion) criterion).matches(pin)) {
+                f.accept(pin);
             }
         }
     }
 
+    private static class TestCriterion implements UniquePinCriterion
+    {
+        private final List<Predicate<Pin>> predicates = new ArrayList<>();
+        private Long id;
+        private PnfsId pnfsId;
+        private String requestId;
+
+        protected TestCriterion add(Predicate<Pin> predicate)
+        {
+            predicates.add(predicate);
+            return this;
+        }
+
+        @Override
+        public TestCriterion id(long id)
+        {
+            this.id = id;
+            return add(p -> p.getPinId() == id);
+        }
+
+        @Override
+        public TestCriterion pnfsId(PnfsId id)
+        {
+            pnfsId = id;
+            return add(p -> Objects.equals(p.getPnfsId(), id));
+        }
+
+        @Override
+        public TestCriterion requestId(String requestId)
+        {
+            this.requestId = requestId;
+            return add(p -> Objects.equals(p.getRequestId(), requestId));
+        }
+
+        @Override
+        public TestCriterion expirationTimeBefore(Date date)
+        {
+            return add(p -> p.getExpirationTime().before(date));
+        }
+
+        @Override
+        public TestCriterion state(Pin.State state)
+        {
+            return add(p -> p.getState() == state);
+        }
+
+        @Override
+        public TestCriterion stateIsNot(Pin.State state)
+        {
+            return add(p -> p.getState() != state);
+        }
+
+        @Override
+        public TestCriterion pool(String pool)
+        {
+            return add(p -> Objects.equals(p.getPool(), pool));
+        }
+
+        @Override
+        public TestCriterion sticky(String sticky)
+        {
+            return add(p -> Objects.equals(p.getSticky(), sticky));
+        }
+
+        @Override
+        public TestCriterion sameIdAs(UniquePinCriterion criterion)
+        {
+            TestCriterion c = (TestCriterion) criterion;
+            if (c.id != null) {
+                return id(c.id);
+            } else {
+                return pnfsId(c.pnfsId).requestId(c.requestId);
+            }
+        }
+
+        boolean matches(Pin pin)
+        {
+            return predicates.stream().allMatch(p -> p.test(pin));
+        }
+    }
+
+    private static class TestUpdate implements PinUpdate
+    {
+        private final List<Function<Pin, Pin>> updates = new ArrayList<>();
+
+        private PinUpdate add(Function<Pin,Pin> update)
+        {
+            updates.add(update);
+            return this;
+        }
+
+        @Override
+        public PinUpdate expirationTime(Date date)
+        {
+            return add(p -> new Pin(p.getPinId(), p.getPnfsId(), p.getRequestId(), p.getCreationTime(), date,
+                                    p.getUid(), p.getGid(), p.getState(), p.getPool(), p.getSticky()));
+
+        }
+
+        @Override
+        public PinUpdate pool(String pool)
+        {
+            return add(p -> new Pin(p.getPinId(), p.getPnfsId(), p.getRequestId(), p.getCreationTime(),
+                                    p.getExpirationTime(), p.getUid(), p.getGid(), p.getState(),
+                                    pool, p.getSticky()));
+        }
+
+        @Override
+        public PinUpdate requestId(String requestId)
+        {
+            return add(p -> new Pin(p.getPinId(), p.getPnfsId(), requestId, p.getCreationTime(),
+                                    p.getExpirationTime(), p.getUid(), p.getGid(), p.getState(),
+                                    p.getPool(), p.getSticky()));
+        }
+
+        @Override
+        public PinUpdate state(Pin.State state)
+        {
+            return add(p -> new Pin(p.getPinId(), p.getPnfsId(), p.getRequestId(), p.getCreationTime(),
+                                    p.getExpirationTime(), p.getUid(), p.getGid(), state,
+                                    p.getPool(), p.getSticky()));
+        }
+
+        @Override
+        public PinUpdate sticky(String sticky)
+        {
+            return add(p -> new Pin(p.getPinId(), p.getPnfsId(), p.getRequestId(), p.getCreationTime(),
+                                    p.getExpirationTime(), p.getUid(), p.getGid(), p.getState(),
+                                    p.getPool(), sticky));
+        }
+
+        @Override
+        public PinUpdate subject(Subject subject)
+        {
+            return add(p -> {
+                long uid = Subjects.getUid(subject);
+                long gid = Subjects.getPrimaryGid(subject);
+                return new Pin(p.getPinId(), p.getPnfsId(), p.getRequestId(), p.getCreationTime(),
+                               p.getExpirationTime(), uid, gid, p.getState(),
+                               p.getPool(), p.getSticky());
+            });
+        }
+
+        @Override
+        public PinUpdate pnfsId(PnfsId pnfsId)
+        {
+            return add(p -> new Pin(p.getPinId(), pnfsId, p.getRequestId(), p.getCreationTime(),
+                                    p.getExpirationTime(), p.getUid(), p.getGid(), p.getState(),
+                                    p.getPool(), p.getSticky()));
+        }
+
+        Pin apply(Pin pin)
+        {
+            for (Function<Pin,Pin> u : updates) {
+                pin = u.apply(pin);
+            }
+            return pin;
+        }
+
+        public Pin createPin(long id)
+        {
+            return apply(new Pin(id));
+        }
+    }
 }
 
 class TestExecutor

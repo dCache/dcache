@@ -1,168 +1,144 @@
 package org.dcache.pinmanager.model;
 
-import javax.jdo.annotations.PersistenceCapable;
-import javax.jdo.annotations.Persistent;
-import javax.jdo.annotations.PrimaryKey;
-import javax.security.auth.Subject;
+import javax.annotation.concurrent.Immutable;
 
 import java.util.Date;
 
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.auth.Subjects;
-
-@PersistenceCapable
-public class Pin
+@Immutable
+public final class Pin
 {
     public enum State
     {
         PINNING, PINNED, UNPINNING
     }
 
-    @PrimaryKey
-    protected long _id;
+    private final long id;
 
-    @Persistent
-    protected long _uid;
+    private final long uid;
 
-    @Persistent
-    protected long _gid;
+    private final long gid;
 
     /** ID provided by the requestor eg. the SRM door. */
-    @Persistent
-    protected String _requestId;
+    private final String requestId;
 
-    @Persistent
-    protected Date _creationTime;
+    private final Date creationTime;
 
-    @Persistent
-    protected Date _expirationTime;
+    private final Date expirationTime;
 
-    @Persistent
-    protected String _pnfsId;
+    private final PnfsId pnfsId;
 
     /** Name of pool on which the file is pinned. */
-    @Persistent
-    protected String _pool;
+    private final String pool;
 
     /** Owner of sticky flag. */
-    @Persistent
-    protected String _sticky;
+    private final String sticky;
 
-    @Persistent
-    protected State _state;
+    private final State state;
 
-    protected Pin()
+    public Pin(long id)
     {
+        this.id = id;
+        this.creationTime = new Date();
+        this.uid = 0;
+        this.gid = 0;
+        this.requestId = null;
+        this.pnfsId = null;
+        this.expirationTime = null;
+        this.pool = null;
+        this.state = null;
+        this.sticky = null;
     }
 
-    public Pin(Subject subject, PnfsId pnfsId)
+    public Pin(long id, PnfsId pnfsid, String requestId,
+               Date createdAt, Date expiresAt, long uid, long gid, State state, String pool, String sticky)
     {
-        _uid = Subjects.getUid(subject);
-        _gid = Subjects.getPrimaryGid(subject);
-        _creationTime = new Date();
-        _pnfsId = pnfsId.toString();
-        _state = State.PINNING;
+        this.id = id;
+        this.pnfsId = pnfsid;
+        this.requestId = requestId;
+        this.creationTime = createdAt;
+        this.expirationTime = expiresAt;
+        this.uid = uid;
+        this.gid = gid;
+        this.state = state;
+        this.pool = pool;
+        this.sticky = sticky;
     }
 
     public long getPinId()
     {
-        return _id;
+        return id;
     }
 
     public long getUid()
     {
-        return _uid;
+        return uid;
     }
 
     public long getGid()
     {
-        return _gid;
-    }
-
-    public void setRequestId(String requestId)
-    {
-        _requestId = requestId;
+        return gid;
     }
 
     public String getRequestId()
     {
-        return _requestId;
+        return requestId;
     }
 
     public Date getCreationTime()
     {
-        return _creationTime;
+        return creationTime;
     }
 
     public Date getExpirationTime()
     {
-        return _expirationTime;
-    }
-
-    public void setExpirationTime(Date date)
-    {
-        _expirationTime = date;
+        return expirationTime;
     }
 
     public PnfsId getPnfsId()
     {
-        return new PnfsId(_pnfsId);
+        return pnfsId;
     }
 
     public String getPool()
     {
-        return _pool;
-    }
-
-    public void setPool(String pool)
-    {
-        _pool = pool;
+        return pool;
     }
 
     public String getSticky()
     {
-        return _sticky;
-    }
-
-    public void setSticky(String sticky)
-    {
-        _sticky = sticky;
+        return sticky;
     }
 
     public State getState()
     {
-        return _state;
-    }
-
-    public void setState(State state)
-    {
-        _state = state;
+        return state;
     }
 
     public boolean hasRemainingLifetimeLessThan(long lifetime)
     {
         long now = System.currentTimeMillis();
-        return (_expirationTime != null) &&
-            (lifetime == -1 || _expirationTime.before(new Date(now + lifetime)));
+        return (expirationTime != null) &&
+               (lifetime == -1 || expirationTime.before(new Date(now + lifetime)));
     }
 
     @Override
     public String toString()
     {
         StringBuilder s = new StringBuilder();
-        s.append(String.format("[%d] %s", _id, _pnfsId));
-        if (_requestId != null) {
-            s.append(" (").append(_requestId).append(')');
+        s.append(String.format("[%d] %s", id, pnfsId));
+        if (requestId != null) {
+            s.append(" (").append(requestId).append(')');
         }
-        s.append(" by ").append(_uid).append(':').append(_gid);
-        s.append(String.format(" %tF %<tT", _creationTime));
-        if (_expirationTime != null) {
-            s.append(String.format(" to %tF %<tT", _expirationTime));
+        s.append(" by ").append(uid).append(':').append(gid);
+        s.append(String.format(" %tF %<tT", creationTime));
+        if (expirationTime != null) {
+            s.append(String.format(" to %tF %<tT", expirationTime));
         }
-        s.append(" is ").append(_state);
-        if (_pool != null) {
-            s.append(" on ").append(_pool).append(':').append(_sticky);
+        s.append(" is ").append(state);
+        if (pool != null) {
+            s.append(" on ").append(pool).append(':').append(sticky);
         }
         return s.toString();
     }

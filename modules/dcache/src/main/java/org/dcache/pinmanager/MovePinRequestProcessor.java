@@ -115,20 +115,24 @@ public class MovePinRequestProcessor
     protected Pin createTemporaryPin(PnfsId pnfsId, String pool)
     {
         long now = System.currentTimeMillis();
-        Pin pin = new Pin(Subjects.ROOT, pnfsId);
-        pin.setState(PINNING);
-        pin.setPool(pool);
-        pin.setSticky("PinManager-" + UUID.randomUUID().toString());
-        pin.setExpirationTime(new Date(now + 2 * _poolStub.getTimeoutInMillis()));
-        return _dao.storePin(pin);
+        return _dao.create(_dao.set()
+                                   .subject(Subjects.ROOT)
+                                   .pnfsId(pnfsId)
+                                   .state(PINNING)
+                                   .pool(pool)
+                                   .sticky("PinManager-" + UUID.randomUUID().toString())
+                                   .expirationTime(new Date(now + 2 * _poolStub.getTimeoutInMillis())));
     }
 
     @Transactional(isolation=REPEATABLE_READ)
     protected Pin swapPins(Pin pin, Pin tmpPin, Date expirationTime)
         throws CacheException
     {
-        Pin targetPin =
-            _dao.getPin(tmpPin.getPinId(), tmpPin.getSticky(), PINNING);
+        Pin targetPin = _dao.get(_dao.where()
+                                         .id(tmpPin.getPinId())
+                                         .sticky(tmpPin.getSticky())
+                                         .state(PINNING));
+
         if (targetPin == null) {
             /* The pin likely expired. We are now in a situation in
              * which we may or may not have a sticky flag on the
@@ -136,31 +140,36 @@ public class MovePinRequestProcessor
              * the safe side we create a new record in the database
              * and then abort.
              */
-            targetPin = new Pin(Subjects.ROOT, pin.getPnfsId());
-            targetPin.setPool(tmpPin.getPool());
-            targetPin.setSticky(tmpPin.getSticky());
-            targetPin.setState(UNPINNING);
-            _dao.storePin(targetPin);
+            _dao.create(_dao.set()
+                                .subject(Subjects.ROOT)
+                                .pnfsId(tmpPin.getPnfsId())
+                                .pool(tmpPin.getPool())
+                                .sticky(tmpPin.getSticky())
+                                .state(UNPINNING));
             throw new TimeoutCacheException("Move expired");
         }
 
         Pin sourcePin =
-            _dao.getPin(pin.getPinId(), pin.getSticky(), PINNED);
+                _dao.update(_dao.where()
+                                    .id(pin.getPinId())
+                                    .sticky(pin.getSticky())
+                                    .state(PINNED),
+                            _dao.set()
+                                    .pool(targetPin.getPool())
+                                    .sticky(targetPin.getSticky())
+                                    .expirationTime(expirationTime));
+
         if (sourcePin == null) {
             /* The target pin will expire by itself.
              */
             throw new CacheException("Pin no longer valid");
         }
 
-        sourcePin.setPool(targetPin.getPool());
-        sourcePin.setSticky(targetPin.getSticky());
-        sourcePin.setExpirationTime(expirationTime);
-        _dao.storePin(sourcePin);
-
-        targetPin.setPool(pin.getPool());
-        targetPin.setSticky(pin.getSticky());
-        targetPin.setState(UNPINNING);
-        return _dao.storePin(targetPin);
+        return _dao.update(targetPin,
+                    _dao.set()
+                            .pool(pin.getPool())
+                            .sticky(pin.getSticky())
+                            .state(UNPINNING));
     }
 
     private void setSticky(String poolName, PnfsId pnfsId, boolean sticky, String owner, long validTill)
@@ -205,7 +214,7 @@ public class MovePinRequestProcessor
         String source = message.getSourcePool();
         String target = message.getTargetPool();
 
-        Collection<Pin> pins = _dao.getPins(pnfsId, source);
+        Collection<Pin> pins = _dao.get(_dao.where().pnfsId(pnfsId).pool(source));
 
         /* Remove all stale sticky flags.
          */
@@ -225,7 +234,8 @@ public class MovePinRequestProcessor
                       false,
                       tmpPin.getSticky(),
                       0);
-            _dao.deletePin(tmpPin);
+
+            _dao.delete(tmpPin);
         }
 
         _log.info("Moved pins for {} from {} to {}", pnfsId, source, target);
@@ -237,8 +247,7 @@ public class MovePinRequestProcessor
         messageArrived(PinManagerExtendPinMessage message)
         throws CacheException, InterruptedException
     {
-        Pin pin = _dao.getPin(message.getFileAttributes().getPnfsId(),
-                              message.getPinId());
+        Pin pin = _dao.get(_dao.where().pnfsId(message.getFileAttributes().getPnfsId()).id(message.getPinId()));
         if (pin == null) {
             throw new InvalidMessageCacheException("Pin does not exist");
         } else if (!_pdp.canExtend(message.getSubject(), pin)) {

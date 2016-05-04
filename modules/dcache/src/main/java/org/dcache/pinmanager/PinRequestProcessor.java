@@ -4,6 +4,7 @@ package org.dcache.pinmanager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.Subject;
@@ -530,14 +531,14 @@ public class PinRequestProcessor
         return new Date(now + 2 * timeout);
     }
 
-    @Transactional
+    @Transactional(isolation = REPEATABLE_READ)
     protected PinTask createTask(PinManagerPinMessage message,
                                  MessageReply<PinManagerPinMessage> reply)
     {
         PnfsId pnfsId = message.getFileAttributes().getPnfsId();
 
         if (message.getRequestId() != null) {
-            Pin pin = _dao.getPin(pnfsId, message.getRequestId());
+            Pin pin = _dao.get(_dao.where().pnfsId(pnfsId).requestId(message.getRequestId()));
             if (pin != null) {
                 /* In this case the request is a resubmission. If the
                  * previous pin completed then use it. Otherwise abort the
@@ -549,63 +550,50 @@ public class PinRequestProcessor
                     return null;
                 }
 
-                pin.setState(UNPINNING);
-                pin.setRequestId(null);
-                _dao.storePin(pin);
+                _dao.update(pin, _dao.set().state(UNPINNING).requestId(null));
             }
         }
 
-        Pin pin = new Pin(message.getSubject(), pnfsId);
-        pin.setRequestId(message.getRequestId());
-        pin.setSticky("PinManager-" + UUID.randomUUID().toString());
-        pin.setExpirationTime(getExpirationTimeForPoolSelection());
+        Pin pin = _dao.create(_dao.set()
+                                      .subject(message.getSubject())
+                                      .state(PINNING)
+                                      .pnfsId(pnfsId)
+                                      .requestId(message.getRequestId())
+                                      .sticky("PinManager-" + UUID.randomUUID().toString())
+                                      .expirationTime(getExpirationTimeForPoolSelection()));
 
-        return new PinTask(message, reply, _dao.storePin(pin));
+        return new PinTask(message, reply, pin);
     }
 
-    /**
-     * Load the pin belonging to the PinTask.
-     *
-     * @throw CacheException if the pin no longer exists or is no
-     *                       longer in PINNING.
-     */
-    protected Pin loadPinBelongingTo(PinTask task)
-        throws CacheException
+    private void updateTask(PinTask task, PinDao.PinUpdate update) throws CacheException
     {
-        Pin pin = _dao.getPin(task.getPinId(), task.getSticky(), PINNING);
+        Pin pin = _dao.update(_dao.where().id(task.getPinId()).sticky(task.getSticky()).state(PINNING), update);
         if (pin == null) {
             throw new CacheException("Operation was aborted");
         }
-        return pin;
+        task.setPin(pin);
     }
+
 
     @Transactional(isolation=REPEATABLE_READ)
     protected void refreshTimeout(PinTask task, Date date)
         throws CacheException
     {
-        Pin pin = loadPinBelongingTo(task);
-        pin.setExpirationTime(date);
-        task.setPin(_dao.storePin(pin));
+        updateTask(task, _dao.set().expirationTime(date));
     }
 
     @Transactional(isolation=REPEATABLE_READ)
     protected void setPool(PinTask task, String pool)
         throws CacheException
     {
-        Pin pin = loadPinBelongingTo(task);
-        pin.setExpirationTime(getExpirationTimeForSettingFlag());
-        pin.setPool(pool);
-        task.setPin(_dao.storePin(pin));
+        updateTask(task, _dao.set().expirationTime(getExpirationTimeForSettingFlag()).pool(pool));
     }
 
     @Transactional(isolation=REPEATABLE_READ)
     protected void setToPinned(PinTask task)
         throws CacheException
     {
-        Pin pin = loadPinBelongingTo(task);
-        pin.setExpirationTime(task.getExpirationTime());
-        pin.setState(PINNED);
-        task.setPin(_dao.storePin(pin));
+        updateTask(task, _dao.set().expirationTime(task.getExpirationTime()).state(PINNED));
     }
 
     @Transactional
@@ -621,10 +609,11 @@ public class PinRequestProcessor
              * cover this case we delete the old record and create a
              * fresh one in UNPINNING.
              */
-            _dao.deletePin(task.getPin());
-            Pin pin = new Pin(task.getSubject(), task.getPnfsId());
-            pin.setState(UNPINNING);
-            _dao.storePin(pin);
+            _dao.delete(task.getPin());
+            _dao.create(_dao.set()
+                                .subject(task.getSubject())
+                                .pnfsId(task.getPnfsId())
+                                .state(UNPINNING));
         } else {
             /* We didn't create a sticky flag yet, so there is no
              * reason to keep the record. It will expire by itself,
@@ -632,7 +621,7 @@ public class PinRequestProcessor
              * tickets from admins wondering why they have records
              * staying in PINNING.
              */
-            _dao.deletePin(task.getPin());
+            _dao.delete(task.getPin());
         }
     }
 }

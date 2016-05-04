@@ -5,13 +5,6 @@
                         http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
                         version="1.0">
 
-    <persistence-unit name="PinManager">
-      <mapping-file>org/dcache/pinmanager/model/package.jdo</mapping-file>
-      <properties>
-        <property name="datanucleus.identifier.case" value="MixedCase"/>
-      </properties>
-    </persistence-unit>
-
     <persistence-unit name="AlarmsXML">
       <mapping-file>org/dcache/alarms/dao/package.jdo</mapping-file>
     </persistence-unit>

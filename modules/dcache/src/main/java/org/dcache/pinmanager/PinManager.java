@@ -7,6 +7,7 @@ import org.springframework.dao.DataAccessException;
 
 import javax.jdo.JDOException;
 
+import java.util.Date;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +21,7 @@ import org.dcache.util.FireAndForgetTask;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
 
 public class PinManager
     implements CellMessageReceiver
@@ -102,7 +104,7 @@ public class PinManager
 
     public PnfsDeleteEntryNotificationMessage messageArrived(PnfsDeleteEntryNotificationMessage message)
     {
-        _dao.deletePin(message.getPnfsId());
+        _dao.delete(_dao.where().pnfsId(message.getPnfsId()));
         return message;
     }
 
@@ -112,7 +114,11 @@ public class PinManager
         public void run()
         {
             try {
-                _dao.expirePins();
+                _dao.update(_dao.where()
+                                    .expirationTimeBefore(new Date())
+                                    .stateIsNot(UNPINNING),
+                            _dao.set().
+                                    state(UNPINNING));
             } catch (JDOException | DataAccessException e) {
                 _log.error("Database failure while expiring pins: {}",
                            e.getMessage());

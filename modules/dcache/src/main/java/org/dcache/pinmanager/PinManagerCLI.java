@@ -210,14 +210,14 @@ public class PinManagerCLI
             if (s != null) {
                 Long id = Longs.tryParse(s);
                 if (id != null) {
-                    Pin pin = _dao.getPin(id);
+                    Pin pin = _dao.get(_dao.where().id(id));
                     if (pin != null) {
                         return pin.toString();
                     }
                 }
-                pins = _dao.getPins(new PnfsId(s));
+                pins = _dao.get(_dao.where().pnfsId((new PnfsId(s))));
             } else {
-                pins = _dao.getPins();
+                pins = _dao.get(_dao.where());
             }
 
             StringBuilder out = new StringBuilder();

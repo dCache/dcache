@@ -73,23 +73,17 @@ public class UnpinProcessor implements Runnable
     }
 
     @Transactional
-    protected void unpin(final Semaphore idle, final Executor executor)
+    protected void unpin(final Semaphore idle, final Executor executor) throws InterruptedException
     {
-        _dao.all(Pin.State.UNPINNING, pin -> upin(idle, executor, pin));
+        _dao.foreach(_dao.where().state(Pin.State.UNPINNING), pin -> upin(idle, executor, pin));
     }
 
-    private boolean upin(Semaphore idle, Executor executor, Pin pin)
+    private void upin(Semaphore idle, Executor executor, Pin pin) throws InterruptedException
     {
-        try {
-            if (pin.getPool() == null) {
-                _dao.deletePin(pin);
-            } else {
-                clearStickyFlag(idle, pin, executor);
-            }
-
-            return true;
-        } catch (InterruptedException e) {
-            return false;
+        if (pin.getPool() == null) {
+            _dao.delete(pin);
+        } else {
+            clearStickyFlag(idle, pin, executor);
         }
     }
 
@@ -116,7 +110,7 @@ public class UnpinProcessor implements Runnable
                                  public void success(PoolSetStickyMessage msg)
                                  {
                                      idle.release();
-                                     _dao.deletePin(pin);
+                                     _dao.delete(pin);
                                  }
 
                                  @Override
@@ -125,7 +119,7 @@ public class UnpinProcessor implements Runnable
                                      idle.release();
                                      switch (rc) {
                                      case CacheException.FILE_NOT_IN_REPOSITORY:
-                                         _dao.deletePin(pin);
+                                         _dao.delete(pin);
                                          break;
                                      default:
                                          _logger.warn("Failed to clear sticky flag: {} [{}]", error, rc);
