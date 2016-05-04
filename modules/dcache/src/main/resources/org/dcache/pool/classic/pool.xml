@@ -28,7 +28,7 @@
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
       <description>Undeliverable message logger</description>
-      <property name="excludedDestinations" value="${pool.destination.heartbeat}"/>
+      <property name="excludedDestinations" value="${pool.destination.heartbeat},${pool.destination.corrupt-file}"/>
   </bean>
 
   <!-- The lock protects the pool from being accessed by multiple
