@@ -17,6 +17,7 @@
  */
 package org.dcache.zookeeper.service;
 
+import com.google.common.base.Strings;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
@@ -68,7 +69,7 @@ public class ZooKeeperCell extends AbstractCell
     @Option(name = "max-client-connections", required = true)
     protected int maxClientConnections;
 
-    @Option(name = "listen", required = true)
+    @Option(name = "listen", required = false)
     protected String address;
 
     @Option(name = "port", required = true)
@@ -89,7 +90,7 @@ public class ZooKeeperCell extends AbstractCell
         super.startUp();
 
         InetSocketAddress socketAddress =
-                address.equals("any") ? new InetSocketAddress(port) : new InetSocketAddress(address, port);
+                Strings.isNullOrEmpty(address) ? new InetSocketAddress(port) : new InetSocketAddress(address, port);
 
         zkServer = new ZooKeeperServer();
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);

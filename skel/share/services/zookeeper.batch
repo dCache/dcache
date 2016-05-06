@@ -9,7 +9,7 @@
 
 check -strong zookeeper.cell.name
 check zookeeper.cell.consume
-check -strong zookeeper.net.listen
+check zookeeper.net.listen
 check -strong zookeeper.net.port
 check -strong zookeeper.data-dir
 check -strong zookeeper.data-log-dir
