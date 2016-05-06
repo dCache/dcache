@@ -765,7 +765,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public String toString()
         {
-            return super.toString() + ' ' + getFileAttributes().getPnfsId();
+            return super.toString() + ' ' + getFileAttributes().getPnfsId() + ' ' + getFileAttributes().getStorageClass();
         }
 
         @Override
@@ -1080,7 +1080,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public String toString()
         {
-            return super.toString() + ' ' + getFileAttributes().getPnfsId();
+            return super.toString() + ' ' + getFileAttributes().getPnfsId() + ' ' + getFileAttributes().getStorageClass();
         }
     }
 
