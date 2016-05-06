@@ -118,6 +118,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 LOG.warn("{} for path {} and user {}", e.getMessage(), request.getPathInfo(),
                         NetLoggerBuilder.describeSubject(subject));
                 if (Subjects.isNobody(subject)) {
+                    response.setHeader("WWW-Authenticate", "Basic realm=\"" + getRealm() + "\"");
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 } else {
                     response.sendError(HttpServletResponse.SC_FORBIDDEN);
