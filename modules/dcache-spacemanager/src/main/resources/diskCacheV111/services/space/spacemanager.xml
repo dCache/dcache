@@ -101,6 +101,7 @@
                      ${spacemanager.link-groups-update.period},
                     '${spacemanager.link-groups-update.period.unit}')}" />
     <property name="authorizationFileName" value="${spacemanager.authz.link-group-file-name}" />
+    <property name="serviceName" value="${spacemanager.cell.service}"/>
   </bean>
 
   <bean id="cli" class="diskCacheV111.services.space.SpaceManagerCommandLineInterface">

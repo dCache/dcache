@@ -1,5 +1,11 @@
 package diskCacheV111.services.space;
 
+import com.google.common.base.Throwables;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.leader.LeaderLatch;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.curator.utils.ZKPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -18,6 +24,7 @@ import java.text.ParseException;
 import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
@@ -28,12 +35,13 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 
+import org.dcache.cells.CuratorFrameworkAware;
 import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.poolmanager.Utils;
 
 public class LinkGroupLoader
-        extends AbstractCellComponent implements Runnable, CellCommandListener
+        extends AbstractCellComponent implements CellCommandListener, CuratorFrameworkAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkGroupLoader.class);
     private static final long EAGER_LINKGROUP_UPDATE_PERIOD = 1000;
@@ -49,6 +57,9 @@ public class LinkGroupLoader
     private SpaceManagerDatabase db;
 
     private ScheduledExecutorService executor;
+    private String zkPath;
+    private LeaderLatch leaderLatch;
+    private CuratorFramework client;
 
     @Required
     public void setUpdateLinkGroupsPeriod(long updateLinkGroupsPeriod)
@@ -74,9 +85,21 @@ public class LinkGroupLoader
         this.authorizationFileName = authorizationFileName;
     }
 
+    @Required
+    public void setServiceName(String serviceName)
+    {
+        zkPath = getZooKeeperLeaderPath(serviceName);
+    }
+
     public long getLatestUpdateTime()
     {
         return latestUpdateTime;
+    }
+
+    @Override
+    public void setCuratorFramework(CuratorFramework client)
+    {
+        this.client = client;
     }
 
     public void start()
@@ -87,7 +110,19 @@ public class LinkGroupLoader
     @Override
     public void afterStart()
     {
-        executor.schedule(this, 0, TimeUnit.MILLISECONDS);
+        try {
+            leaderLatch = new LeaderLatch(client, zkPath, getCellAddress().toString());
+            leaderLatch.addListener(new LeaderListener());
+            leaderLatch.start();
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    @Override
+    public void beforeStop()
+    {
+        CloseableUtils.closeQuietly(leaderLatch);
     }
 
     public void stop()
@@ -101,24 +136,6 @@ public class LinkGroupLoader
     public void getInfo(PrintWriter printWriter) {
         printWriter.append("updateLinkGroupsPeriod = ").println(updateLinkGroupsPeriod);
         printWriter.append("authorizationFileName = ").println(authorizationFileName);
-    }
-
-    @Override
-    public void run() {
-        long period = EAGER_LINKGROUP_UPDATE_PERIOD;
-        try {
-            if (updateLinkGroups() > 0) {
-                period = updateLinkGroupsPeriod;
-            }
-        } catch (RemoteAccessException | DataAccessException | TransactionException e) {
-            LOGGER.error("Link group update failed: {}", e.getMessage());
-        } catch (RuntimeException e) {
-            LOGGER.error("Link group update failed: " + e.toString(), e);
-        } catch (InterruptedException e) {
-            LOGGER.trace("update LinkGroup thread has been interrupted");
-        } finally {
-            executor.schedule(this, period, TimeUnit.MILLISECONDS);
-        }
     }
 
     private void loadLinkGroupAuthorizationFile() {
@@ -216,5 +233,53 @@ public class LinkGroupLoader
             int updated = updateLinkGroups();
             return updated + (updated == 1 ? " link group " : " link groups ") + "updated.";
         }
+    }
+
+    private class LeaderListener implements LeaderLatchListener, Runnable
+    {
+        private ScheduledFuture<?> future;
+
+        @Override
+        public synchronized void isLeader()
+        {
+            future = executor.schedule(this, 1, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public synchronized void notLeader()
+        {
+            future.cancel(false);
+            future = null;
+        }
+
+        private synchronized void reschedule(long period)
+        {
+            if (future != null) {
+                future = executor.schedule(this, period, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        @Override
+        public void run() {
+            long period = EAGER_LINKGROUP_UPDATE_PERIOD;
+            try {
+                if (updateLinkGroups() > 0) {
+                    period = updateLinkGroupsPeriod;
+                }
+            } catch (RemoteAccessException | DataAccessException | TransactionException e) {
+                LOGGER.error("Link group update failed: {}", e.getMessage());
+            } catch (RuntimeException e) {
+                LOGGER.error("Link group update failed: " + e.toString(), e);
+            } catch (InterruptedException e) {
+                LOGGER.trace("update LinkGroup thread has been interrupted");
+            } finally {
+                reschedule(period);
+            }
+        }
+    }
+
+    private static String getZooKeeperLeaderPath(String serviceName)
+    {
+        return ZKPaths.makePath("/dcache/spacemanager", serviceName, "leader");
     }
 }

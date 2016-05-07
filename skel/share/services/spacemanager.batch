@@ -5,6 +5,7 @@
 onerror shutdown
 
 onerror shutdown
+check -strong spacemanager.cell.service
 check -strong spacemanager.cell.name
 check spacemanager.cell.consume
 check spacemanager.cell.subscribe
