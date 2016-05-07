@@ -51,13 +51,14 @@
   </bean>
 
   <bean id="pinmanager" class="org.dcache.pinmanager.PinManager"
-        init-method="init">
+        init-method="start" destroy-method="stop">
       <property name="expirationPeriod" value="${pinmanager.expiration-period}"/>
       <property name="expirationPeriodUnit" value="${pinmanager.expiration-period.unit}"/>
       <property name="poolStub" ref="pool-stub"/>
       <property name="dao" ref="dao"/>
       <property name="executor" ref="scheduled-executor"/>
       <property name="poolMonitor" ref="pool-monitor"/>
+      <property name="serviceName" value="${pinmanager.cell.service}"/>
   </bean>
 
   <bean id="pin-processor" class="org.dcache.pinmanager.PinRequestProcessor">

@@ -1,5 +1,6 @@
 onerror shutdown
 
+check -strong pinmanager.cell.service
 check -strong pinmanager.cell.name
 check pinmanager.cell.consume
 check pinmanager.cell.subscribe
