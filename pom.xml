@@ -62,15 +62,15 @@
 
         <version.slf4j>1.7.15</version.slf4j>
         <version.milton>2.7.1.5</version.milton>
-        <version.spring>4.2.4.RELEASE</version.spring>
+        <version.spring>4.2.6.RELEASE</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
-        <version.aspectj>1.8.8</version.aspectj>
+        <version.aspectj>1.8.9</version.aspectj>
         <version.smc>6.3.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
-        <version.jetty>9.3.7.v20160115</version.jetty>
-        <version.wicket>7.2.0</version.wicket>
+        <version.jetty>9.3.8.v20160314</version.jetty>
+        <version.wicket>7.3.0</version.wicket>
         <version.xrootd4j>3.0.5</version.xrootd4j>
-        <version.jersey>2.22.1</version.jersey>
+        <version.jersey>2.22.2</version.jersey>
 
         <!-- BouncyCastle seems to change the naming convention of
              their ArtifactId fairly often.  Here is a summary of
@@ -322,12 +322,12 @@
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
-                <version>2.4.3</version>
+                <version>2.4.6</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>9.4.1207.jre7</version>
+                <version>9.4.1208</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -357,7 +357,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http</artifactId>
-                <version>4.0.34.Final</version>
+                <version>4.0.36.Final</version>
             </dependency>
             <dependency>
                 <groupId>com.sleepycat</groupId>
@@ -755,7 +755,7 @@
             <dependency>
               <groupId>org.apache.commons</groupId>
               <artifactId>commons-compress</artifactId>
-              <version>1.10</version>
+              <version>1.11</version>
             </dependency>
 
             <dependency>
@@ -777,7 +777,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.5.1</version>
+                <version>4.5.2</version>
                 <exclusions>
                     <exclusion>
                         <groupId>commons-logging</groupId>
