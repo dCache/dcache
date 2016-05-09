@@ -402,7 +402,7 @@
                       oldColumnName="totaltime"
                       tableName="billinginfo_tm_daily"/>
     </changeSet>
-    <changeSet id="6.4.1" author="arossi" context="billing">
+    <changeSet id="6.4.1.1" author="litvinse">
         <preConditions onError="WARN" onFail="WARN">
             <sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
         </preConditions>
@@ -412,6 +412,7 @@
             DECLARE
             max_date timestamp;
             curr_date timestamp;
+	    counter bigint;
             BEGIN
             curr_date := current_date;
             SELECT max(date) into max_date FROM billinginfo_wr_daily;
@@ -428,7 +429,11 @@
                 count(*), coalesce(sum(fullsize),0),
                 coalesce(sum(transfersize),0)
                 from billinginfo where datestamp between max_date+interval'1 day' and curr_date
-                and isnew='t' and errorcode=0 and p2p != 't' group by d;
+                and isnew='t' and errorcode=0 and p2p != 't' group by d RETURNING count INTO counter;
+	        IF counter is NULL THEN
+		     INSERT INTO billinginfo_wr_daily (date,count,size,transferred)
+	             VALUES (curr_date,0,0,0);
+		END IF;
             END IF;
             RETURN NULL;
             END;
@@ -440,6 +445,7 @@
             DECLARE
             max_date timestamp;
             curr_date timestamp;
+	    counter bigint;
             BEGIN
             curr_date := current_date;
             SELECT max(date) into max_date FROM billinginfo_rd_daily;
@@ -456,7 +462,11 @@
                 count(*), coalesce(sum(fullsize),0),
                 coalesce(sum(transfersize),0)
                 from billinginfo where datestamp between max_date+interval'1 day' and curr_date
-                and isnew='f' and errorcode=0 and p2p != 't' group by d;
+                and isnew='f' and errorcode=0 and p2p != 't' group by d RETURNING count INTO counter;
+	        IF counter is NULL THEN
+		     INSERT INTO billinginfo_rd_daily (date,count,size,transferred)
+	             VALUES (curr_date,0,0,0);
+		END IF;
             END IF;
             RETURN NULL;
             END;
@@ -468,6 +478,7 @@
             DECLARE
             max_date timestamp;
             curr_date timestamp;
+	    counter bigint;
             BEGIN
             curr_date := current_date;
             SELECT max(date) into max_date FROM billinginfo_p2p_daily;
@@ -484,7 +495,11 @@
                 count(*), coalesce(sum(fullsize),0),
                 coalesce(sum(transfersize),0)
                 from billinginfo where datestamp between max_date+interval'1 day' and curr_date
-                and errorcode=0 and p2p='t' group by d;
+                and errorcode=0 and p2p='t' group by d RETURNING count INTO counter;
+	        IF counter is NULL THEN
+		     INSERT INTO billinginfo_p2p_daily (date,count,size,transferred)
+	             VALUES (curr_date,0,0,0);
+		END IF;
             END IF;
             RETURN NULL;
             END;
@@ -496,6 +511,7 @@
             DECLARE
             max_date timestamp;
             curr_date timestamp;
+	    counter bigint;
             BEGIN
             curr_date := current_date;
             SELECT max(date) into max_date FROM billinginfo_tm_daily;
@@ -512,7 +528,11 @@
                 count(*),
                 min(connectiontime),max(connectiontime), avg(connectiontime)
                 from billinginfo where datestamp between max_date+interval'1 day' and curr_date
-                and errorcode=0 group by d;
+                and errorcode=0 group by d RETURNING count INTO counter;
+	        IF counter is NULL THEN
+		     INSERT INTO billinginfo_tm_daily (date,count,minimum,maximum,average)
+	             VALUES (curr_date,0,0,0,0);
+		END IF;
             END IF;
             RETURN NULL;
             END;
@@ -525,6 +545,7 @@
             DECLARE
             max_date timestamp;
             curr_date timestamp;
+	    counter bigint;
             BEGIN
             curr_date := current_date;
             SELECT max(date) into max_date FROM storageinfo_rd_daily;
@@ -537,7 +558,11 @@
                 INSERT INTO storageinfo_rd_daily (date,count,size) select date(datestamp) as d,
                 count(*), coalesce(sum(fullsize),0)
                 from storageinfo where datestamp between max_date+interval'1 day' and curr_date
-                and action='restore' and errorcode=0 group by d;
+                and action='restore' and errorcode=0 group by d RETURNING count INTO counter;
+	        IF counter is NULL THEN
+		     INSERT INTO storageinfo_rd_daily (date,count,size)
+	             VALUES (curr_date,0,0);
+		END IF;
             END IF;
             RETURN NULL;
             END;
@@ -549,6 +574,7 @@
             DECLARE
             max_date timestamp;
             curr_date timestamp;
+	    counter bigint;
             BEGIN
             curr_date := current_date;
             SELECT max(date) into max_date FROM storageinfo_wr_daily;
@@ -561,7 +587,11 @@
                 INSERT INTO storageinfo_wr_daily (date,count,size) select date(datestamp) as d,
                 count(*), coalesce(sum(fullsize),0)
                 from storageinfo where datestamp between max_date+interval'1 day' and curr_date
-                and action='store' and errorcode=0 group by d;
+                and action='store' and errorcode=0 group by d RETURNING count INTO counter;
+	        IF counter is NULL THEN
+		     INSERT INTO storageinfo_wr_daily (date,count,size)
+                     VALUES (curr_date,0,0);
+		END IF;
             END IF;
             RETURN NULL;
             END;
@@ -573,6 +603,7 @@
             DECLARE
             max_date timestamp;
             curr_date timestamp;
+	    counter bigint;
             BEGIN
             curr_date := current_date;
             SELECT max(date) into max_date FROM hitinfo_daily;
@@ -589,7 +620,11 @@
                 count(nullif(filecached, 't')) as notcached, count(nullif(filecached, 'f')) as cached
                 from hitinfo where datestamp
                 between max_date+interval'1 day' and curr_date
-                and errorcode=0 group by d;
+                and errorcode=0 group by d RETURNING count INTO counter;
+	        IF counter is NULL THEN
+		     INSERT INTO hitinfo_daily(date, count, notcached, cached)
+		     VALUES (curr_date,0,0,0);
+		END IF;
             END IF;
             RETURN NULL;
             END;
