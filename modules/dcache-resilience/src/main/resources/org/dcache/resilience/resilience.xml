@@ -46,7 +46,7 @@
         <property name="dataSource" ref="data-source"/>
     </bean>
 
-    <bean id="file-system" class="org.dcache.chimera.JdbcFs">
+    <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
       <description>Chimera</description>
       <constructor-arg ref="data-source"/>
       <constructor-arg ref="tx-manager"/>
@@ -56,6 +56,13 @@
       <description>Storage info extractor</description>
       <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('${resilience.default-access-latency}') }"/>
       <constructor-arg value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${resilience.default-retention-policy}') }"/>
+    </bean>
+
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+      <description>Database schema manager</description>
+      <property name="dataSource" ref="data-source"/>
+      <property name="changeLog" value="classpath:${resilience.db.schema.changelog}"/>
+      <property name="shouldUpdate" value="${resilience.db.schema.auto}"/>
     </bean>
 
     <bean id="name-space-provider"
