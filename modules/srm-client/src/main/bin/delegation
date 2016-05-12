@@ -1,6 +1,6 @@
 #!/bin/sh
 
-jar_dir=$(cd $(dirname $0)/../share/srm/lib; pwd)
+jar_dir=$(cd $(dirname $(readlink -f $0))/../share/srm/lib; pwd)
 
 conf_dir=$(cd $jar_dir/../conf;pwd)
 
