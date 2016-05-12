@@ -320,9 +320,6 @@
                         </bean>
                     </property>
                 </bean>
-
-                <!-- Put the dface handler here -->
-
                 <bean class="org.dcache.webdav.MiltonHandler">
                     <property name="httpManager" ref="http-manager"/>
                 </bean>
