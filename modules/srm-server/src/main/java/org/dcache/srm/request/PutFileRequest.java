@@ -263,8 +263,10 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         fileStatus.setSURL(anSurl);
         //fileStatus.set
 
+        TReturnStatus returnStatus = getReturnStatus();
+
         String turlstring = getTurlString();
-        if(turlstring != null) {
+        if(turlstring != null && TStatusCode.SRM_SPACE_AVAILABLE.equals(returnStatus.getStatusCode())) {
             org.apache.axis.types.URI transferURL;
             try {
                 transferURL = new org.apache.axis.types.URI(turlstring);
@@ -277,7 +279,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
         fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
         fileStatus.setRemainingPinLifetime((int)getRemainingLifetime()/1000);
-        TReturnStatus returnStatus = getReturnStatus();
         if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
             //SRM_SPACE_LIFETIME_EXPIRED is illeal on the file level,
             // but we use it to correctly calculate the request level status
