@@ -27,7 +27,10 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -51,10 +54,16 @@ import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -77,20 +86,31 @@ import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SrmRequest;
 import org.dcache.srm.SrmResponse;
 import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
+import org.dcache.srm.v2_2.ArrayOfTRequestSummary;
+import org.dcache.srm.v2_2.ArrayOfTRequestTokenReturn;
+import org.dcache.srm.v2_2.SrmGetRequestSummaryRequest;
+import org.dcache.srm.v2_2.SrmGetRequestSummaryResponse;
+import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
 import org.dcache.srm.v2_2.SrmPingResponse;
 import org.dcache.srm.v2_2.TExtraInfo;
+import org.dcache.srm.v2_2.TRequestSummary;
+import org.dcache.srm.v2_2.TRequestTokenReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.NetLoggerBuilder;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.*;
 import static org.dcache.srm.v2_2.TStatusCode.*;
 
 /**
@@ -325,22 +345,234 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                             String requestName, Object request)
             throws CacheException, InterruptedException, SRMException, NoRouteToCellException
     {
-        SrmRequest msg =
-                new SrmRequest(login.getSubject(), login.getLoginAttributes(), credential, remoteHost,
-                               requestName, request);
+        Function<Object,SrmRequest> toMessage =
+                req -> new SrmRequest(login.getSubject(), login.getLoginAttributes(), credential,
+                                      remoteHost, requestName, req);
         try {
-            CellPath address = mapRequest(request);
-            ListenableFuture<SrmResponse> future =
-                    (address == null)
-                    ? srmManagerStub.send(msg, SrmResponse.class)
-                    : srmManagerStub.send(address, msg, SrmResponse.class);
-            return mapResponse(future.get());
+            switch (requestName) {
+            case "srmGetRequestTokens": {
+                List<ListenableFuture<SrmResponse>> futures =
+                        backends.getCurrentData().stream()
+                                .map(this::toCellPath)
+                                .map(path -> srmManagerStub.send(path, toMessage.apply(request), SrmResponse.class))
+                                .collect(toList());
+                return mapGetRequestTokensResponse(Futures.allAsList(futures).get());
+            }
+            case "srmGetRequestSummary": {
+                SrmGetRequestSummaryRequest summaryRequest = (SrmGetRequestSummaryRequest) request;
+                String[] requestTokens = summaryRequest.getArrayOfRequestTokens().getStringArray();
+                if (requestTokens == null || requestTokens.length == 0) {
+                    throw new SRMInvalidRequestException("arrayOfRequestTokens is empty");
+                }
+                Map<String, ListenableFuture<TRequestSummary>> futureMap =
+                        provideRequestSummary(toMessage, summaryRequest.getAuthorizationID(), requestTokens);
+                return toGetRequestSummaryResponse(futureMap);
+            }
+            default: {
+                CellPath address = mapRequest(request);
+                ListenableFuture<SrmResponse> future =
+                        (address == null)
+                        ? srmManagerStub.send(toMessage.apply(request), SrmResponse.class)
+                        : srmManagerStub.send(address, toMessage.apply(request), SrmResponse.class);
+                return mapResponse(future.get());
+            }
+            }
         } catch (ExecutionException e) {
             Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
             throw Throwables.propagate(e.getCause());
         }
+    }
+
+    private SrmGetRequestSummaryResponse toGetRequestSummaryResponse(
+            Map<String, ListenableFuture<TRequestSummary>> futureMap)
+            throws InterruptedException, CacheException, NoRouteToCellException
+    {
+        boolean hasFailure = false;
+        boolean hasSuccess = false;
+        List<TRequestSummary> summaries = new ArrayList<>();
+        for (Map.Entry<String, ListenableFuture<TRequestSummary>> entry : futureMap.entrySet()) {
+            try {
+                summaries.add(entry.getValue().get());
+                hasSuccess = true;
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof SRMException) {
+                    summaries.add(createRequestSummaryFailure(
+                            entry.getKey(), ((SRMException) cause).getStatusCode(), cause.getMessage()));
+                    hasFailure = true;
+                } else {
+                    Throwables.propagateIfInstanceOf(cause, CacheException.class);
+                    Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
+                    throw Throwables.propagate(cause);
+                }
+            }
+        }
+
+        TReturnStatus status;
+        if (!hasFailure) {
+            status = new TReturnStatus(SRM_SUCCESS, "All request statuses have been retrieved.");
+        } else if (hasSuccess) {
+            status = new TReturnStatus(SRM_PARTIAL_SUCCESS, "Some request statuses have been retrieved.");
+        } else {
+            status = new TReturnStatus(SRM_FAILURE, "No request statuses have been retrieved.");
+        }
+        return new SrmGetRequestSummaryResponse(
+                status, new ArrayOfTRequestSummary(summaries.stream().toArray(TRequestSummary[]::new)));
+    }
+
+    /**
+     * Provide request summaries for a collection of request tokens. The result is
+     * provided as a map from request token to a future request summary as the result is
+     * typically fetched asynchronously from the backends.
+     */
+    private Map<String, ListenableFuture<TRequestSummary>> provideRequestSummary(
+            Function<Object,SrmRequest> toMessage, String authorizationId, String[] tokens)
+    {
+        Function<String, Optional<CellPath>> optionalBackendOf =
+                token -> Optional.ofNullable(hasPrefix(token) ? backendOf(token) : null);
+        Map<Optional<CellPath>, Set<String>> tokensByBackend =
+                Stream.of(tokens).collect(groupingBy(optionalBackendOf, toSet()));
+
+        return tokensByBackend.entrySet().stream()
+                .map(e -> e.getKey().isPresent()
+                          ? provideRequestSummaryForTokenWithBackend(toMessage, authorizationId, e.getValue(), e.getKey().get())
+                          : provideRequestSummaryForTokenWithoutBackend(e.getValue()))
+                .flatMap(m -> m.entrySet().stream())
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /**
+     * Returns a map of responses for a list of tokens that cannot be mapped to a backend.
+     */
+    private Map<String, ? extends ListenableFuture<TRequestSummary>> provideRequestSummaryForTokenWithoutBackend(
+            Collection<String> tokens)
+    {
+        return tokens.stream().collect(toMap(Function.identity(), this::provideRequestSummaryForTokenWithoutBackend));
+    }
+
+    /**
+     * Returns a response for a token that cannot be mapped to a backend. The response depends
+     * on whether the token has a valid backend id prefix (backend if offline) or not (token is invalid).
+     */
+    private ListenableFuture<TRequestSummary> provideRequestSummaryForTokenWithoutBackend(String token)
+    {
+        if (!hasPrefix(token)) {
+            return Futures.immediateFailedFuture(new SRMInvalidRequestException("No such request token: " + token));
+        }
+        return Futures.immediateFailedFuture(
+                new SRMInvalidRequestException("Backend for request " + token + " is currently unavailable."));
+    }
+
+    /**
+     * Returns a map of summaries from backends for a list of tokens.
+     */
+    private Map<String, ? extends ListenableFuture<TRequestSummary>> provideRequestSummaryForTokenWithBackend(
+            Function<Object, SrmRequest> toMessage, String authorizationId, Collection<String> tokens, CellPath backend)
+    {
+        SrmRequest msg = toMessage.apply(createRequestSummaryRequest(authorizationId, tokens));
+        ListenableFuture<SrmResponse> futureResponse = srmManagerStub.send(backend, msg, SrmResponse.class);
+        return transformToMap(tokens, futureResponse, r -> toRequestSummaries(tokens, r), this::translateBackendError);
+    }
+
+    /**
+     * Injects a summary into a settable future, translating errors that indicate failure to obtain
+     * a summary to a failure future.
+     */
+    private void translateBackendError(TRequestSummary summary, SettableFuture<TRequestSummary> future)
+    {
+        TStatusCode statusCode = summary.getStatus().getStatusCode();
+        if (statusCode == SRM_INVALID_REQUEST) {
+            future.setException(new SRMInvalidRequestException(
+                    "No such request token: " + summary.getRequestToken()));
+        } else if (statusCode == SRM_FAILURE && summary.getRequestType() == null) {
+            future.setException(new SRMException(summary.getStatus().getExplanation()));
+        } else {
+            future.set(summary);
+        }
+    }
+
+    /**
+     * Returns a backend request summary request for a list of tokens.
+     */
+    private SrmGetRequestSummaryRequest createRequestSummaryRequest(String authorizationId, Collection<String> tokens)
+    {
+        String[] backendTokens = tokens.stream().map(SrmHandler::backendTokenOf).toArray(String[]::new);
+        return new SrmGetRequestSummaryRequest(new ArrayOfString(backendTokens), authorizationId);
+    }
+
+    /**
+     * Returns a map of request summaries for a backend response.
+     */
+    private Map<String, TRequestSummary> toRequestSummaries(Collection<String> tokens, SrmResponse response)
+    {
+        TRequestSummary[] summaries = ((SrmGetRequestSummaryResponse) response.getResponse()).getArrayOfRequestSummaries().getSummaryArray();
+        Map<String, TRequestSummary> summaryByBackendToken =
+                Stream.of(summaries).collect(toMap(TRequestSummary::getRequestToken, Function.identity()));
+        return tokens.stream()
+                .collect(toMap(token -> token,
+                               token -> mapRequestSummary(token, summaryByBackendToken.get(backendTokenOf(token)))));
+    }
+
+    /**
+     * Map a backend request summary to a frontend request summary.
+     */
+    private TRequestSummary mapRequestSummary(String token, TRequestSummary summary)
+    {
+        return (summary == null)
+               ? createRequestSummaryFailure(token, SRM_INVALID_REQUEST, "No such request token: " + token)
+               : new TRequestSummary(token, summary.getStatus(), summary.getRequestType(),
+                                     summary.getTotalNumFilesInRequest(), summary.getNumOfCompletedFiles(),
+                                     summary.getNumOfWaitingFiles(), summary.getNumOfFailedFiles());
+    }
+
+    private static TRequestSummary createRequestSummaryFailure(String token, TStatusCode status, String explanation)
+    {
+        return new TRequestSummary(token, new TReturnStatus(status, explanation),
+                                   null, null, null, null, null);
+    }
+
+    /**
+     * Transforms a future to a map of future values.
+     *
+     * The return map contains {@code keys} elements. Each key is mapped to a future value. If
+     * {@code future} fails, all returned futures fail with the same error. Otherwise {@code mapper}
+     * maps the return value of {@code future} to a map of values. {@code acceptor} is called for
+     * each value, applying the value to the settable future in the returned map.
+     *
+     * @param keys The keys of the map to return.
+     * @param future The future providing the input value.
+     * @param mapper A function that maps the future input to a map of output values.
+     * @param applicator Consumer that applies an output value to a future output value.
+     */
+    private static <K, T, V> Map<K, ? extends ListenableFuture<V>> transformToMap(
+            Collection<K> keys, ListenableFuture<T> future,
+            Function<T, Map<K, V>> mapper,
+            BiConsumer<V, SettableFuture<V>> applicator)
+    {
+        Map<K, SettableFuture<V>> result = keys.stream().collect(toMap(key -> key, key -> SettableFuture.create()));
+        Futures.addCallback(future, new FutureCallback<T>()
+        {
+            @Override
+            public void onSuccess(T t)
+            {
+                Map<K, V> map = mapper.apply(t);
+                result.forEach((key, f) -> applicator.accept(map.get(key), f));
+            }
+
+            @Override
+            public void onFailure(Throwable t)
+            {
+                result.values().forEach(f -> f.setException(t));
+            }
+        });
+        return result;
+    }
+
+    private CellPath toCellPath(ChildData data)
+    {
+        return new CellPath(new String(data.getData(), US_ASCII));
     }
 
     private CellPath mapRequest(Object request) throws SRMInternalErrorException
@@ -350,15 +582,13 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
             try {
                 Field f = field.get();
                 String token = (String) f.get(request);
-                if (token != null && token.length() > 8) {
-                    f.set(request, token.substring(8));
-
-                    String path = SrmService.getZooKeeperBackendPath(token.substring(0, 8));
-                    ChildData data = backends.getCurrentData(path);
-                    if (data == null) {
+                if (hasPrefix(token)) {
+                    f.set(request, backendTokenOf(token));
+                    CellPath path = backendOf(token);
+                    if (path == null) {
                         throw new SRMInternalErrorException("SRM backend serving this request token is currently offline.");
                     }
-                    return new CellPath(new String(data.getData(), US_ASCII));
+                    return path;
                 }
             } catch (IllegalAccessException e) {
                 Throwables.propagate(e);
@@ -367,18 +597,69 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         return null;
     }
 
+    private SrmGetRequestTokensResponse mapGetRequestTokensResponse(List<SrmResponse> responses)
+    {
+        List<TRequestTokenReturn> tokens = new ArrayList<>();
+        for (SrmResponse srmResponse : responses) {
+            SrmGetRequestTokensResponse response =
+                    (SrmGetRequestTokensResponse) srmResponse.getResponse();
+            if (response.getReturnStatus().getStatusCode() != SRM_SUCCESS) {
+                return response;
+            }
+            for (TRequestTokenReturn token : response.getArrayOfRequestTokens().getTokenArray()) {
+                tokens.add(new TRequestTokenReturn(prefix(srmResponse.getId(), token.getRequestToken()),
+                                                   token.getCreatedAtTime()));
+            }
+        }
+        ArrayOfTRequestTokenReturn arrayOfRequestTokens = new ArrayOfTRequestTokenReturn(
+                tokens.stream().toArray(TRequestTokenReturn[]::new));
+        return new SrmGetRequestTokensResponse(new TReturnStatus(SRM_SUCCESS, "Request processed successfully."), arrayOfRequestTokens);
+    }
+
     private Object mapResponse(SrmResponse response)
     {
         Object o = response.getResponse();
         Optional<Field> field = requestTokenFieldCache.getUnchecked(o.getClass());
         field.ifPresent(f -> {
             try {
-                f.set(o, response.getId() + f.get(o));
+                f.set(o, prefix(response.getId(), (String) f.get(o)));
             } catch (IllegalAccessException e) {
                 Throwables.propagate(e);
             }
         });
         return o;
+    }
+
+    private CellPath backendOf(String prefixedToken)
+    {
+        checkArgument(hasPrefix(prefixedToken));
+        String path = SrmService.getZooKeeperBackendPath(backendIdOf(prefixedToken));
+        ChildData data = backends.getCurrentData(path);
+        if (data != null) {
+            return toCellPath(data);
+        }
+        return null;
+    }
+
+    private static String backendIdOf(String prefixedToken)
+    {
+        return prefixedToken.substring(0, 8);
+    }
+
+    private static String backendTokenOf(String prefixedToken)
+    {
+        checkArgument(hasPrefix(prefixedToken));
+        return prefixedToken.substring(9);
+    }
+
+    private static boolean hasPrefix(String token)
+    {
+        return token != null && token.length() > 9 && token.charAt(8) == ':';
+    }
+
+    private static String prefix(String backend, String backendToken)
+    {
+        return backend + ":" + backendToken;
     }
 
     private Object getFailedResponse(String requestName, TStatusCode statusCode, String errorMessage)
