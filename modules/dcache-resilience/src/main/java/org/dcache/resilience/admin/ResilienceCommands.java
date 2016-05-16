@@ -284,7 +284,7 @@ public final class ResilienceCommands implements CellCommandListener {
         protected String doCall() throws Exception {
             if (strict != null) {
                 if (!"strict".equals(strict.toLowerCase())) {
-                    return "Unrecognized argument " + strict;
+                    return "Unrecognized argument '" + strict + "'.";
                 }
 
                 synchronized(futureMap) {
@@ -639,7 +639,7 @@ public final class ResilienceCommands implements CellCommandListener {
     class FileOpHistoryCommand extends ResilienceCommand {
         @Argument(required = false,
                         valueSpec = "errors",
-                        usage = "Display just the failures")
+                        usage = "Display just the failures.")
         String errors;
 
         @Option(name = "limit",
@@ -901,7 +901,7 @@ public final class ResilienceCommands implements CellCommandListener {
                                     + "or processing of pool state changes",
                     description = "Activates, deactivates, or resets the periodic  "
                                     + "checking of active pools; turns all pool  "
-                                    + "state handling on or off (start/shutdown)")
+                                    + "state handling on or off (start/shutdown).")
     class PoolControlCommand extends ResilienceCommand {
         @Argument(valueSpec = "ON|OFF|START|SHUTDOWN|RESET|RUN|INFO",
                         required = false,
@@ -918,13 +918,13 @@ public final class ResilienceCommands implements CellCommandListener {
                                         + "Amount of time which must pass since "
                                         + "the last scan of a pool for it to be "
                                         + "scanned again.")
-        String window;
+        Integer window;
 
         @Option(name = "sweep",
                         usage = "With reset mode (one of window|sweep|down|restart). "
                                         + "How often a sweep of the pool "
                                         + "operations is made.")
-        String sweep;
+        Integer sweep;
 
         @Option(name = "down",
                         usage = "With reset mode (one of window|sweep|down|restart). "
@@ -982,19 +982,19 @@ public final class ResilienceCommands implements CellCommandListener {
                         return "Watchdog is off; please turn it on first.";
                     }
                     poolOperationMap.runNow();
-                    return "Forced watchdog scan";
+                    return "Forced watchdog scan.";
                 case RESET:
                     if (!poolOperationMap.isWatchdogOn()) {
                         return "Watchdog is off; please turn it on first.";
                     }
 
                     if (window != null) {
-                        poolOperationMap.setRescanWindow(Integer.parseInt(window));
+                        poolOperationMap.setRescanWindow(window);
                         if (unit != null) {
                             poolOperationMap.setRescanWindowUnit(unit);
                         }
                     } else if (sweep != null) {
-                        poolOperationMap.setTimeout(Integer.parseInt(sweep));
+                        poolOperationMap.setTimeout(sweep);
                         if (unit != null) {
                             poolOperationMap.setTimeoutUnit(unit);
                         }
@@ -1061,7 +1061,7 @@ public final class ResilienceCommands implements CellCommandListener {
         @Option(name = "verify",
                         usage = "Run the verification procedure for "
                                         + "the units in the group "
-                                        + "(default is false)")
+                                        + "(default is false).")
         boolean verify = false;
 
         @Argument(required = false,
