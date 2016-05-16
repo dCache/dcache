@@ -11,6 +11,7 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
+import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.xdr.READ4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
@@ -21,6 +22,14 @@ import org.dcache.pool.repository.RepositoryChannel;
 public class EDSOperationREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationREAD.class.getName());
+
+    // Bind a direct buffer to each thread.
+    private static final ThreadLocal<ByteBuffer> BUFFERS = new ThreadLocal<ByteBuffer>() {
+        @Override
+        protected ByteBuffer initialValue() {
+            return  ByteBuffer.allocateDirect((int)NFSv4Defaults.NFS4_MAXIOBUFFERSIZE);
+        }
+    };
 
      private final NFSv4MoverHandler _moverHandler;
 
@@ -49,7 +58,8 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             }
             mover.attachSession(context.getSession());
 
-            ByteBuffer bb = ByteBuffer.allocate(count);
+            ByteBuffer bb = BUFFERS.get();
+            bb.clear().limit(count);
             RepositoryChannel fc = mover.getMoverChannel();
 
             bb.rewind();
