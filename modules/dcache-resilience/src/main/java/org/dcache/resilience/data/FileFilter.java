@@ -80,6 +80,25 @@ public final class FileFilter implements FileMatcher {
     private Integer     opCount;
     private boolean     forceRemoval = false;
 
+    private static boolean matchesPool(String toMatch,
+                                       Integer operationValue,
+                                       PoolInfoMap map) {
+        if (toMatch == null) {
+            return true;
+        }
+
+        if (toMatch.isEmpty()) {
+            return operationValue == null;
+        }
+
+        Integer filterValue = map.getPoolIndex(toMatch);
+        if (filterValue == null) {
+            return false;
+        }
+
+        return filterValue.equals(operationValue);
+    }
+
     @Override
     public boolean isForceRemoval() {
         return forceRemoval;
@@ -141,19 +160,15 @@ public final class FileFilter implements FileMatcher {
             return false;
         }
 
-        if (parent != null && !map.getPoolIndex(parent).equals(operation.getParent())) {
+        if (!matchesPool(parent, operation.getParent(), map)) {
             return false;
         }
 
-        if (source != null && !map.getPoolIndex(source).equals(operation.getSource())) {
+        if (!matchesPool(source, operation.getSource(), map)) {
             return false;
         }
 
-        if (target != null && !map.getPoolIndex(target).equals(operation.getTarget())) {
-            return false;
-        }
-
-        return true;
+        return matchesPool(target, operation.getTarget(), map);
     }
 
     public void setForceRemoval(boolean forceRemoval) {

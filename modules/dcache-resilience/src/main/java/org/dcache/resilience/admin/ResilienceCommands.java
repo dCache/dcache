@@ -563,15 +563,21 @@ public final class ResilienceCommands implements CellCommandListener {
         Integer opCount;
 
         @Option(name = "parent",
-                        usage = "Cancel only operations with this parent pool name.")
+                        usage = "Cancel only operations with this parent pool name; "
+                                        + "use the option with no value to match only "
+                                        + "operations without a parent pool.")
         String parent;
 
         @Option(name = "source",
-                        usage = "Cancel only operations with this source pool name.")
+                        usage = "Cancel only operations with this source pool name; "
+                                        + "use the option with no value to match only "
+                                        + "operations without a source pool.")
         String source;
 
         @Option(name = "target",
-                        usage = "Cancel only operations with this target pool name.")
+                        usage = "Cancel only operations with this target pool name; "
+                                        + "use the option with no value to match only "
+                                        + "operations without a target pool.")
         String target;
 
         @Argument(required = false,
@@ -721,15 +727,21 @@ public final class ResilienceCommands implements CellCommandListener {
         Integer opCount;
 
         @Option(name = "parent",
-                        usage = "List only operations with parent pool name.")
+                        usage = "List only operations with this parent pool name; "
+                                        + "use the option with no value to match only "
+                                        + "operations without a parent pool.")
         String parent;
 
         @Option(name = "source",
-                        usage = "List only operations with source pool name.")
+                        usage = "List only operations with this source pool name; "
+                                        + "use the option with no value to match only "
+                                        + "operations without a source pool.")
         String source;
 
         @Option(name = "target",
-                        usage = "List only operations with target pool name.")
+                        usage = "List only operations with this target pool name; "
+                                        + "use the option with no value to match only "
+                                        + "operations without a target pool.")
         String target;
 
         @Option(name = "limit",
