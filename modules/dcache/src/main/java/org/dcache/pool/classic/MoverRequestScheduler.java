@@ -139,6 +139,9 @@ public class MoverRequestScheduler implements Runnable {
         Mover<?> mover = moverSupplier.createMover();
         request = new PrioritizedRequest(id, doorUniqueId, mover, priority);
 
+        _jobs.put(id, request);
+        _moverByRequests.put(doorUniqueId, request);
+
         if (_semaphore.tryAcquire()) {
             /*
              * there is a free slot in the queue - use it!
@@ -148,8 +151,6 @@ public class MoverRequestScheduler implements Runnable {
             _queue.add(request);
         }
 
-        _jobs.put(id, request);
-        _moverByRequests.put(doorUniqueId, request);
 
         return id;
     }
