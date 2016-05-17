@@ -150,6 +150,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
         final PrioritizedRequest wrapper = new PrioritizedRequest(id, mover, priority);
 
+        _jobs.put(id, wrapper);
+
         if (_semaphore.tryAcquire()) {
             /*
              * there is a free slot in the queue - use it!
@@ -158,8 +160,6 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         } else {
             _queue.add(wrapper);
         }
-
-        _jobs.put(id, wrapper);
 
         return id;
     }
