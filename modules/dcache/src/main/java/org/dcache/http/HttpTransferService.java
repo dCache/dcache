@@ -134,7 +134,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
                 NetworkUtils.getLocalAddress(protocolInfo.getSocketAddress().getAddress());
         return new URI(PROTOCOL_HTTP,
                 null,
-                localIP.getCanonicalHostName(),
+                localIP.getHostAddress(),
                 port,
                 path,
                 UUID_QUERY_PARAM + QUERY_PARAM_ASSIGN + uuid.toString(),
