@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,13 +58,13 @@ public class MoverRequestScheduler implements Runnable {
     private final BlockingQueue<PrioritizedRequest> _queue;
 
     private final Map<Integer, PrioritizedRequest> _jobs =
-        new ConcurrentHashMap<>();
+        new ConcurrentHashMap<>(128);
 
     /**
      * requests by door unique request string
      */
     private final Map<String, PrioritizedRequest> _moverByRequests
-            = new ConcurrentHashMap<>();
+            = new ConcurrentHashMap<>(128);
 
     /**
      * ID of the current queue. Used to identify queue in {@link
@@ -122,37 +123,66 @@ public class MoverRequestScheduler implements Runnable {
      * @param priority
      * @return mover id
      */
-    public synchronized int getOrCreateMover(MoverSupplier moverSupplier, String doorUniqueId, IoPriority priority) throws CacheException {
+    public int getOrCreateMover(MoverSupplier moverSupplier, String doorUniqueId,
+                                IoPriority priority) throws CacheException
+    {
         checkState(!_shutdown);
 
-        PrioritizedRequest request = _moverByRequests.get(doorUniqueId);
-        if (request != null) {
+        try {
+            /* Create the request if it doesn't already exists.
+             */
+            PrioritizedRequest request =
+                    _moverByRequests.computeIfAbsent(doorUniqueId,
+                                                     key -> {
+                                                         try {
+                                                             return createRequest(moverSupplier, key, priority);
+                                                         } catch (CacheException e) {
+                                                             throw new RuntimeException(e);
+                                                         }
+                                                     });
+
+            /* If not already queued, submit it.
+             */
+            if (request.queue()) {
+                if (submit(request)) {
+                    /* There was a free slot in the queue so we submit directly to execution.
+                     */
+                    sendToExecution(request);
+                } else if (_semaphore.getMaxPermits() <= 0) {
+                    _log.warn("A task was added to queue '{}', however the queue is not " +
+                              "configured to execute any tasks.", _name);
+                }
+            }
+
             return request.getId();
+        } catch (RuntimeException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
+            throw e;
         }
+    }
 
-        int id = _queueId << 24 | nextId();
+    private PrioritizedRequest createRequest(MoverSupplier moverSupplier,
+                                             String doorUniqueId,
+                                             IoPriority priority) throws CacheException
+    {
+        return new PrioritizedRequest(_queueId << 24 | nextId(),
+                                      doorUniqueId,
+                                      moverSupplier.createMover(),
+                                      priority);
+    }
 
-        if (_semaphore.getMaxPermits() <= 0) {
-            _log.warn("A task was added to queue '{}', however the queue is not configured to execute any tasks.", _name);
+    private synchronized boolean submit(PrioritizedRequest request)
+    {
+        if (_jobs.put(request.getId(), request) != null) {
+            throw new RuntimeException("Duplicate mover id detected. Please report to support@dcache.org.");
         }
-
-        Mover<?> mover = moverSupplier.createMover();
-        request = new PrioritizedRequest(id, doorUniqueId, mover, priority);
-
-        _jobs.put(id, request);
-        _moverByRequests.put(doorUniqueId, request);
 
         if (_semaphore.tryAcquire()) {
-            /*
-             * there is a free slot in the queue - use it!
-             */
-            sendToExecution(request);
+            return true;
         } else {
             _queue.add(request);
+            return false;
         }
-
-
-        return id;
     }
 
     private synchronized int nextId() {
@@ -303,7 +333,7 @@ public class MoverRequestScheduler implements Runnable {
      * Set maximal number of concurrently running jobs by this scheduler. All
      * pending jobs will be executed.
      *
-     * @param max
+     * @param maxJobs
      */
     public void setMaxActiveJobs(int maxJobs) {
         _semaphore.setMaxPermits(maxJobs);
@@ -425,7 +455,7 @@ public class MoverRequestScheduler implements Runnable {
             _priority = p;
             _ctime = System.nanoTime();
             _submitTime = System.currentTimeMillis();
-            _state = QUEUED;
+            _state = NEW;
             _doorUniqueId = doorUniqueId;
             _cdc = new CDC();
         }
@@ -486,6 +516,15 @@ public class MoverRequestScheduler implements Runnable {
                                  _mover.getPathToDoor().getDestinationAddress().toString(), _mover.getClientId(),
                                  _mover.getFileAttributes().getPnfsId(), _mover.getBytesTransferred(),
                                  _mover.getTransferTime(), _mover.getLastTransferred());
+        }
+
+        public synchronized boolean queue()
+        {
+            if (_state == NEW) {
+                _state = QUEUED;
+                return true;
+            }
+            return false;
         }
 
         public synchronized void transfer(CompletionHandler<Void,Void> completionHandler) {
