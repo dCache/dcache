@@ -6,6 +6,7 @@ package org.dcache.pool.classic;
  * @since 1.9.11
  */
 public enum IoRequestState {
+    NEW,
     QUEUED,
     RUNNING,
     DONE,
