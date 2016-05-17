@@ -8,4 +8,5 @@
     <include file="org/dcache/services/billing/db/sql/billing.changelog-2.4.xml"/>
     <include file="org/dcache/services/billing/db/sql/billing.changelog-2.6.xml"/>
     <include file="org/dcache/services/billing/db/sql/billing.changelog-2.15.xml"/>
+    <include file="org/dcache/services/billing/db/sql/billing.changelog-2.16.xml"/>
 </databaseChangeLog>

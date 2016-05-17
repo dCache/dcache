@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="1" author="litvinse">
+        <comment>create primary key on billinginfo_rd_daily</comment>
+	<addPrimaryKey columnNames="date" constraintName="billinginfo_rd_daily_pkey" tableName="billinginfo_rd_daily"/>
+	<rollback>
+	<dropPrimaryKey constraintName="billinginfo_rd_daily_pkey" tableName="billinginfo_rd_daily"/>
+	</rollback>
+    </changeSet>
+
+    <changeSet id="2" author="litvinse">
+        <comment>create primary key on billinginfo_wr_daily</comment>
+	<addPrimaryKey columnNames="date" constraintName="billinginfo_wr_daily_pkey" tableName="billinginfo_wr_daily"/>
+	<rollback>
+	<dropPrimaryKey constraintName="billinginfo_wr_daily_pkey" tableName="billinginfo_wr_daily"/>
+	</rollback>
+    </changeSet>
+
+    <changeSet id="3" author="litvinse">
+        <comment>create primary key on billinginfo_p2p_daily</comment>
+	<addPrimaryKey columnNames="date" constraintName="billinginfo_p2p_daily_pkey" tableName="billinginfo_p2p_daily"/>
+	<rollback>
+	<dropPrimaryKey constraintName="billinginfo_p2p_daily_pkey" tableName="billinginfo_p2p_daily"/>
+	</rollback>
+    </changeSet>
+
+    <changeSet id="4" author="litvinse">
+        <comment>create primary key on billinginfo_tm_daily</comment>
+	<addPrimaryKey columnNames="date" constraintName="billinginfo_tm_daily_pkey" tableName="billinginfo_tm_daily"/>
+	<rollback>
+	<dropPrimaryKey constraintName="billinginfo_tm_daily_pkey" tableName="billinginfo_tm_daily"/>
+	</rollback>
+    </changeSet>
+
+    <changeSet id="5" author="litvinse">
+        <comment>create primary key on storageinfo_wr_daily</comment>
+	<addPrimaryKey columnNames="date" constraintName="storageinfo_wr_daily_pkey" tableName="storageinfo_wr_daily"/>
+	<rollback>
+	<dropPrimaryKey constraintName="storageinfo_wr_daily_pkey" tableName="storageinfo_wr_daily"/>
+	</rollback>
+    </changeSet>
+
+    <changeSet id="6" author="litvinse">
+        <comment>create primary key on storageinfo_rd_daily</comment>
+	<addPrimaryKey columnNames="date" constraintName="storageinfo_rd_daily_pkey" tableName="storageinfo_rd_daily"/>
+	<rollback>
+	<dropPrimaryKey constraintName="storageinfo_rd_daily_pkey" tableName="storageinfo_rd_daily"/>
+	</rollback>
+    </changeSet>
+
+    <changeSet id="7" author="litvinse">
+        <comment>create primary key on hitinfo_daily</comment>
+	<addPrimaryKey columnNames="date" constraintName="hitinfo_daily_pkey" tableName="hitinfo_daily"/>
+	<rollback>
+	<dropPrimaryKey constraintName="hitinfo_daily_pkey" tableName="hitinfo_daily"/>
+	</rollback>
+    </changeSet>
+
+    <changeSet id="8" author="litvinse">
+        <preConditions onError="WARN" onFail="WARN">
+            <sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
+        </preConditions>
+        <comment>triggers on insert in various fine grained data tables that update data in aggregate tables</comment>
+        <sql splitStatements="false">
+            CREATE OR REPLACE FUNCTION f_update_billinginfo_wr_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+	    start_date timestamp;
+	    counter bigint;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM billinginfo_wr_daily;
+
+	    IF max_date IS NULL OR curr_date - max_date > interval'1 days' THEN
+
+               IF max_date IS NULL THEN
+                  start_date := curr_date - interval'1 day';
+               ELSE
+                  start_date := max_date+interval'1 day';
+               END IF;
+
+	       BEGIN
+                  INSERT INTO billinginfo_wr_daily (date,count,size,transferred)
+                  SELECT date(datestamp) AS d,
+                         COUNT(*), coalesce(sum(fullsize),0),
+                                   coalesce(sum(transfersize),0)
+                  FROM billinginfo
+                  WHERE datestamp BETWEEN start_date AND curr_date
+                     AND isnew='t'
+                     AND errorcode=0
+                     AND p2p='f'
+                  GROUP BY d RETURNING count INTO counter;
+
+                  IF counter is NULL THEN
+                     INSERT INTO billinginfo_wr_daily (date,count,size,transferred)
+                         VALUES (start_date,0,0,0);
+                  END IF;
+
+	          EXCEPTION WHEN       unique_violation THEN
+	             --- do nothing ---
+	       END;
+
+	    END IF;
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">
+            CREATE OR REPLACE FUNCTION f_update_billinginfo_rd_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            start_date timestamp;
+	    counter bigint;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM billinginfo_rd_daily;
+
+	    IF max_date IS NULL OR curr_date - max_date > interval'1 days' THEN
+
+               IF max_date IS NULL THEN
+                  start_date := curr_date - interval'1 day';
+               ELSE
+                  start_date := max_date+interval'1 day';
+               END IF;
+
+	       BEGIN
+                  INSERT INTO billinginfo_rd_daily (date,count,size,transferred)
+                  SELECT date(datestamp) AS d,
+                         COUNT(*), coalesce(sum(fullsize),0),
+                                   coalesce(sum(transfersize),0)
+                  FROM billinginfo
+                  WHERE datestamp BETWEEN start_date AND curr_date
+                      AND isnew='f'
+                      AND errorcode=0
+                      AND p2p = 'f'
+                  GROUP BY d RETURNING count INTO counter;
+
+                  IF counter is NULL THEN
+                     INSERT INTO billinginfo_rd_daily (date,count,size,transferred)
+                     VALUES (start_date,0,0,0);
+                  END IF;
+
+	          EXCEPTION WHEN       unique_violation THEN
+	             --- do nothing ---
+               END;
+
+	    END IF;
+
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">
+	    CREATE OR REPLACE FUNCTION f_update_billinginfo_p2p_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            start_date timestamp;
+	    counter bigint;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM billinginfo_p2p_daily;
+
+	    IF max_date IS NULL OR curr_date - max_date > interval'1 days' THEN
+
+               IF max_date IS NULL THEN
+	          start_date := curr_date - interval'1 day';
+               ELSE
+                  start_date := max_date+interval'1 day';
+               END IF;
+
+	       BEGIN
+                  INSERT INTO billinginfo_p2p_daily (date,count,size,transferred)
+                  SELECT date(datestamp) AS d,
+                         COUNT(*), coalesce(sum(fullsize),0),
+                                    coalesce(sum(transfersize),0)
+                  FROM billinginfo
+                  WHERE datestamp BETWEEN start_date AND curr_date
+                      AND errorcode=0
+                      AND p2p='t'
+                  GROUP BY d RETURNING count INTO counter;
+
+                  IF counter is NULL THEN
+                     INSERT INTO billinginfo_p2p_daily (date,count,size,transferred)
+                     VALUES (start_date,0,0,0);
+                  END IF;
+
+	          EXCEPTION WHEN       unique_violation THEN
+	             --- do nothing ---
+               END;
+
+	    END IF;
+
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">
+	    CREATE OR REPLACE FUNCTION f_update_billinginfo_tm_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+	    start_date timestamp;
+	    counter bigint;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM billinginfo_tm_daily;
+
+	    IF max_date IS NULL OR curr_date - max_date > interval'1 days' THEN
+
+               IF max_date IS NULL THEN
+	          start_date := curr_date - interval'1 day';
+               ELSE
+                  start_date := max_date+interval'1 day';
+               END IF;
+
+	       BEGIN
+                  INSERT INTO billinginfo_tm_daily (date,count,minimum,maximum,average)
+                  SELECT date(datestamp) AS d,
+                         COUNT(*), min(connectiontime),
+                                   max(connectiontime),
+                                   avg(connectiontime)
+                  FROM billinginfo
+                  WHERE datestamp BETWEEN start_date AND curr_date
+                      AND errorcode=0
+                  GROUP BY d RETURNING count INTO counter;
+
+                  IF counter is NULL THEN
+                     INSERT INTO billinginfo_tm_daily (date,count,minimum,maximum,average)
+                     VALUES (start_date,0,0,0,0);
+                  END IF;
+
+                  EXCEPTION WHEN       unique_violation THEN
+	             --- do nothing ---
+               END;
+
+	    END IF;
+
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE
+            plpgsql;
+        </sql>
+        <sql splitStatements="false">
+            CREATE OR REPLACE FUNCTION f_update_storageinfo_rd_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+	    start_date timestamp;
+	    counter bigint;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM storageinfo_rd_daily;
+
+	    IF max_date IS NULL OR curr_date - max_date > interval'1 days' THEN
+
+               IF max_date IS NULL THEN
+	          start_date := curr_date - interval'1 day';
+               ELSE
+                  start_date := max_date+interval'1 day';
+               END IF;
+
+	       BEGIN
+                  INSERT INTO storageinfo_rd_daily (date,count,size)
+                  SELECT date(datestamp) AS d,
+                         COUNT(*), coalesce(sum(fullsize),0)
+                  FROM storageinfo
+                  WHERE datestamp BETWEEN start_date AND curr_date
+                      AND action='restore'
+                      AND errorcode=0
+                  GROUP BY d RETURNING count INTO counter;
+
+                  IF counter is NULL THEN
+                     INSERT INTO storageinfo_rd_daily (date,count,size)
+                     VALUES (start_date,0,0);
+                  END IF;
+	          EXCEPTION WHEN       unique_violation THEN
+	             --- do nothing ---
+               END;
+
+            END IF;
+
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">
+	    CREATE OR REPLACE FUNCTION f_update_storageinfo_wr_daily() RETURNS TRIGGER
+            AS $$
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+	    start_date timestamp;
+	    counter bigint;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM storageinfo_wr_daily;
+
+	    IF max_date IS NULL OR curr_date - max_date > interval'1 days' THEN
+
+               IF max_date IS NULL THEN
+	          start_date := curr_date - interval'1 day';
+               ELSE
+                  start_date := max_date+interval'1 day';
+               END IF;
+
+	       BEGIN
+                  INSERT INTO storageinfo_wr_daily (date,count,size)
+                  SELECT date(datestamp) AS d,
+                         COUNT(*), coalesce(sum(fullsize),0)
+                  FROM storageinfo
+                  WHERE datestamp BETWEEN start_date AND curr_date
+                      AND action='store'
+                      AND errorcode=0
+                  GROUP BY d RETURNING count INTO counter;
+
+                  IF counter is NULL THEN
+                     INSERT INTO storageinfo_wr_daily (date,count,size)
+                     VALUES (start_date,0,0);
+                  END IF;
+	          EXCEPTION WHEN       unique_violation THEN
+	             --- do nothing ---
+	       END;
+
+            END IF;
+
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+        <sql splitStatements="false">
+	  CREATE OR REPLACE FUNCTION f_update_hitinfo_daily() RETURNS TRIGGER
+            AS $$
+
+            DECLARE
+            max_date timestamp;
+            curr_date timestamp;
+            start_date timestamp;
+	    counter bigint;
+            BEGIN
+            curr_date := current_date;
+            SELECT max(date) into max_date FROM hitinfo_daily;
+
+	    IF max_date IS NULL OR curr_date - max_date > interval'1 days' THEN
+
+               IF max_date IS NULL THEN
+                  start_date := curr_date - interval'1 day';
+               ELSE
+                  start_date := max_date+interval'1 day';
+               END IF;
+
+	       BEGIN
+                  INSERT INTO hitinfo_daily(date, count, notcached, cached)
+                  SELECT date(datestamp) AS d,
+                         COUNT(*), COUNT(nullif(filecached, 't')) AS notcached,
+                                        COUNT(nullif(filecached, 'f')) AS cached
+                  FROM hitinfo
+                  WHERE datestamp BETWEEN start_date AND curr_date
+                      AND errorcode=0
+                  GROUP BY d RETURNING count INTO counter;
+
+                  IF counter is NULL THEN
+                     INSERT INTO hitinfo_daily(date, count, notcached, cached)
+                     VALUES (start_date,0,0,0);
+                  END IF;
+	          EXCEPTION WHEN       unique_violation THEN
+	             --- do nothing ---
+	       END;
+
+            END IF;
+
+            RETURN NULL;
+            END;
+            $$
+            LANGUAGE plpgsql;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
