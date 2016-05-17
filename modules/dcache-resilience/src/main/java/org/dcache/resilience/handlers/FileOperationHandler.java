@@ -169,8 +169,11 @@ public class FileOperationHandler {
                                                        namespace);
             if (attributes == null || attributes.getLocations().size() < 2) {
                 /*
-                 * This is the only copy.  Do not remove.
+                 * This is the only copy, or it is not/no longer in the
+                 * namespace.  In either case, do nothing, but cancel
+                 * any running operations for this pnfsid.
                  */
+                fileOpMap.cancel(pnfsId, true);
                 return;
             }
 
