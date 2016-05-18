@@ -300,7 +300,11 @@ public class PnfsManagerV3
 
     @Required
     public void setAtimeGap(long gap) {
-        _atimeGap = TimeUnit.SECONDS.toMillis(gap);
+        if (gap < 0) {
+            _atimeGap = -1;
+        } else {
+            _atimeGap = TimeUnit.SECONDS.toMillis(gap);
+        }
     }
 
     public void init()
@@ -1983,7 +1987,7 @@ public class PnfsManagerV3
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
             Set<FileAttribute> requested = message.getRequestedAttributes();
-            if (message.getUpdateAtime() && _atimeGap != -1) {
+            if (message.getUpdateAtime() && _atimeGap >= 0) {
                 requested.add(ACCESS_TIME);
             }
             if(requested.contains(FileAttribute.STORAGEINFO)) {
@@ -2018,7 +2022,7 @@ public class PnfsManagerV3
 
             message.setFileAttributes(attrs);
             message.setSucceeded();
-            if (message.getUpdateAtime() && _atimeGap != -1) {
+            if (message.getUpdateAtime() && _atimeGap >= 0) {
                 long now = System.currentTimeMillis();
                 if (attrs.getFileType() == FileType.REGULAR && Math.abs(now - attrs.getAccessTime()) > _atimeGap) {
                     FileAttributes atimeUpdateAttr = new FileAttributes();
