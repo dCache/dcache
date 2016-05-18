@@ -28,6 +28,7 @@
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
       <property name="excludedDestinations" value="${pool.destination.heartbeat}"/>
+      <property name="excludedMessages" value="diskCacheV111.vehicles.DoorTransferFinishedMessage"/>
   </bean>
 
   <!-- The lock protects the pool from being accessed by multiple
