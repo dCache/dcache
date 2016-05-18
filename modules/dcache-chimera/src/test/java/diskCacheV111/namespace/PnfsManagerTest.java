@@ -591,6 +591,38 @@ public class PnfsManagerTest
         assertNotExists("/test");
     }
 
+    @Test
+    public void testUpdateAtimeOnGetFileAttributes() throws ChimeraFsException {
+
+        FsInode inode = _fs.createFile("/file1");
+        Stat stat_before = inode.stat();
+        _pnfsManager.setAtimeGap(0);
+
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(inode.getId()), SOME_ATTRIBUTES);
+        message.setUpdateAtime(true);
+
+        _pnfsManager.getFileAttributes(message);
+        Stat stat_after = inode.stat();
+
+        assertTrue("atime is not updated", stat_after.getATime() != stat_before.getATime());
+    }
+
+    @Test
+    public void testNoAtimeUpdateOnGetFileAttributesNegativeGap() throws ChimeraFsException {
+
+        FsInode inode = _fs.createFile("/file1");
+        Stat stat_before = inode.stat();
+        _pnfsManager.setAtimeGap(-1);
+
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(inode.getId()), SOME_ATTRIBUTES);
+        message.setUpdateAtime(true);
+
+        _pnfsManager.getFileAttributes(message);
+        Stat stat_after = inode.stat();
+
+        assertTrue("atime is updated, but shouldn't", stat_after.getATime() == stat_before.getATime());
+    }
+
     private void assertNotExists(String path) throws ChimeraFsException
     {
         try {
