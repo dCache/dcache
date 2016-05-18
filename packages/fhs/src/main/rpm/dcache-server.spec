@@ -110,7 +110,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man8/dcache-billing-indexer.8
 /usr/share/man/man8/dcache.8
 
-%attr(-,dcache,dcache) /var/log/dcache
+%attr(-,dcache,root) /var/log/dcache
 %attr(-,dcache,dcache) /var/lib/dcache/alarms
 %attr(-,dcache,dcache) /var/lib/dcache/config
 %attr(-,dcache,dcache) /var/lib/dcache/billing
