@@ -45,6 +45,7 @@ import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
@@ -127,6 +128,7 @@ public class PnfsManagerTest
         _pnfsManager.setLogSlowThreshold(0);
         _pnfsManager.setNameSpaceProvider(chimera);
         _pnfsManager.setQueueMaxSize(0);
+        _pnfsManager.setFolding(true);
         _pnfsManager.setDirectoryListLimit(100);
         _pnfsManager.init();
 
