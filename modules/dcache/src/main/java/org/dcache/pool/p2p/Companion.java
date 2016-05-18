@@ -1,24 +1,31 @@
 package org.dcache.pool.p2p;
 
+import com.google.common.base.Optional;
+import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.protocol.HTTP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.io.SyncFailedException;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
+import java.nio.channels.Channels;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -48,12 +55,15 @@ import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
+import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
@@ -80,8 +90,10 @@ class Companion
     private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
 
     private static final AtomicInteger _nextId = new AtomicInteger(100);
-    private static final long CONNECT_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
-    private static final long READ_TIMEOUT = TimeUnit.MINUTES.toMillis(10);
+    private static final long CONNECT_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
+    private static final long READ_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
+
+    private static final String USER_AGENT = "dCache/" + Version.of(Companion.class).getVersion();
 
     private final InetAddress _address;
     private final Repository _repository;
@@ -121,6 +133,7 @@ class Companion
 
     /** ID of the mover on the source pool. */
     private int _moverId;
+    private HttpGet _request;
 
     /**
      * Creates a new instance.
@@ -259,6 +272,14 @@ class Companion
         _thread = thread;
     }
 
+    /**
+     * Sets the request used for the file transfer.
+     */
+    private synchronized void setRequest(HttpGet request)
+    {
+        _request = request;
+    }
+
     private void transfer(String uri)
     {
         ReplicaDescriptor handle;
@@ -278,37 +299,9 @@ class Companion
         Throwable error = null;
         try {
             try {
-                File file = handle.getFile();
-                long size = handle.getFileAttributes().getSize();
-
-                handle.allocate(size);
-
-                ChecksumFactory checksumFactory;
-                MessageDigest digest;
-                if (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER)) {
-                    checksumFactory = _checksumModule.getPreferredChecksumFactory(handle);
-                    digest = checksumFactory.create();
-                } else {
-                    checksumFactory = null;
-                    digest = null;
-                }
-
-                HttpURLConnection connection = createConnection(uri);
-                try {
-                    try (InputStream input = connection.getInputStream()) {
-                        long total = copy(input, file, digest);
-                        if (total != size) {
-                            throw new IOException("Amount of received data does not match expected file size");
-                        }
-                    }
-                } finally {
-                    connection.disconnect();
-                }
-
-                Set<Checksum> actualChecksums =
-                        (digest == null)
-                                ? Collections.<Checksum>emptySet()
-                                : Collections.singleton(checksumFactory.create(digest.digest()));
+                handle.allocate(handle.getFileAttributes().getSize());
+                ChecksumFactory checksumFactory = _checksumModule.getPreferredChecksumFactory(handle);
+                Set<Checksum> actualChecksums = copy(uri, handle, checksumFactory);
                 _checksumModule.enforcePostTransferPolicy(handle, actualChecksums);
             } finally {
                 setThread(null);
@@ -328,6 +321,58 @@ class Companion
         }
     }
 
+    private Set<Checksum> copy(String uri, ReplicaDescriptor handle, ChecksumFactory checksumFactory)
+            throws IOException
+    {
+        try (RepositoryChannel channel = handle.createChannel();
+             ChecksumChannel checksumChannel = new ChecksumChannel(channel, checksumFactory)) {
+
+            HttpGet get = new HttpGet(uri);
+            get.addHeader(HttpHeaders.CONNECTION, HTTP.CONN_CLOSE);
+            get.setConfig(RequestConfig.custom()
+                                  .setConnectTimeout((int) CONNECT_TIMEOUT)
+                                  .setSocketTimeout((int) READ_TIMEOUT)
+                                  .build());
+            setRequest(get);
+
+            try (CloseableHttpClient client = HttpClients.custom().setUserAgent(USER_AGENT).build();
+                 CloseableHttpResponse response = client.execute(get)) {
+                StatusLine statusLine = response.getStatusLine();
+                if (statusLine.getStatusCode() >= 300) {
+                    throw new HttpResponseException(statusLine.getStatusCode(), statusLine.getReasonPhrase());
+                }
+
+                HttpEntity entity = response.getEntity();
+                if (entity == null) {
+                    throw new ClientProtocolException("Response contains no content");
+                }
+
+                long contentLength = entity.getContentLength();
+                if (contentLength >= 0 && contentLength != _fileAttributes.getSize()) {
+                    /* Fail fast if the response is incomplete.
+                     */
+                    throw new EOFException("Received file does not match expected file size.");
+                }
+
+                ByteStreams.copy(entity.getContent(), Channels.newOutputStream(checksumChannel));
+
+                try {
+                    checksumChannel.sync();
+                } catch (SyncFailedException e) {
+                    /* Data is not guaranteed to be on disk. Not a fatal
+                     * problem, but better generate a warning.
+                     */
+                    _log.warn("Failed to synchronize file with storage device: {}",
+                              e.getMessage());
+                }
+            } finally {
+                setRequest(null);
+            }
+
+            return Optional.fromNullable(checksumChannel.getChecksum()).asSet();
+        }
+    }
+
     private ReplicaDescriptor createReplicaEntry()
         throws CacheException
     {
@@ -337,49 +382,6 @@ class Companion
                 _targetState,
                 _stickyRecords,
                 EnumSet.of(Repository.OpenFlags.CREATEFILE));
-    }
-
-    private HttpURLConnection createConnection(String uri)
-        throws MalformedURLException, IOException
-    {
-        URL url = new URL(uri);
-        HttpURLConnection connection =
-            (HttpURLConnection) url.openConnection();
-        connection.setRequestProperty("Connection", "close");
-        connection.setConnectTimeout((int) CONNECT_TIMEOUT);
-        connection.setReadTimeout((int) READ_TIMEOUT);
-        connection.connect();
-        return connection;
-    }
-
-    private long copy(InputStream input, File file, MessageDigest digest)
-        throws IOException
-    {
-        long total = 0L;
-        try (RandomAccessFile dataFile = new RandomAccessFile(file, "rw")) {
-            try {
-                byte[] buffer = new byte[BUFFER_SIZE];
-                int read;
-                while ((read = input.read(buffer)) > -1) {
-                    dataFile.write(buffer, 0, read);
-                    total += read;
-                    if (digest != null) {
-                        digest.update(buffer, 0, read);
-                    }
-                }
-            } finally {
-                try {
-                    dataFile.getFD().sync();
-                } catch (SyncFailedException e) {
-                    /* Data is not guaranteed to be on disk. Not a fatal
-                     * problem, but better generate a warning.
-                     */
-                    _log.warn("Failed to synchronize file with storage device: {}",
-                              e.getMessage());
-                }
-            }
-        }
-        return total;
     }
 
     //
@@ -606,6 +608,9 @@ class Companion
     {
         if (_thread != null) {
             _thread.interrupt();
+        }
+        if (_request != null) {
+            _request.abort();
         }
     }
 
