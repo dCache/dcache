@@ -255,6 +255,7 @@
         <property name="loginStrategy" ref="login-strategy"/>
         <property name="readOnly" value="${webdav.authz.readonly}"/>
         <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
+        <property name="realm" value="${webdav.authn.realm}"/>
         <property name="pathMapper" ref="path-mapper"/>
         <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
     </bean>
