@@ -1,5 +1,6 @@
 package diskCacheV111.namespace;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
@@ -1663,7 +1664,8 @@ public class PnfsManagerV3
         sendMessage(new CellMessage(_cacheModificationRelay, message));
     }
 
-    public void processPnfsMessage(CellMessage message, PnfsMessage pnfsMessage)
+    @VisibleForTesting
+    void processPnfsMessage(CellMessage message, PnfsMessage pnfsMessage)
     {
         long ctime = System.currentTimeMillis();
         try {
@@ -1690,10 +1692,7 @@ public class PnfsManagerV3
             _log.info("{} processed in {} ms", pnfsMessage.getClass(), duration);
         }
 
-        if (pnfsMessage.getReplyRequired()) {
-            message.revertDirection();
-            sendMessage(message);
-        }
+        postProcessMessage(message, pnfsMessage);
     }
 
     @Transactional
@@ -1728,7 +1727,7 @@ public class PnfsManagerV3
         } else if (pnfsMessage instanceof PnfsSetChecksumMessage) {
             setChecksum((PnfsSetChecksumMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PoolFileFlushedMessage) {
-            processFlushMessage(message, (PoolFileFlushedMessage) pnfsMessage);
+            processFlushMessage((PoolFileFlushedMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetParentMessage) {
             getParent((PnfsGetParentMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsListDirectoryMessage) {
@@ -1747,7 +1746,58 @@ public class PnfsManagerV3
         return true;
     }
 
-    public void processFlushMessage(CellMessage envelope, PoolFileFlushedMessage pnfsMessage)
+    private void postProcessMessage(CellMessage envelope, PnfsMessage message)
+    {
+        if (message instanceof PoolFileFlushedMessage && message.getReturnCode() == 0) {
+            postProcessFlush(envelope, (PoolFileFlushedMessage) message);
+        } else if (message.getReplyRequired()) {
+            envelope.revertDirection();
+            sendMessage(envelope);
+        }
+    }
+
+    private void postProcessFlush(CellMessage envelope, PoolFileFlushedMessage pnfsMessage)
+    {
+        long timeout = envelope.getAdjustedTtl() - envelope.getLocalAge();
+
+        /* Asynchronously notify flush notification targets about the flush. */
+        PoolFileFlushedMessage notification =
+                new PoolFileFlushedMessage(pnfsMessage.getPoolName(), pnfsMessage.getPnfsId(),
+                                           pnfsMessage.getFileAttributes());
+        List<ListenableFuture<PoolFileFlushedMessage>> futures = new ArrayList<>();
+        for (String address : _flushNotificationTargets) {
+            futures.add(_stub.send(new CellPath(address), notification, timeout));
+        }
+
+        /* Only generate positive reply if all notifications succeeded. */
+        Futures.addCallback(Futures.allAsList(futures),
+                            new FutureCallback<List<PoolFileFlushedMessage>>()
+                            {
+                                @Override
+                                public void onSuccess(List<PoolFileFlushedMessage> result)
+                                {
+                                    pnfsMessage.setSucceeded();
+                                    reply();
+                                }
+
+                                @Override
+                                public void onFailure(Throwable t)
+                                {
+                                    pnfsMessage.setFailed(CacheException.DEFAULT_ERROR_CODE,
+                                                          "PNFS manager failed while notifying other " +
+                                                          "components about the flush: " + t.getMessage());
+                                    reply();
+                                }
+
+                                private void reply()
+                                {
+                                    envelope.revertDirection();
+                                    sendMessage(envelope);
+                                }
+                            });
+    }
+
+    public void processFlushMessage(PoolFileFlushedMessage pnfsMessage)
     {
         try {
             // Note: no Restriction check as message sent autonomously by pool.
@@ -1756,47 +1806,6 @@ public class PnfsManagerV3
             _nameSpaceProvider.setFileAttributes(pnfsMessage.getSubject(),
                                                  pnfsMessage.getPnfsId(), attributesToUpdate,
                                                  EnumSet.noneOf(FileAttribute.class));
-
-            long timeout = envelope.getAdjustedTtl() - envelope.getLocalAge();
-
-            /* Asynchronously notify flush notification targets about the flush. */
-            PoolFileFlushedMessage notification =
-                    new PoolFileFlushedMessage(pnfsMessage.getPoolName(), pnfsMessage.getPnfsId(),
-                                               pnfsMessage.getFileAttributes());
-            List<ListenableFuture<PoolFileFlushedMessage>> futures = new ArrayList<>();
-            for (String address : _flushNotificationTargets) {
-                futures.add(_stub.send(new CellPath(address), notification, timeout));
-            }
-
-            /* Prevent the caller from generating a reply. */
-            pnfsMessage.setReplyRequired(false);
-
-            /* Only generate positive reply if all notifications succeeded. */
-            Futures.addCallback(Futures.allAsList(futures),
-                                new FutureCallback<List<PoolFileFlushedMessage>>()
-                                {
-                                    @Override
-                                    public void onSuccess(List<PoolFileFlushedMessage> result)
-                                    {
-                                        pnfsMessage.setSucceeded();
-                                        reply();
-                                    }
-
-                                    @Override
-                                    public void onFailure(Throwable t)
-                                    {
-                                        pnfsMessage.setFailed(CacheException.DEFAULT_ERROR_CODE,
-                                                              "PNFS manager failed while notifying other " +
-                                                              "components about the flush: " + t.getMessage());
-                                        reply();
-                                    }
-
-                                    private void reply()
-                                    {
-                                        envelope.revertDirection();
-                                        sendMessage(envelope);
-                                    }
-                                });
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
