@@ -540,7 +540,39 @@ public class PnfsManagerTest
 
         assertEquals(beforeUpdateStat.getCrTime(), pnfsGetFileAttributes.getFileAttributes().getCreationTime());
         assertTrue("Creation time can't be in the past", pnfsGetFileAttributes.getFileAttributes().getCreationTime()
-                < pnfsGetFileAttributes.getFileAttributes().getChangeTime());
+                                           < pnfsGetFileAttributes.getFileAttributes().getChangeTime());
+    }
+
+    @Test
+    public void testUpdateAtimeOnGetFileAttributes() throws ChimeraFsException {
+
+        FsInode inode = _fs.createFile("/file1");
+        Stat stat_before = inode.stat();
+        _pnfsManager.setAtimeGap(0);
+
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(inode.toString()), SOME_ATTRIBUTES);
+        message.setUpdateAtime(true);
+
+        _pnfsManager.getFileAttributes(message);
+        Stat stat_after = inode.stat();
+
+        assertTrue("atime is not updated", stat_after.getATime() != stat_before.getATime());
+    }
+
+    @Test
+    public void testNoAtimeUpdateOnGetFileAttributesNegativeGap() throws ChimeraFsException {
+
+        FsInode inode = _fs.createFile("/file1");
+        Stat stat_before = inode.stat();
+        _pnfsManager.setAtimeGap(-1);
+
+        PnfsGetFileAttributes message = new PnfsGetFileAttributes(new PnfsId(inode.toString()), SOME_ATTRIBUTES);
+        message.setUpdateAtime(true);
+
+        _pnfsManager.getFileAttributes(message);
+        Stat stat_after = inode.stat();
+
+        assertTrue("atime is updated, but shouldn't", stat_after.getATime() == stat_before.getATime());
     }
 
     @After
