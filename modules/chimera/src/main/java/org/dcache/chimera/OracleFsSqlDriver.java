@@ -55,6 +55,9 @@ class OracleFsSqlDriver extends FsSqlDriver {
      */
     @Override
     String inode2path(FsInode inode, FsInode startFrom) {
+        if (inode.equals(startFrom)) {
+            return "/";
+        }
         return _jdbc.query(
                 "SELECT iname, LEVEL AS deep FROM (SELECT * FROM  t_dirs) start with ichild=? CONNECT BY  ichild = PRIOR iparent ORDER BY deep DESC",
                 rs -> {

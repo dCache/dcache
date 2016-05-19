@@ -116,6 +116,9 @@ public class PgSQLFsSqlDriver extends FsSqlDriver {
      */
     @Override
     String inode2path(FsInode inode, FsInode startFrom) {
+        if (inode.equals(startFrom)) {
+            return "/";
+        }
         return _jdbc.query("SELECT inumber2path(?)",
                            ps -> ps.setLong(1, inode.ino()),
                            rs -> rs.next() ? rs.getString(1) : null);
