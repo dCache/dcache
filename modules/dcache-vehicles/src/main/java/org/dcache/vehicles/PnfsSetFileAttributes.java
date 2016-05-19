@@ -1,10 +1,11 @@
 package org.dcache.vehicles;
 
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
+
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsMessage;
-
 import org.dcache.namespace.FileAttribute;
 
 /**
@@ -22,6 +23,7 @@ public class PnfsSetFileAttributes extends PnfsMessage {
     private static final long serialVersionUID = -6750531802534981651L;
 
     private FileAttributes _fileAttributes;
+    private transient Collection<String> _locations;
     private final Set<FileAttribute> _acquire;
 
     /**
@@ -81,4 +83,19 @@ public class PnfsSetFileAttributes extends PnfsMessage {
         return _fileAttributes;
     }
 
+    /**
+     * @return the locations included by the sender.
+     */
+    public Collection<String> getLocations() {
+        return _locations;
+    }
+
+    /**
+     * Store for post-processing.
+     *
+     * @param locations included by the sender.
+     */
+    public void setLocations(Collection<String> locations) {
+        _locations = locations;
+    }
 }

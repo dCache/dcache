@@ -8,20 +8,18 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.security.auth.Subject;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -34,6 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.Subject;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -58,13 +57,11 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
-import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
@@ -73,18 +70,15 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
-import dmg.util.command.Command;
 import dmg.util.command.Argument;
-import dmg.util.command.Option;
+import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
-
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
-import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -97,7 +91,6 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.MathUtils;
 import org.dcache.util.PrefixMap;
-
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -106,10 +99,10 @@ import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.dcache.auth.Subjects.ROOT;
-import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.acl.enums.AccessType.*;
+import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.auth.attributes.Activity.*;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsManagerV3
     extends AbstractCellComponent
@@ -1620,22 +1613,6 @@ public class PnfsManagerV3
         }
     }
 
-    public void messageArrived(CellMessage envelope, PnfsModifyCacheLocationMessage message)
-        throws CacheException
-    {
-        if (_cacheModificationRelay != null) {
-            forwardModifyCacheLocationMessage(message);
-        }
-
-        PnfsId pnfsId = message.getPnfsId();
-        int index = pnfsIdToThreadGroup(pnfsId);
-        _log.info("Using thread group [{}] {}", pnfsId, index);
-
-        if (!_fifos[index].offer(envelope)) {
-            throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
-        }
-    }
-
     public void messageArrived(CellMessage envelope, PnfsMessage message)
         throws CacheException
     {
@@ -1657,11 +1634,6 @@ public class PnfsManagerV3
         if (!_fifos[group].offer(envelope)) {
             throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
         }
-    }
-
-    private void forwardModifyCacheLocationMessage(PnfsMessage message)
-    {
-        sendMessage(new CellMessage(_cacheModificationRelay, message));
     }
 
     @VisibleForTesting
@@ -1750,6 +1722,8 @@ public class PnfsManagerV3
     {
         if (message instanceof PoolFileFlushedMessage && message.getReturnCode() == 0) {
             postProcessFlush(envelope, (PoolFileFlushedMessage) message);
+        } else if (_cacheModificationRelay != null && message.getReturnCode() == 0) {
+            postProcessLocationModificationMessage(envelope, message);
         } else if (message.getReplyRequired()) {
             envelope.revertDirection();
             sendMessage(envelope);
@@ -1811,6 +1785,38 @@ public class PnfsManagerV3
         } catch (RuntimeException e) {
             _log.warn("Failed to process flush notification", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
+    }
+
+    private void postProcessLocationModificationMessage(CellMessage envelope,
+                                                        PnfsMessage message)
+    {
+        if (message.getReplyRequired()) {
+            envelope.revertDirection();
+            sendMessage(envelope);
+        }
+
+        if (message instanceof PnfsAddCacheLocationMessage) {
+            PnfsMessage msg = new PnfsAddCacheLocationMessage(message.getPnfsId(),
+                            ((PnfsAddCacheLocationMessage) message).getPoolName());
+            sendMessage(new CellMessage(_cacheModificationRelay, msg));
+        } else if (message instanceof PnfsClearCacheLocationMessage) {
+            PnfsMessage msg = new PnfsClearCacheLocationMessage(message.getPnfsId(),
+                            ((PnfsClearCacheLocationMessage) message).getPoolName());
+            sendMessage(new CellMessage(_cacheModificationRelay, msg));
+        } else if (message instanceof PnfsSetFileAttributes) {
+            Collection<String> locations
+                            = ((PnfsSetFileAttributes)message).getLocations();
+            if (locations == null) {
+                return;
+            }
+
+            PnfsId pnfsId = message.getPnfsId();
+            locations.stream().forEach((pool) ->{
+                PnfsMessage msg = new PnfsAddCacheLocationMessage(pnfsId,
+                                pool);
+                sendMessage(new CellMessage(_cacheModificationRelay, msg));
+            });
         }
     }
 
@@ -2042,12 +2048,11 @@ public class PnfsManagerV3
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
             checkRestriction(message, UPDATE_METADATA);
-            if (attr.getDefinedAttributes().contains(FileAttribute.LOCATIONS)) {
-                for (String pool: attr.getLocations()) {
-                    PnfsMessage msg =
-                        new PnfsAddCacheLocationMessage(pnfsId, pool);
-                    forwardModifyCacheLocationMessage(msg);
-                }
+            if (attr.isDefined(FileAttribute.LOCATIONS)) {
+                /*
+                 * Save for post-processing.
+                 */
+                message.setLocations(attr.getLocations());
             }
 
             /*
