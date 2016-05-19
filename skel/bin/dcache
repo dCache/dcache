@@ -661,21 +661,24 @@ case "$1" in
 
                 user=$(processUser $pid)
                 whoami=$(id|sed 's/.*uid=[0-9]*(\([^)]*\)).*/\1/')
-                if [ "$user" != "$whoami" ]; then
-                    if [ "$whoami" = "root" ]; then
-                        exec su "$user" -c "\"$0\" dump heap \"$domain\" \"$file\""
-                    else
-                        fail 1 "Permission denied. Only $user and root can dump the heap of $domain."
-                    fi
-                fi
 
                 if [ -z "$opt_force" ]; then
+                    if [ "$user" != "$whoami" ]; then
+                      if [ "$whoami" = "root" ]; then
+                         exec su "$user" -c "\"$0\" dump heap \"$domain\" \"$file\""
+                      else
+                         fail 1 "Permission denied. Only $user and root can dump the heap of $domain."
+                      fi
+                    fi
                     dumpHeap "" "live" "$file" "$pid" \
                         "Failed to dump the heap; please consult
                          the previous error message for possible
                          reasons. The dump might succeed when using
                          the --force option."
                 else
+                    if [ "$whoami" != "root" ]; then
+                         fail 1 "Permission denied. Only root can force dump the heap of $domain."
+                    fi
                     dumpHeap "force" "" "$file" "$pid" \
                         "Failed to dump the heap; please consult
                          the previous error message for possible
