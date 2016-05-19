@@ -1,9 +1,14 @@
 package org.dcache.poolmanager;
 
 import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
@@ -13,17 +18,20 @@ import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
-import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
-
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.Reply;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationJobCancelMessage;
+
+import static com.google.common.util.concurrent.Futures.*;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Implements commands to generate migration jobs to rebalance pools.
@@ -55,14 +63,20 @@ public class Rebalancer
         _poolStub = poolStub;
     }
 
-    private void cancelAll(Collection<SelectionPool> pools)
-        throws CacheException, InterruptedException
+    private ListenableFuture<List<PoolMigrationJobCancelMessage>> cancelAll(Collection<SelectionPool> pools)
     {
-        // TODO: Use SpreadAndWait
-        for (SelectionPool pool: pools) {
-            _poolStub.sendAndWait(new CellPath(pool.getName()),
-                                  new PoolMigrationJobCancelMessage(JOB_NAME, true));
-        }
+        return allAsList(pools.stream()
+                                 .map(pool -> new CellPath(pool.getName()))
+                                 .map(path -> _poolStub.send(path, new PoolMigrationJobCancelMessage(JOB_NAME, true)))
+                                 .collect(toList()));
+    }
+
+    private ListenableFuture<List<String>> sendToAll(Collection<SelectionPool> pools, String command)
+    {
+        return allAsList(pools.stream()
+                                 .map(pool -> new CellPath(pool.getName()))
+                                 .map(path -> _poolStub.send(path, command, String.class))
+                                 .collect(toList()));
     }
 
     @Command(name = "rebalance pgroup",
@@ -102,7 +116,7 @@ public class Rebalancer
                     "By default the 'relative' metric is used.  If all pools in the " +
                     "poolgroup have identical capacities then the metric used does not " +
                     "matter.")
-    public class RebalancePgroupCommand implements Callable<String>
+    public class RebalancePgroupCommand extends DelayedReply implements Callable<Reply>
     {
         @Argument(usage = "The name of the pool group to balance.")
         String poolGroup;
@@ -114,8 +128,7 @@ public class Rebalancer
         int period = 30;
 
         @Override
-        public String call() throws CacheException, InterruptedException,
-                NoSuchElementException, IllegalArgumentException
+        public Reply call() throws NoSuchElementException, IllegalArgumentException
         {
             long used = 0;
             long total = 0;
@@ -152,41 +165,67 @@ public class Rebalancer
                     throw new IllegalArgumentException("Unsupported value for -metric: " + metric);
             }
 
-            cancelAll(pools);
+            addCallback(
+                    transformAsync(cancelAll(pools), ignored -> startAllPoolsOrFail(pools, command)),
+                    new FutureCallback<Object>()
+                    {
+                        @Override
+                        public void onSuccess(Object ignored)
+                        {
+                            reply("Rebalancing jobs have been submitted to " + Joiner.on(", ").join(names) + ".");
+                        }
 
-            boolean success = false;
-            try {
-                // TODO: Use SpreadAndWait
-                for (SelectionPool pool: pools) {
-                    _poolStub.sendAndWait(new CellPath(pool.getName()), command,
-                            String.class);
-                }
-                success = true;
-            } finally {
-                if (!success) {
-                    cancelAll(pools);
-                }
-            }
+                        @Override
+                        public void onFailure(Throwable t)
+                        {
+                            reply(t);
+                        }
+                    }
+            );
 
-            return "Rebalancing jobs have been submitted to " +
-                    Joiner.on(", ").join(names) + ".";
+            return this;
+        }
+
+        protected ListenableFuture<Object> startAllPoolsOrFail(Collection<SelectionPool> pools, String command)
+        {
+            return catchingAsync(sendToAll(pools, command), Exception.class, t -> cancelAllPoolsAndFail(pools, t));
+        }
+
+        protected <V> ListenableFuture<V> cancelAllPoolsAndFail(Collection<SelectionPool> pools, Exception t)
+        {
+            return Futures.transformAsync(cancelAll(pools), ignored -> immediateFailedFuture(t));
         }
     }
 
     @Command(name = "rebalance cancel pgroup",
             hint = "cancel rebalancing operation",
             description = "Cancels migration jobs created by the rebalancer.")
-    public class rebalance_cancel_pgroupCommand implements Callable<String>
+    public class RebalanceCancelCommand extends DelayedReply implements Callable<Reply>
     {
         @Argument(usage = "The name of the pool group.")
         String poolGroup;
 
         @Override
-        public String call() throws CacheException, InterruptedException,
-                NoSuchElementException
+        public Reply call()
         {
-            cancelAll(_psu.getPoolsByPoolGroup(poolGroup));
-            return "";
+            addCallback(cancelAll(_psu.getPoolsByPoolGroup(poolGroup)),
+                        new FutureCallback<List<PoolMigrationJobCancelMessage>>()
+                                {
+                                    @Override
+                                    public void onSuccess(List<PoolMigrationJobCancelMessage> result)
+                                    {
+                                        String s = "Cancelled rebalancing on {0,choice,0#zero " +
+                                                   "pools|1#one pool|1<{0,number,integer} pools}.";
+                                        reply(MessageFormat.format(s, result.size()));
+                                    }
+
+                                    @Override
+                                    public void onFailure(Throwable t)
+                                    {
+                                        reply(t);
+                                    }
+                                });
+            return this;
         }
     }
 }
