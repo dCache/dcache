@@ -73,24 +73,22 @@ public class ActiveTransfersPage extends BasePage
             columns.add(new SelectColumn());
         }
         columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("door"), ColumnComparator.DOOR, "cellName"));
-        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("domain"), ColumnComparator.DOMAIN, "cellDomainName"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("domain"), ColumnComparator.DOMAIN, "domainName"));
         columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("id"), ColumnComparator.ID, "serialId"));
         columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("protocol"), ColumnComparator.PROTOCOL, "protocol"));
-        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("owner"), ColumnComparator.OWNER, "owner"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("uid"), ColumnComparator.UID, "uid"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("gid"), ColumnComparator.GID, "gid"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("vomsGroup"), ColumnComparator.VOMSGROUP, "vomsGroup"));
         columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("process"), ColumnComparator.PROCESS, "process"));
         columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("pnfsid"), ColumnComparator.PNFSID, "pnfsId"));
         columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("pool"), ColumnComparator.POOL, "pool"));
-        if (isAdmin) {
-            columns.add(
-                    new PropertyColumn<ActiveTransfersBean, ColumnComparator>(
-                            new ResourceModel("host"), ColumnComparator.HOST, "replyHost"));
-        }
-        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("status"), ColumnComparator.STATUS, "status"));
-        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("time"), ColumnComparator.SINCE, "waitingSinceTime"));
-        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("state"), ColumnComparator.STATE, "state"));
-        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("transferred"), ColumnComparator.TRANSFERRED, "transferred"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("host"), ColumnComparator.HOST, "replyHost"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("status"), ColumnComparator.STATUS, "sessionStatus"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("waiting"), ColumnComparator.SINCE, "timeWaiting"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("state"), ColumnComparator.STATE, "moverStatus"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("transferred"), ColumnComparator.TRANSFERRED, "bytesTransferred"));
         columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("throughput"), ColumnComparator.RATE, "transferRate"));
-        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("mover"), ColumnComparator.JOB, "jobId"));
+        columns.add(new PropertyColumn<ActiveTransfersBean, ColumnComparator>(new ResourceModel("moverId"), ColumnComparator.JOB, "moverId"));
 
         TransfersProvider provider = new TransfersProvider();
         DataTable<ActiveTransfersBean, ColumnComparator> transfers = new DefaultDataTable<>("transfers", columns, provider, 1000);
@@ -140,15 +138,17 @@ public class ActiveTransfersPage extends BasePage
                 String s = filter.toLowerCase();
                 return transfers.stream()
                         .filter(transfer -> transfer.getCellName().toLowerCase().contains(s) ||
-                                            transfer.getCellDomainName().toLowerCase().contains(s) ||
-                                            transfer.getOwner().toLowerCase().contains(s) ||
+                                            transfer.getDomainName().toLowerCase().contains(s) ||
+                                            transfer.getUid().toLowerCase().contains(s) ||
+                                            transfer.getGid().toLowerCase().contains(s) ||
+                                            transfer.getVomsGroup().toLowerCase().contains(s) ||
                                             transfer.getPnfsId().toLowerCase().contains(s) ||
                                             transfer.getPool().toLowerCase().contains(s) ||
                                             transfer.getProcess().toLowerCase().contains(s) ||
-                                            transfer.getProtocolFamily().toLowerCase().contains(s) ||
-                                            isAdmin && transfer.getReplyHost().toLowerCase().contains(s) ||
-                                            transfer.getState().toLowerCase().contains(s) ||
-                                            transfer.getStatus().toLowerCase().contains(s))
+                                            transfer.getProtocol().toLowerCase().contains(s) ||
+                                            transfer.getReplyHost().toLowerCase().contains(s) ||
+                                            transfer.getMoverStatus().toLowerCase().contains(s) ||
+                                            transfer.getSessionStatus().toLowerCase().contains(s))
                         .collect(toList());
             }
             return transfers;
@@ -204,7 +204,7 @@ public class ActiveTransfersPage extends BasePage
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return o1.getCellDomainName().compareTo(o2.getCellDomainName());
+                return o1.getDomainName().compareTo(o2.getDomainName());
             }
         },
         ID {
@@ -218,14 +218,28 @@ public class ActiveTransfersPage extends BasePage
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return o1.getProtocolFamily().compareTo(o2.getProtocolFamily());
+                return o1.getProtocol().compareTo(o2.getProtocol());
             }
         },
-        OWNER {
+        UID {
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return o1.getOwner().compareTo(o2.getOwner());
+                return o1.getUid().compareTo(o2.getUid());
+            }
+        },
+        GID {
+            @Override
+            public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
+            {
+                return o1.getGid().compareTo(o2.getGid());
+            }
+        },
+        VOMSGROUP {
+            @Override
+            public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
+            {
+                return o1.getVomsGroup().compareTo(o2.getVomsGroup());
             }
         },
         PROCESS {
@@ -260,7 +274,7 @@ public class ActiveTransfersPage extends BasePage
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return o1.getStatus().compareTo(o2.getStatus());
+                return o1.getSessionStatus().compareTo(o2.getSessionStatus());
             }
         },
         SINCE {
@@ -274,14 +288,14 @@ public class ActiveTransfersPage extends BasePage
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return o1.getState().compareTo(o2.getState());
+                return o1.getMoverStatus().compareTo(o2.getMoverStatus());
             }
         },
         TRANSFERRED {
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return Longs.compare(o1.getTransferred(), o2.getTransferred());
+                return Longs.compare(o1.getBytesTransferred(), o2.getBytesTransferred());
             }
         },
         RATE {
@@ -295,7 +309,7 @@ public class ActiveTransfersPage extends BasePage
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return Longs.compare(o1.getJobId(), o2.getJobId());
+                return Longs.compare(o1.getMoverId(), o2.getMoverId());
             }
         }
     }

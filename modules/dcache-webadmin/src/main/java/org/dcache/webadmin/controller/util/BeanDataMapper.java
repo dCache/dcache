@@ -124,9 +124,9 @@ public class BeanDataMapper {
 
     public static ActiveTransfersBean moverModelToView(TransferCollector.Transfer transfer) {
         ActiveTransfersBean bean = new ActiveTransfersBean();
-        bean.setCellDomainName(transfer.door().getDomainName());
+        bean.setDomainName(transfer.door().getDomainName());
         bean.setCellName(transfer.door().getCellName());
-        bean.setOwner(transfer.door().getOwner());
+        bean.setSubject(transfer.session().getSubject());
         if (transfer.session().getPnfsId() == null) {
             bean.setPnfsId("");
         } else {
@@ -136,24 +136,23 @@ public class BeanDataMapper {
             bean.setPool(transfer.session().getPool());
         }
         bean.setProcess(transfer.door().getProcess());
-        bean.setProtocolFamily(transfer.door().getProtocolFamily());
-        bean.setProtocolVersion(transfer.door().getProtocolVersion());
+        bean.setProtocol(transfer.door().getProtocolFamily(),
+                        transfer.door().getProtocolVersion());
         bean.setReplyHost(transfer.session().getReplyHost());
         bean.setSerialId(transfer.session().getSerialId());
         if (transfer.session().getStatus() == null) {
-            bean.setStatus("");
+            bean.setSessionStatus("");
         } else {
             String status = transfer.session().getStatus();
             status = status.replace(" ", "\n");
-            bean.setStatus(status);
+            bean.setSessionStatus(status);
         }
         bean.setWaitingSince(transfer.session().getWaitingSince());
         IoJobInfo mover = transfer.mover();
         if (mover != null) {
             bean.setBytesTransferred(mover.getBytesTransferred());
-            bean.setJobId(mover.getJobId());
-            bean.setLastTransferred(mover.getLastTransferred());
-            bean.setState(mover.getStatus());
+            bean.setMoverId(mover.getJobId());
+            bean.setMoverStatus(mover.getStatus());
             bean.setTransferTime(mover.getTransferTime());
         }
         return bean;

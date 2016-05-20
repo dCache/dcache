@@ -68,17 +68,17 @@ public class StandardMoverDAO implements MoverDAO {
                     futures.put(transfer.getKey(),
                                 _cellStub.send(new CellPath(transfer.getPool()),
                                               new PoolMoverKillMessage(transfer.getPool(),
-                                                                       Ints.checkedCast(transfer.getJobId()))));
+                                                                       Ints.checkedCast(transfer.getMoverId()))));
                 }
 
                 Collection<Long> failed = new ArrayList<>();
                 for (ActiveTransfersBean transfer : transfers) {
                     try {
                         CellStub.getMessage(futures.get(transfer.getKey()));
-                        transfer.setState(IoRequestState.CANCELED.toString());
+                        transfer.setMoverStatus(IoRequestState.CANCELED.toString());
                     } catch (CacheException e) {
                         if (e.getRc() != 1) {
-                            failed.add(transfer.getJobId());
+                            failed.add(transfer.getMoverId());
                         }
                     }
                 }

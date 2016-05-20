@@ -33,7 +33,7 @@ public class ActiveTransfersServiceException extends Exception {
     /**
      * Constructor with error message.
      *
-     * @param cause
+     * @param msg
      *            the root cause of the exception
      */
     public ActiveTransfersServiceException(String msg) {

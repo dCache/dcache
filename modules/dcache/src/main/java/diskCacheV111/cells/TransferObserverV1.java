@@ -1,13 +1,13 @@
 package diskCacheV111.cells;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,12 +18,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.HTMLBuilder;
-import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TransferInfo;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
-
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
@@ -31,7 +31,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.cells.services.login.LoginBrokerSubscriber;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
-
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.NetworkUtils;
@@ -42,127 +41,223 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TransferObserverV1
     extends CellAdapter
-    implements Runnable
-{
-    private final Logger _log =
-        LoggerFactory.getLogger(TransferObserverV1.class);
+    implements Runnable {
+    private static final Logger _log = LoggerFactory.getLogger(TransferObserverV1.class);
 
-    private final CellNucleus   _nucleus;
-    private final CellStub      _cellStub;
-    private final Args          _args;
+    private final CellNucleus _nucleus;
+    private final CellStub _cellStub;
+    private final Args _args;
     private TransferCollector _collector;
-    private Thread        _workerThread;
+    private Thread _workerThread;
     private LoginBrokerSubscriber _loginBrokerSource;
-    private       long          _update         = 120000L;
-    private       long          _timeUsed;
-    private       long          _processCounter;
-    private FieldMap      _fieldMap;
-    private final Map<String,TableEntry> _tableHash
-        = new HashMap<>();
+    private long _update = 120000L;
+    private long _timeUsed;
+    private long _processCounter;
+    private final Map<String, TableEntry> _tableHash = new HashMap<>();
 
-
-    private static final String[] __className =
-    {
-        "cell",               //   0
-        "domain",             //   1
-        "sequence",           //   2
-        "protocol",           //   3
-        "owner",              //   4
-        "process",            //   5
-        "pnfs",               //   6
-        "pool",               //   7
-        "host",               //   8
-        "status",             //   9
-        "wait",               //  10
-        "state",              //  11
-        "submitted",          //  12
-        "time",               //  13
-        "transferred",        //  14
-        "speed",              //  15
-        "started"             //  16
+    private static final String[] __className = { "cell",               //   0
+                    "domain",             //   1
+                    "sequence",           //   2
+                    "protocol",           //   3
+                    "uid",                //   4
+                    "gid",                //   5
+                    "vomsGroup",          //   6
+                    "process",            //   7
+                    "pnfs",               //   8
+                    "pool",               //   9
+                    "host",               //  10
+                    "status",             //  11
+                    "waiting",            //  12
+                    "state",              //  13
+                    "submitted",          //  14
+                    "time",               //  15
+                    "transferred",        //  16
+                    "speed",              //  17
+                    "running"             //  18
     };
 
-    private static final String[] __listHeader =
-    {
-        "Cell",               //   0
-        "Domain",             //   1
-        "Seq",                //   2
-        "Prot",               //   3
-        "Owner",              //   4
-        "Proc",               //   5
-        "PnfsId",             //   6
-        "Pool",               //   7
-        "Host",               //   8
-        "State",              //   9
-        "Since",              //  10
-        "JobState",           //  11
-        "Submitted",          //  12
-        "Time",               //  13
-        "Trans.&nbsp;(KB)",   //  14
-        "Speed&nbsp;(KB/s)",  //  15
-        "Started"             //  16
+    private static final String[] __listHeader = { "Cell",               //   0
+                    "Domain",             //   1
+                    "Seq",                //   2
+                    "Prot",               //   3
+                    "UID",                //   4
+                    "GID",                //   5
+                    "VOMS Group",         //   6
+                    "Proc",               //   7
+                    "PnfsId",             //   8
+                    "Pool",               //   9
+                    "Host",               //  10
+                    "State",              //  11
+                    "Waiting",            //  12
+                    "JobState",           //  13
+                    "Submitted",          //  14
+                    "Time",               //  15
+                    "Trans.&nbsp;(KB)",   //  16
+                    "Speed&nbsp;(KB/s)",  //  17
+                    "Running"             //  18
     };
 
-    private class FieldMap
-    {
-        private final Class<?>[] _conArgsClass = { Args.class };
-        private Class<?>       _mapClass;
-        private Constructor<?> _constructor;
-        private Object      _master;
-        private Method      _mapOwner;
+    private static class TableEntry {
+        private final String _tableName;
+        private final int[] _fields;
+        private final String _title;
+        private long _olderThan;
+        private boolean _ifNotYetStarted;
+        private boolean _ifMoverMissing;
 
-        private FieldMap(String className , Args args)
-        {
-            if (className == null) {
-                _log.info("FieldMap : 'fieldMap' not defined");
-                return;
-            }
-
-            Object[] conArgs   = { args } ;
-            Class<?> [] classArgs = { String.class } ;
-            try {
-                _mapClass     = Class.forName(className) ;
-                _constructor  = _mapClass.getConstructor(_conArgsClass) ;
-                _master       = _constructor.newInstance(conArgs);
-                _mapOwner     = _mapClass.getMethod("mapOwner", classArgs ) ;
-                //
-                // only if this is ok, we can load the commandlistener ...
-                //
-                addCommandListener( _master ) ;
-                //
-                _log.info("FieldMap : " + _mapClass.getName() + " loaded");
-            } catch (Exception ee) {
-                _log.warn("FieldMap : Creating map class Failed : " + ee);
-            }
+        private TableEntry(String tableName, int[] fields, String title) {
+            _tableName = tableName;
+            _fields = fields;
+            _title = title;
         }
 
-        private String mapOwner(String owner)
-        {
-            Object [] args = { owner };
-            if (_mapOwner == null) {
-                return owner;
-            }
+        private int[] getFields() {
+            return _fields;
+        }
 
-            try {
-                return (String)_mapOwner.invoke(_master, args);
-            } catch (Exception ee) {
-                _log.warn("Problem invoking 'mapOwner' : " + ee);
-                return owner;
+        private String getName() {
+            return _tableName;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(_tableName).append(" = ");
+            if (_fields.length > 0) {
+                for (int i = 0; i < (_fields.length - 1); i++) {
+                    sb.append(_fields[i]).append(",");
+                }
+                sb.append(_fields[_fields.length - 1]);
             }
+            if (_title != null) {
+                sb.append("  \"").append(_title).append("\"");
+            }
+            return sb.toString();
+        }
+
+        private boolean ifNotYetStarted() {
+            return _ifNotYetStarted;
+        }
+
+        private boolean ifMoverMissing() {
+            return _ifMoverMissing;
+        }
+
+        private long getOlderThan() {
+            return _olderThan;
         }
     }
 
-    public TransferObserverV1(String name, String  args)
-    {
+    /**
+     *   <p>Used to produce JSON representation, but also provides methods
+     *      for conversion into .txt and .html table entries.</p>
+     */
+    private static class TransferBean extends TransferInfo {
+        private String waiting;
+        private String elapsedSinceSubmitted;
+        private String running;
+        private String transferTimeStr;
+        private String transferRateStr;
+
+        public TransferBean() {}
+
+        public TransferBean(Transfer transfer, long now) {
+            cellName = transfer.door().getCellName();
+            domainName = transfer.door().getDomainName();
+            serialId = transfer.session().getSerialId();
+            setProtocol(transfer.door().getProtocolFamily(),
+                            transfer.door().getProtocolVersion());
+            setSubject(transfer.session().getSubject());
+            process = transfer.door().getProcess();
+            pnfsId = Objects.toString(transfer.session().getPnfsId(), "");
+            pool = Objects.toString(transfer.session().getPool(), "");
+            replyHost = Objects.toString(transfer.session().getReplyHost(), "");
+            sessionStatus = Objects.toString(transfer.session().getStatus(), "");
+            waitingSince = transfer.session().getWaitingSince();
+            waiting = timeWaiting(now);
+
+            IoJobInfo moverInfo = transfer.mover();
+            if (moverInfo == null) {
+                moverStatus = null;
+            } else {
+                moverId = moverInfo.getJobId();
+                moverStatus = moverInfo.getStatus();
+                moverSubmit = moverInfo.getSubmitTime();
+                elapsedSinceSubmitted = timeElapsedSinceSubmitted(now);
+                if (moverInfo.getStartTime() > 0L) {
+                    transferTime = moverInfo.getTransferTime();
+                    bytesTransferred = moverInfo.getBytesTransferred();
+                    moverStart = moverInfo.getStartTime();
+                    running = timeRunning(now);
+                    transferTimeStr = getTimeString(transferTime);
+                    long transferRate = getTransferRate();
+                    transferRateStr = transferRate > 0.0 ?
+                        String.format("%s KB/sec", transferRate) : "-";
+                }
+            }
+        }
+
+        void toHtmlRow(List<String> out) {
+            out.add(cellName);
+            out.add(domainName);
+            out.add(String.valueOf(serialId));
+            out.add(protocol);
+            out.add(userInfo.getUid());
+            out.add(userInfo.getGid());
+            out.add(userInfo.getPrimaryVOMSGroup());
+            out.add(process);
+            out.add(pnfsId);
+            out.add(pool);
+            out.add(replyHost);
+            out.add(sessionStatus == null ? ""
+                            : sessionStatus.replace(" ", "&nbsp;"));
+            out.add(waiting);
+
+            if (moverStatus != null) {
+                out.add(moverStatus);
+                out.add(elapsedSinceSubmitted);
+                if (moverStart != null) {
+                    out.add(transferTimeStr);
+                    out.add(String.valueOf(bytesTransferred));
+                    out.add(transferRateStr);
+                    out.add(running);
+                }
+            }
+        }
+
+        void toAsciiLine(StringBuilder builder) {
+            List<String> args = new ArrayList<>();
+            args.add(cellName);
+            args.add(domainName);
+            args.add(String.valueOf(serialId));
+            args.add(protocol);
+            args.add(userInfo.getUid());
+            args.add(userInfo.getGid());
+            args.add(userInfo.getPrimaryVOMSGroup());
+            args.add(process);
+            args.add(pnfsId);
+            args.add(pool);
+            args.add(replyHost);
+            args.add(sessionStatus);
+            args.add(waiting);
+            args.add(moverStatus == null ? "No-mover()-Found" : moverStatus);
+            args.add(transferTimeStr);
+            args.add(String.valueOf(bytesTransferred));
+            args.add(transferRateStr);
+            args.add(running);
+            builder.append(new Args(args)).append('\n');
+        }
+    }
+
+    public TransferObserverV1(String name, String args) {
         super(name, TransferObserverV1.class.getName(), args);
         _nucleus = getNucleus();
         _cellStub = new CellStub(this, null, 30, SECONDS);
-        _args    = getArgs();
+        _args = getArgs();
     }
 
     @Override
-    protected void startUp() throws Exception
-    {
+    protected void startUp() throws Exception {
         if (_args.argc() < 0) {
             throw new IllegalArgumentException("Usage : ... ");
         }
@@ -189,103 +284,27 @@ public class TransferObserverV1
             _log.warn("Illegal value for -update: " + updateString);
         }
 
-        //
-        // if login broker is defined, the
-        // worker will add the 'fixed' door list to the
-        // list provided by the loginBroker.
-        //
-        //
-        _fieldMap = new FieldMap(_args.getOpt("fieldMap"), _args);
-        //
         useInterpreter(true);
     }
 
     @Override
-    protected void started()
-    {
+    protected void started() {
         _workerThread = _nucleus.newThread(this, "worker");
         _workerThread.start();
         _loginBrokerSource.afterStart();
     }
 
     @Override
-    public void cleanUp()
-    {
+    public void cleanUp() {
         if (_workerThread != null) {
             _workerThread.interrupt();
         }
         _loginBrokerSource.beforeStop();
     }
 
-    private static class TableEntry
-    {
-        private final String  _tableName;
-        private final int []  _fields;
-        private final String  _title;
-        private long    _olderThan;
-        private boolean _ifNotYetStarted;
-        private boolean _ifMoverMissing;
-
-        private TableEntry(String tableName, int [] fields)
-        {
-            _tableName = tableName;
-            _fields    = fields;
-            _title     = null;
-        }
-
-        private TableEntry(String tableName, int [] fields, String title)
-        {
-            _tableName = tableName;
-            _fields    = fields;
-            _title     = title;
-        }
-
-        private int [] getFields()
-        {
-            return _fields;
-        }
-
-        private String getName()
-        {
-            return _tableName;
-        }
-
-        @Override
-        public String toString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append(_tableName).append(" = ");
-            if (_fields.length > 0) {
-                for (int i = 0; i < (_fields.length - 1); i++) {
-                    sb.append(_fields[i]).append(",");
-                }
-                sb.append(_fields[_fields.length - 1]);
-            }
-            if (_title != null) {
-                sb.append("  \"").append(_title).append("\"");
-            }
-            return sb.toString();
-        }
-
-        private boolean ifNotYetStarted()
-        {
-            return _ifNotYetStarted;
-        }
-
-        private boolean ifMoverMissing()
-        {
-            return _ifMoverMissing;
-        }
-
-        private long getOlderThan()
-        {
-            return _olderThan;
-        }
-    }
-
     public static final String hh_table_help = "";
-    public String ac_table_help(Args args)
-    {
+
+    public String ac_table_help(Args args) {
         StringBuilder sb = new StringBuilder();
         int i = 0;
         for (String header : __listHeader) {
@@ -294,13 +313,13 @@ public class TransferObserverV1
         return sb.toString();
     }
 
-    public static final String hh_table_define = "<tableName> <n>[,<m>[,...]] [<tableHeader>]" ;
+    public static final String hh_table_define = "<tableName> <n>[,<m>[,...]] [<tableHeader>]";
+
     public synchronized String ac_table_define_$_2_3(Args args)
-        throws NumberFormatException
-    {
-        String     tableName = args.argv(0);
-        String        header = args.argc() > 2 ? args.argv(2) : null;
-        String[]        list = args.argv(1).split(",");
+                    throws NumberFormatException {
+        String tableName = args.argv(0);
+        String header = args.argc() > 2 ? args.argv(2) : null;
+        String[] list = args.argv(1).split(",");
 
         int[] array = new int[list.length];
         for (int i = 0; i < list.length; i++) {
@@ -313,8 +332,8 @@ public class TransferObserverV1
     }
 
     public static final String hh_table_undefine = "<tableName>";
-    public synchronized String ac_table_undefine_$_1(Args args)
-    {
+
+    public synchronized String ac_table_undefine_$_1(Args args) {
         String tableName = args.argv(0);
         _tableHash.remove(tableName);
         _nucleus.getDomainContext().remove(tableName + ".html");
@@ -322,8 +341,8 @@ public class TransferObserverV1
     }
 
     public static final String hh_table_ls = "[<tableName>]";
-    public synchronized String ac_table_ls_$_0_1(Args args)
-    {
+
+    public synchronized String ac_table_ls_$_0_1(Args args) {
         StringBuilder sb = new StringBuilder();
         if (args.argc() == 0) {
             for (TableEntry entry : _tableHash.values()) {
@@ -341,12 +360,12 @@ public class TransferObserverV1
     }
 
     public static final String hh_set_update = "<updateTime/sec>";
-    public String ac_set_update_$_1(Args args)
-    {
+
+    public String ac_set_update_$_1(Args args) {
         long update = Long.parseLong(args.argv(0)) * 1000L;
         if (update < 10000L) {
-            throw new
-                    IllegalArgumentException("Update time must exceed 10 seconds");
+            throw new IllegalArgumentException(
+                            "Update time must exceed 10 seconds");
         }
 
         synchronized (this) {
@@ -357,16 +376,14 @@ public class TransferObserverV1
     }
 
     @Override
-    public void getInfo(PrintWriter pw)
-    {
+    public void getInfo(PrintWriter pw) {
         pw.println("    Update Time : " + (_update / 1000L) + " seconds");
         pw.println("        Counter : " + _processCounter);
         pw.println(" Last Time Used : " + _timeUsed + " milliseconds");
     }
 
     @Override
-    public void messageArrived(CellMessage envelope)
-    {
+    public void messageArrived(CellMessage envelope) {
         Serializable message = envelope.getMessageObject();
         if (message instanceof LoginBrokerInfo) {
             _loginBrokerSource.messageArrived((LoginBrokerInfo) message);
@@ -376,8 +393,7 @@ public class TransferObserverV1
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         try {
             while (!Thread.interrupted()) {
                 try {
@@ -398,41 +414,50 @@ public class TransferObserverV1
         }
     }
 
-    public String ac_go(Args args )
-    {
+    public String ac_go(Args args) {
         synchronized (this) {
             notifyAll();
         }
         return "Update started.";
     }
 
-    private void collectDataSequentially() throws InterruptedException
-    {
+    private void collectDataSequentially() throws InterruptedException {
         try {
-            Collection<LoginBrokerInfo> loginBrokerInfos =
-                    _collector.getLoginBrokerInfo();
-            Collection<LoginManagerChildrenInfo> loginManagerInfos =
-                    _collector.collectLoginManagerInfo(TransferCollector.getLoginManagers(loginBrokerInfos)).get();
-            Collection<IoDoorInfo> doorInfos =
-                    _collector.collectDoorInfo(TransferCollector.getDoors(loginManagerInfos)).get();
-            Collection<IoJobInfo> movers =
-                    _collector.collectMovers(TransferCollector.getPools(doorInfos)).get();
+            Collection<LoginBrokerInfo> loginBrokerInfos = _collector.getLoginBrokerInfo();
+            Collection<LoginManagerChildrenInfo> loginManagerInfos = _collector.collectLoginManagerInfo(
+                            TransferCollector.getLoginManagers(loginBrokerInfos)).get();
+            Collection<IoDoorInfo> doorInfos = _collector.collectDoorInfo(
+                            TransferCollector.getDoors(loginManagerInfos)).get();
+            Collection<IoJobInfo> movers = _collector.collectMovers(
+                            TransferCollector.getPools(doorInfos)).get();
 
-            List<Transfer> transfers = TransferCollector.getTransfers(doorInfos, movers);
+            List<Transfer> transfers = TransferCollector.getTransfers(doorInfos,
+                            movers);
             transfers.sort(new TransferCollector.ByDoorAndSequence());
 
             Map<String, Object> domainContext = _nucleus.getDomainContext();
             domainContext.put("doors.html", createDoorPage(loginBrokerInfos));
             domainContext.put("transfers.list", transfers);
-            domainContext.put("transfers.html", createHtmlTable(transfers));
-            domainContext.put("transfers.txt", createAsciiTable(transfers));
+
+            long now = System.currentTimeMillis();
+            List<TransferBean> beans = transfers
+                            .stream()
+                            .map((t) -> new TransferBean(t, now))
+                            .collect(Collectors.toList());
+
+            domainContext.put("transfers.html", createHtmlTable(beans));
+            domainContext.put("transfers.txt", createAsciiTable(beans));
+            domainContext.put("transfers.json",
+                            new ObjectMapper().writerWithDefaultPrettyPrinter()
+                                              .writeValueAsString(beans));
 
             synchronized (this) {
                 for (TableEntry entry : _tableHash.values()) {
-                    domainContext.put(entry.getName() + ".html", createDynamicTable(transfers, entry.getFields()));
+                    domainContext.put(entry.getName() + ".html",
+                                    createDynamicTable(transfers, entry.getFields()));
                 }
             }
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | JsonProcessingException e) {
             throw Throwables.propagate(e.getCause());
         }
     }
@@ -441,30 +466,29 @@ public class TransferObserverV1
     // the html stuff.
     //
 
-    private String createDoorPage(Collection<LoginBrokerInfo> doors)
-    {
+    private String createDoorPage(Collection<LoginBrokerInfo> doors) {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
         page.addHeader("/styles/doors.css", "Doors");
         page.beginTable("sortable",
-                        "cell",     "Cell",
-                        "domain",   "Domain",
+                        "cell", "Cell",
+                        "domain", "Domain",
                         "protocol", "Protocol",
-                        "version",  "Version",
-                        "host",     "Host",
-                        "port",     "Port",
-                        "load",     "Load");
+                        "version", "Version",
+                        "host", "Host",
+                        "port", "Port",
+                        "load", "Load");
 
         for (LoginBrokerInfo door : doors) {
-            InetAddress address =
-                    door.getAddresses().stream().max(Comparator.comparing(NetworkUtils.InetAddressScope::of)).get();
+            InetAddress address = door.getAddresses().stream().max(
+                            Comparator.comparing(NetworkUtils.InetAddressScope::of)).get();
             page.beginRow(null, "odd");
             page.td("cell", door.getCellName());
-            page.td("domain",   door.getDomainName());
+            page.td("domain", door.getDomainName());
             page.td("protocol", door.getProtocolFamily());
-            page.td("version",  door.getProtocolVersion());
+            page.td("version", door.getProtocolVersion());
             page.td("host", address.getHostName());
-            page.td("port",     door.getPort());
+            page.td("port", door.getPort());
             page.td("load", (int) (door.getLoad() * 100.0));
             page.endRow();
         }
@@ -473,8 +497,7 @@ public class TransferObserverV1
         return page.toString();
     }
 
-    private String createDynamicTable(List<Transfer> transfers, int [] fields)
-    {
+    private String createDynamicTable(List<Transfer> transfers, int[] fields) {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
         page.addHeader("/styles/transfers.css", "Active Transfers");
@@ -486,8 +509,11 @@ public class TransferObserverV1
         }
         page.endTHead();
 
+        long now = System.currentTimeMillis();
+
         for (Transfer transfer : transfers) {
-            List<String> values = createFieldList(transfer);
+            List<String> values = new ArrayList<>();
+            new TransferBean(transfer, now).toHtmlRow(values);
             for (int field : fields) {
                 if (field >= values.size()) {
                     page.td(__className[field], "");
@@ -502,165 +528,62 @@ public class TransferObserverV1
     }
 
     public static final String hh_ls_iolist = "";
-    public synchronized String ac_ls_iolist(Args args)
-    {
+
+    public synchronized String ac_ls_iolist(Args args) {
         return Objects.toString(_nucleus.getDomainContext().get("transfers.txt"), "");
     }
 
-    private String createAsciiTable(List<Transfer> transfers)
-    {
-        long          now = System.currentTimeMillis();
-        StringBuilder sb  = new StringBuilder();
-
-        for (Transfer transfer : transfers) {
-            List<String> args = new ArrayList<>();
-            args.add(transfer.door().getCellName());
-            args.add(transfer.door().getDomainName());
-            args.add(String.valueOf(transfer.session().getSerialId()));
-            args.add(transfer.door().getProtocolFamily() + "-" + transfer.door().getProtocolVersion());
-            args.add(transfer.door().getOwner());
-            args.add(transfer.door().getProcess());
-            args.add(Objects.toString(transfer.session().getPnfsId(), ""));
-            args.add(Objects.toString(transfer.session().getPool(), ""));
-            args.add(transfer.session().getReplyHost());
-            args.add(Objects.toString(transfer.session().getStatus(), ""));
-            args.add(String.valueOf(now - transfer.session().getWaitingSince()));
-
-            IoJobInfo mover = transfer.mover();
-            if (mover == null) {
-                args.add("No-mover()-Found");
-            } else {
-                args.add(mover.getStatus());
-                if (mover.getStartTime() > 0L) {
-                    long transferTime     = mover.getTransferTime();
-                    long bytesTransferred = mover.getBytesTransferred();
-                    args.add(String.valueOf(transferTime));
-                    args.add(String.valueOf(bytesTransferred));
-                    args.add(String.valueOf(transferTime > 0 ? ((double) bytesTransferred / (double) transferTime) : 0));
-                    args.add(String.valueOf(now - mover.getStartTime()));
-                }
-            }
-            sb.append(new Args(args)).append('\n');
-        }
-        return sb.toString();
-    }
-
-    private List<String> createFieldList(Transfer transfer)
-    {
-        long         now = System.currentTimeMillis();
-        List<String> out = new ArrayList<>(20);
-
-        PnfsId pnfsid = transfer.session().getPnfsId();
-        String status = transfer.session().getStatus();
-        out.add(transfer.door().getCellName());
-        out.add(transfer.door().getDomainName());
-        out.add(String.valueOf(transfer.session().getSerialId()));
-        out.add(transfer.door().getProtocolFamily()+"-"+
-                transfer.door().getProtocolVersion());
-        out.add(_fieldMap.mapOwner(transfer.door().getOwner()));
-        out.add(transfer.door().getProcess());
-        out.add(pnfsid == null ? "" : pnfsid.toString());
-        out.add(transfer.session().getPool());
-        out.add(transfer.session().getReplyHost());
-        out.add(status == null ? "" : status.replace(" ", "&nbsp;"));
-        out.add(getTimeString(now - transfer.session().getWaitingSince()));
-
-        if (transfer.mover() != null) {
-            out.add(transfer.mover().getStatus());
-            out.add(getTimeString(now - transfer.mover().getSubmitTime()));
-            if (transfer.mover().getStartTime() > 0L) {
-                long transferTime     = transfer.mover().getTransferTime();
-                long bytesTransferred = transfer.mover().getBytesTransferred();
-                out.add(getTimeString(transferTime));
-                out.add(Long.toString(bytesTransferred / 1024));
-                out.add(transferTime > 0 ?
-                        String.valueOf((1000 * bytesTransferred) / (1024 * transferTime)) :
-                        "-");
-                out.add(getTimeString(now - transfer.mover().getStartTime()));
-            }
-        }
-        return out;
-    }
-
-    private String getTimeString(long msec)
-    {
-        int sec  =  (int) ( msec / 1000L );
-        int min  =  sec / 60; sec  = sec  % 60;
-        int hour =  min / 60; min  = min  % 60;
-        int day  = hour / 24; hour = hour % 24;
-
-        String sS = Integer.toString(sec);
-        String mS = Integer.toString(min);
-        String hS = Integer.toString(hour);
-
+    private String createAsciiTable(List<TransferBean> transfers) {
         StringBuilder sb = new StringBuilder();
-        if (day > 0) {
-            sb.append(day).append(" d ");
-        }
-        sb.append(hS.length() < 2 ? ("0" + hS) : hS).append(":");
-        sb.append(mS.length() < 2 ? ("0" + mS) : mS).append(":");
-        sb.append(sS.length() < 2 ? ("0" + sS) : sS);
-
+        transfers.stream().forEach((t) -> t.toAsciiLine(sb));
         return sb.toString();
     }
 
-    private void createHtmlTableRow(HTMLBuilder page, Transfer transfer)
-    {
-        long now = System.currentTimeMillis();
-
+    private void createHtmlTableRow(HTMLBuilder page, TransferBean transfer) {
         page.beginRow(null, "odd");
-        page.td("door", transfer.door().getCellName());
-        page.td("domain", transfer.door().getDomainName());
-        page.td("sequence", transfer.session().getSerialId());
-        page.td("protocol", transfer.door().getProtocolFamily() +
-                     "-" + transfer.door().getProtocolVersion());
+        page.td("door", transfer.getCellName());
+        page.td("domain", transfer.getDomainName());
+        page.td("sequence", transfer.getSerialId());
+        page.td("protocol", transfer.getProtocol());
+        page.td("uid", transfer.getUserInfo().getUid());
+        page.td("gid", transfer.getUserInfo().getGid());
+        page.td("vomsGroup", transfer.getUserInfo().getPrimaryVOMSGroup());
 
-        String tmp = transfer.door().getOwner() ;
-        tmp = tmp.contains("known") ? "?" : _fieldMap.mapOwner(tmp) ;
-        page.td("owner", tmp);
-
-        tmp = transfer.door().getProcess() ;
-        tmp = tmp.contains("known") ? "?" : tmp ;
+        String tmp = transfer.getProcess();
+        tmp = tmp.contains("known") ? "?" : tmp;
         page.td("process", tmp);
 
-        String poolName = transfer.session().getPool() ;
+        String poolName = transfer.getPool();
         if (poolName == null || poolName.equals("<unknown>")) {
             poolName = "N.N.";
         }
-        page.td("pnfs", transfer.session().getPnfsId());
-        page.td("pool", poolName);
-        page.td("host", transfer.session().getReplyHost());
-        String status = transfer.session().getStatus();
-        page.td("status", status != null ? status.replace(" ", "&nbsp;") : "");
-        page.td("wait", getTimeString(now - transfer.session().getWaitingSince()));
 
-        if (transfer.mover() == null) {
+        page.td("pnfs", transfer.getPnfsId());
+        page.td("pool", poolName);
+        page.td("host", transfer.getReplyHost());
+        String status = transfer.getSessionStatus();
+        page.td("status", status != null ? status.replace(" ", "&nbsp;") : "");
+        page.td("waiting", transfer.waiting);
+
+        if (transfer.getMoverStatus() == null) {
             if (poolName.equals("N.N.")) {
                 page.td(3, "staging", "Staging");
-            }else{
+            } else {
                 page.td(3, "missing", "No Mover found");
             }
         } else {
-            page.td("state", transfer.mover().getStatus());
-            if (transfer.mover().getStartTime() > 0L) {
-                long transferTime     = transfer.mover().getTransferTime() ;
-                long bytesTransferred = transfer.mover().getBytesTransferred() ;
-                //  appendCells(sbtransferTime/1000L);
-                page.td("transferred", bytesTransferred / 1024);
-                page.td("speed", transferTime > 0 ?
-                             (1000 * bytesTransferred) / (1024 * transferTime) :
-                             "-");
-                //  appendCells(sb, (now-io.getMover().getStartTime())/1000L);
+            page.td("state", transfer.getMoverStatus());
+            if (transfer.getMoverStart() > 0L) {
+                page.td("transferred", transfer.getBytesTransferred() / 1024);
             } else {
                 page.td("transferred", "-");
-                page.td("speed", "-");
             }
+            page.td("speed", transfer.getTransferRate());
         }
         page.endRow();
     }
 
-    public String createHtmlTable(List<Transfer> transfers)
-    {
+    private String createHtmlTable(List<TransferBean> transfers) {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
         page.addHeader("/styles/transfers.css", "Active Transfers");
@@ -669,53 +592,21 @@ public class TransferObserverV1
                         "domain", "Domain",
                         "sequence", "Seq",
                         "protocol", "Prot",
-                        "owner", "Owner",
+                        "uid", "UID",
+                        "gid", "GID",
+                        "vomsGroup", "VOMS Group",
                         "process", "Proc",
                         "pnfs", "PnfsId",
                         "pool", "Pool",
                         "host", "Host",
                         "status", "Status",
-                        "wait", "Since",
+                        "waiting", "Waiting",
                         "state", "S",
                         "transferred", "Trans.&nbsp;(KB)",
                         "speed", "Speed&nbsp;(KB/s)");
-        for (Transfer transfer : transfers) {
-            createHtmlTableRow(page, transfer);
-        }
+        transfers.stream().forEach((t) -> createHtmlTableRow(page, t));
         page.endTable();
         page.addFooter(getClass().getName());
-        return page.toString();
-    }
-
-    public String createErrorHtmlTable(List<Transfer> transfers)
-    {
-        HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
-
-        page.addHeader("/styles/transfers.css", "Active Transfers");
-        page.beginTable("sortable",
-                        "door", "Door",
-                        "domain", "Domain",
-                        "sequence", "Seq",
-                        "protocol", "Prot",
-                        "owner", "Owner",
-                        "process", "Proc",
-                        "pnfs", "PnfsId",
-                        "pool", "Pool",
-                        "host", "Host",
-                        "status", "Status",
-                        "wait", "Since",
-                        "state", "S",
-                        "transferred", "Trans.&nbsp;(KB)",
-                        "speed", "Speed&nbsp;(KB/s)");
-
-        for (Transfer transfer : transfers) {
-            if (transfer.mover() == null) {
-                createHtmlTableRow(page, transfer);
-            }
-        }
-        page.endTable();
-        page.addFooter(getClass().getName());
-
         return page.toString();
     }
 }
