@@ -24,9 +24,8 @@ import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
 
-import static org.dcache.srm.scheduler.State.INPROGRESS;
 import static org.dcache.srm.scheduler.State.UNSCHEDULED;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.*;
 
@@ -217,101 +216,6 @@ public class SchedulerContainerTests
         container.schedule(job);
 
         verify(job, times(1)).scheduleWith(schedCapture.capture());
-        assertThat(schedCapture.getValue(), is(reserveSpaceScheduler));
-    }
-
-
-    /* Check correct scheduler is selected when restoring a Job after SRM restart */
-
-    /* We don't test most of the container requests as they don't do any
-     * scheduling on SRM restart */
-
-    @Test
-    public void shouldScheduleRestoredLsFileRequests() throws Exception
-    {
-        LsFileRequest job = mockJob(LsFileRequest.class, INPROGRESS, "ls_localhost");
-
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
-
-        ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
-        assertThat(schedCapture.getValue(), is(lsScheduler));
-    }
-
-    @Test
-    public void shouldScheduleRestoredBringOnlineFileRequests() throws Exception
-    {
-        BringOnlineFileRequest job = mockJob(BringOnlineFileRequest.class,
-                INPROGRESS, "bring_online_localhost");
-
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
-
-        ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
-        assertThat(schedCapture.getValue(), is(bringOnlineScheduler));
-    }
-
-    @Test
-    public void shouldScheduleRestoredGetFileRequests() throws Exception
-    {
-        GetFileRequest job = mockJob(GetFileRequest.class, INPROGRESS,
-                "get_localhost");
-
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
-
-        ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
-        assertThat(schedCapture.getValue(), is(getScheduler));
-    }
-
-    @Test
-    public void shouldScheduleRestoredCopyRequests() throws Exception
-    {
-        CopyRequest job = mockJob(CopyRequest.class, INPROGRESS, "copy_localhost");
-
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
-
-        ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
-        assertThat(schedCapture.getValue(), is(genericScheduler));
-    }
-
-    @Test
-    public void shouldScheduleRestoredCopyFileRequests() throws Exception
-    {
-        CopyFileRequest job = mockJob(CopyFileRequest.class, INPROGRESS,
-                "copy_localhost");
-
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
-
-        ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
-        assertThat(schedCapture.getValue(), is(genericScheduler));
-    }
-
-    @Test
-    public void shouldScheduleRestoredPutFileRequests() throws Exception
-    {
-        PutFileRequest job = mockJob(PutFileRequest.class, INPROGRESS,
-                "put_localhost");
-
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
-
-        ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
-        assertThat(schedCapture.getValue(), is(putScheduler));
-    }
-
-    @Test
-    public void shouldScheduleRestoredReserveSpaceRequests() throws Exception
-    {
-        ReserveSpaceRequest job = mockJob(ReserveSpaceRequest.class, INPROGRESS,
-                "reserve_space_localhost");
-
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
-
-        ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
         assertThat(schedCapture.getValue(), is(reserveSpaceScheduler));
     }
 }

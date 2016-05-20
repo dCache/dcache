@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
 import org.dcache.srm.request.Job;
 
@@ -58,29 +59,15 @@ public class SchedulerContainer
         job.scheduleWith(scheduler);
     }
 
-    private Scheduler<?> getScheduler(Class<? extends Job> type)
+    public Scheduler<?> getScheduler(Class<? extends Job> type)
+            throws NoSuchElementException
     {
-        return getScheduler(null, type);
-    }
-
-    private Scheduler<?> getScheduler(Scheduler<?> suggestion, Class<? extends Job> type)
-            throws UnsupportedOperationException
-    {
-        if (suggestion == null || !suggestion.getType().isAssignableFrom(type)) {
-            for (Entry<Class<? extends Job>, Scheduler<?>> entry : schedulers.entrySet()) {
-                if (entry.getKey().isAssignableFrom(type)) {
-                    suggestion = entry.getValue();
-                    break;
-                }
+        for (Entry<Class<? extends Job>, Scheduler<?>> entry : schedulers.entrySet()) {
+            if (entry.getKey().isAssignableFrom(type)) {
+                return entry.getValue();
             }
         }
-
-        if (suggestion == null) {
-            throw new UnsupportedOperationException("Scheduler for " + type +
-                    " is not supported");
-        }
-
-        return suggestion;
+        throw new NoSuchElementException("Scheduler for " + type + " is not supported");
     }
 
     public CharSequence getInfo()
@@ -102,17 +89,5 @@ public class SchedulerContainer
         scheduler.printReadyQueue(sb);
 
         return sb;
-    }
-
-    public void restoreJobsOnSrmStart(Iterable<? extends Job> activeJobs, boolean shouldFailJobs)
-    {
-        Scheduler<?> scheduler = null;
-
-        for (Job job : activeJobs) {
-            scheduler = getScheduler(scheduler, job.getSchedulerType());
-            if (scheduler.getId().equals(job.getSchedulerId())) {
-                job.onSrmRestart(scheduler, shouldFailJobs);
-            } // else another SRM instance is handling this job
-        }
     }
 }

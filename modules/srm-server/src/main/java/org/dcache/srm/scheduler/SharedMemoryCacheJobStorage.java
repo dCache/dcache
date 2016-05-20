@@ -9,21 +9,22 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.dcache.srm.request.Job;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Canonicalizing and caching job storage decorator suitable for Terracotta.
+ * Canonicalizing and caching job storage decorator.
  *
- * Guarantees that for a given job ID, the same Job instance is returned as long
- * as the job is not in a final state. Jobs in a final state are not canonicalized.
+ * Guarantees that for jobs with a given scheduler id, for a given job ID the same
+ * Job instance is returned as long as the job is not in a final state. Other jobs
+ * are not canonicalized.
  *
- * All non-final jobs are cached in a static SharedMemoryCache instance suitable
- * for use as a root object with Terracotta. The expiration time of such jobs are
- * periodically checked and if passed the jobs are expired.
+ * All non-final jobs with the given scheduler id are cached in a static SharedMemoryCache.
+ * The expiration time of such jobs are periodically checked and the jobs are expired
+ * when the time has passed.
  *
  * Since the cache is shared among all instances of SharedMemoryCacheJobStorage,
  * Job IDs must be unique over all instances. This has the additional benefit
@@ -39,18 +40,23 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     private static final Timer timer = new Timer("Job expiration", true);
     private final JobStorage<J> storage;
     private final Class<J> type;
+    private final String schedulerId;
     private final Set<J> jobsToExpire = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    public SharedMemoryCacheJobStorage(JobStorage<J> storage, Class<J> type)
+    public SharedMemoryCacheJobStorage(JobStorage<J> storage, Class<J> type, String schedulerId)
     {
-        this.storage = storage;
-        this.type = type;
+        this.storage = requireNonNull(storage);
+        this.type = requireNonNull(type);
+        this.schedulerId = requireNonNull(schedulerId);
     }
 
     private J canonicalize(J job)
     {
         if (job == null) {
             return null;
+        }
+        if (!schedulerId.equals(job.getSchedulerId())) {
+            return job;
         }
         J canonicalJob = sharedMemoryCache.canonicalize(job);
         if (job == canonicalJob) {
@@ -72,7 +78,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     public void init() throws DataAccessException
     {
         storage.init();
-        storage.getActiveJobs().forEach(this::canonicalize);
+        storage.getActiveJobs(schedulerId).forEach(this::canonicalize);
         timer.schedule(new ExpirationTask(), SECONDS.toMillis(10), SECONDS.toMillis(60));
     }
 
@@ -100,18 +106,6 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
         } else {
             return null;
         }
-    }
-
-    @Override
-    public Set<J> getJobs(String scheduler) throws DataAccessException
-    {
-        return storage.getJobs(scheduler).stream().map(this::canonicalize).collect(Collectors.toSet());
-    }
-
-    @Override
-    public Set<J> getJobs(String scheduler, State state) throws DataAccessException
-    {
-        return storage.getJobs(scheduler, state).stream().map(this::canonicalize).collect(Collectors.toSet());
     }
 
     @Override
@@ -147,9 +141,11 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getActiveJobs()
+    public Set<J> getActiveJobs(String schedulerId)
     {
-        return sharedMemoryCache.getJobs(type);
+        return schedulerId.equals(this.schedulerId)
+               ? sharedMemoryCache.getJobs(type)
+               : storage.getActiveJobs(schedulerId);
     }
 
     private class ExpirationTask extends TimerTask

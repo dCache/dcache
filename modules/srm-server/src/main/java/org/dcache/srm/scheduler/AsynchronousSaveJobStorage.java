@@ -52,18 +52,6 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
         return storage.getJob(jobId, connection);
     }
 
-    @Override
-    public Set<J> getJobs(String scheduler) throws DataAccessException
-    {
-        return storage.getJobs(scheduler);
-    }
-
-    @Override
-    public Set<J> getJobs(String scheduler, State state) throws DataAccessException
-    {
-        return storage.getJobs(scheduler, state);
-    }
-
     public void saveJob(final J job, final boolean force)
     {
         UpdateState existingState;
@@ -145,8 +133,8 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getActiveJobs() throws DataAccessException
+    public Set<J> getActiveJobs(String schedulerId) throws DataAccessException
     {
-        return storage.getActiveJobs();
+        return storage.getActiveJobs(schedulerId);
     }
 }

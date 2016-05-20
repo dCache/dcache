@@ -38,6 +38,7 @@ import org.dcache.srm.scheduler.ForceOnlyJobStorageDecorator;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.scheduler.NoopJobStorage;
+import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.SharedMemoryCacheJobStorage;
 import org.dcache.srm.util.Configuration;
@@ -56,6 +57,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
             new HashMap<>();
     private final ExecutorService executor;
     private final ScheduledExecutorService scheduledExecutor;
+    private final SchedulerContainer schedulers;
 
     private <J extends Job> void add(DatabaseParameters config, Class<J> entityClass,
                      Supplier<JobStorage<J>> storageFactory)
@@ -76,13 +78,15 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         } else {
             js = new NoopJobStorage<>();
         }
-        jobStorageMap.put(entityClass, new CanonicalizingJobStorage<>(new SharedMemoryCacheJobStorage<>(js, entityClass), entityClass));
+        String schedulerId = schedulers.getScheduler(entityClass).getId();
+        jobStorageMap.put(entityClass, new CanonicalizingJobStorage<>(new SharedMemoryCacheJobStorage<>(js, entityClass, schedulerId), entityClass));
         configurations.put(entityClass, config);
     }
 
-    public DatabaseJobStorageFactory(Configuration config, SRMUserPersistenceManager manager)
+    public DatabaseJobStorageFactory(Configuration config, SRMUserPersistenceManager manager, SchedulerContainer schedulers)
             throws DataAccessException, IOException
     {
+        this.schedulers = schedulers;
         checkNotNull(manager);
         executor = new ThreadPoolExecutor(
                 config.getJdbcExecutionThreadNum(), config.getJdbcExecutionThreadNum(),
@@ -145,12 +149,16 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         }
     }
 
-    public void restoreJobsOnSrmStart(SchedulerContainer schedulers)
+    public void restoreJobsOnSrmStart()
     {
         for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry : jobStorageMap.entrySet()) {
             DatabaseParameters config = configurations.get(entry.getKey());
-            Set<? extends Job> jobs = entry.getValue().getActiveJobs();
-            schedulers.restoreJobsOnSrmStart(jobs, config.isCleanPendingRequestsOnRestart());
+            Scheduler<?> scheduler = schedulers.getScheduler(entry.getKey());
+            Set<? extends Job> jobs = entry.getValue().getActiveJobs(scheduler.getId());
+            boolean shouldFailJobs = config.isCleanPendingRequestsOnRestart();
+            for (Job job : jobs) {
+                job.onSrmRestart(scheduler, shouldFailJobs);
+            }
         }
     }
 
