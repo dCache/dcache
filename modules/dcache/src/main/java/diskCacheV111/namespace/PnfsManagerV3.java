@@ -1,5 +1,6 @@
 package diskCacheV111.namespace;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.FutureCallback;
@@ -13,13 +14,12 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.security.auth.Subject;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.Subject;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -56,13 +57,11 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
-import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
@@ -75,13 +74,11 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
-
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Activity;
 import org.dcache.auth.attributes.Restriction;
-import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -102,10 +99,10 @@ import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.dcache.auth.Subjects.ROOT;
-import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.acl.enums.AccessType.*;
+import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.auth.attributes.Activity.*;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsManagerV3
     extends AbstractCellComponent
@@ -1592,22 +1589,6 @@ public class PnfsManagerV3
         }
     }
 
-    public void messageArrived(CellMessage envelope, PnfsModifyCacheLocationMessage message)
-        throws CacheException
-    {
-        if (_cacheModificationRelay != null) {
-            forwardModifyCacheLocationMessage(message);
-        }
-
-        PnfsId pnfsId = message.getPnfsId();
-        int index = pnfsIdToThreadGroup(pnfsId);
-        _log.info("Using thread group [{}] {}", pnfsId, index);
-
-        if (!_fifos[index].offer(envelope)) {
-            throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
-        }
-    }
-
     public void messageArrived(CellMessage envelope, PnfsMessage message)
         throws CacheException
     {
@@ -1631,12 +1612,8 @@ public class PnfsManagerV3
         }
     }
 
-    private void forwardModifyCacheLocationMessage(PnfsMessage message)
-    {
-        sendMessage(new CellMessage(_cacheModificationRelay, message));
-    }
-
-    public void processPnfsMessage(CellMessage message, PnfsMessage pnfsMessage)
+    @VisibleForTesting
+    void processPnfsMessage(CellMessage message, PnfsMessage pnfsMessage)
     {
         long ctime = System.currentTimeMillis();
         try {
@@ -1663,10 +1640,7 @@ public class PnfsManagerV3
             _log.info("{} processed in {} ms", pnfsMessage.getClass(), duration);
         }
 
-        if (pnfsMessage.getReplyRequired()) {
-            message.revertDirection();
-            sendMessage(message);
-        }
+        postProcessMessage(message, pnfsMessage);
     }
 
     @Transactional
@@ -1701,7 +1675,7 @@ public class PnfsManagerV3
         } else if (pnfsMessage instanceof PnfsSetChecksumMessage) {
             setChecksum((PnfsSetChecksumMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PoolFileFlushedMessage) {
-            processFlushMessage(message, (PoolFileFlushedMessage) pnfsMessage);
+            processFlushMessage((PoolFileFlushedMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetParentMessage) {
             getParent((PnfsGetParentMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsListDirectoryMessage) {
@@ -1720,7 +1694,60 @@ public class PnfsManagerV3
         return true;
     }
 
-    public void processFlushMessage(CellMessage envelope, PoolFileFlushedMessage pnfsMessage)
+    private void postProcessMessage(CellMessage envelope, PnfsMessage message)
+    {
+        if (message instanceof PoolFileFlushedMessage && message.getReturnCode() == 0) {
+            postProcessFlush(envelope, (PoolFileFlushedMessage) message);
+        } else if (_cacheModificationRelay != null && message.getReturnCode() == 0) {
+            postProcessLocationModificationMessage(envelope, message);
+        } else if (message.getReplyRequired()) {
+            envelope.revertDirection();
+            sendMessage(envelope);
+        }
+    }
+
+    private void postProcessFlush(CellMessage envelope, PoolFileFlushedMessage pnfsMessage)
+    {
+        long timeout = envelope.getAdjustedTtl() - envelope.getLocalAge();
+
+        /* Asynchronously notify flush notification targets about the flush. */
+        PoolFileFlushedMessage notification =
+                new PoolFileFlushedMessage(pnfsMessage.getPoolName(), pnfsMessage.getPnfsId(),
+                                           pnfsMessage.getFileAttributes());
+        List<ListenableFuture<PoolFileFlushedMessage>> futures = new ArrayList<>();
+        for (String address : _flushNotificationTargets) {
+            futures.add(_stub.send(new CellPath(address), notification, timeout));
+        }
+
+        /* Only generate positive reply if all notifications succeeded. */
+        Futures.addCallback(Futures.allAsList(futures),
+                            new FutureCallback<List<PoolFileFlushedMessage>>()
+                            {
+                                @Override
+                                public void onSuccess(List<PoolFileFlushedMessage> result)
+                                {
+                                    pnfsMessage.setSucceeded();
+                                    reply();
+                                }
+
+                                @Override
+                                public void onFailure(Throwable t)
+                                {
+                                    pnfsMessage.setFailed(CacheException.DEFAULT_ERROR_CODE,
+                                                          "PNFS manager failed while notifying other " +
+                                                          "components about the flush: " + t.getMessage());
+                                    reply();
+                                }
+
+                                private void reply()
+                                {
+                                    envelope.revertDirection();
+                                    sendMessage(envelope);
+                                }
+                            });
+    }
+
+    public void processFlushMessage(PoolFileFlushedMessage pnfsMessage)
     {
         try {
             // Note: no Restriction check as message sent autonomously by pool.
@@ -1729,52 +1756,43 @@ public class PnfsManagerV3
             _nameSpaceProvider.setFileAttributes(pnfsMessage.getSubject(),
                                                  pnfsMessage.getPnfsId(), attributesToUpdate,
                                                  EnumSet.noneOf(FileAttribute.class));
-
-            long timeout = envelope.getAdjustedTtl() - envelope.getLocalAge();
-
-            /* Asynchronously notify flush notification targets about the flush. */
-            PoolFileFlushedMessage notification =
-                    new PoolFileFlushedMessage(pnfsMessage.getPoolName(), pnfsMessage.getPnfsId(),
-                                               pnfsMessage.getFileAttributes());
-            List<ListenableFuture<PoolFileFlushedMessage>> futures = new ArrayList<>();
-            for (String address : _flushNotificationTargets) {
-                futures.add(_stub.send(new CellPath(address), notification, timeout));
-            }
-
-            /* Prevent the caller from generating a reply. */
-            pnfsMessage.setReplyRequired(false);
-
-            /* Only generate positive reply if all notifications succeeded. */
-            Futures.addCallback(Futures.allAsList(futures),
-                                new FutureCallback<List<PoolFileFlushedMessage>>()
-                                {
-                                    @Override
-                                    public void onSuccess(List<PoolFileFlushedMessage> result)
-                                    {
-                                        pnfsMessage.setSucceeded();
-                                        reply();
-                                    }
-
-                                    @Override
-                                    public void onFailure(Throwable t)
-                                    {
-                                        pnfsMessage.setFailed(CacheException.DEFAULT_ERROR_CODE,
-                                                              "PNFS manager failed while notifying other " +
-                                                              "components about the flush: " + t.getMessage());
-                                        reply();
-                                    }
-
-                                    private void reply()
-                                    {
-                                        envelope.revertDirection();
-                                        sendMessage(envelope);
-                                    }
-                                });
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
             _log.warn("Failed to process flush notification", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
+        }
+    }
+
+    private void postProcessLocationModificationMessage(CellMessage envelope,
+                                                        PnfsMessage message)
+    {
+        if (message.getReplyRequired()) {
+            envelope.revertDirection();
+            sendMessage(envelope);
+        }
+
+        if (message instanceof PnfsAddCacheLocationMessage) {
+            PnfsMessage msg = new PnfsAddCacheLocationMessage(message.getPnfsId(),
+                            ((PnfsAddCacheLocationMessage) message).getPoolName());
+            sendMessage(new CellMessage(_cacheModificationRelay, msg));
+        } else if (message instanceof PnfsClearCacheLocationMessage) {
+            PnfsMessage msg = new PnfsClearCacheLocationMessage(message.getPnfsId(),
+                            ((PnfsClearCacheLocationMessage) message).getPoolName());
+            sendMessage(new CellMessage(_cacheModificationRelay, msg));
+        } else if (message instanceof PnfsSetFileAttributes) {
+            Collection<String> locations
+                            = ((PnfsSetFileAttributes)message).getLocations();
+            if (locations == null) {
+                return;
+            }
+
+            PnfsId pnfsId = message.getPnfsId();
+            locations.stream().forEach((pool) ->{
+                PnfsMessage msg = new PnfsAddCacheLocationMessage(pnfsId,
+                                pool);
+                sendMessage(new CellMessage(_cacheModificationRelay, msg));
+            });
         }
     }
 
@@ -2006,12 +2024,11 @@ public class PnfsManagerV3
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
             checkRestriction(message, UPDATE_METADATA);
-            if (attr.getDefinedAttributes().contains(FileAttribute.LOCATIONS)) {
-                for (String pool: attr.getLocations()) {
-                    PnfsMessage msg =
-                        new PnfsAddCacheLocationMessage(pnfsId, pool);
-                    forwardModifyCacheLocationMessage(msg);
-                }
+            if (attr.isDefined(FileAttribute.LOCATIONS)) {
+                /*
+                 * Save for post-processing.
+                 */
+                message.setLocations(attr.getLocations());
             }
 
             /*
