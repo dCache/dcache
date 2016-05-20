@@ -293,6 +293,7 @@ readconf() # in $1 = file in $2 = prefix
         sed -e "s/\([^=]*\)=\(.*\)/$2\1=\2/")
 }
 
+# Successful if the word matches any of the patterns
 matchesAny() # $1 = word, $2+ = patterns
 {
     local word
@@ -300,6 +301,21 @@ matchesAny() # $1 = word, $2+ = patterns
     shift
     while [ $# -gt 0 ]; do
         if [ -z "${word##$1}" ]; then
+            return 0
+        fi
+        shift
+    done
+    return 1
+}
+
+# Successful if the pattern matches any of the words
+hasMatch() # $1 = pattern, $2+ = words
+{
+    local pattern
+    pattern="$1"
+    shift
+    while [ $# -gt 0 ]; do
+        if [ -z "${1##$pattern}" ]; then
             return 0
         fi
         shift

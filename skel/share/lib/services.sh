@@ -1,7 +1,7 @@
 # Useful functions for working with domains.
 
 # Prints all domains that match a given pattern. Prints all domains if
-# no patterns are provided.
+# no patterns are provided. Fails if a pattern matches no domains.
 printDomains() # $1+ = patterns
 {
     local domain
@@ -10,6 +10,9 @@ printDomains() # $1+ = patterns
     if [ $# -eq 0 ]; then
         echo $domains
     else
+        for pattern in "$@"; do
+            hasMatch "$pattern" $domains || fail 1 "$pattern: No such domain"
+        done
         for domain in $domains; do
             if matchesAny "$domain" "$@"; then
                 echo $domain
