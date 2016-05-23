@@ -34,7 +34,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -72,6 +71,7 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.zookeeper.PathChildrenCache;
 
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
