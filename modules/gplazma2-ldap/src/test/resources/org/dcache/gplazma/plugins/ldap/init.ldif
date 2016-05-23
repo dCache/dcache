@@ -1,0 +1,64 @@
+dn: o=dcache,c=org
+dc: o=dcache
+objectClass: top
+objectClass: domain
+
+dn: ou=people,o=dcache,c=org
+ou: people
+objectClass: top
+objectclass: organizationalunit
+
+dn: ou=group,o=dcache,c=org
+ou: group
+objectClass: top
+objectclass: organizationalunit
+
+dn: uid=kermit,ou=people,o=dcache,c=org
+objectClass: posixAccount
+objectClass: inetorgperson
+objectClass: organizationalperson
+objectClass: top
+uid: kermit
+description: This is the description for Kermit the Frog
+userPassword: kermitTheFrog
+employeeNumber: 1
+initials: kTf
+givenName: Kermit
+cn: Kermit The Frog
+sn: Frog
+mail: kermit.the.frog@dcache.org
+l: Hamburg
+st: DE
+gidNumber: 1000
+homeDirectory: /home/kermit
+uidNumber: 1000
+
+dn: uid=bernd,ou=people,o=dcache,c=org
+objectClass: posixAccount
+objectClass: inetorgperson
+objectClass: organizationalperson
+objectClass: top
+uid: bernd
+description: This is the description for Bernd das Brot
+userPassword: berndDasBrot
+employeeNumber: 2
+initials: BdB
+givenName: Bernd
+cn: Bernd das Brot
+sn: Brot
+mail: bernd.das.brot@dcache.org
+l: Hamburg
+st: DE
+gidNumber: 1000
+homeDirectory: /home/bernd
+uidNumber: 1001
+
+
+dn: cn=actor,ou=group,o=dcache,c=org
+objectClass: groupOfUniqueNames
+objectClass: posixGroup
+objectClass: top
+cn: actor
+uniqueMember: uid=bernd,ou=people,o=dcache,c=org
+uniqueMember: uid=kermit,ou=people,o=dcache,c=org
+gidNumber: 1001

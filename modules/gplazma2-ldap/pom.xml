@@ -34,23 +34,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-server-unit</artifactId>
-            <version>1.5.5</version>
+            <groupId>org.dcache</groupId>
+            <artifactId>ldap4testing</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-server-integ</artifactId>
-            <version>1.5.5</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-core</artifactId>
-            <version>1.5.5</version>
-            <scope>test</scope>
-        </dependency>
+
     </dependencies>
 
     <build>
