@@ -122,7 +122,8 @@ public class DcacheResourceFactory
         EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
                    MODE, OWNER, OWNER_GROUP);
 
-    private static final String HTML_TEMPLATE_NAME = "page";
+    private static final String HTML_TEMPLATE_LISTING_NAME = "page";
+    private static final String HTML_TEMPLATE_CLIENT_NAME = "client";
 
     // Additional attributes needed for PROPFIND requests; e.g., to supply
     // values for properties.
@@ -483,7 +484,7 @@ public class DcacheResourceFactory
          *
          * here we force initialisation to work-around this.
          */
-        _listingGroup.getInstanceOf(HTML_TEMPLATE_NAME);
+        _listingGroup.getInstanceOf(HTML_TEMPLATE_LISTING_NAME);
 
     }
 
@@ -851,6 +852,39 @@ public class DcacheResourceFactory
         return HttpManager.request().getRemoteAddr();
     }
 
+    private void addTemplateAttributes(ST template)
+    {
+        String requestPath = getRequestPath();
+        String[] base =
+            Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
+
+        template.add("path", asList(UrlPathWrapper.forPaths(base)));
+        template.add("static", _staticContentPath);
+        template.add("subject", new SubjectWrapper(getSubject()));
+        template.add("base", UrlPathWrapper.forEmptyPath());
+        template.add("config", _templateConfig);
+    }
+
+    /**
+     * Deliver a client to the user in response to a GET request on a directory.
+     * No effort is made to provide the client with the contents of this directory.
+     * It is expected that the client obtains the information it needs by
+     * itself; e.g., by executing JavaScript that is supplied within the HTML
+     * response.
+     * @return true if a client has been sent.
+     */
+    public boolean deliverClient(FsPath path, Writer out) throws IOException
+    {
+        final ST t = _listingGroup.getInstanceOf(HTML_TEMPLATE_CLIENT_NAME);
+        if (t == null) {
+            return false;
+        }
+
+        addTemplateAttributes(t);
+        t.write(new AutoIndentWriter(out));
+        return true;
+    }
+
     /**
      * Performs a directory listing, writing an HTML view to an output
      * stream.
@@ -862,25 +896,17 @@ public class DcacheResourceFactory
             throw new PermissionDeniedCacheException("Access denied");
         }
 
-        String requestPath = getRequestPath();
-        String[] base =
-            Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
-        final ST t = _listingGroup.getInstanceOf(HTML_TEMPLATE_NAME);
+        final ST t = _listingGroup.getInstanceOf(HTML_TEMPLATE_LISTING_NAME);
 
         if (t == null) {
             _log.error("template '{}' not found in templategroup: {}",
-                    HTML_TEMPLATE_NAME, _listingGroup.getFileName());
+                    HTML_TEMPLATE_LISTING_NAME, _listingGroup.getFileName());
             out.append(DcacheResponseHandler.templateNotFoundErrorPage(_listingGroup,
-                    HTML_TEMPLATE_NAME));
-            out.flush();
+                    HTML_TEMPLATE_LISTING_NAME));
             return;
         }
 
-        t.add("path", asList(UrlPathWrapper.forPaths(base)));
-        t.add("static", _staticContentPath);
-        t.add("subject", new SubjectWrapper(getSubject()));
-        t.add("base", UrlPathWrapper.forEmptyPath());
-        t.add("config", _templateConfig);
+        addTemplateAttributes(t);
 
         DirectoryListPrinter printer =
                 new DirectoryListPrinter() {
@@ -914,7 +940,6 @@ public class DcacheResourceFactory
                              Range.<Integer>all());
 
         t.write(new AutoIndentWriter(out));
-        out.flush();
     }
 
     /**

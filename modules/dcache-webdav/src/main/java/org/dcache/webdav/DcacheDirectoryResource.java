@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +36,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
+import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -121,7 +123,11 @@ public class DcacheDirectoryResource
         throws IOException, NotAuthorizedException
     {
         try {
-            _factory.list(_path, new OutputStreamWriter(out, "UTF-8"));
+            Writer writer = new OutputStreamWriter(out, "UTF-8");
+            if (!_factory.deliverClient(_path, writer)) {
+                _factory.list(_path, writer);
+            }
+            writer.flush();
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (CacheException | InterruptedException e) {
