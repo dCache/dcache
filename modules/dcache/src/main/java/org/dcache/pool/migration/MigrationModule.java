@@ -968,7 +968,7 @@ public class MigrationModule
         String id;
 
         @Override
-        public String call() throws NoSuchElementException
+        public String call() throws NoSuchElementException, IllegalStateException
         {
             Job job = getJob(id);
             job.cancel(force);
