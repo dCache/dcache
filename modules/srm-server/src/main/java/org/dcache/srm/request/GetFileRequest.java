@@ -303,8 +303,9 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             throw new SRMInvalidRequestException("wrong surl format");
         }
 
+        TReturnStatus returnStatus = getReturnStatus();
         String turlstring = getTurlString();
-        if(turlstring != null) {
+        if(turlstring != null && TStatusCode.SRM_FILE_PINNED.equals(returnStatus.getStatusCode())) {
             try {
             fileStatus.setTransferURL(new org.apache.axis.types.URI(turlstring));
             } catch (org.apache.axis.types.URI.MalformedURIException e) {
@@ -318,7 +319,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             fileStatus.setRemainingPinTime((int)(getRemainingLifetime()/1000));
         }
         fileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
-        fileStatus.setStatus(getReturnStatus());
+        fileStatus.setStatus(returnStatus);
 
         return fileStatus;
     }
