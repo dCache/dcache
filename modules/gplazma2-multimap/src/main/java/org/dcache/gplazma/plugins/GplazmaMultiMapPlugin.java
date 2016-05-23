@@ -1,5 +1,7 @@
 package org.dcache.gplazma.plugins;
 
+import com.google.common.base.Strings;
+
 import org.dcache.gplazma.AuthenticationException;
 import java.security.Principal;
 import java.util.Properties;
@@ -13,12 +15,12 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 public class GplazmaMultiMapPlugin implements GPlazmaMappingPlugin
 {
     private GplazmaMultiMapFile mapFile;
-    private static final String GPLAZMA2_MAP_FILE = "gplazma.multimapper.file";
+    private static final String GPLAZMA2_MAP_FILE = "gplazma.multimap.file";
 
     public GplazmaMultiMapPlugin(Properties properties)
     {
         String path = properties.getProperty(GPLAZMA2_MAP_FILE);
-        checkArgument(path != null && !path.isEmpty(), "Undefined property: " + GPLAZMA2_MAP_FILE);
+        checkArgument(!Strings.isNullOrEmpty(path), "Undefined property: " + GPLAZMA2_MAP_FILE);
         mapFile = new GplazmaMultiMapFile(path);
     }
 

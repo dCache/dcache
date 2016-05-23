@@ -214,8 +214,8 @@ public class GplazmaMultiMapPluginTest {
     /*------------------------- Helpers ---------------------------*/
 
     private void givenConfig(String map) throws IOException {
-        final File multimapper = tempFolder.newFile("multimapper.conf");
-        givenConfiguration.put("gplazma.multimapper.file", multimapper.getPath());
+        final File multimapper = tempFolder.newFile("multi-mapfile");
+        givenConfiguration.put("gplazma.multimap.file", multimapper.getPath());
 
         FileUtils.writeStringToFile(multimapper, map);
     }

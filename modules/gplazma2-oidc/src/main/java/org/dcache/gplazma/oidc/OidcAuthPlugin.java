@@ -1,6 +1,7 @@
 package org.dcache.gplazma.oidc;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -20,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
@@ -32,7 +35,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
@@ -61,7 +63,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     {
         String oidcHostnamesProperty = properties.getProperty(OIDC_HOSTNAMES);
 
-        checkNotNull(oidcHostnamesProperty, "Oidc Hostnames not defined");
+        checkArgument(oidcHostnamesProperty != null, OIDC_HOSTNAMES + " not defined");
 
         Map<Boolean, Set<String>> validHosts =  Arrays.stream(oidcHostnamesProperty.split("\\s+"))
                                                       .filter(not(String::isEmpty))
@@ -70,10 +72,12 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                                                                         Collectors.toSet())
                                                       );
 
-        if (validHosts.containsKey(Boolean.FALSE)) {
-            throw new IllegalArgumentException("Invalid Oidc Hostnames provided: " + validHosts.get(Boolean.FALSE));
-        }
-        checkArgument(validHosts.containsKey(Boolean.TRUE), "No Valid Oidc Hostnames: %s", oidcHostnamesProperty);
+        checkArgument(!validHosts.containsKey(Boolean.FALSE),
+                                    String.format("Invalid hosts in %s: %s", OIDC_HOSTNAMES,
+                                            Joiner.on(", ").join(nullToEmpty(validHosts.get(Boolean.FALSE)))));
+
+        checkArgument(validHosts.containsKey(Boolean.TRUE),
+                                    String.format("No hosts specified in %s", OIDC_HOSTNAMES));
 
         this.discoveryDocs = validHosts.get(Boolean.TRUE);
         this.jsonHttpClient = client;
@@ -214,6 +218,10 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
     private static <T> Predicate<T> not(Predicate<T> t) {
         return t.negate();
+    }
+
+    private <T> Collection<T> nullToEmpty(final Collection<T> collection) {
+        return collection == null ? Collections.emptySet() : collection;
     }
 
     private String buildErrorMessage(Set<String> errors)
