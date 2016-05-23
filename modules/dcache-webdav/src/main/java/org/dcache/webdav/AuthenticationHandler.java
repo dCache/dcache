@@ -240,6 +240,18 @@ public class AuthenticationHandler extends HandlerWrapper {
         }
 
         @Override
+        public void setStatus(int code) {
+            addAuthenticationChallenges(code);
+            super.setStatus(code);
+        }
+
+        @Override
+        public void setStatus(int code, String message) {
+            addAuthenticationChallenges(code);
+            super.setStatus(code, message);
+        }
+
+        @Override
         public void sendError(int code) throws IOException {
             addAuthenticationChallenges(code);
             super.sendError(code);
