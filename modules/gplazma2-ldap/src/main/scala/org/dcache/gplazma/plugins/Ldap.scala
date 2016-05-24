@@ -65,6 +65,9 @@ object Ldap {
   val LDAP_USER_HOME = "gplazma.ldap.home-dir"
   val LDAP_USER_ROOT = "gplazma.ldap.root-dir"
   val LDAP_GROUP_MEMBER = "gplazma.ldap.group-member"
+  val LDAP_BINDDN = "gplazma.ldap.binddn"
+  val LDAP_BINDPW = "gplazma.ldap.bindpw"
+  val LDAP_AUTH = "gplazma.ldap.auth"
 }
 
 class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSessionPlugin with GPlazmaMappingPlugin {
@@ -73,9 +76,22 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
 
   private def newContext = {
     val url = properties.getProperty(Ldap.LDAP_URL)
+    val auth = properties.getProperty(Ldap.LDAP_AUTH)
+
     val env: Properties = new Properties
     env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
     env.put(Context.PROVIDER_URL, url)
+
+    if (auth == "simple") {
+
+      val binddn = properties.getProperty(Ldap.LDAP_BINDDN)
+      val bindpw = properties.getProperty(Ldap.LDAP_BINDPW)
+
+      env.put(Context.SECURITY_AUTHENTICATION, "simple")
+      env.put(Context.SECURITY_PRINCIPAL, binddn)
+      env.put(Context.SECURITY_CREDENTIALS, bindpw)
+   }
+
     new InitialLdapContext(env, null)
   }
 
