@@ -216,12 +216,7 @@ public class TransferObserverV1
             if (moverStatus != null) {
                 out.add(moverStatus);
                 out.add(elapsedSinceSubmitted);
-                if (moverStart != null) {
-                    out.add(transferTimeStr);
-                    out.add(String.valueOf(bytesTransferred));
-                    out.add(transferRateStr);
-                    out.add(running);
-                }
+                addMoverInfo(out);
             }
         }
 
@@ -240,12 +235,24 @@ public class TransferObserverV1
             args.add(replyHost);
             args.add(sessionStatus);
             args.add(waiting);
-            args.add(moverStatus == null ? "No-mover()-Found" : moverStatus);
-            args.add(transferTimeStr);
-            args.add(String.valueOf(bytesTransferred));
-            args.add(transferRateStr);
-            args.add(running);
+
+            if (moverStatus == null) {
+                args.add("No-mover()-Found");
+            } else {
+                args.add(moverStatus);
+                addMoverInfo(args);
+            }
+
             builder.append(new Args(args)).append('\n');
+        }
+
+        private void addMoverInfo(List<String> list) {
+            if (moverStart != null) {
+                list.add(transferTimeStr);
+                list.add(String.valueOf(bytesTransferred));
+                list.add(transferRateStr);
+                list.add(running);
+            }
         }
     }
 

@@ -164,6 +164,14 @@ public class TransferInfo implements Serializable {
     }
 
     public Long getTransferRate() {
+        if (bytesTransferred == null) {
+            return 0L;
+        }
+
+        if (transferTime == null) {
+            return 0L;
+        }
+
         long kB = bytesTransferred / 1024;
         long secs = transferTime / 1000;
         return secs > 0.0 ? kB / secs : 0L;

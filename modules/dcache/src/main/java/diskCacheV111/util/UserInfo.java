@@ -59,8 +59,12 @@ documents or software obtained from this server.
  */
 package diskCacheV111.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.security.auth.Subject;
 import java.io.Serializable;
+import java.util.NoSuchElementException;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
@@ -70,6 +74,7 @@ import org.dcache.auth.Subjects;
  * between core dCache and webadmin modules.</p>
  */
 public final class UserInfo implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserInfo.class);
     private String username;
     private Long   uid;
     private Long   gid;
@@ -80,9 +85,46 @@ public final class UserInfo implements Serializable {
 
     public UserInfo(Subject subject) {
         username = Subjects.getUserName(subject);
-        uid = Subjects.getUid(subject);
-        gid = Subjects.getPrimaryGid(subject);
-        primaryFqan = Subjects.getPrimaryFqan(subject);
+
+        /*
+         *  The values may not be set by some protocols,
+         *  such as anonymous dcap.  We do not want to fail here
+         *  in that case.
+         *
+         *  In the case of an IllegalArgument, this is actually an
+         *  error which should be reported, but again we do not
+         *  want to fail the interface because of it.
+         */
+
+        if (Subjects.isNobody(subject)) {
+            uid = null;
+        } else {
+            try {
+                uid = Subjects.getUid(subject);
+            } catch (IllegalArgumentException e) {
+                uid = null;
+                LOGGER.warn("Error when fetching UID from {}: {}.",
+                            subject, e.toString());
+            }
+        }
+
+        try {
+            gid = Subjects.getPrimaryGid(subject);
+        } catch (NoSuchElementException e) {
+            gid = null;
+        } catch (IllegalArgumentException e) {
+            gid = null;
+            LOGGER.warn("Error when fetching GID from {}: {}.",
+                        subject, e.toString());
+        }
+
+        try {
+            primaryFqan = Subjects.getPrimaryFqan(subject);
+        } catch (IllegalArgumentException e) {
+            primaryFqan = null;
+            LOGGER.warn("Error when fetching primary FQAN from {}: {}.",
+                        subject, e.toString());
+        }
     }
 
     public String getGid() {

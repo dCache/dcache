@@ -249,7 +249,7 @@ public class Subjects
      *         primary FQANs
      */
     public static FQAN getPrimaryFqan(Subject subject)
-        throws NoSuchElementException
+        throws IllegalArgumentException
     {
         Set<FQANPrincipal> principals =
             subject.getPrincipals(FQANPrincipal.class);
