@@ -862,7 +862,7 @@ class FsSqlDriver {
                                  ps.setBinaryStream(9, new ByteArrayInputStream(data, offset, len), len);
                              });
             } else {
-                _jdbc.update("UPDATE t_level_" + level + " SET ifiledata=?,isize=? WHERE ino=?",
+                _jdbc.update("UPDATE t_level_" + level + " SET ifiledata=?,isize=? WHERE inumber=?",
                              ps -> {
                                  ps.setBinaryStream(1, new ByteArrayInputStream(data, offset, len), len);
                                  ps.setLong(2, len);
