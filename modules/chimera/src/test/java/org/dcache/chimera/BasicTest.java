@@ -1182,4 +1182,19 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.createFile(_rootInode, "aDir", 0, 0, 0755 | UnixPermission.S_IFDIR, UnixPermission.S_IFDIR);
     }
 
+    @Test
+    public void testLevelCreation() throws ChimeraFsException {
+
+        FsInode file = _fs.createFile(_rootInode, "aFile", 0, 0, 0755 | UnixPermission.S_IFREG, UnixPermission.S_IFREG);
+        FsInode level = _fs.createFileLevel(file, 2);
+
+        byte[] data = "some random data".getBytes(StandardCharsets.UTF_8);
+        int n = level.write(0, data, 0, data.length);
+        assertEquals("incorrect number of bytes", data.length, n);
+
+        byte[] moreData = "some more random data".getBytes(StandardCharsets.UTF_8);
+        n = level.write(0, moreData, 0, moreData.length);
+        assertEquals("incorrect number of bytes", moreData.length, n);
+
+    }
 }
