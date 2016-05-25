@@ -111,7 +111,7 @@
         <url>https://github.com/dCache/dcache</url>
         <connection>scm:git:https://github.com/dCache/dcache.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/dCache/dcache.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>2.16</tag>
   </scm>
 
     <repositories>
