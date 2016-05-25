@@ -63,6 +63,6 @@ public class ActiveTransfersBean extends TransferInfo {
     }
 
     public String getTimeWaiting() {
-        return timeWaiting(System.currentTimeMillis());
+        return timeWaiting(System.currentTimeMillis(), true);
     }
 }
