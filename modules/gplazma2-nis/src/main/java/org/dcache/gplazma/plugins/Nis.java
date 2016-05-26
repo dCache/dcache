@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,7 @@ import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.find;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
@@ -84,6 +86,9 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
 
         String server = properties.getProperty(SERVER);
         String domain = properties.getProperty(DOMAIN);
+
+        checkArgument(!Strings.isNullOrEmpty(server), SERVER + " must be specified.");
+        checkArgument(!Strings.isNullOrEmpty(domain), DOMAIN + " must be specified.");
 
         Properties env = new Properties();
         env.put(DirContext.INITIAL_CONTEXT_FACTORY,

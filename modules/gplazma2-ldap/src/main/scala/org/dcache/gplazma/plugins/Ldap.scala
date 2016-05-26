@@ -4,14 +4,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import scala.collection.convert.Wrappers._
-
-import javax.naming.{Context, CommunicationException, NamingEnumeration, NamingException}
+import javax.naming.{CommunicationException, Context, NamingEnumeration, NamingException}
 import javax.naming.directory.{Attributes, BasicAttributes, SearchControls, SearchResult}
 import javax.naming.ldap.InitialLdapContext
-
 import java.security.Principal
 import java.util.Properties
 
+import com.google.common.base.Strings
 import org.dcache.auth.GidPrincipal
 import org.dcache.auth.GroupNamePrincipal
 import org.dcache.auth.UidPrincipal
@@ -19,6 +18,7 @@ import org.dcache.auth.UserNamePrincipal
 import org.dcache.auth.attributes._
 import org.dcache.gplazma.AuthenticationException
 import org.dcache.gplazma.NoSuchPrincipalException
+
 import scala.collection.convert.WrapAsJava
 
 /**
@@ -77,6 +77,8 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
   private def newContext = {
     val url = properties.getProperty(Ldap.LDAP_URL)
     val auth = properties.getProperty(Ldap.LDAP_AUTH)
+
+    require(!Strings.isNullOrEmpty(url), Ldap.LDAP_URL + " must be specified.")
 
     val env: Properties = new Properties
     env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
