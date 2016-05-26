@@ -18,6 +18,7 @@
 package org.dcache.zookeeper.service;
 
 import com.google.common.base.Strings;
+import org.apache.zookeeper.server.DatadirCleanupManager;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
@@ -34,6 +35,8 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.cells.AbstractCell;
 import org.dcache.util.Args;
 import org.dcache.util.Option;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * Embedded standalone ZooKeeper as a dCache cell.
@@ -75,6 +78,15 @@ public class ZooKeeperCell extends AbstractCell
     @Option(name = "port", required = true)
     protected int port;
 
+    @Option(name = "autoPurgeRetainCount", required = true)
+    protected int autoPurgeRetainCount;
+
+    @Option(name = "autoPurgeInterval", required = true)
+    protected int autoPurgeInterval;
+
+    @Option(name = "autoPurgeIntervalUnit", required = true)
+    protected TimeUnit autoPurgeIntervalUnit;
+
     private ServerCnxnFactory cnxnFactory;
     private FileTxnSnapLog txnLog;
     private ZooKeeperServer zkServer;
@@ -91,6 +103,13 @@ public class ZooKeeperCell extends AbstractCell
 
         InetSocketAddress socketAddress =
                 Strings.isNullOrEmpty(address) ? new InetSocketAddress(port) : new InetSocketAddress(address, port);
+
+        checkArgument(autoPurgeInterval > 0, "zookeeper.auto-purge.purge-interval must be non-negative.");
+        int purgeIntervalHours = (int) TimeUnit.HOURS.convert(autoPurgeInterval, autoPurgeIntervalUnit);
+        DatadirCleanupManager purgeMgr =
+                new DatadirCleanupManager(dataDir.getAbsolutePath(), dataLogDir.getAbsolutePath(),
+                                          autoPurgeRetainCount, purgeIntervalHours);
+        purgeMgr.start();
 
         zkServer = new ZooKeeperServer();
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);
