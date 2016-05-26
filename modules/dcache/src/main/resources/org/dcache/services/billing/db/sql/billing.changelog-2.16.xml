@@ -60,7 +60,7 @@
 	</rollback>
     </changeSet>
 
-    <changeSet id="8" author="litvinse">
+    <changeSet id="8.1" author="litvinse">
         <preConditions onError="WARN" onFail="WARN">
             <sqlCheck expectedResult="CREATE LANGUAGE">CREATE LANGUAGE plpgsql</sqlCheck>
         </preConditions>
@@ -391,6 +391,7 @@
             $$
             LANGUAGE plpgsql;
         </sql>
+        <rollback/>
     </changeSet>
 
 </databaseChangeLog>
