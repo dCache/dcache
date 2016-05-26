@@ -2,6 +2,7 @@
 
 package diskCacheV111.cells;
 
+import org.apache.http.annotation.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +10,7 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -20,6 +22,7 @@ import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.HTMLBuilder;
 
+import dmg.cells.network.PingMessage;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
@@ -39,8 +42,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     private final CellNucleus _nucleus;
     private final Args       _args;
+    @GuardedBy("_infoLock")
     private final Map<CellAddressCore,CellQueryInfo> _infoMap
         = new TreeMap<>(); // TreeMap because we need it sorted
+    @GuardedBy("_infoLock")
+    private final Set<CellAddressCore> _queues = new HashSet<>();
     private final Object     _infoLock  = new Object();
     private Thread     _collectThread;
     private Thread     _senderThread;
@@ -134,6 +140,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             _destination = destination;
         }
 
+        private CellAddressCore getDestination()
+        {
+            return _destination;
+        }
+
         private String      getName()
         {
             return _destination.getCellName();
@@ -205,15 +216,16 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         _log.info("Aggressive mode : {}", aggressive);
 
         _sleepHandler = new SleepHandler(aggressive);
-
-        for (int i = 0; i < _args.argc(); i++) {
-            addQuery(new CellAddressCore(_args.argv(i)));
-        }
     }
 
     @Override
     protected void started()
     {
+        synchronized (_infoLock) {
+            for (int i = 0; i < _args.argc(); i++) {
+                addQuery(new CellAddressCore(_args.argv(i)));
+            }
+        }
         _senderThread = _nucleus.newThread(this, "sender");
         _senderThread.start();
         _log.info("Sender started");
@@ -222,20 +234,30 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         _collectThread.start();
     }
 
-    private synchronized boolean addQuery(CellAddressCore address)
+    @GuardedBy("_infoLock")
+    private boolean addQuery(CellAddressCore address)
     {
-        if (_infoMap.get(address) != null) {
+        if (_infoMap.containsKey(address) || _queues.contains(address)) {
             return false;
         }
         _log.debug("Adding {)", address);
-        _infoMap.put(address, new CellQueryInfo(address));
+        if (address.isLocalAddress()) {
+            _queues.add(address);
+            sendPing(address);
+        } else {
+            CellQueryInfo info = new CellQueryInfo(address);
+            _infoMap.put(address, info);
+            sendQuery(info);
+        }
         return true;
     }
 
-    private synchronized void removeQuery(String destination)
+    private void removeQuery(String destination)
     {
         _log.debug("Removing {}", destination);
-        _infoMap.remove(new CellAddressCore(destination));
+        synchronized (_infoLock) {
+            _infoMap.remove(new CellAddressCore(destination));
+        }
     }
 
     @Override
@@ -277,18 +299,31 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         try {
             while (!Thread.interrupted()) {
                 _counter++;
-                //sendMessage(loginBrokerMessage);
+                _sleepHandler.sleep();
                 synchronized (_infoLock) {
+                    for (CellAddressCore queue : _queues) {
+                        sendPing(queue);
+                    }
                     for (CellQueryInfo info : _infoMap.values()) {
-                        _log.debug("Sending query to : {}", info.getName());
-                        sendMessage(info.getCellMessage());
+                        sendQuery(info);
                     }
                 }
-                _sleepHandler.sleep();
             }
         } catch (InterruptedException iie) {
             _log.info("Sender Thread interrupted");
         }
+    }
+
+    private void sendPing(CellAddressCore address)
+    {
+        _log.debug("Sending ping to : {}", address);
+        sendMessage(new CellMessage(address, new PingMessage()));
+    }
+
+    private void sendQuery(CellQueryInfo info)
+    {
+        _log.debug("Sending query to : {}", info.getDestination());
+        sendMessage(info.getCellMessage());
     }
 
     @Override
@@ -306,16 +341,23 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                     modified++;
                 }
             }
+        } else if (reply instanceof PingMessage) {
+            synchronized (_infoLock) {
+                addQuery(message.getSourceAddress());
+            }
         } else {
             CellPath path = message.getSourcePath();
             CellAddressCore address = path.getSourceAddress();
-            CellQueryInfo info = _infoMap.get(address);
-            if (info == null) {
-                // We may have registered the cell as a well known cell
-                info = _infoMap.get(new CellAddressCore(address.getCellName()));
+            CellQueryInfo info;
+            synchronized (_infoLock) {
+                info = _infoMap.get(address);
                 if (info == null) {
-                    _log.info("Unexpected reply arrived from: {}", path);
-                    return;
+                    // We may have registered the cell as a well known cell
+                    info = _infoMap.get(new CellAddressCore(address.getCellName()));
+                    if (info == null) {
+                        _log.info("Unexpected reply arrived from: {}", path);
+                        return;
+                    }
                 }
             }
 
@@ -366,8 +408,10 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     public static final String hh_watch = "<CellAddress> [...]";
     public String ac_watch_$_1_99(Args args)
     {
-        for (int i = 0; i < args.argc(); i++) {
-            addQuery(new CellAddressCore(args.argv(i)));
+        synchronized (_infoLock) {
+            for (int i = 0; i < args.argc(); i++) {
+                addQuery(new CellAddressCore(args.argv(i)));
+            }
         }
         return "";
     }
