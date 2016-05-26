@@ -450,7 +450,7 @@
           init-method="start" destroy-method="stop">
         <description>Scheduler for GET operations</description>
 
-        <constructor-arg value="get_${srmmanager.cell.name}"/>
+        <constructor-arg value="get_${srmmanager.scheduler-id}"/>
         <constructor-arg value="org.dcache.srm.request.GetFileRequest"/>
 
         <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
@@ -465,7 +465,7 @@
           init-method="start" destroy-method="stop">
         <description>Scheduler for LS operations</description>
 
-        <constructor-arg value="ls_${srmmanager.cell.name}"/>
+        <constructor-arg value="ls_${srmmanager.scheduler-id}"/>
         <constructor-arg value="org.dcache.srm.request.LsFileRequest"/>
 
         <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
@@ -479,7 +479,7 @@
           init-method="start" destroy-method="stop">
         <description>Scheduler for BRING-ONLINE operations</description>
 
-        <constructor-arg value="bring_online_${srmmanager.cell.name}"/>
+        <constructor-arg value="bring_online_${srmmanager.scheduler-id}"/>
         <constructor-arg value="org.dcache.srm.request.BringOnlineFileRequest"/>
 
         <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
@@ -493,7 +493,7 @@
           init-method="start" destroy-method="stop">
         <description>Scheduler for PUT operations</description>
 
-        <constructor-arg value="put_${srmmanager.cell.name}"/>
+        <constructor-arg value="put_${srmmanager.scheduler-id}"/>
         <constructor-arg value="org.dcache.srm.request.PutFileRequest"/>
 
         <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
@@ -507,7 +507,7 @@
           init-method="start" destroy-method="stop">
         <description>Scheduler for COPY operations</description>
 
-        <constructor-arg value="copy_${srmmanager.cell.name}"/>
+        <constructor-arg value="copy_${srmmanager.scheduler-id}"/>
         <constructor-arg value="org.dcache.srm.request.Job"/>
 
         <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
@@ -520,7 +520,7 @@
           init-method="start" destroy-method="stop">
         <description>Scheduler for RESERVE-SPACE operations</description>
 
-        <constructor-arg value="reserve_space_${srmmanager.cell.name}"/>
+        <constructor-arg value="reserve_space_${srmmanager.scheduler-id}"/>
         <constructor-arg value="org.dcache.srm.request.ReserveSpaceRequest"/>
 
         <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>

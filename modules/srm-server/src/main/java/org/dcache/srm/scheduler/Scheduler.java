@@ -588,6 +588,7 @@ public class Scheduler <T extends Job>
         formatter.format("\n");
         formatter.format("    Scheduling strategy             : %s\n", schedulingStrategyName);
         formatter.format("    Transfer strategy               : %s\n", transferStrategyName);
+        formatter.format("    Scheduler ID                    : %s\n", id);
     }
 
     private static void printQueue(StringBuilder sb, Collection<Long> queue)
