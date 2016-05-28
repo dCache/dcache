@@ -44,23 +44,23 @@
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
       <description>PnfsManager communication stub</description>
-      <property name="destination" value="${api.service.pnfsmanager}"/>
-      <property name="timeout" value="${api.service.pnfsmanager.timeout}"/>
-      <property name="timeoutUnit" value="${api.service.pnfsmanager.timeout.unit}"/>
+      <property name="destination" value="${frontend.service.pnfsmanager}"/>
+      <property name="timeout" value="${frontend.service.pnfsmanager.timeout}"/>
+      <property name="timeoutUnit" value="${frontend.service.pnfsmanager.timeout.unit}"/>
   </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
       <description>PoolManager communication stub</description>
-      <property name="destination" value="${api.service.poolmanager}"/>
-      <property name="timeout" value="${api.service.poolmanager.timeout}"/>
-      <property name="timeoutUnit" value="${api.service.poolmanager.timeout.unit}"/>
+      <property name="destination" value="${frontend.service.poolmanager}"/>
+      <property name="timeout" value="${frontend.service.poolmanager.timeout}"/>
+      <property name="timeoutUnit" value="${frontend.service.poolmanager.timeout.unit}"/>
   </bean>
 
   <bean id="login-stub" class="org.dcache.cells.CellStub">
       <description>Login serviceunication stub</description>
-      <property name="destination" value="${api.service.gplazma}"/>
-      <property name="timeout" value="${api.service.gplazma.timeout}"/>
-      <property name="timeoutUnit" value="${api.service.gplazma.timeout.unit}"/>
+      <property name="destination" value="${frontend.service.gplazma}"/>
+      <property name="timeout" value="${frontend.service.gplazma.timeout}"/>
+      <property name="timeoutUnit" value="${frontend.service.gplazma.timeout.unit}"/>
   </bean>
 
   <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
@@ -81,15 +81,15 @@
           </bean>
 	  </list>
       </property>
-      <property name="anonymousAccess" value="${api.authz.anonymous-operations}"/>
+      <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
   </bean>
 
   <bean id="cache-login-strategy" class="org.dcache.auth.CachingLoginStrategy">
       <description>Processes mapping requests</description>
       <constructor-arg index="0" ref="union-login-strategy" />
-      <constructor-arg index="1" value="${api.service.gplazma.cache.size}" />
-      <constructor-arg index="2" value="${api.service.gplazma.cache.timeout}" />
-      <constructor-arg index="3" value="${api.service.gplazma.cache.timeout.unit}" />
+      <constructor-arg index="1" value="${frontend.service.gplazma.cache.size}" />
+      <constructor-arg index="2" value="${frontend.service.gplazma.cache.timeout}" />
+      <constructor-arg index="3" value="${frontend.service.gplazma.cache.timeout.unit}" />
   </bean>
 
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
@@ -99,7 +99,7 @@
 
   <bean id="custom-headers"
 	class="org.dcache.util.ConfigurationMapFactoryBean">
-      <property name="prefix" value="api.custom-response-header"/>
+      <property name="prefix" value="frontend.custom-response-header"/>
   </bean>
 
     <bean id="handlers" class="org.dcache.webdav.AuthenticationHandler">
@@ -163,29 +163,29 @@
             </bean>
         </property>
         <property name="loginStrategy" ref="cache-login-strategy"/>
-        <property name="readOnly" value="${api.authz.readonly}"/>
-        <property name="enableBasicAuthentication" value="${api.authn.basic}"/>
-        <property name="realm" value="${api.authn.realm}"/>
+        <property name="readOnly" value="${frontend.authz.readonly}"/>
+        <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
+        <property name="realm" value="${frontend.authn.realm}"/>
     </bean>
 
     <bean id="banned-ciphers" class="org.dcache.util.Crypto"
           factory-method="getBannedCipherSuitesFromConfigurationValue">
-        <constructor-arg value="${api.authn.ciphers}"/>
+        <constructor-arg value="${frontend.authn.ciphers}"/>
     </bean>
 
     <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool">
         <!-- Note that Jetty manages the lifecycle of this thread pool -->
         <description>Thread pool used by Jetty for request processing</description>
 
-        <constructor-arg value="${api.limits.threads.max}"/>
-        <constructor-arg value="${api.limits.threads.min}"/>
+        <constructor-arg value="${frontend.limits.threads.max}"/>
+        <constructor-arg value="${frontend.limits.threads.min}"/>
         <constructor-arg
                 value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${api.limits.threads.idle-time},
-                     '${api.limits.threads.idle-time.unit}')}" />
+                     ${frontend.limits.threads.idle-time},
+                     '${frontend.limits.threads.idle-time.unit}')}" />
         <constructor-arg>
             <bean class="org.eclipse.jetty.util.BlockingArrayQueue">
-                <constructor-arg value="${api.limits.queue-length}"/>
+                <constructor-arg value="${frontend.limits.queue-length}"/>
             </bean>
         </constructor-arg>
 
@@ -197,8 +197,8 @@
         <description>Embedded HTTP server</description>
         <constructor-arg ref="thread-pool"/>
         <property name="stopTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${api.limits.graceful-shutdown},
-                     '${api.limits.graceful-shutdown.unit}')}"/>
+                     ${frontend.limits.graceful-shutdown},
+                     '${frontend.limits.graceful-shutdown.unit}')}"/>
         <property name="connectors">
             <list>
                 <ref bean="server-connector"/>
@@ -232,8 +232,8 @@
                     <constructor-arg ref="jetty"/>
                     <property name="lowResourcesIdleTimeout"
                               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                              ${api.limits.low-resource-idle-time},
-                              '${api.limits.low-resource-idle-time.unit}')}" />
+                              ${frontend.limits.low-resource-idle-time},
+                              '${frontend.limits.low-resource-idle-time.unit}')}" />
                     <property name="maxLowResourcesTime" value="180000"/>
                 </bean>
             </list>
@@ -244,16 +244,16 @@
         <bean id="server-connector" class="org.eclipse.jetty.server.ServerConnector">
             <description>HTTP connector</description>
             <constructor-arg ref="jetty"/>
-            <constructor-arg value="${api.limits.acceptors}"/>
+            <constructor-arg value="${frontend.limits.acceptors}"/>
             <constructor-arg value="-1"/>
 
-            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${api.net.listen}') }"/>
-            <property name="port" value="${api.net.port}"/>
-            <property name="acceptQueueSize" value="${api.limits.backlog}"/>
+            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${frontend.net.listen}') }"/>
+            <property name="port" value="${frontend.net.port}"/>
+            <property name="acceptQueueSize" value="${frontend.limits.backlog}"/>
             <property name="idleTimeout"
                       value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                                  ${api.limits.idle-time},
-                                  '${api.limits.idle-time.unit}')}" />
+                                  ${frontend.limits.idle-time},
+                                  '${frontend.limits.idle-time.unit}')}" />
         </bean>
     </beans>
 
@@ -263,29 +263,29 @@
 
             <property name="server" ref="jetty"/>
 
-            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${api.net.listen}') }"/>
-            <property name="port" value="${api.net.port}"/>
-            <property name="backlog" value="${api.limits.backlog}"/>
-            <property name="idleTimeout" value="${api.limits.idle-time}"/>
-            <property name="idleTimeoutUnit" value="${api.limits.idle-time.unit}"/>
-            <property name="acceptors" value="${api.limits.acceptors}"/>
+            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${frontend.net.listen}') }"/>
+            <property name="port" value="${frontend.net.port}"/>
+            <property name="backlog" value="${frontend.limits.backlog}"/>
+            <property name="idleTimeout" value="${frontend.limits.idle-time}"/>
+            <property name="idleTimeoutUnit" value="${frontend.limits.idle-time.unit}"/>
+            <property name="acceptors" value="${frontend.limits.acceptors}"/>
 
-            <property name="wantClientAuth" value="${api.authn.accept-client-cert}"/>
-            <property name="needClientAuth" value="${api.authn.require-client-cert}"/>
+            <property name="wantClientAuth" value="${frontend.authn.accept-client-cert}"/>
+            <property name="needClientAuth" value="${frontend.authn.require-client-cert}"/>
             <property name="excludedCipherSuites" ref="banned-ciphers"/>
 
-            <property name="caPath" value="${api.authn.capath}"/>
-            <property name="caPathTimeout" value="${api.authn.capath.refresh}"/>
-            <property name="caPathTimeoutUnit" value="${api.authn.capath.refresh.unit}"/>
+            <property name="caPath" value="${frontend.authn.capath}"/>
+            <property name="caPathTimeout" value="${frontend.authn.capath.refresh}"/>
+            <property name="caPathTimeoutUnit" value="${frontend.authn.capath.refresh.unit}"/>
 
-            <property name="serverCertificatePath" value="${api.authn.hostcert.cert}"/>
-            <property name="serverKeyPath" value="${api.authn.hostcert.key}"/>
-            <property name="serverCertificateTimeout" value="${api.authn.hostcert.refresh}"/>
-            <property name="serverCertificateTimeoutUnit" value="${api.authn.hostcert.refresh.unit}"/>
+            <property name="serverCertificatePath" value="${frontend.authn.hostcert.cert}"/>
+            <property name="serverKeyPath" value="${frontend.authn.hostcert.key}"/>
+            <property name="serverCertificateTimeout" value="${frontend.authn.hostcert.refresh}"/>
+            <property name="serverCertificateTimeoutUnit" value="${frontend.authn.hostcert.refresh.unit}"/>
 
-            <property name="namespaceMode" value="${api.authn.namespace-mode}"/>
-            <property name="crlCheckingMode" value="${api.authn.crl-mode}"/>
-            <property name="ocspCheckingMode" value="${api.authn.ocsp-mode}"/>
+            <property name="namespaceMode" value="${frontend.authn.namespace-mode}"/>
+            <property name="crlCheckingMode" value="${frontend.authn.crl-mode}"/>
+            <property name="ocspCheckingMode" value="${frontend.authn.ocsp-mode}"/>
         </bean>
     </beans>
 </beans>
