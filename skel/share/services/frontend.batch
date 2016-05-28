@@ -1,0 +1,74 @@
+#
+#      dCache Frontend service (RESTful webapi and dCacheView web interface)
+#
+
+onerror shutdown
+check -strong frontend.cell.name
+check frontend.cell.consume
+check frontend.cell.subscribe
+check -strong frontend.net.port
+check -strong frontend.net.listen
+check -strong frontend.service.pnfsmanager
+check -strong frontend.service.pnfsmanager.timeout
+check -strong frontend.service.pnfsmanager.timeout.unit
+check -strong frontend.service.poolmanager
+check -strong frontend.service.poolmanager.timeout
+check -strong frontend.service.poolmanager.timeout.unit
+check -strong frontend.service.gplazma
+check -strong frontend.service.gplazma.timeout
+check -strong frontend.service.gplazma.timeout.unit
+check -strong frontend.authn.accept-client-cert
+check -strong frontend.authn.require-client-cert
+check -strong frontend.authn.basic
+check -strong frontend.authn.profile
+check -strong frontend.authn.namespace-mode
+check -strong frontend.authn.crl-mode
+check -strong frontend.authn.ocsp-mode
+check -strong frontend.authz.anonymous-operations
+check -strong frontend.authz.readonly
+
+check -strong frontend.limits.acceptors
+check -strong frontend.limits.idle-time
+check -strong frontend.limits.idle-time.unit
+check -strong frontend.limits.low-resource-idle-time
+check -strong frontend.limits.low-resource-idle-time.unit
+check -strong frontend.limits.backlog
+check -strong frontend.limits.threads.max
+check -strong frontend.limits.threads.min
+check -strong frontend.limits.threads.idle-time
+check -strong frontend.limits.threads.idle-time.unit
+check -strong frontend.limits.queue-length
+check -strong frontend.limits.graceful-shutdown
+check -strong frontend.limits.graceful-shutdown.unit
+
+check frontend.authn.ciphers
+
+define env verify-http.exe enddefine
+enddefine
+
+onerror continue
+test -f ${frontend.authn.keystore}
+set env have_keystore ${rc}
+test -f ${frontend.authn.truststore}
+set env have_truststore ${rc}
+onerror shutdown
+
+define env verify-https.exe enddefine
+  check -strong frontend.authn.hostcert.refresh
+  check -strong frontend.authn.hostcert.refresh.unit
+  check -strong frontend.authn.capath.refresh
+  check -strong frontend.authn.capath.refresh.unit
+  check -strong frontend.authn.hostcert.cert
+  check -strong frontend.authn.hostcert.key
+  check -strong frontend.authn.capath
+enddefine
+
+exec env verify-${frontend.authn.profile}.exe
+
+onerror shutdown
+create org.dcache.cells.UniversalSpringCell ${frontend.cell.name} \
+   "classpath:org/dcache/webdav/frontend.xml \
+    -profiles=connector-${frontend.authn.profile} \
+    -consume=${frontend.cell.consume} \
+    -subscribe=${frontend.cell.subscribe} \
+    -cellClass=FrontendDoor"
