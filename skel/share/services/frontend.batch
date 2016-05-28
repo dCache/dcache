@@ -41,6 +41,11 @@ check -strong frontend.limits.queue-length
 check -strong frontend.limits.graceful-shutdown
 check -strong frontend.limits.graceful-shutdown.unit
 
+check -strong frontend.dcache-view.endpoints.webapi
+check frontend.dcache-view.endpoints.webdav
+check frontend.dcache-view.org-name
+check -strong frontend.dcache-view.dir
+
 check frontend.authn.ciphers
 
 define env verify-http.exe enddefine
@@ -64,6 +69,16 @@ define env verify-https.exe enddefine
 enddefine
 
 exec env verify-${frontend.authn.profile}.exe
+
+
+define context config-${frontend.cell.name}.js enddefine
+var CONFIG =
+{
+    "webapiEndpoint": "${frontend.dcache-view.endpoints.webapi}",
+    "webdavEndpoint": "${frontend.dcache-view.endpoints.webdav}",
+    "orgName": "${frontend.dcache-view.org-name}"
+};
+enddefine
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${frontend.cell.name} \
