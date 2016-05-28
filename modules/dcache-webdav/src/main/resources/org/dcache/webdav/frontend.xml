@@ -109,12 +109,16 @@
                 <description>List of handlers for HTTP requests</description>
                 <property name="handlers">
                     <list>
+                        <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                            <property name="directoriesListed" value="true"/>
+                            <property name="resourceBase" value="${frontend.dcache-view.dir}"/>
+                        </bean>
                         <bean class="org.eclipse.jetty.server.handler.ContextHandler">
-                            <property name="contextPath" value="/"/>
+                            <property name="contextPath" value="/scripts/config.js"/>
+                            <property name="allowNullPathInfo" value="true"/>
                             <property name="handler">
-                                <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
-                                    <property name="directoriesListed" value="true"/>
-                                    <property name="resourceBase" value="${frontend.dcache-view.dir}"/>
+                                <bean class="org.dcache.services.httpd.handlers.ContextHandler">
+                                    <constructor-arg value="config-${frontend.cell.name}.js"/>
                                 </bean>
                             </property>
                         </bean>
