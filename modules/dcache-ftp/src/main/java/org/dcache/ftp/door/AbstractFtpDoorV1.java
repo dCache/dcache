@@ -1757,7 +1757,7 @@ public abstract class AbstractFtpDoorV1
 
     private FsPath absolutePath(String path) throws FTPCommandException
     {
-        FsPath absolutePath = _doorRootPath.chroot(_cwd + "/" + path);
+        FsPath absolutePath = path.startsWith("/") ? _doorRootPath.chroot(path) : _doorRootPath.chroot(_cwd + "/" + path);
         if (absolutePath.hasPrefix(_userRootPath)) {
             return absolutePath;
         }
