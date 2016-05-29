@@ -57,7 +57,7 @@ public class PathMapper implements CellInfoProvider
      * the supplied dCache path.  This method is the inverse of the
      * {@link #asDcachePath} method.
      */
-    public String asRequestPath(HttpServletRequest request, FsPath path)
+    public String asRequestPath(FsPath path)
     {
         return path.stripPrefix(_rootPath);
     }

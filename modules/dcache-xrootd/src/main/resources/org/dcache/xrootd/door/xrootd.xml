@@ -88,7 +88,6 @@
     <property name="door" ref="door"/>
     <property name="channelHandlerFactories" ref="channelhandler-factories"/>
     <property name="rootPath" value="${xrootd.root}"/>
-    <property name="uploadPath" value="${xrootd.authz.upload-directory}"/>
     <property name="queryConfig">
         <bean class="org.dcache.util.ConfigurationMapFactoryBean">
             <property name="prefix" value="xrootd.query-config"/>

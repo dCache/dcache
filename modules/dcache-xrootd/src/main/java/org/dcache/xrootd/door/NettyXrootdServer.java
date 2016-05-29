@@ -64,7 +64,6 @@ public class NettyXrootdServer implements CellIdentityAware
     private ConnectionTracker _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
     private FsPath _rootPath;
-    private FsPath _uploadPath;
     private InetAddress _address;
     private String sessionPrefix;
     private EventLoopGroup _acceptGroup;
@@ -149,16 +148,6 @@ public class NettyXrootdServer implements CellIdentityAware
         return Objects.toString(_rootPath, null);
     }
 
-    public void setUploadPath(File uploadPath)
-    {
-        this._uploadPath = uploadPath.isAbsolute() ? FsPath.create(uploadPath.getPath()) : null;
-    }
-
-    public File getUploadPath()
-    {
-        return (_uploadPath == null) ? null : new File(_uploadPath.toString());
-    }
-
     public Map<String, String> getQueryConfig()
     {
         return _queryConfig;
@@ -201,8 +190,7 @@ public class NettyXrootdServer implements CellIdentityAware
                         for (ChannelHandlerFactory factory: _channelHandlerFactories) {
                             pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
                         }
-                        pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _uploadPath, _requestExecutor,
-                                                                                 _queryConfig));
+                        pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _requestExecutor, _queryConfig));
                     }
                 });
 

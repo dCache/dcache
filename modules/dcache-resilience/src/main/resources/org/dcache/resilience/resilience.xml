@@ -74,7 +74,6 @@
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
       <property name="aclEnabled" value="${resilience.enable.acl}"/>
-      <property name="uploadDirectory" value="${resilience.upload-directory}/%d"/>
     </bean>
 
     <bean id="NamespaceAccess" class="org.dcache.resilience.db.LocalNamespaceAccess">
