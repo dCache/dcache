@@ -28,7 +28,6 @@ check -strong resilience.default-retention-policy
 check -strong resilience.enable.inherit-file-ownership
 check -strong resilience.enable.full-path-permission-check
 check -strong resilience.enable.acl
-check -strong resilience.upload-directory
 
 check -strong resilience.home
 check -strong resilience.cell.export

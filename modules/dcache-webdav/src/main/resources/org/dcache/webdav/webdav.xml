@@ -215,7 +215,8 @@
         <property name="buffering" value="never"/>
         <property name="staticContentPath" value="${webdav.static-content.uri}"/>
         <property name="templateResource" value="${webdav.templates.html}"/>
-	<property name="templateConfig" ref="template-config"/>
+        <property name="pathMapper" ref="path-mapper"/>
+        <property name="templateConfig" ref="template-config"/>
     </bean>
 
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
@@ -257,10 +258,6 @@
                               <bean class="org.eclipse.jetty.server.handler.HandlerList">
                                   <property name="handlers">
                                       <list>
-                                          <bean class="org.dcache.webdav.RedirectPathHandler">
-                                              <property name="pathMapper" ref="path-mapper"/>
-                                              <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
-                                          </bean>
                                           <bean class="org.dcache.webdav.MiltonHandler">
                                               <property name="httpManager" ref="http-manager"/>
                                           </bean>
@@ -281,7 +278,7 @@
   </bean>
 
 
-  <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
+    <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
       <description>Registers the door with a LoginBroker</description>
 
       <property name="executor" ref="scheduled-thread-pool"/>

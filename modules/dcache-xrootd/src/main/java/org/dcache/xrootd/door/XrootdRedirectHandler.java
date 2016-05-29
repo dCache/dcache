@@ -84,23 +84,20 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
     private final XrootdDoor _door;
     private final FsPath _rootPath;
-    private final FsPath _uploadPath;
 
     private Restriction _authz = Restrictions.denyAll();
-    private FsPath _userRootPath = FsPath.ROOT;
 
     /**
      * Custom entries for kXR_Qconfig requests.
      */
     private final Map<String,String> _queryConfig;
 
-    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, FsPath uploadPath, ExecutorService executor,
+    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, ExecutorService executor,
                                  Map<String, String> queryConfig)
     {
         super(executor);
         _door = door;
         _rootPath = rootPath;
-        _uploadPath = uploadPath;
         _queryConfig = queryConfig;
     }
 
@@ -695,14 +692,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     {
         LoginReply reply = event.getLoginReply();
         _authz = Restrictions.none();
-        _userRootPath = FsPath.ROOT;
         if (reply != null) {
             _authz = reply.getRestriction();
-            for (LoginAttribute attribute : reply.getLoginAttributes()) {
-                if (attribute instanceof RootDirectory) {
-                    _userRootPath = FsPath.create(((RootDirectory) attribute).getRoot());
-                }
-            }
         }
     }
 
@@ -714,13 +705,6 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     private FsPath createFullPath(String path)
             throws PermissionDeniedCacheException
     {
-        FsPath fullPath = _rootPath.chroot(path);
-        if (fullPath.hasPrefix(_userRootPath)) {
-            return fullPath;
-        }
-        if (_uploadPath != null && fullPath.hasPrefix(_uploadPath)) {
-            return fullPath;
-        }
-        throw new PermissionDeniedCacheException("Permission denied");
+        return _rootPath.chroot(path);
     }
 }

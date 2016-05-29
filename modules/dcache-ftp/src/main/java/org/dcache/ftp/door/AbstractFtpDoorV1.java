@@ -508,8 +508,6 @@ public abstract class AbstractFtpDoorV1
 
     protected InetAddress _internalInetAddress;
 
-    protected FsPath _absoluteUploadPath;
-
     protected ServerSocketChannel _passiveModeServerSocket;
 
     private final Map<String,Method>  _methodDict =
@@ -1162,10 +1160,6 @@ public abstract class AbstractFtpDoorV1
 
         _checkStagePermission = new CheckStagePermission(_settings.getStageConfigurationFilePath());
 
-        if (_settings.getUploadPath().isAbsolute()) {
-            _absoluteUploadPath = FsPath.create(_settings.getUploadPath().getPath());
-        }
-
         reply(_commandLine, "220 " + _ftpDoorName + " door ready");
     }
 
@@ -1197,10 +1191,8 @@ public abstract class AbstractFtpDoorV1
             doorRootPath = FsPath.create(_settings.getRoot());
             if (userRootPath.hasPrefix(doorRootPath)) {
                 cwd = userRootPath.chroot(userHomePath).stripPrefix(doorRootPath);
-            } else if (_absoluteUploadPath != null && _absoluteUploadPath.hasPrefix(doorRootPath)) {
-                cwd = _absoluteUploadPath.stripPrefix(doorRootPath);
             } else {
-                throw new PermissionDeniedCacheException("User's files are not visible through this FTP service.");
+                cwd = "/";
             }
         }
 
@@ -1757,14 +1749,7 @@ public abstract class AbstractFtpDoorV1
 
     private FsPath absolutePath(String path) throws FTPCommandException
     {
-        FsPath absolutePath = path.startsWith("/") ? _doorRootPath.chroot(path) : _doorRootPath.chroot(_cwd + "/" + path);
-        if (absolutePath.hasPrefix(_userRootPath)) {
-            return absolutePath;
-        }
-        if (_absoluteUploadPath != null && absolutePath.hasPrefix(_absoluteUploadPath)) {
-            return absolutePath;
-        }
-        throw new FTPCommandException(550, "Permission denied");
+        return path.startsWith("/") ? _doorRootPath.chroot(path) : _doorRootPath.chroot(_cwd + "/" + path);
     }
 
 

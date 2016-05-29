@@ -21,16 +21,20 @@ import java.util.Date;
 
 import org.dcache.webdav.federation.FederationResponseHandler;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBean
 {
     private Resource _templateResource;
     private ImmutableMap<String,String> _templateConfig;
     private String _staticContentPath;
+    private PathMapper _pathMapper;
 
     @Override
     public Object getObject() throws Exception
     {
         DcacheResponseHandler dcacheResponseHandler = new DcacheResponseHandler();
+        dcacheResponseHandler.setPathMapper(_pathMapper);
         WebDavResponseHandler handler = new FederationResponseHandler(dcacheResponseHandler);
         setWebdavResponseHandler(handler);
 
@@ -118,6 +122,12 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
     public boolean isSingleton()
     {
         return true;
+    }
+
+    @Required
+    public void setPathMapper(PathMapper mapper)
+    {
+        _pathMapper = checkNotNull(mapper);
     }
 
     /**

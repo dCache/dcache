@@ -47,5 +47,6 @@
     <description>Interfaces with gPlazma</description>
     <property name="configurationFile" value="${gplazma.configuration.file}"/>
     <property name="nameSpace" ref="namespace"/>
+    <property name="uploadPath" value="${gplazma.authz.upload-directory}"/>
   </bean>
 </beans>

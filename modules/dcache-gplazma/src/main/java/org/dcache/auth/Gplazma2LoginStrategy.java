@@ -1,7 +1,6 @@
 package org.dcache.auth;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
+import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
@@ -13,9 +12,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import dmg.cells.nucleus.CellCommandListener;
@@ -24,6 +26,8 @@ import dmg.util.Formats;
 import dmg.util.Replaceable;
 
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.PrefixRestriction;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.GPlazma;
 import org.dcache.gplazma.NoSuchPrincipalException;
@@ -47,6 +51,7 @@ public class Gplazma2LoginStrategy
     private GPlazma _gplazma;
     private Map<String,Object> _environment = Collections.emptyMap();
     private PluginFactory _factory;
+    private Function<FsPath, PrefixRestriction> _createPrefixRestriction;
 
     @Required
     public void setConfigurationFile(String configurationFile)
@@ -112,13 +117,24 @@ public class Gplazma2LoginStrategy
         }
     }
 
-    static LoginReply
-        convertLoginReply(org.dcache.gplazma.LoginReply gPlazmaLoginReply)
+    private LoginReply convertLoginReply(org.dcache.gplazma.LoginReply gPlazmaLoginReply)
     {
         Set<Object> sessionAttributes =
             gPlazmaLoginReply.getSessionAttributes();
         Set<LoginAttribute> loginAttributes =
-            Sets.newHashSet(Iterables.filter(sessionAttributes, LoginAttribute.class));
+                sessionAttributes.stream()
+                        .filter(LoginAttribute.class::isInstance)
+                        .map(LoginAttribute.class::cast)
+                        .collect(Collectors.toSet());
+
+        sessionAttributes.stream()
+                .filter(RootDirectory.class::isInstance)
+                .map(RootDirectory.class::cast)
+                .filter(att -> !att.getRoot().equals("/"))
+                .map(att -> FsPath.create(att.getRoot()))
+                .map(_createPrefixRestriction)
+                .forEach(loginAttributes::add);
+
         return new LoginReply(gPlazmaLoginReply.getSubject(), loginAttributes);
     }
 
@@ -173,5 +189,15 @@ public class Gplazma2LoginStrategy
         LoginResult result = monitor.getResult();
         LoginResultPrinter printer = new LoginResultPrinter(result);
         return printer.print();
+    }
+
+    public void setUploadPath(String s)
+    {
+        if (Strings.isNullOrEmpty(s) || !s.startsWith("/")) {
+            _createPrefixRestriction = path -> new PrefixRestriction(path);
+        } else {
+            FsPath uploadPath = FsPath.create(s);
+            _createPrefixRestriction = path -> new PrefixRestriction(path, uploadPath);
+        }
     }
 }

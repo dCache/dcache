@@ -187,10 +187,6 @@ public class FtpDoorSettings
             description = "Root path")
     protected String root;
 
-    @Option(name = "upload",
-            description = "Upload directory")
-    protected File uploadPath;
-
     public PortRange getPortRange()
     {
         return portRange;
@@ -309,11 +305,6 @@ public class FtpDoorSettings
     public String getRoot()
     {
         return root;
-    }
-
-    public File getUploadPath()
-    {
-        return uploadPath;
     }
 
     public CellStub createBillingStub(CellEndpoint cellEndpoint)
