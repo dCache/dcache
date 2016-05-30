@@ -17,8 +17,7 @@ public class ResponseHeaderFilter implements ContainerResponseFilter
         MultivaluedMap<String, Object> headers = responseContext.getHeaders();
 
         headers.add("Access-Control-Allow-Origin", "*");
-        headers.add("Access-Control-Allow-Methods", "POST");
-        headers.add("dCache-RESTfulAPI-version", "0.1-unstable");
+        headers.add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
         headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
     }
 }
