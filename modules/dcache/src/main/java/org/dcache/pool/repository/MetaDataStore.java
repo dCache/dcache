@@ -1,5 +1,6 @@
 package org.dcache.pool.repository;
 
+import java.io.Closeable;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -13,7 +14,7 @@ import diskCacheV111.util.PnfsId;
  * the interface is used as an abstraction over both meta data storage
  * and file storage.
  */
-public interface MetaDataStore
+public interface MetaDataStore extends Closeable
 {
     enum IndexOption
     {

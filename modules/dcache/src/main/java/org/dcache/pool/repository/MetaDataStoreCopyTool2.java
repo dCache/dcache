@@ -10,10 +10,10 @@ import java.util.Collection;
 
 import diskCacheV111.util.PnfsId;
 
-public class MetaDataStoreCopyTool
+public class MetaDataStoreCopyTool2
 {
     private static final Logger _log =
-        LoggerFactory.getLogger(MetaDataStoreCopyTool.class);
+        LoggerFactory.getLogger(MetaDataStoreCopyTool2.class);
 
     static MetaDataStore createStore(Class<? extends MetaDataStore> clazz,
                                      FileStore fileStore, File poolDir, boolean readOnly)
