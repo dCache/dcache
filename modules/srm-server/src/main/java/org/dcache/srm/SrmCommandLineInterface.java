@@ -463,15 +463,15 @@ public class SrmCommandLineInterface
         }
 
         private void listLatestCompletedLsRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-            listRequests(sb, srm.getLsRequestStorage().getLatestCompletedJobIds(maxCount), ReserveSpaceRequest.class);
+            listRequests(sb, srm.getLsRequestStorage().getLatestCompletedJobIds(maxCount), LsRequest.class);
         }
 
         private void listLatestFailedLsRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-            listRequests(sb, srm.getLsRequestStorage().getLatestFailedJobIds(maxCount), ReserveSpaceRequest.class);
+            listRequests(sb, srm.getLsRequestStorage().getLatestFailedJobIds(maxCount), LsRequest.class);
         }
 
         private void listLatestCancelledLsRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-            listRequests(sb, srm.getLsRequestStorage().getLatestCanceledJobIds(maxCount), ReserveSpaceRequest.class);
+            listRequests(sb, srm.getLsRequestStorage().getLatestCanceledJobIds(maxCount), LsRequest.class);
         }
 
         private <T extends Job> void listRequests(StringBuilder sb,
