@@ -70,6 +70,7 @@ import org.apache.zookeeper.data.Stat;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CDC;
@@ -88,7 +89,23 @@ public class CellCuratorFramework implements CuratorFramework
     public CellCuratorFramework(CuratorFramework inner, Executor executor)
     {
         this.inner = inner;
-        this.executor = new SequentialExecutor(executor);
+        this.executor = new SequentialExecutor(executor) {
+            @Override
+            public void execute(Runnable task)
+            {
+                try {
+                    super.execute(task);
+                } catch (RejectedExecutionException e) {
+                    /* There is no way to unregister watchers from ZooKeeper. Thus
+                     * it is possible for ZooKeeper to try to call a watcher after a
+                     * cell shut down, resulting in a RejectedExecutionException.
+                     */
+                    if (!isShutdown()) {
+                        throw e;
+                    }
+                }
+            }
+        };
     }
 
     protected static BackgroundCallback wrap(BackgroundCallback callback)
