@@ -59,9 +59,9 @@ documents or software obtained from this server.
  */
 package diskCacheV111.util;
 
-import javax.security.auth.Subject;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.Subject;
 
 import org.dcache.util.TimeUtils.DurationParser;
 
@@ -73,15 +73,30 @@ import org.dcache.util.TimeUtils.DurationParser;
 public class TransferInfo implements Serializable {
     private static final long serialVersionUID = 7303353263666911507L;
 
-    protected static String getTimeString(long time) {
+    protected static String getTimeString(long time, boolean display) {
         DurationParser durations = new DurationParser(time,
                                                       TimeUnit.MILLISECONDS).parseAll();
 
-        return String.format("%d+%02d:%02d:%02d",
-                             durations.get(TimeUnit.DAYS),
-                             durations.get(TimeUnit.HOURS),
-                             durations.get(TimeUnit.MINUTES),
-                             durations.get(TimeUnit.SECONDS));
+        if (display) {
+            return String.format("%d+%02d:%02d:%02d",
+                            durations.get(TimeUnit.DAYS),
+                            durations.get(TimeUnit.HOURS),
+                            durations.get(TimeUnit.MINUTES),
+                            durations.get(TimeUnit.SECONDS));
+        }
+
+        if (durations.get(TimeUnit.DAYS) > 0) {
+            return String.format("%d d %02d:%02d:%02d",
+                            durations.get(TimeUnit.DAYS),
+                            durations.get(TimeUnit.HOURS),
+                            durations.get(TimeUnit.MINUTES),
+                            durations.get(TimeUnit.SECONDS));
+        }
+
+        return String.format("%02d:%02d:%02d",
+                        durations.get(TimeUnit.HOURS),
+                        durations.get(TimeUnit.MINUTES),
+                        durations.get(TimeUnit.SECONDS));
     }
 
     protected String cellName   = "";
@@ -266,15 +281,15 @@ public class TransferInfo implements Serializable {
         this.waitingSince = waitingSince;
     }
 
-    protected String timeRunning(long now) {
-        return getTimeString(now - moverStart);
+    protected String timeRunning(long now, boolean display) {
+        return getTimeString(now - moverStart, display);
     }
 
-    protected String timeElapsedSinceSubmitted(long now) {
-        return getTimeString(now - moverSubmit);
+    protected String timeElapsedSinceSubmitted(long now, boolean display) {
+        return getTimeString(now - moverSubmit, display);
     }
 
-    protected String timeWaiting(long now) {
-        return getTimeString(now - waitingSince);
+    protected String timeWaiting(long now, boolean display) {
+        return getTimeString(now - waitingSince, display);
     }
 }

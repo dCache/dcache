@@ -153,15 +153,14 @@ public class TransferObserverV1
      *      for conversion into .txt and .html table entries.</p>
      */
     private static class TransferBean extends TransferInfo {
-        private String waiting;
-        private String elapsedSinceSubmitted;
-        private String running;
-        private String transferTimeStr;
-        private String transferRateStr;
+        private final long now;
 
-        public TransferBean() {}
+        public TransferBean() {
+            now = System.currentTimeMillis();
+        }
 
         public TransferBean(Transfer transfer, long now) {
+            this.now = now;
             cellName = transfer.door().getCellName();
             domainName = transfer.door().getDomainName();
             serialId = transfer.session().getSerialId();
@@ -174,7 +173,6 @@ public class TransferObserverV1
             replyHost = Objects.toString(transfer.session().getReplyHost(), "");
             sessionStatus = Objects.toString(transfer.session().getStatus(), "");
             waitingSince = transfer.session().getWaitingSince();
-            waiting = timeWaiting(now);
 
             IoJobInfo moverInfo = transfer.mover();
             if (moverInfo == null) {
@@ -183,16 +181,10 @@ public class TransferObserverV1
                 moverId = moverInfo.getJobId();
                 moverStatus = moverInfo.getStatus();
                 moverSubmit = moverInfo.getSubmitTime();
-                elapsedSinceSubmitted = timeElapsedSinceSubmitted(now);
                 if (moverInfo.getStartTime() > 0L) {
                     transferTime = moverInfo.getTransferTime();
                     bytesTransferred = moverInfo.getBytesTransferred();
                     moverStart = moverInfo.getStartTime();
-                    running = timeRunning(now);
-                    transferTimeStr = getTimeString(transferTime);
-                    long transferRate = getTransferRate();
-                    transferRateStr = transferRate > 0.0 ?
-                        String.format("%s KB/sec", transferRate) : "-";
                 }
             }
         }
@@ -211,12 +203,12 @@ public class TransferObserverV1
             out.add(replyHost);
             out.add(sessionStatus == null ? ""
                             : sessionStatus.replace(" ", "&nbsp;"));
-            out.add(waiting);
+            out.add(timeWaiting(now, true));
 
             if (moverStatus != null) {
                 out.add(moverStatus);
-                out.add(elapsedSinceSubmitted);
-                addMoverInfo(out);
+                out.add(timeElapsedSinceSubmitted(now, true));
+                addMoverInfo(out, true);
             }
         }
 
@@ -227,31 +219,41 @@ public class TransferObserverV1
             args.add(String.valueOf(serialId));
             args.add(protocol);
             args.add(userInfo.getUid());
-            args.add(userInfo.getGid());
-            args.add(userInfo.getPrimaryVOMSGroup());
             args.add(process);
             args.add(pnfsId);
             args.add(pool);
             args.add(replyHost);
             args.add(sessionStatus);
-            args.add(waiting);
+            args.add(timeWaiting(now, false));
 
             if (moverStatus == null) {
                 args.add("No-mover()-Found");
             } else {
                 args.add(moverStatus);
-                addMoverInfo(args);
+                addMoverInfo(args, false);
             }
 
             builder.append(new Args(args)).append('\n');
         }
 
-        private void addMoverInfo(List<String> list) {
+        String timeWaiting(boolean display) {
+            return timeWaiting(now, true);
+        }
+
+        private void addMoverInfo(List<String> list, boolean display) {
             if (moverStart != null) {
-                list.add(transferTimeStr);
+                list.add(getTimeString(transferTime, display));
                 list.add(String.valueOf(bytesTransferred));
-                list.add(transferRateStr);
-                list.add(running);
+                if (display) {
+                    list.add(transferTime > 0 ?
+                             String.valueOf((1000 * bytesTransferred)/(1024 * transferTime))
+                                    : "-");
+                } else {
+                    list.add(String.valueOf(transferTime > 0 ?
+                            ((double) bytesTransferred / (double) transferTime)
+                                    : 0));
+                }
+                list.add(timeRunning(now, display));
             }
         }
     }
@@ -570,7 +572,7 @@ public class TransferObserverV1
         page.td("host", transfer.getReplyHost());
         String status = transfer.getSessionStatus();
         page.td("status", status != null ? status.replace(" ", "&nbsp;") : "");
-        page.td("waiting", transfer.waiting);
+        page.td("waiting", transfer.timeWaiting(true));
 
         if (transfer.getMoverStatus() == null) {
             if (poolName.equals("N.N.")) {
