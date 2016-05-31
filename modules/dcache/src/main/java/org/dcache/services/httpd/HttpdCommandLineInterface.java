@@ -1,6 +1,7 @@
 package org.dcache.services.httpd;
 
 import com.google.common.base.Joiner;
+import jersey.repackaged.com.google.common.base.Throwables;
 import org.eclipse.jetty.server.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +12,10 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.HttpResponseEngine;
@@ -77,7 +80,9 @@ public class HttpdCommandLineInterface
             + "   predefined alias : <home>    =  default for http://host:port/ \n"
             + "                      <default> =  default for any type or error \n";
 
-    public String ac_set_alias_$_3_16(Args args) throws Exception
+    public String ac_set_alias_$_3_16(Args args)
+            throws NoSuchMethodException, IllegalAccessException, InstantiationException, FileNotFoundException,
+            InvocationTargetException, ClassNotFoundException, IllegalArgumentException
     {
         String alias = args.argv(0);
         String type = args.argv(1);
@@ -89,13 +94,15 @@ public class HttpdCommandLineInterface
     }
 
     public static final String hh_unset_alias = "<aliasName>";
-    public String ac_unset_alias_$_1(Args args) throws Exception
+    public String ac_unset_alias_$_1(Args args) throws InvocationTargetException
     {
         delegator.removeAlias(args.argv(0));
         return "Done";
     }
 
-    private AliasEntry createEntry(String alias, String type, Args args) throws Exception
+    private AliasEntry createEntry(String alias, String type, Args args)
+            throws FileNotFoundException, ClassNotFoundException, NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException, InstantiationException
     {
         String specific = args.argv(0);
         args.shift();
@@ -133,17 +140,14 @@ public class HttpdCommandLineInterface
             Joiner.on(";").appendTo(sb, args.getArguments());
             String failure = null;
 
+            Class<? extends HttpResponseEngine> c = Class.forName(specific).asSubclass(HttpResponseEngine.class);
+            Constructor<? extends HttpResponseEngine> constr = c.getConstructor(String[].class);
             try {
-                Class<? extends HttpResponseEngine> c = Class.forName(specific).asSubclass(HttpResponseEngine.class);
-                Constructor<? extends HttpResponseEngine> constr = c.getConstructor(String[].class);
                 HttpResponseEngine engine = constr.newInstance(new Object[] { args.getArguments().toArray(new String[args.argc()]) });
                 handler = new ResponseEngineHandler((HttpResponseEngine) beanFactory.initializeBean(engine, alias));
-            } catch (Exception e) {
-                logger.error(e.toString());
-                handler = new BadConfigHandler();
-                aliasType = AliasType.BADCONFIG;
-                failure = "failed to load class " + specific;
-                sb.append(" FAILED TO LOAD CLASS");
+            } catch (InvocationTargetException e) {
+                Throwables.propagateIfPossible(e.getCause());
+                throw e;
             }
 
             entry = new AliasEntry(alias, aliasType, handler, sb.toString());

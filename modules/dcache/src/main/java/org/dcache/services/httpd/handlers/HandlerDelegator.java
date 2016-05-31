@@ -1,6 +1,7 @@
 package org.dcache.services.httpd.handlers;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -167,14 +169,19 @@ public class HandlerDelegator extends AbstractHandler {
         logger.info("Finished");
     }
 
-    public AliasEntry removeAlias(String name) throws Exception
+    public AliasEntry removeAlias(String name) throws InvocationTargetException
     {
         AliasEntry entry = aliases.remove(name);
         if (entry != null) {
-            Handler handler = entry.getHandler();
-            removeBean(handler);
-            if (handler.isStarted()) {
-                handler.stop();
+            try {
+                Handler handler = entry.getHandler();
+                removeBean(handler);
+                if (handler.isStarted()) {
+                    handler.stop();
+                }
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                throw new InvocationTargetException(e, "Handler failed to stop.");
             }
         }
         return entry;
@@ -189,13 +196,18 @@ public class HandlerDelegator extends AbstractHandler {
         super.doStart();
     }
 
-    public void addAlias(String name, AliasEntry entry) throws Exception
+    public void addAlias(String name, AliasEntry entry) throws InvocationTargetException
     {
         Handler handler = entry.getHandler();
         addBean(handler, true);
         if (isStarted() && !handler.isStarted()) {
-            handler.setServer(getServer());
-            handler.start();
+            try {
+                handler.setServer(getServer());
+                handler.start();
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                throw new InvocationTargetException(e, "Handler failed to start.");
+            }
         }
         aliases.put(name, entry);
     }
