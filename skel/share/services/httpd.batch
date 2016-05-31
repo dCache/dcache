@@ -14,6 +14,7 @@ check httpd.cell.subscribe
 check -strong httpd.setup
 check -strong httpd.enable.authn
 check -strong httpd.enable.plots.pool-queue
+check httpd.watch
 
 check httpd.statistics.location
 
@@ -258,9 +259,7 @@ create diskCacheV111.services.web.PoolInfoObserverV3 ${httpd.cell.name}PoolColle
 
 onerror shutdown
 create diskCacheV111.cells.WebCollectorV3 ${httpd.cell.name}Collector \
-    "PnfsManager \
-     PoolManager \
-     gPlazma \
+    "${httpd.watch} \
      -subscribe=${httpd.cell.subscribe} \
      -replyObject"
 
