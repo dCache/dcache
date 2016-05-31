@@ -255,4 +255,29 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
     {
         this.pmf = pmf;
     }
+
+
+    @Override
+    public void aggregateDaily()
+    {
+        executeStoredProcedure("f_billing_daily_summary()");
+    }
+
+    private void executeStoredProcedure(String name)
+    {
+        PersistenceManager pm = pmf.getPersistenceManager();
+        Transaction tx = pm.currentTransaction();
+        try {
+            tx.begin();
+            Query query = pm.newQuery("javax.jdo.query.SQL","SELECT "+name);
+            query.execute();
+            tx.commit();
+        } finally {
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                pm.close();
+            }
+        }
+    }
 }
