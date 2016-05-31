@@ -35,6 +35,7 @@ import org.dcache.services.info.serialisation.XmlSerialiser;
 import org.dcache.util.Args;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.base.Throwables.propagate;
 import static com.google.common.collect.Iterables.find;
@@ -160,6 +161,7 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
     public InfoHttpEngine(String[] args)
     {
         _infoCellName = new Args(args).getOption("cell");
+        checkArgument(_infoCellName != null, "-cell option is required for InfoHttpEngine handler.");
     }
 
     @Override
