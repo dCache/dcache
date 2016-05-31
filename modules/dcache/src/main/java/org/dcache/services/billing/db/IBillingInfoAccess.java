@@ -149,4 +149,6 @@ public interface IBillingInfoAccess {
      */
     <T> long remove(Class<T> type, String filter, String parameters,
                     Object... values);
+
+    void aggregateDaily();
 }
