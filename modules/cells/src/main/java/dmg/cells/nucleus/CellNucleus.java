@@ -199,7 +199,6 @@ public class CellNucleus implements ThreadFactory
     {
         if (__cellGlue != null) {
             __cellGlue.shutdown();
-            __cellGlue = null;
         }
     }
 
