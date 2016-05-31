@@ -6,6 +6,11 @@ uid=$(id -u)
 gid=1000
 username=$(id -u -n)
 
+@DCACHE_LOAD_CONFIG@
+lib="$(getProperty dcache.paths.share.lib)"
+. ${lib}/utils.sh
+. ${lib}/database.sh
+
 @TARGET@/bin/ctlcluster stop
 
 cd @TARGET@/dcache
@@ -84,8 +89,16 @@ writetag /private sGroup "private"
 chown $uid:$gid /private
 EOF
 }
-
-bin/dcache database update
+# Apply liquibase change sets in parallel
+export JAVA
+export -f liquibase getScopedProperty getProperty printLimitedClassPath printPluginClassPath quickJava undefinedProperty
+for domain in $(getProperty dcache.domains); do
+    for cell in $(getProperty dcache.domain.cells "$domain"); do
+        if hasManagedDatabase "$domain" "$cell"; then
+            echo "$cell"
+        fi
+    done | xargs -P 4 -I CELL bash -c "liquibase $domain CELL update"
+done
 
 if [ ! -f var/db/chimera.initialized ]; then
     createfs
@@ -134,14 +147,14 @@ for path in etc/grid-security/certificates/*; do
     file=$(basename $path)
 
     if [ ! -f ~/.globus/certificates/$file -a ! -f /etc/grid-security/certificates/$file ]; then
-	if [ $warn_missing_trust = 0 ]; then
-	    echo
-	    echo "WARNING: not all certificates dCache trusts are trusted by YOU.  This can cause"
-	    echo "         authentication problems when trying to use dCache.  To solve this"
-	    echo "         problem use the 'hostCredentials --install' command."
-	    warn_missing_trust=1
-	fi
-	continue
+        if [ $warn_missing_trust = 0 ]; then
+            echo
+            echo "WARNING: not all certificates dCache trusts are trusted by YOU.  This can cause"
+            echo "         authentication problems when trying to use dCache.  To solve this"
+            echo "         problem use the 'hostCredentials --install' command."
+            warn_missing_trust=1
+        fi
+        continue
     fi
 
     compare $path ~/.globus/certificates/$file
