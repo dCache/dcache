@@ -38,7 +38,7 @@ public class MetaDataStoreYamlTool
         }
 
         File poolDir = new File(args[0]);
-        FileStore fileStore = new FlatFileStore(poolDir);
+        FileStore fileStore = new DummyFileStore();
         MetaDataStore metaStore =
             createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir);
         metaStore.init();
@@ -97,5 +97,6 @@ public class MetaDataStoreYamlTool
         }
         out.flush();
         error.flush();
-   }
+    }
+
 }
