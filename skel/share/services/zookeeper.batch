@@ -20,6 +20,9 @@ check -strong zookeeper.min-session-timeout.unit
 check zookeeper.max-session-timeout
 check -strong zookeeper.max-session-timeout.unit
 check -strong zookeeper.max-client-connections
+check -strong zookeeper.auto-purge.snap-retain-count
+check -strong zookeeper.auto-purge.purge-interval
+check -strong zookeeper.auto-purge.purge-interval.unit
 
 create org.dcache.zookeeper.service.ZooKeeperCell ${zookeeper.cell.name} \
           "-consume=${zookeeper.cell.consume} \
@@ -33,4 +36,7 @@ create org.dcache.zookeeper.service.ZooKeeperCell ${zookeeper.cell.name} \
            -max-session-timeout-unit=${zookeeper.max-session-timeout.unit} \
            -max-client-connections=${zookeeper.max-client-connections} \
            -listen=${zookeeper.net.listen} \
-           -port=${zookeeper.net.port}"
+           -port=${zookeeper.net.port} \
+           -autoPurgeRetainCount=${zookeeper.auto-purge.snap-retain-count} \
+           -autoPurgeInterval=${zookeeper.auto-purge.purge-interval} \
+           -autoPurgeIntervalUnit=${zookeeper.auto-purge.purge-interval.unit}"
