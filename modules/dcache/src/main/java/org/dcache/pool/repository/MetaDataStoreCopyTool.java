@@ -16,13 +16,13 @@ public class MetaDataStoreCopyTool
         LoggerFactory.getLogger(MetaDataStoreCopyTool.class);
 
     static MetaDataStore createStore(Class<? extends MetaDataStore> clazz,
-                                     FileStore fileStore, File poolDir)
+                                     FileStore fileStore, File poolDir, boolean readOnly)
         throws NoSuchMethodException, InstantiationException,
                IllegalAccessException, InvocationTargetException
     {
         Constructor<? extends MetaDataStore> constructor =
-            clazz.getConstructor(FileStore.class, File.class);
-        return constructor.newInstance(fileStore, poolDir);
+            clazz.getConstructor(FileStore.class, File.class, Boolean.TYPE);
+        return constructor.newInstance(fileStore, poolDir, readOnly);
     }
 
     public static void main(String[] args)
@@ -37,11 +37,11 @@ public class MetaDataStoreCopyTool
         }
 
         File poolDir = new File(args[0]);
-        FileStore fileStore = new FlatFileStore(poolDir);
+        FileStore fileStore = new DummyFileStore();
         MetaDataStore fromStore =
-            createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir);
+            createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir, true);
         MetaDataStore toStore =
-            createStore(Class.forName(args[2]).asSubclass(MetaDataStore.class), fileStore, poolDir);
+            createStore(Class.forName(args[2]).asSubclass(MetaDataStore.class), fileStore, poolDir, false);
         fromStore.init();
         toStore.init();
 
@@ -55,7 +55,12 @@ public class MetaDataStoreCopyTool
         int count = 1;
         for (PnfsId id: ids) {
             _log.info("Copying {} ({} of {})", id, count, size);
-            toStore.copy(fromStore.get(id));
+            MetaDataRecord entry = fromStore.get(id);
+            if (entry == null) {
+                System.err.println("Failed to load " + id);
+                System.exit(1);
+            }
+            toStore.copy(entry);
             count++;
         }
     }
