@@ -2,7 +2,8 @@
 billing_indexer() # $* = arguments
 {
     CLASSPATH="$(printLimitedClassPath slf4j-api logback-classic logback-core logback-console-config \
-        jul-to-slf4j commons-compress gson spring-core guava dcache-common common-cli cells dcache-core)" \
+        jul-to-slf4j commons-compress gson spring-core guava dcache-common common-cli cells dcache-core \
+        curator-client)" \
         quickJava \
           "-Ddcache.home=${DCACHE_HOME}" \
           "-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" \
