@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ dCache - http://www.dcache.org/
+  ~
+  ~ Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as
+  ~ published by the Free Software Foundation, either version 3 of the
+  ~ License, or (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+  <context:property-placeholder/>
+  <context:annotation-config/>
+
+  <!-- Convert properties with multiple values separated by comma into an array of strings:
+       key=value1,value2,value3 : String[] {value1, value2, value3}
+  -->
+  <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+      <property name="customEditors">
+          <map>
+              <entry key="java.lang.String[]"
+                     value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor" />
+          </map>
+      </property>
+  </bean>
+
+  <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+      <description>PnfsManager communication stub</description>
+      <property name="destination" value="${frontend.service.pnfsmanager}"/>
+      <property name="timeout" value="${frontend.service.pnfsmanager.timeout}"/>
+      <property name="timeoutUnit" value="${frontend.service.pnfsmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+      <description>PoolManager communication stub</description>
+      <property name="destination" value="${frontend.service.poolmanager}"/>
+      <property name="timeout" value="${frontend.service.poolmanager.timeout}"/>
+      <property name="timeoutUnit" value="${frontend.service.poolmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="login-stub" class="org.dcache.cells.CellStub">
+      <description>Login serviceunication stub</description>
+      <property name="destination" value="${frontend.service.gplazma}"/>
+      <property name="timeout" value="${frontend.service.gplazma.timeout}"/>
+      <property name="timeoutUnit" value="${frontend.service.gplazma.timeout.unit}"/>
+  </bean>
+
+  <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
+      <description>Client stub for directory listing</description>
+      <constructor-arg>
+	  <bean class="diskCacheV111.util.PnfsHandler">
+	      <constructor-arg ref="pnfs-stub"/>
+	  </bean>
+      </constructor-arg>
+  </bean>
+
+  <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+      <description>Processes login requests</description>
+      <property name="loginStrategies">
+	  <list>
+          <bean class="org.dcache.services.login.RemoteLoginStrategy">
+              <property name="cellStub" ref="login-stub"/>
+          </bean>
+	  </list>
+      </property>
+      <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
+  </bean>
+
+  <bean id="cache-login-strategy" class="org.dcache.auth.CachingLoginStrategy">
+      <description>Processes mapping requests</description>
+      <constructor-arg index="0" ref="union-login-strategy" />
+      <constructor-arg index="1" value="${frontend.service.gplazma.cache.size}" />
+      <constructor-arg index="2" value="${frontend.service.gplazma.cache.timeout}" />
+      <constructor-arg index="3" value="${frontend.service.gplazma.cache.timeout.unit}" />
+  </bean>
+
+  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
+     <description>Maintains runtime information about all pools</description>
+     <property name="poolManagerStub" ref="pool-manager-stub"/>
+  </bean>
+
+  <bean id="custom-headers"
+	class="org.dcache.util.ConfigurationMapFactoryBean">
+      <property name="prefix" value="frontend.custom-response-header"/>
+  </bean>
+
+    <bean id="handlers" class="org.dcache.webdav.AuthenticationHandler">
+        <description>List of handlers for HTTP requests</description>
+        <property name="handler">
+            <bean class="org.eclipse.jetty.server.handler.HandlerList">
+                <description>List of handlers for HTTP requests</description>
+                <property name="handlers">
+                    <list>
+                        <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                            <property name="contextPath" value="/"/>
+                            <property name="handler">
+                                <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                                    <property name="directoriesListed" value="true"/>
+                                    <property name="resourceBase" value="${frontend.dcache-view.dir}"/>
+                                </bean>
+                            </property>
+                        </bean>
+                        <bean class="org.eclipse.jetty.servlet.ServletContextHandler">
+                            <property name="contextPath" value="/api"/>
+                            <property name="servletHandler">
+                                <bean class="org.eclipse.jetty.servlet.ServletHandler">
+                                    <property name="servlets">
+                                        <list>
+                                            <bean class="org.eclipse.jetty.servlet.ServletHolder">
+                                                <constructor-arg name="name" value="rest"/>
+                                                <constructor-arg name="servlet">
+                                                    <bean class="org.glassfish.jersey.servlet.ServletContainer">
+                                                        <constructor-arg name="resourceConfig">
+                                                            <bean class="org.dcache.restful.DcacheRestApplication"/>
+                                                        </constructor-arg>
+                                                    </bean>
+                                                </constructor-arg>
+                                            </bean>
+                                        </list>
+                                    </property>
+                                    <property name="servletMappings">
+                                        <list>
+                                            <bean class="org.eclipse.jetty.servlet.ServletMapping">
+                                                <property name="servletName" value="rest"/>
+                                                <property name="pathSpecs">
+                                                    <list>
+                                                        <value>/v1/*</value>
+                                                    </list>
+                                                </property>
+                                            </bean>
+                                        </list>
+                                    </property>
+                                </bean>
+                            </property>
+                            <property name="attributes">
+                                <bean class="org.dcache.util.jetty.ImmutableAttributesMap">
+                                    <constructor-arg>
+                                        <map>
+                                            <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).DL}"
+                                                   value-ref="list-handler"/>
+                                            <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).CS}"
+                                                   value-ref="pnfs-stub"/>
+                                            <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PM}"
+                                                   value-ref="pool-monitor"/>
+
+                                        </map>
+                                    </constructor-arg>
+                                </bean>
+                            </property>
+                        </bean>
+                        <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+                    </list>
+                </property>
+            </bean>
+        </property>
+        <property name="loginStrategy" ref="cache-login-strategy"/>
+        <property name="readOnly" value="${frontend.authz.readonly}"/>
+        <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
+        <property name="realm" value="${frontend.authn.realm}"/>
+    </bean>
+
+    <bean id="banned-ciphers" class="org.dcache.util.Crypto"
+          factory-method="getBannedCipherSuitesFromConfigurationValue">
+        <constructor-arg value="${frontend.authn.ciphers}"/>
+    </bean>
+
+    <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+        <!-- Note that Jetty manages the lifecycle of this thread pool -->
+        <description>Thread pool used by Jetty for request processing</description>
+
+        <constructor-arg value="${frontend.limits.threads.max}"/>
+        <constructor-arg value="${frontend.limits.threads.min}"/>
+        <constructor-arg
+                value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${frontend.limits.threads.idle-time},
+                     '${frontend.limits.threads.idle-time.unit}')}" />
+        <constructor-arg>
+            <bean class="org.eclipse.jetty.util.BlockingArrayQueue">
+                <constructor-arg value="${frontend.limits.queue-length}"/>
+            </bean>
+        </constructor-arg>
+
+        <property name="name" value="jetty"/>
+    </bean>
+
+    <bean id="jetty" class="org.eclipse.jetty.server.Server"
+          init-method="start" destroy-method="stop">
+        <description>Embedded HTTP server</description>
+        <constructor-arg ref="thread-pool"/>
+        <property name="stopTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${frontend.limits.graceful-shutdown},
+                     '${frontend.limits.graceful-shutdown.unit}')}"/>
+        <property name="connectors">
+            <list>
+                <ref bean="server-connector"/>
+            </list>
+        </property>
+        <property name="handler">
+	  <!--+
+              |  The RewriteHandler allows modification of the
+              |  HttpServletResponse headers.  This allows
+              |  injection of the admin-supplied non-standard
+              |  response headers.  Note that these header values
+              |  are set before the request handler processes the
+              |  request, allowing the handler to adjust any
+              |  admin-supplied header.  While this weakens the
+              |  feature, it also prevents the admin from
+              |  mistakenly breaking the response.
+	      +-->
+            <bean class="org.eclipse.jetty.rewrite.handler.RewriteHandler">
+                <property name="rules">
+                    <bean class="org.dcache.util.jetty.HeaderRewriteRuleContainerFactoryBean">
+                        <property name="headers" ref="custom-headers"/>
+                    </bean>
+                </property>
+                <property name="handler" ref="handlers"/>
+            </bean>
+        </property>
+
+        <property name="beans">
+            <list>
+                <bean class="org.eclipse.jetty.server.LowResourceMonitor">
+                    <constructor-arg ref="jetty"/>
+                    <property name="lowResourcesIdleTimeout"
+                              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                              ${frontend.limits.low-resource-idle-time},
+                              '${frontend.limits.low-resource-idle-time.unit}')}" />
+                    <property name="maxLowResourcesTime" value="180000"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <beans profile="connector-http">
+        <bean id="server-connector" class="org.eclipse.jetty.server.ServerConnector">
+            <description>HTTP connector</description>
+            <constructor-arg ref="jetty"/>
+            <constructor-arg value="${frontend.limits.acceptors}"/>
+            <constructor-arg value="-1"/>
+
+            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${frontend.net.listen}') }"/>
+            <property name="port" value="${frontend.net.port}"/>
+            <property name="acceptQueueSize" value="${frontend.limits.backlog}"/>
+            <property name="idleTimeout"
+                      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                                  ${frontend.limits.idle-time},
+                                  '${frontend.limits.idle-time.unit}')}" />
+        </bean>
+    </beans>
+
+    <beans profile="connector-https">
+        <bean id="server-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
+            <description>HTTPS connector supporting grid certificates</description>
+
+            <property name="server" ref="jetty"/>
+
+            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${frontend.net.listen}') }"/>
+            <property name="port" value="${frontend.net.port}"/>
+            <property name="backlog" value="${frontend.limits.backlog}"/>
+            <property name="idleTimeout" value="${frontend.limits.idle-time}"/>
+            <property name="idleTimeoutUnit" value="${frontend.limits.idle-time.unit}"/>
+            <property name="acceptors" value="${frontend.limits.acceptors}"/>
+
+            <property name="wantClientAuth" value="${frontend.authn.accept-client-cert}"/>
+            <property name="needClientAuth" value="${frontend.authn.require-client-cert}"/>
+            <property name="excludedCipherSuites" ref="banned-ciphers"/>
+
+            <property name="caPath" value="${frontend.authn.capath}"/>
+            <property name="caPathTimeout" value="${frontend.authn.capath.refresh}"/>
+            <property name="caPathTimeoutUnit" value="${frontend.authn.capath.refresh.unit}"/>
+
+            <property name="serverCertificatePath" value="${frontend.authn.hostcert.cert}"/>
+            <property name="serverKeyPath" value="${frontend.authn.hostcert.key}"/>
+            <property name="serverCertificateTimeout" value="${frontend.authn.hostcert.refresh}"/>
+            <property name="serverCertificateTimeoutUnit" value="${frontend.authn.hostcert.refresh.unit}"/>
+
+            <property name="namespaceMode" value="${frontend.authn.namespace-mode}"/>
+            <property name="crlCheckingMode" value="${frontend.authn.crl-mode}"/>
+            <property name="ocspCheckingMode" value="${frontend.authn.ocsp-mode}"/>
+        </bean>
+    </beans>
+</beans>

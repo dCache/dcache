@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<!--
+dCache - http://www.dcache.org/
+
+Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+
+        <title>dCache View</title>
+        <meta name="description" content="dcache view">
+
+        <!-- Mobile -->
+        <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+        <!-- Chrome / Android -->
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="theme-color" content="black">
+        <link rel="icon" href="icon.png">
+
+        <!-- Safari / iOS -->
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png">
+
+        <!-- build:css styles/main.css -->
+        <link rel="stylesheet" href="styles/main.css">
+
+        <!-- Web Components -->
+        <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+
+        <link rel="import" href="elements/elements.html">
+    </head>
+    <body class="fullbleed layout vertical" unresolved>
+        <template is="dom-bind" id="app">
+            <paper-header-panel class="flex" mode="standard" shadow id="df-main-header">
+
+                <paper-toolbar class="medium-tall">
+                    <paper-icon-button icon="menu" on-tap="menuAction"></paper-icon-button>
+                    <span class="title">[[config.orgName]]</span>
+                    <user-login-up id="WhoAmI"></user-login-up>
+                    <div class="bottom fit" style="height: 70px; background-color: #eee; display: flex; flex-direction: column; justify-content: center;">
+                        <selected-title id="selectedTitle" selected="{{route}}"></selected-title>
+                    </div>
+                </paper-toolbar>
+                <div class="fit">
+                    <paper-drawer-panel drawer-width="60px" id="dfDrawerPanel">
+                        <div class="horizontal layout" drawer>
+                            <paper-menu attr-for-selected="data-route" id="df-page-navigator" selected="[[route]]">
+                                <a data-route="home" href$="{{baseUrl}}">
+                                    <paper-fab icon="device:storage" title="My Root" class="blue" mini></paper-fab>
+                                </a>
+                            </paper-menu>
+                        </div>
+
+                        <div main>
+                            <paper-drawer-panel id="metadata" responsive-width="300000px" right-drawer disable-swipe>
+                                <paper-header-panel id="metadataDrawer" drawer>
+                                    <paper-scroll-header-panel class="flex">
+                                        <paper-toolbar style="background:#fafafa; color:#333;">
+                                            <span>Oops!</span>
+                                        </paper-toolbar>
+                                        <div class="content">
+                                            You are not suppose to see this :(-
+                                        </div>
+                                    </paper-scroll-header-panel>
+                                </paper-header-panel>
+
+                                <div main>
+                                    <iron-pages attr-for-selected="data-route" selected="{{route}}">
+                                        <section data-route="home" class="fit" style="background-color:#ECECEC;">
+                                            <paper-header-panel mode="seamed" class="flex">
+                                                <paper-toolbar id="list-table-header">
+                                                    <div></div>
+                                                </paper-toolbar>
+                                                <div class="fit">
+                                                    <view-file id="homeDir"></view-file>
+                                                </div>
+                                            </paper-header-panel>
+                                        </section>
+
+                                        <section data-route="pathfinder" class="fit" style="background-color:#ECECEC;">
+                                            <paper-header-panel mode="seamed" class="flex">
+                                                <paper-toolbar id="list-table-header">
+                                                    <div></div>
+                                                </paper-toolbar>
+                                                <div class="fit">
+                                                    <view-file id="pathFinder" path$="{{params}}"></view-file>
+                                                </div>
+                                            </paper-header-panel>
+                                        </section>
+                                    </iron-pages>
+                                </div>
+                        </div>
+                    </paper-drawer-panel>
+                </div>
+            </paper-header-panel>
+
+            <!-- HERE IS A CENTRAL DIALOG BOX -->
+            <central-dialog-box id="centralDialogBox" modal role="alertdialog">
+                <div></div>
+            </central-dialog-box>
+
+            <!-- HERE IS A CENTRAL TOAST -->
+            <paper-toast id="toast">
+                <span class="toast-hide-button" role="button" tabindex="0" onclick="app.$.toast.hide()">Ok</span>
+            </paper-toast>
+        </template>
+
+        <script src="scripts/dv.js"></script>
+        <script src="scripts/config.js"></script>
+    </body>
+</html>
