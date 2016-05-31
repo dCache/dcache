@@ -91,18 +91,111 @@ import org.dcache.srm.SrmRequest;
 import org.dcache.srm.SrmResponse;
 import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
+import org.dcache.srm.v2_2.ArrayOfTBringOnlineRequestFileStatus;
+import org.dcache.srm.v2_2.ArrayOfTCopyFileRequest;
+import org.dcache.srm.v2_2.ArrayOfTCopyRequestFileStatus;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
+import org.dcache.srm.v2_2.ArrayOfTGetFileRequest;
+import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
+import org.dcache.srm.v2_2.ArrayOfTPutFileRequest;
+import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
 import org.dcache.srm.v2_2.ArrayOfTRequestSummary;
 import org.dcache.srm.v2_2.ArrayOfTRequestTokenReturn;
+import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
+import org.dcache.srm.v2_2.SrmAbortFilesRequest;
+import org.dcache.srm.v2_2.SrmAbortFilesResponse;
+import org.dcache.srm.v2_2.SrmAbortRequestRequest;
+import org.dcache.srm.v2_2.SrmAbortRequestResponse;
+import org.dcache.srm.v2_2.SrmBringOnlineRequest;
+import org.dcache.srm.v2_2.SrmBringOnlineResponse;
+import org.dcache.srm.v2_2.SrmChangeSpaceForFilesRequest;
+import org.dcache.srm.v2_2.SrmChangeSpaceForFilesResponse;
+import org.dcache.srm.v2_2.SrmCheckPermissionRequest;
+import org.dcache.srm.v2_2.SrmCheckPermissionResponse;
+import org.dcache.srm.v2_2.SrmCopyRequest;
+import org.dcache.srm.v2_2.SrmCopyResponse;
+import org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceRequest;
+import org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceResponse;
+import org.dcache.srm.v2_2.SrmExtendFileLifeTimeRequest;
+import org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse;
+import org.dcache.srm.v2_2.SrmGetPermissionRequest;
+import org.dcache.srm.v2_2.SrmGetPermissionResponse;
 import org.dcache.srm.v2_2.SrmGetRequestSummaryRequest;
 import org.dcache.srm.v2_2.SrmGetRequestSummaryResponse;
+import org.dcache.srm.v2_2.SrmGetRequestTokensRequest;
 import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
+import org.dcache.srm.v2_2.SrmGetSpaceMetaDataRequest;
+import org.dcache.srm.v2_2.SrmGetSpaceMetaDataResponse;
+import org.dcache.srm.v2_2.SrmGetSpaceTokensRequest;
+import org.dcache.srm.v2_2.SrmGetSpaceTokensResponse;
+import org.dcache.srm.v2_2.SrmGetTransferProtocolsRequest;
+import org.dcache.srm.v2_2.SrmGetTransferProtocolsResponse;
+import org.dcache.srm.v2_2.SrmLsRequest;
+import org.dcache.srm.v2_2.SrmLsResponse;
+import org.dcache.srm.v2_2.SrmMkdirRequest;
+import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
+import org.dcache.srm.v2_2.SrmMkdirResponse;
+import org.dcache.srm.v2_2.SrmMvRequest;
+import org.dcache.srm.v2_2.SrmMvResponse;
+import org.dcache.srm.v2_2.SrmPingRequest;
 import org.dcache.srm.v2_2.SrmPingResponse;
+import org.dcache.srm.v2_2.SrmPrepareToGetRequest;
+import org.dcache.srm.v2_2.SrmPrepareToGetResponse;
+import org.dcache.srm.v2_2.SrmPrepareToPutRequest;
+import org.dcache.srm.v2_2.SrmPrepareToPutResponse;
+import org.dcache.srm.v2_2.SrmPurgeFromSpaceRequest;
+import org.dcache.srm.v2_2.SrmPurgeFromSpaceResponse;
+import org.dcache.srm.v2_2.SrmPutDoneRequest;
+import org.dcache.srm.v2_2.SrmPutDoneResponse;
+import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
+import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
+import org.dcache.srm.v2_2.SrmReleaseSpaceRequest;
+import org.dcache.srm.v2_2.SrmReleaseSpaceResponse;
+import org.dcache.srm.v2_2.SrmReserveSpaceRequest;
+import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
+import org.dcache.srm.v2_2.SrmResumeRequestRequest;
+import org.dcache.srm.v2_2.SrmResumeRequestResponse;
+import org.dcache.srm.v2_2.SrmRmRequest;
+import org.dcache.srm.v2_2.SrmRmResponse;
+import org.dcache.srm.v2_2.SrmRmdirRequest;
+import org.dcache.srm.v2_2.SrmRmdirResponse;
+import org.dcache.srm.v2_2.SrmSetPermissionRequest;
+import org.dcache.srm.v2_2.SrmSetPermissionResponse;
+import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestResponse;
+import org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestResponse;
+import org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;
+import org.dcache.srm.v2_2.SrmStatusOfGetRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
+import org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
+import org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
+import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
+import org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestRequest;
+import org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestResponse;
+import org.dcache.srm.v2_2.SrmSuspendRequestRequest;
+import org.dcache.srm.v2_2.SrmSuspendRequestResponse;
+import org.dcache.srm.v2_2.SrmUpdateSpaceRequest;
+import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
+import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
+import org.dcache.srm.v2_2.TCopyFileRequest;
+import org.dcache.srm.v2_2.TCopyRequestFileStatus;
 import org.dcache.srm.v2_2.TExtraInfo;
+import org.dcache.srm.v2_2.TGetFileRequest;
+import org.dcache.srm.v2_2.TGetRequestFileStatus;
+import org.dcache.srm.v2_2.TMetaDataPathDetail;
+import org.dcache.srm.v2_2.TPutFileRequest;
+import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.TRequestSummary;
 import org.dcache.srm.v2_2.TRequestTokenReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.NetLoggerBuilder;
@@ -744,6 +837,7 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 } else {
                     log.add("request.surl", getSurl(request));
                 }
+                logOperationSpecific(log, requestName, request, response);
                 if (status != null) {
                     log.add("status.code", status.getStatusCode());
                     log.add("status.explanation", status.getExplanation());
@@ -752,6 +846,303 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 log.add("user-agent", Axis.getUserAgent());
                 log.toLogger(ACCESS_LOGGER);
             }
+        }
+
+        private void logOperationSpecific(NetLoggerBuilder log, String operation,
+                Object request, Object response)
+        {
+            switch (operation) {
+            case "srmAbortFiles":
+                log(log, (SrmAbortFilesRequest) request, (SrmAbortFilesResponse) response);
+                break;
+            case "srmAbortRequest":
+                log(log, (SrmAbortRequestRequest) request, (SrmAbortRequestResponse) response);
+                break;
+            case "srmBringOnline":
+                log(log, (SrmBringOnlineRequest) request, (SrmBringOnlineResponse) response);
+                break;
+            case "srmChangeSpaceForFiles":
+                log(log, (SrmChangeSpaceForFilesRequest) request, (SrmChangeSpaceForFilesResponse) response);
+                break;
+            case "srmCheckPermission":
+                log(log, (SrmCheckPermissionRequest) request, (SrmCheckPermissionResponse) response);
+                break;
+            case "srmCopy":
+                log(log, (SrmCopyRequest) request, (SrmCopyResponse) response);
+                break;
+            case "srmExtendFileLifeTimeInSpace":
+                log(log, (SrmExtendFileLifeTimeInSpaceRequest) request, (SrmExtendFileLifeTimeInSpaceResponse) response);
+                break;
+            case "srmExtendFileLifeTime":
+                log(log, (SrmExtendFileLifeTimeRequest) request, (SrmExtendFileLifeTimeResponse) response);
+                break;
+            case "srmGetPermission":
+                log(log, (SrmGetPermissionRequest) request, (SrmGetPermissionResponse) response);
+                break;
+            case "srmGetRequestSummary":
+                log(log, (SrmGetRequestSummaryRequest) request, (SrmGetRequestSummaryResponse) response);
+                break;
+            case "srmGetRequestTokens":
+                log(log, (SrmGetRequestTokensRequest) request, (SrmGetRequestTokensResponse) response);
+                break;
+            case "srmGetSpaceMetaData":
+                log(log, (SrmGetSpaceMetaDataRequest) request, (SrmGetSpaceMetaDataResponse) response);
+                break;
+            case "srmGetSpaceTokens":
+                log(log, (SrmGetSpaceTokensRequest) request, (SrmGetSpaceTokensResponse) response);
+                break;
+            case "srmGetTransferProtocols":
+                log(log, (SrmGetTransferProtocolsRequest) request, (SrmGetTransferProtocolsResponse) response);
+                break;
+            case "srmLs":
+                log(log, (SrmLsRequest) request, (SrmLsResponse) response);
+                break;
+            case "srmMkdir":
+                log(log, (SrmMkdirRequest) request, (SrmMkdirResponse) response);
+                break;
+            case "srmMv":
+                log(log, (SrmMvRequest) request, (SrmMvResponse) response);
+                break;
+            case "srmPing":
+                log(log, (SrmPingRequest) request, (SrmPingResponse) response);
+                break;
+            case "srmPrepareToGet":
+                log(log, (SrmPrepareToGetRequest) request, (SrmPrepareToGetResponse) response);
+                break;
+            case "srmPrepareToPut":
+                log(log, (SrmPrepareToPutRequest) request, (SrmPrepareToPutResponse) response);
+                break;
+            case "srmPurgeFromSpace":
+                log(log, (SrmPurgeFromSpaceRequest) request, (SrmPurgeFromSpaceResponse) response);
+                break;
+            case "srmPutDone":
+                log(log, (SrmPutDoneRequest) request, (SrmPutDoneResponse) response);
+                break;
+            case "srmReleaseFiles":
+                log(log, (SrmReleaseFilesRequest) request, (SrmReleaseFilesResponse) response);
+                break;
+            case "srmReleaseSpace":
+                log(log, (SrmReleaseSpaceRequest) request, (SrmReleaseSpaceResponse) response);
+                break;
+            case "srmReserveSpace":
+                log(log, (SrmReserveSpaceRequest) request, (SrmReserveSpaceResponse) response);
+                break;
+            case "srmResumeRequest":
+                log(log, (SrmResumeRequestRequest) request, (SrmResumeRequestResponse) response);
+                break;
+            case "srmRmdir":
+                log(log, (SrmRmdirRequest) request, (SrmRmdirResponse) response);
+                break;
+            case "srmRm":
+                log(log, (SrmRmRequest) request, (SrmRmResponse) response);
+                break;
+            case "srmSetPermission":
+                log(log, (SrmSetPermissionRequest) request, (SrmSetPermissionResponse) response);
+                break;
+            case "srmStatusOfBringOnlineRequest":
+                log(log, (SrmStatusOfBringOnlineRequestRequest) request, (SrmStatusOfBringOnlineRequestResponse) response);
+                break;
+            case "srmStatusOfChangeSpaceForFilesRequest":
+                log(log, (SrmStatusOfChangeSpaceForFilesRequestRequest) request, (SrmStatusOfChangeSpaceForFilesRequestResponse) response);
+                break;
+            case "srmStatusOfCopyRequest":
+                log(log, (SrmStatusOfCopyRequestRequest) request, (SrmStatusOfCopyRequestResponse) response);
+                break;
+            case "srmStatusOfGetRequest":
+                log(log, (SrmStatusOfGetRequestRequest) request, (SrmStatusOfGetRequestResponse) response);
+                break;
+            case "srmStatusOfLsRequest":
+                log(log, (SrmStatusOfLsRequestRequest) request, (SrmStatusOfLsRequestResponse) response);
+                break;
+            case "srmStatusOfPutRequest":
+                log(log, (SrmStatusOfPutRequestRequest) request, (SrmStatusOfPutRequestResponse) response);
+                break;
+            case "srmStatusOfReserveSpaceRequest":
+                log(log, (SrmStatusOfReserveSpaceRequestRequest) request, (SrmStatusOfReserveSpaceRequestResponse) response);
+                break;
+            case "srmStatusOfUpdateSpaceRequest":
+                log(log, (SrmStatusOfUpdateSpaceRequestRequest) request, (SrmStatusOfUpdateSpaceRequestResponse) response);
+                break;
+            case "srmSuspendRequest":
+                log(log, (SrmSuspendRequestRequest) request, (SrmSuspendRequestResponse) response);
+                break;
+            case "srmUpdateSpace":
+                log(log, (SrmUpdateSpaceRequest) request, (SrmUpdateSpaceResponse) response);
+                break;
+            default:
+                LOGGER.error("Unknown SRM request {}", operation);
+            }
+        }
+
+        private void log(NetLoggerBuilder log, Object request, Object response)
+        {
+            // by default, add no additional logging.
+        }
+
+        private void log(NetLoggerBuilder log, SrmAbortFilesRequest request,
+                SrmAbortFilesResponse response)
+        {
+            log.addSingleValue("request.surl", request.getArrayOfSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTSURLReturnStatus::getStatusArray,
+                    TSURLReturnStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmRmRequest request, SrmRmResponse response)
+        {
+            log.addSingleValue("request.surl", request.getArrayOfSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTSURLReturnStatus::getStatusArray,
+                    TSURLReturnStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmLsRequest request, SrmLsResponse response)
+        {
+            logCountAndOffset(log, request.getCount(), request.getOffset());
+            log.addSingleValue("request.surl", request.getArrayOfSURLs(), ArrayOfAnyURI::getUrlArray);
+
+            logFileStatus(log, response.getDetails(),
+                    ArrayOfTMetaDataPathDetail::getPathDetailArray, TMetaDataPathDetail::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmStatusOfLsRequestRequest request,
+                SrmStatusOfLsRequestResponse response)
+        {
+            logCountAndOffset(log, request.getCount(), request.getOffset());
+
+            logFileStatus(log, response.getDetails(),
+                    ArrayOfTMetaDataPathDetail::getPathDetailArray, TMetaDataPathDetail::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmPrepareToGetRequest request,
+                SrmPrepareToGetResponse response)
+        {
+            log.add("request.pin", request.getDesiredPinLifeTime());
+            log.add("request.lifetime", request.getDesiredTotalRequestTime());
+            log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
+                    ArrayOfTGetFileRequest::getRequestArray, TGetFileRequest::getSourceSURL);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTGetRequestFileStatus::getStatusArray, TGetRequestFileStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmStatusOfGetRequestRequest request,
+                SrmStatusOfGetRequestResponse response)
+        {
+            log.addSingleValue("request.surl", request.getArrayOfSourceSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTGetRequestFileStatus::getStatusArray, TGetRequestFileStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmPrepareToPutRequest request,
+                SrmPrepareToPutResponse response)
+        {
+            log.add("request.pin", request.getDesiredPinLifeTime());
+            log.add("request.lifetime", request.getDesiredTotalRequestTime());
+            log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
+                    ArrayOfTPutFileRequest::getRequestArray, TPutFileRequest::getTargetSURL);
+
+            ArrayOfTPutRequestFileStatus statuses = response.getArrayOfFileStatuses();
+            log.addSingleValue("turl", statuses, ArrayOfTPutRequestFileStatus::getStatusArray,
+                    TPutRequestFileStatus::getTransferURL);
+            logFileStatus(log, statuses, ArrayOfTPutRequestFileStatus::getStatusArray,
+                    TPutRequestFileStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmStatusOfPutRequestRequest request, SrmStatusOfPutRequestResponse response)
+        {
+            log.addSingleValue("request.surl", request.getArrayOfTargetSURLs(),
+                    ArrayOfAnyURI::getUrlArray);
+
+            ArrayOfTPutRequestFileStatus statuses = response.getArrayOfFileStatuses();
+            log.addSingleValue("turl", statuses, ArrayOfTPutRequestFileStatus::getStatusArray,
+                    TPutRequestFileStatus::getTransferURL);
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTPutRequestFileStatus::getStatusArray, TPutRequestFileStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmPutDoneRequest request,
+                SrmPutDoneResponse response)
+        {
+            log.addSingleValue("request.surl", request.getArrayOfSURLs(), ArrayOfAnyURI::getUrlArray);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTSURLReturnStatus::getStatusArray, TSURLReturnStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmCopyRequest request,
+                SrmCopyResponse response)
+        {
+            log.addSingleValue("request.src-surl", request.getArrayOfFileRequests(), ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getSourceSURL);
+            log.addSingleValue("request.dst-surl", request.getArrayOfFileRequests(), ArrayOfTCopyFileRequest::getRequestArray, TCopyFileRequest::getTargetSURL);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(), ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmStatusOfCopyRequestRequest request, SrmStatusOfCopyRequestResponse response)
+        {
+            log.addSingleValue("request.src-surl", request.getArrayOfSourceSURLs(), ArrayOfAnyURI::getUrlArray);
+            log.addSingleValue("request.dst-surl", request.getArrayOfTargetSURLs(), ArrayOfAnyURI::getUrlArray);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(), ArrayOfTCopyRequestFileStatus::getStatusArray, TCopyRequestFileStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmReleaseFilesRequest request,
+                SrmReleaseFilesResponse response)
+        {
+            log.addSingleValue("request.surl", request.getArrayOfSURLs(), ArrayOfAnyURI::getUrlArray);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTSURLReturnStatus::getStatusArray, TSURLReturnStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log, SrmBringOnlineRequest request,
+                SrmBringOnlineResponse response)
+        {
+            log.addSingleValue("request.surl", request.getArrayOfFileRequests(),
+                    ArrayOfTGetFileRequest::getRequestArray, TGetFileRequest::getSourceSURL);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
+                    TBringOnlineRequestFileStatus::getStatus);
+        }
+
+        private void log(NetLoggerBuilder log,
+                SrmStatusOfBringOnlineRequestRequest request,
+                SrmStatusOfBringOnlineRequestResponse response)
+        {
+            log.addSingleValue("request.surl", request.getArrayOfSourceSURLs(), ArrayOfAnyURI::getUrlArray);
+
+            logFileStatus(log, response.getArrayOfFileStatuses(),
+                    ArrayOfTBringOnlineRequestFileStatus::getStatusArray,
+                    TBringOnlineRequestFileStatus::getStatus);
+        }
+
+
+        private void logCountAndOffset(NetLoggerBuilder log, Integer count, Integer offset)
+        {
+            if (count != null || offset != null) {
+                StringBuilder sb = new StringBuilder();
+                if (count != null) {
+                    sb.append(count);
+                }
+                if (offset != null) {
+                    sb.append('@').append(offset);
+                }
+                log.add("limit", sb.toString());
+            }
+        }
+
+        private <U,A> void logFileStatus(NetLoggerBuilder log, U source, Function<U,A[]> toArray, Function <A,TReturnStatus> toFileStatus)
+        {
+            log.addSingleValue("file-status.code", source, toArray, toFileStatus.andThen(TReturnStatus::getStatusCode));
+            log.addSingleValue("file-status.explanation", source, toArray, toFileStatus.andThen(TReturnStatus::getExplanation));
         }
     }
 
