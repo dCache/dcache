@@ -816,7 +816,7 @@ case "$1" in
                                 else
                                     manageable=No
                                 fi
-                                if [ "$(getScopedProperty db.schema.auto "$domain" "$cell")" = "true" ]; then
+                                if hasAutoSchema "$domain" "$cell"; then
                                     auto=Yes
                                 else
                                     auto=No

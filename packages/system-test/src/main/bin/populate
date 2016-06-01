@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
@@ -90,14 +90,17 @@ chown $uid:$gid /private
 EOF
 }
 # Apply liquibase change sets in parallel
-export JAVA
-export -f liquibase getScopedProperty getProperty printLimitedClassPath printPluginClassPath quickJava undefinedProperty
+pids=""
 for domain in $(getProperty dcache.domains); do
     for cell in $(getProperty dcache.domain.cells "$domain"); do
-        if hasManagedDatabase "$domain" "$cell"; then
-            echo "$cell"
+        if hasManagedDatabase "$domain" "$cell" && hasAutoSchema "$domain" "$cell"; then
+            liquibase "$domain" "$cell" update &
+            pids="$! $pids"
         fi
-    done | xargs -P 4 -I CELL bash -c "liquibase $domain CELL update"
+    done
+done
+for pid in $pids; do
+    wait $pid
 done
 
 if [ ! -f var/db/chimera.initialized ]; then

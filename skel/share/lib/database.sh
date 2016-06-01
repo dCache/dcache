@@ -10,6 +10,11 @@ hasManagedDatabase() # $1 = domain, $2 = cell
     [ -n "$(getScopedProperty db.schema.changelog "$1" "$2")" ]
 }
 
+hasAutoSchema() # $1 = domain, $2 = cell
+{
+    [ "$(getScopedProperty db.schema.auto "$1" "$2")" = "true" ]
+}
+
 liquibase() # $1 = domain, $2 = cell, $3+ = liquibase arguments
 {
     local url
