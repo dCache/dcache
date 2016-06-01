@@ -26,6 +26,8 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.util.TimeUtils.relativeTimestamp;
+
 public final class LsRequest extends ContainerRequest<LsFileRequest> {
     private final static Logger logger =
             LoggerFactory.getLogger(LsRequest.class);
@@ -436,27 +438,30 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
 
         @Override
         public void toString(StringBuilder sb, boolean longformat) {
-                sb.append(getMethod()).append("Request #").append(getId()).append(" created by ").append(getUser());
-                sb.append(" state = ").append(getState());
-                sb.append("\n SURL(s) : ");
-                for (LsFileRequest fr: getFileRequests()) {
-                        sb.append(fr.getSurlString()).append(" ");
+            sb.append(getNameForRequestType()).append(" id:").append(getId());
+            sb.append(" files:").append(getFileRequests().size());
+            sb.append(" state:").append(getState());
+            TStatusCode code = getStatusCode();
+            if (code != null) {
+                sb.append(" status:").append(code);
+            }
+            sb.append(" by:").append(getUser().getDisplayName());
+            if (longformat) {
+                sb.append('\n');
+                long now = System.currentTimeMillis();
+                sb.append("   Submitted: ").append(relativeTimestamp(getCreationTime(), now)).append('\n');
+                sb.append("   Expires: ").append(relativeTimestamp(getCreationTime() + getLifetime(), now)).append('\n');
+                sb.append("   Count      : ").append(getCount()).append('\n');
+                sb.append("   Offset     : ").append(getOffset()).append('\n');
+                sb.append("   LongFormat : ").append(getLongFormat()).append('\n');
+                sb.append("   NumOfLevels: ").append(getNumOfLevels()).append('\n');
+                sb.append("   History:\n");
+                sb.append(getHistory("   "));
+                for (LsFileRequest fr:getFileRequests()) {
+                    sb.append("\n");
+                    fr.toString(sb, "   ", true);
                 }
-                sb.append("\n count      : ").append(getCount());
-                sb.append("\n offset     : ").append(getOffset());
-                sb.append("\n longFormat : ").append(getLongFormat());
-                sb.append("\n numOfLevels: ").append(getNumOfLevels());
-                if(longformat) {
-                        sb.append("\n status code=").append(getStatusCode());
-                        sb.append("\n error message=").append(getErrorMessage());
-                        sb.append("\n History of State Transitions: \n");
-                        sb.append(getHistory());
-                        for (LsFileRequest fr: getFileRequests()) {
-                                fr.toString(sb,longformat);
-                        }
-                } else {
-                    sb.append(" number of surls in request:").append(getFileRequests().size());
-                }
+            }
         }
 
     /**
