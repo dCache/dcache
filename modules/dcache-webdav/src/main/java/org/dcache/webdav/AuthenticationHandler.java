@@ -4,12 +4,17 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.security.UserAuthentication;
+import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -64,6 +69,7 @@ public class AuthenticationHandler extends HandlerWrapper {
     private String _realm;
     private Restriction _doorRestriction;
     private boolean _isBasicAuthenticationEnabled;
+    private boolean _isSpnegoAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
 
     private CertificateFactory _cf = CertificateFactories.newX509CertificateFactory();
@@ -78,6 +84,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 addX509ChainToSubject(request, subject);
                 addOriginToSubject(request, subject);
                 addAuthCredentialsToSubject(request, subject);
+                addSpnegoCredentialsToSubject(baseRequest, request, subject);
 
                 LoginReply login = _loginStrategy.login(subject);
                 subject = login.getSubject();
@@ -111,6 +118,22 @@ public class AuthenticationHandler extends HandlerWrapper {
                 LOG.error("Internal server error: {}", e);
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 baseRequest.setHandled(true);
+            }
+        }
+    }
+
+    private void addSpnegoCredentialsToSubject(Request baseRequest,
+                                               HttpServletRequest request,
+                                               Subject subject)
+    {
+        if (_isSpnegoAuthenticationEnabled) {
+            Authentication spnegoAuth = baseRequest.getAuthentication();
+            if (spnegoAuth instanceof Authentication.Deferred) {
+                Authentication spnegoUser = ((Authentication.Deferred) spnegoAuth).authenticate(request);
+                if (spnegoUser instanceof UserAuthentication) {
+                    UserIdentity identity = ((UserAuthentication) spnegoUser).getUserIdentity();
+                    subject.getPrincipals().add(new KerberosPrincipal(identity.getUserPrincipal().getName()));
+                }
             }
         }
     }
@@ -229,6 +252,10 @@ public class AuthenticationHandler extends HandlerWrapper {
         _isBasicAuthenticationEnabled = isEnabled;
     }
 
+    public void setEnableSpnegoAuthentication(boolean isEnabled) {
+        _isSpnegoAuthenticationEnabled = isEnabled;
+    }
+
     public void setLoginStrategy(LoginStrategy loginStrategy) {
         _loginStrategy = loginStrategy;
     }
@@ -265,7 +292,14 @@ public class AuthenticationHandler extends HandlerWrapper {
 
         private void addAuthenticationChallenges(int code) {
             if (code == HttpServletResponse.SC_UNAUTHORIZED) {
-                setHeader("WWW-Authenticate", "Basic realm=\"" + getRealm() + "\"");
+                if (_isSpnegoAuthenticationEnabled) {
+                    // Firefox always defaults to the first available authentication mechanism
+                    // Conversely, Chrome and Safari choose the strongest mechanism
+                    setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), HttpHeader.NEGOTIATE.asString());
+                    addHeader(HttpHeader.WWW_AUTHENTICATE.asString(), "Basic realm=\"" + getRealm() + "\"");
+                } else {
+                    setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), "Basic realm=\"" + getRealm() + "\"");
+                }
             }
         }
     }
