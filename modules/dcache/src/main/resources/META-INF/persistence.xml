@@ -58,6 +58,7 @@
             <property name="datanucleus.persistenceByReachabilityAtCommit" value="false"/>
             <property name="datanucleus.rdbms.stringLengthExceededAction" value="TRUNCATE"/>
             <property name="datanucleus.query.jdoql.allowAll" value="true"/>
+            <property name="datanucleus.query.sql.allowAll" value="true"/>
             <property name="javax.jdo.option.Optimistic" value="true"/>
             <property name="javax.jdo.option.NontransactionalRead" value="false"/>
             <property name="javax.jdo.option.RetainValues" value="true"/>
