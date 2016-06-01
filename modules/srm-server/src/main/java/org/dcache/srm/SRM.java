@@ -115,7 +115,6 @@ import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
-import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
@@ -151,7 +150,7 @@ public class SRM implements CellLifeCycleAware
     /**
      * Creates a new instance of SRM
      * @param config
-     * @param storage
+     * @param name
      * @throws IOException
      * @throws InterruptedException
      * @throws DataAccessException
@@ -258,7 +257,7 @@ public class SRM implements CellLifeCycleAware
     {
         checkState(schedulers != null, "Cannot start SRM with no schedulers");
         setSRM(this);
-        databaseFactory = new DatabaseJobStorageFactory(configuration, manager, schedulers);
+        databaseFactory = new DatabaseJobStorageFactory(configuration, manager);
         try {
             JobStorageFactory.initJobStorageFactory(databaseFactory);
             databaseFactory.init();
@@ -275,7 +274,7 @@ public class SRM implements CellLifeCycleAware
     @Override
     public void afterStart()
     {
-        databaseFactory.restoreJobsOnSrmStart();
+        databaseFactory.restoreJobsOnSrmStart(schedulers);
     }
 
     @Override
@@ -339,11 +338,11 @@ public class SRM implements CellLifeCycleAware
     }
 
     public Set<Long> getGetRequestIds(SRMUser user, String description) throws DataAccessException {
-        return getActiveJobIds(GetRequest.class, description);
+        return getActiveJobIds(GetRequest.class,description);
     }
 
     public Set<Long> getLsRequestIds(SRMUser user, String description) throws DataAccessException {
-        return getActiveJobIds(LsRequest.class, description);
+        return getActiveJobIds(LsRequest.class,description);
     }
 
     public CharSequence getSchedulerInfo()
@@ -582,8 +581,7 @@ public class SRM implements CellLifeCycleAware
     public <T extends Job> Set<T> getActiveJobs(Class<T> type) throws DataAccessException
     {
         JobStorage<T> jobStorage = databaseFactory.getJobStorage(type);
-        Scheduler<?> scheduler = schedulers.getScheduler(type);
-        return (jobStorage == null) ? Collections.emptySet() : jobStorage.getActiveJobs(scheduler.getId());
+        return (jobStorage == null) ? Collections.<T>emptySet() : jobStorage.getActiveJobs();
     }
 
     public <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description)

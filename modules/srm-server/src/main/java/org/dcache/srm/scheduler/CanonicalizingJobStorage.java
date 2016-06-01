@@ -85,6 +85,18 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
+    public Set<J> getJobs(String scheduler) throws DataAccessException
+    {
+        return canonicalize(storage.getJobs(scheduler));
+    }
+
+    @Override
+    public Set<J> getJobs(String scheduler, State state) throws DataAccessException
+    {
+        return canonicalize(storage.getJobs(scheduler, state));
+    }
+
+    @Override
     public void saveJob(J job, boolean force) throws DataAccessException
     {
         Job other = map.putIfAbsent(job.getId(), job);
@@ -119,8 +131,8 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public Set<J> getActiveJobs(String schedulerId) throws DataAccessException
+    public Set<J> getActiveJobs() throws DataAccessException
     {
-        return canonicalize(storage.getActiveJobs(schedulerId));
+        return canonicalize(storage.getActiveJobs());
     }
 }
