@@ -38,31 +38,30 @@ public class MetaDataStoreCopyTool
 
         File poolDir = new File(args[0]);
         FileStore fileStore = new DummyFileStore();
-        try (MetaDataStore fromStore =
-                     createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir, true);
-             MetaDataStore toStore =
-                     createStore(Class.forName(args[2]).asSubclass(MetaDataStore.class), fileStore, poolDir, false)) {
-            fromStore.init();
-            toStore.init();
+        MetaDataStore fromStore =
+            createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir, true);
+        MetaDataStore toStore =
+            createStore(Class.forName(args[2]).asSubclass(MetaDataStore.class), fileStore, poolDir, false);
+        fromStore.init();
+        toStore.init();
 
-            if (!toStore.index(MetaDataStore.IndexOption.META_ONLY).isEmpty()) {
-                System.err.println("ERROR: Target store is not empty");
+        if (!toStore.index(MetaDataStore.IndexOption.META_ONLY).isEmpty()) {
+            System.err.println("ERROR: Target store is not empty");
+            System.exit(1);
+        }
+
+        Collection<PnfsId> ids = fromStore.index(MetaDataStore.IndexOption.META_ONLY);
+        int size = ids.size();
+        int count = 1;
+        for (PnfsId id: ids) {
+            _log.info("Copying {} ({} of {})", id, count, size);
+            MetaDataRecord entry = fromStore.get(id);
+            if (entry == null) {
+                System.err.println("Failed to load " + id);
                 System.exit(1);
             }
-
-            Collection<PnfsId> ids = fromStore.index(MetaDataStore.IndexOption.META_ONLY);
-            int size = ids.size();
-            int count = 1;
-            for (PnfsId id : ids) {
-                _log.info("Copying {} ({} of {})", id, count, size);
-                MetaDataRecord entry = fromStore.get(id);
-                if (entry == null) {
-                    System.err.println("Failed to load " + id);
-                    System.exit(1);
-                }
-                toStore.copy(entry);
-                count++;
-            }
+            toStore.copy(entry);
+            count++;
         }
     }
 }
