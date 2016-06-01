@@ -5,6 +5,7 @@ onerror shutdown
 check -strong pnfsmanager.plugins.storage-info-extractor
 check -strong pnfsmanager.enable.inherit-file-ownership
 check -strong pnfsmanager.enable.full-path-permission-check
+check -strong pnfsmanager.enable.folding
 check -strong pnfsmanager.enable.acl
 check -strong pnfsmanager.default-retention-policy
 check -strong pnfsmanager.default-access-latency
