@@ -80,6 +80,7 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
@@ -162,7 +163,6 @@ public class ChimeraNameSpaceProvider
      * Base directory for temporary upload directories. If not an absolute path, the directory
      * is relative to the user's root directory.
      */
-    @Required
     public void setUploadDirectory(String path)
     {
         _uploadDirectory = path;
@@ -1155,6 +1155,8 @@ public class ChimeraNameSpaceProvider
                                    Set<CreateOption> options)
             throws CacheException
     {
+        checkState(_uploadDirectory != null, "Upload directory is not configured.");
+
         try {
             /* Parent directory must exist.
              */
@@ -1284,6 +1286,7 @@ public class ChimeraNameSpaceProvider
     protected void checkIsTemporaryDirectory(FsPath temporaryPath, FsPath temporaryDir)
             throws NotFileCacheException, InvalidMessageCacheException
     {
+        checkState(_uploadDirectory != null, "Upload directory is not configured.");
         FsPath temporaryDirContainer = getParentOfFile(temporaryDir);
         if (_uploadDirectory.startsWith("/")) {
             if (!temporaryDirContainer.hasPrefix(FsPath.create(_uploadDirectory))) {

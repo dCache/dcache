@@ -192,7 +192,6 @@ import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.srm.AbstractStorageElement;
-import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.RemoveFileCallback;
@@ -724,11 +723,6 @@ public final class Storage
     {
         DcacheUser user = asDcacheUser(srmUser);
         FsPath path = config.getPath(surl);
-        if (!verifyUserPathIsRootSubpath(path, user)) {
-            throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]",
-                                                              path, user.getRoot()));
-        }
-
         return getTurl(loginBrokerSource.readDoorsByProtocol(), user, path, protocols,
                        srmGetNotSupportedProtocols, previousTurl, d -> d.canRead(user.getRoot(), path));
     }
@@ -888,18 +882,6 @@ public final class Storage
         return loginBrokerInfos.get(index);
     }
 
-    private boolean verifyUserPathIsRootSubpath(FsPath absolutePath, DcacheUser user)
-    {
-        FsPath user_root = user.getRoot();
-        _log.trace("getTurl() user root is {}", user_root);
-        if (!absolutePath.hasPrefix(user_root)) {
-            _log.warn("verifyUserPathIsInTheRoot error: user's path {} is not subpath of the user's root {}",
-                    absolutePath, user_root);
-            return false;
-        }
-        return true;
-    }
-
     @Override
     public boolean isLocalTransferUrl(URI url)
     {
@@ -1050,12 +1032,6 @@ public final class Storage
             Subject subject = user.getSubject();
             Restriction restriction = user.getRestriction();
             FsPath fullPath = config.getPath(surl);
-
-            if (!verifyUserPathIsRootSubpath(fullPath, user)) {
-                return immediateFailedCheckedFuture(new SRMAuthorizationException(
-                        String.format("Access denied: Path [%s] is outside user's root [%s]",
-                                      fullPath, user.getRoot())));
-            }
 
             if (spaceToken != null) {
                 if (!_isSpaceManagerEnabled) {
@@ -1795,10 +1771,6 @@ public final class Storage
         Subject subject = user.getSubject();
 
         _log.debug("performRemoteTransfer performing "+(store?"store":"restore"));
-        if (!verifyUserPathIsRootSubpath(actualFilePath, user)) {
-            throw new SRMAuthorizationException("user's path "+actualFilePath+
-                                                " is not subpath of the user's root");
-        }
 
         IpProtocolInfo protocolInfo;
 

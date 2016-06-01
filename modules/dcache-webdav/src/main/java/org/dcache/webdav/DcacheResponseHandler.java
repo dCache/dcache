@@ -17,6 +17,7 @@ import io.milton.http.webdav.PropFindResponse;
 import io.milton.http.webdav.PropFindResponse.NameAndError;
 import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
+import io.milton.servlet.ServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -34,10 +35,18 @@ import java.security.AccessController;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import diskCacheV111.util.FsPath;
+
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.util.Slf4jSTErrorListener;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static io.milton.http.Response.Status.*;
+import static org.dcache.webdav.AuthenticationHandler.DCACHE_LOGIN_ATTRIBUTES;
 
 /**
  * This class controls how Milton responds under different circumstances by
@@ -71,6 +80,13 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     private String _staticContentPath;
     private STGroup _templateGroup;
     private ImmutableMap<String, String> _templateConfig;
+
+    private PathMapper pathMapper;
+
+    public void setPathMapper(PathMapper mapper)
+    {
+        pathMapper = checkNotNull(mapper);
+    }
 
     public void setAuthenticationService(AuthenticationService authenticationService)
     {
@@ -130,6 +146,29 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     @Override
     public void respondUnauthorised(Resource resource, Response response, Request request)
     {
+        // If GET on the root results in an authorization failure, we redirect to the users
+        // home directory for convenience.
+        if (request.getAbsolutePath().equals("/") && request.getMethod() == Request.Method.GET) {
+            Set<LoginAttribute> login = (Set<LoginAttribute>) ServletRequest.getRequest().getAttribute(DCACHE_LOGIN_ATTRIBUTES);
+            FsPath userRoot = FsPath.ROOT;
+            String userHome = "/";
+            for (LoginAttribute attribute : login) {
+                if (attribute instanceof RootDirectory) {
+                    userRoot = FsPath.create(((RootDirectory) attribute).getRoot());
+                } else if (attribute instanceof HomeDirectory) {
+                    userHome = ((HomeDirectory) attribute).getHome();
+                }
+            }
+            try {
+                FsPath redirectFullPath = userRoot.chroot(userHome);
+                String redirectPath = pathMapper.asRequestPath(redirectFullPath);
+                if (!redirectPath.equals("/")) {
+                    respondRedirect(response, request, redirectPath);
+                }
+                return;
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
         List<String> challenges =
             _authenticationService.getChallenges(resource, request);
         response.setAuthenticateHeader(challenges);

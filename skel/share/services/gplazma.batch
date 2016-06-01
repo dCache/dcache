@@ -6,6 +6,7 @@ check -strong gplazma.cell.max-message-threads
 check gplazma.cell.max-messages-queued
 check -strong gplazma.configuration.file
 check -strong gplazma.service.pnfsmanager
+check gplazma.authz.upload-directory
 check gplazma.cell.consume
 
 create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
