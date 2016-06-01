@@ -68,16 +68,16 @@ usage()
     exit 2
 } 1>&2
 
-# Get the canonical path of $1. Only returns a truly canonical path
+# Print the canonical path of $1. Only returns a truly canonical path
 # if readlink is available. Otherwise an absolute path which does not
 # end in a symlink is returned.
-getCanonicalPath() # in $1 = path, out $2 = canonical path
+printCanonicalPath() # in $1 = path
 {
     local link
     local ret
     link="$1"
-    if readlink -f . > /dev/null 2>&1; then
-        ret="$(readlink -f $link)"
+    if readlink -f / > /dev/null 2>&1; then
+        readlink -f $link
     else
         ret="$(cd $(dirname $link); pwd)/$(basename $link)"
         while [ -h "$ret" ]; do
@@ -89,8 +89,8 @@ getCanonicalPath() # in $1 = path, out $2 = canonical path
                 ret="$(cd $(dirname $link); pwd)/$(basename $link)"
             fi
         done
+        echo "$ret"
     fi
-    eval $2=\"$ret\"
 }
 
 # Returns true if $1 is contained as a word in $2.
@@ -605,6 +605,9 @@ case "$1" in
                 domain="$1"
                 file="$2"
 
+                whoami=$(id|sed 's/.*uid=[0-9]*(\([^)]*\)).*/\1/')
+                file="$(printCanonicalPath $file)" || fail 1 "Failed to resolve $file."
+
                 findJavaTool jmap ||
                 fail 1 "Could not find the jmap command, part of the Java 6
                         JDK. This command is required for producing a heap
@@ -620,22 +623,24 @@ case "$1" in
                 fi
 
                 user=$(processUser $pid)
-                whoami=$(id|sed 's/.*uid=[0-9]*(\([^)]*\)).*/\1/')
-                if [ "$user" != "$whoami" ]; then
-                    if [ "$whoami" = "root" ]; then
-                        exec su "$user" -c "\"$0\" dump heap \"$domain\" \"$file\""
-                    else
-                        fail 1 "Permission denied. Only $user and root can dump the heap of $domain."
-                    fi
-                fi
 
                 if [ -z "$opt_force" ]; then
+                    if [ "$user" != "$whoami" ]; then
+                      if [ "$whoami" = "root" ]; then
+                         exec su "$user" -c "\"$0\" dump heap \"$domain\" \"$file\""
+                      else
+                         fail 1 "Permission denied. Only $user and root can dump the heap of $domain."
+                      fi
+                    fi
                     dumpHeap "" "live" "$file" "$pid" \
                         "Failed to dump the heap; please consult
                          the previous error message for possible
                          reasons. The dump might succeed when using
                          the --force option."
                 else
+                    if [ "$whoami" != "root" ]; then
+                         fail 1 "Permission denied. Only root can force dump the heap of $domain."
+                    fi
                     dumpHeap "force" "" "$file" "$pid" \
                         "Failed to dump the heap; please consult
                          the previous error message for possible
