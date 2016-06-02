@@ -585,6 +585,7 @@
     <property name="schedulers" ref="schedulers"/>
     <property name="requestCredentialStorage" ref="srm-credential-store"/>
     <property name="srmUserPersistenceManager" ref="user-manager"/>
+    <property name="executor" ref="scheduledExecutor"/>
   </bean>
 
   <bean id="srm-cli" class="org.dcache.srm.SrmCommandLineInterface">
