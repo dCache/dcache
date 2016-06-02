@@ -609,6 +609,7 @@
     <constructor-arg ref="storage"/>
     <property name="schedulers" ref="schedulers"/>
     <property name="requestCredentialStorage" ref="srm-credential-store"/>
+    <property name="executor" ref="scheduledExecutor"/>
   </bean>
 
   <bean id="srm-cli" class="org.dcache.srm.SrmCommandLineInterface">
