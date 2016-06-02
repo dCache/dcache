@@ -32,7 +32,12 @@
 
 package org.dcache.gplazma.htpasswd;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.security.MessageDigest;
+
+import org.dcache.gplazma.AuthenticationException;
 
 /**
  * This class defines a method, {@link MD5Crypt#crypt(java.lang.String, java.lang.String) crypt()},
@@ -41,6 +46,8 @@ import java.security.MessageDigest;
  */
 public final class MD5Crypt
 {
+    private static final Logger LOG = LoggerFactory.getLogger(MD5Crypt.class);
+
     private static final String itoa64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
     private static final String to64(long v, int size)
@@ -277,16 +284,18 @@ public final class MD5Crypt
      * @param plaintextPass The plaintext password text to test.
      * @param md5CryptText  The Apache or FreeBSD-md5Crypted hash used to authenticate the
      *                      plaintextPass.
+     * @throws AuthenticationException if the md5CryptText is badly formed.
      */
-
     public static final boolean verifyPassword(String plaintextPass, String md5CryptText)
+            throws AuthenticationException
     {
         if (md5CryptText.startsWith("$1$")) {
             return md5CryptText.equals(MD5Crypt.crypt(plaintextPass, md5CryptText));
         } else if (md5CryptText.startsWith("$apr1$")) {
             return md5CryptText.equals(MD5Crypt.apacheCrypt(plaintextPass, md5CryptText));
         } else {
-            throw new RuntimeException("Bad md5CryptText");
+            LOG.error("Bad entry in file: hash does not start '$1$' or '$apr1$': {}", md5CryptText);
+            throw new AuthenticationException("bad hash in file");
         }
     }
 }
