@@ -64,6 +64,7 @@ import org.datanucleus.FetchPlan;
 import java.util.Arrays;
 import java.util.Collection;
 import javax.jdo.JDOCanRetryException;
+import javax.jdo.JDODataStoreException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
@@ -269,8 +270,27 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
         Transaction tx = pm.currentTransaction();
         try {
             tx.begin();
+            /* TODO: the recommended recipe to execute a stored procedure
+             *       using DataNucleus JDO API is to call
+             *
+             *  Query query = pm.newQuery("STOREDPROC",name);
+             *
+             * http://www.datanucleus.org/products/datanucleus/jdo/stored_procedures.html
+             *
+             * Unfortunately currently this call translates into "CALL name" query
+             * on a DB backend and therefore does not work for postgresql
+             *
+             *  http://www.datanucleus.org/servlet/forum/viewthread_thread,7968
+             *
+             * until this is fixed, a hack is below
+             */
             Query query = pm.newQuery("javax.jdo.query.SQL","SELECT "+name);
-            query.execute();
+            try {
+                query.execute();
+            } catch (JDODataStoreException ignore) {
+                query = pm.newQuery("javax.jdo.query.SQL","CALL "+name);
+                query.execute();
+            }
             tx.commit();
         } finally {
             try {
