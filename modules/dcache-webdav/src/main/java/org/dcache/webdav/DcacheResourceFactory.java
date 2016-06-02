@@ -1,5 +1,6 @@
 package org.dcache.webdav;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -100,6 +101,8 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.cycle;
+import static com.google.common.collect.Iterables.limit;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
@@ -858,11 +861,14 @@ public class DcacheResourceFactory
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
 
+        String relPathOfRoot = Joiner.on("/").join(limit(cycle(".."), base.length));
+
         template.add("path", asList(UrlPathWrapper.forPaths(base)));
         template.add("static", _staticContentPath);
         template.add("subject", new SubjectWrapper(getSubject()));
         template.add("base", UrlPathWrapper.forEmptyPath());
         template.add("config", _templateConfig);
+        template.add("root", relPathOfRoot);
     }
 
     /**
