@@ -86,8 +86,13 @@
       <property name="numberOfConsumers" value="${billing.db.consumers}"/>
     </bean>
 
+    <bean id="hourly-aggregata-data-handler" class="org.dcache.services.billing.db.impl.HourlyAggregateDataHandler" init-method="initialize">
+      <property name="access" ref="jdbc-billing-info-access"/>
+    </bean>
+
     <bean id="histogram-service" class="org.dcache.services.billing.histograms.data.JDOTimeFrameHistogramDataService">
       <property name="access" ref="jdbc-billing-info-access"/>
+      <property name="hourlyAggregateDataHandler" ref="hourly-aggregata-data-handler"/>
     </bean>
 
     <bean id="histogram-request-receiver" class="org.dcache.services.billing.cells.receivers.HistogramRequestReceiver">
@@ -96,6 +101,7 @@
 
     <bean id="billing-info-message-receiver" class="org.dcache.services.billing.cells.receivers.BillingInfoMessageReceiver">
       <property name="access" ref="jdbc-billing-info-access"/>
+      <property name="hourlyAggregateDataHandler" ref="hourly-aggregata-data-handler"/>
     </bean>
 
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
