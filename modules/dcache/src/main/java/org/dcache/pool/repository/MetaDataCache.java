@@ -490,7 +490,7 @@ public class MetaDataCache
     public void init() throws CacheException
     {
         for (PnfsId id: _inner.index(IndexOption.ALLOW_REPAIR)) {
-            _entries.put(id, new Monitor(id));
+            _entries.putIfAbsent(id, new Monitor(id));
         }
     }
 
