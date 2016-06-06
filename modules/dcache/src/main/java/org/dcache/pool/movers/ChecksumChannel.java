@@ -91,12 +91,19 @@ public class ChecksumChannel implements RepositoryChannel
     @VisibleForTesting
     ByteBuffer _readBackBuffer = ByteBuffer.allocate(KiB.toBytes(256));
 
+    /*
+     * Static buffer with zeros shared with in all instances of ChecksumChannel.
+     */
+    private static final ByteBuffer ZERO_BUFFER = ByteBuffer
+            .allocate(KiB.toBytes(256))
+            .asReadOnlyBuffer();
+
     /**
      * Buffer to be used for feeding the checksum digester with 0s to fill up
      * gaps in ranges.
      */
     @VisibleForTesting
-    ByteBuffer _zerosBuffer = ByteBuffer.allocate(KiB.toBytes(256));
+    ByteBuffer _zerosBuffer = ZERO_BUFFER.duplicate();
 
     public ChecksumChannel(RepositoryChannel inner,
                            ChecksumFactory checksumFactory)
