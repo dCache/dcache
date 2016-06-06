@@ -66,21 +66,19 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
-import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PoolHitInfoMessage;
 import diskCacheV111.vehicles.StorageInfoMessage;
-
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.data.DoorRequestData;
 import org.dcache.services.billing.db.data.MoverData;
 import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.StorageData;
+import org.dcache.services.billing.db.impl.HourlyAggregateDataHandler;
 
 /**
  * This class is responsible for the processing of messages from other domains
@@ -96,7 +94,8 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
     /**
      * Injected
      */
-    private IBillingInfoAccess access;
+    private IBillingInfoAccess         access;
+    private HourlyAggregateDataHandler hourlyAggregateDataHandler;
 
     private Thread commitStatistics;
 
@@ -190,12 +189,18 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
         this.access = access;
     }
 
+    public void setHourlyAggregateDataHandler(HourlyAggregateDataHandler handler) {
+        hourlyAggregateDataHandler = handler;
+    }
+
     public void messageArrived(MoverInfoMessage info) {
         access.put(new MoverData(info));
+        hourlyAggregateDataHandler.update(new MoverData(info));
     }
 
     public void messageArrived(StorageInfoMessage info) {
         access.put(new StorageData(info));
+        hourlyAggregateDataHandler.update(new StorageData(info));
     }
 
     public void messageArrived(DoorRequestInfoMessage info) {
@@ -204,6 +209,7 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
 
     public void messageArrived(PoolHitInfoMessage info) {
         access.put(new PoolHitData(info));
+        hourlyAggregateDataHandler.update(new PoolHitData(info));
     }
 
     private synchronized void startStatistics() {
@@ -223,11 +229,5 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
                 commitStatistics = null;
             }
         }
-    }
-
-    private static void processDroppedMessage(Exception e, InfoMessage info) {
-        logger.error("the following billing message could not be stored: {};"
-                        + "this data will be lost", info.toString());
-        logger.trace("{}; {}", info.toString(), e.getMessage());
     }
 }
