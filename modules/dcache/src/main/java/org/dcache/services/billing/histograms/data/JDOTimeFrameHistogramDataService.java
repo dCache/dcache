@@ -60,11 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.billing.histograms.data;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
@@ -79,13 +75,13 @@ import org.dcache.services.billing.db.data.HSMReadsDaily;
 import org.dcache.services.billing.db.data.HSMReadsHourly;
 import org.dcache.services.billing.db.data.HSMWritesDaily;
 import org.dcache.services.billing.db.data.HSMWritesHourly;
-import org.dcache.services.billing.db.data.SizeEntry;
 import org.dcache.services.billing.db.data.HitsDaily;
-import org.dcache.services.billing.db.data.HitsHourly;
-import org.dcache.services.billing.db.data.MissesHourly;
+import org.dcache.services.billing.db.data.PoolHitsHourly;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersDaily;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersHourly;
+import org.dcache.services.billing.db.data.SizeEntry;
 import org.dcache.services.billing.db.data.TransferredEntry;
+import org.dcache.services.billing.db.impl.HourlyAggregateDataHandler;
 import org.dcache.services.billing.histograms.TimeFrame;
 import org.dcache.services.billing.histograms.TimeFrame.BinType;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData.HistogramDataType;
@@ -99,29 +95,8 @@ import org.dcache.services.billing.histograms.data.TimeFrameHistogramData.Histog
 public final class JDOTimeFrameHistogramDataService implements
                 ITimeFrameHistogramDataService {
 
-    /**
-     * Stand-in aggregate object for hits data.
-     */
-    private static class HourlyHitData extends BaseEntry {
-        private static final long serialVersionUID = -4776963573729329237L;
-        private Long cached = 0L;
-        private Long notcached = 0L;
-
-        @Override
-        public Map<String, Double> data() {
-            Map<String, Double> dataMap = super.data();
-            dataMap.put(HitsDaily.CACHED, cached.doubleValue());
-            dataMap.put(HitsDaily.NOT_CACHED, notcached.doubleValue());
-            return dataMap;
-        }
-
-        @Override
-        public String toString() {
-            return "(" + dateString() + "," + cached + "," + notcached + ")";
-        }
-    }
-
-    private IBillingInfoAccess access;
+    private IBillingInfoAccess         access;
+    private HourlyAggregateDataHandler hourlyAggregateDataHandler;
 
     @Override
     public TimeFrameHistogramData[] getDcBytesHistogram(TimeFrame timeFrame,
@@ -133,9 +108,9 @@ public final class JDOTimeFrameHistogramDataService implements
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             if (write) {
-                plotData = getViewData(DcacheWritesHourly.class);
+                plotData = hourlyAggregateDataHandler.get(DcacheWritesHourly.class);
             } else {
-                plotData = getViewData(DcacheReadsHourly.class);
+                plotData = hourlyAggregateDataHandler.get(DcacheReadsHourly.class);
             }
         } else {
             if (write) {
@@ -158,7 +133,7 @@ public final class JDOTimeFrameHistogramDataService implements
         Collection<IHistogramData> plotData;
 
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            plotData = getViewData(DcacheTimeHourly.class);
+            plotData = hourlyAggregateDataHandler.get(DcacheTimeHourly.class);
         } else {
             plotData = getCoarseGrainedData(DcacheTimeDaily.class, timeFrame);
         }
@@ -194,9 +169,9 @@ public final class JDOTimeFrameHistogramDataService implements
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             if (write) {
-                plotData = getViewData(DcacheWritesHourly.class);
+                plotData = hourlyAggregateDataHandler.get(DcacheWritesHourly.class);
             } else {
-                plotData = getViewData(DcacheReadsHourly.class);
+                plotData = hourlyAggregateDataHandler.get(DcacheReadsHourly.class);
             }
         } else {
             if (write) {
@@ -216,7 +191,7 @@ public final class JDOTimeFrameHistogramDataService implements
     public TimeFrameHistogramData[] getHitHistograms(TimeFrame timeFrame) {
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            plotData = getHourlyAggregateForHits();
+            plotData = hourlyAggregateDataHandler.get(PoolHitsHourly.class);
         } else {
             plotData = getCoarseGrainedData(HitsDaily.class, timeFrame);
         }
@@ -242,9 +217,9 @@ public final class JDOTimeFrameHistogramDataService implements
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             if (write) {
-                plotData = getViewData(HSMWritesHourly.class);
+                plotData = hourlyAggregateDataHandler.get(HSMWritesHourly.class);
             } else {
-                plotData = getViewData(HSMReadsHourly.class);
+                plotData = hourlyAggregateDataHandler.get(HSMReadsHourly.class);
             }
         } else {
             if (write) {
@@ -269,9 +244,9 @@ public final class JDOTimeFrameHistogramDataService implements
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
             if (write) {
-                plotData = getViewData(HSMWritesHourly.class);
+                plotData = hourlyAggregateDataHandler.get(HSMWritesHourly.class);
             } else {
-                plotData = getViewData(HSMReadsHourly.class);
+                plotData = hourlyAggregateDataHandler.get(HSMReadsHourly.class);
             }
         } else {
             if (write) {
@@ -292,7 +267,7 @@ public final class JDOTimeFrameHistogramDataService implements
         histogram[0].setType(HistogramDataType.BYTES_P2P);
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            plotData = getViewData(PoolToPoolTransfersHourly.class);
+            plotData = hourlyAggregateDataHandler.get(PoolToPoolTransfersHourly.class);
         } else {
             plotData = getCoarseGrainedData(PoolToPoolTransfersDaily.class,
                             timeFrame);
@@ -310,7 +285,7 @@ public final class JDOTimeFrameHistogramDataService implements
         histogram[0].setType(HistogramDataType.TRANSFERS_P2P);
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
-            plotData = getViewData(PoolToPoolTransfersHourly.class);
+            plotData = hourlyAggregateDataHandler.get(PoolToPoolTransfersHourly.class);
         } else {
             plotData = getCoarseGrainedData(PoolToPoolTransfersDaily.class,
                             timeFrame);
@@ -324,19 +299,15 @@ public final class JDOTimeFrameHistogramDataService implements
         this.access = access;
     }
 
+    public void setHourlyAggregateDataHandler(HourlyAggregateDataHandler handler) {
+        hourlyAggregateDataHandler = handler;
+    }
+
     private <T extends IHistogramData> Collection<IHistogramData> getCoarseGrainedData(
                     Class<T> clzz, TimeFrame timeFrame) {
         return getData(clzz, "date >= date1 && date <= date2",
                         "java.util.Date date1, java.util.Date date2",
                         timeFrame.getLow(), timeFrame.getHigh());
-    }
-
-    private <T extends IHistogramData> Collection<IHistogramData> getViewData(
-                    Class<T> clzz) {
-        Collection<T> c = access.get(clzz);
-        Collection<IHistogramData> plotData = new ArrayList<>();
-        plotData.addAll(c);
-        return plotData;
     }
 
     private <T extends IHistogramData> Collection<IHistogramData> getData(
@@ -346,53 +317,5 @@ public final class JDOTimeFrameHistogramDataService implements
         Collection<IHistogramData> plotData = new ArrayList<>();
         plotData.addAll(c);
         return plotData;
-    }
-
-    private Collection<IHistogramData> getHourlyAggregateForHits() {
-        Map<String, HourlyHitData> hourlyAggregate
-            = new TreeMap<String, HourlyHitData>();
-        Collection<IHistogramData> histogramData = getViewData(HitsHourly.class);
-        for (IHistogramData d : histogramData) {
-            Date date = normalizeForHour(d.timestamp());
-            String key = date.toString();
-            HourlyHitData hourlyData = hourlyAggregate.get(key);
-            if (hourlyData == null) {
-                hourlyData = new HourlyHitData();
-                hourlyData.setDate(date);
-                hourlyAggregate.put(key, hourlyData);
-            }
-            long count = d.data().get(BaseEntry.COUNT).longValue();
-            hourlyData.cached += count;
-        }
-        histogramData = getViewData(MissesHourly.class);
-        for (IHistogramData d : histogramData) {
-            Date date = normalizeForHour(d.timestamp());
-            String key = date.toString();
-            HourlyHitData hourlyData = hourlyAggregate.get(key);
-            if (hourlyData == null) {
-                hourlyData = new HourlyHitData();
-                hourlyData.setDate(date);
-                hourlyAggregate.put(key, hourlyData);
-            }
-            long count = d.data().get(BaseEntry.COUNT).longValue();
-            hourlyData.notcached += count;
-        }
-        histogramData = new ArrayList<IHistogramData>();
-        histogramData.addAll(hourlyAggregate.values());
-        return histogramData;
-    }
-
-    /**
-     * Rounds down to beginning of the hour in which the timestamp is bounded.
-     *
-     * @return normalized date (hh:00:00.000)
-     */
-    private Date normalizeForHour(Date date) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTime();
     }
 }
