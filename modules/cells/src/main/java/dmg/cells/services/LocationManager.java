@@ -74,7 +74,6 @@ public class LocationManager extends CellAdapter
     private static final String ZK_CORES = "/dcache/lm/cores";
 
     private final CoreDomains coreDomains;
-    private final LegacyServer legacy;
     private final Args args;
     private final CellNucleus nucleus;
     private final CellDomainRole role;
@@ -156,145 +155,6 @@ public class LocationManager extends CellAdapter
         byte[] toBytes(HostAndPort address)
         {
             return address.toString().getBytes(StandardCharsets.US_ASCII);
-        }
-    }
-
-    /**
-     * Legacy server component of the location manager, i.e. the location manager daemon.
-     *
-     * For backwards compatibility is provides a UDP server on which pre-2.16 domains
-     * may discover the message brokers. We do not support pre-2.16 message brokers (aka
-     * listening domains).
-     */
-    @Deprecated // drop in 2.17
-    public class LegacyServer implements Runnable, Closeable
-    {
-        private final int port;
-        private final DatagramSocket socket;
-        private final Thread worker;
-        private final RemoteCommands remoteCommands = new RemoteCommands();
-
-        public LegacyServer(int port)
-                throws SocketException
-        {
-            this.port = port;
-
-            socket = new DatagramSocket(this.port);
-            worker = nucleus.newThread(this, "Server");
-        }
-
-        public void start()
-        {
-            worker.start();
-        }
-
-        /**
-         * Shutdown the server. Notice that the method will not wait
-         * for the worker thread to shut down.
-         */
-        @Override
-        public void close()
-        {
-            worker.interrupt();
-            socket.close();
-        }
-
-        @Override
-        public void run()
-        {
-            /* Legacy UDP location manager daemon.
-             */
-            DatagramPacket packet;
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    packet = new DatagramPacket(new byte[1024], 1024);
-                    socket.receive(packet);
-                } catch (SocketException e) {
-                    if (!Thread.currentThread().isInterrupted()) {
-                        LOGGER.warn("Exception in Server receive loop (exiting)", e);
-                    }
-                    break;
-                } catch (Exception ie) {
-                    LOGGER.warn("Exception in Server receive loop (exiting)", ie);
-                    break;
-                }
-                try {
-                    process(packet);
-                    socket.send(packet);
-                } catch (Exception se) {
-                    LOGGER.warn("Exception in send ", se);
-                }
-            }
-            socket.close();
-        }
-
-        public void process(DatagramPacket packet) throws Exception
-        {
-            byte[] data = packet.getData();
-            int datalen = packet.getLength();
-            InetAddress address = packet.getAddress();
-            if (datalen <= 0) {
-                LOGGER.warn("Empty Packet arrived from {}", packet.getAddress());
-                return;
-            }
-            String message = new String(data, 0, datalen);
-            LOGGER.info("server query : [{}] ({}) {}", address, message.length(), message);
-            Args args = new Args(message);
-            message = (args.argc() == 0) ? "" : (String) remoteCommands.command(args);
-
-            if (message != null) {
-                LOGGER.info("server reply : {}", message);
-                data = message.getBytes();
-                packet.setData(data);
-                packet.setLength(data.length);
-            }
-        }
-
-        /**
-         * Legacy UDP remote commands used for backwards compatibility with pre 2.16 pools.
-         *
-         * Maps whatToDo and whereIs commands to equivalent ZooKeeper representations.
-         */
-        public class RemoteCommands extends CommandInterpreter
-        {
-            public static final String hh_whatToDo = "<domainName>";
-            public String ac_whatToDo_$_1(Args args)
-            {
-                String domainName = args.argv(0);
-                String serial = args.getOpt("serial");
-                Map<String, HostAndPort> cores = coreDomains.cores();
-                switch (cores.size()) {
-                case 0:
-                    return null;
-                case 1:
-                    String broker = Iterables.get(cores.keySet(), 0);
-                    return "do" + (serial != null ? " -serial=" + serial : "") + " " + domainName + " " + "nl" + " c:" + broker + " d:" + broker;
-                default:
-                    LOGGER.warn("Legacy domain {} tried to connect, but are not supported in multi-core topologies.", domainName);
-                    return "do" + (serial != null ? " -serial=" + serial : "") + " " + domainName;
-                }
-            }
-
-            public static final String hh_whereIs = "<domainName>";
-            public String ac_whereIs_$_1(Args args)
-            {
-                String domainName = args.argv(0);
-
-                HostAndPort address = coreDomains.readAddressOf(domainName);
-                if (address == null) {
-                    throw new IllegalArgumentException("Domain not listening: " + domainName);
-                }
-
-                StringBuilder sb = new StringBuilder();
-                sb.append("location");
-                String serial = args.getOpt("serial");
-                if (serial != null) {
-                    sb.append(" -serial=").append(serial);
-                }
-                sb.append(" ").append(domainName);
-                sb.append(" ").append(address);
-                return sb.toString();
-            }
         }
     }
 
@@ -412,12 +272,6 @@ public class LocationManager extends CellAdapter
         nucleus = getNucleus();
         coreDomains = new CoreDomains(getCellDomainName(), getCuratorFramework());
 
-        if (this.args.hasOption("legacy")) {
-            legacy = new LegacyServer(this.args.getIntOption("legacy"));
-        } else {
-            legacy = null;
-        }
-
         if (this.args.hasOption("role")) {
             role = CellDomainRole.valueOf(this.args.getOption("role").toUpperCase());
             switch (role) {
@@ -442,10 +296,6 @@ public class LocationManager extends CellAdapter
     {
         try {
             coreDomains.start();
-            if (legacy != null) {
-                legacy.start();
-                LOGGER.info("Server Setup Done");
-            }
             if (client != null) {
                 client.start();
             }
@@ -467,9 +317,6 @@ public class LocationManager extends CellAdapter
     public void cleanUp()
     {
         CloseableUtils.closeQuietly(coreDomains);
-        if (legacy != null) {
-            legacy.close();
-        }
         if (client != null) {
             client.close();
         }

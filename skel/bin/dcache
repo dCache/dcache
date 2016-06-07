@@ -661,21 +661,14 @@ case "$1" in
 
     ports)
         . ${lib}/utils.sh
-        broker_domain=$(getProperty dcache.broker.domain)
         (
             printf "DOMAIN\tCELL\tSERVICE\tPROTO\tPORT\n"
             for domain in $(getProperty dcache.domains); do
-                if [ "$domain" = "$broker_domain" ]; then
-                    prop_prefix=dcache.broker.net.ports
-                else
-                    prop_prefix=dcache.non-broker.net.ports
-                fi
-
-                for port in $(getProperty "${prop_prefix}.tcp" "$domain"); do
+                for port in $(getProperty "dcache.net.ports.tcp" "$domain"); do
                     printf "${domain}\t-\t-\tTCP\t${port}\n"
                 done
 
-                for port in $(getProperty "${prop_prefix}.udp" "$domain"); do
+                for port in $(getProperty "dcache.net.ports.udp" "$domain"); do
                     printf "${domain}\t-\t-\tUDP\t${port}\n"
                 done
 
@@ -694,14 +687,8 @@ case "$1" in
         ) | column
 
         for domain in $(getProperty dcache.domains); do
-            if [ "$domain" = "$broker_domain" ]; then
-                prop_prefix=dcache.broker.net.ports
-            else
-                prop_prefix=dcache.non-broker.net.ports
-            fi
-
-            for port in $(getProperty "${prop_prefix}.tcp" "$domain") \
-                        $(getProperty "${prop_prefix}.udp" "$domain"); do
+            for port in $(getProperty "dcache.net.ports.tcp" "$domain") \
+                        $(getProperty "dcache.net.ports.udp" "$domain"); do
                  has_broker_ports=true
 
                  if [ "$port" = "0" ]; then
