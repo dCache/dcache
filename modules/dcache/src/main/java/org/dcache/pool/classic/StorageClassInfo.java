@@ -27,6 +27,7 @@ import org.dcache.pool.repository.CacheEntry;
 
 import static com.google.common.collect.Iterables.transform;
 import static java.util.Collections.min;
+import static java.util.Collections.singleton;
 import static java.util.Comparator.comparingLong;
 import static java.util.Objects.requireNonNull;
 
@@ -78,19 +79,30 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
     private final NearlineStorageHandler _storageHandler;
     private final Executor _callbackExecutor = Executors.newSingleThreadExecutor();
 
-    private boolean _defined;
+    private boolean _isDefined;
     private long _expiration; // expiration time in millis since _time
     private long _maxTotalSize;
     private int _pending;
 
+    /**
+     * When flushing, new files are flushed right away.
+     */
+    private boolean _isOpen;
+
+    /**
+     * Suppresses open flushing when true.
+     */
+    private boolean _isDraining;
+
     private long _time; // creation time of oldest file or 0L.
     private long _totalSize;
     private int _activeCounter;
-    private boolean _suspended;
+    private boolean _isSuspended;
     private int _errorCounter;
     private long _lastSubmittedAt;
     private long _recentFlushId;
     private int _requestsSubmitted;
+    private int _maxRequests;
     private StorageClassInfoFlushable _flushCallback;
 
     public StorageClassInfo(NearlineStorageHandler storageHandler, String hsmName, String storageClass)
@@ -117,7 +129,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         info.setTotalPendingFileSize(_totalSize);
         info.setMaximumAllowedPendingFileSize(_maxTotalSize);
         info.setActiveCount(_activeCounter);
-        info.setSuspended(_suspended);
+        info.setSuspended(_isSuspended);
         info.setErrorCounter(_errorCounter);
         info.setLastSubmittedTime(_lastSubmittedAt);
         info.setFlushId(_recentFlushId);
@@ -194,9 +206,12 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
             throw new IllegalArgumentException("Is already active.");
         }
 
+        _maxRequests = maxCount;
+
         List<Entry> entries = Ordering.natural().sortedCopy(_requests.values());
         maxCount = Math.min(entries.size(), maxCount);
 
+        _isDraining = false;
         _errorCounter = 0;
         _requestsSubmitted = maxCount;
         _activeCounter = maxCount;
@@ -221,6 +236,11 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
     public synchronized int getActiveCount()
     {
         return _activeCounter;
+    }
+
+    public synchronized boolean isActive()
+    {
+        return _activeCounter > 0;
     }
 
     public synchronized int getErrorCount()
@@ -251,6 +271,12 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
             _time = entry.timeStamp;
         }
         _totalSize += entry.size;
+
+        if (_isOpen && !_isDraining && _activeCounter > 0 && _requestsSubmitted < _maxRequests) {
+            _requestsSubmitted++;
+            _activeCounter++;
+            _storageHandler.flush(_hsmName, singleton(entry.pnfsId()), this);
+        }
     }
 
     private synchronized Entry removeRequest(PnfsId pnfsId)
@@ -334,7 +360,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
     {
         return "SCI=" + _storageClass +
                "@" + _hsmName +
-               ";def=" + _defined +
+               ";def=" + _isDefined +
                ";exp=" + TimeUnit.MILLISECONDS.toSeconds(_expiration) +
                ";pend=" + _pending +
                ";maxTotal=" + _maxTotalSize +
@@ -361,12 +387,12 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     public synchronized void setSuspended(boolean suspended)
     {
-        _suspended = suspended;
+        _isSuspended = suspended;
     }
 
     public synchronized boolean isSuspended()
     {
-        return _suspended;
+        return _isSuspended;
     }
 
     public synchronized boolean isTriggered()
@@ -391,12 +417,27 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     public synchronized void setDefined(boolean d)
     {
-        _defined = d;
+        _isDefined = d;
     }
 
     public synchronized boolean isDefined()
     {
-        return _defined;
+        return _isDefined;
+    }
+
+    public synchronized void setOpen(boolean isOpen)
+    {
+        _isOpen = isOpen;
+    }
+
+    public synchronized boolean isOpen()
+    {
+        return _isOpen;
+    }
+
+    public synchronized void drain()
+    {
+        _isDraining = true;
     }
 
     public synchronized int size()

@@ -1,11 +1,15 @@
 package org.dcache.pool.classic;
 
+import com.google.common.primitives.Ints;
+
 import java.io.PrintWriter;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
@@ -16,18 +20,20 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
-
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
 import org.dcache.vehicles.FileAttributes;
+
+import static java.util.stream.Collectors.partitioningBy;
+import static java.util.stream.Collectors.toCollection;
 
 /**
  * Manages tape flush queues.
@@ -197,18 +203,26 @@ public class StorageClassContainer
     public void flushAll(int maxActive, long retryDelayOnError)
     {
         long now = System.currentTimeMillis();
-        int active = 0;
-        for (StorageClassInfo info: getStorageClassInfos()) {
-            if (active >= maxActive) {
-                break;
-            }
-            if (info.getActiveCount() > 0) {
-                active++;
-            } else if (info.isTriggered() && ((now - info.getLastSubmitted()) > retryDelayOnError)) {
-                info.flush(Integer.MAX_VALUE, null);
-                active++;
-            }
-        }
+        Map<Boolean, List<StorageClassInfo>> classes =
+                getStorageClassInfos().stream()
+                        .filter(i -> i.isActive() || i.isTriggered() && now - i.getLastSubmitted() > retryDelayOnError)
+                        .collect(partitioningBy(StorageClassInfo::isActive, toCollection(ArrayList::new)));
+
+        List<StorageClassInfo> active = classes.get(true);
+        List<StorageClassInfo> ready = classes.get(false);
+
+        int flushLimit = Math.max(0, maxActive - active.size());
+        int drainLimit = Ints.max(0, active.size() - maxActive, ready.size() - flushLimit);
+
+        active.stream()
+                .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted))
+                .limit(drainLimit)
+                .forEach(StorageClassInfo::drain);
+
+        ready.stream()
+                .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted))
+                .limit(flushLimit)
+                .forEach(i -> i.flush(Integer.MAX_VALUE, null));
     }
 
     @Override
@@ -217,10 +231,11 @@ public class StorageClassContainer
         for (StorageClassInfo classInfo : _storageClasses.values()) {
             if (classInfo.isDefined()) {
                 pw.println("queue define class " + classInfo.getHsm() +
-                        " " + classInfo.getStorageClass() +
-                        " -pending=" + classInfo.getPending() +
-                        " -total=" + classInfo.getMaxSize() +
-                        " -expire=" + TimeUnit.MILLISECONDS.toSeconds(classInfo.getExpiration()));
+                           " " + classInfo.getStorageClass() +
+                           " -pending=" + classInfo.getPending() +
+                           " -total=" + classInfo.getMaxSize() +
+                           " -expire=" + TimeUnit.MILLISECONDS.toSeconds(classInfo.getExpiration()) +
+                           " -open=" + (classInfo.isOpen() ? "true" : "false"));
             }
         }
     }
@@ -492,14 +507,21 @@ public class StorageClassContainer
         @Argument(index = 1, usage = "Name of storage class")
         String storageClass;
 
-        @Option(name = "expire", valueSpec="<seconds>")
+        @Option(name = "expire", valueSpec="<seconds>",
+                usage = "Flush queue when the oldest file reaches this age.")
         Integer expirationTime;
 
-        @Option(name = "total", valueSpec="<bytes>")
+        @Option(name = "total", valueSpec="<bytes>",
+                usage = "Flush queue when amount of queued data surpasses this value.")
         Long maxTotalSize;
 
-        @Option(name = "pending", valueSpec="<files>")
+        @Option(name = "pending", valueSpec="<files>",
+                usage = "Flush queue when number of queued files surpasses this value.")
         Integer maxPending;
+
+        @Option(name = "open",
+                usage = "Flush new files immediately if queue is already flushing.")
+        boolean isOpen;
 
         @Override
         public String call()
@@ -514,6 +536,7 @@ public class StorageClassContainer
             if (maxTotalSize != null) {
                 info.setMaxSize(maxTotalSize);
             }
+            info.setOpen(isOpen);
             _poolStatusInfoChanged = true;
             return info.toString();
         }
