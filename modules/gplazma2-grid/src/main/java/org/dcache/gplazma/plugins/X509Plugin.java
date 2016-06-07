@@ -35,11 +35,10 @@ import org.dcache.auth.Origin;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertPaths;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static eu.emi.security.authn.x509.helpers.CertificateHelpers.getExtensionBytes;
 import static org.dcache.auth.EntityDefinition.*;
 import static org.dcache.auth.LoA.*;
-import static org.dcache.gplazma.util.CertPaths.*;
+import static org.dcache.gplazma.util.CertPaths.isX509CertPath;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
@@ -56,15 +55,9 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     private static final String OID_CERTIFICATE_POLICIES = "2.5.29.32";
     private static final String OID_ANY_POLICY = "2.5.29.32";
     private static final DERSequence ANY_POLICY = new DERSequence(new ASN1ObjectIdentifier(OID_ANY_POLICY));
-    private static final String POLICY_PRINCIPALS_PROPERTY = "gplazma.x509.use-policy-principals";
-
-    private final boolean isPolicyPrincipalsEnabled;
 
     public X509Plugin(Properties properties)
     {
-        String enablePolicies = properties.getProperty(POLICY_PRINCIPALS_PROPERTY);
-        checkArgument(enablePolicies != null, "Undefined property: " + POLICY_PRINCIPALS_PROPERTY);
-        isPolicyPrincipalsEnabled = Boolean.parseBoolean(enablePolicies);
     }
 
     @Override
@@ -104,15 +97,13 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                     identifiedPrincipals.add(new GlobusPrincipal(
                             OpensslNameUtils.convertFromRfc2253(eec.getSubjectX500Principal().getName(), true)));
 
-                    if (isPolicyPrincipalsEnabled) {
-                        listPolicies(eec).stream()
-                                .map(PolicyInformation::getInstance)
-                                .map(PolicyInformation::getPolicyIdentifier)
-                                .map(DERObjectIdentifier::getId)
-                                .map(X509Plugin::asPrincipal)
-                                .filter(Objects::nonNull)
-                                .forEach(identifiedPrincipals::add);
-                    }
+                    listPolicies(eec).stream()
+                            .map(PolicyInformation::getInstance)
+                            .map(PolicyInformation::getPolicyIdentifier)
+                            .map(DERObjectIdentifier::getId)
+                            .map(X509Plugin::asPrincipal)
+                            .filter(Objects::nonNull)
+                            .forEach(identifiedPrincipals::add);
 
                     found = true;
                 }
@@ -141,7 +132,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         }
 
         Enumeration<DEREncodable> policySource = ASN1Sequence.getInstance(encoded).getObjects();
-        List<DEREncodable> policies = new ArrayList();
+        List<DEREncodable> policies = new ArrayList<>();
         while (policySource.hasMoreElements()) {
             DEREncodable policy = policySource.nextElement();
             if (!policy.equals(ANY_POLICY)) {
