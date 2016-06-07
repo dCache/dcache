@@ -30,7 +30,6 @@ check -strong resilience.enable.full-path-permission-check
 check -strong resilience.enable.acl
 
 check -strong resilience.home
-check -strong resilience.cell.export
 check -strong resilience.enable.watchdog
 check -strong resilience.limits.checkpoint-expiry
 check -strong resilience.limits.checkpoint-expiry.unit
