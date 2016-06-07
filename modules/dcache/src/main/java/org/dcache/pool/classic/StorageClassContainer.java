@@ -156,7 +156,7 @@ public class StorageClassContainer
      *  adds a CacheEntry to the list of HSM storage requests.
      * @param entry
      */
-    public synchronized boolean addCacheEntry(CacheEntry entry)
+    public synchronized void addCacheEntry(CacheEntry entry)
         throws CacheException, InterruptedException
     {
         FileAttributes fileAttributes = entry.getFileAttributes();
@@ -184,7 +184,6 @@ public class StorageClassContainer
 
         classInfo.add(entry);
         _pnfsIds.put(entry.getPnfsId(), classInfo);
-        return classInfo.size() >= classInfo.getPending();
     }
 
     public void flush(PnfsId pnfsId, CompletionHandler<Void,PnfsId> callback)
@@ -239,20 +238,20 @@ public class StorageClassContainer
     //
     private void dumpClassInfo(StringBuilder sb, StorageClassInfo classInfo)
     {
-        sb.append("              Class@Hsm : ").append(classInfo.getFullName()).append("\n");
-        sb.append(" Exiration rest/defined : ").append(classInfo.expiresIn()).
+        sb.append("               Class@Hsm : ").append(classInfo.getFullName()).append("\n");
+        sb.append(" Expiration rest/defined : ").append(classInfo.expiresIn()).
             append(" / ").
             append(TimeUnit.MILLISECONDS.toSeconds(classInfo.getExpiration())).
             append("   seconds\n");
-        sb.append(" Pending   rest/defined : ").append(classInfo.size()).
+        sb.append(" Pending    rest/defined : ").append(classInfo.size()).
             append(" / ").
             append(classInfo.getPending()).
             append("\n");
-        sb.append(" Size      rest/defined : ").append(classInfo.getTotalSize()).
+        sb.append(" Size       rest/defined : ").append(classInfo.getTotalSize()).
             append(" / ").
             append(classInfo.getMaxSize()).
             append("\n");
-        sb.append(" Active Store Procs.    : ").
+        sb.append(" Active Store Procs.     : ").
             append(classInfo.getActiveCount()).
             append(classInfo.isSuspended() ? "  SUSPENDED" : "").
             append("\n");

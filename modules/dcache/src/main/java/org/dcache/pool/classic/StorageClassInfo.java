@@ -1,16 +1,19 @@
 package org.dcache.pool.classic;
 
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +26,9 @@ import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 
 import static com.google.common.collect.Iterables.transform;
+import static java.util.Collections.min;
+import static java.util.Comparator.comparingLong;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Holds the files to flush for a particular storage class.
@@ -39,25 +45,29 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
         Entry(CacheEntry entry)
         {
-            pnfsId = entry.getPnfsId();
+            pnfsId = requireNonNull(entry.getPnfsId());
             timeStamp = entry.getCreationTime();
             size = entry.getReplicaSize();
         }
 
-        public PnfsId pnfsId()
+        @Nonnull
+        PnfsId pnfsId()
         {
             return pnfsId;
+        }
+
+        long getTimeStamp()
+        {
+            return timeStamp;
         }
 
         @Override
         public int compareTo(Entry entry)
         {
-            try {
-                return (timeStamp > entry.timeStamp) ? 1 :
-                        (timeStamp == entry.timeStamp) ? pnfsId().compareTo(entry.pnfsId()) : -1;
-            } catch (Exception e) {
-                return -1;
-            }
+            return ComparisonChain.start()
+                    .compare(timeStamp, entry.timeStamp)
+                    .compare(pnfsId, entry.pnfsId)
+                    .result();
         }
     }
 
@@ -85,8 +95,8 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     public StorageClassInfo(NearlineStorageHandler storageHandler, String hsmName, String storageClass)
     {
-        _storageHandler = storageHandler;
-        _storageClass = storageClass;
+        _storageHandler = requireNonNull(storageHandler);
+        _storageClass = requireNonNull(storageClass);
         _hsmName = hsmName.toLowerCase();
     }
 
@@ -97,7 +107,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         if (entries.isEmpty()) {
             info.setOldestFileTimestamp(0);
         } else {
-            Entry entry = Collections.min(entries);
+            Entry entry = min(entries, comparingLong(Entry::getTimeStamp));
             info.setOldestFileTimestamp(entry.timeStamp);
         }
         info.setRequestCount(_requests.size());
@@ -115,35 +125,30 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
     }
 
     @Override
-    public void completed(Void nil, PnfsId attachment)
+    public synchronized void completed(Void nil, PnfsId attachment)
     {
-        StorageClassInfoFlushable callback = null;
-        synchronized (this) {
-            _activeCounter--;
-            if (_activeCounter <= 0) {
-                _activeCounter = 0;
-                callback = _flushCallback;
+        _activeCounter--;
+        if (_activeCounter <= 0) {
+            _activeCounter = 0;
+            if (_flushCallback != null) {
+                _callbackExecutor.execute(new CallbackTask(_hsmName, _storageClass, _errorCounter,
+                                                           _recentFlushId, _requestsSubmitted, _flushCallback));
             }
-        }
-        if (callback != null) {
-            _callbackExecutor.execute(new CallbackTask(this, callback));
         }
     }
 
     @Override
-    public void failed(Throwable exc, PnfsId pnfsId)
+    public synchronized void failed(Throwable exc, PnfsId pnfsId)
     {
-        synchronized (this) {
-            _errorCounter++;
-            if (exc instanceof CacheException) {
-                CacheException ce = (CacheException) exc;
-                if (ce.getRc() >= 30 && ce.getRc() < 40) {
-                    Entry entry = removeRequest(pnfsId);
-                    if (entry != null) {
-                        _failedRequests.put(entry.pnfsId(), entry);
-                    }
-                    _errorCounter--;
+        _errorCounter++;
+        if (exc instanceof CacheException) {
+            CacheException ce = (CacheException) exc;
+            if (ce.getRc() >= 30 && ce.getRc() < 40) {
+                Entry entry = removeRequest(pnfsId);
+                if (entry != null) {
+                    _failedRequests.put(entry.pnfsId(), entry);
                 }
+                _errorCounter--;
             }
         }
         completed(null, pnfsId);
@@ -151,30 +156,32 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     private static class CallbackTask implements Runnable
     {
-        private final int _flushErrorCounter;
-        private final long _flushId;
-        private final int _requests;
-        private final StorageClassInfoFlushable _callback;
-        private final String _hsm;
-        private final String _storageClass;
+        private final int flushErrorCounter;
+        private final long flushId;
+        private final int requests;
+        private final StorageClassInfoFlushable callback;
+        private final String hsm;
+        private final String storageClass;
 
-        private CallbackTask(StorageClassInfo info, StorageClassInfoFlushable callback)
+        private CallbackTask(String hsm, String storageClass, int flushErrorCounter,
+                             long flushId, int requests, StorageClassInfoFlushable callback)
         {
-            _hsm = info.getHsm();
-            _storageClass = info.getStorageClass();
-            _flushErrorCounter = info.getErrorCount();
-            _flushId = info._recentFlushId;
-            _requests = info._requestsSubmitted;
-            _callback = callback;
+            this.flushErrorCounter = flushErrorCounter;
+            this.flushId = flushId;
+            this.requests = requests;
+            this.callback = callback;
+            this.hsm = hsm;
+            this.storageClass = storageClass;
         }
 
         @Override
         public void run()
         {
             try {
-                _callback.storageClassInfoFlushed(_hsm, _storageClass, _flushId, _requests, _flushErrorCounter);
-            } catch (Throwable t) {
-                LOGGER.error("Problem in running storageClassInfoFlushed callback: {}", t.toString());
+                callback.storageClassInfoFlushed(hsm, storageClass, flushId, requests, flushErrorCounter);
+            } catch (Throwable e) {
+                Thread t = Thread.currentThread();
+                t.getUncaughtExceptionHandler().uncaughtException(t, e);
             }
         }
     }
@@ -196,11 +203,11 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         _flushCallback = flushCallback;
         _recentFlushId = _lastSubmittedAt = System.currentTimeMillis();
 
-        if (maxCount == 0) {
-            _callbackExecutor.execute(new CallbackTask(this, flushCallback));
-        } else {
+        if (maxCount != 0) {
             _storageHandler.flush(_hsmName,
                     transform(entries.subList(0, maxCount), Entry::pnfsId), this);
+        } else if (flushCallback != null) {
+            _callbackExecutor.execute(new CallbackTask(_hsmName, _storageClass, 0, _recentFlushId, 0, flushCallback));
         }
 
         return _recentFlushId;
@@ -224,7 +231,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
     @Override
     public int hashCode()
     {
-        return _storageClass.hashCode() | _hsmName.hashCode();
+        return Objects.hash(_storageClass, _hsmName);
     }
 
     @Override
@@ -367,7 +374,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         return (hasExpired() || isFull()) && !isSuspended();
     }
 
-    public synchronized String getStorageClass()
+    public String getStorageClass()
     {
         return _storageClass;
     }
