@@ -13,10 +13,6 @@ public class PnfsDeleteEntryMessage extends PnfsMessage
 {
     private static final long serialVersionUID = 7375207858020099787L;
 
-    /** Path of entry to delete. */
-    @Deprecated // Remove after next golden release (> 2.14)
-    private final String _path;
-
     /**
      * Allowed FileTypes to delete. If the entry is not of this type,
      * then the operation will fail.
@@ -53,7 +49,6 @@ public class PnfsDeleteEntryMessage extends PnfsMessage
     {
         super(pnfsId);
         _allowed = allowed;
-        _path = path;
         setPnfsPath(path);
         setReplyRequired(false);
     }

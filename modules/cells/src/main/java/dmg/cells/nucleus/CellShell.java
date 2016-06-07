@@ -1089,19 +1089,6 @@ public class CellShell extends CommandInterpreter
         }
     }
 
-    @Command(name = "show onexit", hint = "show current error action",
-            description = "Shows how the command interpreter reacts to errors. The action can " +
-                          "be set using the onerror command.")
-    @Deprecated
-    class ShowOnExitCommand implements Callable<String>
-    {
-        @Override
-        public String call()
-        {
-            return _doOnError.toString().toLowerCase();
-        }
-    }
-
     @Command(name = "show onerror", hint = "show current error action",
             description = "Shows how the command interpreter reacts to errors. The action can " +
                           "be set using the onerror command.")
