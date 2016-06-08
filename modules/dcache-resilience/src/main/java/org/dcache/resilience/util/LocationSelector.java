@@ -96,10 +96,14 @@ public final class LocationSelector {
                     Set<String> locations) throws Exception {
         LOGGER.trace("selecting source for {}", operation);
         if (locations.size() == 1) {
+            if (!operation.getTried().isEmpty()) {
+                throw new Exception(String.format("Cannot find a new source "
+                                                + "because only one exists:  %s.",
+                                    locations));
+            }
             return locations.iterator().next();
-        } else {
-            return selectSource(locations, operation.getTried());
         }
+        return selectSource(locations, operation.getTried());
     }
 
     public String selectCopyTarget(FileOperation operation, Integer gindex,
