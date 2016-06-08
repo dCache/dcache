@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.StorageClassFlushInfo;
@@ -53,6 +55,7 @@ public class StorageClassContainer
     private final Repository _repository;
     private final NearlineStorageHandler _storageHandler;
     private boolean  _poolStatusInfoChanged = true;
+    private final Executor _callbackExecutor = Executors.newSingleThreadExecutor();
 
     public StorageClassContainer(Repository repository, NearlineStorageHandler storageHandler)
     {
@@ -222,7 +225,7 @@ public class StorageClassContainer
         ready.stream()
                 .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted))
                 .limit(flushLimit)
-                .forEach(i -> i.flush(Integer.MAX_VALUE, null));
+                .forEach(i -> i.flush(Integer.MAX_VALUE, null, null));
     }
 
     @Override

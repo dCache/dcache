@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -229,7 +230,7 @@ public class HsmFlushController
                     _flush.setFailed(576, "Flush failed: No queue for " + composed);
                 } else {
                     int max = _flush.getMaxFlushCount();
-                    long flushId = info.flush((max == 0) ? Integer.MAX_VALUE : max, this);
+                    long flushId = info.flush((max == 0) ? Integer.MAX_VALUE : max, this, _flushExecutor);
                     _flush.setFlushId(flushId);
                 }
             } catch (RuntimeException e) {
@@ -388,7 +389,7 @@ public class HsmFlushController
             if (info == null) {
                 throw new IllegalArgumentException("No such storage class: " + storageClass + "@" + hsm);
             }
-            long id = info.flush(count, null);
+            long id = info.flush(count, null, null);
             return "Flush initiated (id=" + id + ")";
         }
     }

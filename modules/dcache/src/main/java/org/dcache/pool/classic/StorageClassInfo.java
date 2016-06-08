@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.StorageClassFlushInfo;
@@ -77,7 +76,6 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
     private final String _storageClass;
     private final String _hsmName;
     private final NearlineStorageHandler _storageHandler;
-    private final Executor _callbackExecutor = Executors.newSingleThreadExecutor();
 
     private boolean _isDefined;
     private long _expiration; // expiration time in millis since _time
@@ -103,7 +101,8 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
     private long _recentFlushId;
     private int _requestsSubmitted;
     private int _maxRequests;
-    private StorageClassInfoFlushable _flushCallback;
+    private StorageClassInfoFlushable _callback;
+    private Executor _callbackExecutor;
 
     public StorageClassInfo(NearlineStorageHandler storageHandler, String hsmName, String storageClass)
     {
@@ -136,21 +135,24 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         return info;
     }
 
-    @Override
-    public synchronized void completed(Void nil, PnfsId attachment)
+    private synchronized Runnable internalCompleted()
     {
         _activeCounter--;
         if (_activeCounter <= 0) {
             _activeCounter = 0;
-            if (_flushCallback != null) {
-                _callbackExecutor.execute(new CallbackTask(_hsmName, _storageClass, _errorCounter,
-                                                           _recentFlushId, _requestsSubmitted, _flushCallback));
+            if (_callback != null) {
+                CallbackTask task = new CallbackTask(_hsmName, _storageClass, _errorCounter,
+                                                     _recentFlushId, _requestsSubmitted, _callback);
+                Executor executor = _callbackExecutor;
+                _callbackExecutor = null;
+                _callback = null;
+                return () -> executor.execute(task);
             }
         }
+        return () -> {};
     }
 
-    @Override
-    public synchronized void failed(Throwable exc, PnfsId pnfsId)
+    private synchronized Runnable internalFailed(Throwable exc, PnfsId pnfsId)
     {
         _errorCounter++;
         if (exc instanceof CacheException) {
@@ -163,7 +165,19 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
                 _errorCounter--;
             }
         }
-        completed(null, pnfsId);
+        return internalCompleted();
+    }
+
+    @Override
+    public void completed(Void nil, PnfsId attachment)
+    {
+        internalCompleted().run();
+    }
+
+    @Override
+    public void failed(Throwable exc, PnfsId pnfsId)
+    {
+        internalFailed(exc, pnfsId).run();
     }
 
     private static class CallbackTask implements Runnable
@@ -198,7 +212,15 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         }
     }
 
-    public synchronized long flush(int maxCount, final StorageClassInfoFlushable flushCallback)
+    public long flush(int maxCount, StorageClassInfoFlushable callback, Executor executor)
+    {
+        long id = System.currentTimeMillis();
+        internalFlush(id, maxCount, callback, executor).run();
+        return id;
+    }
+
+    private synchronized Runnable internalFlush(long id, int maxCount,
+                                                StorageClassInfoFlushable callback, Executor executor)
     {
         LOGGER.info("Flushing {}", this);
 
@@ -215,17 +237,17 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
         _errorCounter = 0;
         _requestsSubmitted = maxCount;
         _activeCounter = maxCount;
-        _flushCallback = flushCallback;
-        _recentFlushId = _lastSubmittedAt = System.currentTimeMillis();
+        _recentFlushId = _lastSubmittedAt = id;
 
         if (maxCount != 0) {
-            _storageHandler.flush(_hsmName,
-                    transform(entries.subList(0, maxCount), Entry::pnfsId), this);
-        } else if (flushCallback != null) {
-            _callbackExecutor.execute(new CallbackTask(_hsmName, _storageClass, 0, _recentFlushId, 0, flushCallback));
+            _callback = callback;
+            _callbackExecutor = executor;
+            _storageHandler.flush(_hsmName, transform(entries.subList(0, maxCount), Entry::pnfsId), this);
+        } else if (callback != null) {
+            CallbackTask task = new CallbackTask(_hsmName, _storageClass, 0, id, 0, callback);
+            return () -> executor.execute(task);
         }
-
-        return _recentFlushId;
+        return () -> {};
     }
 
     public synchronized long getLastSubmitted()
