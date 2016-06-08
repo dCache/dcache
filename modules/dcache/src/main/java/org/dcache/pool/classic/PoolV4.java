@@ -45,6 +45,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
@@ -766,6 +767,12 @@ public class PoolV4
         try {
             message.setMoverId(queueIoRequest(envelope, message));
             message.setSucceeded();
+        } catch (FileNotInCacheException | FileInCacheException e) {
+            _log.warn(e.getMessage());
+            message.setFailed(e.getRc(), e.getMessage());
+        } catch (LockedCacheException e) {
+            _log.info(e.getMessage());
+            message.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {
             _log.error(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
