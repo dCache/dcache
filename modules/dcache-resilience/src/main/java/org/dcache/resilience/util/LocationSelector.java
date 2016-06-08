@@ -93,13 +93,13 @@ public final class LocationSelector {
     }
 
     public String selectCopySource(FileOperation operation,
-                    Set<String> locations) throws Exception {
+                    Set<String> locations) throws LocationSelectionException {
         LOGGER.trace("selecting source for {}", operation);
         if (locations.size() == 1) {
             if (!operation.getTried().isEmpty()) {
-                throw new Exception(String.format("Cannot find a new source "
-                                                + "because only one exists:  %s.",
-                                    locations));
+                throw new LocationSelectionException(String.format("Cannot find "
+                                + "a new source because only one exists:  %s.",
+                                locations));
             }
             return locations.iterator().next();
         }
@@ -108,21 +108,21 @@ public final class LocationSelector {
 
     public String selectCopyTarget(FileOperation operation, Integer gindex,
                                    Collection<String> locations, Collection<String> tags)
-                    throws Exception {
+                    throws LocationSelectionException {
         LOGGER.trace("selecting target for {}", operation);
         return selectCopyTarget(gindex, locations, operation.getTried(), tags);
     }
 
     public String selectRemoveTarget(FileOperation operation,
                     Collection<String> locations, Collection<String> tags)
-                    throws Exception {
+                    throws LocationSelectionException {
         LOGGER.trace("selecting target for {}", operation);
         if (locations.size() == 1) {
             String message = String.format("Remove replica was selected, but "
                                             + "the principal pool %s is the "
                                             + "only location; this is a bug.",
                             locations.iterator().next());
-            throw new Exception(message);
+            throw new LocationSelectionException(message);
         }
         return selectRemoveTarget(locations, tags);
     }
@@ -162,7 +162,7 @@ public final class LocationSelector {
      @VisibleForTesting
      String selectCopyTarget(Integer gindex,
                     Collection<String> locations, Set<Integer> tried,
-                    Collection<String> oneCopyPer) throws Exception {
+                    Collection<String> oneCopyPer) throws LocationSelectionException {
         /*
          *  Writable locations in the pool group without a copy of this
          *  pnfsId.
@@ -179,8 +179,8 @@ public final class LocationSelector {
                         possible);
 
         if (candidates.isEmpty()) {
-            throw new Exception(String.format("Cannot satisfy copy request "
-                            + "because there are no (further) "
+            throw new LocationSelectionException(String.format("Cannot satisfy "
+                            + "copy request because there are no (further) "
                             + "possible locations; candidates %s", candidates));
         }
 
@@ -202,12 +202,10 @@ public final class LocationSelector {
                         + "selected {} as copy target.", target);
 
         if (target == null) {
-            throw new Exception(String.format("Cannot satisfy copy request "
-                                            + "because the selection "
-                                            + "algorithm returned "
-                                            + "no viable locations; "
-                                            + "locations: %s; possible %s",
-                            locations, candidates));
+            throw new LocationSelectionException(String.format("Cannot satisfy "
+                            + "copy request because the selection "
+                            + "algorithm returned no viable locations; "
+                            + "locations: %s; possible %s", locations, candidates));
         }
 
         return target.getName();
@@ -222,7 +220,7 @@ public final class LocationSelector {
      */
     @VisibleForTesting
     String selectRemoveTarget(Collection<String> locations,
-                    Collection<String> oneCopyPer) throws Exception {
+                    Collection<String> oneCopyPer) throws LocationSelectionException {
         Set<String> possible = getEligibleRemoveTargets(locations);
         RemoveLocationExtractor extractor = new RemoveLocationExtractor(
                         oneCopyPer, poolInfoMap);
@@ -231,9 +229,9 @@ public final class LocationSelector {
         String target = RandomSelectionStrategy.SELECTOR.apply(maximallyConstrained);
 
         if (target == null) {
-            throw new Exception(String.format("Cannot satisfy remove request "
-                            + "because the selection algorithm returned "
-                            + "no viable locations: locations: %s; "
+            throw new LocationSelectionException(String.format("Cannot satisfy "
+                            + "remove request because the selection algorithm "
+                            + "returned no viable locations: locations: %s; "
                             + "possible: %s", locations, possible));
         }
 
@@ -246,15 +244,14 @@ public final class LocationSelector {
      */
     @VisibleForTesting
     String selectSource(Set<String> readable, Collection<Integer> tried)
-                    throws Exception {
+                    throws LocationSelectionException {
         Set<String> excluded = poolInfoMap.getPools(tried);
         Set<String> possible = Sets.difference(readable, excluded);
         if (possible.isEmpty()) {
-            throw new Exception(String.format("Cannot find a readable source "
-                                            + "because there are no other "
-                                            + "viable locations; "
-                                            + "readable: %s; tried: %s",
-                            readable, excluded));
+            throw new LocationSelectionException(String.format("Cannot find  "
+                            + "a readable source because there "
+                            + "are no other viable locations; "
+                            + "readable: %s; tried: %s", readable, excluded));
         }
 
         return RandomSelectionStrategy.SELECTOR.apply(possible);
