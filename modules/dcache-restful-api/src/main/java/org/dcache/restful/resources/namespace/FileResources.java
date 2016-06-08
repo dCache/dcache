@@ -1,8 +1,35 @@
 package org.dcache.restful.resources.namespace;
 
 import com.google.common.collect.Range;
-import diskCacheV111.poolManager.PoolMonitorV5;
-import diskCacheV111.util.*;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+
+import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.RemotePoolMonitor;
@@ -12,27 +39,6 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
-
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.NotAllowedException;
-import javax.ws.rs.InternalServerErrorException;
-
-import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * RestFul API to  provide files/folders manipulation operations
@@ -161,7 +167,11 @@ public class FileResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (PermissionDeniedCacheException e) {
-            throw new NotAllowedException(e);
+            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+                throw new NotAuthorizedException(e);
+            } else {
+                throw new ForbiddenException(e);
+            }
         } catch (CacheException | InterruptedException ex) {
             throw new InternalServerErrorException(ex);
         }
