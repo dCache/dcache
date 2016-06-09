@@ -1,7 +1,9 @@
 package diskCacheV111.util;
 
 /**
- * Thrown when accessing a locked resource.
+ * Thrown when accessing a locked resource. This is typically a transient
+ * error and retrying later maybe allow the operation to succeed without
+ * administrative intervention.
  */
 public class LockedCacheException extends CacheException
 {

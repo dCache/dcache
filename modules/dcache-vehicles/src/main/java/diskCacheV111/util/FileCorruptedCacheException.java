@@ -25,7 +25,7 @@ import org.dcache.util.Checksum;
 
 /**
  * Signals that the file size or checksum of a file does not match the expected
- * checksum or file size.
+ * checksum or file size, or that a file or replica is otherwise corrupted.
  *
  * Note that expected and actual file size or checksum stored in the exception
  * are not preserved by cells message passing.
