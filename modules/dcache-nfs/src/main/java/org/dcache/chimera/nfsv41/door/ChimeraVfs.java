@@ -593,14 +593,17 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             throw new BadHandleException("Bad/old file handle");
         }
 
-        byte[] opaque = new byte[opaqueLen];
-        b.get(opaque);
-
         FsInodeType inodeType = FsInodeType.valueOf(type);
 
         switch (inodeType) {
             case INODE:
-                int level = Integer.parseInt(new String(opaque));
+                if (opaqueLen != 1) {
+                    throw new BadHandleException("Bad file handle: invalid level len :" + opaqueLen);
+                }
+                int level = b.get() - 0x30; // 0x30 is ascii code for '0'
+                if (level < 0 || level > JdbcFs.LEVELS_NUMBER) {
+                    throw new BadHandleException("Bad file handle: invalid level:" + level);
+                }
                 inode = new FsInode(_fs, ino, level);
                 break;
 
@@ -613,7 +616,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 break;
 
             case TAG:
-                String tag = new String(opaque);
+                String tag = new String(handle, b.position(), opaqueLen);
                 inode = new FsInode_TAG(_fs, ino, tag);
                 break;
 
@@ -633,7 +636,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
                 break;
 
             case PSET:
-                inode = new FsInode_PSET(_fs, ino, getArgs(opaque));
+                inode = new FsInode_PSET(_fs, ino, getArgs(b, opaqueLen));
                 break;
 
             case PCUR:
@@ -654,9 +657,9 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         return inode;
     }
 
-    private String[] getArgs(byte[] bytes) {
+    private String[] getArgs(ByteBuffer b, int opaqueLen) {
 
-        StringTokenizer st = new StringTokenizer(new String(bytes), "[:]");
+        StringTokenizer st = new StringTokenizer(new String(b.array(), b.position(), opaqueLen), "[:]");
         int argc = st.countTokens();
         String[] args = new String[argc];
         for (int i = 0; i < argc; i++) {

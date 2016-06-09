@@ -88,7 +88,7 @@ public class JdbcFs implements FileSystemProvider {
      * the number of pnfs levels. Level zero associated with file real
      * content, which is not our regular case.
      */
-    private static final int LEVELS_NUMBER = 7;
+    public static final int LEVELS_NUMBER = 7;
 
     /**
      * SQL query engine
