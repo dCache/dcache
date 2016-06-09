@@ -8,6 +8,8 @@
 %access package
 %import diskCacheV111.vehicles.DoorTransferFinishedMessage
 %import diskCacheV111.vehicles.HttpDoorUrlInfoMessage
+%import static diskCacheV111.util.CacheException.*;
+%import static org.dcache.util.CacheExceptionFactory.exceptionOf;
 
 %start FSM::Init
 %map FSM
@@ -35,17 +37,17 @@ Entry
         timeout
                 Failed
                 {
-                        setError("Failed to get file attributes (timeout)");
+                        setError(exceptionOf(TIMEOUT, "Failed to get file attributes (timeout)"));
                 }
         noroute
                 Failed
                 {
-                        setError("Failed to get file attributes (no route to cell)");
+                        setError(exceptionOf(TIMEOUT, "Failed to get file attributes (no route to cell)"));
                 }
         failure(rc: Integer, cause: Object)
                 Failed
                 {
-                        setError("Failed to get file attributes (" + cause + ")");
+                        setError(exceptionOf(rc, "Failed to get file attributes (" + cause + ")"));
                 }
         success()
                 CreatingMover
@@ -71,17 +73,17 @@ Entry
         failure(rc: Integer, cause: Object)
                 Failed
                 {
-                        setError("Source pool failed (" + cause + ")");
+                        setError(exceptionOf(rc, "Source pool failed (" + cause + ")"));
                 }
         timeout
                 Failed
                 {
-                        setError("Source pool failed (no response)");
+                        setError(exceptionOf(TIMEOUT, "Source pool failed (no response)"));
                 }
         noroute
                 Failed
                 {
-                        setError("Source pool failed (no route to cell)");
+                        setError(exceptionOf(TIMEOUT, "Source pool failed (no route to cell)"));
                 }
 }
 
@@ -113,12 +115,12 @@ Exit
         noroute
                 Failed
                 {
-                        setError("Ping failed (no route to cell)");
+                        setError(exceptionOf(TIMEOUT, "Ping failed (no route to cell)"));
                 }
         failure(rc: Integer, cause: Object)
                 Failed
                 {
-                        setError("Ping failed (" + cause + ")");
+                        setError(exceptionOf(rc, "Ping failed (" + cause + ")"));
                 }
         messageArrived(message: HttpDoorUrlInfoMessage)
                 Transferring
@@ -138,7 +140,7 @@ Transferring
                 [ message.getReturnCode() != 0]
                 Cancelling
                 {
-                        setError(message.getErrorObject());
+                        setError(exceptionOf(message));
                 }
         transferEnded(error: Object)
                 [ error == null ]
@@ -210,12 +212,12 @@ Default
         fileExists
                 Failed
                 {
-                        setError("Replica already exists");
+                        setError(exceptionOf(FILE_IN_CACHE, "Replica already exists"));
                 }
         createEntryFailed(rc: Integer, cause: Object)
                 Failed
                 {
-                        setError("Replica creation failed (" + cause + " [" + rc + "])");
+                        setError(exceptionOf(rc, "Replica creation failed (" + cause + " [" + rc + "])"));
                 }
         cancel(error: Object)
                 Failed
@@ -226,7 +228,7 @@ Default
                 [ message.getReturnCode() != 0]
                 Failed
                 {
-                        setError(message.getErrorObject());
+                        setError(exceptionOf(message));
                 }
         transferEnded(error: Object)
                 [ error != null ]
