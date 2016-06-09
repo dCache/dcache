@@ -19,7 +19,6 @@ package org.dcache.chimera;
 import com.google.common.primitives.Longs;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -142,12 +141,22 @@ public class FsInode {
     }
 
     /**
-     * A helper method to generate the base path of identifier.
+     * A helper method to generate the base part of identifier.
      * @param opaque inode specific data
-     * @return
+     * @return byte array identifying the inode.
      */
     protected final byte[] byteBase(byte[] opaque) {
-        ByteBuffer b = ByteBuffer.allocate(128);
+        /**
+         * allocate array with a correct number of bytes:
+         *    1 - fs is
+         *    1 - inode type
+         *    1 - number of bytes in ino, for compatibility
+         *    8 - ino,
+         *    1 - size of type specific data
+         *    opaque.len - opaque data
+         */
+        byte[] bytes = new byte[1 + 1 + 1 + Long.BYTES + 1 + opaque.length];
+        ByteBuffer b = ByteBuffer.wrap(bytes);
         b.put((byte) _fs.getFsId())
                 .put((byte) _type.getType())
                 .put((byte)Long.BYTES) // set the file id size to be compatible with old format
@@ -156,7 +165,7 @@ public class FsInode {
         b.put((byte) opaque.length);
         b.put(opaque);
 
-        return Arrays.copyOf(b.array(), b.position());
+        return bytes;
     }
 
     /**
