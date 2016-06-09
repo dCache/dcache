@@ -907,15 +907,15 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         {
             try {
                 repository.setState(pnfsId, EntryState.REMOVED);
+            } catch (IllegalTransitionException f) {
+                LOGGER.warn("File not found in name space, but failed to remove {}: {}",
+                            pnfsId, f.getMessage());
             } catch (CacheException f) {
                 LOGGER.error("File not found in name space, but failed to remove {}: {}",
                              pnfsId, f.getMessage());
             } catch (InterruptedException f) {
                 LOGGER.warn("File not found in name space, but failed to remove {}: {}",
                             pnfsId, f);
-            } catch (IllegalTransitionException f) {
-                LOGGER.warn("File not found in name space, but failed to remove {}: {}",
-                            pnfsId, f.getMessage());
             }
         }
 

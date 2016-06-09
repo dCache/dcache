@@ -903,12 +903,12 @@ public class Job
             }
         } catch (FileNotInCacheException e) {
             // File got remove before we could update it. TODO: log it
+        } catch (IllegalTransitionException e) {
+            // File is likely about to be removed. TODO: log it
         } catch (CacheException e) {
             _log.error("Migration job failed to update source mode: " +
                        e.getMessage());
             setState(State.FAILED);
-        } catch (IllegalTransitionException e) {
-            // File is likely about to be removed. TODO: log it
         } catch (InterruptedException e) {
             _log.error("Migration job was interrupted");
             setState(State.FAILED);

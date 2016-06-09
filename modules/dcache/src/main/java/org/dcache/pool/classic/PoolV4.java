@@ -1604,7 +1604,7 @@ public class PoolV4
                 try {
                     _repository.setState(id, EntryState.REMOVED);
                     _log.info("File not found in PNFS; removed " + id);
-                } catch (InterruptedException | IllegalTransitionException | CacheException f) {
+                } catch (InterruptedException | CacheException f) {
                     _log.error("File not found in PNFS, but failed to remove "
                                + id + ": " + f);
                 }

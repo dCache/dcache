@@ -757,8 +757,7 @@ public class CacheRepositoryV5
 
     @Override
     public void setState(PnfsId id, EntryState state)
-        throws IllegalTransitionException, IllegalArgumentException,
-               InterruptedException, CacheException
+        throws IllegalArgumentException, InterruptedException, CacheException
     {
         if (id == null) {
             throw new IllegalArgumentException("id is null");

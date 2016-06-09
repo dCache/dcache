@@ -9,7 +9,6 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -70,7 +69,7 @@ public class NoCachedFilesSpaceSweeper
                     _log.debug(entry.getPnfsId() + " : removed.");
                 }
             }
-        } catch (InterruptedException | IllegalTransitionException | CacheException e) {
+        } catch (InterruptedException | CacheException e) {
             _log.warn("Failed to remove entry from repository: " + e.getMessage() );
         }
     }

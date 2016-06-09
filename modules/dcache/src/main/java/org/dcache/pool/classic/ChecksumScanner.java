@@ -448,7 +448,7 @@ public class ChecksumScanner
                                     e.getMessage());
                     try {
                         _repository.setState(id, EntryState.BROKEN);
-                    } catch (IllegalTransitionException | CacheException f) {
+                    } catch (CacheException f) {
                         _log.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
                     }
                 } catch (IOException e) {
