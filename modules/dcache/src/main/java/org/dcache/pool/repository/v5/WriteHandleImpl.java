@@ -303,27 +303,6 @@ class WriteHandleImpl implements ReplicaDescriptor
         _pnfs.setFileAttributes(_entry.getPnfsId(), attributesToUpdate);
     }
 
-    private void setToTargetState() throws CacheException
-    {
-        /* In several situations, dCache requests a CACHED file
-         * without having any sticky flags on it. Such files are
-         * subject to immediate garbage collection if we are short on
-         * disk space. Thus to give other clients time to access the
-         * file, we mark it sticky for a short amount of time.
-         */
-        if (_targetState == EntryState.CACHED && _stickyRecords.isEmpty()) {
-            long now = System.currentTimeMillis();
-            _entry.setSticky("self", now + HOLD_TIME, false);
-        }
-
-        /* Move entry to target state.
-         */
-        for (StickyRecord record: _stickyRecords) {
-            _entry.setSticky(record.owner(), record.expire(), false);
-        }
-        _entry.setState(_targetState);
-    }
-
     private void verifyFileSize(long length) throws CacheException
     {
         assert _initialState == EntryState.FROM_CLIENT || _fileAttributes.isDefined(SIZE);
@@ -356,10 +335,27 @@ class WriteHandleImpl implements ReplicaDescriptor
 
             registerFileAttributesInNameSpace();
 
-            synchronized (_entry) {
-                _entry.setFileAttributes(_fileAttributes);
-                setToTargetState();
-            }
+            _entry.update(r -> {
+                r.setFileAttributes(_fileAttributes);
+                /* In several situations, dCache requests a CACHED file
+                 * without having any sticky flags on it. Such files are
+                 * subject to immediate garbage collection if we are short on
+                 * disk space. Thus to give other clients time to access the
+                 * file, we mark it sticky for a short amount of time.
+                 */
+                if (_targetState == EntryState.CACHED && _stickyRecords.isEmpty()) {
+                    long now = System.currentTimeMillis();
+                    r.setSticky("self", now + HOLD_TIME, false);
+                }
+
+                /* Move entry to target state.
+                 */
+                for (StickyRecord record : _stickyRecords) {
+                    r.setSticky(record.owner(), record.expire(), false);
+                }
+                return r.setState(_targetState);
+            });
+
             setState(HandleState.COMMITTED);
         } catch (CacheException e) {
             /* If any of the PNFS operations return FILE_NOT_FOUND,
@@ -419,7 +415,7 @@ class WriteHandleImpl implements ReplicaDescriptor
 
         if (_targetState == EntryState.REMOVED) {
             try {
-                _entry.setState(EntryState.REMOVED);
+                _entry.update(r -> r.setState(EntryState.REMOVED));
             } catch (CacheException e) {
                 _log.warn("Failed to remove replica: {}", e.getMessage());
             }
@@ -432,7 +428,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                       _entry.getPnfsId(),
                       _repository.getPoolName());
             try {
-                _entry.setState(EntryState.BROKEN);
+                _entry.update(r -> r.setState(EntryState.BROKEN));
             } catch (CacheException e) {
                 _log.warn("Failed to mark replica as broken: {}", e.getMessage());
             }

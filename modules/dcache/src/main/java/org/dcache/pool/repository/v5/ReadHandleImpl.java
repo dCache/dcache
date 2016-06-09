@@ -27,13 +27,12 @@ class ReadHandleImpl implements ReplicaDescriptor
     private FileAttributes _fileAttributes;
     private boolean _open;
 
-    ReadHandleImpl(PnfsHandler pnfs, MetaDataRecord entry) throws CacheException
+    ReadHandleImpl(PnfsHandler pnfs, MetaDataRecord entry, FileAttributes fileAttributes)
     {
         _pnfs = checkNotNull(pnfs);
         _entry = checkNotNull(entry);
-        _fileAttributes = _entry.getFileAttributes();
+        _fileAttributes = checkNotNull(fileAttributes);
         _open = true;
-        _entry.incrementLinkCount();
     }
 
     /**
@@ -84,7 +83,7 @@ class ReadHandleImpl implements ReplicaDescriptor
                 _fileAttributes = _entry.getFileAttributes();
                 if (_fileAttributes.isUndefined(FileAttribute.CHECKSUM)) {
                     _fileAttributes.setChecksums(checksums);
-                    _entry.setFileAttributes(_fileAttributes);
+                    _entry.update(r -> r.setFileAttributes(_fileAttributes));
                 }
             }
         }

@@ -107,8 +107,11 @@ public class ConsistentStoreTest
         throws DuplicateEntryException, CacheException
     {
         MetaDataRecord entry = _metaDataStore.create(attributes.getPnfsId());
-        entry.setState(state);
-        entry.setFileAttributes(attributes);
+        entry.update(r -> {
+            r.setState(state);
+            r.setFileAttributes(attributes);
+            return null;
+        });
     }
 
     @Test

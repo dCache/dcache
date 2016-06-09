@@ -164,7 +164,7 @@ public class ConsistentStore
                     throw e;
 
                 default:
-                    entry.setState(EntryState.BROKEN);
+                    entry.update(r -> r.setState(EntryState.BROKEN));
                     _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                     id.toString(),
                                     _poolName),
@@ -172,7 +172,7 @@ public class ConsistentStore
                     break;
                 }
             } catch (NoSuchAlgorithmException e) {
-                entry.setState(EntryState.BROKEN);
+                entry.update(r -> r.setState(EntryState.BROKEN));
                 _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                 id.toString(),
                                 _poolName),
@@ -301,23 +301,25 @@ public class ConsistentStore
 
             /* Update the pool meta data.
              */
-            entry.setFileAttributes(attributesInNameSpace);
-
             /* If not already precious or cached, we move the entry to
              * the target state of a newly uploaded file.
              */
             if (state != EntryState.CACHED && state != EntryState.PRECIOUS) {
                 EntryState targetState =
-                    _replicaStatePolicy.getTargetState(attributesInNameSpace);
+                        _replicaStatePolicy.getTargetState(attributesInNameSpace);
                 List<StickyRecord> stickyRecords =
-                    _replicaStatePolicy.getStickyRecords(attributesInNameSpace);
-
-                for (StickyRecord record: stickyRecords) {
-                    entry.setSticky(record.owner(), record.expire(), false);
-                }
-
-                entry.setState(targetState);
+                        _replicaStatePolicy.getStickyRecords(attributesInNameSpace);
+                entry.update(r -> {
+                    r.setFileAttributes(attributesInNameSpace);
+                    for (StickyRecord record : stickyRecords) {
+                        r.setSticky(record.owner(), record.expire(), false);
+                    }
+                    r.setState(targetState);
+                    return null;
+                });
                 _log.warn(String.format(MARKED_MSG, id, targetState));
+            } else {
+                entry.update(r -> r.setFileAttributes(attributesInNameSpace));
             }
 
             return entry;

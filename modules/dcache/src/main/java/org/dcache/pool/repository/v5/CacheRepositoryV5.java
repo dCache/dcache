@@ -583,11 +583,9 @@ public class CacheRepositoryV5
             LOGGER.info("Creating new entry for {}", id);
 
             MetaDataRecord entry = _store.create(id);
-            synchronized (entry) {
-                entry.setFileAttributes(fileAttributes);
-
-                entry.setState(transferState);
-
+            return entry.update(r -> {
+                r.setFileAttributes(fileAttributes);
+                r.setState(transferState);
                 try {
                     return new WriteHandleImpl(
                             this, _allocator, _pnfs, entry, fileAttributes,
@@ -595,7 +593,7 @@ public class CacheRepositoryV5
                 } catch (IOException e) {
                     throw new DiskErrorCacheException("Failed to create file: " + entry.getDataFile(), e);
                 }
-            }
+            });
         } catch (DuplicateEntryException e) {
             /* Somebody got the idea that we don't have the file, so we make
              * sure to register it.
@@ -614,8 +612,8 @@ public class CacheRepositoryV5
         _stateLock.readLock().lock();
         try {
             checkInitialized();
-            ReplicaDescriptor handle;
 
+            FileAttributes fileAttributes;
             MetaDataRecord entry = getMetaDataRecord(id);
             synchronized (entry) {
                 switch (entry.getState()) {
@@ -633,21 +631,21 @@ public class CacheRepositoryV5
                 case CACHED:
                     break;
                 }
-                handle = new ReadHandleImpl(_pnfs, entry);
+                fileAttributes = entry.getFileAttributes();
+                if (!flags.contains(OpenFlags.NOATIME)) {
+                    entry.touch();
+                }
+                entry.incrementLinkCount();
             }
 
-            if (!flags.contains(OpenFlags.NOATIME)) {
-                entry.touch();
-            }
-
-            return handle;
+            return new ReadHandleImpl(_pnfs, entry, fileAttributes);
         } catch (FileNotInCacheException e) {
             /* Somebody got the idea that we have the file, so we make
              * sure to remove any stray pointers.
              */
             try {
                 MetaDataRecord entry = _store.create(id);
-                entry.setState(REMOVED);
+                entry.update(r -> r.setState(REMOVED));
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
             } catch (CacheException | RuntimeException f) {
@@ -703,7 +701,7 @@ public class CacheRepositoryV5
                  */
                 try {
                     entry = _store.create(id);
-                    entry.setState(REMOVED);
+                    entry.update(r -> r.setState(REMOVED));
                 } catch (DuplicateEntryException concurrentCreation) {
                     setSticky(id, owner, expire, overwrite);
                     return;
@@ -713,8 +711,8 @@ public class CacheRepositoryV5
                 throw e;
             }
 
-            synchronized (entry) {
-                switch (entry.getState()) {
+            entry.update(r -> {
+                switch (r.getState()) {
                 case NEW:
                 case FROM_CLIENT:
                 case FROM_STORE:
@@ -728,9 +726,8 @@ public class CacheRepositoryV5
                 case CACHED:
                     break;
                 }
-
-                entry.setSticky(owner, expire, overwrite);
-            }
+                return r.setSticky(owner, expire, overwrite);
+            });
         } finally {
             _stateLock.readLock().unlock();
         }
@@ -769,8 +766,8 @@ public class CacheRepositoryV5
 
             try {
                 MetaDataRecord entry = getMetaDataRecord(id);
-                synchronized (entry) {
-                    EntryState source = entry.getState();
+                entry.update(r -> {
+                    EntryState source = r.getState();
                     switch (source) {
                     case NEW:
                     case REMOVED:
@@ -779,7 +776,7 @@ public class CacheRepositoryV5
                             /* File doesn't exist or is already
                              * deleted. That's all we care about.
                              */
-                            return;
+                            return null;
                         }
                         break;
                     case PRECIOUS:
@@ -790,8 +787,7 @@ public class CacheRepositoryV5
                         case CACHED:
                         case PRECIOUS:
                         case BROKEN:
-                            entry.setState(state);
-                            return;
+                            return r.setState(state);
                         default:
                             break;
                         }
@@ -799,7 +795,7 @@ public class CacheRepositoryV5
                         break;
                     }
                     throw new IllegalTransitionException(id, source, state);
-                }
+                });
             } catch (FileNotInCacheException e) {
                 /* File disappeared before we could change the
                  * state. That's okay if we wanted to remove it, otherwise

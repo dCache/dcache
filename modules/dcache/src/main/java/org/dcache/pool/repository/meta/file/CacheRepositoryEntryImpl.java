@@ -3,6 +3,8 @@ package org.dcache.pool.repository.meta.file;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,7 +31,7 @@ import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
 import org.dcache.vehicles.FileAttributes;
 
-public class CacheRepositoryEntryImpl implements MetaDataRecord
+public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.UpdatableRecord
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
     private final CacheRepositoryEntryState _state;
@@ -105,19 +107,21 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized void incrementLinkCount()
+    public synchronized int incrementLinkCount()
     {
         _linkCount++;
+        return _linkCount;
     }
 
     @Override
-    public synchronized void decrementLinkCount()
+    public synchronized int decrementLinkCount()
     {
 
         if (_linkCount <= 0) {
             throw new IllegalStateException("Link count is already  zero");
         }
         _linkCount--;
+        return _linkCount;
     }
 
     @Override
@@ -181,7 +185,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized void setState(EntryState state)
+    public synchronized Void setState(EntryState state)
         throws CacheException
     {
         try {
@@ -189,6 +193,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         } catch (IOException e) {
             throw new DiskErrorCacheException(e.getMessage(), e);
         }
+        return null;
     }
 
     @Override
@@ -202,7 +207,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException {
+    public boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException {
         try {
             if (_state.setSticky(owner, expire, overwrite)) {
                 return true;
@@ -226,7 +231,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public void setFileAttributes(FileAttributes attributes) throws CacheException {
+    public Void setFileAttributes(FileAttributes attributes) throws CacheException {
         try {
             if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
                 setStorageInfo(StorageInfos.extractFrom(attributes));
@@ -236,6 +241,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         } catch (IOException e) {
             throw new DiskErrorCacheException(_pnfsId + " " + e.getMessage(), e);
         }
+        return null;
     }
 
     @Override
@@ -284,5 +290,11 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized Collection<StickyRecord> stickyRecords() {
         return _state.stickyRecords();
+    }
+
+    @Override
+    public synchronized <T> T update(Update<T> update) throws CacheException
+    {
+        return update.apply(this);
     }
 }

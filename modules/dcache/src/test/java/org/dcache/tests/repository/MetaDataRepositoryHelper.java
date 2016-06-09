@@ -30,7 +30,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
 
 
-    public static class CacheRepositoryEntryImpl implements MetaDataRecord {
+    public static class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.UpdatableRecord {
         private final PnfsId _pnfsId;
 
         private long _creationTime = System.currentTimeMillis();
@@ -59,17 +59,19 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized void decrementLinkCount()
+        public synchronized int decrementLinkCount()
         {
             assert _linkCount > 0;
             _linkCount--;
+            return _linkCount;
         }
 
 
         @Override
-        public synchronized void incrementLinkCount()
+        public synchronized int incrementLinkCount()
         {
             _linkCount++;
+            return _linkCount;
         }
 
         public synchronized void setCreationTime(long time)
@@ -131,9 +133,10 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized void setState(EntryState state)
+        public Void setState(EntryState state)
         {
             _state = state;
+            return null;
         }
 
         @Override
@@ -149,7 +152,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized boolean setSticky(String owner, long expire, boolean overwrite)
+        public boolean setSticky(String owner, long expire, boolean overwrite)
             throws CacheException
         {
             if (!overwrite && _sticky.stream().anyMatch(r -> r.owner().equals(owner) && r.isValidAt(expire))) {
@@ -186,15 +189,22 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
+        public synchronized <T> T update(Update<T> update) throws CacheException
+        {
+            return update.apply(this);
+        }
+
+        @Override
         public synchronized Collection<StickyRecord> removeExpiredStickyFlags()
         {
             return Collections.emptyList();
         }
 
         @Override
-        public void setFileAttributes(FileAttributes attributes) throws CacheException
+        public Void setFileAttributes(FileAttributes attributes) throws CacheException
         {
             _fileAttributes = attributes;
+            return null;
         }
 
         @Override

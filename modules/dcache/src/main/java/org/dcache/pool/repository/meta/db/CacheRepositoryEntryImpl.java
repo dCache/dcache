@@ -30,7 +30,7 @@ import static com.google.common.collect.Iterables.*;
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.
  */
-public class CacheRepositoryEntryImpl implements MetaDataRecord
+public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.UpdatableRecord
 {
     private static final Logger _log =
         LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
@@ -113,22 +113,24 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized void decrementLinkCount()
+    public synchronized int decrementLinkCount()
     {
         if (_linkCount <= 0) {
             throw new IllegalStateException("Link count is already zero");
         }
         _linkCount--;
+        return _linkCount;
     }
 
     @Override
-    public synchronized void incrementLinkCount()
+    public synchronized int incrementLinkCount()
     {
         EntryState state = getState();
         if (state == EntryState.REMOVED || state == EntryState.DESTROYED) {
             throw new IllegalStateException("Entry is marked as removed");
         }
         _linkCount++;
+        return _linkCount;
     }
 
     @Override
@@ -206,7 +208,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public void setFileAttributes(FileAttributes attributes) throws CacheException
+    public Void setFileAttributes(FileAttributes attributes) throws CacheException
     {
         try {
             String id = _pnfsId.toString();
@@ -223,6 +225,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         } catch (OperationFailureException e) {
             throw new CacheException("Meta data update failed: " + e.getMessage(), e);
         }
+        return null;
     }
 
     @Override
@@ -238,12 +241,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized void setState(EntryState state) throws CacheException
+    public Void setState(EntryState state) throws CacheException
     {
         if (_state != state) {
             _state = state;
             storeState();
         }
+        return null;
     }
 
     @Override
@@ -271,7 +275,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
+    public boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
     {
         if (_state == EntryState.REMOVED) {
             throw new CacheException("Entry in removed state");
@@ -306,6 +310,12 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     public synchronized Collection<StickyRecord> stickyRecords()
     {
         return _sticky;
+    }
+
+    @Override
+    public synchronized <T> T update(Update<T> update) throws CacheException
+    {
+        return update.apply(this);
     }
 
     private synchronized void storeState() throws CacheException
