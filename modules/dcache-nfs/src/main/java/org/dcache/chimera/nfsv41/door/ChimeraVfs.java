@@ -28,9 +28,11 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceFlags;
@@ -43,13 +45,24 @@ import org.dcache.chimera.DirectoryStreamHelper;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.FsInode_CONST;
+import org.dcache.chimera.FsInode_ID;
+import org.dcache.chimera.FsInode_NAMEOF;
+import org.dcache.chimera.FsInode_PARENT;
+import org.dcache.chimera.FsInode_PATHOF;
+import org.dcache.chimera.FsInode_PCRC;
+import org.dcache.chimera.FsInode_PCUR;
+import org.dcache.chimera.FsInode_PLOC;
+import org.dcache.chimera.FsInode_PSET;
+import org.dcache.chimera.FsInode_TAG;
+import org.dcache.chimera.FsInode_TAGS;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.InvalidArgumentChimeraException;
 import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
-import org.dcache.chimera.StorageGenericLocation;
+import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
 import org.dcache.nfs.status.ExistException;
 import org.dcache.nfs.status.InvalException;
@@ -86,6 +99,11 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     private static final Logger _log = LoggerFactory.getLogger(ChimeraVfs.class);
     private final JdbcFs _fs;
     private final NfsIdMapping _idMapping;
+
+    /**
+     * minimal binary handle size which can be processed.
+     */
+    private static final int MIN_HANDLE_LEN = 4;
 
     public ChimeraVfs(JdbcFs fs, NfsIdMapping idMapping) {
         _fs = fs;
@@ -246,15 +264,11 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     }
 
     private FsInode toFsInode(Inode inode) throws IOException {
-        return _fs.inodeFromBytes(inode.getFileId());
+        return inodeFromBytes(inode.getFileId());
     }
 
     private Inode toInode(final FsInode inode) {
-        try {
-            return Inode.forFile(_fs.inodeToBytes(inode));
-        } catch (ChimeraFsException e) {
-            throw new RuntimeException("bug found", e);
-        }
+        return Inode.forFile(inodeToBytes(inode));
     }
 
     @Override
@@ -538,4 +552,113 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
         return Access.UNDEFINED;
     }
+
+    /**
+     * Get a bytes corresponding to provided {code FsInode} into.
+     *
+     * @param inode to process.
+     * @return bytes array representing inode.
+     */
+    private byte[] inodeToBytes(FsInode inode) {
+        return inode.getIdentifier();
+    }
+
+    /**
+     * Get a {code FsInode} corresponding to provided bytes.
+     *
+     * @param bytes to construct inode from.
+     * @return object inode.
+     * @throws ChimeraFsException
+     */
+    public FsInode inodeFromBytes(byte[] handle) throws BadHandleException {
+        FsInode inode;
+
+        if (handle.length < MIN_HANDLE_LEN) {
+            throw new BadHandleException("Bad file handle");
+        }
+
+        ByteBuffer b = ByteBuffer.wrap(handle);
+        int fsid = b.get();
+        int type = b.get();
+        int len = b.get(); // eat the file id size.
+        long ino = b.getLong();
+        int opaqueLen = b.get();
+        if (opaqueLen > b.remaining()) {
+            throw new BadHandleException("Bad/old file handle");
+        }
+
+        byte[] opaque = new byte[opaqueLen];
+        b.get(opaque);
+
+        FsInodeType inodeType = FsInodeType.valueOf(type);
+
+        switch (inodeType) {
+            case INODE:
+                int level = Integer.parseInt(new String(opaque));
+                inode = new FsInode(_fs, ino, level);
+                break;
+
+            case ID:
+                inode = new FsInode_ID(_fs, ino);
+                break;
+
+            case TAGS:
+                inode = new FsInode_TAGS(_fs, ino);
+                break;
+
+            case TAG:
+                String tag = new String(opaque);
+                inode = new FsInode_TAG(_fs, ino, tag);
+                break;
+
+            case NAMEOF:
+                inode = new FsInode_NAMEOF(_fs, ino);
+                break;
+            case PARENT:
+                inode = new FsInode_PARENT(_fs, ino);
+                break;
+
+            case PATHOF:
+                inode = new FsInode_PATHOF(_fs, ino);
+                break;
+
+            case CONST:
+                inode = new FsInode_CONST(_fs, ino);
+                break;
+
+            case PSET:
+                inode = new FsInode_PSET(_fs, ino, getArgs(opaque));
+                break;
+
+            case PCUR:
+                inode = new FsInode_PCUR(_fs, ino);
+                break;
+
+            case PLOC:
+                inode = new FsInode_PLOC(_fs, ino);
+                break;
+
+            case PCRC:
+                inode = new FsInode_PCRC(_fs, ino);
+                break;
+
+            default:
+                throw new BadHandleException("Unsupported file handle type: " + inodeType);
+        }
+        return inode;
+    }
+
+    private String[] getArgs(byte[] bytes) {
+
+        StringTokenizer st = new StringTokenizer(new String(bytes), "[:]");
+        int argc = st.countTokens();
+        String[] args = new String[argc];
+        for (int i = 0; i < argc; i++) {
+            args[i] = st.nextToken();
+        }
+
+        return args;
+    }
+
+
 }

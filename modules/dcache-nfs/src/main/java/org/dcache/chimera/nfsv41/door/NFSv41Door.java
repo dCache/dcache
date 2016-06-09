@@ -198,6 +198,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     private boolean _enableRpcsecGss;
 
     private VfsCache _vfs;
+    private ChimeraVfs _chimeraVfs;
 
     private LoginBrokerPublisher _loginBrokerPublisher;
 
@@ -264,7 +265,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     public void init() throws Exception {
 
-        _vfs = new VfsCache(new ChimeraVfs(_fileFileSystemProvider, _idMapper), _vfsCacheConfig);
+        _chimeraVfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
+        _vfs = new VfsCache(_chimeraVfs, _vfsCacheConfig);
         MountServer ms = new MountServer(_exportFile, _vfs);
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
@@ -416,7 +418,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public Layout layoutGet(CompoundContext context, Inode nfsInode, int layoutType, int ioMode, stateid4 stateid)
             throws IOException {
 
-        FsInode inode = _fileFileSystemProvider.inodeFromBytes(nfsInode.getFileId());
+        FsInode inode = _chimeraVfs.inodeFromBytes(nfsInode.getFileId());
         PnfsId pnfsId = new PnfsId(inode.getId());
         Transfer.initSession(false, false);
         NDC.push(pnfsId.toString());

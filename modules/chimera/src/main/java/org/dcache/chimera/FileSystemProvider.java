@@ -322,22 +322,6 @@ public interface FileSystemProvider extends Closeable {
     void setACL(FsInode inode, List<ACE> acl) throws ChimeraFsException;
 
     /**
-     * Get a {code FsInode} corresponding to provided bytes.
-     * @param bytes
-     * @return
-     * @throws ChimeraFsException
-     */
-    FsInode inodeFromBytes(byte[] bytes) throws ChimeraFsException;
-
-    /**
-     * Get a bytes corresponding to provided {code FsInode} into.
-     * @param inode
-     * @return
-     * @throws ChimeraFsException
-     */
-    byte[] inodeToBytes(FsInode inode) throws ChimeraFsException;
-
-    /**
      * Query the PoolManager for live locality information.
      * @param node
      * @return

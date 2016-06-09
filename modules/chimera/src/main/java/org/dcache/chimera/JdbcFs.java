@@ -93,10 +93,6 @@ public class JdbcFs implements FileSystemProvider {
     private static final int LEVELS_NUMBER = 7;
 
     /**
-     * minimal binary handle size which can be processed.
-    */
-    private static final int MIN_HANDLE_LEN = 4;
-    /**
      * SQL query engine
      */
     private final FsSqlDriver _sqlDriver;
@@ -1362,102 +1358,6 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void close() throws IOException {
 	// enforced by the interface
-    }
-
-    @Override
-    public FsInode inodeFromBytes(byte[] handle) throws ChimeraFsException {
-        FsInode inode;
-
-        if (handle.length < MIN_HANDLE_LEN) {
-            throw new FileNotFoundHimeraFsException("File handle too short");
-        }
-
-        ByteBuffer b = ByteBuffer.wrap(handle);
-        int fsid = b.get();
-        int type = b.get();
-        int len = b.get(); // eat the file id size.
-        long ino = b.getLong();
-        int opaqueLen = b.get();
-        if (opaqueLen > b.remaining()) {
-            throw new FileNotFoundHimeraFsException("Bad Opaque len");
-        }
-
-        byte[] opaque = new byte[opaqueLen];
-        b.get(opaque);
-
-        FsInodeType inodeType = FsInodeType.valueOf(type);
-
-        switch (inodeType) {
-            case INODE:
-                int level = Integer.parseInt( new String(opaque));
-                inode = new FsInode(this, ino, level);
-                break;
-
-            case ID:
-                inode = new FsInode_ID(this, ino);
-                break;
-
-            case TAGS:
-                inode = new FsInode_TAGS(this, ino);
-                break;
-
-            case TAG:
-                String tag = new String(opaque);
-                inode = new FsInode_TAG(this, ino, tag);
-                break;
-
-            case NAMEOF:
-                inode = new FsInode_NAMEOF(this, ino);
-                break;
-            case PARENT:
-                inode = new FsInode_PARENT(this, ino);
-                break;
-
-            case PATHOF:
-                inode = new FsInode_PATHOF(this, ino);
-                break;
-
-            case CONST:
-                inode = new FsInode_CONST(this, ino);
-                break;
-
-            case PSET:
-                inode = new FsInode_PSET(this, ino, getArgs(opaque));
-                break;
-
-            case PCUR:
-                inode = new FsInode_PCUR(this, ino);
-                break;
-
-            case PLOC:
-                inode = new FsInode_PLOC(this, ino);
-                break;
-
-            case PCRC:
-                inode = new FsInode_PCRC(this, ino);
-                break;
-
-            default:
-                throw new FileNotFoundHimeraFsException("Unsupported file handle type: " + inodeType);
-        }
-        return inode;
-    }
-
-    private String[] getArgs(byte[] bytes) {
-
-        StringTokenizer st = new StringTokenizer(new String(bytes), "[:]");
-        int argc = st.countTokens();
-        String[] args = new String[argc];
-        for (int i = 0; i < argc; i++) {
-            args[i] = st.nextToken();
-        }
-
-        return args;
-    }
-
-    @Override
-    public byte[] inodeToBytes(FsInode inode) throws ChimeraFsException {
-        return inode.getIdentifier();
     }
 
     @Override
