@@ -356,9 +356,10 @@ class WriteHandleImpl implements ReplicaDescriptor
 
             registerFileAttributesInNameSpace();
 
-            _entry.setFileAttributes(_fileAttributes);
-            setToTargetState();
-
+            synchronized (_entry) {
+                _entry.setFileAttributes(_fileAttributes);
+                setToTargetState();
+            }
             setState(HandleState.COMMITTED);
         } catch (CacheException e) {
             /* If any of the PNFS operations return FILE_NOT_FOUND,
