@@ -6,6 +6,7 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
+import com.sleepycat.je.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -337,5 +338,10 @@ public class BerkeleyDBMetaDataRepository
     public File getPath()
     {
         return _dir;
+    }
+
+    public Transaction beginTransaction()
+    {
+        return _database.getEnvironment().beginTransaction(null, null);
     }
 }

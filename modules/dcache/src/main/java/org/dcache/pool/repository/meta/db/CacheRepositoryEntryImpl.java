@@ -1,9 +1,11 @@
 package org.dcache.pool.repository.meta.db;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
+import com.sleepycat.je.Transaction;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.function.Predicate;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -24,12 +28,13 @@ import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Iterables.elementsEqual;
+import static com.google.common.collect.Iterables.filter;
 
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.
  */
-public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.UpdatableRecord
+public class CacheRepositoryEntryImpl implements MetaDataRecord
 {
     private static final Logger _log =
         LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
@@ -187,8 +192,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
         }
     }
 
-    @Override
-    public Void setFileAttributes(FileAttributes attributes) throws CacheException
+    private Void setFileAttributes(FileAttributes attributes) throws CacheException
     {
         try {
             String id = _pnfsId.toString();
@@ -221,16 +225,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     }
 
     @Override
-    public Void setState(EntryState state) throws CacheException
-    {
-        if (_state != state) {
-            _state = state;
-            storeState();
-        }
-        return null;
-    }
-
-    @Override
     public synchronized boolean isSticky()
     {
         return !_sticky.isEmpty();
@@ -243,35 +237,18 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     }
 
     @Override
-    public synchronized Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
+    public Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
     {
-        long now = System.currentTimeMillis();
-        List<StickyRecord> removed = Lists.newArrayList(filter(_sticky, r -> !r.isValidAt(now)));
-        if (!removed.isEmpty()) {
-            setStickyRecords(ImmutableList.copyOf(filter(_sticky, r -> r.isValidAt(now))));
-            storeState();
-        }
-        return removed;
+        return update(r -> {
+            long now = System.currentTimeMillis();
+            List<StickyRecord> removed = Lists.newArrayList(filter(_sticky, s -> !s.isValidAt(now)));
+            if (!removed.isEmpty()) {
+                setStickyRecords(ImmutableList.copyOf(filter(_sticky, s -> s.isValidAt(now))));
+            }
+            return removed;
+        });
     }
 
-    @Override
-    public boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
-    {
-        if (_state == EntryState.REMOVED) {
-            throw new CacheException("Entry in removed state");
-        }
-        if (any(_sticky, r -> r.owner().equals(owner) && (r.expire() == expire || !overwrite && r.isValidAt(expire)))) {
-            return false;
-        }
-        ImmutableList.Builder<StickyRecord> builder = ImmutableList.builder();
-        builder.addAll(filter(_sticky, r -> !r.owner().equals(owner)));
-        builder.add(new StickyRecord(owner, expire));
-        setStickyRecords(builder.build());
-        storeState();
-        return true;
-    }
-
-    @Override
     public synchronized Collection<StickyRecord> stickyRecords()
     {
         return _sticky;
@@ -280,7 +257,38 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     @Override
     public synchronized <T> T update(Update<T> update) throws CacheException
     {
-        return update.apply(this);
+        T result;
+        EntryState state = _state;
+        ImmutableList<StickyRecord> sticky = _sticky;
+        Transaction transaction = _repository.beginTransaction();
+        try {
+            UpdatableRecordImpl record = new UpdatableRecordImpl();
+            result = update.apply(record);
+            record.save();
+            transaction.commit();
+        } catch (Throwable t) {
+            _state = state;
+            _sticky = sticky;
+            try {
+                if (transaction.getState() != Transaction.State.COMMITTED &&
+                    transaction.getState() != Transaction.State.POSSIBLY_COMMITTED) {
+                    transaction.abort();
+                }
+            } catch (Throwable e) {
+                t.addSuppressed(e);
+            }
+            if (t instanceof EnvironmentFailureException && !_repository.isValid()) {
+                throw new DiskErrorCacheException(
+                        "Meta data update failed and a pool restart is required: " + t.getMessage(), t);
+            }
+            if (transaction.getState() == Transaction.State.POSSIBLY_COMMITTED) {
+                throw new DiskErrorCacheException(
+                        "Meta data commit and a pool restart is required: " + t.getMessage(), t);
+            }
+            Throwables.propagateIfPossible(t, CacheException.class);
+            throw new CacheException("Meta data update failed: " + t.getMessage(), t);
+        }
+        return result;
     }
 
     private synchronized void storeState() throws CacheException
@@ -320,5 +328,70 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
         }
 
         return new CacheRepositoryEntryImpl(repository, pnfsId);
+    }
+
+    private class UpdatableRecordImpl implements UpdatableRecord
+    {
+        private boolean _stateModified;
+
+        @Override
+        public boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
+        {
+            if (_state == EntryState.REMOVED) {
+                throw new CacheException("Entry in removed state");
+            }
+            Predicate<StickyRecord> subsumes =
+                    r -> r.owner().equals(owner) && (r.expire() == expire || !overwrite && r.isValidAt(expire));
+            if (_sticky.stream().anyMatch(subsumes)) {
+                return false;
+            }
+            ImmutableList.Builder<StickyRecord> builder = ImmutableList.builder();
+            _sticky.stream().filter(r -> !r.owner().equals(owner)).forEach(builder::add);
+            builder.add(new StickyRecord(owner, expire));
+            setStickyRecords(builder.build());
+            _stateModified = true;
+            return true;
+        }
+
+        @Override
+        public Void setState(EntryState state) throws CacheException
+        {
+            if (_state != state) {
+                _state = state;
+                _stateModified = true;
+            }
+            return null;
+        }
+
+        @Override
+        public Void setFileAttributes(FileAttributes attributes) throws CacheException
+        {
+            return CacheRepositoryEntryImpl.this.setFileAttributes(attributes);
+        }
+
+        @Override
+        public FileAttributes getFileAttributes() throws CacheException
+        {
+            return CacheRepositoryEntryImpl.this.getFileAttributes();
+        }
+
+        @Override
+        public EntryState getState()
+        {
+            return CacheRepositoryEntryImpl.this.getState();
+        }
+
+        @Override
+        public int getLinkCount()
+        {
+            return CacheRepositoryEntryImpl.this.getLinkCount();
+        }
+
+        public void save() throws CacheException
+        {
+            if (_stateModified) {
+                storeState();
+            }
+        }
     }
 }
