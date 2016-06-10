@@ -138,23 +138,6 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public MetaDataRecord copy(MetaDataRecord entry)
-        throws CacheException
-    {
-        PnfsId id = entry.getPnfsId();
-        try {
-            File controlFile = new File(_metadir, id.toString());
-            File siFile = new File(_metadir, "SI-" + id.toString());
-            File dataFile = _fileStore.get(id);
-
-            return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile, entry);
-        } catch (IOException e) {
-            throw new RepositoryException(
-                    "Failed to create new entry " + id + ": " + e.getMessage(), e);
-        }
-    }
-
-    @Override
     public MetaDataRecord get(PnfsId id)
         throws CacheException
     {

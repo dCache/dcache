@@ -56,29 +56,6 @@ public interface MetaDataStore extends Closeable
         throws DuplicateEntryException, CacheException;
 
     /**
-     * Copies the state from an entry belonging to a different store to this store.
-     * The new entry will have the same PNFS ID and the same field values as the
-     * existing entry.
-     *
-     * Existing meta data for this PNFS ID will be overwritten.
-     *
-     * Limitations:
-     * <ul>
-     * <li> Due to limitations in the CacheRepositoryEntry interface, the
-     * locking status is currently not copied to the new entry.
-     * <li> The storage info in both entries will refer to the same
-     * storage info object.
-     * <li> The sending to client flag is not preserved.
-     * </ul>
-     *
-     * @param entry Cache entry from which to create the new entry
-     * @return The new entry
-     * @throws CacheException if reading from <i>entry</i> fails
-     */
-    MetaDataRecord copy(MetaDataRecord entry)
-        throws DuplicateEntryException, CacheException;
-
-    /**
      * Removes a meta data entry. If the entry does not exist, nothing
      * happens.
      *

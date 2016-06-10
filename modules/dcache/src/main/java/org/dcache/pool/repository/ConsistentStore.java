@@ -341,16 +341,6 @@ public class ConsistentStore
      * Calls through to the wrapped meta data store.
      */
     @Override
-    public MetaDataRecord copy(MetaDataRecord entry)
-        throws DuplicateEntryException, CacheException
-    {
-        return _metaDataStore.copy(entry);
-    }
-
-    /**
-     * Calls through to the wrapped meta data store.
-     */
-    @Override
     public void remove(PnfsId id) throws CacheException
     {
         _metaDataStore.remove(id);

@@ -38,7 +38,7 @@ public class MetaDataStoreYamlTool
         }
 
         File poolDir = new File(args[0]);
-        FileStore fileStore = new DummyFileStore();
+        FileStore fileStore = new DummyFileStore(DummyFileStore.Mode.ALL_EXIST);
         try (MetaDataStore metaStore =
                      createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir)) {
             metaStore.init();

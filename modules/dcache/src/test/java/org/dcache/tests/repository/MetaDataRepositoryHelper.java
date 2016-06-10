@@ -223,14 +223,6 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
     @Override
-    public MetaDataRecord copy(MetaDataRecord entry) throws DuplicateEntryException, CacheException {
-
-        _entryList.put(entry.getPnfsId(), entry);
-
-        return entry;
-    }
-
-    @Override
     public MetaDataRecord get(PnfsId id) {
         if (!_repository.get(id).exists()) {
             return null;

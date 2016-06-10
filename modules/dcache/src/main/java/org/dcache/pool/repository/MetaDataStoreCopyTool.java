@@ -37,11 +37,12 @@ public class MetaDataStoreCopyTool
         }
 
         File poolDir = new File(args[0]);
-        FileStore fileStore = new DummyFileStore();
+        FileStore fromFileStore = new DummyFileStore(DummyFileStore.Mode.ALL_EXIST);
+        FileStore toFileStore = new DummyFileStore(DummyFileStore.Mode.NONE_EXIST);
         try (MetaDataStore fromStore =
-                     createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir, true);
+                     createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fromFileStore, poolDir, true);
              MetaDataStore toStore =
-                     createStore(Class.forName(args[2]).asSubclass(MetaDataStore.class), fileStore, poolDir, false)) {
+                     createStore(Class.forName(args[2]).asSubclass(MetaDataStore.class), toFileStore, poolDir, false)) {
             fromStore.init();
             toStore.init();
 
@@ -60,7 +61,18 @@ public class MetaDataStoreCopyTool
                     System.err.println("Failed to load " + id);
                     System.exit(1);
                 }
-                toStore.copy(entry);
+                toStore.create(id).update(r -> {
+                    /* NOTE: We do not copy the last access time, as this is currently stored
+                     * as the last modification time on the data file. If we at some point move
+                     * the last access time into the meta data, this has to be updated here.
+                     */
+                    r.setState(entry.getState());
+                    for (StickyRecord s : entry.stickyRecords()) {
+                        r.setSticky(s.owner(), s.expire(), true);
+                    }
+                    r.setFileAttributes(entry.getFileAttributes());
+                    return null;
+                });
                 count++;
             }
         }

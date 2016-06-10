@@ -71,25 +71,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
         }
     }
 
-    public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
-                                    MetaDataRecord entry) throws CacheException
-    {
-        _repository   = repository;
-        _pnfsId       = entry.getPnfsId();
-        _lastAccess   = entry.getLastAccessTime();
-        _linkCount    = entry.getLinkCount();
-        _creationTime = entry.getCreationTime();
-        _size         = entry.getSize();
-        _state        = entry.getState();
-        setStickyRecords(entry.stickyRecords());
-
-        storeState();
-        setFileAttributes(entry.getFileAttributes());
-        if (_lastAccess == 0) {
-            _lastAccess = _creationTime;
-        }
-    }
-
     private CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
                                      PnfsId pnfsId,
                                      CacheRepositoryEntryState state)

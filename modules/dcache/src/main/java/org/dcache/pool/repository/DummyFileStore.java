@@ -27,16 +27,21 @@ import diskCacheV111.util.PnfsId;
 
 /**
  * File store to be used with meta data utilities. Returns the same temporary file for
- * all PNFS IDs.
+ * all PNFS IDs. Depending on constructor arguments, the file may or may not exist.
  */
 class DummyFileStore implements FileStore
 {
     public final File file;
 
-    DummyFileStore() throws IOException
+    public enum Mode { ALL_EXIST, NONE_EXIST }
+
+    DummyFileStore(Mode mode) throws IOException
     {
         file = File.createTempFile("dcache-yaml-tool", null);
         file.deleteOnExit();
+        if (mode == Mode.NONE_EXIST) {
+            file.delete();
+        }
     }
 
     @Override

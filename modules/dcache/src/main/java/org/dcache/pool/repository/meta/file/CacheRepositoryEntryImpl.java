@@ -3,8 +3,6 @@ package org.dcache.pool.repository.meta.file;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.concurrent.GuardedBy;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +25,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
 import org.dcache.vehicles.FileAttributes;
 
@@ -84,26 +81,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
         if (_lastAccess == 0) {
             _lastAccess = _creationTime;
         }
-    }
-
-    /**
-     * Copy from existing MetaDataRecord.
-     */
-    public CacheRepositoryEntryImpl(PnfsId pnfsId, File controlFile,
-                                    File dataFile,  File siFile,
-                                    MetaDataRecord entry)
-        throws IOException, RepositoryException, CacheException
-    {
-        _pnfsId = pnfsId;
-        _controlFile = controlFile;
-        _siFile = siFile;
-        _dataFile = dataFile;
-        _lastAccess   = entry.getLastAccessTime();
-        _linkCount    = entry.getLinkCount();
-        _creationTime = entry.getCreationTime();
-        _size         = entry.getSize();
-        _state        = new CacheRepositoryEntryState(_controlFile, entry);
-        setFileAttributes(entry.getFileAttributes());
     }
 
     @Override

@@ -212,13 +212,6 @@ public class BerkeleyDBMetaDataRepository
     }
 
     @Override
-    public MetaDataRecord copy(MetaDataRecord entry)
-        throws CacheException
-    {
-        return new CacheRepositoryEntryImpl(this, entry);
-    }
-
-    @Override
     public void remove(PnfsId id) throws CacheException
     {
         File f = _fileStore.get(id);

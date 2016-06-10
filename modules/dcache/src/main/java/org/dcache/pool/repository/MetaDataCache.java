@@ -139,25 +139,6 @@ public class MetaDataCache
             return this;
         }
 
-        private synchronized MetaDataRecord create(MetaDataRecord entry)
-                throws CacheException
-        {
-            if (_entries.get(_id) != this || _record != null) {
-                throw new DuplicateEntryException(_id);
-            }
-            assert _entries.get(_id) == this;
-            try {
-                checkState(!_isClosed);
-                _record = _inner.copy(entry);
-            } catch (DuplicateEntryException e) {
-                throw e;
-            } catch (RuntimeException | CacheException e) {
-                _entries.remove(_id);
-                throw e;
-            }
-            return this;
-        }
-
         @GuardedBy("this")
         private void destroy()
         {
@@ -454,19 +435,6 @@ public class MetaDataCache
     {
         try {
             return _entries.computeIfAbsent(id, Monitor::new).create();
-        } catch (RuntimeException | DiskErrorCacheException e) {
-            _faultListener.faultOccurred(
-                    new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
-            throw e;
-        }
-    }
-
-    @Override
-    public MetaDataRecord copy(MetaDataRecord entry)
-            throws CacheException
-    {
-        try {
-            return _entries.computeIfAbsent(entry.getPnfsId(), Monitor::new).create(entry);
         } catch (RuntimeException | DiskErrorCacheException e) {
             _faultListener.faultOccurred(
                     new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
