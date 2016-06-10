@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -157,7 +156,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     }
 
     @Override
-    public void setLastAccessTime(long time) throws CacheException
+    public synchronized void setLastAccessTime(long time) throws CacheException
     {
         File file = getDataFile();
         if (!file.setLastModified(time)) {
@@ -289,21 +288,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
         setStickyRecords(builder.build());
         storeState();
         return true;
-    }
-
-    @Override
-    public synchronized void touch() throws CacheException
-    {
-        File file = getDataFile();
-        try {
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-        } catch (IOException e) {
-            throw new DiskErrorCacheException("IO error creating: " + file);
-        }
-
-        setLastAccessTime(System.currentTimeMillis());
     }
 
     @Override

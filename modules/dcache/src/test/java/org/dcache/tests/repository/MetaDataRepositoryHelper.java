@@ -1,7 +1,6 @@
 package org.dcache.tests.repository;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -92,7 +91,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public void setLastAccessTime(long time)
+        public synchronized void setLastAccessTime(long time)
         {
             _lastAccess = time;
         }
@@ -162,24 +161,6 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
                                     Stream.of(new StickyRecord(owner, expire)))
                     .collect(toList());
             return true;
-        }
-
-        @Override
-        public synchronized void touch() throws CacheException
-        {
-            File file = getDataFile();
-
-            try {
-                if (!file.exists()) {
-                    file.createNewFile();
-                }
-            } catch(IOException e) {
-                throw new CacheException("IO error creating: " + file);
-            }
-
-            long now = System.currentTimeMillis();
-            file.setLastModified(now);
-            setLastAccess(now);
         }
 
         @Override

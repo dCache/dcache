@@ -54,8 +54,6 @@ public interface MetaDataRecord
 
     void setLastAccessTime(long time) throws CacheException;
 
-    void touch() throws CacheException;
-
     int decrementLinkCount();
 
     int incrementLinkCount();

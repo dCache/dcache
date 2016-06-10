@@ -290,21 +290,6 @@ public class MetaDataCache
         }
 
         @Override
-        public synchronized void touch() throws CacheException
-        {
-            try {
-                CacheEntry oldEntry = new CacheEntryImpl(_record);
-                _record.touch();
-                CacheEntryImpl newEntry = new CacheEntryImpl(_record);
-                _stateChangeListener.accessTimeChanged(new EntryChangeEvent(oldEntry, newEntry));
-            } catch (RuntimeException | DiskErrorCacheException e) {
-                _faultListener.faultOccurred(
-                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
-                throw e;
-            }
-        }
-
-        @Override
         public synchronized int decrementLinkCount()
         {
             int cnt = _record.decrementLinkCount();

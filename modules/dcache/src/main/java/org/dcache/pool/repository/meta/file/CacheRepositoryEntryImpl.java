@@ -146,13 +146,12 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     }
 
     @Override
-    public void setLastAccessTime(long time) throws CacheException
+    public synchronized void setLastAccessTime(long time) throws CacheException
     {
         if (!_dataFile.setLastModified(time)) {
             throw new DiskErrorCacheException("Failed to set modification time: " + _dataFile);
         }
         _lastAccess = System.currentTimeMillis();
-
     }
 
     @Override
@@ -242,19 +241,6 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
             throw new DiskErrorCacheException(_pnfsId + " " + e.getMessage(), e);
         }
         return null;
-    }
-
-    @Override
-    public synchronized void touch() throws CacheException {
-
-        try{
-            if( ! _dataFile.exists() ) {
-                _dataFile.createNewFile();
-            }
-        }catch(IOException ee){
-            throw new DiskErrorCacheException("Io Error creating : "+_dataFile ,ee);
-        }
-        setLastAccessTime(System.currentTimeMillis());
     }
 
     private synchronized StorageInfo getStorageInfo()

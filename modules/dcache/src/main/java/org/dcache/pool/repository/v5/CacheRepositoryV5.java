@@ -633,7 +633,7 @@ public class CacheRepositoryV5
                 }
                 fileAttributes = entry.getFileAttributes();
                 if (!flags.contains(OpenFlags.NOATIME)) {
-                    entry.touch();
+                    entry.setLastAccessTime(System.currentTimeMillis());
                 }
                 entry.incrementLinkCount();
             }

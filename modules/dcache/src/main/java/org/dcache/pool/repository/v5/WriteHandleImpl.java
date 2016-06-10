@@ -322,11 +322,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         }
 
         try {
-            if (_atime == null) {
-                _entry.touch();
-            } else {
-                _entry.setLastAccessTime(_atime);
-            }
+            _entry.setLastAccessTime((_atime == null) ? System.currentTimeMillis() : _atime);
 
             long length = getFile().length();
             adjustReservation(length);
