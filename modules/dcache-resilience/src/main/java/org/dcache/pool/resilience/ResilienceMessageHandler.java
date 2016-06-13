@@ -59,33 +59,27 @@ documents or software obtained from this server.
  */
 package org.dcache.pool.resilience;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.ExecutorService;
 
 import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.Reply;
+import org.dcache.cells.MessageReply;
+import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
-import org.dcache.pool.resilience.tasks.RemoveReplica;
-import org.dcache.pool.resilience.tasks.SetSystemSticky;
+import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 
 /**
- * <p>Uses the ListenableFuture pattern to add and remove sticky records, and
- *      to remove entries from the repository. Launches tasks specific to the
- *      resilience system using a dedidcated thread pool.</p>
+ * <p>Serves requests from resilience to add sticky records and remove entries
+ *      from the repository.</p>
  */
-public final class ResilienceMessageHandler implements CellMessageReceiver,
-                CellMessageSender {
-    private static final Logger LOGGER
-                    = LoggerFactory.getLogger(ResilienceMessageHandler.class);
+public final class ResilienceMessageHandler implements CellMessageReceiver {
+    private static final String SYSTEM_OWNER = "system";
 
-    private CellEndpoint endpoint;
     private Repository   repository;
     private String       pool;
     private BrokenFileListener brokenFileListener;
@@ -93,42 +87,45 @@ public final class ResilienceMessageHandler implements CellMessageReceiver,
     private ExecutorService executor;
 
     public void initialize() {
-    	repository.addListener(brokenFileListener);
+	repository.addListener(brokenFileListener);
     }
 
-    public void messageArrived(CellMessage message, RemoveReplicaMessage info)
-                    throws CacheException, InterruptedException {
-        try {
-            new RemoveReplica(repository, pool, executor, info)
-                            .getCommand()
-                            .call()
-                            .deliver(endpoint, message);
-        } catch (RuntimeException t) {
-            LOGGER.error("Unexpected error during processing of {}.", info, t);
-        } catch (Exception e) {
-            LOGGER.error("Error during processing of {}: {}.", info,
-                         e.getMessage());
-        }
+    /**
+     * <p>Attempts to set the cache entry to REMOVED for the pnfsid.</p>
+     */
+    public Reply messageArrived(RemoveReplicaMessage message) {
+        MessageReply<Message> reply = new MessageReply<>();
+        executor.execute(() -> {
+            try {
+                repository.setState(message.getPnfsId(), EntryState.REMOVED);
+                reply.reply(message);
+            } catch (Exception e) {
+                reply.fail(message, e);
+            }
+        });
+        return reply;
     }
 
-    public void messageArrived(CellMessage message,
-                               ForceSystemStickyBitMessage info)
-                    throws CacheException, InterruptedException {
-        try {
-            new SetSystemSticky(repository, pool, executor, info)
-                            .getCommand()
-                            .call()
-                            .deliver(endpoint, message);
-        } catch (RuntimeException t) {
-            LOGGER.error("Unexpected error during processing of {}.", info, t);
-        } catch (Exception e) {
-            LOGGER.error("Error during processing of {}: {}.", info,
-                         e.getMessage());
-        }
-    }
-
-    public void setCellEndpoint(CellEndpoint endpoint) {
-        this.endpoint = endpoint;
+    /**
+     * <p>Sets a system sticky record of indefinite lifetime for the pnfsid.</p>
+     */
+    public Reply messageArrived(ForceSystemStickyBitMessage info) {
+        MessageReply<Message> reply = new MessageReply<>();
+        executor.execute(() -> {
+            try {
+                PnfsId pnfsId = info.getPnfsId();
+                if (pnfsId != null) {
+                    repository.setSticky(pnfsId,
+                                    SYSTEM_OWNER,
+                                    StickyRecord.NON_EXPIRING,
+                                    true);
+                }
+                reply.reply(info);
+            } catch (Exception e) {
+                reply.fail(info, e);
+            }
+        });
+        return reply;
     }
 
     public void setExecutionService(ExecutorService executor) {
