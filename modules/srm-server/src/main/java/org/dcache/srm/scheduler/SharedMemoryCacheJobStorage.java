@@ -4,16 +4,10 @@ import org.springframework.dao.DataAccessException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.dcache.srm.request.Job;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Canonicalizing and caching job storage decorator suitable for Terracotta.
@@ -36,10 +30,8 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     private static final SharedMemoryCache sharedMemoryCache =
             new SharedMemoryCache();
 
-    private static final Timer timer = new Timer("Job expiration", true);
     private final JobStorage<J> storage;
     private final Class<J> type;
-    private final Set<J> jobsToExpire = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public SharedMemoryCacheJobStorage(JobStorage<J> storage, Class<J> type)
     {
@@ -52,20 +44,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
         if (job == null) {
             return null;
         }
-        J canonicalJob = sharedMemoryCache.canonicalize(job);
-        if (job == canonicalJob) {
-            updateExpirationSet(job);
-        }
-        return canonicalJob;
-    }
-
-    private void updateExpirationSet(J job)
-    {
-        if (job.getState().isFinal()) {
-            jobsToExpire.remove(job);
-        } else {
-            jobsToExpire.add(job);
-        }
+        return sharedMemoryCache.canonicalize(job);
     }
 
     @Override
@@ -73,7 +52,6 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     {
         storage.init();
         storage.getActiveJobs().forEach(this::canonicalize);
-        timer.schedule(new ExpirationTask(), SECONDS.toMillis(10), SECONDS.toMillis(60));
     }
 
     @Override
@@ -119,7 +97,6 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     {
         storage.saveJob(job, force);
         sharedMemoryCache.update(job);
-        updateExpirationSet(job);
     }
 
     @Override
@@ -150,21 +127,5 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     public Set<J> getActiveJobs()
     {
         return sharedMemoryCache.getJobs(type);
-    }
-
-    private class ExpirationTask extends TimerTask
-    {
-        @Override
-        public void run()
-        {
-            for (J job : jobsToExpire) {
-                try {
-                    job.checkExpiration();
-                } catch (RuntimeException e) {
-                    Thread thread = Thread.currentThread();
-                    thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
-                }
-            }
-        }
     }
 }
