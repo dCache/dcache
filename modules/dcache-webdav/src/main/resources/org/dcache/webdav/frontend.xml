@@ -102,83 +102,88 @@
       <property name="prefix" value="frontend.custom-response-header"/>
   </bean>
 
-    <bean id="handlers" class="org.dcache.webdav.AuthenticationHandler">
+    <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
         <description>List of handlers for HTTP requests</description>
-        <property name="handler">
-            <bean class="org.eclipse.jetty.server.handler.HandlerList">
-                <description>List of handlers for HTTP requests</description>
-                <property name="handlers">
-                    <list>
-                        <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
-                            <property name="directoriesListed" value="true"/>
-                            <property name="resourceBase" value="${frontend.dcache-view.dir}"/>
+        <property name="handlers">
+            <list>
+                <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                    <property name="directoriesListed" value="true"/>
+                    <property name="resourceBase" value="${frontend.dcache-view.dir}"/>
+                </bean>
+                <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                    <property name="contextPath" value="/scripts/config.js"/>
+                    <property name="allowNullPathInfo" value="true"/>
+                    <property name="handler">
+                        <bean class="org.dcache.services.httpd.handlers.ContextHandler">
+                            <constructor-arg value="config-${frontend.cell.name}.js"/>
                         </bean>
-                        <bean class="org.eclipse.jetty.server.handler.ContextHandler">
-                            <property name="contextPath" value="/scripts/config.js"/>
-                            <property name="allowNullPathInfo" value="true"/>
-                            <property name="handler">
-                                <bean class="org.dcache.services.httpd.handlers.ContextHandler">
-                                    <constructor-arg value="config-${frontend.cell.name}.js"/>
-                                </bean>
-                            </property>
-                        </bean>
-                        <bean class="org.eclipse.jetty.servlet.ServletContextHandler">
-                            <property name="contextPath" value="/api"/>
-                            <property name="servletHandler">
-                                <bean class="org.eclipse.jetty.servlet.ServletHandler">
-                                    <property name="servlets">
-                                        <list>
-                                            <bean class="org.eclipse.jetty.servlet.ServletHolder">
-                                                <constructor-arg name="name" value="rest"/>
-                                                <constructor-arg name="servlet">
-                                                    <bean class="org.glassfish.jersey.servlet.ServletContainer">
-                                                        <constructor-arg name="resourceConfig">
-                                                            <bean class="org.dcache.restful.DcacheRestApplication"/>
-                                                        </constructor-arg>
-                                                    </bean>
-                                                </constructor-arg>
-                                            </bean>
-                                        </list>
-                                    </property>
-                                    <property name="servletMappings">
-                                        <list>
-                                            <bean class="org.eclipse.jetty.servlet.ServletMapping">
-                                                <property name="servletName" value="rest"/>
-                                                <property name="pathSpecs">
+                    </property>
+                </bean>
+                <bean class="org.dcache.webdav.AuthenticationHandler">
+                    <property name="handler">
+                        <bean class="org.eclipse.jetty.server.handler.HandlerList">
+                            <property name="handlers">
+                                <list>
+                                    <bean class="org.eclipse.jetty.servlet.ServletContextHandler">
+                                        <property name="contextPath" value="/api"/>
+                                        <property name="servletHandler">
+                                            <bean class="org.eclipse.jetty.servlet.ServletHandler">
+                                                <property name="servlets">
                                                     <list>
-                                                        <value>/v1/*</value>
+                                                        <bean class="org.eclipse.jetty.servlet.ServletHolder">
+                                                            <constructor-arg name="name" value="rest"/>
+                                                            <constructor-arg name="servlet">
+                                                                <bean class="org.glassfish.jersey.servlet.ServletContainer">
+                                                                    <constructor-arg name="resourceConfig">
+                                                                        <bean class="org.dcache.restful.DcacheRestApplication"/>
+                                                                    </constructor-arg>
+                                                                </bean>
+                                                            </constructor-arg>
+                                                        </bean>
+                                                    </list>
+                                                </property>
+                                                <property name="servletMappings">
+                                                    <list>
+                                                        <bean class="org.eclipse.jetty.servlet.ServletMapping">
+                                                            <property name="servletName" value="rest"/>
+                                                            <property name="pathSpecs">
+                                                                <list>
+                                                                    <value>/v1/*</value>
+                                                                </list>
+                                                            </property>
+                                                        </bean>
                                                     </list>
                                                 </property>
                                             </bean>
-                                        </list>
-                                    </property>
-                                </bean>
-                            </property>
-                            <property name="attributes">
-                                <bean class="org.dcache.util.jetty.ImmutableAttributesMap">
-                                    <constructor-arg>
-                                        <map>
-                                            <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).DL}"
-                                                   value-ref="list-handler"/>
-                                            <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).CS}"
-                                                   value-ref="pnfs-stub"/>
-                                            <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PM}"
-                                                   value-ref="pool-monitor"/>
+                                        </property>
+                                        <property name="attributes">
+                                            <bean class="org.dcache.util.jetty.ImmutableAttributesMap">
+                                                <constructor-arg>
+                                                    <map>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).DL}"
+                                                               value-ref="list-handler"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).CS}"
+                                                               value-ref="pnfs-stub"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PM}"
+                                                               value-ref="pool-monitor"/>
 
-                                        </map>
-                                    </constructor-arg>
-                                </bean>
+                                                    </map>
+                                                </constructor-arg>
+                                            </bean>
+                                        </property>
+                                    </bean>
+                                    <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+                                </list>
                             </property>
                         </bean>
-                        <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
-                    </list>
-                </property>
-            </bean>
+                    </property>
+                    <property name="loginStrategy" ref="cache-login-strategy"/>
+                    <property name="readOnly" value="${frontend.authz.readonly}"/>
+                    <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
+                    <property name="realm" value="${frontend.authn.realm}"/>
+                </bean>
+            </list>
         </property>
-        <property name="loginStrategy" ref="cache-login-strategy"/>
-        <property name="readOnly" value="${frontend.authz.readonly}"/>
-        <property name="enableBasicAuthentication" value="${frontend.authn.basic}"/>
-        <property name="realm" value="${frontend.authn.realm}"/>
     </bean>
 
     <bean id="banned-ciphers" class="org.dcache.util.Crypto"
