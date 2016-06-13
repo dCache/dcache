@@ -4,7 +4,6 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +43,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
@@ -70,6 +70,7 @@ import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
+
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
@@ -87,7 +88,6 @@ import dmg.util.command.Option;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
@@ -113,9 +113,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.namespace.FileAttribute.*;
-import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
-import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
+import static org.dcache.namespace.FileAttribute.CHECKSUM;
 
 public class PoolV4
     extends AbstractCellComponent
@@ -783,6 +781,12 @@ public class PoolV4
         try {
             message.setMoverId(queueIoRequest(envelope, message));
             message.setSucceeded();
+        } catch (FileNotInCacheException | FileInCacheException e) {
+            _log.warn(e.getMessage());
+            message.setFailed(e.getRc(), e.getMessage());
+        } catch (LockedCacheException e) {
+            _log.info(e.getMessage());
+            message.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {
             _log.error(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
