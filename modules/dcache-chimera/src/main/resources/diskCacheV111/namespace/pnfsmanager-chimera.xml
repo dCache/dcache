@@ -62,13 +62,7 @@
 
   <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
       <description>Database schema manager</description>
-      <property name="dataSource">
-          <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-              <property name="url" value="${pnfsmanager.db.url}"/>
-              <property name="username" value="${pnfsmanager.db.user}"/>
-              <property name="password" value="${pnfsmanager.db.password}"/>
-          </bean>
-      </property>
+      <property name="dataSource" ref="chimera-data-source"/>
       <property name="changeLog" value="classpath:${pnfsmanager.db.schema.changelog}"/>
       <property name="shouldUpdate" value="${pnfsmanager.db.schema.auto}"/>
   </bean>
