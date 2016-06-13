@@ -38,7 +38,7 @@ public class CopyNearlineStorage extends FileSystemNearlineStorage
     @Override
     protected void stage(Path externalPath, Path path) throws IOException
     {
-        Files.copy(path, externalPath);
+        Files.copy(externalPath, path);
     }
 
     @Override
