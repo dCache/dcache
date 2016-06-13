@@ -95,6 +95,7 @@ import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.DegenerateSelectionStrategy;
 import org.dcache.resilience.util.ExceptionMessage;
+import org.dcache.resilience.util.LocationSelectionException;
 import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.RemoveLocationExtractor;
@@ -595,7 +596,7 @@ public class FileOperationHandler {
                 fileOpMap.voidOperation(pnfsId);
                 return Type.VOID;
             }
-        } catch (Exception e) {
+        } catch (LocationSelectionException e) {
             CacheException exception = CacheExceptionUtils.getCacheException(
                             CacheException.DEFAULT_ERROR_CODE,
                             FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
