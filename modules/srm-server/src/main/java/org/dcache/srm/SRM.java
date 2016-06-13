@@ -79,10 +79,15 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -144,6 +149,8 @@ public class SRM implements CellLifeCycleAware
     private SchedulerContainer schedulers;
     private DatabaseJobStorageFactory databaseFactory;
     private SRMUserPersistenceManager manager;
+    private ScheduledExecutorService executor;
+    private final List<Future<?>> tasks = new ArrayList<>();
 
     private static SRM srm;
 
@@ -235,6 +242,11 @@ public class SRM implements CellLifeCycleAware
         this.manager = checkNotNull(manager);
     }
 
+    public void setExecutor(java.util.concurrent.ScheduledExecutorService executor)
+    {
+        this.executor = checkNotNull(executor);
+    }
+
     public static final synchronized void setSRM(SRM srm)
     {
         SRM.srm = srm;
@@ -275,11 +287,23 @@ public class SRM implements CellLifeCycleAware
     public void afterStart()
     {
         databaseFactory.restoreJobsOnSrmStart(schedulers);
+
+        /* Schedule expiration of active jobs individually for each job storage to
+         * break expiration into smaller tasks.
+         */
+        for (JobStorage<?> jobStorage : databaseFactory.getJobStorages().values()) {
+            tasks.add(executor.scheduleWithFixedDelay(() -> {
+                for (Job job : jobStorage.getActiveJobs()) {
+                    job.checkExpiration();
+                }
+            }, 509, 509, TimeUnit.SECONDS));
+        }
     }
 
     @Override
     public void beforeStop()
     {
+        tasks.forEach(f -> f.cancel(false));
     }
 
     public void stop() throws InterruptedException
@@ -625,4 +649,5 @@ public class SRM implements CellLifeCycleAware
     {
         return Iterables.filter(getActiveJobs(type), request -> request.isTouchingSurl(surl));
     }
+
 }
