@@ -81,6 +81,7 @@
           </bean>
 	  </list>
       </property>
+      <property name="fallbackToAnonymous" value="false"/>
       <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
   </bean>
 
