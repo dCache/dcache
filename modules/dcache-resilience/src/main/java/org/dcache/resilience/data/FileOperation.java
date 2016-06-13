@@ -64,10 +64,10 @@ import com.google.common.collect.ImmutableSet;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -179,7 +179,6 @@ public final class FileOperation {
     private int               state;
     private int               opCount;
     private int               retried;
-    private int               locations;
     private boolean           checkSticky;
 
     private Collection<Integer> tried;
@@ -223,7 +222,6 @@ public final class FileOperation {
         state = operation.state;
         target = operation.target;
         task = operation.task;
-        locations = operation.locations;
         if (operation.tried != null) {
             tried.addAll(operation.tried);
         }
@@ -265,10 +263,6 @@ public final class FileOperation {
 
     public long getLastUpdate() {
         return lastUpdate;
-    }
-
-    public int getLocations() {
-        return locations;
     }
 
     public synchronized int getOpCount() {
@@ -383,10 +377,6 @@ public final class FileOperation {
         this.lastUpdate = lastUpdate;
     }
 
-    public void setLocations(int numLocations) {
-        this.locations = numLocations;
-    }
-
     public synchronized void setOpCount(int opCount) {
         this.opCount = opCount;
     }
@@ -436,9 +426,17 @@ public final class FileOperation {
         }
 
         if (tried == null) {
-            tried = new ArrayList<>();
+            tried = new HashSet<>();
         }
         tried.add(source);
+
+        /*
+         *  Sticky-bit verification only needs to be done
+         *  on a new source location.  If a different source
+         *  is to be attempted, the verification can be
+         *  bypassed.
+         */
+        checkSticky = false;
     }
 
     void addTargetToTriedLocations() {
@@ -447,7 +445,7 @@ public final class FileOperation {
         }
 
         if (tried == null) {
-            tried = new ArrayList<>();
+            tried = new HashSet<>();
         }
         tried.add(target);
     }
@@ -604,7 +602,6 @@ public final class FileOperation {
         retried = 0;
         source = NIL;
         target = NIL;
-        locations = 0;
         tried = null;
         lastUpdate = System.currentTimeMillis();
         return true;

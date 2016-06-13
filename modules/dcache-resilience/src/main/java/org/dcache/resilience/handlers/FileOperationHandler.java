@@ -454,8 +454,6 @@ public class FileOperationHandler {
         LOGGER.trace("handleVerification, {}, readable locations {}", pnfsId,
                      readableLocations);
 
-        operation.setLocations(readableLocations.size());
-
         /*
          *  If we have arrived here, we are expecting there to be an
          *  available source file.

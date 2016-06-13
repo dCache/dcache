@@ -119,36 +119,63 @@ public final class CacheExceptionUtils {
         return CacheExceptionFactory.exceptionOf(rc, message);
     }
 
-    public static FailureType getFailureType(CacheException exception) {
+    public static FailureType getFailureType(CacheException exception,
+                                             boolean isCopyOperation) {
         if (exception == null) {
             return FailureType.RETRIABLE;
         }
 
-        int errorCode = exception.getRc();
-        String msg = exception.getMessage();
-        if (msg != null && msg.contains("broken")) {
-            return FailureType.BROKEN;
-        }
-
-        if (msg != null && msg.contains("Source pool failed")) {
-            return FailureType.NEWSOURCE;
-        }
-
-        switch (errorCode) {
+        switch (exception.getRc()) {
             case CacheException.FILE_CORRUPTED:
+            case CacheException.BROKEN_ON_TAPE:
+                return FailureType.BROKEN;
             case CacheException.FILE_NOT_IN_REPOSITORY:
             case CacheException.FILE_NOT_FOUND:
+                if (isCopyOperation) {
+                    /*
+                     * The source for a copy is missing.
+                     */
+                    return FailureType.NEWSOURCE;
+                }
+
+                /*
+                 *  This is a remove operation.  Trying to remove
+                 *  a file which doesn't exist suggests the remove
+                 *  information is faulty or subject to a race.
+                 *  Consider this fatal.
+                 */
+                return FailureType.FATAL;
+
+            /*
+             *
+             * The replica already exists on this target.
+             */
+            case CacheException.FILE_IN_CACHE:
+                return FailureType.NEWTARGET;
+
+            /*
+             *  These are transient source errors.
+             */
+            case CacheException.LOCKED:
+            case CacheException.FILE_IS_NEW:
+            case CacheException.HSM_DELAY_ERROR:
+
+            /*
+             *  There is not enough information to know whether
+             *  these involve the source or target.
+             *
+             *  The logic of the resilience service, however, is
+             *  to retry these for the indicated number of times,
+             *  and if we continue to fail, the source and target are
+             *  both marked tried, and an attempt with a new source
+             *  and target is made, if possible.
+             */
             case CacheException.NO_POOL_CONFIGURED:
             case CacheException.NO_POOL_ONLINE:
             case CacheException.POOL_DISABLED:
             case CacheException.SELECTED_POOL_FAILED:
             case CacheException.PERMISSION_DENIED:
-                return FailureType.NEWTARGET;
             case CacheException.SERVICE_UNAVAILABLE:
-            case CacheException.FILE_IS_NEW:
-            case CacheException.FILE_IN_CACHE:
-            case CacheException.LOCKED:
-            case CacheException.HSM_DELAY_ERROR:
             case CacheException.TIMEOUT:
                 return FailureType.RETRIABLE;
             default:
