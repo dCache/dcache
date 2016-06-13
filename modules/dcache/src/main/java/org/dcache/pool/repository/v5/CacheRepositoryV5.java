@@ -26,6 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.DiskSpace;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
@@ -620,7 +621,7 @@ public class CacheRepositoryV5
                 case FROM_POOL:
                     throw new LockedCacheException("File is incomplete");
                 case BROKEN:
-                    throw new LockedCacheException("File is broken");
+                    throw new FileCorruptedCacheException("File is broken");
                 case REMOVED:
                 case DESTROYED:
                     throw new LockedCacheException("File has been removed");
