@@ -22,7 +22,10 @@ import org.dcache.auth.attributes.Restrictions;
  * LoginStrategy which forms the union of allowed logins of several
  * access strategies. Login will be granted by the first of a list of
  * LoginStrategies which grants login. If no LoginStrategy grants
- * login, an anonymous login can optionally be generated.
+ * login then the behaviour depends on whether the user supplied any credentials.
+ * If no credentials were presented then the login attempt is treated as
+ * anonymous and the correct level of access is granted.  If credentials were
+ * presented then fallback to anonymous only if that is allowed.
  */
 public class UnionLoginStrategy implements LoginStrategy
 {
@@ -39,6 +42,7 @@ public class UnionLoginStrategy implements LoginStrategy
 
     private List<LoginStrategy> _loginStrategies = Collections.emptyList();
     private AccessLevel _anonymousAccess = AccessLevel.NONE;
+    private boolean _shouldFallback = true;
 
     public void setLoginStrategies(List<LoginStrategy> list)
     {
@@ -61,6 +65,16 @@ public class UnionLoginStrategy implements LoginStrategy
         return _anonymousAccess;
     }
 
+    public void setFallbackToAnonymous(boolean fallback)
+    {
+        _shouldFallback = fallback;
+    }
+
+    public boolean hasFallbackToAnonymous()
+    {
+        return _shouldFallback;
+    }
+
     @Override
     public LoginReply login(Subject subject) throws CacheException
     {
@@ -68,13 +82,16 @@ public class UnionLoginStrategy implements LoginStrategy
                 .filter(Origin.class::isInstance)
                 .findFirst();
 
+        boolean areCredentialsSupplied = !subject.getPrivateCredentials().isEmpty()
+                || !subject.getPublicCredentials().isEmpty()
+                || !subject.getPrincipals().stream().allMatch(Origin.class::isInstance);
+
         for (LoginStrategy strategy: _loginStrategies) {
             _log.debug( "Attempting login strategy: {}", strategy.getClass().getName());
 
             try {
                 LoginReply login = strategy.login(subject);
                 _log.debug( "Login strategy returned {}", login.getSubject());
-
                 if (!Subjects.isNobody(login.getSubject())) {
                     return login;
                 }
@@ -93,6 +110,11 @@ public class UnionLoginStrategy implements LoginStrategy
                         e.getMessage());
             }
         }
+
+        if (areCredentialsSupplied && !_shouldFallback) {
+            throw new PermissionDeniedCacheException("Access denied");
+        }
+
         _log.debug( "Strategies failed, trying for anonymous access");
 
         LoginReply reply = new LoginReply();
