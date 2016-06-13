@@ -217,9 +217,14 @@ public final class FileOperationMapTest extends TestBase {
         whenOperationFailsWithRetriableError();
         whenScanIsRun();
         whenOperationFailsWithRetriableError();
+
         /*
-         * No other source exists.  Should fail terminally.
+         * This should set retry with new source and target, but
+         * there should be no other source when it retries, and a failure
+         * should result.
          */
+        whenScanIsRun();
+        whenVerifyIsRun();
         whenScanIsRun();
         assertNull(fileOperationMap.getOperation(operation.getPnfsId()));
     }
@@ -318,10 +323,12 @@ public final class FileOperationMapTest extends TestBase {
     private void afterOperationAdded(int count) throws CacheException {
         PnfsId pnfsId = attributes.getPnfsId();
         String pool = attributes.getLocations().iterator().next();
+        String unit = attributes.getStorageClass() + "@" + attributes.getHsm();
         Integer pindex = poolInfoMap.getPoolIndex(pool);
         Integer gindex = poolInfoMap.getResilientPoolGroup(pindex);
+        Integer sindex = poolInfoMap.getGroupIndex(unit);
         FileUpdate update = new FileUpdate(pnfsId, pool,
-                                           MessageType.ADD_CACHE_LOCATION, pindex, gindex, null,
+                                           MessageType.ADD_CACHE_LOCATION, pindex, gindex, sindex,
                                            attributes);
         update.setCount(count);
         fileOperationMap.register(update);
@@ -415,5 +422,9 @@ public final class FileOperationMapTest extends TestBase {
 
     private void whenScanIsRun() throws IOException {
         fileOperationMap.scan();
+    }
+
+    private void whenVerifyIsRun() throws IOException {
+        fileOperationMap.getOperation(operation.getPnfsId()).getTask().call();
     }
 }

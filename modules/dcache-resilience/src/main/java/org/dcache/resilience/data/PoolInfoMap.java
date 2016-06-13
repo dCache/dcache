@@ -356,6 +356,21 @@ public class PoolInfoMap {
 
     /**
      * @param writable location is writable if true, readable if false.
+     * @return all pool group pools which qualify.
+     */
+    public Set<String> getMemberPools(Integer gindex, boolean writable) {
+        read.lock();
+        try {
+            Set<Integer> members = ImmutableSet.copyOf(poolGroupToPool.get(gindex));
+            members = getValidLocations(members, writable);
+            return getPools(members);
+        } finally {
+            read.unlock();
+        }
+    }
+
+    /**
+     * @param writable location is writable if true, readable if false.
      * @return all the locations belonging to the given pool group which
      * qualify.
      */
