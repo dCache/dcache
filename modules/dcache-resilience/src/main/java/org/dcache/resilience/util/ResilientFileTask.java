@@ -99,6 +99,7 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
     private final PnfsId               pnfsId;
     private final FileOperationHandler handler;
     private final boolean              suppressAlarm;
+    private final int                  retry;
 
     private Task   migrationTask;
     private Future future;
@@ -124,9 +125,10 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
         return String.format("%.3f", delta);
     }
 
-    public ResilientFileTask(PnfsId pnfsId, boolean suppressAlarm,
+    public ResilientFileTask(PnfsId pnfsId, boolean suppressAlarm, int retry,
                              FileOperationHandler handler) {
         this.pnfsId = pnfsId;
+        this.retry = retry;
         this.handler = handler;
         this.suppressAlarm = suppressAlarm;
         type = Type.VOID;
@@ -138,6 +140,20 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
 
     @Override
     public Void call() {
+        if (retry > 0) {
+            synchronized(this) {
+                try {
+                    wait(TimeUnit.SECONDS.toMillis(5));
+                } catch (InterruptedException e) {
+                    /*
+                     *  Consider this a cancellation.
+                     */
+                    cancelled = true;
+                    return null;
+                }
+            }
+        }
+
         startTime = System.currentTimeMillis();
         FileAttributes attributes = new FileAttributes();
         attributes.setAccessLatency(AccessLatency.ONLINE);

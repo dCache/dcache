@@ -329,11 +329,12 @@ public class FileOperationMap extends RunnableModule {
 
             if (operation.getState() == FileOperation.FAILED) {
                 FailureType type =
-                    CacheExceptionUtils.getFailureType(operation.getException());
+                    CacheExceptionUtils.getFailureType(operation.getException(),
+                                                       source != null);
 
                 switch (type) {
                     case BROKEN:
-                        if (operation.getSource() != null) {
+                        if (source != null) {
                             pool = poolInfoMap.getPool(operation.getSource());
                             operationHandler.handleBrokenFileLocation(operation.getPnfsId(),
                                                                       pool);
@@ -355,9 +356,24 @@ public class FileOperationMap extends RunnableModule {
                             retry = true;
                             break;
                         }
+                        /*
+                         *  We don't really know here whether the source
+                         *  is bad or the target.  The best we can do is
+                         *  retry until we have exhausted all the possible
+                         *  pool group members.
+                         */
                         operation.addTargetToTriedLocations();
-                        if (operation.getLocations()
-                                        > operation.getTried().size()) {
+                        if (source != null) {
+                            operation.addSourceToTriedLocations();
+                        }
+
+                        /*
+                         *  All readable pools in the pool group.
+                         */
+                        int groupMembers = poolInfoMap.getMemberPools
+                                        (operation.getPoolGroup(), false).size();
+
+                        if (groupMembers > operation.getTried().size()) {
                             operation.resetSourceAndTarget();
                             retry = true;
                             break;
@@ -365,6 +381,9 @@ public class FileOperationMap extends RunnableModule {
                         // fall through; no more possibilities left
                     case FATAL:
                         operation.addTargetToTriedLocations();
+                        if (source != null) {
+                            operation.addSourceToTriedLocations();
+                        }
                         Set<String> tried = operation.getTried().stream()
                                         .map(poolInfoMap::getPool)
                                         .collect(Collectors.toSet());
@@ -533,6 +552,7 @@ public class FileOperationMap extends RunnableModule {
             int remove = SelectionAction.REMOVE.ordinal();
             operation.setTask(new ResilientFileTask(operation.getPnfsId(),
                             operation.getSelectionAction() == remove,
+                            operation.getRetried(),
                             operationHandler));
             operation.setState(FileOperation.RUNNING);
             running.add(operation);
@@ -785,7 +805,6 @@ public class FileOperationMap extends RunnableModule {
         operation.setParentOrSource(data.getPoolIndex(), data.isParent);
         operation.setVerifySticky(data.shouldVerifySticky());
         FileAttributes attributes = data.getAttributes();
-        operation.setLocations(attributes.getLocations().size());
         operation.setRetentionPolicy(attributes.getRetentionPolicy().toString());
         operation.resetOperation();
         return add(data.pnfsId, operation);

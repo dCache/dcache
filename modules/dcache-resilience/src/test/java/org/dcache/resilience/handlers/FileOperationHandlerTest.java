@@ -609,7 +609,7 @@ public final class FileOperationHandlerTest extends TestBase
     private void whenOperationFailsWithBrokenFileError() throws IOException {
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
-                                         new CacheException(CacheException.BROKEN_ON_TAPE,
+                                         new CacheException(CacheException.FILE_CORRUPTED,
                                         "broken"));
         fileOperationMap.scan();
     }
@@ -617,7 +617,7 @@ public final class FileOperationHandlerTest extends TestBase
     private void whenOperationFailsWithNewTargetError() throws IOException {
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
-                                         new CacheException(CacheException.FILE_NOT_FOUND,
+                                         new CacheException(CacheException.FILE_IN_CACHE,
                                         FORCED_FAILURE.toString()));
         fileOperationMap.scan();
     }
@@ -626,7 +626,7 @@ public final class FileOperationHandlerTest extends TestBase
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
                                          new CacheException(
-                                                         CacheException.HSM_DELAY_ERROR,
+                                                         CacheException.FILE_NOT_IN_REPOSITORY,
                                                          FORCED_FAILURE.toString()));
         fileOperationMap.scan();
     }
@@ -635,7 +635,7 @@ public final class FileOperationHandlerTest extends TestBase
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
                                          new CacheException(
-                                                         CacheException.SELECTED_POOL_FAILED,
+                                                         CacheException.FILE_NOT_FOUND,
                                                          "Source pool failed"));
         fileOperationMap.scan();
     }
@@ -655,7 +655,7 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     private void whenTaskIsCreatedAndCalled() {
-        task = new ResilientFileTask(update.pnfsId, false,
+        task = new ResilientFileTask(update.pnfsId, false, 0,
                                      fileOperationHandler);
         task.call();
     }
