@@ -63,11 +63,6 @@ exit 0
 
 %post
 # generate admin door ssh2 server key
-if [ ! -f /etc/dcache/admin/ssh_host_dsa_key ]; then
-    ssh-keygen -q -t dsa -f /etc/dcache/admin/ssh_host_dsa_key -N ""
-    chmod 640 /etc/dcache/admin/ssh_host_dsa_key
-    chgrp dcache /etc/dcache/admin/ssh_host_dsa_key
-fi
 if [ ! -f /etc/dcache/admin/ssh_host_rsa_key ]; then
     ssh-keygen -q -t rsa -f /etc/dcache/admin/ssh_host_rsa_key -N ""
     chmod 640 /etc/dcache/admin/ssh_host_rsa_key
