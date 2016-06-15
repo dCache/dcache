@@ -456,7 +456,8 @@ public class FileOperationHandler {
 
         /*
          *  If we have arrived here, we are expecting there to be an
-         *  available source file.
+         *  available source file.  So we need the strictly readable
+         *  locations, not just "countable" ones.
          */
         if (readableLocations.size() == 0
                         && operation.getRetentionPolicy()
@@ -550,7 +551,13 @@ public class FileOperationHandler {
 
         StorageUnitConstraints constraints
                         = poolInfoMap.getStorageUnitConstraints(sindex);
-        int missing = constraints.getRequired() - readableLocations.size();
+        /*
+         *  Countable means readable OR intentionally excluded locations.
+         *  If there are copies missing only from excluded locations,
+         *  do nothing.
+         */
+        int missing = constraints.getRequired()
+                        - poolInfoMap.getCountableLocations(locations);
 
         Collection<String> tags = constraints.getOneCopyPer();
 

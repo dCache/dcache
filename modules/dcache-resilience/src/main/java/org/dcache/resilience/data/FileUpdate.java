@@ -338,14 +338,16 @@ public final class FileUpdate {
 
         /*
          *  Check the constraints.
+         *  Countable means readable OR intentionally excluded locations.
+         *  If there are copies missing only from excluded locations,
+         *  do nothing.
          */
-        int readable = locationSelector.getReadableMemberLocations(group,
-                                                                   locations).size();
-        count = constraints.getRequired() - readable;
+        int countable = poolInfoMap.getCountableLocations(locations);
+        count = constraints.getRequired() - countable;
         LOGGER.debug("validateForAction ({} needs {} replicas, locations {}, "
-                                     + "{} readable; difference = {}.",
+                                     + "{} countable; difference = {}.",
                      pnfsId, constraints.getRequired(),
-                     locations, readable, count);
+                     locations, countable, count);
 
         if (count == 0) {
             LOGGER.debug("{}, requirements are already met.", pnfsId);

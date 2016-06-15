@@ -82,6 +82,7 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.resilience.data.PoolOperation.NextAction;
 import org.dcache.resilience.data.PoolOperation.State;
 import org.dcache.resilience.handlers.PoolOperationHandler;
+import org.dcache.resilience.util.CheckpointUtils;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.Operation;
@@ -155,12 +156,23 @@ public class PoolOperationMap extends RunnableModule {
     private PoolOperationHandler    handler;
     private FileOperationMap        fileOperationMap; // needed for cancellation
 
+    private String                  excludedPoolsFile;
+
     private int                 downGracePeriod;
     private TimeUnit            downGracePeriodUnit;
     private int                 restartGracePeriod;
     private TimeUnit            restartGracePeriodUnit;
     private int                 maxConcurrentRunning;
     private OperationStatistics counters;
+
+    public void saveExcluded() {
+        lock.lock();
+        try {
+            CheckpointUtils.save(excludedPoolsFile, idle);
+        } finally {
+            lock.unlock();
+        }
+    }
 
     /**
      * <p>Called by the admin interface.</p>
@@ -356,6 +368,12 @@ public class PoolOperationMap extends RunnableModule {
             lock.unlock();
         }
 
+        CheckpointUtils.load(excludedPoolsFile).stream().forEach((p) -> {
+            PoolFilter filter = new PoolFilter();
+            filter.setPools(p);
+            setIncluded(filter, false);
+        });
+
         return removed;
     }
 
@@ -496,6 +514,10 @@ public class PoolOperationMap extends RunnableModule {
         this.downGracePeriodUnit = downGracePeriodUnit;
     }
 
+    public void setExcludedPoolsFile(String excludedPoolsFile) {
+        this.excludedPoolsFile = excludedPoolsFile;
+    }
+
     public void setHandler(PoolOperationHandler handler) {
         this.handler = handler;
     }
@@ -583,11 +605,6 @@ public class PoolOperationMap extends RunnableModule {
             }
 
             switch (nextAction) {
-                case DEACTIVATE:
-                    queue.remove(update.pool);
-                    operation.state = State.INACTIVE;
-                    reset(update.pool, operation);
-                    break;
                 case DOWN_TO_UP:
                 case UP_TO_DOWN:
                     if (operation.state == State.WAITING) {
@@ -829,8 +846,7 @@ public class PoolOperationMap extends RunnableModule {
                 String pool = entry.getKey();
                 PoolOperation operation = entry.getValue();
 
-                if (operation.state == State.EXCLUDED ||
-                                operation.state == State.INACTIVE) {
+                if (operation.state == State.EXCLUDED) {
                     continue;
                 }
 
@@ -973,6 +989,12 @@ public class PoolOperationMap extends RunnableModule {
                         update(poolInfoMap.getPoolState(k));
                         visited.add(k);
                     }
+                    /*
+                     *  mark the pool information so that other operations
+                     *  know this pool is temporarily in limbo.
+                     */
+                    poolInfoMap.getPoolInformation(poolInfoMap.getPoolIndex(k))
+                               .setExcluded(!include);
                 }
             }
         });
