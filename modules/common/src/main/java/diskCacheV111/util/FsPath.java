@@ -3,6 +3,12 @@ package diskCacheV111.util;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
 
@@ -20,8 +26,10 @@ import static com.google.common.base.Preconditions.checkArgument;
  * that /a/b/.. becomes /a even if b is a symbolic link, a file or when
  * it doesn't exist.
  */
-public abstract class FsPath
+public abstract class FsPath implements Serializable
 {
+    private static final long serialVersionUID = -4852395244086808172L;
+
     /* An FsPath is implemented as a single linked list from the tail to the
      * root. All operations are implemented recursively and modifying operations
      * return a new FsPath rather than changing the existing FsPath.
@@ -270,6 +278,33 @@ public abstract class FsPath
      */
     protected abstract StringBuilder appendSuffix2(FsPath prefix, FsPath length, StringBuilder s);
 
+    /**
+     * Helper method to write a path to a stream.
+     *
+     * @param out Stream to write the path to
+     * @param len The length of the suffix of this path being written
+     * @throws IOException
+     */
+    protected abstract void write(ObjectOutput out, int len) throws IOException;
+
+    /**
+     * Helper method to read a path from a stream.
+     *
+     * @param in Stream to read the path from
+     * @param len The length of the suffix of this path being read
+     * @throws IOException
+     */
+    protected FsPath read(ObjectInput in, int len) throws IOException
+    {
+        return (len == 0) ? this : child(in.readUTF()).read(in, len - 1);
+    }
+
+    private Object writeReplace()
+            throws ObjectStreamException
+    {
+        return new SerializedPath(this);
+    }
+
     private static final class Root extends FsPath
     {
         @Override
@@ -364,6 +399,12 @@ public abstract class FsPath
                 throw new IllegalArgumentException(prefix + " is not a prefix of " + this);
             }
             return s.append('/');
+        }
+
+        @Override
+        protected void write(ObjectOutput out, int len) throws IOException
+        {
+            out.writeShort(len);
         }
     }
 
@@ -477,6 +518,46 @@ public abstract class FsPath
         protected StringBuilder appendSuffix2(FsPath prefix, FsPath length, StringBuilder s)
         {
             return appendSuffix(prefix, length, s).append('/');
+        }
+
+        @Override
+        protected void write(ObjectOutput out, int len) throws IOException
+        {
+            parent.write(out, len + 1);
+            out.writeUTF(name);
+        }
+    }
+
+    private static class SerializedPath implements Externalizable
+    {
+        private static final long serialVersionUID = 2301167077307955976L;
+
+        private transient FsPath path;
+
+        public SerializedPath()
+        {
+        }
+
+        public SerializedPath(FsPath path)
+        {
+            this.path = path;
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException
+        {
+            path.write(out, 0);
+        }
+
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
+        {
+            this.path = ROOT.read(in, in.readShort());
+        }
+
+        private Object readResolve()
+        {
+            return path;
         }
     }
 }
