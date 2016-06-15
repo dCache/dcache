@@ -267,7 +267,7 @@
     <bean id="spnegohandler" class="org.eclipse.jetty.security.ConstraintSecurityHandler">
         <property name="loginService">
             <bean class="org.eclipse.jetty.security.SpnegoLoginService">
-                <property name="config" value="${webdav.authz.spnego.properties-file}"/>
+                <property name="config" value="${webdav.authz.spnego.file}"/>
                 <property name="name" value="${dcache.authn.kerberos.realm}"/>
             </bean>
         </property>
