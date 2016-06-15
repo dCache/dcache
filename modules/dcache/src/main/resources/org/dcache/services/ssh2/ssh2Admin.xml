@@ -10,6 +10,18 @@
     <context:annotation-config/>
     <context:property-placeholder/>
 
+    <!-- Convert properties with multiple values separated by comma into an array of strings:
+     key=value1,value2,value3 : String[] {value1, value2, value3}
+     -->
+    <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+        <property name="customEditors">
+            <map>
+                <entry key="java.lang.String[]"
+                       value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor"/>
+            </map>
+        </property>
+    </bean>
+
     <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
         <description>Undeliverable message logger</description>
         <property name="excludedDestinations" value="${admin.loginbroker.request-topic}"/>
@@ -98,8 +110,7 @@
     <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
         <property name="host" value="#{ '${admin.net.listen}'.equals('any') ? null : '${admin.net.listen}' }"/>
         <property name="port"               value="${admin.net.port}"/>
-        <property name="hostKeyPrivate"     value="${admin.paths.dsa-host-key.private}"/>
-        <property name="hostKeyPublic"      value="${admin.paths.dsa-host-key.public}"/>
+        <property name="hostKeys"           value="${admin.paths.host-keys}"/>
         <property name="authorizedKeyList"  value="${admin.paths.authorized-keys}"/>
         <property name="loginStrategy"      ref="login-strategy"/>
         <property name="adminGroupId"       value="${admin.authz.gid}"/>
