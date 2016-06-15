@@ -62,9 +62,9 @@ package diskCacheV111.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
+import javax.security.auth.Subject;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;

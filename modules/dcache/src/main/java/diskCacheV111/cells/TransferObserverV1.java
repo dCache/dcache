@@ -19,9 +19,11 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import javax.security.auth.Subject;
 
 import diskCacheV111.util.HTMLBuilder;
 import diskCacheV111.util.TransferInfo;
+import diskCacheV111.util.UserInfo;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 import dmg.cells.nucleus.CellAdapter;
@@ -167,7 +169,12 @@ public class TransferObserverV1
             serialId = transfer.session().getSerialId();
             setProtocol(transfer.door().getProtocolFamily(),
                             transfer.door().getProtocolVersion());
-            setSubject(transfer.session().getSubject());
+            Subject subject = transfer.session().getSubject();
+            if (subject == null) {
+                setUserInfo(new UserInfo());
+            } else {
+                setSubject(subject);
+            }
             process = transfer.door().getProcess();
             pnfsId = Objects.toString(transfer.session().getPnfsId(), "");
             pool = Objects.toString(transfer.session().getPool(), "");

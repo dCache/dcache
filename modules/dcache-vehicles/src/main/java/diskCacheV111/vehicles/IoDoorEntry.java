@@ -58,6 +58,13 @@ public class IoDoorEntry implements Serializable
         return _status;
     }
 
+    /**
+     *  Under certain conditions it is possible to receive
+     *  transfer info sent before login has been performed
+     *  by the door.  It is thus possible that the Subject
+     *  also be <code>null</code>.
+     */
+    @Nullable
     public Subject getSubject()
     {
         return _subject;

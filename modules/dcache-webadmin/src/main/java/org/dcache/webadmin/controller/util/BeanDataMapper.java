@@ -9,6 +9,7 @@ import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.Space;
+import diskCacheV111.util.UserInfo;
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
@@ -126,7 +127,11 @@ public class BeanDataMapper {
         ActiveTransfersBean bean = new ActiveTransfersBean();
         bean.setDomainName(transfer.door().getDomainName());
         bean.setCellName(transfer.door().getCellName());
-        bean.setSubject(transfer.session().getSubject());
+        if (transfer.session().getSubject() == null) {
+            bean.setUserInfo(new UserInfo());
+        } else {
+            bean.setSubject(transfer.session().getSubject());
+        }
         if (transfer.session().getPnfsId() == null) {
             bean.setPnfsId("");
         } else {
