@@ -72,22 +72,20 @@
       </constructor-arg>
   </bean>
 
-  <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+  <bean id="login-strategy" class="org.dcache.webdav.AnonymousUserLoginStrategy">
       <description>Processes login requests</description>
-      <property name="loginStrategies">
-	  <list>
+      <property name="nonAnonymousStrategy">
           <bean class="org.dcache.services.login.RemoteLoginStrategy">
               <property name="cellStub" ref="login-stub"/>
           </bean>
-	  </list>
       </property>
-      <property name="fallbackToAnonymous" value="false"/>
       <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
+      <property name="username" value="anonymous"/>
   </bean>
 
   <bean id="cache-login-strategy" class="org.dcache.auth.CachingLoginStrategy">
       <description>Processes mapping requests</description>
-      <constructor-arg index="0" ref="union-login-strategy" />
+      <constructor-arg index="0" ref="login-strategy" />
       <constructor-arg index="1" value="${frontend.service.gplazma.cache.size}" />
       <constructor-arg index="2" value="${frontend.service.gplazma.cache.timeout}" />
       <constructor-arg index="3" value="${frontend.service.gplazma.cache.timeout.unit}" />
