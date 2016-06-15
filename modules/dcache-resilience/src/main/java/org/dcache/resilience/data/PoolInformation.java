@@ -85,6 +85,7 @@ final class PoolInformation {
     private final Integer key;
     private PoolStatusForResilience status;
     private PoolV2Mode mode;
+    private boolean excluded;
     private ImmutableMap<String, String> tags;
     private PoolCostInfo costInfo;
     private long lastUpdate;
@@ -93,6 +94,7 @@ final class PoolInformation {
         this.name = name;
         this.key = key;
         lastUpdate = System.currentTimeMillis();
+        excluded = false;
     }
 
     public synchronized String toString() {
@@ -101,7 +103,9 @@ final class PoolInformation {
                                   key, name, "", "", UNINITIALIZED, "");
         }
         return String.format(TOSTRING,
-                             key, name, tags, mode, status, new Date(lastUpdate));
+                             key, name, tags, mode,
+                             excluded ? "EXCLUDED" : status,
+                             new Date(lastUpdate));
     }
 
     synchronized boolean canRead() {
@@ -142,12 +146,20 @@ final class PoolInformation {
         return tags;
     }
 
+    synchronized boolean isCountable() {
+        return canRead() || excluded;
+    }
+
     synchronized boolean isInitialized() {
         return mode != null && tags != null && costInfo != null;
     }
 
+    synchronized void setExcluded(boolean excluded) {
+        this.excluded = excluded;
+    }
+
     synchronized void update(PoolV2Mode mode, Map<String, String> tags,
-                    PoolCostInfo costInfo) {
+                             PoolCostInfo costInfo) {
         updatePoolMode(mode);
         updateTags(tags);
         if (costInfo != null) {

@@ -579,6 +579,22 @@ public class PoolInfoMap {
         return tags;
     }
 
+    public int getCountableLocations(Collection<String> locations) {
+        read.lock();
+        int countable = 0;
+        try {
+            for (String location : locations) {
+                PoolInformation info = poolInfo.get(getPoolIndex(location));
+                if (info != null && info.isInitialized() && info.isCountable()) {
+                    ++countable;
+                }
+            }
+        } finally {
+            read.unlock();
+        }
+        return countable;
+    }
+
     public Set<Integer> getValidLocations(Collection<Integer> locations,
                                           boolean writable) {
         read.lock();

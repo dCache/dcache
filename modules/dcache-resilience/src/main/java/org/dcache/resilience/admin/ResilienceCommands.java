@@ -1299,10 +1299,9 @@ public final class ResilienceCommands implements CellCommandListener {
                                     + "exclusion will cancel any running "
                                     + "operations.  The pool will not be included "
                                     + "in periodic, forced, or status-change "
-                                    + "scans, though it will still "
-                                    + "appear to its pool group as a member "
-                                    + "in whatever state the pool manager "
-                                    + "knows about.")
+                                    + "scans; locations on it are still considered "
+                                    + "valid regarding replica count, but "
+                                    + "cannot be used as copy sources.")
     class PoolOpExcludeCommand extends PoolOpActivateCommand {
         PoolOpExcludeCommand() {
             super(false);
