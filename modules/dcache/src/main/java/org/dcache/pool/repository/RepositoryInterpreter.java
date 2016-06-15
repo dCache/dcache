@@ -1,12 +1,12 @@
 package org.dcache.pool.repository;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -19,10 +19,10 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.DelayedReply;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.namespace.FileAttribute;
@@ -33,7 +33,6 @@ import org.dcache.vehicles.FileAttributes;
 
 import static java.util.stream.Collectors.joining;
 import static org.dcache.util.ByteUnit.*;
-import static org.dcache.util.ByteUnits.jedecSymbol;
 
 public class RepositoryInterpreter
     implements CellCommandListener
@@ -41,14 +40,17 @@ public class RepositoryInterpreter
     private static final Logger _log =
             LoggerFactory.getLogger(RepositoryInterpreter.class);
 
+    private static final Map<String,ByteUnit> STRING_TO_UNIT =
+            ImmutableMap.of("k", KiB, "m", MiB, "g", GiB, "t", TiB);
+
     private Repository _repository;
 
-    private final StatisticsListener _statiStatisticsListener = new StatisticsListener();
+    private final StatisticsListener _statisticsListener = new StatisticsListener();
 
     public void setRepository(Repository repository)
     {
         _repository = repository;
-        _repository.addListener(_statiStatisticsListener);
+        _repository.addListener(_statisticsListener);
     }
 
     @Command(name = "rep set sticky", hint = "change sticky flags",
@@ -153,63 +155,175 @@ public class RepositoryInterpreter
         }
     }
 
-    public static final String hh_rep_sticky_ls = "<pnfsid>";
-    public String ac_rep_sticky_ls_$_1(Args args)
-        throws CacheException, InterruptedException
+    @Command(name = "rep sticky ls", hint = "list sticky flags",
+            description = "List sticky flags of a replica.")
+    public class ListStickyCommand implements Callable<String>
     {
-        PnfsId pnfsId  = new PnfsId(args.argv(0));
-        CacheEntry entry = _repository.getEntry(pnfsId);
-        return entry.getStickyRecords().stream()
-                .filter(StickyRecord::isValid).map(Object::toString).collect(joining("\n"));
+        @Argument
+        PnfsId pnfsId;
+
+        @Override
+        public String call() throws CacheException, InterruptedException
+        {
+            CacheEntry entry = _repository.getEntry(pnfsId);
+            return entry.getStickyRecords().stream()
+                    .filter(StickyRecord::isValid).map(Object::toString).collect(joining("\n"));
+        }
     }
 
-    public static final String fh_rep_ls =
-        "\n"+
-        " Format I  : <pnfsId>...\n"+
-        " Format II : [-l[=<selectionOptions>]] [-storage=<glob>] [-s]\n"+
-        "              Options :\n"+
-        "              -l[=splunc]  # selected list\n"+
-        "                 s  : sticky files\n"+
-        "                 p  : precious files\n"+
-        "                 l  : locked files\n"+
-        "                 u  : files in use\n"+
-        "                 nc : files which are not cached\n" +
-        "                 e  : files which error condition\n" +
-        "              -storage=<glob>   # select only replicas\n" +
-        "                                  of files with storage-\n" +
-        "                                  info that matches <glob>\n" +
-        "              -s[=kmgt] [-sum]       # statistics\n" +
-        "                 k  : data amount in KiB\n"+
-        "                 m  : data amount in MiB\n"+
-        "                 g  : data amount in GiB\n"+
-        "                 t  : data amount in TiB\n"+
-        " Output is a list of repository entries, one per line\n" +
-        " each line has the followin syntax:\n" +
-        "<pnfsid> <state> <size> <storageinfo>\n"+
-        " state is a sequence of state bits inclosed in angular \"<>\" brackets \n"+
-        " bit 1 is \"C\" if entry is cached or \"-\" if not \n"+
-        " bit 2 is \"P\" if entry is precious or \"-\" if not \n"+
-        " bit 3 is \"C\" if entry is being transfered \"from client\" or \"-\" if not \n"+
-        " bit 4 is \"S\" if entry is being transfered \"from store\" or \"-\" if not \n"+
-        " bit 5 is \"c\" if entry is being transfered \"to client\" or \"-\" if not \n"+
-        " bit 6 is \"s\" if entry is being transfered \"to store\" or \"-\" if not \n"+
-        " bit 7 is \"R\" if entry is removed or \"-\" if not \n"+
-        " bit 8 is is always \"-\" \n"+
-        " bit 9 is \"X\" if entry is sticky or \"-\" if not \n"+
-        " bit 10 is \"E\" if entry is in error state or \"-\" if not \n"+
-        " bit 11 is \"L(x)(y)\" if entry is in locked or \"-\" if not \n"+
-        "        x is epoch until which the entry is locked, 0 for non expiring lock \n"+
-        "        y is the link count";
-    public static final String hh_rep_ls = "[-l[=s,l,u,nc,p]] [-s[=kmgt]] [-storage=<glob>] | <pnfsId>...";
-    public Object ac_rep_ls_$_0_99(final Args args) throws Exception
+    @Command(name = "rep ls", hint = "list replicas",
+            description = "List the replicas in this pool.\n\n" +
+                          "Each line has the following format:\n\n" +
+                          "   PNFSID <STATE> <SIZE> <STORAGE CLASS>\n\n"+
+                          "STATE is a sequence of fields:\n"+
+                          "   field 1 is \"C\"\n" +
+                          "      if entry is cached and \"-\" otherwise.\n"+
+                          "   field 2 is \"P\"\n" +
+                          "      if entry is precious and \"-\" otherwise.\n"+
+                          "   field 3 is \"C\"\n" +
+                          "      if entry is being transferred \"from client\" and \"-\" otherwise.\n" +
+                          "   field 4 is \"S\"\n" +
+                          "      if entry is being transferred \"from store\" and \"-\" otherwise.\n" +
+                          "   field 5 is unused.\n" +
+                          "   field 6 is unused.\n" +
+                          "   field 7 is \"R\"\n" +
+                          "      if entry is removed but still open and \"-\" otherwise.\n"+
+                          "   field 8 is \"D\"\n" +
+                          "      if entry is removed and \"-\" otherwise.\n"+
+                          "   field 9 is \"X\"\n" +
+                          "      if entry is sticky and \"-\" otherwise.\n"+
+                          "   field 10 is \"E\"\n" +
+                          "      if entry is in error state and \"-\" otherwise.\n"+
+                          "   field 11 is unused.\n"+
+                          "   field 12 is \"L(0)(n)\"\n" +
+                          "      where is the link count.")
+    public class ListCommand extends DelayedCommand<Serializable>
     {
-        if (args.argc() > 0) {
+        @Argument(usage = "Limit to these replicas.", required = false)
+        PnfsId[] pnfsIds;
+
+        @Option(name = "l", valueSpec = "[s|p|l|u|nc|e...]",
+                usage = "Limit to replicas with these flags: \n" +
+                        "   s  : sticky\n"+
+                        "   p  : precious\n"+
+                        "   l  : locked\n"+
+                        "   u  : in use\n"+
+                        "   nc : not cached\n" +
+                        "   e  : error")
+        String format;
+
+        @Option(name = "storage", metaVar = "GLOB", usage = "Limit to replicas with matching storage class.")
+        Glob si;
+
+        @Option(name = "s", valueSpec = "[k|m|g|t]", values = { "k", "m", "g", "t", "" },
+                usage = "Output per storage class statistics instead. Optionally use KiB, MiB, " +
+                        "GiB, or TiB.")
+        String stat;
+
+        @Option(name = "sum", usage = "Include totals for all storage classes when used with -s or -binary.")
+        boolean sum;
+
+        @Option(name = "binary", usage = "Return statistics in binary format instead.")
+        boolean binary;
+
+        @Override
+        public Serializable execute() throws CacheException, InterruptedException
+        {
+            if (pnfsIds != null) {
+                return listById(pnfsIds);
+            } else if (binary) {
+                return listBinary();
+            } else if (stat != null) {
+                return listStatistics(STRING_TO_UNIT.getOrDefault(stat, BYTES));
+            } else {
+                return listAll();
+            }
+        }
+
+        private Serializable listAll() throws CacheException, InterruptedException
+        {
+            String format = Strings.nullToEmpty(this.format);
+            boolean notcached = format.contains("nc");
+            boolean precious  = format.indexOf('p')  > -1;
+            boolean sticky    = format.indexOf('s')  > -1;
+            boolean used      = format.indexOf('u')  > -1;
+            boolean broken    = format.indexOf('e')  > -1;
+            boolean cached    = format.replace("nc", "").indexOf('c') > -1;
+
+            Pattern siFilter = (si == null) ? null : si.toPattern();
+
+            StringBuilder sb = new StringBuilder();
+            for (PnfsId id: _repository) {
+                try {
+                    CacheEntry entry = _repository.getEntry(id);
+                    EntryState state = entry.getState();
+                    if (siFilter != null) {
+                        FileAttributes attributes = entry.getFileAttributes();
+                        String siValue = attributes.isDefined(FileAttribute.STORAGECLASS)
+                                         ? attributes.getStorageClass()
+                                         : "<unknown>";
+                        if (!siFilter.matcher(siValue).matches()) {
+                            continue;
+                        }
+                    }
+                    if (format.length() == 0 ||
+                        (notcached && state != EntryState.CACHED) ||
+                        (precious && state == EntryState.PRECIOUS) ||
+                        (sticky && entry.isSticky()) ||
+                        (broken && state == EntryState.BROKEN) ||
+                        (cached && state == EntryState.CACHED) ||
+                        (used && entry.getLinkCount() > 0)) {
+
+                        sb.append(entry).append('\n');
+                    }
+                } catch (FileNotInCacheException e) {
+                    // Entry was deleted; no problem
+                }
+            }
+            return sb.toString();
+        }
+
+        private Object[] listBinary()
+        {
+            return getStatistics(sum).entrySet().stream()
+                    .map(e -> new Object[] { e.getKey(), e.getValue() })
+                    .toArray(Object[]::new);
+        }
+
+        private Serializable listStatistics(ByteUnit unit)
+        {
+            Map<String, long[]> stats = getStatistics(sum);
+            StringBuilder sb = new StringBuilder();
+            stats.forEach((sc, counter) -> {
+                sb.append(Formats.field(sc, 24, Formats.LEFT)).
+                        append("  ").
+                        append(Formats.field("" + unit.convert(counter[0], BYTES), 10, Formats.RIGHT)).
+                        append("  ").
+                        append(Formats.field("" + counter[1], 8, Formats.RIGHT)).
+                        append("  ").
+                        append(Formats.field("" + unit.convert(counter[2], BYTES), 10, Formats.RIGHT)).
+                        append("  ").
+                        append(Formats.field("" + counter[3], 8, Formats.RIGHT)).
+                        append("  ").
+                        append(Formats.field("" + unit.convert(counter[4], BYTES), 10, Formats.RIGHT)).
+                        append("  ").
+                        append(Formats.field("" + counter[5], 8, Formats.RIGHT)).
+                        append("  ").
+                        append(Formats.field("" + unit.convert(counter[6], BYTES), 10, Formats.RIGHT)).
+                        append("  ").
+                        append(Formats.field("" + counter[7], 8, Formats.RIGHT)).
+                        append("\n");
+            });
+            return sb.toString();
+        }
+
+        private Serializable listById(PnfsId[] pnfsIds) throws CacheException, InterruptedException
+        {
             StringBuilder sb   = new StringBuilder();
             StringBuilder exceptionMessages = new StringBuilder();
-            for (int i = 0; i < args.argc(); i++) {
-                PnfsId pnfsid = new PnfsId(args.argv(i));
+            for (PnfsId pnfsId : pnfsIds) {
                 try {
-                    sb.append(_repository.getEntry(pnfsid));
+                    sb.append(_repository.getEntry(pnfsId));
                     sb.append("\n");
                 } catch (FileNotInCacheException fnice) {
                     exceptionMessages.append(fnice.getMessage()).append("\n");
@@ -218,129 +332,6 @@ public class RepositoryInterpreter
             sb.append(exceptionMessages.toString());
             return sb.toString();
         }
-
-        final DelayedReply reply = new DelayedReply();
-        Thread task = new Thread() {
-                @Override
-                public void run()
-                {
-                    try {
-                        try {
-                            reply.reply(list());
-                        } catch (CacheException | RuntimeException e) {
-                            reply.reply(e);
-                        }
-                    } catch (InterruptedException e) {
-                        _log.warn("Interrupted while listing: " + e);
-                    }
-                }
-
-                private Serializable list()
-                    throws CacheException, InterruptedException
-                {
-                    StringBuilder sb = new StringBuilder();
-                    String stat = args.getOpt("s");
-                    if (stat != null) {
-                        Map<String,long[]> map = _statiStatisticsListener.toMap();
-
-                        if (args.hasOption("sum")) {
-                            long[] counter = new long[10];
-                            map.put("total", counter);
-                            SpaceRecord record = _repository.getSpaceRecord();
-                            counter[0] = record.getTotalSpace();
-                            counter[1] = record.getFreeSpace();
-                            counter[2] = _statiStatisticsListener.getOtherBytes();
-                        }
-
-                        Iterator<String> e2 = map.keySet().iterator();
-                        if (args.hasOption("binary")) {
-                            Object [] result = new Object[map.size()];
-                            for (int i = 0; e2.hasNext(); i++) {
-                                String key = e2.next();
-                                Object[] ex =  new Object[2];
-                                ex[0]  = key;
-                                ex[1]  = map.get(key);
-                                result[i] = ex;
-                            }
-                            return result;
-                        }
-
-                        ByteUnit units = BYTES;
-                        units = stat.contains(jedecSymbol().of(KiB)) ? KiB : units;
-                        units = stat.contains(jedecSymbol().of(MiB)) ? MiB : units;
-                        units = stat.contains(jedecSymbol().of(GiB)) ? GiB : units;
-                        units = stat.contains(jedecSymbol().of(TiB)) ? TiB : units;
-
-                        while (e2.hasNext()) {
-                            String sc = e2.next();
-                            long[] counter = map.get(sc);
-                            sb.append(Formats.field(sc,24,Formats.LEFT)).
-                                append("  ").
-                                append(Formats.field(""+units.convert(counter[0], BYTES),10,Formats.RIGHT)).
-                                append("  ").
-                                append(Formats.field(""+counter[1],8,Formats.RIGHT)).
-                                append("  ").
-                                append(Formats.field(""+units.convert(counter[2], BYTES),10,Formats.RIGHT)).
-                                append("  ").
-                                append(Formats.field(""+counter[3],8,Formats.RIGHT)).
-                                append("  ").
-                                append(Formats.field(""+units.convert(counter[4], BYTES),10,Formats.RIGHT)).
-                                append("  ").
-                                append(Formats.field(""+counter[5],8,Formats.RIGHT)).
-                                append("  ").
-                                append(Formats.field(""+units.convert(counter[6], BYTES),10,Formats.RIGHT)).
-                                append("  ").
-                                append(Formats.field(""+counter[7],8,Formats.RIGHT)).
-                                append("\n");
-                        }
-                    } else  {
-                        String format = args.getOpt("l");
-                        format = format == null ? "" : format;
-
-                        boolean notcached = format.contains("nc");
-                        boolean precious  = format.indexOf('p')  > -1;
-                        boolean locked    = format.indexOf('l')  > -1;
-                        boolean sticky    = format.indexOf('s')  > -1;
-                        boolean used      = format.indexOf('u')  > -1;
-                        boolean broken    = format.indexOf('e')  > -1;
-                        boolean cached    = format.indexOf('c')  > -1;
-
-                        String si = args.getOption("storage");
-                        Pattern siFilter = si == null ? null : Glob.parseGlobToPattern(si);
-
-                        for (PnfsId id: _repository) {
-                            try {
-                                CacheEntry entry = _repository.getEntry(id);
-                                EntryState state = entry.getState();
-                                if (siFilter != null) {
-                                    FileAttributes attributes = entry.getFileAttributes();
-                                    String siValue = attributes.isDefined(FileAttribute.STORAGECLASS)
-                                            ? attributes.getStorageClass()
-                                            : "<unknown>";
-                                    if (!siFilter.matcher(siValue).matches()) {
-                                        continue;
-                                    }
-                                }
-                                if (format.length() == 0 ||
-                                    (notcached && state != EntryState.CACHED) ||
-                                    (precious && state == EntryState.PRECIOUS) ||
-                                    (sticky && entry.isSticky()) ||
-                                    (broken && state == EntryState.BROKEN) ||
-                                    (cached && state == EntryState.CACHED) ||
-                                    (used && entry.getLinkCount() > 0)) {
-
-                                    sb.append(entry).append('\n');
-                                }
-                            } catch (FileNotInCacheException e) {
-                                // Entry was deleted; no problem
-                            }
-                        }
-                    }
-                    return sb.toString();
-                }
-            };
-        task.start();
-        return reply;
     }
 
     public static final String hh_rep_rmclass = "<storageClass> # removes the from the cache";
@@ -426,6 +417,20 @@ public class RepositoryInterpreter
         PnfsId pnfsId  = new PnfsId(args.argv(0));
         _repository.setState(pnfsId, EntryState.BROKEN);
         return "";
+    }
+
+    private Map<String, long[]> getStatistics(boolean isSumIncluded)
+    {
+        Map<String,long[]> map = _statisticsListener.toMap();
+        if (isSumIncluded) {
+            long[] counter = new long[10];
+            map.put("total", counter);
+            SpaceRecord record = _repository.getSpaceRecord();
+            counter[0] = record.getTotalSpace();
+            counter[1] = record.getFreeSpace();
+            counter[2] = _statisticsListener.getOtherBytes();
+        }
+        return map;
     }
 
     private static class Statistics
