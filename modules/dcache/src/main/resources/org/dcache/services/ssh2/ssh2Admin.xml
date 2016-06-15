@@ -46,16 +46,10 @@
         <property name="timeoutUnit" value="${admin.service.acm.timeout.unit}"/>
     </bean>
 
-    <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+    <bean id="login-strategy"
+	  class="org.dcache.services.login.RemoteLoginStrategy">
         <description>Processes login requests</description>
-        <property name="loginStrategies">
-            <list>
-                <bean class="org.dcache.services.login.RemoteLoginStrategy">
-                    <property name="cellStub" ref="gplazma"/>
-                </bean>
-            </list>
-        </property>
-        <property name="anonymousAccess" value="NONE"/>
+        <property name="cellStub" ref="gplazma"/>
     </bean>
 
     <bean id="shell-factory" class="org.dcache.services.ssh2.ShellFactory">

@@ -154,40 +154,6 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         _server.setPublickeyAuthenticator(new AdminPublickeyAuthenticator());
     }
 
-    public boolean kpwdLogin(String userName, String passwd, InetAddress client) {
-        PasswordCredential passCredential = new PasswordCredential(userName,
-                passwd);
-        Subject subject = new Subject();
-        subject.getPrivateCredentials().add(passCredential);
-        if (client != null) {
-            subject.getPrincipals().add(new Origin(client));
-        }
-
-        try {
-            _log.debug("LoginStrategy: {}, {}", _loginStrategy.getClass(),
-                    ((UnionLoginStrategy) _loginStrategy).getLoginStrategies());
-            LoginReply loginReply = _loginStrategy.login(subject);
-            Subject authenticatedSubject = loginReply.getSubject();
-            _log.debug("All pricipals returned by login: {}", authenticatedSubject.getPrincipals());
-            if (Subjects.hasGid(authenticatedSubject, _adminGroupId)) {
-                return true;
-            } else {
-                long[] userGids = Subjects.getGids(authenticatedSubject);
-                _log.warn("User: {} has GID(s): {}. In order to have login " +
-                        "rights this list should include GID {}. Add GID {} " +
-                        "to the user's GID list to grant login rights.",
-                        Subjects.getDisplayName(authenticatedSubject),
-                        Arrays.toString(userGids), _adminGroupId, _adminGroupId);
-                return false;
-            }
-        } catch (PermissionDeniedCacheException e) {
-            _log.warn("Pwd-based login for user: {} was denied.", userName);
-        } catch (CacheException e) {
-            _log.warn("Pwd-based Login failed: {}", e.toString());
-        }
-        return false;
-    }
-
     @Override
     public void afterStart() {
         configureAuthentication();
@@ -238,13 +204,12 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         }
     }
 
-    private InetAddress extractClientAddress(ServerSession session)
+    private void addOrigin(ServerSession session, Subject subject)
     {
         SocketAddress remote = session.getIoSession().getRemoteAddress();
         if (remote instanceof InetSocketAddress) {
-            return ((InetSocketAddress) remote).getAddress();
-        } else {
-            return null;
+            InetAddress address = ((InetSocketAddress) remote).getAddress();
+            subject.getPrincipals().add(new Origin(address));
         }
     }
 
@@ -253,8 +218,26 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         @Override
         public boolean authenticate(String userName, String password,
                 ServerSession session) {
-            _log.debug("Authentication username set to: {}", userName);
-            return kpwdLogin(userName, password, extractClientAddress(session));
+            Subject subject = new Subject();
+            addOrigin(session, subject);
+            subject.getPrivateCredentials().add(new PasswordCredential(userName,
+                    password));
+
+            try {
+                LoginReply reply = _loginStrategy.login(subject);
+
+                Subject authenticatedSubject = reply.getSubject();
+                if (!Subjects.hasGid(authenticatedSubject, _adminGroupId)) {
+                    throw new PermissionDeniedCacheException("not member of admin gid");
+                }
+
+                return true;
+            } catch (PermissionDeniedCacheException e) {
+                _log.warn("Login for {} denied: {}", userName, e.getMessage());
+            } catch (CacheException e) {
+                _log.warn("Login for {} failed: {}", userName, e.toString());
+            }
+            return false;
         }
     }
 
