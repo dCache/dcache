@@ -152,7 +152,6 @@ public class PoolV4
     private PoolV2Mode _poolMode;
     private boolean _reportOnRemovals;
     private boolean _suppressHsmLoad;
-    private boolean _suppressResilience;
     private boolean _cleanPreciousFiles;
     private String     _poolStatusMessage = "OK";
     private int        _poolStatusCode;
@@ -639,9 +638,6 @@ public class PoolV4
         if (_suppressHsmLoad) {
             pw.println("pool suppress hsmload on");
         }
-        if (!_poolMode.isResilienceEnabled()) {
-            pw.println("pool suppress resilience on");
-        }
         pw.println("set duplicate request "
                 + ((_dupRequest == DUP_REQ_NONE)
                 ? "none"
@@ -685,8 +681,6 @@ public class PoolV4
                    + " seconds");
         pw.println("Breakeven         : " + getBreakEven());
         pw.println("ReplicationMgr    : " + _replicationHandler);
-        pw.println("Resilience        : "
-            + (_poolMode.isResilienceEnabled() ? "on" : "off"));
         if (_hasTapeBackend) {
             pw.println("LargeFileStore    : None");
         } else if (_isVolatile) {
@@ -1382,7 +1376,7 @@ public class PoolV4
         _poolStatusCode = errorCode;
         _poolStatusMessage =
             (errorString == null) ? "Requested by operator" : errorString;
-        _poolMode.setMode(getModeWithResilienceSuppression(mode));
+        _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
         _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
@@ -1394,18 +1388,12 @@ public class PoolV4
      */
     private synchronized void enablePool(int mode)
     {
-        _poolMode.setMode(getModeWithResilienceSuppression(mode));
+        _poolMode.setMode(mode);
         _poolStatusCode = 0;
         _poolStatusMessage = "OK";
 
         _pingThread.sendPoolManagerMessage(true);
         _log.warn("Pool mode changed to " + _poolMode);
-    }
-
-    private int getModeWithResilienceSuppression(int mode) {
-        PoolV2Mode modified = new PoolV2Mode(mode);
-        modified.setResilienceEnabled(!_suppressResilience);
-        return modified.getMode();
     }
 
     private class PoolManagerPingThread implements Runnable
@@ -1756,26 +1744,6 @@ public class PoolV4
             }
         }
         return _replicationHandler.toString();
-    }
-
-    @Command(name = "pool suppress resilience",
-                    hint = "control whether pool state changes trigger "
-                                    + "any action in the resilience service",
-                    description = "Sets a pool mode flag indicating whether "
-                                    + "resilience handling is enabled or disabled.")
-    class SuppressResilienceCommand implements Callable<String> {
-        @Argument (valueSpec = "on|off",
-                        usage = "If on, indicates to the resilience service "
-                                        + "that pool state changes should be "
-                                        + "ignored (default is off).")
-        String suppress = "off";
-
-        @Override
-        public String call() throws Exception {
-            suppressResilience("on".equalsIgnoreCase(suppress));
-            return "suppress resilience on pool mode change : "
-                            + (_suppressResilience ? "on" : "off");
-        }
     }
 
     public static final String hh_pool_suppress_hsmload = "on|off";
@@ -2166,11 +2134,5 @@ public class PoolV4
 
             return "Heartbeat set to " + (_pingThread.getHeartbeat()) + " seconds";
         }
-    }
-
-    private synchronized void suppressResilience(boolean on) {
-        _suppressResilience = on;
-        _poolMode.setResilienceEnabled(!on);
-        _pingThread.sendPoolManagerMessage(true);
     }
 }

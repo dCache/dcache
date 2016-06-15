@@ -98,6 +98,7 @@ public abstract class TestBase implements Cancellable {
     protected static final Exception FORCED_FAILURE
                     = new Exception("Forced failure for test purposes");
     protected static final String    CHKPTFILE      = "/tmp/checkpoint-file";
+    protected static final String    POOLSFILE      = "/tmp/excluded-pools";
 
     /*
      *  Real instances.
@@ -528,6 +529,7 @@ public abstract class TestBase implements Cancellable {
         poolOperationMap.setCounters(counters);
         poolOperationMap.setPoolInfoMap(poolInfoMap);
         poolOperationMap.setHandler(poolOperationHandler);
+        poolOperationMap.setExcludedPoolsFile(POOLSFILE);
     }
 
     private void setLongTaskExecutor() {

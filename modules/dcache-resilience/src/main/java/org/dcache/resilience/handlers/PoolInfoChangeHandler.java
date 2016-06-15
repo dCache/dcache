@@ -215,6 +215,7 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
             .map(poolInfoMap::getPoolState)
             .forEach(resilienceMessageHandler::handleInternalMessage);
 
+        poolOperationMap.saveExcluded();
         lastRefresh = System.currentTimeMillis();
 
         LOGGER.trace("DIFF:\n{}", diff);

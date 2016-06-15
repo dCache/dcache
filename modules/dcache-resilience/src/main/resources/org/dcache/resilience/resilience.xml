@@ -199,6 +199,7 @@
       <property name="counters" ref="Counters"/>
       <property name="downGracePeriod" value="${resilience.limits.pool.down-grace-period}"/>
       <property name="downGracePeriodUnit" value="${resilience.limits.pool.down-grace-period.unit}"/>
+      <property name="excludedPoolsFile" value="${resilience.home}/excluded-pools"/>
       <property name="handler" ref="PoolOpHandler"/>
       <property name="maxConcurrentRunning" value="${resilience.limits.pool.scan-threads}"/>
       <property name="rescanWindow" value="${resilience.watchdog.scan.window}"/>

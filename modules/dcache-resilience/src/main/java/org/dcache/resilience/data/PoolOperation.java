@@ -67,7 +67,7 @@ import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 /**
  * <p>Object stored in the {@link PoolOperationMap}.</p>
  */
-final class PoolOperation {
+public final class PoolOperation {
     private static final String TO_STRING = "(completed: %s / %s : %s%%) – "
                     + "(updated: %s)(scanned: %s)(prev %s)(curr %s)(%s) %s";
 
@@ -77,15 +77,13 @@ final class PoolOperation {
         RUNNING,    // OPERATION IS ACTIVE
         CANCELED,   // OPERATION WAS TERMINATED BY USER
         FAILED,     // OPERATION FAILED WITH EXCEPTION
-        INACTIVE,   // RECEIVED AN IGNORE STATUS
         EXCLUDED    // POOL EXCLUDED FROM OPERATIONS
     }
 
     enum NextAction {
         NOP,            // REMAIN IN CURRENT QUEUE
         UP_TO_DOWN,     // PROMOTE TO WAITING
-        DOWN_TO_UP,     // CANCEL ANY CURRENT DOWN AND PROMOTE TO WAITING
-        DEACTIVATE      // SET DISABLED ON STATE
+        DOWN_TO_UP     // CANCEL ANY CURRENT DOWN AND PROMOTE TO WAITING
     }
 
     boolean forceScan;     // Overrides non-handling of restarts
@@ -128,28 +126,19 @@ final class PoolOperation {
                              exception == null ? "" : new ExceptionMessage(exception));
     }
 
+
+    public synchronized boolean isExcluded() {
+        return state == State.EXCLUDED;
+    }
+
     /**
      * <p>Provides a transition table for determining what to do when
      *      a successive status change notification is received.</p>
-     *
-     * <p>Note that the UP_IGNORE and DOWN_IGNORE states are not stored.</p>
      */
     synchronized NextAction getNextAction(PoolStatusForResilience incoming) {
-        switch(incoming) {
-            case DOWN_IGNORE:
-                currStatus = PoolStatusForResilience.DOWN;
-                return state == State.EXCLUDED ? NextAction.NOP :
-                                NextAction.DEACTIVATE;
-            case UP_IGNORE:
-                currStatus = currStatus == PoolStatusForResilience.DOWN ?
-                                PoolStatusForResilience.READ_ONLY : currStatus;
-                return state == State.EXCLUDED ? NextAction.NOP :
-                                NextAction.DEACTIVATE;
-            default:
-                if (state == State.EXCLUDED) {
-                    currStatus = incoming;
-                    return NextAction.NOP;
-                }
+        if (state == State.EXCLUDED) {
+            currStatus = incoming;
+            return NextAction.NOP;
         }
 
         lastStatus = currStatus;
@@ -162,19 +151,11 @@ final class PoolOperation {
                     case ENABLED:
                         return NextAction.DOWN_TO_UP;
                     case DOWN:
-                        return state == State.INACTIVE ? NextAction.UP_TO_DOWN :
-                                        NextAction.NOP;
+                        return NextAction.NOP;
                 }
             case READ_ONLY:
             case ENABLED:
-                switch (currStatus) {
-                    case DOWN:
-                        return NextAction.UP_TO_DOWN;
-                    case READ_ONLY:
-                    case ENABLED:
-                        return state == State.INACTIVE ? NextAction.DOWN_TO_UP :
-                                        NextAction.NOP;
-                }
+            case UNINITIALIZED:
                 /*
                  *  The transition from UNINITIALIZED to another
                  *  state occurs when the resilience service comes on line,
@@ -190,7 +171,6 @@ final class PoolOperation {
                  *  and handling this transition will unnecessarily provoke
                  *  an immediate system-wide scan.
                  */
-            case UNINITIALIZED:
                 switch (currStatus) {
                     case DOWN:
                         return NextAction.UP_TO_DOWN;

@@ -67,17 +67,15 @@ import java.util.List;
 
 import diskCacheV111.pools.PoolV2Mode;
 import org.dcache.resilience.data.PoolOperation.NextAction;
+import org.dcache.resilience.data.PoolOperation.State;
 
-import static org.dcache.resilience.data.PoolOperation.NextAction.DEACTIVATE;
 import static org.dcache.resilience.data.PoolOperation.NextAction.DOWN_TO_UP;
 import static org.dcache.resilience.data.PoolOperation.NextAction.NOP;
 import static org.dcache.resilience.data.PoolOperation.NextAction.UP_TO_DOWN;
 import static org.dcache.resilience.data.PoolStatusForResilience.DOWN;
-import static org.dcache.resilience.data.PoolStatusForResilience.DOWN_IGNORE;
 import static org.dcache.resilience.data.PoolStatusForResilience.ENABLED;
 import static org.dcache.resilience.data.PoolStatusForResilience.READ_ONLY;
 import static org.dcache.resilience.data.PoolStatusForResilience.UNINITIALIZED;
-import static org.dcache.resilience.data.PoolStatusForResilience.UP_IGNORE;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -110,23 +108,23 @@ public final class PoolStatusTransitionTest {
 
     static void generateOracles() {
         oracles.add(new TestOracle(DOWN, DOWN, DOWN, NOP));
-        oracles.add(new TestOracle(UNINITIALIZED, DOWN_IGNORE, DOWN, DEACTIVATE));
-        oracles.add(new TestOracle(UNINITIALIZED, UP_IGNORE, READ_ONLY, DEACTIVATE));
+        oracles.add(new TestOracle(UNINITIALIZED, DOWN, DOWN, NOP));
+        oracles.add(new TestOracle(UNINITIALIZED, DOWN, ENABLED, NOP));
         oracles.add(new TestOracle(DOWN, READ_ONLY, READ_ONLY, DOWN_TO_UP));
         oracles.add(new TestOracle(DOWN, ENABLED, ENABLED, DOWN_TO_UP));
         oracles.add(new TestOracle(READ_ONLY, DOWN, DOWN, UP_TO_DOWN));
-        oracles.add(new TestOracle(UNINITIALIZED, DOWN_IGNORE, DOWN, DEACTIVATE));
-        oracles.add(new TestOracle(UNINITIALIZED, UP_IGNORE, READ_ONLY, DEACTIVATE));
+        oracles.add(new TestOracle(UNINITIALIZED, DOWN, DOWN, NOP));
+        oracles.add(new TestOracle(UNINITIALIZED, READ_ONLY, ENABLED, NOP));
         oracles.add(new TestOracle(READ_ONLY, READ_ONLY, READ_ONLY, NOP));
         oracles.add(new TestOracle(READ_ONLY, ENABLED, ENABLED, NOP));
         oracles.add(new TestOracle(ENABLED, DOWN, DOWN, UP_TO_DOWN));
-        oracles.add(new TestOracle(UNINITIALIZED, DOWN_IGNORE, DOWN, DEACTIVATE));
-        oracles.add(new TestOracle(UNINITIALIZED, UP_IGNORE, ENABLED, DEACTIVATE));
+        oracles.add(new TestOracle(UNINITIALIZED, DOWN, DOWN, NOP));
+        oracles.add(new TestOracle(UNINITIALIZED, ENABLED, ENABLED, NOP));
         oracles.add(new TestOracle(ENABLED, READ_ONLY, READ_ONLY, NOP));
         oracles.add(new TestOracle(ENABLED, ENABLED, ENABLED, NOP));
         oracles.add(new TestOracle(UNINITIALIZED, DOWN, DOWN, UP_TO_DOWN));
-        oracles.add(new TestOracle(UNINITIALIZED, DOWN_IGNORE, DOWN, DEACTIVATE));
-        oracles.add(new TestOracle(UNINITIALIZED, UP_IGNORE, UNINITIALIZED, DEACTIVATE));
+        oracles.add(new TestOracle(UNINITIALIZED, DOWN, DOWN, NOP));
+        oracles.add(new TestOracle(UNINITIALIZED, ENABLED, ENABLED, NOP));
         oracles.add(new TestOracle(UNINITIALIZED, READ_ONLY, READ_ONLY, NOP));
         oracles.add(new TestOracle(UNINITIALIZED, ENABLED, ENABLED, NOP));
     }
@@ -143,14 +141,14 @@ public final class PoolStatusTransitionTest {
     }
 
     @Test
-    public void case01ActionShouldBeDeactivateForDownFollowedByDownResilienceOff() {
+    public void case01ActionShouldBeNOPForDownFollowedByDownResilienceOff() {
         givenUpdateWithPoolModeEqualToDown();
         givenUpdateWithPoolModeEqualToDownButResilienceOff();
         assertThatTestCaseObeysOracle(1);
     }
 
     @Test
-    public void case02ActionShouldBeDeactivateForDownFollowedByUpResilienceOff() {
+    public void case02ActionShouldBeNOPForDownFollowedByUpResilienceOff() {
         givenUpdateWithPoolModeEqualToDown();
         givenUpdateWithPoolModeEnabledButResilienceOff();
         assertThatTestCaseObeysOracle(2);
@@ -178,14 +176,14 @@ public final class PoolStatusTransitionTest {
     }
 
     @Test
-    public void case06ActionShouldBeDeactivateForReadableFollowedByDownResilienceOff() {
+    public void case06ActionShouldBeNOPForReadableFollowedByDownResilienceOff() {
         givenUpdateWithPoolModeReadOnly();
         givenUpdateWithPoolModeEqualToDownButResilienceOff();
         assertThatTestCaseObeysOracle(6);
     }
 
     @Test
-    public void case07ActionShouldBeDeactivateForReadableFollowedByUpResilienceOff() {
+    public void case07ActionShouldBeNOPForReadableFollowedByUpResilienceOff() {
         givenUpdateWithPoolModeReadOnly();
         givenUpdateWithPoolModeEnabledButResilienceOff();
         assertThatTestCaseObeysOracle(7);
@@ -213,14 +211,14 @@ public final class PoolStatusTransitionTest {
     }
 
     @Test
-    public void case11ActionShouldBeDeactivateForWritableFollowedByDownResilienceOff() {
+    public void case11ActionShouldBeNOPForWritableFollowedByDownResilienceOff() {
         givenUpdateWithPoolModeEnabled();
         givenUpdateWithPoolModeEqualToDownButResilienceOff();
         assertThatTestCaseObeysOracle(11);
     }
 
     @Test
-    public void case12ActionShouldBeDeactivateForWritableFollowedByUpResilienceOff() {
+    public void case12ActionShouldBeNOPForWritableFollowedByUpResilienceOff() {
         givenUpdateWithPoolModeEnabled();
         givenUpdateWithPoolModeEnabledButResilienceOff();
         assertThatTestCaseObeysOracle(12);
@@ -247,13 +245,13 @@ public final class PoolStatusTransitionTest {
     }
 
     @Test
-    public void case16ActionShouldBeDeactivateForUninitializedFollowedByDownResilienceOff() {
+    public void case16ActionShouldBeNOPForUninitializedFollowedByDownResilienceOff() {
         givenUpdateWithPoolModeEqualToDownButResilienceOff();
         assertThatTestCaseObeysOracle(16);
     }
 
     @Test
-    public void case17ActionShouldBeDeactivateForUninitializedFollowedByUpResilienceOff() {
+    public void case17ActionShouldBeNOPForUninitializedFollowedByUpResilienceOff() {
         givenUpdateWithPoolModeEnabledButResilienceOff();
         assertThatTestCaseObeysOracle(17);
     }
@@ -284,7 +282,7 @@ public final class PoolStatusTransitionTest {
 
     private void givenPoolModeOf(int mode, boolean enabled) {
         this.mode = new PoolV2Mode(mode);
-        this.mode.setResilienceEnabled(enabled);
+        operation.state = enabled ? State.WAITING : State.EXCLUDED;
     }
 
     private void givenUpdateWithPoolModeEnabled() {

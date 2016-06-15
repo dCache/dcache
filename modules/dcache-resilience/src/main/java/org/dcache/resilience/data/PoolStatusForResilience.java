@@ -68,9 +68,7 @@ public enum PoolStatusForResilience {
     UNINITIALIZED,      // no info yet
     DOWN,               // equivalent to disabled -strict, or dead
     ENABLED,            // equivalent to enabled
-    READ_ONLY,          // equivalent to disabled -readOnly
-    DOWN_IGNORE,        // DOWN for pool with resilience suppressed
-    UP_IGNORE;          // READ_ONLY/ENABLED for pool with resilience suppressed
+    READ_ONLY;          // equivalent to disabled -readOnly
 
     final static int[] notReadable = { PoolV2Mode.DISABLED_DEAD,
                                        PoolV2Mode.DISABLED_STRICT,
@@ -113,14 +111,6 @@ public enum PoolStatusForResilience {
             if ((mode & mask) == mask) {
                 state = DOWN;
                 break;
-            }
-        }
-
-        if (!poolMode.isResilienceEnabled()) {
-            if (state == DOWN) {
-                state = DOWN_IGNORE;
-            } else {
-                state = UP_IGNORE;
             }
         }
 

@@ -69,16 +69,21 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
+import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
+import org.dcache.resilience.data.PoolOperation;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 
@@ -90,6 +95,8 @@ import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
  *      on the order of 45 minutes to an hour to complete.</p>
  *
  * <p>This implementation writes out a simple CDL to a text file.</p>
+ *
+ * <p>Also includes load and save methods for recording excluded pools.</p>
  *
  * <p><b>A note on why 'parent' pool information is not saved</b>:  When
  *      writing the record, the originating pool must be recorded so that
@@ -161,6 +168,40 @@ public final class CheckpointUtils {
     }
 
     /**
+     * <p>Read back in from the excluded pools file pool names.</p>
+     *
+     * <p>Deletes the file when done; NOP if there is no file.</p>
+     *
+     * @param excludedPoolsFile to read
+     */
+    public static Collection<String> load(String excludedPoolsFile) {
+        File current = new File(excludedPoolsFile);
+        if (!current.exists()) {
+            return Collections.EMPTY_LIST;
+        }
+
+        Collection<String> excluded = new ArrayList<>();
+
+        try (BufferedReader fr = new BufferedReader(new FileReader(current))) {
+                while (true) {
+                String line = fr.readLine();
+                if (line == null) {
+                    break;
+                }
+                excluded.add(line);
+            }
+           current.delete();
+        } catch (FileNotFoundException e) {
+            LOGGER.error("Unable to reload excluded pools file: {}", e.getMessage());
+        } catch (IOException e) {
+            LOGGER.error("Unrecoverable error during reload excluded pools file: {}",
+                            e.getMessage());
+        }
+
+        return excluded;
+    }
+
+    /**
      * <p>Since we use checkpointing as an approximation,
      *      the fact that the ConcurrentMap (internal to the deque class)
      *      may be dirty and that it is not locked should not matter greatly.</p>
@@ -198,6 +239,33 @@ public final class CheckpointUtils {
         }
 
         return count.get();
+    }
+
+    /**
+     * <p>Save the excluded pool names to a file.</p>
+     *
+     * <p>If there already is such a file, it is deleted.</p>
+     *
+     * @param excludedPoolsFile to read
+     * @param operations the pools which could potentially be
+     *                   in the excluded state.
+     */
+    public static void save(String excludedPoolsFile,
+                            Map<String, PoolOperation> operations) {
+        File current = new File(excludedPoolsFile);
+        if (current.exists()) {
+            current.delete();
+        }
+
+        try (PrintWriter fw = new PrintWriter(new FileWriter(excludedPoolsFile, false))) {
+            operations.entrySet().stream().filter((e) -> e.getValue().isExcluded())
+                                 .forEach((e) -> fw.println(e.getKey()));
+        } catch (FileNotFoundException e) {
+            LOGGER.error("Unable to save excluded pools file: {}", e.getMessage());
+        } catch (IOException e) {
+            LOGGER.error("Unrecoverable error during save of excluded pools file: {}",
+                            e.getMessage());
+        }
     }
 
     /**
