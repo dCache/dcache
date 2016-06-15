@@ -175,9 +175,9 @@ public class RepositoryInterpreter
         "                 u  : files in use\n"+
         "                 nc : files which are not cached\n" +
         "                 e  : files which error condition\n" +
-        "              -si=<glob>   # select only replicas\n" +
-        "                             of files with storage-\n" +
-        "                             info that matches <glob>\n" +
+        "              -storage=<glob>   # select only replicas\n" +
+        "                                  of files with storage-\n" +
+        "                                  info that matches <glob>\n" +
         "              -s[=kmgt] [-sum]       # statistics\n" +
         "                 k  : data amount in KiB\n"+
         "                 m  : data amount in MiB\n"+
