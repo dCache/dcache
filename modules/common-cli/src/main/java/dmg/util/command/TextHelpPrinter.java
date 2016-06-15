@@ -284,7 +284,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                     help = Joiner.on(' ').join(help, getDefaultDescription(instance, field));
                 }
                 if (!help.isEmpty()) {
-                    writer.append(Strings.wrap("              ", help, 65));
+                    writer.append(Strings.wrap("              ", help, WIDTH));
                 }
             }
             writer.println();
@@ -324,7 +324,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                         usage = Joiner.on(' ').join(usage, getDefaultDescription(instance, field));
                     }
                     if (!usage.isEmpty()) {
-                        writer.append(Strings.wrap("              ", usage, 65));
+                        writer.append(Strings.wrap("              ", usage, WIDTH));
                     }
                 }
             }

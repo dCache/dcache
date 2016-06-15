@@ -1,5 +1,6 @@
 package org.dcache.commons.util;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import org.slf4j.Logger;
@@ -132,7 +133,8 @@ public final class Strings {
     }
 
     /**
-     * Wraps a text to a particular width.
+     * Wraps a text to a particular width. Leading white space is
+     * repeated in front of every wrapped line.
      *
      * ANSI escape sequences are considered to have zero width.
      *
@@ -149,14 +151,21 @@ public final class Strings {
         char[] chars = str.toCharArray();
         int length = chars.length;
         while (offset < length) {
-            int eop = offset;
+            int bop = offset;        // beginning of paragraph
+            while (offset < length && chars[offset] == ' ') {
+                offset++;
+            }
+            int pil = offset - bop;  // paragraph indentation length
+
+            int eop = offset;        // end of paragraph
             while (eop < length && chars[eop] != '\n') {
                 eop++;
             }
 
             int spaceToWrapAt;
-            while ((spaceToWrapAt = indexOfNextWrap(chars, offset, wrapLength)) < eop) {
+            while ((spaceToWrapAt = indexOfNextWrap(chars, offset, wrapLength - indent.length() - pil)) < eop) {
                 out.append(indent);
+                out.append(chars, bop, pil);
                 out.append(chars, offset, spaceToWrapAt - offset);
                 out.append('\n');
                 offset = spaceToWrapAt + 1;
@@ -167,7 +176,7 @@ public final class Strings {
                 }
             }
 
-            out.append(indent).append(chars, offset, eop - offset).append('\n');
+            out.append(indent).append(chars, bop, pil).append(chars, offset, eop - offset).append('\n');
             offset = eop + 1;
         }
 

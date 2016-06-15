@@ -407,8 +407,7 @@ public class MigrationModule
                         "precious:\n" +
                         "    marks it precious.\n" +
                         "removable:\n" +
-                        "    marks it cached and strips all existing sticky flags\n" +
-                        "    exluding pins.\n" +
+                        "    marks it cached and strips all existing sticky flags excluding pins.\n" +
                         "delete:\n" +
                         "    deletes the replica unless it is pinned.\n" +
                         "An optional list of sticky flags can be specified. The " +
@@ -421,8 +420,7 @@ public class MigrationModule
                 category="Transfer options",
                 usage = "Set the mode of the target replica:\n" +
                         "same:\n" +
-                        "    applies the state and sticky bits excluding pins\n" +
-                        "    of the local replica.\n" +
+                        "    applies the state and sticky bits excluding pins of the local replica.\n" +
                         "cached:\n" +
                         "    marks it cached.\n" +
                         "precious:\n" +
@@ -504,8 +502,7 @@ public class MigrationModule
                 category="Target options",
                 usage = "Determines how a pool is selected from the set of target pools:\n" +
                         "proportional:\n" +
-                        "    selects a pool with a probability proportional\n" +
-                        "    to the free space.\n" +
+                        "    selects a pool with a probability proportional to the free space.\n" +
                         "random:\n" +
                         "    selects a pool randomly.\n")
         String select = "proportional";

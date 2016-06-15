@@ -137,19 +137,19 @@ public class StringsTests {
         assertThat(wrap("  ", "The quick brown fox jumps\nover the lazy dog.", 70),
                    is("  The quick brown fox jumps\n  over the lazy dog.\n"));
         assertThat(wrap("  ", "The quick brown fox jumps over the lazy dog.", 14),
-                   is("  The quick\n  brown fox\n  jumps over the\n  lazy dog.\n"));
+                   is("  The quick\n  brown fox\n  jumps over\n  the lazy\n  dog.\n"));
         assertThat(wrap("  ", "The quick brown fox jumps over the lazy dog.", 15),
-                   is("  The quick brown\n  fox jumps over\n  the lazy dog.\n"));
+                   is("  The quick\n  brown fox\n  jumps over\n  the lazy dog.\n"));
         assertThat(wrap("  ", "The quick brown fox jumps over the lazy dog.", 16),
-                   is("  The quick brown\n  fox jumps over\n  the lazy dog.\n"));
+                   is("  The quick\n  brown fox\n  jumps over the\n  lazy dog.\n"));
         assertThat(wrap("  ", "  The quick brown fox jumps over the lazy dog.", 16),
-                   is("    The quick\n  brown fox jumps\n  over the lazy\n  dog.\n"));
+                   is("    The quick\n    brown fox\n    jumps over\n    the lazy\n    dog.\n"));
         assertThat(wrap("  ", "\u001B[1mThe quick brown\u001B[1m \u001B[1mfox jumps over the lazy dog.\u001B[1m", 15),
-                   is("  \u001B[1mThe quick brown\u001B[1m\n  \u001B[1mfox jumps over\n  the lazy dog.\u001B[1m\n"));
+                   is("  \u001B[1mThe quick\n  brown\u001B[1m \u001B[1mfox\n  jumps over\n  the lazy dog.\u001B[1m\n"));
         assertThat(
                 wrap("  ", "\u001B[1mThe quick brown\u001B[1m \u001B[1mfox jumps over the lazy dog.\u001B[1m\n\n"
                         + "\u001B[1mThe quick brown\u001B[1m \u001B[1mfox jumps over the lazy dog.\u001B[1m", 15),
-                is("  \u001B[1mThe quick brown\u001B[1m\n  \u001B[1mfox jumps over\n  the lazy dog.\u001B[1m\n  \n"
-                           + "  \u001B[1mThe quick brown\u001B[1m\n  \u001B[1mfox jumps over\n  the lazy dog.\u001B[1m\n"));
+                is("  \u001B[1mThe quick\n  brown\u001B[1m \u001B[1mfox\n  jumps over\n  the lazy dog.\u001B[1m\n  \n"
+                           + "  \u001B[1mThe quick\n  brown\u001B[1m \u001B[1mfox\n  jumps over\n  the lazy dog.\u001B[1m\n"));
     }
 }
