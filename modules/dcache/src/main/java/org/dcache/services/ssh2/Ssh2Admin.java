@@ -1,7 +1,5 @@
 package org.dcache.services.ssh2;
 
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellLifeCycleAware;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.NamedFactory;
@@ -15,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,16 +23,21 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import java.util.function.Function;
-import org.dcache.auth.*;
 
-import static java.util.stream.Collectors.toList;
-import java.util.stream.Stream;
-import static org.dcache.util.Files.checkFile;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
+
+import org.dcache.auth.LoginReply;
+import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.Subjects;
+import org.dcache.auth.UnionLoginStrategy;
+import org.dcache.util.Files;
 
 /**
  * This class starts the ssh server. It is however not started in the
@@ -48,8 +52,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private final static Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private final SshServer _server;
     // UniversalSpringCell injected parameters
-    private String _hostKeyPrivate;
-    private String _hostKeyPublic;
+    private String[] _hostKeys;
     private File _authorizedKeyList;
     private String _host;
     private int _port;
@@ -95,22 +98,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         return _adminGroupId;
     }
 
-    public String getHostKeyPrivate() {
-        return _hostKeyPrivate;
-    }
-
-    public void setHostKeyPrivate(String hostKeyPrivate) {
-        _hostKeyPrivate = hostKeyPrivate;
-        _log.debug("hostKeyPrivate set to: {}", _hostKeyPrivate);
-    }
-
-    public String getHostKeyPublic() {
-        return _hostKeyPublic;
-    }
-
-    public void setHostKeyPublic(String hostKeyPublic) {
-        _hostKeyPublic = hostKeyPublic;
-        _log.debug("hostKeyPublic set to: {}", _hostKeyPublic);
+    public void setHostKeys(String[] keys) {
+        _hostKeys = keys;
     }
 
     public File getAuthorizedKeyList() {
@@ -200,18 +189,14 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
     private void configureKeyFiles() {
         try {
-            checkFile(_hostKeyPrivate);
-            checkFile(_hostKeyPublic);
-        } catch (IOException ex) {
-            throw new RuntimeException("Problem with server ssh host keys, " + ex.getMessage());
+            for (String key : _hostKeys) {
+                Files.checkFile(key);
+            }
+            FileKeyPairProvider fKeyPairProvider = new FileKeyPairProvider(_hostKeys);
+            _server.setKeyPairProvider(fKeyPairProvider);
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage(), e);
         }
-
-        String[] keyFiles = {_hostKeyPrivate, _hostKeyPublic};
-        FileKeyPairProvider fKeyPairProvider = new FileKeyPairProvider(
-                keyFiles);
-
-        _server.setKeyPairProvider(fKeyPairProvider);
-
     }
 
     private void startServer() {
