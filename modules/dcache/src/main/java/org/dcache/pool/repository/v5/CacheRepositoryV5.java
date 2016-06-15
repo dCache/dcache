@@ -715,10 +715,10 @@ public class CacheRepositoryV5
                 case FROM_CLIENT:
                 case FROM_STORE:
                 case FROM_POOL:
-                    throw new FileNotInCacheException("File is incomplete");
+                    throw new LockedCacheException("File is incomplete");
                 case REMOVED:
                 case DESTROYED:
-                    throw new FileNotInCacheException("File has been removed");
+                    throw new LockedCacheException("File has been removed");
                 case BROKEN:
                 case PRECIOUS:
                 case CACHED:
