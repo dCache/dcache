@@ -26,7 +26,6 @@ import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.util.Args;
 import org.dcache.util.ByteUnit;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
@@ -334,11 +333,17 @@ public class RepositoryInterpreter
         }
     }
 
-    public static final String hh_rep_rmclass = "<storageClass> # removes the from the cache";
-    public String ac_rep_rmclass_$_1(Args args)
+    @Command(name = "rep rmclass", hint = "remove replicas by storage class",
+            description = "Removed all replicas of this pool that belong to a given storage class. " +
+                          "WARNING: This is a dangerous command and may result in data loss if misused.")
+    public class RemoveClassCommand extends DelayedCommand<String>
     {
-        final String storageClassName = args.argv(0);
-        new Thread(() -> {
+        @Argument(usage = "A storage class.")
+        String storageClassName;
+
+        @Override
+        public String execute()
+        {
             int cnt = 0;
             for (PnfsId id: _repository) {
                 try {
@@ -363,60 +368,84 @@ public class RepositoryInterpreter
                 }
             }
             _log.info("'rep rmclass {}' removed {} files.", storageClassName, cnt);
-        }, "rmclass").start();
-        return "Backgrounded";
-    }
-
-    public static final String fh_rep_rm =
-        " rep rm [-force] <pnfsid>\n" +
-        "        removes <pnfsid> from the pool. The file is only \n"+
-        "        removed if it is CACHED and not STICKY.\n"+
-        "  -force overwrites this protection and tries to remove the file\n"+
-        "         in any case. If the link count is not yet 0, the file\n"+
-        "         exists until zero is reached.\n"+
-        "  SEE ALSO :\n"+
-        "     rep rmclass ...\n";
-    public static final String hh_rep_rm = "<pnfsid> [-force] # removes the pnfsfile from the cache";
-    public String ac_rep_rm_$_1(Args args) throws Exception
-    {
-        boolean forced = args.hasOption("force");
-        PnfsId pnfsId  = new PnfsId(args.argv(0));
-        CacheEntry entry = _repository.getEntry(pnfsId);
-        if (forced ||
-            (entry.getState() == EntryState.CACHED && !entry.isSticky())) {
-            _log.warn("rep rm: removing " + pnfsId);
-            _repository.setState(pnfsId, EntryState.REMOVED);
-            return "Removed " + pnfsId;
-        } else {
-            return "File is not removable; use -force to override";
+            return cnt + " files removed.";
         }
     }
 
-    public static final String hh_rep_set_precious = "<pnfsId>";
-    public String ac_rep_set_precious_$_1(Args args)
-        throws IllegalTransitionException, CacheException, InterruptedException
+    @Command(name = "rep rm", hint = "remove replica",
+            description = "Removes a replica from the pool. The replica is only "+
+                          "removed if it is CACHED and not STICKY.")
+    public class RemoveCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        _repository.setState(pnfsId, EntryState.PRECIOUS);
-        return "";
+        @Argument(usage = "PNFS ID of replica to remove.")
+        PnfsId pnfsId;
+
+        @Option(name = "force",
+                usage = "Removes replica even if it is not garbage collectable. WARNING: This is " +
+                        "a dangerous option and may result in data loss if misused.")
+        boolean isForced;
+
+        @Override
+        public String call() throws Exception
+        {
+            CacheEntry entry = _repository.getEntry(pnfsId);
+            if (isForced || entry.getState() == EntryState.CACHED && !entry.isSticky()) {
+                _log.warn("rep rm: removing {}", pnfsId);
+                _repository.setState(pnfsId, EntryState.REMOVED);
+                return "Removed " + pnfsId;
+            } else {
+                return "File is not removable; use -force to override";
+            }
+        }
     }
 
-    public static final String hh_rep_set_cached = "<pnfsId> # DON'T USE, Potentially dangerous";
-    public String ac_rep_set_cached_$_1(Args args)
-        throws IllegalTransitionException, CacheException, InterruptedException
+    @Command(name = "rep set precious", hint = "set replica precious",
+            description = "Marks a replica as precious. On tape connected pools, precious " +
+                          "replicas are flushed to tape.")
+    public class SetPreciousCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        _repository.setState(pnfsId, EntryState.CACHED);
-        return "";
+        @Argument(usage = "PNFS ID of replica to make precious.")
+        PnfsId pnfsId;
+
+        @Override
+        public String call() throws Exception
+        {
+            _repository.setState(pnfsId, EntryState.PRECIOUS);
+            return "";
+        }
     }
 
-    public static final String hh_rep_set_broken = "<pnfsid>";
-    public String ac_rep_set_broken_$_1(Args args)
-        throws IllegalTransitionException, CacheException, InterruptedException
+    @Command(name = "rep set cached", hint = "set replica cached",
+            description = "Marks a replica as cached. Unless also marked sticky, cached files " +
+                          "can be garbage collected. WARNING: This is a dangerous command and may " +
+                          "result in data loss if misused.")
+    public class SetCachedCommand implements Callable<String>
     {
-        PnfsId pnfsId  = new PnfsId(args.argv(0));
-        _repository.setState(pnfsId, EntryState.BROKEN);
-        return "";
+        @Argument(usage = "PNFS ID of replica to make cached.")
+        PnfsId pnfsId;
+
+        @Override
+        public String call() throws Exception
+        {
+            _repository.setState(pnfsId, EntryState.CACHED);
+            return "";
+        }
+    }
+
+    @Command(name = "rep set broken", hint = "set replica broken",
+            description = "Marks a replica as broken. Broken replicas are not served to clients. Such " +
+                          "replicas are subject to an automatic error recovery upon pool restart.")
+    public class SetBrokenommand implements Callable<String>
+    {
+        @Argument(usage = "PNFS ID of replica to mark as broken.")
+        PnfsId pnfsId;
+
+        @Override
+        public String call() throws Exception
+        {
+            _repository.setState(pnfsId, EntryState.BROKEN);
+            return "";
+        }
     }
 
     private Map<String, long[]> getStatistics(boolean isSumIncluded)
