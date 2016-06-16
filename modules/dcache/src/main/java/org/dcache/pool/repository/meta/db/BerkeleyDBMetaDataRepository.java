@@ -14,6 +14,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -181,18 +184,23 @@ public class BerkeleyDBMetaDataRepository
     {
         try {
             File file = _fileStore.get(id);
-            if (!file.isFile()) {
-                return null;
+            BasicFileAttributes attributes =
+                    Files.getFileAttributeView(file.toPath(), BasicFileAttributeView.class).readAttributes();
+            if (!attributes.isRegularFile()) {
+                throw new DiskErrorCacheException("Not a regular file: " + file);
             }
-
-            return CacheRepositoryEntryImpl.load(this, id);
+            return CacheRepositoryEntryImpl.load(this, id, attributes);
         } catch (EnvironmentFailureException e) {
             if (!isValid()) {
-                throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
+                throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
             }
-            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
+            throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
         } catch (OperationFailureException e) {
-            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
+            throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
+        } catch (NoSuchFileException | FileNotFoundException e) {
+            return null;
+        } catch (IOException e) {
+            throw new CacheException("Failed to read " + id + ": " + e.getMessage(), e);
         }
     }
 

@@ -11,9 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 
 import diskCacheV111.util.CacheException;
@@ -61,35 +62,24 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
     private long _size;
 
-    public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
-                                    PnfsId pnfsId)
+    public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId)
     {
         _repository = repository;
         _pnfsId = pnfsId;
-        _sticky = ImmutableList.of();
         _state = EntryState.NEW;
-        File file = getDataFile();
-        _lastAccess = file.lastModified();
-        _size = file.length();
-        if (_lastAccess == 0) {
-            _lastAccess = _creationTime;
-        }
+        _sticky = ImmutableList.of();
+        _lastAccess = _creationTime;
     }
 
-    private CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
-                                     PnfsId pnfsId,
-                                     CacheRepositoryEntryState state)
+    public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId, EntryState state,
+                                    Collection<StickyRecord> sticky, BasicFileAttributes attributes)
     {
         _repository = repository;
         _pnfsId = pnfsId;
-        _state = state.getState();
-        setStickyRecords(state.stickyRecords());
-        File file = getDataFile();
-        _lastAccess = file.lastModified();
-        _size = file.length();
-        if (_lastAccess == 0) {
-            _lastAccess = _creationTime;
-        }
+        _state = state;
+        setStickyRecords(sticky);
+        _lastAccess = attributes.lastModifiedTime().toMillis();
+        _size = attributes.size();
     }
 
     private void setStickyRecords(Iterable<StickyRecord> records)
@@ -305,13 +295,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
     }
 
-    static CacheRepositoryEntryImpl load(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId)
+    static CacheRepositoryEntryImpl load(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId,
+                                         BasicFileAttributes attributes) throws IOException
     {
         try {
             String id = pnfsId.toString();
             CacheRepositoryEntryState state = repository.getStateMap().get(id);
             if (state != null) {
-                return new CacheRepositoryEntryImpl(repository, pnfsId, state);
+                return new CacheRepositoryEntryImpl(repository, pnfsId, state.getState(), state.stickyRecords(), attributes);
             }
         } catch (ClassCastException e) {
             _log.warn(e.toString());
@@ -326,8 +317,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             }
             _log.warn(e.toString());
         }
-
-        return new CacheRepositoryEntryImpl(repository, pnfsId);
+        return new CacheRepositoryEntryImpl(repository, pnfsId, EntryState.BROKEN, ImmutableList.of(), attributes);
     }
 
     private class UpdatableRecordImpl implements UpdatableRecord
