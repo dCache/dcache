@@ -421,7 +421,7 @@ class CellGlue
                  */
                 for (CellRoute route : _routingTable.findTopicRoutes(address)) {
                     CellAddressCore target = route.getTarget();
-                    boolean isLocalSubscriber = !target.getCellName().equals("*");
+                    boolean isLocalSubscriber = !target.isDomainAddress();
                     if (isLocalSubscriber || resolveRemotely) {
                         CellMessage m = msg.clone();
                         if (isLocalSubscriber) {
@@ -472,7 +472,8 @@ class CellGlue
 
             /* Alias routes rewrite the address.
              */
-            if (route.getRouteType() == CellRoute.ALIAS) {
+            if (route.getRouteType() == CellRoute.ALIAS ||
+                route.getRouteType() == CellRoute.QUEUE && !address.isDomainAddress()) {
                 destination.replaceCurrent(address);
                 hasDestinationChanged = true;
             }
