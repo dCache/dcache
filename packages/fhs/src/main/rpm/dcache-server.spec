@@ -68,6 +68,11 @@ if [ ! -f /etc/dcache/admin/ssh_host_dsa_key ]; then
     chmod 640 /etc/dcache/admin/ssh_host_dsa_key
     chgrp dcache /etc/dcache/admin/ssh_host_dsa_key
 fi
+if [ ! -f /etc/dcache/admin/ssh_host_rsa_key ]; then
+    ssh-keygen -q -t rsa -f /etc/dcache/admin/ssh_host_rsa_key -N ""
+    chmod 640 /etc/dcache/admin/ssh_host_rsa_key
+    chgrp dcache /etc/dcache/admin/ssh_host_rsa_key
+fi
 
 %preun
 if [ $1 -eq 0 ] ; then
