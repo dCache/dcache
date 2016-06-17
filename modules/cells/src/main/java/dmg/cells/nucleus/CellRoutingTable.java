@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 
 import org.dcache.util.ColumnWriter;
 
+import static com.google.common.collect.Iterables.*;
 import static java.util.stream.Collectors.toList;
 
 public class CellRoutingTable implements Serializable
@@ -199,7 +200,7 @@ public class CellRoutingTable implements Serializable
         }
     }
 
-    public CellRoute find(CellAddressCore addr)
+    public CellRoute find(CellAddressCore addr, boolean allowRemote)
     {
         String cellName = addr.getCellName();
         String domainName = addr.getCellDomainName();
@@ -217,7 +218,11 @@ public class CellRoutingTable implements Serializable
             //
             synchronized (_queue) {
                 List<CellRoute> routes = _queue.get(cellName);
-                if (!routes.isEmpty()) {
+                if (!allowRemote) {
+                    CellRoute[] localRoutes =
+                            routes.stream().filter(r -> !r.getTarget().isDomainAddress()).toArray(CellRoute[]::new);
+                    return (localRoutes.length > 0) ? localRoutes[_random.nextInt(localRoutes.length)] : null;
+                } else if (!routes.isEmpty()) {
                     return routes.get(_random.nextInt(routes.size()));
                 }
             }
