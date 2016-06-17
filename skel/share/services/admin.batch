@@ -4,8 +4,7 @@ check -strong admin.cell.name
 check admin.cell.subscribe
 check -strong admin.history.size
 check -strong admin.net.port
-check -strong admin.paths.dsa-host-key.private
-check -strong admin.paths.dsa-host-key.public
+check -strong admin.paths.host-keys
 check -strong admin.service.gplazma
 check -strong admin.service.gplazma.timeout
 check -strong admin.service.gplazma.timeout.unit
@@ -28,17 +27,6 @@ check admin.paths.authorized-keys
 # Use the global property as the route affects the entire domain
 check -strong dcache.service.spacemanager
 route add -alias SrmSpaceManager ${dcache.service.spacemanager}
-
-define env failMissingServerKey.exe endDefine
-   say -level=esay "The host key file ${admin.paths.dsa-host-key.private} is missing.  Please generate it with:"
-   say -level=esay "     ssh-keygen -t dsa -f ${admin.paths.dsa-host-key.private} -N \"\""
-   exit 1
-endDefine
-onerror continue
-test -f ${admin.paths.dsa-host-key.private}
-set env have_server_key ${rc}
-onerror shutdown
-exec env failMissingServerKey.exe -ifnotok=have_server_key
 
 create org.dcache.cells.UniversalSpringCell ${admin.cell.name} \
     "classpath:org/dcache/services/ssh2/ssh2Admin.xml \
