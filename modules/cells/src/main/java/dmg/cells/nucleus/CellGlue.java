@@ -356,7 +356,8 @@ class CellGlue
      *
      * @param msg The cell envelope
      * @param resolveLocally Whether to deliver messages for @local addresses to local cells
-     * @param resolveRemotely Whether to deliver messages for @local addresses to remote cells
+     * @param resolveRemotely Whether to deliver messages for @local addresses through routes with
+     *                        a domain address as a target
      * @throws SerializationException
      */
     void sendMessage(CellMessage msg, boolean resolveLocally, boolean resolveRemotely)
@@ -411,7 +412,7 @@ class CellGlue
             /* If the address if not fully qualified we have the choice of resolving
              * it locally or through the routing table.
              */
-            if (address.getCellDomainName().equals("local")) {
+            if (address.isLocalAddress()) {
                 if (resolveLocally && deliverLocally(msg, address)) {
                     return;
                 }
@@ -431,13 +432,6 @@ class CellGlue
                     }
                     hasTopicRoutes = true;
                 }
-
-                if (!resolveRemotely) {
-                    if (!hasTopicRoutes) {
-                        sendException(msg, address.toString());
-                    }
-                    return;
-                }
             }
 
             /* Unless we updated the destination path, there is no reason to send the message back to where
@@ -452,14 +446,9 @@ class CellGlue
                 return;
             }
 
-            /* The delivery restrictions do not apply to routes.
-             */
-            resolveLocally = true;
-            resolveRemotely = true;
-
             /* Lookup a route.
              */
-            CellRoute route = _routingTable.find(address);
+            CellRoute route = _routingTable.find(address, resolveRemotely);
             if (route == null) {
                 LOGGER.trace("sendMessage : no route destination for : {}", address);
                 if (!hasTopicRoutes) {
@@ -477,6 +466,12 @@ class CellGlue
                 destination.replaceCurrent(address);
                 hasDestinationChanged = true;
             }
+
+            /* The delivery restrictions do not apply to routes.
+             */
+            resolveLocally = true;
+            resolveRemotely = true;
+
             steps--;
         }
         // end of big iteration loop
