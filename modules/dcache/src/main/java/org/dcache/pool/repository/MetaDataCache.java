@@ -429,7 +429,7 @@ public class MetaDataCache
                                 }));
             } catch (IllegalArgumentException | IllegalStateException e) {
                 throw e;
-            } catch (RuntimeException | CacheException e) {
+            } catch (RuntimeException | DiskErrorCacheException e) {
                 FaultEvent event = new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e);
                 _faultListener.faultOccurred(event);
                 throw e;
