@@ -105,12 +105,6 @@ public class ZooKeeperCell extends AbstractCell
                 Strings.isNullOrEmpty(address) ? new InetSocketAddress(port) : new InetSocketAddress(address, port);
 
         checkArgument(autoPurgeInterval > 0, "zookeeper.auto-purge.purge-interval must be non-negative.");
-        int purgeIntervalHours = (int) TimeUnit.HOURS.convert(autoPurgeInterval, autoPurgeIntervalUnit);
-        DatadirCleanupManager purgeMgr =
-                new DatadirCleanupManager(dataDir.getAbsolutePath(), dataLogDir.getAbsolutePath(),
-                                          autoPurgeRetainCount, purgeIntervalHours);
-        purgeMgr.start();
-
         zkServer = new ZooKeeperServer();
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);
         zkServer.setTxnLogFactory(txnLog);
@@ -129,6 +123,19 @@ public class ZooKeeperCell extends AbstractCell
         cnxnFactory.configure(socketAddress, maxClientConnections);
         this.cnxnFactory = cnxnFactory;
         this.cnxnFactory.startup(zkServer);
+
+        // FileTxnSnapLog constructor creates dataDir and dataLogDir if they
+        // don't already exist, but in a non-thread safe fashion.
+        // Unfortunately, DatadirCleanupManager#start launches an asynchronous
+        // task that runs immediately and creates a FileTxnSnapLog object.  This
+        // can creating a race between the constructor above.  To avoid this,
+        // we must call DatadirCleanupManager#start after the FileTxnSnapLog
+        // object has been created.
+        int purgeIntervalHours = (int) TimeUnit.HOURS.convert(autoPurgeInterval, autoPurgeIntervalUnit);
+        DatadirCleanupManager purgeMgr =
+                new DatadirCleanupManager(dataDir.getAbsolutePath(), dataLogDir.getAbsolutePath(),
+                                          autoPurgeRetainCount, purgeIntervalHours);
+        purgeMgr.start();
     }
 
     @Override
