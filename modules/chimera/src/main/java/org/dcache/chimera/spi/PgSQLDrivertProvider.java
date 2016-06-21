@@ -10,8 +10,7 @@ import org.dcache.chimera.FsSqlDriver;
 import org.dcache.chimera.PgSQL95FsSqlDriver;
 import org.dcache.chimera.PgSQLFsSqlDriver;
 
-import static org.dcache.commons.util.SqlHelper.tryToClose;
-import static org.dcache.commons.util.SqlHelper.tryToClose;
+import static org.dcache.util.SqlHelper.tryToClose;
 
 public class PgSQLDrivertProvider implements DBDriverProvider {
 

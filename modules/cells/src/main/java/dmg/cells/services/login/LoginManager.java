@@ -46,7 +46,7 @@ import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
 
 import org.dcache.auth.Subjects;
-import org.dcache.commons.util.NDC;
+import org.dcache.util.NDC;
 import org.dcache.util.Args;
 import org.dcache.util.Version;
 

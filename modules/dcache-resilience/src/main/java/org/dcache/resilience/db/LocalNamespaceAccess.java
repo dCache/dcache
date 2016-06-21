@@ -76,7 +76,6 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.BackEndErrorHimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
-import org.dcache.commons.util.SqlHelper;
 import org.dcache.resilience.data.FileOperationMap;
 import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
@@ -87,7 +86,7 @@ import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.commons.util.SqlHelper.tryToClose;
+import static org.dcache.util.SqlHelper.tryToClose;
 
 /**
  * <p>Provides handling of specialized resilience-related queries which require
@@ -263,8 +262,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                 }
             }
         } finally {
-            SqlHelper.tryToClose(resultSet);
-            SqlHelper.tryToClose(statement);
+            tryToClose(resultSet);
+            tryToClose(statement);
         }
     }
 
@@ -309,8 +308,8 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                 }
             }
         } finally {
-            SqlHelper.tryToClose(resultSet);
-            SqlHelper.tryToClose(statement);
+            tryToClose(resultSet);
+            tryToClose(statement);
         }
 
         LOGGER.info("Printing of inaccessible files for {} completed.", location);

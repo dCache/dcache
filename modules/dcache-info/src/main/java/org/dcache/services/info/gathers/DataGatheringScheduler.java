@@ -12,7 +12,7 @@ import java.util.Map;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.nucleus.UOID;
 
-import org.dcache.commons.util.NDC;
+import org.dcache.util.NDC;
 import org.dcache.services.info.base.StateExhibitor;
 import org.dcache.services.info.base.StateUpdateManager;
 

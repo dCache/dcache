@@ -1,4 +1,4 @@
-package org.dcache.commons.util;
+package org.dcache.util;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;

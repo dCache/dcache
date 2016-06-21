@@ -2,7 +2,7 @@ package dmg.cells.nucleus;
 
 import org.slf4j.MDC;
 
-import org.dcache.commons.util.NDC;
+import org.dcache.util.NDC;
 
 /**
  * The Cell Diagnostic Context, a utility class for working with the

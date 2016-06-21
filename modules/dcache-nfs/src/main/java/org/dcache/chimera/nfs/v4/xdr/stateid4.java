@@ -21,7 +21,7 @@ package org.dcache.chimera.nfs.v4.xdr;
 import java.util.Arrays;
 
 import java.io.Serializable;
-import org.dcache.utils.Bytes;
+import org.dcache.util.Bytes;
 
 public class stateid4 implements  Serializable {
 

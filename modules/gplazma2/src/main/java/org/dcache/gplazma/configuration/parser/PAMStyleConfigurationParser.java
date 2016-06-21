@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import org.dcache.commons.util.Strings;
+import org.dcache.util.Strings;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;

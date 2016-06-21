@@ -16,7 +16,7 @@ import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
 
-import org.dcache.commons.util.NDC;
+import org.dcache.util.NDC;
 import org.dcache.util.FireAndForgetTask;
 
 /**

@@ -7,7 +7,7 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.dcache.commons.util.NDC;
+import org.dcache.util.NDC;
 
 import static com.google.common.base.Strings.nullToEmpty;
 

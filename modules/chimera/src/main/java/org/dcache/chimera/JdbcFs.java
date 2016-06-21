@@ -62,7 +62,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.acl.enums.AceFlags.*;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
-import static org.dcache.commons.util.SqlHelper.tryToClose;
+import static org.dcache.util.SqlHelper.tryToClose;
 
 /**
  *

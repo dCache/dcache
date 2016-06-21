@@ -1,9 +1,9 @@
-package org.dcache.commons.util;
+package org.dcache.util;
 
 import org.junit.Test;
 
-import static org.dcache.commons.util.Strings.plainLength;
-import static org.dcache.commons.util.Strings.wrap;
+import static org.dcache.util.Strings.plainLength;
+import static org.dcache.util.Strings.wrap;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertThat;

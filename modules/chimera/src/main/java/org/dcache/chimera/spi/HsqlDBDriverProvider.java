@@ -6,8 +6,7 @@ import javax.sql.DataSource;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsSqlDriver;
 import org.dcache.chimera.HsqlDBFsSqlDriver;
-import static org.dcache.commons.util.SqlHelper.tryToClose;
-import static org.dcache.commons.util.SqlHelper.tryToClose;
+import static org.dcache.util.SqlHelper.tryToClose;
 
 public class HsqlDBDriverProvider implements DBDriverProvider {
 

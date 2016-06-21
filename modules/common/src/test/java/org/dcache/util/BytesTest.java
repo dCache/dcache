@@ -1,4 +1,4 @@
-package org.dcache.utils;
+package org.dcache.util;
 
 import org.junit.Before;
 import org.junit.Test;

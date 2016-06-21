@@ -59,7 +59,6 @@ import dmg.util.TimebasedCounter;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
-import org.dcache.commons.util.NDC;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;

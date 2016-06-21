@@ -13,7 +13,7 @@ import java.util.ServiceLoader;
 
 import dmg.cells.nucleus.EnvironmentAware;
 
-import org.dcache.commons.util.NDC;
+import org.dcache.util.NDC;
 import org.dcache.util.ConfigurationProperties;
 
 import static com.google.common.base.Predicates.compose;

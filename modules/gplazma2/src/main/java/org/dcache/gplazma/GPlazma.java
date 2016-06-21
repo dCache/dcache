@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
-import org.dcache.commons.util.NDC;
+import org.dcache.util.NDC;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;

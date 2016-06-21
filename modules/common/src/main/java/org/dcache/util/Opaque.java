@@ -15,7 +15,7 @@
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-package org.dcache.utils;
+package org.dcache.util;
 
 import java.util.Arrays;
 import java.util.Collection;

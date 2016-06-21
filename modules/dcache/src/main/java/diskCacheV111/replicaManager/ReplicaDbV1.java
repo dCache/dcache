@@ -22,7 +22,7 @@ import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellAdapter;
 import java.util.Collections;
 
-import static org.dcache.commons.util.SqlHelper.tryToClose;
+import static org.dcache.util.SqlHelper.tryToClose;
 
 //import uk.org.primrose.GeneralException;
 //import uk.org.primrose.vendor.standalone.*;

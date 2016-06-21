@@ -52,7 +52,7 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.nfs.vfs.AclCheckable;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.util.PortRange;
-import org.dcache.utils.Bytes;
+import org.dcache.util.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;

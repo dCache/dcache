@@ -88,7 +88,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.dcache.commons.util.SqlHelper;
+import org.dcache.util.SqlHelper;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.IllegalStateTransition;

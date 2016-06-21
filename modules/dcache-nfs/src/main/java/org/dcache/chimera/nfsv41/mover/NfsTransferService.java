@@ -51,7 +51,7 @@ import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
-import org.dcache.utils.Bytes;
+import org.dcache.util.Bytes;
 import org.dcache.xdr.OncRpcException;
 
 /**

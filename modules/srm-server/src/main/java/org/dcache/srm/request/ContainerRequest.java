@@ -87,7 +87,7 @@ import java.util.function.LongFunction;
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
 
-import org.dcache.commons.util.AtomicCounter;
+import org.dcache.util.AtomicCounter;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMUser;

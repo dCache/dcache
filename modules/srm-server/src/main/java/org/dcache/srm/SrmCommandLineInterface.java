@@ -83,7 +83,7 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
-import org.dcache.commons.util.Strings;
+import org.dcache.util.Strings;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.GetRequest;

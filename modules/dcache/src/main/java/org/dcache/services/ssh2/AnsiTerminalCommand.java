@@ -34,7 +34,7 @@ import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 
-import org.dcache.commons.util.Strings;
+import org.dcache.util.Strings;
 
 import static org.fusesource.jansi.Ansi.Color.CYAN;
 import static org.fusesource.jansi.Ansi.Color.RED;

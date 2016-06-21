@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 
-import org.dcache.commons.util.NDC;
+import org.dcache.util.NDC;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;

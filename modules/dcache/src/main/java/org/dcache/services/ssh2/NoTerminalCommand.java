@@ -27,7 +27,7 @@ import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 
-import org.dcache.commons.util.Strings;
+import org.dcache.util.Strings;
 
 public class NoTerminalCommand implements Command, Runnable
 {

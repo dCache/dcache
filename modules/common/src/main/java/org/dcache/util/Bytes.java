@@ -14,7 +14,7 @@
  * details); if not, write to the Free Software Foundation, Inc.,
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-package org.dcache.utils;
+package org.dcache.util;
 
 /**
  *

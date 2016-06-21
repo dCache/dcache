@@ -656,7 +656,7 @@ public class UniversalSpringCell
                     if (bean.isReadableProperty(property)) {
                         s.append(property).append('=');
                         try {
-                            s.append(org.dcache.commons.util.Strings.toString(bean.getPropertyValue(property)));
+                            s.append(org.dcache.util.Strings.toString(bean.getPropertyValue(property)));
                             if (!bean.isWritableProperty(property)) {
                                 s.append(" [read-only]");
                             }
@@ -682,7 +682,7 @@ public class UniversalSpringCell
         public String call() throws InvalidPropertyException
         {
             Object o = getBeanProperty(name);
-            return (o != null) ? org.dcache.commons.util.Strings.toMultilineString(o) : ("No such property: " + name);
+            return (o != null) ? org.dcache.util.Strings.toMultilineString(o) : ("No such property: " + name);
         }
     }
 

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static org.dcache.commons.util.Strings.toStringSignature;
+import static org.dcache.util.Strings.toStringSignature;
 
 /**
  * This class provides a convinient way to collect statistics about

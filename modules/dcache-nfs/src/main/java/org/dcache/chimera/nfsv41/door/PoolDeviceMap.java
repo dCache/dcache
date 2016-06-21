@@ -12,7 +12,7 @@ import org.dcache.chimera.nfsv41.door.NFSv41Door.PoolDS;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.v4.LayoutDriver;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
-import org.dcache.utils.Bytes;
+import org.dcache.util.Bytes;
 
 /**
  * A mapping between pool name, nfs device id and pool's ip addresses.

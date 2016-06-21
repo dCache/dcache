@@ -1,4 +1,4 @@
-package org.dcache.commons.util;
+package org.dcache.util;
 
 import org.junit.Test;
 import org.slf4j.MDC;

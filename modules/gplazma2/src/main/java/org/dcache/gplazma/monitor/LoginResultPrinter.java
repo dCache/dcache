@@ -61,7 +61,7 @@ import org.italiangrid.voms.VOMSAttribute;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
-import static org.dcache.utils.Bytes.toHexString;
+import static org.dcache.util.Bytes.toHexString;
 
 import org.italiangrid.voms.asn1.VOMSACUtils;
 
