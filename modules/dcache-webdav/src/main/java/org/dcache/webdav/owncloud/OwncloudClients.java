@@ -33,6 +33,6 @@ public class OwncloudClients
     {
         String userAgent = request.getHeader(HttpHeader.USER_AGENT.toString());
 
-        return userAgent.contains(OWNCLOUD_USERAGENT);
+        return userAgent != null && userAgent.contains(OWNCLOUD_USERAGENT);
     }
 }
