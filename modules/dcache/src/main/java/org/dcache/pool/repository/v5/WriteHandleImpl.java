@@ -202,7 +202,6 @@ class WriteHandleImpl implements ReplicaDescriptor
 
         synchronized (this) {
             _allocated += size;
-            _entry.setSize(_allocated);
         }
     }
 
@@ -238,7 +237,6 @@ class WriteHandleImpl implements ReplicaDescriptor
         if (isAllocated) {
             synchronized (this) {
                 _allocated += size;
-                _entry.setSize(_allocated);
             }
         }
         return  isAllocated;
@@ -270,7 +268,6 @@ class WriteHandleImpl implements ReplicaDescriptor
                 _allocator.free(_allocated - length);
             }
             _allocated = length;
-            _entry.setSize(length);
         } catch (InterruptedException e) {
             /* Space allocation is broken now. The entry size
              * matches up with what was actually allocated,
@@ -324,7 +321,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         try {
             _entry.setLastAccessTime((_atime == null) ? System.currentTimeMillis() : _atime);
 
-            long length = getFile().length();
+            long length = _entry.getReplicaSize();
             adjustReservation(length);
             verifyFileSize(length);
             _fileAttributes.setSize(length);
@@ -372,7 +369,7 @@ class WriteHandleImpl implements ReplicaDescriptor
      */
     private synchronized void fail()
     {
-        long length = getFile().length();
+        long length = _entry.getReplicaSize();
         try {
             adjustReservation(length);
         } catch (InterruptedException e) {

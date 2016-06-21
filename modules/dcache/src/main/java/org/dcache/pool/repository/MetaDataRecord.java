@@ -22,25 +22,10 @@ public interface MetaDataRecord
     PnfsId getPnfsId();
 
     /**
-     * Set the size of this entry. An entry has a size which normally
-     * corresponds to the size of the file on disk. While the file is
-     * created there may be a mismatch between the entry size and the
-     * physical size.
-     *
-     * For a healthy entry and complete, the entry size will match the
-     * file size stored in PNFS. For broken entries or while the file
-     * is created, the two may not match.
-     *
-     * The size stored in the entries StorageInfo record is a cached
-     * copy of the size stored in PNFS.
+     * Get the size of this replica. May be different from the size
+     * registered in Chimera.
      */
-    void setSize(long size);
-
-    /**
-     * Get the size of this entry. May be different from the size of
-     * the on-disk file.
-     */
-    long getSize();
+    long getReplicaSize();
 
     FileAttributes getFileAttributes() throws CacheException;
 

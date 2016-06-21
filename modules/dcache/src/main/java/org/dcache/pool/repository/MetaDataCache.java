@@ -171,24 +171,10 @@ public class MetaDataCache
         }
 
         @Override
-        public void setSize(long size)
+        public long getReplicaSize()
         {
             try {
-                _record.setSize(size);
-            } catch (IllegalArgumentException e) {
-                throw e;
-            } catch (RuntimeException e) {
-                _faultListener.faultOccurred(
-                        new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
-                throw e;
-            }
-        }
-
-        @Override
-        public long getSize()
-        {
-            try {
-                return _record.getSize();
+                return _record.getReplicaSize();
             } catch (RuntimeException e) {
                 _faultListener.faultOccurred(
                         new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));

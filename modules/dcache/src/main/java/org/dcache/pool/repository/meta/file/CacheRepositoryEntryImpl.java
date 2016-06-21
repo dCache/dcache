@@ -137,16 +137,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     }
 
     @Override
-    public synchronized void setSize(long size) {
-        if (size < 0) {
-            throw new IllegalArgumentException("Negative entry size is not allowed");
-        }
-        _size = size;
-    }
-
-    @Override
-    public synchronized long getSize() {
-        return _size;
+    public synchronized long getReplicaSize()
+    {
+        return _state.getState().isMutable() ? getDataFile().length() : _size;
     }
 
     @Override
@@ -165,6 +158,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
         throws CacheException
     {
         try {
+            if (_state.getState().isMutable() && !state.isMutable()) {
+                _size = getDataFile().length();
+            }
             _state.setState(state);
         } catch (IOException e) {
             throw new DiskErrorCacheException(e.getMessage(), e);

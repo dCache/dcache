@@ -26,7 +26,7 @@ public class CacheEntryImpl implements CacheEntry
     public CacheEntryImpl(MetaDataRecord entry) throws CacheException
     {
         synchronized (entry) {
-            _size = entry.getSize();
+            _size = entry.getReplicaSize();
             _created_at = entry.getCreationTime();
             _accessed_at = entry.getLastAccessTime();
             _linkCount = entry.getLinkCount();

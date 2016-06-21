@@ -103,13 +103,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized void setSize(long size)
-        {
-            _size = size;
-        }
-
-        @Override
-        public synchronized long getSize()
+        public synchronized long getReplicaSize()
         {
             return _size;
         }
@@ -197,12 +191,12 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         @Override
         public synchronized String toString()
         {
-            return _pnfsId.toString()+
-                " <"+_state.toString()+"-"+
-                "(0)"+
-                "["+getLinkCount()+"]> "+
-                getSize()+
-                " si={"+(_fileAttributes.isDefined(FileAttribute.STORAGECLASS) ? "<unknown>" : _fileAttributes.getStorageClass())+"}" ;
+            return _pnfsId.toString() +
+                   " <" + _state.toString() + "-" +
+                   "(0)" +
+                   "[" + getLinkCount() + "]> " +
+                   getReplicaSize() +
+                   " si={" + (_fileAttributes.isDefined(FileAttribute.STORAGECLASS) ? "<unknown>" : _fileAttributes.getStorageClass()) + "}" ;
         }
 
     }

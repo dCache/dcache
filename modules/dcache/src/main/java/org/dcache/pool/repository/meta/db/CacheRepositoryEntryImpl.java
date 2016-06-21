@@ -31,6 +31,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.elementsEqual;
 import static com.google.common.collect.Iterables.filter;
+import static org.dcache.pool.repository.EntryState.*;
 
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.
@@ -66,7 +67,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     {
         _repository = repository;
         _pnfsId = pnfsId;
-        _state = EntryState.NEW;
+        _state = NEW;
         _sticky = ImmutableList.of();
         _lastAccess = _creationTime;
     }
@@ -101,7 +102,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     public synchronized int incrementLinkCount()
     {
         EntryState state = getState();
-        if (state == EntryState.REMOVED || state == EntryState.DESTROYED) {
+        if (state == REMOVED || state == DESTROYED) {
             throw new IllegalStateException("Entry is marked as removed");
         }
         _linkCount++;
@@ -142,18 +143,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized void setSize(long size)
+    public synchronized long getReplicaSize()
     {
-        if (size < 0) {
-            throw new IllegalArgumentException("Negative entry size is not allowed");
-        }
-        _size = size;
-    }
-
-    @Override
-    public synchronized long getSize()
-    {
-        return _size;
+        return _state.isMutable() ? getDataFile().length() : _size;
     }
 
     private synchronized StorageInfo getStorageInfo()
@@ -317,7 +309,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             }
             _log.warn(e.toString());
         }
-        return new CacheRepositoryEntryImpl(repository, pnfsId, EntryState.BROKEN, ImmutableList.of(), attributes);
+        return new CacheRepositoryEntryImpl(repository, pnfsId, BROKEN, ImmutableList.of(), attributes);
     }
 
     private class UpdatableRecordImpl implements UpdatableRecord
@@ -327,7 +319,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         @Override
         public boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
         {
-            if (_state == EntryState.REMOVED) {
+            if (_state == REMOVED) {
                 throw new CacheException("Entry in removed state");
             }
             Predicate<StickyRecord> subsumes =
@@ -347,6 +339,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         public Void setState(EntryState state) throws CacheException
         {
             if (_state != state) {
+                if (_state.isMutable() && !state.isMutable()) {
+                    _size = getDataFile().length();
+                }
                 _state = state;
                 _stateModified = true;
             }

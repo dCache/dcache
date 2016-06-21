@@ -188,7 +188,7 @@ public class ConsistentStore
         FileAttributes attributes = entry.getFileAttributes();
         EntryState state = entry.getState();
         return !attributes.isDefined(FileAttribute.SIZE) ||
-               attributes.getSize() != entry.getSize() ||
+               attributes.getSize() != entry.getReplicaSize() ||
                state != EntryState.CACHED && state != EntryState.PRECIOUS;
     }
 
@@ -208,7 +208,7 @@ public class ConsistentStore
              * as it is a lot cheaper than the checksum check and we
              * may thus safe some time for incomplete files.
              */
-            long length = entry.getDataFile().length();
+            long length = entry.getReplicaSize();
             if (attributesInNameSpace.isDefined(FileAttribute.SIZE) && attributesInNameSpace.getSize() != length) {
                 String message = String.format(BAD_SIZE_MSG,
                                                id,

@@ -2,13 +2,25 @@ package org.dcache.pool.repository;
 
 public enum EntryState
 {
-    NEW,
-    FROM_CLIENT,
-    FROM_POOL,
-    FROM_STORE,
-    BROKEN,
-    CACHED,
-    PRECIOUS,
-    REMOVED,
-    DESTROYED
+    NEW(true),
+    FROM_CLIENT(true),
+    FROM_POOL(true),
+    FROM_STORE(true),
+    BROKEN(false),
+    CACHED(false),
+    PRECIOUS(false),
+    REMOVED(false),
+    DESTROYED(false);
+
+    boolean isMutable;
+
+    EntryState(boolean isMutable)
+    {
+        this.isMutable = isMutable;
+    }
+
+    public boolean isMutable()
+    {
+        return isMutable;
+    }
 }
