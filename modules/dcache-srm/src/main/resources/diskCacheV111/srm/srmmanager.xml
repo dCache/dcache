@@ -230,9 +230,9 @@
         <property name="sizeOfSingleRemoveBatch"
                   value="${srmmanager.limits.remove-batch-size}"/>
         <property name="maxNumberOfLsEntries"
-                  value="#{T(org.dcache.commons.util.Strings).parseInt('${srmmanager.limits.ls.entries}')}"/>
+                  value="#{T(org.dcache.util.Strings).parseInt('${srmmanager.limits.ls.entries}')}"/>
         <property name="maxNumberOfLsLevels"
-                  value="#{T(org.dcache.commons.util.Strings).parseInt('${srmmanager.limits.ls.levels}')}"/>
+                  value="#{T(org.dcache.util.Strings).parseInt('${srmmanager.limits.ls.levels}')}"/>
         <property name="authzCacheLifetime"
                   value="#{T(java.util.concurrent.TimeUnit).
                      SECONDS.convert(
@@ -268,7 +268,7 @@
                      ${srmmanager.request.get.max-poll-period},
                      '${srmmanager.request.get.max-poll-period.unit}')}" />
         <property name="getSwitchToAsynchronousModeDelay"
-                  value="#{T(org.dcache.commons.util.Strings).parseTime(
+                  value="#{T(org.dcache.util.Strings).parseTime(
                      '${srmmanager.request.get.switch-to-async-mode-delay}',
                      '${srmmanager.request.get.switch-to-async-mode-delay.unit}')}"/>
         <property name="bringOnlineMaxPollPeriod"
@@ -276,7 +276,7 @@
                      ${srmmanager.request.bring-online.max-poll-period},
                      '${srmmanager.request.bring-online.max-poll-period.unit}')}" />
         <property name="bringOnlineSwitchToAsynchronousModeDelay"
-                  value="#{T(org.dcache.commons.util.Strings).parseTime(
+                  value="#{T(org.dcache.util.Strings).parseTime(
                      '${srmmanager.request.bring-online.switch-to-async-mode-delay}',
                      '${srmmanager.request.bring-online.switch-to-async-mode-delay.unit}')}"/>
         <property name="lsMaxPollPeriod"
@@ -284,7 +284,7 @@
                      ${srmmanager.request.ls.max-poll-period},
                      '${srmmanager.request.ls.max-poll-period.unit}')}" />
         <property name="lsSwitchToAsynchronousModeDelay"
-                  value="#{T(org.dcache.commons.util.Strings).parseTime(
+                  value="#{T(org.dcache.util.Strings).parseTime(
                      '${srmmanager.request.ls.switch-to-async-mode-delay}',
                      '${srmmanager.request.ls.switch-to-async-mode-delay.unit}')}"/>
         <property name="putMaxPollPeriod"
@@ -292,7 +292,7 @@
                      ${srmmanager.request.put.max-poll-period},
                      '${srmmanager.request.put.max-poll-period.unit}')}" />
         <property name="putSwitchToAsynchronousModeDelay"
-                  value="#{T(org.dcache.commons.util.Strings).parseTime(
+                  value="#{T(org.dcache.util.Strings).parseTime(
                      '${srmmanager.request.put.switch-to-async-mode-delay}',
                      '${srmmanager.request.put.switch-to-async-mode-delay.unit}')}"/>
         <property name="copyMaxPollPeriod"

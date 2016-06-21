@@ -115,7 +115,7 @@
                 <ref bean="legacy-factory"/>
             </list>
         </property>
-        <property name="idleTimeout" value="#{T(org.dcache.commons.util.Strings).parseLong('${admin.ssh.idle-timeout}')}" />
+        <property name="idleTimeout" value="#{T(org.dcache.util.Strings).parseLong('${admin.ssh.idle-timeout}')}" />
         <property name="idleTimeoutUnit" value="${admin.ssh.idle-timeout.unit}" />
     </bean>
 </beans>
