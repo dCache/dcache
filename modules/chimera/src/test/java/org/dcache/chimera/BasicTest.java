@@ -4,14 +4,22 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.AbstractFuture;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
@@ -29,6 +37,8 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 public class BasicTest extends ChimeraTestCaseHelper {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BasicTest.class);
 
     @Test
     public void testLevelRemoveOnDelete() throws Exception {
@@ -260,80 +270,75 @@ public class BasicTest extends ChimeraTestCaseHelper {
     private final static int PARALLEL_THREADS_COUNT = 10;
 
     /**
-     *
-     * Helper class.
-     *
-     * the idea behind is to run a test in parallel threads.
-     * number of running thread defined by <i>PARALLEL_THREADS_COUNT</i>
-     * constant.
-     *
-     * The concept of a parallel test is following:
-     *
-     * a test have two <i>CountDownLatch</i> - readyToStart and testsReady.
-     * <i>readyToStart</i> used to synchronize tests
-     * <i>testsReady</i> used to notify test that all test are done;
-     *
+     * Run some database activity in a separate thread, providing a
+     * ListenableFuture of that activity's result.
+     * A <i>CountDownLatch</i> is accepted for synchronising the start of the
+     * task.
      */
-    private static class ParallelCreateTestRunnerThread extends Thread {
+    private static class ParallelDbFuture<T> extends AbstractFuture<T> implements Runnable
+    {
+        private final Thread _thread;
+        private final Callable<T> _task;
+        private final CountDownLatch _start;
 
-        /**
-         * tests root directory
-         */
-        private final FsInode _testRoot;
-        /**
-         * have to be counted down as soon as thread is done it's job
-         */
-        private final CountDownLatch _ready;
-        /**
-         * wait for 'Go'
-         */
-        private final CountDownLatch _waitingToStart;
+        public ParallelDbFuture(CountDownLatch start, Callable<T> task)
+        {
+            _thread = new Thread(this);
+            _start = start;
+            _task = task;
+        }
 
-        /**
-         *
-         * @param name of the thread
-         * @param testRoot root directory of the test
-         * @param ready tests ready count down
-         * @param waitingToStart wait for 'Go'
-         */
-        public ParallelCreateTestRunnerThread(String name, FsInode testRoot, CountDownLatch ready, CountDownLatch waitingToStart) {
-            super(name);
-            _testRoot = testRoot;
-            _ready = ready;
-            _waitingToStart = waitingToStart;
+        public void start()
+        {
+            _thread.start();
         }
 
         @Override
         public void run() {
+            _start.countDown();
             try {
-                _waitingToStart.await();
-                _testRoot.create(Thread.currentThread().getName(), 0, 0, 0644);
-            } catch (Exception hfe) {
-                // FIXME
-            } finally {
-                _ready.countDown();
+                _start.await();
+                set(_task.call());
+            } catch (Exception e) {
+                setException(e);
             }
         }
     }
 
-    @Test
-    public void testParallelCreate() throws Exception {
-
+    @Test(timeout=60_000)
+    public void testParallelCreate() throws ChimeraFsException
+    {
         FsInode base = _rootInode.mkdir("junit");
         Stat stat = base.stat();
 
-        CountDownLatch readyToStart = new CountDownLatch(PARALLEL_THREADS_COUNT);
-        CountDownLatch testsReady = new CountDownLatch(PARALLEL_THREADS_COUNT);
+        CountDownLatch start = new CountDownLatch(PARALLEL_THREADS_COUNT);
+        List<ParallelDbFuture> futures = IntStream.range(0, PARALLEL_THREADS_COUNT)
+                .mapToObj(i -> "file-" + i)
+                .map(name -> new ParallelDbFuture<>(start, () -> base.create(name, 0, 0, 0644)))
+                .collect(Collectors.toList());
+        futures.stream().forEach(ParallelDbFuture::start);
 
-        for (int i = 0; i < PARALLEL_THREADS_COUNT; i++) {
-
-            new ParallelCreateTestRunnerThread("TestRunner" + i, base, testsReady, readyToStart).start();
-            readyToStart.countDown();
+        int nlink = stat.getNlink();
+        int exceptions = 0;
+        for (ListenableFuture<Void> f : futures) {
+            try {
+                f.get();
+                nlink++;
+            } catch (ExecutionException e) {
+                LOG.warn("ExecutionException, triggered by {}", String.valueOf(e.getCause()));
+                exceptions++;
+            } catch (InterruptedException e) {
+                LOG.warn("Interrupted.");
+            }
         }
 
-        testsReady.await();
-        assertEquals("new dir should have link count equal to two", base.stat().getNlink(), stat.getNlink() + PARALLEL_THREADS_COUNT);
+        assertEquals("Checking nlink count of dir", nlink, base.stat().getNlink());
 
+        // REVISIT: we fail this test if any exceptions are found.  The
+        // motivation is to draw attendion to any such exception, but exceptions
+        // due to TransientDataAccessException or RecoverableDataAccessException
+        // are not indicative of an error.
+        assertEquals("Expecting no exceptions", 0, exceptions);
     }
 
     @Test
