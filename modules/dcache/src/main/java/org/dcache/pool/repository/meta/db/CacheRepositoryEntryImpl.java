@@ -12,11 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
@@ -30,7 +26,6 @@ import diskCacheV111.vehicles.StorageInfos;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
@@ -53,7 +48,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             ImmutableList.of(new StickyRecord("system", -1));
 
     private final PnfsId _pnfsId;
-    private final BerkeleyDBMetaDataRepository _repository;
+    private final AbstractBerkeleyDBMetaDataRepository _repository;
 
     /**
      * Sticky records held by the file.
@@ -70,7 +65,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
     private long _size;
 
-    public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId)
+    public CacheRepositoryEntryImpl(AbstractBerkeleyDBMetaDataRepository repository, PnfsId pnfsId)
     {
         _repository = repository;
         _pnfsId = pnfsId;
@@ -79,7 +74,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _lastAccess = _creationTime;
     }
 
-    public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository, PnfsId pnfsId, EntryState state,
+    public CacheRepositoryEntryImpl(AbstractBerkeleyDBMetaDataRepository repository, PnfsId pnfsId, EntryState state,
                                     Collection<StickyRecord> sticky, BasicFileAttributes attributes)
     {
         _repository = repository;
@@ -142,11 +137,10 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized void setLastAccessTime(long time) throws CacheException
     {
-        Path path = _repository.getPath(_pnfsId);
         try {
-            Files.setLastModifiedTime(path, FileTime.fromMillis(time));
+            _repository.setLastModifiedTime(_pnfsId, time);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to set modification time: " + path);
+            throw new DiskErrorCacheException("Failed to set modification time for " + _pnfsId + ": " + e.toString(), e);
         }
         _lastAccess = time;
     }
@@ -155,9 +149,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     public synchronized long getReplicaSize()
     {
         try {
-            return _state.isMutable() ? Files.size(_repository.getPath(_pnfsId)) : _size;
-        } catch (NoSuchFileException e) {
-            return 0;
+            return _state.isMutable() ? _repository.getFileSize(_pnfsId) : _size;
         } catch (IOException e) {
             _log.error("Failed to read file size: " + e);
             return 0;
@@ -231,13 +223,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized URI getReplicaUri()
     {
-        return _repository.getPath(_pnfsId).toUri();
+        return _repository.getUri(_pnfsId);
     }
 
     @Override
     public RepositoryChannel openChannel(IoMode mode) throws IOException
     {
-        return new FileRepositoryChannel(_repository.getPath(_pnfsId), mode.toOpenString());
+        return _repository.openChannel(_pnfsId, mode);
     }
 
     @Override
@@ -363,9 +355,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             if (_state != state) {
                 if (_state.isMutable() && !state.isMutable()) {
                     try {
-                        _size = Files.size(_repository.getPath(_pnfsId));
-                    } catch (NoSuchFileException e) {
-                        _size = 0;
+                        _size = _repository.getFileSize(_pnfsId);
                     } catch (IOException e) {
                         throw new DiskErrorCacheException("Failed to query file size: " + e, e);
                     }
