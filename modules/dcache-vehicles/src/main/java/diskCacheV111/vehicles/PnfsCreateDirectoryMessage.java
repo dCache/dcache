@@ -11,9 +11,6 @@ public class PnfsCreateDirectoryMessage extends PnfsCreateEntryMessage {
     public PnfsCreateDirectoryMessage(String path){
         super(path);
     }
-    public PnfsCreateDirectoryMessage(String path, Set<FileAttribute> attr) {
-        super(path, attr);
-    }
     public PnfsCreateDirectoryMessage(String path, int uid, int gid, int mode){
         super(path,uid,gid,mode);
     }

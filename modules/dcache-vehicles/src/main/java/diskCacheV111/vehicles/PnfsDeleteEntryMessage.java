@@ -21,27 +21,12 @@ public class PnfsDeleteEntryMessage extends PnfsMessage
 
     public PnfsDeleteEntryMessage(String path)
     {
-	this(null, path);
-    }
-
-    public PnfsDeleteEntryMessage(PnfsId pnfsId)
-    {
-	this(pnfsId, (String) null);
-    }
-
-    public PnfsDeleteEntryMessage(PnfsId pnfsId, String path)
-    {
-        this(pnfsId, path, EnumSet.allOf(FileType.class));
+        this(null, path, EnumSet.allOf(FileType.class));
     }
 
     public PnfsDeleteEntryMessage(String path, Set<FileType> allowed)
     {
         this(null, path, allowed);
-    }
-
-    public PnfsDeleteEntryMessage(PnfsId pnfsId, Set<FileType> allowed)
-    {
-        this(pnfsId, null, allowed);
     }
 
     public PnfsDeleteEntryMessage(PnfsId pnfsId, String path,

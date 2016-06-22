@@ -47,16 +47,7 @@ public class PnfsSetFileAttributes extends PnfsMessage {
 
     /**
      * Construct request by path.
-     *
-     * @param path
-     * @param attr
      */
-    public PnfsSetFileAttributes(String path, FileAttributes attr) {
-        setPnfsPath(path);
-        _fileAttributes = attr;
-        _acquire = EnumSet.noneOf(FileAttribute.class);
-    }
-
     public PnfsSetFileAttributes(String path, FileAttributes attr, Set<FileAttribute> acquire) {
         setPnfsPath(path);
         _fileAttributes = attr;

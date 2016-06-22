@@ -24,11 +24,6 @@ public class PnfsCreateEntryMessage extends PnfsGetFileAttributes
         this(path, -1, -1, -1);
     }
 
-    public PnfsCreateEntryMessage(String path, Set<FileAttribute> attr)
-    {
-        this(path, -1, -1, -1, attr);
-    }
-
     public PnfsCreateEntryMessage(String path, int uid, int gid, int mode) {
         this(path, uid, gid, mode, Collections.<FileAttribute>emptySet());
     }
