@@ -1,7 +1,7 @@
 package org.dcache.pool.repository;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
@@ -33,7 +33,7 @@ public interface MetaDataRecord
 
     EntryState getState();
 
-    File getDataFile();
+    URI getReplicaUri();
 
     RepositoryChannel openChannel(IoMode mode) throws IOException;
 

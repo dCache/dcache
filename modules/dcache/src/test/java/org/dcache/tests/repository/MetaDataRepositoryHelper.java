@@ -1,7 +1,7 @@
 package org.dcache.tests.repository;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
@@ -27,6 +27,7 @@ import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.RepositoryException;
@@ -151,9 +152,9 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized File getDataFile()
+        public synchronized URI getReplicaUri()
         {
-            return _repository.get(_pnfsId).toFile();
+            return _repository.get(_pnfsId).toUri();
         }
 
         @Override
@@ -227,7 +228,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
     @Override
-    public MetaDataRecord create(PnfsId id) throws DuplicateEntryException, RepositoryException {
+    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws DuplicateEntryException, RepositoryException {
         try {
             MetaDataRecord entry = new CacheRepositoryEntryImpl(_repository, id);
             _entryList.put(id, entry);

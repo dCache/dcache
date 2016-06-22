@@ -39,6 +39,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.URI;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -736,7 +737,13 @@ public class NearlineStorageHandler
         @Override
         public File getFile()
         {
-            return descriptor.getFile();
+            return Paths.get(descriptor.getReplicaFile()).toFile();
+        }
+
+        @Override
+        public URI getReplicaUri()
+        {
+            return descriptor.getReplicaFile();
         }
 
         @Override
@@ -1010,7 +1017,13 @@ public class NearlineStorageHandler
         @Override
         public File getFile()
         {
-            return descriptor.getFile();
+            return Paths.get(descriptor.getReplicaFile()).toFile();
+        }
+
+        @Override
+        public URI getReplicaUri()
+        {
+            return descriptor.getReplicaFile();
         }
 
         @Override

@@ -138,7 +138,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     {
         try {
             Set<URI> locations = new HashSet<>();
-            String[] storeCommand = getFlushCommand(request.getFile(), request.getFileAttributes());
+            String[] storeCommand = getFlushCommand(request.getReplicaUri(), request.getFileAttributes());
             String output = new HsmRunSystem(name, MAX_LINES, request.getDeadline() - System.currentTimeMillis(), storeCommand).execute();
             for (String uri : Splitter.on("\n").trimResults().omitEmptyStrings().split(output)) {
                 try {
@@ -158,7 +158,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     {
         try {
             FileAttributes attributes = request.getFileAttributes();
-            String[] fetchCommand = getFetchCommand(request.getFile(), attributes);
+            String[] fetchCommand = getFetchCommand(request.getReplicaUri(), attributes);
             new HsmRunSystem(name, MAX_LINES, request.getDeadline() - System.currentTimeMillis(), fetchCommand).execute();
             return readChecksumFromHsm(request.getFile());
         } catch (IllegalThreadStateException  e) {
@@ -202,26 +202,32 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     }
 
     @VisibleForTesting
-    String[] getFlushCommand(File file, FileAttributes fileAttributes)
+    String[] getFlushCommand(URI dataFile, FileAttributes fileAttributes)
     {
         StorageInfo storageInfo = StorageInfos.extractFrom(fileAttributes);
         String[] argsArray = Stream.concat(Stream.of(
                 command,
                 "put",
                 fileAttributes.getPnfsId().toString(),
-                file.getPath(),
-                "-si=" + storageInfo.toString()),
+                getFileString(dataFile),
+                "-si=" + storageInfo),
                 options.stream()).toArray(String[]::new);
         LOGGER.debug("COMMAND: {}", Arrays.deepToString(argsArray));
         return argsArray;
     }
 
+    private String getFileString(URI dataFile)
+    {
+        return "file".equalsIgnoreCase(dataFile.getScheme()) ? dataFile.getPath() : dataFile.toASCIIString();
+    }
+
     @VisibleForTesting
-    String[] getFetchCommand(File file, FileAttributes fileAttributes)
+    String[] getFetchCommand(URI dataFile, FileAttributes fileAttributes)
     {
         StorageInfo storageInfo = StorageInfos.extractFrom(fileAttributes);
         String[] argsArray = Stream.of(
-                Stream.of(command, "get", fileAttributes.getPnfsId().toString(), file.getPath(), "-si=" + storageInfo.toString()),
+                Stream.of(command, "get", fileAttributes.getPnfsId().toString(),
+                          getFileString(dataFile), "-si=" + storageInfo),
                 getLocations(fileAttributes).stream().map(uri -> "-uri="+uri),
                 options.stream()
         ).flatMap(s -> s).toArray(String[]::new);

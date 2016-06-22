@@ -36,9 +36,23 @@ public interface FlushRequest extends NearlineRequest<Set<URI>>
     /**
      * A local file system path to the replica to flush.
      *
+     * <p>Consider using {@link FlushRequest#getReplicaUri} instead.
+     *
      * @return A file system path
+     * @throws UnsupportedOperationException if this pool is not backed by th default
+     *         file system provider.
      */
+    @Deprecated
     File getFile();
+
+    /**
+     * A URI to the replica to flush. This identifies the replica in the pool,
+     * not the file stored on tape. This is typically a file:// URI unless
+     * a file store other than the OS file system is used.
+     *
+     * @return A URI
+     */
+    URI getReplicaUri();
 
     /**
      * Attributes of the file to which this request applies.
@@ -50,7 +64,7 @@ public interface FlushRequest extends NearlineRequest<Set<URI>>
     /**
      * Signals that the request is being activated and returns the path of the file.
      *
-     * Similar to <code>activate</code>, but in addition to marking the request as
+     * <p>Similar to <code>activate</code>, but in addition to marking the request as
      * active, this method resolves the path of the file. Resolving the path of a
      * file is relatively expensive, which is why <code>activate</code> doesn't do
      * it. If a file has several hard-links, only one of the paths is returned.

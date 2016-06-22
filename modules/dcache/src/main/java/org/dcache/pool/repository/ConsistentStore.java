@@ -334,10 +334,10 @@ public class ConsistentStore
      * it is overwritten.
      */
     @Override
-    public MetaDataRecord create(PnfsId id)
+    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
         throws DuplicateEntryException, CacheException
     {
-        return _metaDataStore.create(id);
+        return _metaDataStore.create(id, flags);
     }
 
     /**

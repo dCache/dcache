@@ -5,11 +5,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -127,9 +127,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     }
 
     @Override
-    public synchronized File getDataFile()
+    public synchronized URI getReplicaUri()
     {
-        return _dataFile.toFile();
+        return _dataFile.toUri();
     }
 
     @Override

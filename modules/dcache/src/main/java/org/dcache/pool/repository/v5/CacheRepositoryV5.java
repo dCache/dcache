@@ -583,17 +583,13 @@ public class CacheRepositoryV5
 
             LOGGER.info("Creating new entry for {}", id);
 
-            MetaDataRecord entry = _store.create(id);
+            MetaDataRecord entry = _store.create(id, flags);
             return entry.update(r -> {
                 r.setFileAttributes(fileAttributes);
                 r.setState(transferState);
-                try {
-                    return new WriteHandleImpl(
-                            this, _allocator, _pnfs, entry, fileAttributes,
-                                    targetState, stickyRecords, flags);
-                } catch (IOException e) {
-                    throw new DiskErrorCacheException("Failed to create file: " + id, e);
-                }
+                return new WriteHandleImpl(
+                        this, _allocator, _pnfs, entry, fileAttributes,
+                        targetState, stickyRecords);
             });
         } catch (DuplicateEntryException e) {
             /* Somebody got the idea that we don't have the file, so we make
@@ -645,7 +641,7 @@ public class CacheRepositoryV5
              * sure to remove any stray pointers.
              */
             try {
-                MetaDataRecord entry = _store.create(id);
+                MetaDataRecord entry = _store.create(id, EnumSet.noneOf(OpenFlags.class));
                 entry.update(r -> r.setState(REMOVED));
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
@@ -701,7 +697,7 @@ public class CacheRepositoryV5
                  * indicate a stale registration in the name space.
                  */
                 try {
-                    entry = _store.create(id);
+                    entry = _store.create(id, EnumSet.noneOf(OpenFlags.class));
                     entry.update(r -> r.setState(REMOVED));
                 } catch (DuplicateEntryException concurrentCreation) {
                     setSticky(id, owner, expire, overwrite);

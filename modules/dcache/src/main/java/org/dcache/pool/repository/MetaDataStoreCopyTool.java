@@ -7,6 +7,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.EnumSet;
 
 import diskCacheV111.util.PnfsId;
 
@@ -61,7 +62,7 @@ public class MetaDataStoreCopyTool
                     System.err.println("Failed to load " + id);
                     System.exit(1);
                 }
-                toStore.create(id).update(r -> {
+                toStore.create(id, EnumSet.noneOf(Repository.OpenFlags.class)).update(r -> {
                     /* NOTE: We do not copy the last access time, as this is currently stored
                      * as the last modification time on the data file. If we at some point move
                      * the last access time into the meta data, this has to be updated here.

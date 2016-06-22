@@ -587,7 +587,7 @@ public class RepositorySubsystemTest
         ReplicaDescriptor handle =
             repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
         handle.close();
-        handle.getFile();
+        handle.getReplicaFile();
     }
 
     @Test

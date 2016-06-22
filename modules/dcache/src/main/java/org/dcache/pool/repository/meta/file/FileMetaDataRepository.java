@@ -20,6 +20,7 @@ import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 import static java.util.Arrays.asList;
@@ -116,7 +117,7 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public MetaDataRecord create(PnfsId id)
+    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
         throws DuplicateEntryException, CacheException
     {
         try {
@@ -134,9 +135,13 @@ public class FileMetaDataRepository
             Files.deleteIfExists(controlFile);
             Files.deleteIfExists(siFile);
 
+            if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
+                Files.createFile(dataFile);
+            }
+
             return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
         } catch (IOException e) {
-            throw new RepositoryException(
+            throw new DiskErrorCacheException(
                     "Failed to create new entry " + id + ": " + e.getMessage(), e);
         }
     }

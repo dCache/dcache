@@ -15,6 +15,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.EnumSet;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -95,7 +96,7 @@ public class ConsistentStoreTest
     private void givenMetaDataStoreHas(EntryState state, FileAttributes attributes)
         throws DuplicateEntryException, CacheException
     {
-        MetaDataRecord entry = _metaDataStore.create(attributes.getPnfsId());
+        MetaDataRecord entry = _metaDataStore.create(attributes.getPnfsId(), EnumSet.noneOf(Repository.OpenFlags.class));
         entry.update(r -> {
             r.setState(state);
             r.setFileAttributes(attributes);

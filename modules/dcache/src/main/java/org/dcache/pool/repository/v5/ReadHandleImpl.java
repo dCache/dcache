@@ -1,7 +1,7 @@
 package org.dcache.pool.repository.v5;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -59,13 +59,13 @@ class ReadHandleImpl implements ReplicaDescriptor
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
     @Override
-    public synchronized File getFile() throws IllegalStateException
+    public synchronized URI getReplicaFile() throws IllegalStateException
     {
         if (!_open) {
             throw new IllegalStateException("Handle is closed");
         }
 
-        return _entry.getDataFile();
+        return _entry.getReplicaUri();
     }
 
     @Override

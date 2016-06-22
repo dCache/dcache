@@ -20,6 +20,7 @@ package org.dcache.pool.nearline.spi;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
+import java.net.URI;
 import java.util.Set;
 
 import org.dcache.util.Checksum;
@@ -37,12 +38,27 @@ public interface StageRequest extends NearlineRequest<Set<Checksum>>
     /**
      * A local file system path to which to stage the replica.
      *
+     * <p>Consider using {@link StageRequest#getReplicaUri} instead.
+     *
      * @return A file system path
+     * @throws UnsupportedOperationException if this pool is not backed by th default
+     *         file system provider.
      */
+    @Deprecated
     File getFile();
 
     /**
-     * Attributes of the file to stage.
+     * A URI to the replica to stage. This identifies the replica in the pool,
+     * not the file stored on tape. This is typically a file:// URI unless
+     * a file store other than the OS file system is used.
+     *
+     * @return A URI to the replica.
+     */
+    URI getReplicaUri();
+
+    /**
+     * Attributes of the file to stage. Specifically tape locations of the file
+     * to stage can be access as {@code FileAttributes#getStorageInfo().locations()}.
      *
      * @return Attributes of the file
      */
@@ -51,11 +67,11 @@ public interface StageRequest extends NearlineRequest<Set<Checksum>>
     /**
      * Triggers space allocation for the file being requested.
      *
-     * Before completing a stage request, space must be allocated for the file.
+     * <p>Before completing a stage request, space must be allocated for the file.
      * A NearlineStorage must take care to not use any of the pool's disk space
      * before space has been allocated to it.
      *
-     * Some NearlineStorage implementations may have a dedicated buffer area
+     * <p>Some NearlineStorage implementations may have a dedicated buffer area
      * separate from the pool allocation. Such implementations are able to
      * stage the file first and ask the pool for space afterwards. This allows
      * the implementation to reorder stage requests to optimize tape access
@@ -64,7 +80,7 @@ public interface StageRequest extends NearlineRequest<Set<Checksum>>
      * as they become available, thus eventually allowing all files to be
      * staged).
      *
-     * Space allocation may not be instantaneous as dCache may have to delete
+     * <p>Space allocation may not be instantaneous as dCache may have to delete
      * other files to free up space. For this reason the result is provided
      * asynchronously. A NearlineStorage should not proceed with processing
      * the request until allocation has completed.

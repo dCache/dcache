@@ -1,7 +1,7 @@
 package org.dcache.pool.repository;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 import diskCacheV111.util.CacheException;
 
@@ -79,7 +79,7 @@ public interface ReplicaDescriptor extends Allocator
      *
      * @throws IllegalStateException if the descriptor is closed.
      */
-    File getFile() throws IllegalStateException;
+    URI getReplicaFile() throws IllegalStateException;
 
     /**
      * Get {@link RepositoryChannel} for this {@code ReplicaDescriptor}.

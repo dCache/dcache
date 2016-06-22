@@ -31,6 +31,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -155,21 +157,21 @@ public class TarNearlineStorage implements NearlineStorage
             List<FlushRequest> requests = new ArrayList<>();
             flushQueue.drainTo(requests);
             if (!requests.isEmpty()) {
-                Map<File, URI> uris = new HashMap<>();
+                Map<URI, URI> uris = new HashMap<>();
                 String tarName = UUID.randomUUID().toString();
                 File tarFile = new File(directory, tarName + ".tar");
                 try (FileOutputStream out = new FileOutputStream(tarFile)) {
                     try (TarArchiveOutputStream tarStream = new TarArchiveOutputStream(out)) {
                         for (FlushRequest request : requests) {
                             request.activate().get();
-                            File file = request.getFile();
+                            Path file = Paths.get(request.getReplicaUri());
                             PnfsId pnfsId = request.getFileAttributes().getPnfsId();
                             TarArchiveEntry entry = new TarArchiveEntry(pnfsId.getId());
-                            entry.setSize(request.getFile().length());
+                            entry.setSize(Files.size(file));
                             tarStream.putArchiveEntry(entry);
-                            Files.copy(file.toPath(), tarStream);
+                            Files.copy(file, tarStream);
                             tarStream.closeArchiveEntry();
-                            uris.put(file, new URI(type, name, '/' + tarName + '/' + pnfsId.getId(), null, null));
+                            uris.put(request.getReplicaUri(), new URI(type, name, '/' + tarName + '/' + pnfsId.getId(), null, null));
                         }
                         tarStream.finish();
                     }
@@ -185,7 +187,7 @@ public class TarNearlineStorage implements NearlineStorage
                     return;
                 }
                 for (FlushRequest request : requests) {
-                    request.completed(Collections.singleton(uris.get(request.getFile())));
+                    request.completed(Collections.singleton(uris.get(request.getReplicaUri())));
                 }
             }
         }

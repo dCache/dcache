@@ -35,6 +35,7 @@ import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.Repository;
 import org.dcache.util.ConfigurationMapFactoryBean;
 
 import static java.util.Arrays.asList;
@@ -206,16 +207,24 @@ public class BerkeleyDBMetaDataRepository
      * TODO: The entry is not persistent yet!
      */
     @Override
-    public MetaDataRecord create(PnfsId id)
+    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
             throws CacheException
     {
-        Path dataFile = _fileStore.get(id);
-        if (Files.exists(dataFile)) {
-            throw new DuplicateEntryException(id);
+        try {
+            Path dataFile = _fileStore.get(id);
+            if (Files.exists(dataFile)) {
+                throw new DuplicateEntryException(id);
+            }
+            _views.getStorageInfoMap().remove(id.toString());
+            _views.getStateMap().remove(id.toString());
+            if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
+                Files.createFile(dataFile);
+            }
+            return new CacheRepositoryEntryImpl(this, id);
+        } catch (IOException e) {
+            throw new DiskErrorCacheException(
+                    "Failed to create new entry " + id + ": " + e.getMessage(), e);
         }
-        _views.getStorageInfoMap().remove(id.toString());
-        _views.getStateMap().remove(id.toString());
-        return new CacheRepositoryEntryImpl(this, id);
     }
 
     @Override

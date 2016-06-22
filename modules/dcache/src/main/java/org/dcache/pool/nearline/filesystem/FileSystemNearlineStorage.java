@@ -19,12 +19,12 @@ package org.dcache.pool.nearline.filesystem;
 
 import com.google.common.collect.Iterables;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -83,8 +83,8 @@ public abstract class FileSystemNearlineStorage extends AbstractBlockingNearline
     @Override
     protected Set<URI> flush(FlushRequest request) throws IOException, URISyntaxException
     {
-        File file = request.getFile();
-        flush(file.toPath(), getExternalPath(file.getName()));
+        Path file = Paths.get(request.getReplicaUri());
+        flush(file, getExternalPath(file.getFileName().toString()));
         URI uri = new URI(type, name, '/' + request.getFileAttributes().getPnfsId().getId(), null, null);
         return Collections.singleton(uri);
     }

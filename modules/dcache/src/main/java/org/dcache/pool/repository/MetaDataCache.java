@@ -2,8 +2,8 @@ package org.dcache.pool.repository;
 
 import javax.annotation.concurrent.GuardedBy;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -122,7 +122,7 @@ public class MetaDataCache
             return this;
         }
 
-        private synchronized MetaDataRecord create()
+        private synchronized MetaDataRecord create(Set<Repository.OpenFlags> flags)
                 throws CacheException
         {
             if (_entries.get(_id) != this || _record != null) {
@@ -131,7 +131,7 @@ public class MetaDataCache
             assert _entries.get(_id) == this;
             try {
                 checkState(!_isClosed);
-                _record = _inner.create(_id);
+                _record = _inner.create(_id, flags);
             } catch (DuplicateEntryException e) {
                 throw e;
             } catch (RuntimeException | CacheException e) {
@@ -209,10 +209,10 @@ public class MetaDataCache
         }
 
         @Override
-        public File getDataFile()
+        public URI getReplicaUri()
         {
             try {
-                return _record.getDataFile();
+                return _record.getReplicaUri();
             } catch (RuntimeException e) {
                 _faultListener.faultOccurred(
                         new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
@@ -425,10 +425,10 @@ public class MetaDataCache
     }
 
     @Override
-    public MetaDataRecord create(PnfsId id) throws CacheException
+    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws CacheException
     {
         try {
-            return _entries.computeIfAbsent(id, Monitor::new).create();
+            return _entries.computeIfAbsent(id, Monitor::new).create(flags);
         } catch (RuntimeException | DiskErrorCacheException e) {
             _faultListener.faultOccurred(
                     new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));

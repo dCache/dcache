@@ -48,11 +48,12 @@ public interface MetaDataStore extends Closeable
      * call.
      *
      * @param id PNFS id for which to create the entry
+     * @param flags options that influence how the entry is created
      * @return The new entry
      * @throws DuplicateEntryException if entry already exists
      * @throws CacheException if entry creation fails
      */
-    MetaDataRecord create(PnfsId id)
+    MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
         throws DuplicateEntryException, CacheException;
 
     /**

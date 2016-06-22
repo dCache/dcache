@@ -10,8 +10,8 @@ import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -229,9 +229,9 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized File getDataFile()
+    public synchronized URI getReplicaUri()
     {
-        return _repository.getPath(_pnfsId).toFile();
+        return _repository.getPath(_pnfsId).toUri();
     }
 
     @Override

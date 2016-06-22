@@ -4,11 +4,10 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -22,7 +21,6 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
@@ -92,8 +90,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                     MetaDataRecord entry,
                     FileAttributes fileAttributes,
                     EntryState targetState,
-                    List<StickyRecord> stickyRecords,
-                    Set<Repository.OpenFlags> flags) throws IOException
+                    List<StickyRecord> stickyRecords)
     {
         _repository = checkNotNull(repository);
         _allocator = checkNotNull(allocator);
@@ -108,13 +105,6 @@ class WriteHandleImpl implements ReplicaDescriptor
 
         checkState(_initialState != EntryState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
         checkState(_initialState == EntryState.FROM_CLIENT || _fileAttributes.isDefined(SIZE));
-
-        if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
-            File file = _entry.getDataFile();
-            if (!file.createNewFile()) {
-                throw new IOException("File exists when it should not: " + file);
-            }
-        }
     }
 
     private synchronized void setState(HandleState state)
@@ -447,13 +437,13 @@ class WriteHandleImpl implements ReplicaDescriptor
      * @throws IllegalStateException if EntryIODescriptor is closed.
      */
     @Override
-    public synchronized File getFile() throws IllegalStateException
+    public synchronized URI getReplicaFile() throws IllegalStateException
     {
         if (_state == HandleState.CLOSED) {
             throw new IllegalStateException("Handle is closed");
         }
 
-        return _entry.getDataFile();
+        return _entry.getReplicaUri();
     }
 
     @Override
