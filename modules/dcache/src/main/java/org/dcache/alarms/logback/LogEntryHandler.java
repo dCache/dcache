@@ -74,16 +74,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.dao.LogEntry;
@@ -119,6 +116,7 @@ public class LogEntryHandler {
 
             if (entry.isAlarm()) {
                 int priority = priorityMap.getPriority(entry.getType()).ordinal();
+                event.getMDCPropertyMap().put(MDC_TYPE, entry.getType());
 
                 /*
                  * The history log parses out all alerts above a certain
@@ -128,7 +126,6 @@ public class LogEntryHandler {
                  * service itself.
                  */
                 if (historyEnabled && priority >= historyThreshold.ordinal()) {
-                    setType(event);
                     historyAppender.doAppend(event);
                 }
 
@@ -137,7 +134,6 @@ public class LogEntryHandler {
                  * email.
                  */
                 if (emailEnabled && priority >= emailThreshold.ordinal()) {
-                    setType(event);
                     emailAppender.doAppend(event);
                 }
 
@@ -372,19 +368,6 @@ public class LogEntryHandler {
             LOGGER.info("{}, discarded: {}.",
                             e.getMessage(),
                             eventObject.getFormattedMessage());
-        }
-    }
-
-    private void setType(ILoggingEvent eventObject) {
-        if (eventObject.getMDCPropertyMap().containsKey(MDC_TYPE)) {
-            return;
-        }
-
-        Marker sub = AlarmMarkerFactory.getTypeSubmarker(eventObject.getMarker());
-        Iterator<Marker> it = sub.iterator();
-        if (it.hasNext()) {
-            String type = it.next().getName();
-            eventObject.getMDCPropertyMap().put(MDC_TYPE, type);
         }
     }
 
