@@ -59,6 +59,7 @@ import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
 import dmg.cells.nucleus.CellMessageReceiver;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
@@ -222,15 +223,15 @@ public class RemoteTransferHandler implements CellMessageReceiver
     }
 
     public void acceptRequest(OutputStream out, Map<String,String> requestHeaders,
-            Subject subject, FsPath path, URI remote, X509Credential credential,
-            Direction direction)
+            Subject subject, Restriction restriction, FsPath path, URI remote,
+            X509Credential credential, Direction direction)
             throws ErrorResponseException, InterruptedException
     {
         EnumSet<TransferFlag> flags = EnumSet.noneOf(TransferFlag.class);
         flags = addVerificationFlag(flags, requestHeaders);
         ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
-        RemoteTransfer transfer = new RemoteTransfer(out, subject, path, remote,
-                credential, flags, transferHeaders, direction);
+        RemoteTransfer transfer = new RemoteTransfer(out, subject, restriction,
+                path, remote, credential, flags, transferHeaders, direction);
 
         long id;
 
@@ -329,6 +330,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
     {
         private final TransferType _type;
         private final Subject _subject;
+        private final Restriction _restriction;
         private final FsPath _path;
         private final URI _destination;
         @Nullable
@@ -345,13 +347,14 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
         private boolean _finished;
 
-        public RemoteTransfer(OutputStream out, Subject subject, FsPath path,
-                URI destination, @Nullable X509Credential credential,
+        public RemoteTransfer(OutputStream out, Subject subject, Restriction restriction,
+                FsPath path, URI destination, @Nullable X509Credential credential,
                 EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders,
                 Direction direction)
                 throws ErrorResponseException
         {
             _subject = subject;
+            _restriction = restriction;
             _path = path;
             _destination = destination;
             _type = TransferType.fromScheme(destination.getScheme());
@@ -376,6 +379,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                             DUMMY_LONG, buildProtocolInfo());
 
             message.setSubject(_subject);
+            message.setRestriction(_restriction);
 
             try {
                 _id = _transferManager.sendAndWait(message).getId();

@@ -278,8 +278,8 @@ public class CopyFilter implements Filter
             redirectWithDelegation(response);
         } else {
             _remoteTransfers.acceptRequest(response.getOutputStream(),
-                    request.getHeaders(), getSubject(), path, remote,
-                    credential, direction);
+                    request.getHeaders(), getSubject(), getRestriction(), path,
+                    remote, credential, direction);
         }
     }
 

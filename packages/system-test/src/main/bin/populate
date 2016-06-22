@@ -32,10 +32,14 @@ if [ ! -f etc/dcache.kpwd ]; then
     echo "version 2.1" > etc/grid-security/storage-authzdb
     if which htpasswd; then
       htpasswd -b -c etc/htpasswd admin dickerelch
+      htpasswd -b etc/htpasswd readonly password
       echo "authorize admin read-write 0 0 / / /" >> etc/grid-security/storage-authzdb
+      echo "authorize readonly read-only 1 1 / / /" >> etc/grid-security/storage-authzdb
     else
       bin/dcache kpwd dcuseradd -u 0 -g 0 -h / -r / -f / \
                                 -w read-write -p dickerelch admin
+      bin/dcache kpwd dcuseradd -u 1 -g 1 -h / -r / -f / \
+                                -w read-only -p password readonly
     fi
 fi
 
