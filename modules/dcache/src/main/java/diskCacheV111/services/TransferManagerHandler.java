@@ -179,6 +179,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         if (store) {
             message = new PnfsCreateEntryMessage(pnfsPath);
             message.setSubject(transferRequest.getSubject());
+            message.setRestriction(transferRequest.getRestriction());
             setState(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE);
         } else {
             EnumSet<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
@@ -186,6 +187,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
             message = new PnfsGetFileAttributes(pnfsPath, attributes);
             message.setSubject(transferRequest.getSubject());
+            message.setRestriction(transferRequest.getRestriction());
             message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
             setState(WAITING_FOR_PNFS_INFO_STATE);
         }
@@ -688,6 +690,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         }
         sb.append("\n  state=").append(state);
         sb.append("\n  user=").append(transferRequest.getSubject());
+        sb.append("\n  restriction=").append(transferRequest.getRestriction());
         if (pnfsId != null) {
             sb.append("\n   pnfsId=").append(pnfsId);
         }

@@ -92,6 +92,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.RemoveFileCallback;
@@ -124,6 +125,7 @@ public class RemoveFileCompanion
     }
 
     public static void removeFile(Subject subject,
+                                  Restriction restriction,
                                   String path,
                                   RemoveFileCallback callbacks,
                                   CellStub pnfsStub,
@@ -135,6 +137,7 @@ public class RemoveFileCompanion
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
+        message.setRestriction(restriction);
         CellStub.addCallback(pnfsStub.send(message), companion, executor);
     }
 

@@ -217,8 +217,22 @@ end
 def http(source, dest, *args)
   args << "-s"
   tmp1 = makeTempName
+  runExpectingStatus(401, @curl, args, "-o", "/dev/null", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+
+  # FIXME: following request should return 403 Forbidden since user is known
+  runExpectingStatus(401, @curl, args, "-o", "/dev/null", "-u", "readonly:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+
   run(@curl, args, "-f", "-o", "/dev/null", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+
+  run(@curl, args, "-f", "-L", "-o", dest, "-u", "#{Etc.getlogin}:password", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-L", "-o", dest, "-u", "readonly:password", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
   run(@curl, args, "-f", "-L", "-o", dest, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+
+  runExpectingStatus(401, @curl, args, "-X", "DELETE", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+
+  # FIXME: following request should return 403 Forbidden since the user is known
+  runExpectingStatus(401, @curl, args, "-u", "readonly:password", "-X", "DELETE", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+
   run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-X", "DELETE", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
   runExpectingStatus(404, @curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
       "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
@@ -230,9 +244,20 @@ def httpNoAnonymous(source, dest, *args)
   args << "-s"
   tmp1 = makeTempName
   runExpectingStatus(401, @curl, args, "-o", "/dev/null", "-L", "-T", source, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+
+  # FIXME: following request should return 403 Forbidden since the user is known
+  runExpectingStatus(401, @curl, args, "-o", "/dev/null", "-u", "readonly:password", "-L", "-T", source, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
   run(@curl, args, "-f", "-o", "/dev/null", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+
   runExpectingStatus(401, @curl, args, "-L", "-o", dest, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-u", "readonly:password", "-L", "-o", dest, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
   run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-L", "-o", dest, "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+
+  runExpectingStatus(401, @curl, args, "-X", "DELETE", "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
+
+  # FIXME: following request should return 403 Forbidden since the user is known
+  runExpectingStatus(401, @curl, args, "-u", "readonly:password", "-X", "DELETE",
+      "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
   run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-X", "DELETE", "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
   runExpectingStatus(404, @curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
       "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
@@ -243,13 +268,30 @@ end
 def https(source, dest, *args)
   args << "--capath" << "/etc/grid-security/certificates" << "-s"
   tmp1 = makeTempName
+  runExpectingStatus(401, @curl, args, "-L", "-T", source,
+                     "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+
+  # FIXME: following request should return 403 Forbidden since the user is known
+  runExpectingStatus(401, @curl, args, "-u", "readonly:password", "-L", "-T", source,
+                     "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
   run(@curl, args, "-u", "#{Etc.getlogin}:password", "-L", "-T", source,
       "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+
   run(@curl, args, "-L", "-o", dest,
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+
+  runExpectingStatus(401, @curl, args, "-X", "DELETE",
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+
+  # FIXME: following request should return 403 Forbidden since the user is known
+  runExpectingStatus(401, @curl, args, "-u", "readonly:password", "-X", "DELETE",
       "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
   run(@curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
       "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+
   runExpectingStatus(404, @curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+  runExpectingStatus(404, @curl, args, "-u", "readonly:password", "-X", "DELETE",
       "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
   runExpectingStatus(404, @curl, args, "-X", "DELETE",
       "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
