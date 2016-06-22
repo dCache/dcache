@@ -1,7 +1,7 @@
 package org.dcache.pool.repository;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 
 import diskCacheV111.util.CacheException;
 
@@ -123,4 +123,9 @@ public interface ReplicaDescriptor extends Allocator
      * @param time
      */
     void setLastAccessTime(long time);
+
+    /**
+     * Returns the current size of the replica.
+     */
+    long getReplicaSize();
 }

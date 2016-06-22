@@ -88,11 +88,9 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     public void execute(final Mover<?> mover, final CompletionHandler<Void, Void> completionHandler)
     {
         _executor.execute(new FireAndForgetTask(() -> {
-            long fileSize = 0;
+            ReplicaDescriptor handle = mover.getIoHandle();
             try {
-                ReplicaDescriptor handle = mover.getIoHandle();
                 try {
-                    fileSize = handle.getFile().length();
                     if (mover.getIoMode() == IoMode.WRITE) {
                         handle.addChecksums(mover.getExpectedChecksums());
                         _checksumModule.enforcePostTransferPolicy(handle, mover.getActualChecksums());
@@ -135,7 +133,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                                         "Transfer failed due to unexpected exception: " + e.getMessage());
                 completionHandler.failed(e, null);
             }
-            sendBillingMessage(mover, fileSize);
+            sendBillingMessage(mover, handle.getReplicaSize());
             sendFinished(mover);
         }));
     }

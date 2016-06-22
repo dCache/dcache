@@ -14,12 +14,12 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
@@ -30,14 +30,9 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Iterables.isEmpty;
-import static com.google.common.collect.Iterables.unmodifiableIterable;
+import static com.google.common.collect.Iterables.*;
 import static java.util.Collections.singleton;
-import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
-import static org.dcache.namespace.FileAttribute.CHECKSUM;
-import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
-import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.*;
 
 class WriteHandleImpl implements ReplicaDescriptor
 {
@@ -499,5 +494,11 @@ class WriteHandleImpl implements ReplicaDescriptor
             throw new IllegalStateException("Handle is closed");
         }
         _atime = time;
+    }
+
+    @Override
+    public long getReplicaSize()
+    {
+        return _entry.getReplicaSize();
     }
 }

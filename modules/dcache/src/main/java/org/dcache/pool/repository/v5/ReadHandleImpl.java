@@ -1,7 +1,7 @@
 package org.dcache.pool.repository.v5;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -12,7 +12,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
@@ -99,6 +98,12 @@ class ReadHandleImpl implements ReplicaDescriptor
     public void setLastAccessTime(long time)
     {
         throw new IllegalStateException("Read-only handle");
+    }
+
+    @Override
+    public long getReplicaSize()
+    {
+        return _entry.getReplicaSize();
     }
 
     @Override
