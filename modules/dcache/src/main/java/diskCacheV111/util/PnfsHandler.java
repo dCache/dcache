@@ -234,6 +234,9 @@ public class PnfsHandler
         if (_subject != null) {
             msg.setSubject(_subject);
         }
+        if (_restriction != null) {
+            msg.setRestriction(_restriction);
+        }
         return _cellStub.send(msg, timeout);
     }
 

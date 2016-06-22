@@ -1384,9 +1384,10 @@ public final class Storage
     }
 
     @Override
-    public void localCopy(SRMUser user, URI fromSurl, String localTransferPath)
+    public void localCopy(SRMUser srmUser, URI fromSurl, String localTransferPath)
         throws SRMException
     {
+        DcacheUser user = asDcacheUser(srmUser);
         FsPath actualFromFilePath = config.getPath(fromSurl);
         FsPath actualToFilePath = FsPath.create(localTransferPath);
         long id = getNextMessageID();
@@ -1399,7 +1400,8 @@ public final class Storage
                                        id,
                                        config.getBuffer_size(),
                                        config.getTcp_buffer_size());
-            copyRequest.setSubject(asDcacheUser(user).getSubject());
+            copyRequest.setSubject(user.getSubject());
+            copyRequest.setRestriction(user.getRestriction());
             _transferManagerStub.sendAndWait(copyRequest);
         } catch (TimeoutCacheException e) {
             _log.error("CopyManager is unavailable");
@@ -1423,6 +1425,7 @@ public final class Storage
         _log.trace("Storage.removeFile");
         try {
             RemoveFileCompanion.removeFile(asDcacheUser(user).getSubject(),
+                                           asDcacheUser(user).getRestriction(),
                                            config.getPath(surl).toString(),
                                            callbacks,
                                            _pnfsStub,
@@ -1768,7 +1771,6 @@ public final class Storage
         throws SRMException
     {
         DcacheUser user = asDcacheUser(srmUser);
-        Subject subject = user.getSubject();
 
         _log.debug("performRemoteTransfer performing "+(store?"store":"restore"));
 
@@ -1834,7 +1836,8 @@ public final class Storage
                                                  store,
                                                  remoteCredentialId,
                                                  protocolInfo);
-        request.setSubject(subject);
+        request.setSubject(user.getSubject());
+        request.setRestriction(user.getRestriction());
         try {
             RemoteTransferManagerMessage reply =
                 _transferManagerStub.sendAndWait(request);

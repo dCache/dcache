@@ -1,6 +1,9 @@
 package diskCacheV111.vehicles.transferManager;
 import diskCacheV111.vehicles.Message;
 
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
+
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
@@ -26,6 +29,7 @@ public abstract class TransferManagerMessage extends Message {
     private String remoteUrl;
     private boolean spaceReservationStrict;
     private Long credentialId;
+    private Restriction restriction;
 
     public TransferManagerMessage(
             String pnfsPath,
@@ -46,11 +50,21 @@ public abstract class TransferManagerMessage extends Message {
         this.spaceReservationId = original.spaceReservationId;
         this.size = original.size;
         this.credentialId = original.credentialId;
-
-
+        this.restriction = original.restriction;
     }
 
     public TransferManagerMessage() {
+    }
+
+    public void setRestriction(Restriction restriction)
+    {
+        this.restriction = (restriction != null && !Restrictions.none().equals(restriction)) ?
+                restriction : null;
+    }
+
+    public Restriction getRestriction()
+    {
+        return restriction == null ? Restrictions.none() : restriction;
     }
 
     /** Getter for property store.
