@@ -165,13 +165,11 @@
                                                                value-ref="pnfs-stub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PM}"
                                                                value-ref="pool-monitor"/>
-
                                                     </map>
                                                 </constructor-arg>
                                             </bean>
                                         </property>
                                     </bean>
-                                    <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
                                 </list>
                             </property>
                         </bean>
@@ -253,6 +251,7 @@
                               '${frontend.limits.low-resource-idle-time.unit}')}" />
                     <property name="maxLowResourcesTime" value="180000"/>
                 </bean>
+                <bean class="org.dcache.restful.errorHandling.RestAPIExceptionHandler"/>
             </list>
         </property>
     </bean>
