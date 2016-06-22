@@ -1,16 +1,17 @@
 package org.dcache.tests.repository;
 
-import com.google.common.io.Files;
-import com.google.common.primitives.Bytes;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import com.sleepycat.je.DatabaseException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -18,15 +19,16 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.DiskSpace;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.DiskSpace;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
@@ -34,6 +36,7 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.FairQueueAllocation;
 import org.dcache.pool.classic.SpaceSweeper2;
@@ -47,6 +50,7 @@ import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository.OpenFlags;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
@@ -58,19 +62,8 @@ import org.dcache.tests.cells.Message;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
-import static org.dcache.pool.repository.EntryState.BROKEN;
-import static org.dcache.pool.repository.EntryState.CACHED;
-import static org.dcache.pool.repository.EntryState.DESTROYED;
-import static org.dcache.pool.repository.EntryState.FROM_CLIENT;
-import static org.dcache.pool.repository.EntryState.FROM_STORE;
-import static org.dcache.pool.repository.EntryState.NEW;
-import static org.dcache.pool.repository.EntryState.PRECIOUS;
-import static org.dcache.pool.repository.EntryState.REMOVED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.dcache.pool.repository.EntryState.*;
+import static org.junit.Assert.*;
 
 public class RepositorySubsystemTest
     extends AbstractStateChangeListener
@@ -106,9 +99,10 @@ public class RepositorySubsystemTest
     private SpaceSweeper2 sweeper;
     private MetaDataStore metaDataStore;
 
-    private File root;
-    private File metaDir;
-    private File dataDir;
+    private Path metaRoot;
+    private Path dataRoot;
+    private Path metaDir;
+    private Path dataDir;
 
     private BlockingQueue<StateChangeEvent> stateChangeEvents =
         new LinkedBlockingQueue<>();
@@ -116,10 +110,12 @@ public class RepositorySubsystemTest
     private CellEndpointHelper cell;
     private final CellAddressCore address = new CellAddressCore("pool", "test");
 
-    private void createFile(File file, long size)
+    private void createFile(ReplicaDescriptor descriptor, long size)
         throws IOException
     {
-        Files.write(Bytes.toArray(Collections.nCopies((int) size, (byte) 0)), file);
+        try (RepositoryChannel channel = descriptor.createChannel()) {
+            channel.write(ByteBuffer.allocate((int) size));
+        }
     }
 
     private void createEntry(final FileAttributes attributes,
@@ -147,7 +143,7 @@ public class RepositorySubsystemTest
                                 EnumSet.noneOf(OpenFlags.class));
                 try {
                     handle.allocate(attributes.getSize());
-                    createFile(handle.getFile(), attributes.getSize());
+                    createFile(handle, attributes.getSize());
                     handle.commit();
                 } finally {
                     handle.close();
@@ -167,30 +163,32 @@ public class RepositorySubsystemTest
         return attributes;
     }
 
-    private void deleteDirectory(File dir)
+    private void deleteDirectory(Path dir) throws IOException
     {
-        File[] fileArray = dir.listFiles();
+        Path[] fileArray;
+        try (Stream<Path> list = Files.list(dir)) {
+            fileArray = list.toArray(Path[]::new);
+        }
 
-        if (fileArray != null)
-        {
-            for (File file : fileArray) {
-                if (file.isDirectory()) {
-                    deleteDirectory(file);
-                } else {
-                    file.delete();
-                }
+        for (Path file : fileArray) {
+            if (Files.isDirectory(file)) {
+                deleteDirectory(file);
+            } else {
+                Files.delete(file);
             }
         }
-        dir.delete();
+        if (dir.getParent() != null) {
+            Files.delete(dir);
+        }
     }
 
     private void initRepository()
-        throws FileNotFoundException, DatabaseException
+            throws IOException, DatabaseException
     {
         FairQueueAllocation allocator = new FairQueueAllocation();
-        FileStore fileStore = new FlatFileStore(root);
+        FileStore fileStore = new FlatFileStore(dataRoot);
         metaDataStore =
-            new FileMetaDataRepository(fileStore, root);
+            new FileMetaDataRepository(fileStore, metaRoot);
 
         account = new Account();
         sweeper = new SpaceSweeper2();
@@ -208,6 +206,7 @@ public class RepositorySubsystemTest
         repository.addListener(this);
         repository.setSpaceSweeperPolicy(sweeper);
         repository.setMaxDiskSpace(new DiskSpace(5120));
+        repository.addFaultListener(event -> System.err.println(event.getMessage() + ": " + event.getCause()));
     }
 
     @Before
@@ -232,22 +231,13 @@ public class RepositorySubsystemTest
         attributes4 = createFileAttributes(id4, 0, info4);
         attributes5 = createFileAttributes(id5, size5, info5);
 
-        root = File.createTempFile("dtest", null);
-        if (!root.delete()) {
-            throw new IOException("Could not delete temp file");
-        }
-        if (!root.mkdir()) {
-            throw new IOException("Could not create temp dir");
-        }
-        dataDir = new File(root, "data");
-        metaDir = new File(root, "meta");
+        dataRoot = Jimfs.newFileSystem(Configuration.unix()).getPath("/");
+        metaRoot = Files.createTempDirectory("dtest");
+        dataDir = dataRoot.resolve("data");
+        metaDir = metaRoot.resolve("meta");
 
-        if (!dataDir.mkdir()) {
-            throw new IOException("Could not create data dir");
-        }
-        if (!metaDir.mkdir()) {
-            throw new IOException("Could not create meta dir");
-        }
+        Files.createDirectory(dataDir);
+        Files.createDirectory(metaDir);
 
         cell = new CellEndpointHelper(address);
         pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
@@ -283,13 +273,16 @@ public class RepositorySubsystemTest
 
     @After
     public void tearDown()
-        throws InterruptedException
+            throws InterruptedException, IOException
     {
         sweeper.stop();
         repository.shutdown();
         metaDataStore.close();
-        if (root != null) {
-            deleteDirectory(root);
+        if (metaRoot != null) {
+            deleteDirectory(metaRoot);
+        }
+        if (dataRoot != null) {
+            deleteDirectory(dataRoot);
         }
     }
 
@@ -339,14 +332,15 @@ public class RepositorySubsystemTest
             ReplicaDescriptor handle =
                 repository.openEntry(id, EnumSet.noneOf(OpenFlags.class));
             try {
-                assertEquals(new File(dataDir, id.toString()), handle.getFile());
+                try (RepositoryChannel channel = handle.createChannel()) {
+                }
                 assertCacheEntry(repository.getEntry(id), id, size, state);
             } finally {
                 handle.close();
             }
         } catch (FileNotInCacheException e) {
             fail("Expected entry " + id + " not found");
-        } catch (CacheException | InterruptedException e) {
+        } catch (CacheException | InterruptedException | IOException e) {
             fail("Failed to open " + id + ": " + e.getMessage());
         }
     }
@@ -502,7 +496,7 @@ public class RepositorySubsystemTest
                         EnumSet.noneOf(OpenFlags.class));
                 try {
                     handle.allocate(attributes5.getSize());
-                    createFile(handle.getFile(), attributes5.getSize());
+                    createFile(handle, attributes5.getSize());
                     handle.commit();
                 }catch( IOException e) {
                     throw new DiskErrorCacheException(e.getMessage());
@@ -825,7 +819,7 @@ public class RepositorySubsystemTest
                 try {
                     handle.allocate(size4 + overallocation);
                     assertStep("No clear after this point", 2);
-                    createFile(handle.getFile(), size4);
+                    createFile(handle, size4);
                     if (!cancel) {
                         handle.commit();
                     }

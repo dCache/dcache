@@ -5,18 +5,17 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.entry.state.Sticky;
 
@@ -37,36 +36,20 @@ public class CacheRepositoryEntryState
     private EntryState _state;
 
     // data, control and SI- files locations
-    private final File _controlFile;
+    private final Path _controlFile;
 
-    public CacheRepositoryEntryState(File controlFile) throws IOException {
+    public CacheRepositoryEntryState(Path controlFile) throws IOException {
         _controlFile = controlFile;
         _state = EntryState.NEW;
 
         // read state from file
         try {
             loadState();
-        }catch( FileNotFoundException fnf) {
+        }catch( FileNotFoundException | NoSuchFileException fnf) {
             /*
              * it's not an error state.
              */
         }
-    }
-
-    /**
-     * Copy state from existing MetaDataRecord.
-     */
-    public CacheRepositoryEntryState(File controlFile, MetaDataRecord entry)
-        throws IOException
-    {
-        _controlFile = controlFile;
-        _state = entry.getState();
-
-        for (StickyRecord record: entry.stickyRecords()) {
-            _sticky.addRecord(record.owner(), record.expire(), true);
-        }
-
-        makeStatePersistent();
     }
 
     public List<StickyRecord> removeExpiredStickyFlags() throws IOException
@@ -175,7 +158,7 @@ public class CacheRepositoryEntryState
     {
 
         //BufferedReader in = new BufferedReader( new FileReader(_controlFile) );
-        try (BufferedWriter out = new BufferedWriter(new FileWriter(_controlFile, false))) {
+        try (BufferedWriter out = Files.newBufferedWriter(_controlFile)) {
 
             // write repository version number
 
@@ -216,7 +199,7 @@ public class CacheRepositoryEntryState
 
     private void loadState() throws IOException
     {
-        try (BufferedReader in = new BufferedReader(new FileReader(_controlFile))) {
+        try (BufferedReader in = Files.newBufferedReader(_controlFile)) {
             _state = EntryState.BROKEN;
 
             String line;
@@ -320,7 +303,7 @@ public class CacheRepositoryEntryState
 
                         break;
                     default:
-                        _log.info("Unknow number of arguments in {} [{}]", _controlFile.getPath(), line);
+                        _log.info("Unknow number of arguments in {} [{}]", _controlFile, line);
                         _state = EntryState.BROKEN;
                         return;
                     }

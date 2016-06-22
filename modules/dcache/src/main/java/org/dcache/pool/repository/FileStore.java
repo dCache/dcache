@@ -1,6 +1,7 @@
 package org.dcache.pool.repository;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Set;
 
 import diskCacheV111.util.PnfsId;
@@ -14,24 +15,24 @@ public interface FileStore
     /**
      * Returns the path to the data file for the given PNFS id.
      */
-    File get(PnfsId id);
+    Path get(PnfsId id);
 
     /**
      * Returns the PNFS-IDs of available data files.
      */
-    Set<PnfsId> index();
+    Set<PnfsId> index() throws IOException;
 
     /**
      * Provides the amount of free space on the file system containing
      * the data files.
      */
-    long getFreeSpace();
+    long getFreeSpace() throws IOException;
 
     /**
      * Provides the total amount of space on the file system
      * containing the data files.
      */
-    long getTotalSpace();
+    long getTotalSpace() throws IOException;
 
     /**
      * Returns whether the store appears healthy. How this is

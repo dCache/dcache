@@ -1,10 +1,12 @@
 package org.dcache.pool.repository;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashSet;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.PnfsId;
 
@@ -14,20 +16,18 @@ import diskCacheV111.util.PnfsId;
  */
 public class FlatFileStore implements FileStore
 {
-    private final File _dataDir;
+    private final Path _dataDir;
 
-    public FlatFileStore(File baseDir) throws FileNotFoundException
+    public FlatFileStore(Path baseDir) throws IOException
     {
-        if (!baseDir.isDirectory()) {
+        if (!Files.isDirectory(baseDir)) {
             throw new FileNotFoundException("No such directory: " + baseDir);
         }
 
-        _dataDir = new File(baseDir, "data");
-        if (!_dataDir.exists()) {
-            if (!_dataDir.mkdir()) {
-                throw new FileNotFoundException("Failed to create directory: " + _dataDir);
-            }
-        } else if (!_dataDir.isDirectory()) {
+        _dataDir = baseDir.resolve("data");
+        if (!Files.exists(_dataDir)) {
+            Files.createDirectory(_dataDir);
+        } else if (!Files.isDirectory(_dataDir)) {
             throw new FileNotFoundException("No such directory: " + _dataDir);
         }
     }
@@ -37,60 +37,46 @@ public class FlatFileStore implements FileStore
      */
     public String toString()
     {
-        return _dataDir.getPath();
+        return _dataDir.toString();
     }
 
     @Override
-    public File get(PnfsId id)
+    public Path get(PnfsId id)
     {
-        return new File(_dataDir, id.toString());
+        return _dataDir.resolve(id.toString());
     }
 
     @Override
-    public Set<PnfsId> index()
+    public Set<PnfsId> index() throws IOException
     {
-        String[] files = _dataDir.list();
-        Set<PnfsId> ids = new HashSet<>(files.length);
-
-        for (String name : files) {
-            try {
-                ids.add(new PnfsId(name));
-            } catch (IllegalArgumentException e) {
-                // data file contains foreign key
-            }
+        try (Stream<Path> files = Files.list(_dataDir)) {
+            return files
+                    .map(p -> p.getFileName().toString())
+                    .filter(PnfsId::isValid)
+                    .map(PnfsId::new)
+                    .collect(Collectors.toSet());
         }
-
-        return ids;
     }
 
     @Override
-    public long getFreeSpace()
+    public long getFreeSpace() throws IOException
     {
-        return _dataDir.getUsableSpace();
+        return Files.getFileStore(_dataDir).getUsableSpace();
     }
 
     @Override
-    public long getTotalSpace()
+    public long getTotalSpace() throws IOException
     {
-        return _dataDir.getTotalSpace();
+        return Files.getFileStore(_dataDir).getTotalSpace();
     }
 
     @Override
     public boolean isOk()
     {
         try {
-            File tmp = new File(_dataDir, ".repository_is_ok");
-            tmp.delete();
-            tmp.deleteOnExit();
-
-            if (!tmp.createNewFile()) {
-                return false;
-            }
-
-            if (!tmp.exists()) {
-                return false;
-            }
-
+            Path tmp = _dataDir.resolve(".repository_is_ok");
+            Files.deleteIfExists(tmp);
+            Files.createFile(tmp);
             return true;
         } catch (IOException e) {
             return false;

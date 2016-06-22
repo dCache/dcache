@@ -592,7 +592,7 @@ public class CacheRepositoryV5
                             this, _allocator, _pnfs, entry, fileAttributes,
                                     targetState, stickyRecords, flags);
                 } catch (IOException e) {
-                    throw new DiskErrorCacheException("Failed to create file: " + entry.getDataFile(), e);
+                    throw new DiskErrorCacheException("Failed to create file: " + id, e);
                 }
             });
         } catch (DuplicateEntryException e) {

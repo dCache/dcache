@@ -2,6 +2,10 @@ package org.dcache.tests.repository;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -12,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
@@ -51,12 +56,15 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         private final FileStore _repository;
         private FileAttributes _fileAttributes;
 
-        public CacheRepositoryEntryImpl(FileStore repository, PnfsId pnfsId)
+        public CacheRepositoryEntryImpl(FileStore repository, PnfsId pnfsId) throws IOException
         {
             _repository = repository;
             _pnfsId = pnfsId;
-            _lastAccess = getDataFile().lastModified();
-            _size = getDataFile().length();
+            Path path = _repository.get(_pnfsId);
+            BasicFileAttributes attributes =
+                    Files.getFileAttributeView(path, BasicFileAttributeView.class).readAttributes();
+            _lastAccess = attributes.lastModifiedTime().toMillis();
+            _size = attributes.size();
             _state = EntryState.NEW;
             _fileAttributes = new FileAttributes();
         }
@@ -145,13 +153,13 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         @Override
         public synchronized File getDataFile()
         {
-            return _repository.get(_pnfsId);
+            return _repository.get(_pnfsId).toFile();
         }
 
         @Override
         public RepositoryChannel openChannel(IoMode mode) throws IOException
         {
-            return new FileRepositoryChannel(getDataFile(), mode.toOpenString());
+            return new FileRepositoryChannel(_repository.get(_pnfsId), mode.toOpenString());
         }
 
         @Override
@@ -220,18 +228,26 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
     @Override
     public MetaDataRecord create(PnfsId id) throws DuplicateEntryException, RepositoryException {
-        MetaDataRecord entry = new CacheRepositoryEntryImpl(_repository, id);
-
-        _entryList.put(id, entry);
-        return entry;
+        try {
+            MetaDataRecord entry = new CacheRepositoryEntryImpl(_repository, id);
+            _entryList.put(id, entry);
+            return entry;
+        } catch (IOException e) {
+            throw new RepositoryException("Failed to create entry: " + e, e);
+        }
     }
 
     @Override
-    public MetaDataRecord get(PnfsId id) {
-        if (!_repository.get(id).exists()) {
-            return null;
+    public MetaDataRecord get(PnfsId id) throws RepositoryException
+    {
+        try {
+            if (!Files.exists(_repository.get(id))) {
+                return null;
+            }
+            return _entryList.containsKey(id) ? _entryList.get(id) : new CacheRepositoryEntryImpl(_repository, id);
+        } catch (IOException e) {
+            throw new RepositoryException("Failed to open entry: " + e, e);
         }
-        return _entryList.containsKey(id) ? _entryList.get(id) : new CacheRepositoryEntryImpl(_repository, id);
     }
 
     @Override
@@ -250,9 +266,15 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
     @Override
-    public void remove(PnfsId id) {
-        _repository.get(id).delete();
-        _entryList.remove(id);
+    public void remove(PnfsId id) throws DiskErrorCacheException
+    {
+        try {
+            Files.deleteIfExists(_repository.get(id));
+            _entryList.remove(id);
+        } catch (IOException e) {
+            throw new DiskErrorCacheException(
+                    "Failed to remove meta data for " + id + ": " + e.getMessage(), e);
+        }
     }
 
     @Override

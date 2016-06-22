@@ -8,6 +8,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
@@ -26,7 +28,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
     private static final Set<StandardOpenOption> O_RWS = EnumSet.of(READ, WRITE, CREATE, DSYNC, SYNC);
 
     private final FileChannel _fileChannel;
-    private final File _file;
+    private final Path _path;
 
     /*
      * Cached value of files size. If value is -1, then we have to get file size
@@ -35,7 +37,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
     private final long _fileSize;
 
     public FileRepositoryChannel(String file, String mode) throws FileNotFoundException, IOException {
-        this(new File(file), mode);
+        this(FileSystems.getDefault().getPath(file), mode);
     }
 
     /**
@@ -98,9 +100,8 @@ public class FileRepositoryChannel implements RepositoryChannel {
      *            that name cannot be created, or if some other error occurs
      *            while opening or creating the file
      */
-    public FileRepositoryChannel(File file, String mode) throws FileNotFoundException, IOException {
-        _file = file;
-        Path path = file.toPath();
+    public FileRepositoryChannel(Path path, String mode) throws FileNotFoundException, IOException {
+        _path = path;
         Set<StandardOpenOption> openOptions = getOpenOptions(mode);
         _fileChannel = FileChannel.open(path, openOptions, NO_ATTRIBUTES);
         _fileSize = mode.equals("r") ? _fileChannel.size() : -1;
@@ -140,7 +141,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
 
     @Override
     public long size() throws IOException {
-        return _fileSize == -1 ? _file.length() : _fileSize;
+        return _fileSize == -1 ? _fileChannel.size() : _fileSize;
     }
 
     @Override

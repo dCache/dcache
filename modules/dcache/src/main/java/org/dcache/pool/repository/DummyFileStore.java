@@ -18,8 +18,9 @@
  */
 package org.dcache.pool.repository;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Set;
 
@@ -31,21 +32,21 @@ import diskCacheV111.util.PnfsId;
  */
 class DummyFileStore implements FileStore
 {
-    public final File file;
+    public final Path file;
 
     public enum Mode { ALL_EXIST, NONE_EXIST }
 
     DummyFileStore(Mode mode) throws IOException
     {
-        file = File.createTempFile("dcache-yaml-tool", null);
-        file.deleteOnExit();
+        file = Files.createTempFile("dcache-yaml-tool", null);
+        file.toFile().deleteOnExit();
         if (mode == Mode.NONE_EXIST) {
-            file.delete();
+            Files.delete(file);
         }
     }
 
     @Override
-    public File get(PnfsId id)
+    public Path get(PnfsId id)
     {
         return file;
     }

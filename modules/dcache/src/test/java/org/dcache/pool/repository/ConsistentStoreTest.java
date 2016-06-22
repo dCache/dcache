@@ -1,13 +1,20 @@
 package org.dcache.pool.repository;
 
-import org.junit.After;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -17,30 +24,16 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
+
 import org.dcache.cells.CellStub;
-import org.dcache.chimera.ChimeraFsException;
-import org.dcache.chimera.FsInode;
-import org.dcache.chimera.posix.Stat;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
 import org.dcache.tests.repository.MetaDataRepositoryHelper;
-import org.dcache.tests.repository.RepositoryHealerTestChimeraHelper;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.pool.repository.EntryState.BROKEN;
-import static org.dcache.pool.repository.EntryState.CACHED;
-import static org.dcache.pool.repository.EntryState.FROM_CLIENT;
-import static org.dcache.pool.repository.EntryState.FROM_STORE;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
+import static org.dcache.pool.repository.EntryState.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.mockito.BDDMockito.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.mock;
-import static org.mockito.BDDMockito.never;
-import static org.mockito.BDDMockito.verify;
-import static org.mockito.BDDMockito.verifyNoMoreInteractions;
+import static org.mockito.BDDMockito.*;
 
 public class ConsistentStoreTest
 {
@@ -49,7 +42,7 @@ public class ConsistentStoreTest
         new PnfsId("000000000000000000000000000000000001");
 
     private PnfsHandler _pnfs;
-    private RepositoryHealerTestChimeraHelper _fileStore;
+    private FlatFileStore _fileStore;
     private MetaDataStore _metaDataStore;
     private ConsistentStore _consistentStore;
     private CellStub _broadcast;
@@ -59,18 +52,14 @@ public class ConsistentStoreTest
     {
         _pnfs = mock(PnfsHandler.class);
         _broadcast = mock(CellStub.class);
-        _fileStore = new RepositoryHealerTestChimeraHelper();
+
+        FileSystem fileSystem = Jimfs.newFileSystem(Configuration.unix());
+        _fileStore = new FlatFileStore(fileSystem.getPath("/"));
         _metaDataStore = new MetaDataRepositoryHelper(_fileStore);
         _consistentStore =
             new ConsistentStore(_pnfs, null, _metaDataStore,
                                 new ALRPReplicaStatePolicy());
         _consistentStore.setPoolName(POOL);
-    }
-
-    @After
-    public void tearDown()
-    {
-        _fileStore.shutdown();
     }
 
     private static FileAttributes createFileAttributes(PnfsId pnfsId)
@@ -95,12 +84,12 @@ public class ConsistentStoreTest
     }
 
     private void givenStoreHasFileOfSize(PnfsId pnfsId, long size)
-        throws ChimeraFsException
+            throws IOException
     {
-	Stat stat = new Stat();
-	stat.setSize(17);
-        FsInode inode = _fileStore.add(pnfsId);
-	inode.setStat(stat);
+        Path path = _fileStore.get(pnfsId);
+        try (OutputStream stream = Files.newOutputStream(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW)) {
+            stream.write(new byte[(int) size]);
+        }
     }
 
     private void givenMetaDataStoreHas(EntryState state, FileAttributes attributes)
@@ -200,7 +189,7 @@ public class ConsistentStoreTest
 
         // and the replica is deleted
         assertThat(_metaDataStore.get(PNFSID), is(nullValue()));
-        assertThat(_fileStore.get(PNFSID).exists(), is(false));
+        assertThat(Files.exists(_fileStore.get(PNFSID)), is(false));
 
         // and the name space entry is not touched
         verify(_pnfs, never())
@@ -229,7 +218,7 @@ public class ConsistentStoreTest
 
         // and the replica is deleted
         assertThat(_metaDataStore.get(PNFSID), is(nullValue()));
-        assertThat(_fileStore.get(PNFSID).exists(), is(false));
+        assertThat(Files.exists(_fileStore.get(PNFSID)), is(false));
 
         // and the name space entry is not touched
         verify(_pnfs, never())
@@ -290,7 +279,7 @@ public class ConsistentStoreTest
 
         // and the replica is deleted
         assertThat(_metaDataStore.get(PNFSID), is(nullValue()));
-        assertThat(_fileStore.get(PNFSID).exists(), is(false));
+        assertThat(Files.exists(_fileStore.get(PNFSID)), is(false));
 
         // and the location is cleared
         verify(_pnfs).clearCacheLocation(PNFSID);

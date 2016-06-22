@@ -12,7 +12,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
@@ -138,9 +142,11 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized void setLastAccessTime(long time) throws CacheException
     {
-        File file = getDataFile();
-        if (!file.setLastModified(time)) {
-            throw new DiskErrorCacheException("Failed to set modification time: " + file);
+        Path path = _repository.getPath(_pnfsId);
+        try {
+            Files.setLastModifiedTime(path, FileTime.fromMillis(time));
+        } catch (IOException e) {
+            throw new DiskErrorCacheException("Failed to set modification time: " + path);
         }
         _lastAccess = time;
     }
@@ -148,7 +154,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized long getReplicaSize()
     {
-        return _state.isMutable() ? getDataFile().length() : _size;
+        try {
+            return _state.isMutable() ? Files.size(_repository.getPath(_pnfsId)) : _size;
+        } catch (NoSuchFileException e) {
+            return 0;
+        } catch (IOException e) {
+            _log.error("Failed to read file size: " + e);
+            return 0;
+        }
     }
 
     private synchronized StorageInfo getStorageInfo()
@@ -218,13 +231,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized File getDataFile()
     {
-        return _repository.getDataFile(_pnfsId);
+        return _repository.getPath(_pnfsId).toFile();
     }
 
     @Override
     public RepositoryChannel openChannel(IoMode mode) throws IOException
     {
-        return new FileRepositoryChannel(getDataFile(), mode.toOpenString());
+        return new FileRepositoryChannel(_repository.getPath(_pnfsId), mode.toOpenString());
     }
 
     @Override
@@ -349,7 +362,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         {
             if (_state != state) {
                 if (_state.isMutable() && !state.isMutable()) {
-                    _size = getDataFile().length();
+                    try {
+                        _size = Files.size(_repository.getPath(_pnfsId));
+                    } catch (NoSuchFileException e) {
+                        _size = 0;
+                    } catch (IOException e) {
+                        throw new DiskErrorCacheException("Failed to query file size: " + e, e);
+                    }
                 }
                 _state = state;
                 _stateModified = true;

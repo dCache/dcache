@@ -15,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
@@ -78,7 +79,7 @@ public class BerkeleyDBMetaDataRepository
     /**
      * Directory containing the database.
      */
-    private final File _dir;
+    private final Path _dir;
 
     /**
      * Berkeley DB configuration properties.
@@ -90,27 +91,22 @@ public class BerkeleyDBMetaDataRepository
      * does not exist yet, then it is created. If the 'meta' directory
      * does not exist, it is created.
      */
-    public BerkeleyDBMetaDataRepository(FileStore fileStore,
-                                        File directory)
-            throws FileNotFoundException, DatabaseException, CacheException
+    public BerkeleyDBMetaDataRepository(FileStore fileStore, Path directory)
+            throws IOException, DatabaseException, CacheException
     {
         this(fileStore, directory, false);
     }
 
-    public BerkeleyDBMetaDataRepository(FileStore fileStore,
-                                        File directory,
-                                        boolean readOnly)
-            throws FileNotFoundException, DatabaseException
+    public BerkeleyDBMetaDataRepository(FileStore fileStore, Path directory, boolean readOnly)
+            throws IOException, DatabaseException
     {
         _fileStore = fileStore;
         _readOnly = readOnly;
-        _dir = new File(directory, DIRECTORY_NAME);
+        _dir = directory.resolve(DIRECTORY_NAME);
 
-        if (!_dir.exists()) {
-            if (!_dir.mkdir()) {
-                throw new FileNotFoundException("Failed to create directory: " + _dir);
-            }
-        } else if (!_dir.isDirectory()) {
+        if (!Files.exists(_dir)) {
+            Files.createDirectory(_dir);
+        } else if (!Files.isDirectory(_dir)) {
             throw new FileNotFoundException("No such directory: " + _dir);
         }
     }
@@ -130,7 +126,7 @@ public class BerkeleyDBMetaDataRepository
     public void init() throws CacheException
     {
         try {
-            _database = new MetaDataRepositoryDatabase(_properties, _dir, _readOnly);
+            _database = new MetaDataRepositoryDatabase(_properties, _dir.toFile(), _readOnly);
             _views = new MetaDataRepositoryViews(_database);
         } catch (EnvironmentFailureException e) {
             throw new CacheException(CacheException.PANIC, "Failed to open Berkeley DB database. When upgrading to " +
@@ -176,6 +172,8 @@ public class BerkeleyDBMetaDataRepository
             throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
         } catch (OperationFailureException e) {
             throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
         }
     }
 
@@ -183,11 +181,11 @@ public class BerkeleyDBMetaDataRepository
     public MetaDataRecord get(PnfsId id) throws CacheException
     {
         try {
-            File file = _fileStore.get(id);
+            Path path = _fileStore.get(id);
             BasicFileAttributes attributes =
-                    Files.getFileAttributeView(file.toPath(), BasicFileAttributeView.class).readAttributes();
+                    Files.getFileAttributeView(path, BasicFileAttributeView.class).readAttributes();
             if (!attributes.isRegularFile()) {
-                throw new DiskErrorCacheException("Not a regular file: " + file);
+                throw new DiskErrorCacheException("Not a regular file: " + path);
             }
             return CacheRepositoryEntryImpl.load(this, id, attributes);
         } catch (EnvironmentFailureException e) {
@@ -211,8 +209,8 @@ public class BerkeleyDBMetaDataRepository
     public MetaDataRecord create(PnfsId id)
             throws CacheException
     {
-        File dataFile = _fileStore.get(id);
-        if (dataFile.exists()) {
+        Path dataFile = _fileStore.get(id);
+        if (Files.exists(dataFile)) {
             throw new DuplicateEntryException(id);
         }
         _views.getStorageInfoMap().remove(id.toString());
@@ -223,8 +221,10 @@ public class BerkeleyDBMetaDataRepository
     @Override
     public void remove(PnfsId id) throws CacheException
     {
-        File f = _fileStore.get(id);
-        if (!f.delete() && f.exists()) {
+        Path f = _fileStore.get(id);
+        try {
+            Files.deleteIfExists(f);
+        } catch (IOException e) {
             throw new DiskErrorCacheException("Failed to delete " + id);
         }
         try {
@@ -247,15 +247,10 @@ public class BerkeleyDBMetaDataRepository
             return false;
         }
 
-        File tmp = new File(_dir, ".repository_is_ok");
+        Path tmp = _dir.resolve(".repository_is_ok");
         try {
-            Files.deleteIfExists(tmp.toPath());
-            tmp.deleteOnExit();
-
-            if (!tmp.createNewFile() || !tmp.exists()) {
-                _log.error("Could not create " + tmp);
-                return false;
-            }
+            Files.deleteIfExists(tmp);
+            Files.createFile(tmp);
 
             if (_database.isFailed()) {
                 return false;
@@ -272,7 +267,7 @@ public class BerkeleyDBMetaDataRepository
      * Requests a data file from the CacheRepository. Used by the
      * entries to obtain a data file.
      */
-    File getDataFile(PnfsId id)
+    Path getPath(PnfsId id)
     {
         return _fileStore.get(id);
     }
@@ -320,7 +315,12 @@ public class BerkeleyDBMetaDataRepository
     @Override
     public long getFreeSpace()
     {
-        return _fileStore.getFreeSpace();
+        try {
+            return _fileStore.getFreeSpace();
+        } catch (IOException e) {
+            _log.warn("Failed to query free space: " + e.toString());
+            return 0;
+        }
     }
 
     /**
@@ -330,7 +330,12 @@ public class BerkeleyDBMetaDataRepository
     @Override
     public long getTotalSpace()
     {
-        return _fileStore.getTotalSpace();
+        try {
+            return _fileStore.getTotalSpace();
+        } catch (IOException e) {
+            _log.warn("Failed to query total space: " + e.toString());
+            return 0;
+        }
     }
 
     public boolean isValid()
@@ -341,11 +346,6 @@ public class BerkeleyDBMetaDataRepository
     public EnvironmentConfig getConfig()
     {
         return _database.getEnvironment().getConfig();
-    }
-
-    public File getPath()
-    {
-        return _dir;
     }
 
     public Transaction beginTransaction()

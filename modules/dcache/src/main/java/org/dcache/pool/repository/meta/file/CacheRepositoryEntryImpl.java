@@ -4,15 +4,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
@@ -45,21 +49,21 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     /**
      * control file
      */
-    private final File _controlFile;
+    private final Path _controlFile;
 
     /**
      * serialized storage info file
      */
-    private final File _siFile;
+    private final Path _siFile;
 
     /**
      * data file
      */
-    private final File _dataFile;
+    private final Path _dataFile;
 
 
 
-    public CacheRepositoryEntryImpl(PnfsId pnfsId, File controlFile, File dataFile, File siFile ) throws IOException
+    public CacheRepositoryEntryImpl(PnfsId pnfsId, Path controlFile, Path dataFile, Path siFile) throws IOException
     {
 
         _pnfsId = pnfsId;
@@ -71,15 +75,23 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
 
         try {
             _storageInfo = readStorageInfo(siFile);
-            _creationTime = _siFile.lastModified();
-        }catch(FileNotFoundException fnf) {
+            _creationTime = Files.getLastModifiedTime(_siFile).toMillis();
+        } catch (FileNotFoundException | NoSuchFileException fnf) {
             /*
              * it's not an error state.
              */
         }
 
-        _lastAccess = _dataFile.lastModified();
-        _size = _dataFile.length();
+        try {
+            BasicFileAttributes attributes =
+                    Files.getFileAttributeView(_dataFile, BasicFileAttributeView.class).readAttributes();
+            _lastAccess = attributes.lastModifiedTime().toMillis();
+            _size = attributes.size();
+        } catch (FileNotFoundException | NoSuchFileException fnf) {
+            /*
+             * it's not an error state.
+             */
+        }
 
         if (_lastAccess == 0) {
             _lastAccess = _creationTime;
@@ -117,13 +129,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     @Override
     public synchronized File getDataFile()
     {
-        return _dataFile;
+        return _dataFile.toFile();
     }
 
     @Override
     public RepositoryChannel openChannel(IoMode mode) throws IOException
     {
-        return new FileRepositoryChannel(getDataFile(), mode.toOpenString());
+        return new FileRepositoryChannel(_dataFile, mode.toOpenString());
     }
 
     @Override
@@ -134,8 +146,10 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     @Override
     public synchronized void setLastAccessTime(long time) throws CacheException
     {
-        if (!_dataFile.setLastModified(time)) {
-            throw new DiskErrorCacheException("Failed to set modification time: " + _dataFile);
+        try {
+            Files.setLastModifiedTime(_dataFile, FileTime.fromMillis(time));
+        } catch (IOException e) {
+            throw new DiskErrorCacheException("Failed to set modification time: " + _dataFile, e);
         }
         _lastAccess = System.currentTimeMillis();
     }
@@ -148,7 +162,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     @Override
     public synchronized long getReplicaSize()
     {
-        return _state.getState().isMutable() ? getDataFile().length() : _size;
+        try {
+            return _state.getState().isMutable() ? Files.size(_dataFile) : _size;
+        } catch (NoSuchFileException e) {
+            return 0;
+        } catch (IOException e) {
+            LOGGER.error("Failed to read file size: " + e);
+            return 0;
+        }
     }
 
     @Override
@@ -168,7 +189,11 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     {
         try {
             if (_state.getState().isMutable() && !state.isMutable()) {
-                _size = getDataFile().length();
+                try {
+                    _size = Files.size(_dataFile);
+                } catch (NoSuchFileException e) {
+                    _size = 0;
+                }
             }
             _state.setState(state);
         } catch (IOException e) {
@@ -232,25 +257,25 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
 
     private synchronized void setStorageInfo(StorageInfo storageInfo) throws IOException
     {
-        File siFileTemp = File.createTempFile(_siFile.getName(), null, _siFile.getParentFile());
+        Path siFileTemp = Files.createTempFile(_siFile.getParent(), _siFile.getFileName().toString(), null);
         try {
-            try (ObjectOutputStream objectOut = new ObjectOutputStream(new FileOutputStream(siFileTemp))) {
+            try (ObjectOutputStream objectOut = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(siFileTemp)))) {
                 objectOut.writeObject(storageInfo);
             }
-            Files.move(siFileTemp.toPath(), _siFile.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(siFileTemp, _siFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } finally {
-            Files.deleteIfExists(siFileTemp.toPath());
+            Files.deleteIfExists(siFileTemp);
         }
         _storageInfo = storageInfo;
     }
 
-    private static StorageInfo readStorageInfo(File objIn) throws IOException {
+    private static StorageInfo readStorageInfo(Path objIn) throws IOException {
         try {
-            try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(new FileInputStream(objIn)))) {
+            try (ObjectInputStream in = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(objIn)))) {
                 return (StorageInfo) in.readObject();
             }
         } catch (Throwable t) {
-            LOGGER.debug("Failed to read {}: {}", objIn.getPath(), t.toString());
+            LOGGER.debug("Failed to read {}: {}", objIn, t.toString());
         }
         return null;
     }

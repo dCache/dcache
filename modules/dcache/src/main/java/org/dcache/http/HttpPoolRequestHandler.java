@@ -394,6 +394,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     _writeChannel = null;
                     _files.remove(writeChannel);
 
+                    long size = writeChannel.size();
+                    URI location = writeChannel.getProtocolInfo().getLocation();
+
                     ChannelPromise promise = context.newPromise();
                     Futures.addCallback(writeChannel.release(), new FutureCallback<Void>()
                     {
@@ -401,7 +404,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                         public void onSuccess(Void result)
                         {
                             try {
-                                context.writeAndFlush(new HttpPutResponse(writeChannel), promise);
+                                context.writeAndFlush(new HttpPutResponse(size, location), promise);
                             } catch (IOException e) {
                                 context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()), promise);
                             }
@@ -604,7 +607,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     private static class HttpPutResponse extends HttpTextResponse
     {
-        public HttpPutResponse(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file)
+        public HttpPutResponse(long size, URI location)
                 throws IOException
         {
             /* RFC 2616: 9.6. If a new resource is created, the origin server
@@ -620,13 +623,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
              * format is specified by the media type given in the Content-Type
              * header field.
              */
-            super(CREATED, file.size() + " bytes uploaded\r\n");
+            super(CREATED, size + " bytes uploaded\r\n");
 
             /* RFC 2616: 14.30. For 201 (Created) responses, the Location is
             * that of the new resource which was created by the request.
             */
-            if (file.getProtocolInfo().getLocation() != null) {
-                headers().set(LOCATION, file.getProtocolInfo().getLocation());
+            if (location != null) {
+                headers().set(LOCATION, location);
             }
 
         }

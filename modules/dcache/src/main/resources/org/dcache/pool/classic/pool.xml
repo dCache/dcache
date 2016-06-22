@@ -102,7 +102,7 @@
 
   <bean id="file-store" class="org.dcache.pool.repository.FlatFileStore">
     <description>Store for pool files</description>
-    <constructor-arg value="${pool.path}"/>
+    <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
   </bean>
 
   <bean id="meta-store" class="org.dcache.pool.repository.ConsistentStore"  init-method="init">
@@ -112,7 +112,7 @@
           <bean class="${pool.plugins.meta}" init-method="init">
               <description>Store for pool meta data</description>
               <constructor-arg ref="file-store"/>
-              <constructor-arg value="${pool.path}"/>
+              <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
           </bean>
       </constructor-arg>
       <constructor-arg ref="replica-state-policy"/>

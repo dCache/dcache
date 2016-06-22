@@ -4,12 +4,13 @@ import com.google.common.base.Stopwatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -22,6 +23,7 @@ import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -40,30 +42,25 @@ public class FileMetaDataRepository
             "Removing redundant meta data for %s.";
 
     private final FileStore _fileStore;
-    private final File _metadir;
+    private final Path _metadir;
 
-    public FileMetaDataRepository(FileStore fileStore,
-                                  File baseDir)
-        throws FileNotFoundException
+    public FileMetaDataRepository(FileStore fileStore, Path baseDir)
+            throws IOException
     {
         this(fileStore, baseDir, false);
     }
 
-    public FileMetaDataRepository(FileStore fileStore,
-                                  File baseDir,
-                                  boolean readOnly)
-        throws FileNotFoundException
+    public FileMetaDataRepository(FileStore fileStore, Path baseDir, boolean readOnly)
+            throws IOException
     {
     	_fileStore = fileStore;
-    	_metadir = new File(baseDir, DIRECTORY_NAME);
-        if (!_metadir.exists()) {
+        _metadir = baseDir.resolve(DIRECTORY_NAME);
+        if (!Files.exists(_metadir)) {
             if (readOnly) {
                 throw new FileNotFoundException("No such directory and not allowed to create it: " + _metadir);
             }
-            if (!_metadir.mkdir()) {
-                throw new FileNotFoundException("Failed to create directory: " + _metadir);
-            }
-        } else if (!_metadir.isDirectory()) {
+            Files.createDirectory(_metadir);
+        } else if (!Files.isDirectory(_metadir)) {
             throw new FileNotFoundException("No such directory: " + _metadir);
         }
     }
@@ -76,39 +73,46 @@ public class FileMetaDataRepository
     @Override
     public Set<PnfsId> index(IndexOption... options) throws CacheException
     {
-        List<IndexOption> indexOptions = asList(options);
+        try {
+            List<IndexOption> indexOptions = asList(options);
 
-        if (indexOptions.contains(IndexOption.META_ONLY)) {
-            return asList(_metadir.list()).stream()
-                    .map(name -> name.startsWith("SI-") ? name.substring(3) : name)
-                    .filter(PnfsId::isValid)
-                    .map(PnfsId::new)
-                    .collect(toSet());
-        }
-
-        Stopwatch watch = Stopwatch.createStarted();
-        Set<PnfsId> files = _fileStore.index();
-        _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
-
-        watch.reset().start();
-        String[] metaFiles = _metadir.list();
-        _log.info("Indexed {} entries in {} in {}.", metaFiles.length, _metadir, watch);
-
-        if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
-            for (String name : metaFiles) {
-                try {
-                    String s = name.startsWith("SI-") ? name.substring(3) : name;
-                    if (PnfsId.isValid(s) && !files.contains(new PnfsId(s))) {
-                        Files.deleteIfExists(_metadir.toPath().resolve(name));
-                    }
-                } catch (IllegalArgumentException ignored) {
-                } catch (IOException e) {
-                    throw new DiskErrorCacheException(
-                            "Failed to remove " + name + ": " + e.getMessage(), e);
+            if (indexOptions.contains(IndexOption.META_ONLY)) {
+                try (Stream<Path> list = Files.list(_metadir)) {
+                    return list
+                            .map(path -> path.getFileName().toString())
+                            .map(name -> name.startsWith("SI-") ? name.substring(3) : name)
+                            .filter(PnfsId::isValid)
+                            .map(PnfsId::new)
+                            .collect(toSet());
                 }
             }
+
+            Stopwatch watch = Stopwatch.createStarted();
+            Set<PnfsId> files = _fileStore.index();
+            _log.info("Indexed {} entries in {} in {}.", files.size(), _fileStore, watch);
+
+            if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
+                watch.reset().start();
+                List<Path> metaFilesToBeDeleted;
+                try (Stream<Path> list = Files.list(_metadir)) {
+                    metaFilesToBeDeleted = list
+                            .filter(path -> {
+                                String name = path.getFileName().toString();
+                                String s = name.startsWith("SI-") ? name.substring(3) : name;
+                                return PnfsId.isValid(s) && !files.contains(new PnfsId(s));
+                            })
+                            .collect(toList());
+                }
+                _log.info("Found {} orphaned meta data entries in {} in {}.", metaFilesToBeDeleted.size(), _metadir, watch);
+
+                for (Path name : metaFilesToBeDeleted) {
+                    deleteIfExists(name);
+                }
+            }
+            return files;
+        } catch (IOException e) {
+            throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
         }
-        return files;
     }
 
     @Override
@@ -116,19 +120,19 @@ public class FileMetaDataRepository
         throws DuplicateEntryException, CacheException
     {
         try {
-            File controlFile = new File(_metadir, id.toString());
-            File siFile = new File(_metadir, "SI-" + id.toString());
-            File dataFile = _fileStore.get(id);
+            Path controlFile = _metadir.resolve(id.toString());
+            Path siFile = _metadir.resolve("SI-" + id.toString());
+            Path dataFile = _fileStore.get(id);
 
-            if (dataFile.exists()) {
+            if (Files.exists(dataFile)) {
                 throw new DuplicateEntryException(id);
             }
 
             /* In case of left over or corrupted files, we delete them
              * before creating a new entry.
              */
-            controlFile.delete();
-            siFile.delete();
+            Files.deleteIfExists(controlFile);
+            Files.deleteIfExists(siFile);
 
             return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
         } catch (IOException e) {
@@ -141,13 +145,13 @@ public class FileMetaDataRepository
     public MetaDataRecord get(PnfsId id)
         throws CacheException
     {
-        File dataFile = _fileStore.get(id);
-        if (!dataFile.isFile()) {
+        Path dataFile = _fileStore.get(id);
+        if (!Files.isRegularFile(dataFile)) {
             return null;
         }
         try {
-            File siFile = new File(_metadir, "SI-"+id.toString());
-            File controlFile = new File(_metadir, id.toString());
+            Path siFile = _metadir.resolve("SI-" + id.toString());
+            Path controlFile = _metadir.resolve(id.toString());
             return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
@@ -159,20 +163,17 @@ public class FileMetaDataRepository
     public void remove(PnfsId id)
             throws CacheException
     {
+        deleteIfExists(_fileStore.get(id));
+        deleteIfExists(_metadir.resolve(id.toString()));
+        deleteIfExists(_metadir.resolve("SI-" + id.toString()));
+    }
+
+    protected void deleteIfExists(Path path) throws DiskErrorCacheException
+    {
         try {
-            File f = _fileStore.get(id);
-            if (!f.delete() && f.exists()) {
-                throw new DiskErrorCacheException("Failed to delete " + id);
-            }
-
-            File controlFile = new File(_metadir, id.toString());
-            File siFile = new File(_metadir, "SI-"+id.toString());
-
-            Files.deleteIfExists(controlFile.toPath());
-            Files.deleteIfExists(siFile.toPath());
+            Files.deleteIfExists(path);
         } catch (IOException e) {
-            throw new DiskErrorCacheException(
-                    "Failed to remove meta data for " + id + ": " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to remove " + path + ": " + e.getMessage(), e);
         }
     }
 
@@ -182,16 +183,10 @@ public class FileMetaDataRepository
         if (!_fileStore.isOk()) {
             return false;
         }
-        File tmp = new File(_metadir, ".repository_is_ok");
+        Path tmp = _metadir.resolve(".repository_is_ok");
         try {
-            tmp.delete();
-            tmp.deleteOnExit();
-
-            if (!tmp.createNewFile() || !tmp.exists()) {
-                _log.error("Could not create " + tmp);
-                return false;
-            }
-
+            Files.deleteIfExists(tmp);
+            Files.createFile(tmp);
             return true;
         } catch (IOException e) {
             _log.error("Failed to touch " + tmp + ": " + e.getMessage(), e);
@@ -221,7 +216,12 @@ public class FileMetaDataRepository
     @Override
     public long getFreeSpace()
     {
-        return _fileStore.getFreeSpace();
+        try {
+            return _fileStore.getFreeSpace();
+        } catch (IOException e) {
+            _log.warn("Failed to query free space: " + e.toString());
+            return 0;
+        }
     }
 
     /**
@@ -231,6 +231,11 @@ public class FileMetaDataRepository
     @Override
     public long getTotalSpace()
     {
-        return _fileStore.getTotalSpace();
+        try {
+            return _fileStore.getTotalSpace();
+        } catch (IOException e) {
+            _log.warn("Failed to query total space: " + e.toString());
+            return 0;
+        }
     }
 }

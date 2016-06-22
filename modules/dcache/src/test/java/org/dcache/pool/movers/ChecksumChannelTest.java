@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,11 +43,11 @@ public class ChecksumChannelTest {
     private int blockcount = data.length/blocksize;
     private ByteBuffer[] buffers = new ByteBuffer[blockcount];
 
-    private File testFile;
+    private Path testFile;
 
     @Before
     public void setUp() throws NoSuchAlgorithmException, IOException {
-        testFile = File.createTempFile("ChecksumChannelTest", ".tmp");
+        testFile = Files.createTempFile("ChecksumChannelTest", ".tmp");
         RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, "rw");
         ChecksumFactory checksumFactory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
         chksumChannel = new ChecksumChannel(mockRepositoryChannel, checksumFactory);
@@ -60,9 +62,7 @@ public class ChecksumChannelTest {
     @After
     public void tearDown() throws IOException {
         chksumChannel.close();
-        if (!testFile.delete()) {
-            fail("Could not delete temporary test file " + testFile.getAbsolutePath());
-        }
+        Files.delete(testFile);
     }
 
     @Test
