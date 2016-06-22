@@ -137,7 +137,7 @@ class WriteHandleImpl implements ReplicaDescriptor
 
     @Override
     public RepositoryChannel createChannel() throws IOException {
-        return new FileRepositoryChannel(getFile(), IoMode.WRITE.toOpenString());
+        return _entry.openChannel(IoMode.WRITE);
     }
 
     /**

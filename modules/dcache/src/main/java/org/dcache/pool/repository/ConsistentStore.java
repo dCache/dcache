@@ -22,6 +22,7 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.ReplicaStatePolicy;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
@@ -229,7 +230,9 @@ public class ConsistentStore
                     (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_WRITE) ||
                             _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER) ||
                             _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_RESTORE))) {
-                actualChecksums = _checksumModule.verifyChecksum(entry.getDataFile(), expectedChecksums);
+                try (RepositoryChannel channel = entry.openChannel(IoMode.READ)) {
+                    actualChecksums = _checksumModule.verifyChecksum(channel, expectedChecksums);
+                }
             } else {
                 actualChecksums = Collections.emptySet();
             }

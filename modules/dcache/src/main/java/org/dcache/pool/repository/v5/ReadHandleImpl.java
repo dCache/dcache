@@ -52,7 +52,7 @@ class ReadHandleImpl implements ReplicaDescriptor
 
     @Override
     public RepositoryChannel createChannel() throws IOException {
-        return new FileRepositoryChannel(getFile(), IoMode.READ.toOpenString());
+        return _entry.openChannel(IoMode.READ);
     }
 
     /**

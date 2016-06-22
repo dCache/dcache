@@ -3,6 +3,7 @@ package org.dcache.pool.repository;
 import javax.annotation.concurrent.GuardedBy;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -16,6 +17,7 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.v5.CacheEntryImpl;
 import org.dcache.vehicles.FileAttributes;
 
@@ -216,6 +218,12 @@ public class MetaDataCache
                         new FaultEvent("repository", FaultAction.DEAD, "Internal repository error", e));
                 throw e;
             }
+        }
+
+        @Override
+        public RepositoryChannel openChannel(IoMode mode) throws IOException
+        {
+            return _record.openChannel(mode);
         }
 
         @Override

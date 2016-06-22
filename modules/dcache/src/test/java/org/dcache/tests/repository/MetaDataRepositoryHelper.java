@@ -1,6 +1,7 @@
 package org.dcache.tests.repository;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,11 +15,14 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.vehicles.FileAttributes;
@@ -142,6 +146,12 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         public synchronized File getDataFile()
         {
             return _repository.get(_pnfsId);
+        }
+
+        @Override
+        public RepositoryChannel openChannel(IoMode mode) throws IOException
+        {
+            return new FileRepositoryChannel(getDataFile(), mode.toOpenString());
         }
 
         @Override

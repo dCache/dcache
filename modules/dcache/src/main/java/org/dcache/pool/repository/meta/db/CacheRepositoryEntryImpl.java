@@ -24,8 +24,11 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
@@ -216,6 +219,12 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     public synchronized File getDataFile()
     {
         return _repository.getDataFile(_pnfsId);
+    }
+
+    @Override
+    public RepositoryChannel openChannel(IoMode mode) throws IOException
+    {
+        return new FileRepositoryChannel(getDataFile(), mode.toOpenString());
     }
 
     @Override

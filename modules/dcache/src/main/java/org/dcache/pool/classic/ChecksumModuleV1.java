@@ -20,7 +20,6 @@ package org.dcache.pool.classic;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
@@ -35,14 +34,14 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileCorruptedCacheException;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
-
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
@@ -50,9 +49,10 @@ import org.dcache.util.Checksums;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
 import static org.dcache.pool.classic.ChecksumModule.PolicyFlag.*;
-import static org.dcache.util.ChecksumType.*;
-import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.ChecksumType.ADLER32;
+import static org.dcache.util.ChecksumType.getChecksumType;
 
 public class ChecksumModuleV1
     extends AbstractCellComponent
@@ -378,9 +378,11 @@ public class ChecksumModuleV1
                 || (hasPolicy(ENFORCE_CRC) && isEmpty(expectedChecksums) && isEmpty(actualChecksums))) {
             ChecksumFactory factory = ChecksumFactory.getFactory(
                     concat(expectedChecksums, actualChecksums), getDefaultChecksumType());
-            actualChecksums
-                    = concat(actualChecksums,
-                            Collections.singleton(factory.computeChecksum(handle.getFile())));
+            try (RepositoryChannel channel = handle.createChannel()) {
+                actualChecksums
+                        = concat(actualChecksums,
+                                 Collections.singleton(factory.computeChecksum(channel)));
+            }
         }
         compareChecksums(expectedChecksums, actualChecksums);
         handle.addChecksums(actualChecksums);
@@ -408,27 +410,31 @@ public class ChecksumModuleV1
     public Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
     {
-        return verifyChecksum(handle.getFile(), handle.getChecksums());
+        try (RepositoryChannel channel = handle.createChannel()) {
+            return verifyChecksum(channel, handle.getChecksums());
+        }
     }
 
     @Override
-    public Iterable<Checksum> verifyChecksum(File file, Iterable<Checksum> expectedChecksums)
+    public Iterable<Checksum> verifyChecksum(RepositoryChannel channel, Iterable<Checksum> expectedChecksums)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
     {
-        return verifyChecksum(file, expectedChecksums, Double.POSITIVE_INFINITY);
+        return verifyChecksum(channel, expectedChecksums, Double.POSITIVE_INFINITY);
     }
 
     public Iterable<Checksum> verifyChecksumWithThroughputLimit(ReplicaDescriptor handle)
             throws IOException, InterruptedException, NoSuchAlgorithmException, CacheException
     {
-        return verifyChecksum(handle.getFile(), handle.getChecksums(), getThroughputLimit());
+        try (RepositoryChannel channel = handle.createChannel()) {
+            return verifyChecksum(channel, handle.getChecksums(), getThroughputLimit());
+        }
     }
 
-    private Iterable<Checksum> verifyChecksum(File file, Iterable<Checksum> expectedChecksums, double throughputLimit)
+    private Iterable<Checksum> verifyChecksum(RepositoryChannel channel, Iterable<Checksum> expectedChecksums, double throughputLimit)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
     {
         ChecksumFactory factory = ChecksumFactory.getFactory(expectedChecksums, getDefaultChecksumType());
-        Iterable<Checksum> actualChecksums = Collections.singleton(factory.computeChecksum(file, throughputLimit));
+        Iterable<Checksum> actualChecksums = Collections.singleton(factory.computeChecksum(channel, throughputLimit));
         compareChecksums(expectedChecksums, actualChecksums);
         return actualChecksums;
     }

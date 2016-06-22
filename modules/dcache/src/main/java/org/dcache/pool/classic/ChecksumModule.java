@@ -18,7 +18,6 @@
 
 package org.dcache.pool.classic;
 
-import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
@@ -27,6 +26,7 @@ import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 
 /**
@@ -133,7 +133,7 @@ public interface ChecksumModule
     /**
      * Verifies the checksum of a file.
      *
-     * @param handle A replica descripor
+     * @param handle A replica descriptor
      * @throws CacheException If the checksums could not be verified
      * @throws FileCorruptedCacheException If checksums do not match
      * @throws NoSuchAlgorithmException If no suitable checksum algorithm is supported
@@ -147,7 +147,7 @@ public interface ChecksumModule
     /**
      * Verifies the checksum of a file.
      *
-     * @param file A file
+     * @param channel A repository channel
      * @param checksums Expected checksums for file
      * @throws CacheException If the checksums could not be verified
      * @throws FileCorruptedCacheException If checksums do not match
@@ -156,6 +156,6 @@ public interface ChecksumModule
      * @throws InterruptedException If the thread is interrupted
      * @return Any checksum computed for the file
      */
-    Iterable<Checksum> verifyChecksum(File file, Iterable<Checksum> checksums)
+    Iterable<Checksum> verifyChecksum(RepositoryChannel channel, Iterable<Checksum> checksums)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException;
 }

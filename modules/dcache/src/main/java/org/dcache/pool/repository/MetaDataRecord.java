@@ -1,11 +1,13 @@
 package org.dcache.pool.repository;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.pool.movers.IoMode;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -32,6 +34,8 @@ public interface MetaDataRecord
     EntryState getState();
 
     File getDataFile();
+
+    RepositoryChannel openChannel(IoMode mode) throws IOException;
 
     long getCreationTime();
 

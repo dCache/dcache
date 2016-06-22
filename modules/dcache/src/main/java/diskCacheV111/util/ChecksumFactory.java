@@ -3,18 +3,18 @@ package diskCacheV111.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
-import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.ByteUnit.BYTES;
+import static org.dcache.util.ByteUnit.KiB;
 
 public abstract class ChecksumFactory
 {
@@ -23,7 +23,7 @@ public abstract class ChecksumFactory
     public abstract Checksum create(byte [] digest);
     public abstract Checksum create(String stringDigest);
     public abstract Checksum find(Set<Checksum> checksums);
-    public abstract Checksum computeChecksum(File file)
+    public abstract Checksum computeChecksum(RepositoryChannel channel)
         throws IOException, InterruptedException;
 
     /**
@@ -36,7 +36,7 @@ public abstract class ChecksumFactory
      * @throws IOException
      * @throws InterruptedException
      */
-    public abstract Checksum computeChecksum(File file, double throughputLimit)
+    public abstract Checksum computeChecksum(RepositoryChannel file, double throughputLimit)
         throws IOException, InterruptedException;
 
     public static ChecksumFactory getFactory(ChecksumType type)
@@ -140,10 +140,10 @@ class GenericIdChecksumFactory extends ChecksumFactory
     }
 
     @Override
-    public Checksum computeChecksum(File file) throws IOException,
+    public Checksum computeChecksum(RepositoryChannel channel) throws IOException,
         InterruptedException
     {
-        return computeChecksum(file, Double.POSITIVE_INFINITY);
+        return computeChecksum(channel, Double.POSITIVE_INFINITY);
     }
 
     /**
@@ -199,42 +199,42 @@ class GenericIdChecksumFactory extends ChecksumFactory
     }
 
     @Override
-    public Checksum computeChecksum(File file, double throughputLimit)
+    public Checksum computeChecksum(RepositoryChannel channel, double throughputLimit)
         throws IOException, InterruptedException
     {
         long start = System.currentTimeMillis();
         MessageDigest digest = create();
-        byte [] buffer = new byte[KiB.toBytes(64)];
-        long sum = 0L;
-        try (FileInputStream in = new FileInputStream(file)) {
-            int rc;
-            while ((rc = in.read(buffer, 0, buffer.length)) > 0) {
-                sum += rc;
-                digest.update(buffer, 0, rc);
-                if (Thread.interrupted()) {
-                    throw new InterruptedException();
-                }
-                long adjust =
-                        throughputAdjustment(throughputLimit,
-                                sum,
-                                System.currentTimeMillis() - start);
-                if (adjust > 0) {
-                    Thread.sleep(adjust);
-                }
+        long pos = 0L;
+        ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(64));
+
+        int rc;
+        while ((rc = channel.read(buffer, pos)) > 0) {
+            pos += rc;
+            buffer.flip();
+            digest.update(buffer);
+            buffer.clear();
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+            long adjust
+                    = throughputAdjustment(throughputLimit,
+                                           pos,
+                                           System.currentTimeMillis() - start);
+            if (adjust > 0) {
+                Thread.sleep(adjust);
             }
         }
 
         Checksum checksum = create(digest.digest());
 
-        _log.debug("Computed checksum for {}, length {}, checksum {} in {} ms{}", file, sum, checksum,
-                   System.currentTimeMillis() - start, sum == 0 ? ""
+        _log.debug("Computed checksum, length {}, checksum {} in {} ms{}", pos, checksum,
+                   System.currentTimeMillis() - start, pos == 0 ? ""
                             : ", throughput " +
-                              throughputAsString(sum, System.currentTimeMillis() - start) +
+                              throughputAsString(pos, System.currentTimeMillis() - start) +
                               " MiB/s" +
-                              (Double.isInfinite(throughputLimit) ? ""
-                                                                  : " (limit " +
-                                                                          BYTES.toMiB(throughputLimit) +
-                                                                    " MiB/s)"));
+                              (Double.isInfinite(throughputLimit)
+                               ? ""
+                               : " (limit " + BYTES.toMiB(throughputLimit) + " MiB/s)"));
         return checksum;
     }
 }
