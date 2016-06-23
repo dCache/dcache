@@ -79,6 +79,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.resilience.data.PoolOperation.NextAction;
 import org.dcache.resilience.data.PoolOperation.State;
 import org.dcache.resilience.handlers.PoolOperationHandler;
@@ -823,7 +825,15 @@ public class PoolOperationMap extends RunnableModule {
         operation.psuAction = SelectionAction.NONE;
         operation.forceScan = false;
         operation.resetChildren();
-        idle.put(pool, operation);
+        if (poolInfoMap.isResilientPool(pool)) {
+            idle.put(pool, operation);
+        } else if (operation.state == State.FAILED) {
+            LOGGER.error(AlarmMarkerFactory.getMarker(
+                            PredefinedAlarm.FAILED_REPLICATION, pool),
+                            "{} was removed from resilient group but final scan "
+                                            + "failed: {}.", pool,
+                            new ExceptionMessage(operation.exception));
+        }
     }
 
     /**
