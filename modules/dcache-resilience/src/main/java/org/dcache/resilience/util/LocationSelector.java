@@ -87,11 +87,6 @@ public final class LocationSelector {
     private PoolInfoMap poolInfoMap;
     private PoolSelectionStrategy poolSelectionStrategy;
 
-    public Set<String> getReadableMemberLocations(Integer gindex,
-                    Collection<String> locations) {
-        return poolInfoMap.getMemberPools(gindex, locations, false);
-    }
-
     public String selectCopySource(FileOperation operation,
                     Set<String> locations) throws LocationSelectionException {
         LOGGER.trace("selecting source for {}", operation);
