@@ -97,7 +97,6 @@ import org.dcache.resilience.util.DegenerateSelectionStrategy;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.LocationSelectionException;
 import org.dcache.resilience.util.LocationSelector;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.RemoveLocationExtractor;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.resilience.util.StaticSinglePoolList;
@@ -312,12 +311,6 @@ public class FileOperationHandler {
          */
         operation.ensureSticky(poolInfoMap, pools);
 
-        if (operation.getSelectionAction()
-                        == SelectionAction.REMOVE.ordinal()) {
-            attributes.getLocations().remove(
-                            poolInfoMap.getPool(operation.getParent()));
-        }
-
         LOGGER.trace("Configuring migration task for {}.", pnfsId);
         StaticSinglePoolList list;
 
@@ -405,8 +398,7 @@ public class FileOperationHandler {
      *
      * @return COPY, REMOVE, or VOID if no operation is necessary.
      */
-    public Type handleVerification(FileAttributes attributes,
-                                   boolean suppressAlarm) {
+    public Type handleVerification(FileAttributes attributes) {
         PnfsId pnfsId = attributes.getPnfsId();
         FileOperation operation = fileOpMap.getOperation(pnfsId);
 
@@ -428,41 +420,33 @@ public class FileOperationHandler {
             return Type.VOID;
         }
 
-        Collection<String> locations = attributes.getLocations();
+        Collection<String> locations
+                        = poolInfoMap.getMemberLocations(gindex,
+                                                         attributes.getLocations());
+        /*
+         * Once again, if all the locations are pools now missing
+         * from the group, this is a NOP.
+         */
+        if (locations.isEmpty()) {
+            return Type.VOID;
+        }
 
         LOGGER.trace("handleVerification {}, locations {}", pnfsId, locations);
 
-        if (operation.getSelectionAction()
-                        == SelectionAction.REMOVE.ordinal()) {
-            locations.remove(poolInfoMap.getPool(operation.getParent()));
-        }
-
-        LOGGER.trace("handleVerification after action check, {}, locations {}",
-                     pnfsId, locations);
-
-        if (shouldEvictALocation(operation, locations)) {
-            return Type.REMOVE;
-        }
-
-        LOGGER.trace("handleVerification after eviction check, {}, locations {}",
-                     pnfsId, locations);
-
-        Set<String> readableLocations
-                        = locationSelector.getReadableMemberLocations(gindex,
-                                                                      locations);
-
-        LOGGER.trace("handleVerification, {}, readable locations {}", pnfsId,
-                     readableLocations);
-
-        /*
+         /*
          *  If we have arrived here, we are expecting there to be an
          *  available source file.  So we need the strictly readable
          *  locations, not just "countable" ones.
          */
+        Set<String> readableLocations
+                        = poolInfoMap.getReadableLocations(locations);
+
+        LOGGER.trace("handleVerification, {}, readable locations {}", pnfsId,
+                        readableLocations);
+
         if (readableLocations.size() == 0
                         && operation.getRetentionPolicy()
-                        != FileOperation.CUSTODIAL
-                        && !suppressAlarm) {
+                        != FileOperation.CUSTODIAL) {
             Integer pindex = operation.getParent();
             if (pindex == null) {
                 pindex = operation.getSource();
@@ -489,6 +473,13 @@ public class FileOperationHandler {
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
         }
+
+        if (shouldEvictALocation(operation, readableLocations)) {
+            return Type.REMOVE;
+        }
+
+        LOGGER.trace("handleVerification after eviction check, {}, locations {}",
+                        pnfsId, locations);
 
         return determineTypeFromConstraints(operation,
                                             locations,
@@ -655,7 +646,11 @@ public class FileOperationHandler {
      *      be a chance to repeat the operation in order to make a new copy.</p>
      */
     private boolean shouldEvictALocation(FileOperation operation,
-                                         Collection<String> locations) {
+                                         Collection<String> readableLocations) {
+        if (readableLocations.isEmpty()) {
+            return false;
+        }
+
         Integer sunit = operation.getStorageUnit();
         if (sunit == null) {
             return false;
@@ -667,7 +662,7 @@ public class FileOperationHandler {
                         = new RemoveLocationExtractor(
                         constraints.getOneCopyPer(),
                         poolInfoMap);
-        String toEvict = extractor.findALocationToEvict(locations);
+        String toEvict = extractor.findALocationToEvict(readableLocations);
 
         if (toEvict != null) {
             operation.setTarget(poolInfoMap.getPoolIndex(toEvict));

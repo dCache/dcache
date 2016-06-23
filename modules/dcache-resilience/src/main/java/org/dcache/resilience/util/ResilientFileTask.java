@@ -98,7 +98,6 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
 
     private final PnfsId               pnfsId;
     private final FileOperationHandler handler;
-    private final boolean              suppressAlarm;
     private final int                  retry;
 
     private Task   migrationTask;
@@ -125,12 +124,11 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
         return String.format("%.3f", delta);
     }
 
-    public ResilientFileTask(PnfsId pnfsId, boolean suppressAlarm, int retry,
+    public ResilientFileTask(PnfsId pnfsId, int retry,
                              FileOperationHandler handler) {
         this.pnfsId = pnfsId;
         this.retry = retry;
         this.handler = handler;
-        this.suppressAlarm = suppressAlarm;
         type = Type.VOID;
         cancelled = false;
         inVerify = 0L;
@@ -164,7 +162,7 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
         }
 
         startSubTask = System.currentTimeMillis();
-        type = handler.handleVerification(attributes, suppressAlarm);
+        type = handler.handleVerification(attributes);
         inVerify = System.currentTimeMillis() - startSubTask;
 
         switch (type) {

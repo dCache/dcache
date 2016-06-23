@@ -326,14 +326,17 @@ public final class FileUpdate {
             return true;
         }
 
-        Collection<String> locations = attributes.getLocations();
-
+        Collection<String> locations
+                        = poolInfoMap.getMemberLocations(group,
+                                                         attributes.getLocations());
         /*
-         * On removing a pool from a group, the pool must
-         * be considered as if it were DOWN.
+         * This indicates that all the locations for the file do not belong
+         * to the given pool group.  This could happen if all locations
+         * that were once part of the group are removed.  In this case,
+         * the operation is a NOP.
          */
-        if (action == SelectionAction.REMOVE) {
-            locations.remove(pool);
+        if (locations.isEmpty()) {
+            return false;
         }
 
         /*
