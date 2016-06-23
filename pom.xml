@@ -71,6 +71,7 @@
         <version.wicket>7.3.0</version.wicket>
         <version.xrootd4j>3.0.5</version.xrootd4j>
         <version.jersey>2.22.2</version.jersey>
+        <version.dcache>${project.version}</version.dcache>
 
         <!-- BouncyCastle seems to change the naming convention of
              their ArtifactId fairly often.  Here is a summary of
@@ -800,6 +801,16 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.apache.maven.archetype</groupId>
+                <artifactId>archetype-packaging</artifactId>
+                <version>2.4</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.12</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -844,7 +855,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -862,7 +872,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>logback-test-config</artifactId>
-            <version>${project.version}</version>
+            <version>${version.dcache}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -931,7 +941,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>2.5.5</version>
+                    <version>2.6</version>
                     <configuration>
                         <tarLongFileMode>gnu</tarLongFileMode>
                     </configuration>
@@ -1224,6 +1234,7 @@
         <module>modules/missingfiles-semsg</module>
         <module>plugins</module>
         <module>packages</module>
+        <module>archetypes</module>
     </modules>
 
     <profiles>

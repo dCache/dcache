@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype-descriptor
+        xsi:schemaLocation="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0 http://maven.apache.org/xsd/archetype-descriptor-1.0.0.xsd"
+        name="xrootd4j-channelhandler-plugin"
+        xmlns="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <requiredProperties>
+        <requiredProperty key="dcache">
+            <defaultValue>${project.parent.version}</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="name">
+            <defaultValue>\${package}.\${artifactId}</defaultValue>
+        </requiredProperty>
+        <requiredProperty key="description"/>
+    </requiredProperties>
+    <fileSets>
+        <fileSet filtered="true" packaged="true" encoding="UTF-8">
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.java</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory>src/main/assembly</directory>
+            <includes>
+                <include>**/*.xml</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory>src/main/defaults</directory>
+            <includes>
+                <include>**/*.properties</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory></directory>
+            <includes>
+                <include>**/*.md</include>
+            </includes>
+        </fileSet>
+        <fileSet encoding="UTF-8">
+            <directory></directory>
+            <includes>
+                <include>LICENSE.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet filtered="true" encoding="UTF-8">
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>**/org.dcache.xrootd.plugins.ChannelHandlerProvider</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</archetype-descriptor>
