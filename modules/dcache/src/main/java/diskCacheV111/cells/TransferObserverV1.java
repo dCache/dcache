@@ -590,7 +590,7 @@ public class TransferObserverV1
             }
         } else {
             page.td("state", transfer.getMoverStatus());
-            if (transfer.getMoverStart() > 0L) {
+            if (transfer.getMoverStart() != null) {
                 page.td("transferred", BYTES.toKiB(transfer.getBytesTransferred()));
             } else {
                 page.td("transferred", "-");
