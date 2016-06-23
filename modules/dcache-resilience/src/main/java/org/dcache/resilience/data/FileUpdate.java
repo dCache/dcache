@@ -317,7 +317,7 @@ public final class FileUpdate {
          * exist.  Force the pnfsId operation into the table if the
          * storage unit matches the modified one.
          */
-        if (action == SelectionAction.MODIFY && unitIndex.equals(storageUnit)) {
+        if (unitIndex.equals(storageUnit)) {
             /*
              * The maximum number of steps required to redistribute all files
              * would be (required - 1) removes + (required - 1) copies.
