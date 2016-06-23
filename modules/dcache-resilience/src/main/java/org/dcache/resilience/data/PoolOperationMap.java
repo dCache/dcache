@@ -444,18 +444,22 @@ public class PoolOperationMap extends RunnableModule {
     }
 
     /**
+     * <p>Called by {@link org.dcache.resilience.handlers.PoolInfoChangeHandler)</p>
+     *
      * See documentation at {@link #doScan}.
      */
-    public boolean scan(PoolStateUpdate update) {
+    public boolean scan(PoolStateUpdate update, boolean bypassStateCheck) {
         lock.lock();
         try {
-            return doScan(update);
+            return doScan(update, bypassStateCheck);
         } finally {
             lock.unlock();
         }
     }
 
     /**
+     * <p>Called by admin command.</p>
+     *
      * <p>Tries to match the filter against pool operation on the
      *      WAITING or IDLE queue.  As in the auxiliary method called,
      *      WAITING operations have their forceScan flag set to true,
@@ -479,14 +483,14 @@ public class PoolOperationMap extends RunnableModule {
                     continue;
                 }
 
-                if (operation.currStatus == PoolStatusForResilience.UNINITIALIZED) {
-                    LOGGER.info("Cannot scan {} –– uninitialized", pool);
-                    continue;
-                }
-
                 if (filter.matches(pool, operation)) {
                     try {
-                        if (doScan(poolInfoMap.getPoolState(pool))) {
+                        /*
+                         *  true overrides considerations of whether
+                         *  the pool has already been scanned because
+                         *  it is down, or has been excluded.
+                         */
+                        if (doScan(poolInfoMap.getPoolState(pool), true)) {
                             reply.append("\t").append(pool).append("\n");
                         }
                     } catch (IllegalArgumentException e) {
@@ -724,7 +728,7 @@ public class PoolOperationMap extends RunnableModule {
     }
 
     private void cancel(String pool, PoolOperation operation,
-                        Map<String, PoolOperation> queue) {
+                    Map<String, PoolOperation> queue) {
         if (operation.task != null) {
             operation.task.cancel();
             operation.task = null;
@@ -748,19 +752,24 @@ public class PoolOperationMap extends RunnableModule {
     }
 
     /**
-     * <p>Ad hoc scan. Ignores the grace period timeouts.</p>
+     * <p>Serves ad hoc scans. Ignores the grace period timeouts (this
+     *    corresponds to setting the <code>forceScan</code>
+     *    flag on the operation).</p>
      *
      * <p>Will <i>not</i> override the behavior of normal task submission by
      *      cancelling any outstanding task for this pool.</p>
      *
-     * <p>Bypasses the transition checking of pool status to force
-     *      the task onto the waiting queue.</p>
+     * <p>If indicated, bypasses the transition checking of pool status.</p>
      *
      * <p>Called after lock has been acquired.</p>
      *
+     * @param bypassStateCheck if false, will not bypass considerations
+     *                              of whether the pool has been previously
+     *                              scanned because it went down, or is
+     *                              excluded from scans.
      * @return true only if operation has been promoted from idle to waiting.
      */
-    private boolean doScan(PoolStateUpdate update) {
+    private  boolean doScan(PoolStateUpdate update, boolean bypassStateCheck) {
         if (running.containsKey(update.pool)) {
             LOGGER.info("Scan of {} is already in progress", update.pool);
             return false;
@@ -784,8 +793,30 @@ public class PoolOperationMap extends RunnableModule {
             return false;
         }
 
-        operation.forceScan = true;
+        if (operation.currStatus == PoolStatusForResilience.UNINITIALIZED) {
+            LOGGER.info("Cannot scan {} –– uninitialized", update.pool);
+            reset(update.pool, operation);
+            return false;
+        }
+
+        if (!bypassStateCheck) {
+            if (operation.state == State.EXCLUDED) {
+                LOGGER.info("Skipping scan {} –– pool is excluded", update.pool);
+                reset(update.pool, operation);
+                return false;
+            }
+
+            if (operation.currStatus == PoolStatusForResilience.DOWN &&
+                operation.lastStatus == PoolStatusForResilience.DOWN) {
+                LOGGER.info("Skipping scan {} –– pool is down and was already "
+                                + "scanned", update.pool);
+                reset(update.pool, operation);
+                return false;
+            }
+        }
+
         operation.getNextAction(update.getStatus());
+        operation.forceScan = true;
         operation.lastUpdate = System.currentTimeMillis();
         operation.state = State.WAITING;
         operation.psuAction = update.action;
