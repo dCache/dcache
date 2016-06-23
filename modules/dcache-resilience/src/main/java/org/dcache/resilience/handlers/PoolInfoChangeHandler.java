@@ -205,7 +205,7 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
             .filter(poolInfoMap::isInitialized)
             .filter(poolInfoMap::isResilientPool)
             .map(poolInfoMap::getPoolState)
-            .forEach(poolOperationMap::scan);
+            .forEach((u) -> poolOperationMap.scan(u, true));
 
         LOGGER.trace("Checking to see if previously uninitialized "
                                      + "pools are now ready.");
@@ -324,11 +324,12 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         if (poolInfoMap.isResilientGroup(gindex)) {
             String pool = entry.getKey();
             poolOperationMap.add(pool);
+            poolOperationMap.update(poolInfoMap.getPoolState(pool));
             scanPool(pool, gindex, null);
         }
     }
 
-    /*
+    /**
      *  <p>Skips non-resilient pool.</p>
      *
      *  <p>NB:  if we try to scan the pool as DOWN, this means we need
@@ -344,28 +345,26 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         }
     }
 
+    /**
+     *  <p>Will skip the grace period wait, but still take into
+     *     consideration whether the pool has already been scanned
+     *     because it went DOWN, or whether it is EXCLUDED.</p>
+     */
     private void scanPool(String pool, Integer addedTo, Integer removedFrom) {
         PoolStateUpdate update = poolInfoMap.getPoolState(pool, addedTo,
                         removedFrom);
         poolInfoMap.updatePoolStatus(update);
-
-        /*
-         * Bypasses the transition check to place the operation
-         * on the waiting queue.
-         */
         if (poolInfoMap.isInitialized(pool)) {
-            poolOperationMap.scan(update);
+            poolOperationMap.scan(update, false);
         }
     }
 
+    /**
+     *  <p>Will skip the grace period wait, as well as transition checks.</p>
+     */
     private void scanPool(String pool, String unit) {
         PoolStateUpdate update = poolInfoMap.getPoolState(pool, unit);
-
-        /*
-         * Bypasses the transition check to place the operation
-         * on the waiting queue.
-         */
-        poolOperationMap.scan(update);
+        poolOperationMap.scan(update, true);
     }
 
     private void scanPoolsInGroup(String poolGroupName, String unit) {

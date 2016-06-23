@@ -379,7 +379,7 @@ public class PoolOperationMapTest extends TestBase {
     }
 
     private boolean givenForcedScanOf(String pool) {
-        return poolOperationMap.scan(poolInfoMap.getPoolState(pool));
+        return poolOperationMap.scan(poolInfoMap.getPoolState(pool), true);
     }
 
     private void givenPnfsCountOfPoolIs(int count) {
