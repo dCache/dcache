@@ -113,10 +113,6 @@ public final class PoolSelectionUnitDecorator
     @Override
     public void addLink(String linkName, String name) {
         delegate.addLink(linkName, name);
-
-        if (active) {
-            StorageUnitInfoExtractor.validateAllStorageUnits(psu);
-        }
     }
 
     @Override
@@ -133,13 +129,6 @@ public final class PoolSelectionUnitDecorator
     public void addToUnitGroup(String uGroupName, String unitName,
                     boolean isNet) {
         delegate.addToUnitGroup(uGroupName, unitName, isNet);
-
-        if (active) {
-            StorageUnit unit = psu.getStorageUnit(unitName);
-            if (unit != null) {
-                StorageUnitInfoExtractor.validateAllStorageUnits(psu);
-            }
-        }
     }
 
     @Override
@@ -148,9 +137,6 @@ public final class PoolSelectionUnitDecorator
          *  note that this method is already called by the UniversalSpringCell
          *  on the delegate before the decorator's is invoked.
          */
-
-        StorageUnitInfoExtractor.validateAllStorageUnits(psu);
-
         active = true;
     }
 
@@ -421,12 +407,9 @@ public final class PoolSelectionUnitDecorator
      *          from its unit group.
      * </li>
      * </ol>
-     * <p>This call will run two verifications before allowing the change:
-     *          first, that a change making this unit resilient not be allowed
-     *          if this storage unit is linked to non-resilient groups; second,
-     *          a test to see that all pool groups to which it is linked can
-     *          satisfy the requirements for copies (including partitioning
-     *          by pool tags).</p>
+     * <p>This call will test to see that all resilient pool groups to which
+     *          it is linked can satisfy the requirements for copies
+     *          (including partitioning by pool tags).</p>
      */
     @Override
     public void setStorageUnit(String storageUnitKey, Integer required,
@@ -459,7 +442,6 @@ public final class PoolSelectionUnitDecorator
                 unit.setOnlyOneCopyPer(onlyOneCopyPer);
             }
 
-            StorageUnitInfoExtractor.validate(unit, psu);
             StorageUnitInfoExtractor.verifyCanBeSatisfied(unit, psu, module);
         }
 
