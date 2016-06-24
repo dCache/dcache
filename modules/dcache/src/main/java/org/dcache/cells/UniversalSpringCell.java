@@ -33,15 +33,14 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
 
 import java.beans.PropertyDescriptor;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
+import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,8 +74,8 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.services.SetupInfoMessage;
-import dmg.cells.zookeeper.CellCuratorFramework;
 import dmg.util.CommandException;
+import dmg.util.CommandInterpreter;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -156,6 +155,11 @@ public class UniversalSpringCell
      */
     private final Map<String, CellLifeCycleAware> _lifeCycleAware =
         new TreeMap<>();
+
+    /**
+     * Command interpreter for processing setup files.
+     */
+    private final CommandInterpreter _setupInterpreter = new CommandInterpreter();
 
     /**
      * Cell name of the setup controller.
@@ -297,7 +301,7 @@ public class UniversalSpringCell
                     provider.beforeSetup();
                     providers.add(provider);
                 }
-                execFile(_setupFile);
+                executeSetup(_setupFile.toString(), Files.readAllLines(_setupFile.toPath()));
             } finally {
                 for (CellSetupProvider provider : Lists.reverse(providers)) {
                     provider.afterSetup();
@@ -432,35 +436,24 @@ public class UniversalSpringCell
         }
     }
 
-    private void execFile(File setup)
+    private void executeSetup(String source, List<String> lines)
         throws IOException, CommandException
     {
-        BufferedReader br = new BufferedReader(new FileReader(setup));
-        String line;
-        try {
-            int lineCount = 0;
-            while ((line = br.readLine()) != null) {
-                ++lineCount;
+        int lineCount = 0;
+        for (String line: lines) {
+            ++lineCount;
 
-                line = line.trim();
-                if (line.length() == 0) {
-                    continue;
-                }
-                if (line.charAt(0) == '#') {
-                    continue;
-                }
-                try {
-                    command(new Args(line));
-                } catch (CommandException e) {
-                    throw new CommandException("Error at " + setup + ":" +
-                            lineCount + ": " + e.getMessage());
-                }
+            line = line.trim();
+            if (line.length() == 0) {
+                continue;
             }
-        } finally {
+            if (line.charAt(0) == '#') {
+                continue;
+            }
             try {
-                br.close();
-            } catch (IOException e) {
-                // ignored
+                _setupInterpreter.command(new Args(line));
+            } catch (CommandException e) {
+                throw new CommandException("Error at " + source + ":" + lineCount + ": " + e.getMessage());
             }
         }
     }
@@ -948,6 +941,7 @@ public class UniversalSpringCell
     public void addSetupProviderBean(CellSetupProvider bean, String name)
     {
         _setupProviders.put(name, bean);
+        _setupInterpreter.addCommandListener(bean);
     }
 
     /**

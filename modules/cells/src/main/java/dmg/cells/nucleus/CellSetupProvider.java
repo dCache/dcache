@@ -4,14 +4,17 @@ import java.io.PrintWriter;
 
 /**
  * Classes implementing this interface can participate in the creation
- * of a cell setup file. Cell setup files are batch files, which when
- * executed recreate the current settings.
+ * and processing of cell setup files. Cell setup files are batch files,
+ * which when executed recreate the current settings. A CellSetupProvider
+ * should be able to process its own setup commands, although the
+ * command processing and setup file generation could be split over
+ * multiple implementing classes.
  *
- * The interface provides notification points before and after the
- * setup file is executed. Notice that the setup may be executed
+ * <p>The interface provides notification points before and after the
+ * setup file is executed. Note that the setup may be executed
  * during normal operation.
  *
- * Notice that UniversalSpringCell will invoke the notification
+ * <p>Note that UniversalSpringCell will invoke the notification
  * methods no matter whether a setup file is actually defined or not.
  */
 public interface CellSetupProvider

@@ -8,10 +8,12 @@ import java.net.UnknownHostException;
 import java.util.concurrent.Callable;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
 import org.dcache.util.Args;
 
 /**
@@ -22,12 +24,27 @@ import org.dcache.util.Args;
  *
  * Created by arossi on 2/19/15.
  */
-public class PoolSelectionUnitCommands implements CellCommandListener {
-
+public class PoolSelectionUnitCommands implements CellCommandListener, CellSetupProvider
+{
     private PoolSelectionUnitAccess psuAccess;
 
     public void setPsuAccess(PoolSelectionUnitAccess psuAccess) {
         this.psuAccess = psuAccess;
+    }
+
+    @Override
+    public void printSetup(PrintWriter pw)
+    {
+    }
+
+    @Override
+    public void beforeSetup()
+    {
+    }
+
+    @Override
+    public void afterSetup()
+    {
     }
 
     public static final String hh_psu_add_link = "<link> <pool>|<pool group>";
