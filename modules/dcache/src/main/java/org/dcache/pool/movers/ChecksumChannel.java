@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -120,7 +121,7 @@ public class ChecksumChannel implements RepositoryChannel
     }
 
     @Override
-    public RepositoryChannel position(long position) throws IOException
+    public SeekableByteChannel position(long position) throws IOException
     {
         return _channel.position(position);
     }
@@ -160,7 +161,7 @@ public class ChecksumChannel implements RepositoryChannel
     }
 
     @Override
-    public RepositoryChannel truncate(long size) throws IOException
+    public SeekableByteChannel truncate(long size) throws IOException
     {
         return _channel.truncate(size);
     }

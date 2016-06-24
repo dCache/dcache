@@ -3,34 +3,15 @@ package org.dcache.pool.repository;
 import java.io.IOException;
 import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ByteChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ScatteringByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
 public interface RepositoryChannel
-    extends GatheringByteChannel, ScatteringByteChannel, ByteChannel
+    extends GatheringByteChannel, ScatteringByteChannel, SeekableByteChannel
 {
-    /**
-     * Get current position in the file.
-     * @return position
-     */
-    long position() throws IOException;
-
-    /**
-     * Sets this channel's file position.
-     * @param position
-     * @throws IOException
-     */
-    RepositoryChannel position(long position) throws IOException;
-
-    /**
-     * Get current size of the file.
-     * @return size
-     */
-    long size() throws IOException;
-
     /**
      * Writes a sequence of bytes to this channel from the given buffer, starting at the given file position.
      *
@@ -60,20 +41,6 @@ public interface RepositoryChannel
      * @return The number of bytes read, possibly zero, or -1 if the channel has reached end-of-stream
      */
     int read(ByteBuffer buffer, long position) throws IOException;
-
-    /**
-     * Truncates this channel's file to the given size.
-     *
-     * If the given size is less than the file's current size then the file is truncated,
-     * discarding any bytes beyond the new end of the file. If the given size is greater
-     * than or equal to the file's current size then the file is not modified. In either
-     * case, if this channel's file position is greater than the given size then it is set
-     * to that size.
-     *
-     * @param size
-     * @return the file channel.
-     */
-    RepositoryChannel truncate(long size) throws IOException;
 
     /**
      * Force all system buffers to synchronize with the underlying
