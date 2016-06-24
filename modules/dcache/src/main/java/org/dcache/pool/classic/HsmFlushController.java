@@ -59,7 +59,6 @@ public class HsmFlushController
             LoggerFactory.getLogger(HsmFlushController.class);
 
     private final ScheduledExecutorService _flushExecutor = createFlushExecutor();
-    private final StorageClassContainer _storageQueue;
     private final FireAndForgetTask _flushTask = new FireAndForgetTask(new FlushTask());
 
     private ScheduledFuture<?> _future;
@@ -69,9 +68,10 @@ public class HsmFlushController
     private int _maxActive = 1000;
     private PoolV2Mode _poolMode;
     private Supplier<CellInfo> _cellInfoSupplier;
+    private StorageClassContainer _storageQueue;
 
-    public HsmFlushController(
-            StorageClassContainer storageQueue)
+    @Required
+    public void setStorageClassContainer(StorageClassContainer storageQueue)
     {
         _storageQueue = storageQueue;
     }

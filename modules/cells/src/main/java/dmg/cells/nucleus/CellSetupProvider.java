@@ -5,10 +5,16 @@ import java.io.PrintWriter;
 /**
  * Classes implementing this interface can participate in the creation
  * and processing of cell setup files. Cell setup files are batch files,
- * which when executed recreate the current settings. A CellSetupProvider
- * should be able to process its own setup commands, although the
- * command processing and setup file generation could be split over
- * multiple implementing classes.
+ * which when executed recreate the current settings.
+ *
+ * <p>A CellSetupProvider should be able to process its own setup commands,
+ * although the command processing and setup file generation could be split
+ * over multiple implementing classes.
+ *
+ * <p>Implementations must have a default constructor and must be instantiable
+ * outside a regular cell context. The setup commands must be executable even
+ * if the instance is otherwise unconfigured. This allows setup files to be
+ * processed and tested before applying them to the real cell.
  *
  * <p>The interface provides notification points before and after the
  * setup file is executed. Note that the setup may be executed

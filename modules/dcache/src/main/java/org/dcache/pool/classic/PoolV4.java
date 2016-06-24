@@ -140,7 +140,7 @@ public class PoolV4
 
     private static final Logger _log = LoggerFactory.getLogger(PoolV4.class);
 
-    private final String _poolName;
+    private String _poolName;
 
     /**
      * pool start time identifier.
@@ -168,7 +168,7 @@ public class PoolV4
     private final Map<String, String> _tags = new HashMap<>();
     private String _baseDir;
 
-    private final PoolManagerPingThread _pingThread ;
+    private final PoolManagerPingThread _pingThread = new PoolManagerPingThread();
     private HsmFlushController _flushingThread;
     private IoQueueManager _ioQueue ;
     private HsmSet _hsmSet;
@@ -199,23 +199,16 @@ public class PoolV4
     private double _moverCostFactor = 0.5;
     private TransferServices _transferServices;
 
-    public PoolV4(String poolName)
-    {
-        _poolName = poolName;
-
-        _log.info("Pool " + poolName + " starting");
-
-        //
-        // repository and ping thread must exist BEFORE the setup
-        // file is scanned. PingThread will be started after all
-        // the setup is done.
-        //
-        _pingThread = new PoolManagerPingThread();
-    }
-
     protected void assertNotRunning(String error)
     {
         checkState(!_running, error);
+    }
+
+    @Required
+    public void setPoolName(String name)
+    {
+        assertNotRunning("Cannot change pool name after initialisation");
+        _poolName = name;
     }
 
     @Required
@@ -448,6 +441,9 @@ public class PoolV4
     {
         assertNotRunning("Cannot initialize several times");
         checkState(!_isVolatile || !_hasTapeBackend, "Volatile pool cannot have a tape backend");
+
+        _log.info("Pool {} starting", _poolName);
+
         _running = true;
     }
 

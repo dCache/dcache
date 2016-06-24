@@ -1,6 +1,7 @@
 package org.dcache.pool.classic;
 
 import com.google.common.primitives.Ints;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.PrintWriter;
 import java.nio.channels.CompletionHandler;
@@ -53,14 +54,19 @@ public class StorageClassContainer
 {
     private final Map<String, StorageClassInfo> _storageClasses = new HashMap<>();
     private final Map<PnfsId, StorageClassInfo> _pnfsIds = new HashMap<>();
-    private final Repository _repository;
-    private final NearlineStorageHandler _storageHandler;
+    private Repository _repository;
+    private NearlineStorageHandler _storageHandler;
     private boolean  _poolStatusInfoChanged = true;
-    private final Executor _callbackExecutor = Executors.newSingleThreadExecutor();
 
-    public StorageClassContainer(Repository repository, NearlineStorageHandler storageHandler)
+    @Required
+    public void setRepository(Repository repository)
     {
         _repository = repository;
+    }
+
+    @Required
+    public void setNearlineStorageHandler(NearlineStorageHandler storageHandler)
+    {
         _storageHandler = storageHandler;
     }
 

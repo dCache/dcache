@@ -58,7 +58,7 @@
   <bean id="pool" class="org.dcache.pool.classic.PoolV4"
         init-method="init">
     <description>Main pool component</description>
-    <constructor-arg index="0" value="${pool.name}"/>
+    <property name="poolName" value="${pool.name}"/>
 
     <property name="baseDir"
               value="${pool.path}"/>
@@ -161,8 +161,8 @@
 
   <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">
       <description>HSM flush queue manager</description>
-      <constructor-arg ref="rep"/>
-      <constructor-arg ref="storagehandler"/>
+      <property name="repository" ref="rep"/>
+      <property name="nearlineStorageHandler" ref="storagehandler"/>
   </bean>
 
   <bean id="storagehandler" class="org.dcache.pool.nearline.NearlineStorageHandler">
@@ -195,9 +195,9 @@
   </bean>
 
   <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
-    <description>Controller for centralising flushing</description>
-    <constructor-arg ref="queue"/>
-    <property name="poolMode" ref="pool-mode"/>
+      <description>Controller for centralising flushing</description>
+      <property name="storageClassContainer" ref="queue"/>
+      <property name="poolMode" ref="pool-mode"/>
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">
