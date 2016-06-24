@@ -7,7 +7,6 @@ import org.dcache.util.Args;
 
 public class AbstractCellComponent
     implements CellInfoProvider,
-        CellSetupProvider,
         CellMessageSender,
         CellLifeCycleAware,
         CellIdentityAware,
@@ -31,24 +30,6 @@ public class AbstractCellComponent
     {
         return info;
     }
-
-    /**
-     * Implements CellSetupProvider interface.
-     */
-    @Override
-    public void printSetup(PrintWriter pw) {}
-
-    /**
-     * Implements CellSetupProvider interface.
-     */
-    @Override
-    public void beforeSetup() {}
-
-    /**
-     * Implements CellSetupProvider interface.
-     */
-    @Override
-    public void afterSetup() {}
 
     /**
      * Implements CellLifeCycleAware interface.

@@ -77,6 +77,7 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
@@ -117,9 +118,7 @@ import static org.dcache.namespace.FileAttribute.CHECKSUM;
 
 public class PoolV4
     extends AbstractCellComponent
-    implements FaultListener,
-               CellCommandListener,
-               CellMessageReceiver
+    implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider
 {
     private static final int DUP_REQ_NONE = 0;
     private static final int DUP_REQ_IGNORE = 1;

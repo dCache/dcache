@@ -24,6 +24,7 @@ import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -48,7 +49,7 @@ import static java.util.stream.Collectors.toCollection;
  */
 public class StorageClassContainer
     extends AbstractCellComponent
-    implements CellCommandListener
+    implements CellCommandListener, CellSetupProvider
 {
     private final Map<String, StorageClassInfo> _storageClasses = new HashMap<>();
     private final Map<PnfsId, StorageClassInfo> _pnfsIds = new HashMap<>();

@@ -71,6 +71,7 @@ import diskCacheV111.vehicles.StorageInfoMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -108,7 +109,9 @@ import static org.dcache.namespace.FileAttribute.*;
 /**
  * Entry point to and management interface for the nearline storage subsystem.
  */
-public class NearlineStorageHandler extends AbstractCellComponent implements CellCommandListener, StateChangeListener
+public class NearlineStorageHandler
+        extends AbstractCellComponent
+        implements CellCommandListener, StateChangeListener, CellSetupProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NearlineStorageHandler.class);
 

@@ -25,6 +25,7 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
 
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import org.dcache.cells.CellStub;
@@ -39,8 +40,7 @@ import static java.util.stream.Collectors.*;
 
 public class P2PClient
     extends AbstractCellComponent
-    implements CellMessageReceiver,
-               CellCommandListener
+    implements CellMessageReceiver, CellCommandListener, CellSetupProvider
 {
     private final Map<Integer, Companion> _companions = new HashMap<>();
     private ScheduledExecutorService _executor;

@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 import org.slf4j.Logger;
@@ -87,8 +88,7 @@ class SchedulerEntry
 
 public class JobTimeoutManager
     extends AbstractCellComponent
-    implements Runnable,
-               CellCommandListener
+    implements Runnable, CellCommandListener, CellSetupProvider
 {
     private static final Logger _log =
         LoggerFactory.getLogger(JobTimeoutManager.class);

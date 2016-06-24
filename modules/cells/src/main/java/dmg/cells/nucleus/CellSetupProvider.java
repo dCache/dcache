@@ -22,16 +22,16 @@ public interface CellSetupProvider
     /**
      * Adds cell shell commands for recreating the current setup.
      */
-    void printSetup(PrintWriter pw);
+    default void printSetup(PrintWriter pw) {}
 
     /**
      * Invoked before the setup file is executed.
      */
-    void beforeSetup();
+    default void beforeSetup() {}
 
     /**
      * Invoked after the setup file has been executed.
      */
-    void afterSetup();
+    default void afterSetup() {}
 }
 

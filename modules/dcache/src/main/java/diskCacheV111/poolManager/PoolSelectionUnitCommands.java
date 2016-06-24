@@ -32,21 +32,6 @@ public class PoolSelectionUnitCommands implements CellCommandListener, CellSetup
         this.psuAccess = psuAccess;
     }
 
-    @Override
-    public void printSetup(PrintWriter pw)
-    {
-    }
-
-    @Override
-    public void beforeSetup()
-    {
-    }
-
-    @Override
-    public void afterSetup()
-    {
-    }
-
     public static final String hh_psu_add_link = "<link> <pool>|<pool group>";
 
     public String ac_psu_add_link_$_2(Args args) {

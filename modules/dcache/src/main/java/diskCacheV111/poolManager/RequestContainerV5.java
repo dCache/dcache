@@ -58,6 +58,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.UOID;
 
 import org.dcache.cells.CellStub;
@@ -71,7 +72,7 @@ import org.dcache.vehicles.FileAttributes;
 
 public class RequestContainerV5
     extends AbstractCellComponent
-    implements Runnable, CellCommandListener, CellMessageReceiver
+    implements Runnable, CellCommandListener, CellMessageReceiver, CellSetupProvider
 {
     private static final Logger _log =
         LoggerFactory.getLogger(RequestContainerV5.class);

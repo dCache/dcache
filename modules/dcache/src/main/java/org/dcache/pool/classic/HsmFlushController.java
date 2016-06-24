@@ -27,6 +27,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
 import diskCacheV111.vehicles.PoolFlushGainControlMessage;
 
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
 import dmg.util.Formats;
@@ -52,7 +53,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class HsmFlushController
         extends AbstractCellComponent
-        implements CellMessageReceiver, CellCommandListener, CellInfoAware
+        implements CellMessageReceiver, CellCommandListener, CellInfoAware, CellSetupProvider
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(HsmFlushController.class);

@@ -36,6 +36,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
@@ -56,7 +57,7 @@ import static org.dcache.util.ChecksumType.getChecksumType;
 
 public class ChecksumModuleV1
     extends AbstractCellComponent
-    implements CellCommandListener, ChecksumModule
+    implements CellCommandListener, ChecksumModule, CellSetupProvider
 {
     private final EnumSet<PolicyFlag> _policy = EnumSet.of(ON_TRANSFER, ENFORCE_CRC);
 

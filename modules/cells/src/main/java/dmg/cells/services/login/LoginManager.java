@@ -201,7 +201,6 @@ public class LoginManager
             Splitter byComma = Splitter.on(",").omitEmptyStrings();
             Splitter byColon = Splitter.on(":").omitEmptyStrings();
             _loginBrokerPublisher = new LoginBrokerPublisher();
-            _loginBrokerPublisher.beforeSetup();
             _loginBrokerPublisher.setExecutor(_scheduledExecutor);
             _loginBrokerPublisher.setTopic(topic);
             _loginBrokerPublisher.setCellEndpoint(this);
@@ -218,7 +217,6 @@ public class LoginManager
             _loginBrokerPublisher.setWritePaths(byColon.splitToList(_args.getOption("brokerWritePaths", "/")));
             addCommandListener(_loginBrokerPublisher);
             addCellEventListener(_loginBrokerPublisher);
-            _loginBrokerPublisher.afterSetup();
 
             if (_maxLogin < 0) {
                 _maxLogin = 100000;

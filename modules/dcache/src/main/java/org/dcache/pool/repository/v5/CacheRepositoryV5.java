@@ -37,6 +37,7 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
@@ -84,7 +85,7 @@ import static org.dcache.util.ByteUnit.GiB;
  */
 public class CacheRepositoryV5
     extends AbstractCellComponent
-    implements Repository, CellCommandListener
+    implements Repository, CellCommandListener, CellSetupProvider
 {
     /* Implementation note
      * -------------------
