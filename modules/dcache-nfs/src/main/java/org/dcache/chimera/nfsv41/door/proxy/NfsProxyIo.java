@@ -33,7 +33,8 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.xdr.IoStrategy;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcException;
-import org.dcache.xdr.OncRpcClient;
+import org.dcache.xdr.OncRpcSvc;
+import org.dcache.xdr.OncRpcSvcBuilder;
 import org.dcache.xdr.RpcAuth;
 import org.dcache.xdr.RpcAuthTypeUnix;
 import org.dcache.xdr.RpcCall;
@@ -76,17 +77,26 @@ public class NfsProxyIo implements ProxyIoAdapter {
 
     private final InetSocketAddress remoteClient;
     private final RpcCall client;
-    private final OncRpcClient rpcClient;
+    private final OncRpcSvc rpcsvc;
     private final XdrTransport transport;
     private final ScheduledExecutorService sessionThread;
 
     public NfsProxyIo(InetSocketAddress poolAddress,  InetSocketAddress remoteClient, Inode inode, stateid4 stateid, long timeout, TimeUnit timeUnit) throws IOException {
         this.remoteClient = remoteClient;
-        rpcClient = new OncRpcClient(poolAddress, IpProtocolType.TCP);
+        rpcsvc = new OncRpcSvcBuilder()
+                .withClientMode()
+                .withPort(0)
+                .withIpProtocolType(IpProtocolType.TCP)
+                .withIoStrategy(IoStrategy.SAME_THREAD)
+                .withServiceName("proxy-io-rpc-selector-" + poolAddress.getAddress().getHostAddress())
+                .withSelectorThreadPoolSize(1)
+                .build();
+
         try {
-            transport = rpcClient.connect(timeout, timeUnit);
+            rpcsvc.start();
+            transport = rpcsvc.connect(poolAddress, timeout, timeUnit);
         } catch (IOException | Error | RuntimeException e) {
-            rpcClient.close();
+            rpcsvc.stop();
             throw e;
         }
 
@@ -159,7 +169,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
         try {
             destroy_session();
         } finally {
-            rpcClient.close();
+            rpcsvc.stop();
         }
     }
     /**

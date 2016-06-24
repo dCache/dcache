@@ -32,6 +32,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41Session;
+import org.dcache.nfs.v4.xdr.state_owner4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.classic.Cancellable;
@@ -56,7 +57,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         super(handle, message, pathToDoor, nfsTransferService, MoverChannel.AllocatorMode.SOFT, checksumModule);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
-        _state = new MoverState(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
+        _state = new MoverState(null, new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         _namespace = pnfsHandler;
         _bootVerifier = nfsTransferService.getBootVerifier();
     }
@@ -141,8 +142,8 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      */
     private class MoverState extends NFS4State {
 
-        MoverState(stateid4 stateid) {
-            super(stateid);
+        MoverState(state_owner4 owner,  stateid4 stateid) {
+            super(owner, stateid);
         }
 
         @Override

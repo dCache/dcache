@@ -80,6 +80,7 @@ import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
+import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v3.xdr.mount_prot;
 import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.CompoundContext;
@@ -564,7 +565,7 @@ public class NFSv41Door extends AbstractCellComponent implements
              * Well, according to spec we have to return a different
              * stateid anyway.
              */
-            final NFS4State layoutStateId = client.createState();
+            final NFS4State layoutStateId = client.createState(client.asStateOwner(), nfsState.getOpenState());
 
             /*
              * as  we will never see layout return with this stateid clean it
@@ -579,6 +580,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                         }
                     }
             );
+            layoutStateId.bumpSeqid();
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
         } catch (CacheException | TimeoutException | ExecutionException e) {
