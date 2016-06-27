@@ -76,6 +76,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import javax.ws.rs.HEAD;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -979,24 +980,6 @@ public class FileOperationMap extends RunnableModule {
     }
 
     /**
-     * <p>Another pool/source has requested a resilience check on this file.</p>
-     *
-     * @return true if the pnfsId is already registered, false if it is new entry.
-     */
-    public boolean updateCount(PnfsId pnfsId) {
-        FileOperation operation = index.get(pnfsId);
-
-        if (operation == null) {
-            return false;
-        }
-
-        operation.incrementCount();
-
-        signalAll();
-        return true;
-    }
-
-    /**
      * <p>Records the selected source and/or target. No state change is involved.</p>
      */
     public void updateOperation(PnfsId pnfsId, String source, String target) {
@@ -1074,16 +1057,15 @@ public class FileOperationMap extends RunnableModule {
     }
 
     private boolean add(PnfsId pnfsId, FileOperation operation) {
-        FileOperation present = index.get(pnfsId);
-
-        if (present != null) {
-            present.updateOperation(operation);
-            return false;
-        }
-
-        index.put(pnfsId, operation);
 
         synchronized (incoming) {
+            FileOperation present = index.get(pnfsId);
+            if (present != null) {
+                present.updateOperation(operation);
+                return false;
+            }
+
+            index.put(pnfsId, operation);
             incoming.add(operation);
         }
 
