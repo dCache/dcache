@@ -82,7 +82,7 @@ import org.dcache.vehicles.FileAttributes;
 
 /**
  * <p>A transient encapsulation of pertinent configuration data regarding
- *      a pnfs location.</p>
+ *      a file location.</p>
  *
  * <p>Implements verification/validation methods to determine if the update
  *      should be registered in the operation map or not.</p>
@@ -314,7 +314,7 @@ public final class FileUpdate {
 
         /*
          * Files may be in need of migration even if the correct number
-         * exist.  Force the pnfsId operation into the table if the
+         * exist.  Force the file operation into the table if the
          * storage unit matches the modified one.
          */
         if (unitIndex.equals(storageUnit)) {

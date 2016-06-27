@@ -594,7 +594,7 @@ public class PoolOperationMap extends RunnableModule {
                 /*
                  *  NOTE:  there is a need to cancel children here,
                  *  even though the task is being canceled because
-                 *  of a change of status, so that all waiting pnfsid tasks
+                 *  of a change of status, so that all waiting file tasks
                  *  would eventually find the available replica count changed
                  *  and act accordingly.  The problem is with possible
                  *  inconsistencies in the child counts for the operation,

@@ -124,7 +124,7 @@ public class PoolOperationHandlerTest extends TestBase {
         givenMinimumReplicasOnPool();
         givenARestartStatusChangeFor(pool);
         whenPoolOpScanIsRun();
-        theResultingNumberOfPnfsOperationsSubmittedWas(0);
+        theResultingNumberOfFileOperationsSubmittedWas(0);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class PoolOperationHandlerTest extends TestBase {
          * (the inaccessible handler is invoked later, during
          * the verification phase)
          */
-        theResultingNumberOfPnfsOperationsSubmittedWas(10);
+        theResultingNumberOfFileOperationsSubmittedWas(10);
     }
 
     @Test
@@ -150,7 +150,7 @@ public class PoolOperationHandlerTest extends TestBase {
         /*
          *  5 REPLICA ONLINE, 5 CUSTODIAL ONLINE
          */
-        theResultingNumberOfPnfsOperationsSubmittedWas(10);
+        theResultingNumberOfFileOperationsSubmittedWas(10);
     }
 
     @Test
@@ -162,7 +162,7 @@ public class PoolOperationHandlerTest extends TestBase {
         /*
          * 2 REPLICA ONLINE, 2 CUSTODIAL ONLINE
          */
-        theResultingNumberOfPnfsOperationsSubmittedWas(4);
+        theResultingNumberOfFileOperationsSubmittedWas(4);
     }
 
     @Test
@@ -174,7 +174,7 @@ public class PoolOperationHandlerTest extends TestBase {
         /*
          * 2 REPLICA ONLINE, 2 CUSTODIAL ONLINE
          */
-        theResultingNumberOfPnfsOperationsSubmittedWas(4);
+        theResultingNumberOfFileOperationsSubmittedWas(4);
     }
 
     @Test
@@ -187,7 +187,7 @@ public class PoolOperationHandlerTest extends TestBase {
         /*
          * 3 REPLICA ONLINE, 3 CUSTODIAL ONLINE
          */
-        theResultingNumberOfPnfsOperationsSubmittedWas(6);
+        theResultingNumberOfFileOperationsSubmittedWas(6);
     }
 
     @Test
@@ -278,7 +278,7 @@ public class PoolOperationHandlerTest extends TestBase {
         });
     }
 
-    private void theResultingNumberOfPnfsOperationsSubmittedWas(int submitted) {
+    private void theResultingNumberOfFileOperationsSubmittedWas(int submitted) {
         FileFilter filter = new FileFilter();
         filter.setState(ImmutableSet.of("WAITING"));
         assertEquals(submitted, fileOperationMap.count(filter, new StringBuilder()));

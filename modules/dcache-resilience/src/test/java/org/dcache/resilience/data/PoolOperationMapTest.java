@@ -282,7 +282,7 @@ public class PoolOperationMapTest extends TestBase {
         givenRescanWindowInHoursIs(10);
         givenPoolIsDown("resilient_pool-3");
         givenPoolIsRestarted("resilient_pool-3");
-        givenPnfsCountOfPoolIs(4);
+        givenFileCountOfPoolIs(4);
         whenQueuesAreScanned();
         assertTrue(poolOperationMap.running.containsKey(pool));
         assertFalse(poolOperationMap.idle.containsKey(pool));
@@ -296,7 +296,7 @@ public class PoolOperationMapTest extends TestBase {
         givenRescanWindowInHoursIs(10);
         givenPoolIsDown("resilient_pool-3");
         givenPoolIsRestarted("resilient_pool-3");
-        givenPnfsCountOfPoolIs(4);
+        givenFileCountOfPoolIs(4);
         whenQueuesAreScanned();
         assertTrue(poolOperationMap.running.containsKey(pool));
         assertFalse(poolOperationMap.idle.containsKey(pool));
@@ -310,7 +310,7 @@ public class PoolOperationMapTest extends TestBase {
         givenRescanWindowInHoursIs(10);
         givenPoolIsDown("resilient_pool-3");
         givenPoolIsRestarted("resilient_pool-3");
-        givenPnfsCountOfPoolIs(4);
+        givenFileCountOfPoolIs(4);
         whenQueuesAreScanned();
         assertTrue(poolOperationMap.running.containsKey(pool));
         assertFalse(poolOperationMap.idle.containsKey(pool));
@@ -325,7 +325,7 @@ public class PoolOperationMapTest extends TestBase {
         givenRescanWindowInHoursIs(10);
         givenPoolIsDown("resilient_pool-3");
         givenPoolIsRestarted("resilient_pool-3");
-        givenPnfsCountOfPoolIs(0);
+        givenFileCountOfPoolIs(0);
         whenQueuesAreScanned();
         assertTrue(poolOperationMap.running.containsKey(pool));
         assertFalse(poolOperationMap.idle.containsKey(pool));
@@ -339,7 +339,7 @@ public class PoolOperationMapTest extends TestBase {
         givenRescanWindowInHoursIs(10);
         givenPoolIsDown("resilient_pool-3");
         givenPoolIsRestarted("resilient_pool-3");
-        givenPnfsCountOfPoolIs(4);
+        givenFileCountOfPoolIs(4);
         whenQueuesAreScanned();
         assertTrue(poolOperationMap.running.containsKey(pool));
         assertFalse(poolOperationMap.idle.containsKey(pool));
@@ -354,7 +354,7 @@ public class PoolOperationMapTest extends TestBase {
         givenRescanWindowInHoursIs(10);
         givenPoolIsDown("resilient_pool-3");
         givenPoolIsRestarted("resilient_pool-3");
-        givenPnfsCountOfPoolIs(0);
+        givenFileCountOfPoolIs(0);
         whenQueuesAreScanned();
         assertTrue(poolOperationMap.running.containsKey(pool));
         assertFalse(poolOperationMap.idle.containsKey(pool));
@@ -382,7 +382,7 @@ public class PoolOperationMapTest extends TestBase {
         return poolOperationMap.scan(poolInfoMap.getPoolState(pool), true);
     }
 
-    private void givenPnfsCountOfPoolIs(int count) {
+    private void givenFileCountOfPoolIs(int count) {
         children = count;
     }
 

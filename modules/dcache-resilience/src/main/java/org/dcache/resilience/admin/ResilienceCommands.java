@@ -393,21 +393,21 @@ public final class ResilienceCommands implements CellCommandListener {
                                         + "on = turn checkpointing on; "
                                         + "info = information (default); "
                                         + "reset = reset properties; "
-                                        + "start = (re)start processing of pnfs operations; "
-                                        + "shutdown = stop all processing of pnfs operations; "
+                                        + "start = (re)start processing of file operations; "
+                                        + "shutdown = stop all processing of file operations; "
                                         + "run = checkpoint to disk immediately." )
         String arg = "INFO";
 
         @Option(name = "checkpoint",
                         usage = "With reset mode (one of checkpoint|sweep). "
                                         + "Interval length between checkpointing "
-                                        + "of the pnfs operation data.")
+                                        + "of the file operation data.")
         Long checkpoint;
 
         @Option(name = "sweep",
                         usage = "With reset mode (one of checkpoint|sweep). "
                                         + "Minimal interval between sweeps of "
-                                        + "the pnfs operations.")
+                                        + "the file operations.")
         Long sweep;
 
         @Option(name = "unit",
@@ -508,7 +508,7 @@ public final class ResilienceCommands implements CellCommandListener {
                                       fileOperationMap.getCheckpointExpiry(),
                                       fileOperationMap.getCheckpointExpiryUnit(),
                                       fileOperationMap.getCheckpointFilePath()));
-            counters.getPnfsSweepInfo(info);
+            counters.getFileOpSweepInfo(info);
             counters.getCheckpointInfo(info);
             return info.toString();
         }
@@ -523,7 +523,7 @@ public final class ResilienceCommands implements CellCommandListener {
         @Option(name = "state",
                         valueSpec = "WAITING|RUNNING",
                         separator = ",",
-                        usage = "Cancel operations for pnfsids matching this "
+                        usage = "Cancel operations for files matching this "
                                         + "comma-delimited set of operation states; "
                                         + "default is both.")
         String[] state;
@@ -549,12 +549,12 @@ public final class ResilienceCommands implements CellCommandListener {
 
         @Option(name = "retentionPolicy",
                         valueSpec = "REPLICA|CUSTODIAL ",
-                        usage = "Cancel only operations for pnfsids with this "
+                        usage = "Cancel only operations for files with this "
                                         + "policy.")
         String retentionPolicy;
 
         @Option(name = "storageUnit",
-                        usage = "Cancel only operations for pnfsids with this "
+                        usage = "Cancel only operations for files with this "
                                         + "storage unit/group.")
         String storageUnit;
 
@@ -630,7 +630,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
             fileOperationMap.cancel(filter);
 
-            return "Issued cancel command to cancel pnfs operations.";
+            return "Issued cancel command to cancel file operations.";
         }
     }
 
@@ -693,19 +693,19 @@ public final class ResilienceCommands implements CellCommandListener {
     class FileOpLsCommand extends ResilienceCommand {
         @Option(name = "retentionPolicy",
                         valueSpec = "REPLICA|CUSTODIAL",
-                        usage = "List only operations for pnfsids with this "
+                        usage = "List only operations for files with this "
                                         + "policy.")
         String retentionPolicy;
 
         @Option(name = "storageUnit",
-                        usage = "List only operations for pnfsids with this "
+                        usage = "List only operations for files with this "
                                         + "storage unit/group.")
         String storageUnit;
 
         @Option(name = "state",
                         valueSpec = "WAITING|RUNNING",
                         separator = ",",
-                        usage = "List only operations for pnfsids matching this "
+                        usage = "List only operations for files matching this "
                                         + "comma-delimited set of operation states; "
                                         + "default is both.")
         String[] state = {"WAITING", "RUNNING"};
@@ -758,7 +758,7 @@ public final class ResilienceCommands implements CellCommandListener {
                         usage = "List only activities for this comma-delimited "
                                         + "list of pnfsids. No argument lists all "
                                         + "operations; use '$' to return just "
-                                        + "the number of pnfsid entries; '$@' to "
+                                        + "the number of entries; '$@' to "
                                         + "return the op counts by pool.")
         String pnfsids;
 
@@ -789,7 +789,7 @@ public final class ResilienceCommands implements CellCommandListener {
                     return total + " matching pnfsids";
                 }
 
-                return String.format("%s matching pnfsids."
+                return String.format("%s matching operations."
                                 + "\n\nOperation counts per pool:\n%s",
                                 total, builder.toString());
             }
@@ -1238,7 +1238,7 @@ public final class ResilienceCommands implements CellCommandListener {
         String lastScanAfter;
 
         @Option(name = "includeChildren",
-                        usage = "Cancel pnfsId operations whose parents match "
+                        usage = "Cancel file operations whose parents match "
                                         + "the pool pattern.  Note that this "
                                         + "option automatically sets 'forceRemoval' "
                                         + "to true on the child operation cancel. "
@@ -1285,7 +1285,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
             if (includeChildren) {
                 fileOperationMap.cancel(filter);
-                sb.append("  Also issued cancel command to pnfsId operations.");
+                sb.append("  Also issued cancel command to file operations.");
             }
 
             return sb.toString();
@@ -1428,7 +1428,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
         @Argument(usage = "Regular expression for pool(s) on which to "
                                         + "conduct the adjustment of "
-                                        + "all pnfsids.")
+                                        + "all files.")
         String pools;
 
         @Override

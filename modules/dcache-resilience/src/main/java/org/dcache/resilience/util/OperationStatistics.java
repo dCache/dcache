@@ -122,8 +122,8 @@ public final class OperationStatistics {
 
     private static final String LASTSTART = "Running since: %s\n";
     private static final String UPTIME    = "Uptime %s days, %s hours, %s minutes, %s seconds\n\n";
-    private static final String LASTSWP   = "Last pnfs sweep at %s\n";
-    private static final String LASTSWPD  = "Last pnfs sweep took %s seconds\n";
+    private static final String LASTSWP   = "Last file operation sweep at %s\n";
+    private static final String LASTSWPD  = "Last file operation sweep took %s seconds\n";
     private static final String LASTCHK   = "Last checkpoint at %s\n";
     private static final String LASTCHKD  = "Last checkpoint took %s seconds\n";
     private static final String LASTCHKCT = "Last checkpoint saved %s records\n";
@@ -188,8 +188,8 @@ public final class OperationStatistics {
     private long lastCheckpoint         = started.getTime();
     private long lastCheckpointDuration = 0;
 
-    private long lastPnfsSweep          = started.getTime();
-    private long lastPnfsSweepDuration  = 0;
+    private long lastFileOpSweep = started.getTime();
+    private long lastFileOpSweepDuration = 0;
 
     private File statisticsPath;
     private boolean toFile = false;
@@ -213,11 +213,10 @@ public final class OperationStatistics {
         builder.append(String.format(LASTCHKCT, latest.get()));
     }
 
-    public void getPnfsSweepInfo(StringBuilder info) {
-        info.append(String.format(LASTSWP, new Date(lastPnfsSweep)));
+    public void getFileOpSweepInfo(StringBuilder info) {
+        info.append(String.format(LASTSWP, new Date(lastFileOpSweep)));
         info.append(String.format(LASTSWPD,
-                        TimeUnit.MILLISECONDS.toSeconds(
-                                        lastPnfsSweepDuration)));
+                        TimeUnit.MILLISECONDS.toSeconds(lastFileOpSweepDuration)));
     }
 
     public void increment(String source, String target, Type type, long size) {
@@ -312,7 +311,7 @@ public final class OperationStatistics {
         StringBuilder builder = new StringBuilder();
 
         getRunning(builder);
-        getPnfsSweepInfo(builder);
+        getFileOpSweepInfo(builder);
         getCheckpointInfo(builder);
         builder.append("\n");
         printSummary(builder);
@@ -375,9 +374,9 @@ public final class OperationStatistics {
         resetLatestCounts();
     }
 
-    public void recordPnfsSweep(long ended, long duration) {
-        lastPnfsSweep = ended;
-        lastPnfsSweepDuration = duration;
+    public void recordFileOpSweep(long ended, long duration) {
+        lastFileOpSweep = ended;
+        lastFileOpSweepDuration = duration;
     }
 
     public void recordTaskStatistics(ResilientFileTask task,
@@ -486,7 +485,7 @@ public final class OperationStatistics {
         if (!statisticsPath.exists()) {
             try (FileWriter fw = new FileWriter(statisticsPath, true)) {
                 fw.write(String.format(FORMAT_FILE, "CHECKPOINT", "NEWLOC",
-                                "HZ", "CHNG", "PNFSOP", "HZ", "CHNG", "FAILED",
+                                "HZ", "CHNG", "FILEOP", "HZ", "CHNG", "FAILED",
                                 "CHCKPTD"));
                 fw.flush();
             } catch (FileNotFoundException e) {
