@@ -121,7 +121,7 @@ public final class MapInitializer implements Runnable {
         poolInfoChangeHandler.stopWatchdog();
 
         if (fileOperationMap.isRunning()) {
-            LOGGER.info("Shutting down pnfs operation map.");
+            LOGGER.info("Shutting down file operation map.");
             fileOperationMap.shutdown();
         }
 
@@ -180,10 +180,10 @@ public final class MapInitializer implements Runnable {
         LOGGER.info("Pool maps initialized; delivering backlog.");
         messageGuard.enable();
 
-        LOGGER.info("Messages are now activated; starting pnfs consumer.");
+        LOGGER.info("Messages are now activated; starting file operation consumer.");
         fileOperationMap.initialize();
 
-        LOGGER.info("Pnfs consumer is running; activating admin commands.");
+        LOGGER.info("File operation consumer is running; activating admin commands.");
         synchronized (this) {
             initialized = System.currentTimeMillis();
         }

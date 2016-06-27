@@ -112,7 +112,7 @@ public class LocalNamespaceAccess implements NamespaceAccess {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalNamespaceAccess.class);
 
     /**
-     * <p>Handler for processing pnfs operations.</p>
+     * <p>Handler for processing file operations.</p>
      */
     protected FileOperationHandler handler;
 

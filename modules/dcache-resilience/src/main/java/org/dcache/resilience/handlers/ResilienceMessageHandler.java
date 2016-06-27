@@ -82,7 +82,7 @@ import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.vehicles.CorruptFileMessage;
 
 /**
- * <p>Processes external messages in order to trigger Pnfs-based operations.
+ * <p>Processes external messages in order to trigger file operations.
  *      Also handles internal callbacks indicated the change of
  *      pool status/mode.</p>
  */
@@ -100,7 +100,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver{
     /**
      * <p>Pool status changes are detected internally during the
      *      comparison of pool monitor states.  The change is rerouted
-     *      here as a loopback to conform with the way external pnfs updates
+     *      here as a loopback to conform with the way external file updates
      *      are handled.</p>
      *
      * <p>Pools that have not yet been fully initialized are skipped.</p>

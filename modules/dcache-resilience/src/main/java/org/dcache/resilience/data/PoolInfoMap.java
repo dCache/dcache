@@ -109,7 +109,7 @@ import org.dcache.vehicles.FileAttributes;
  *      operation.</p>
  *
  * <p>The reason for doing this is to be able to store most of the pool info
- *      associated with a given pnfs or pool operation in progress as index
+ *      associated with a given file or pool operation in progress as index
  *      references, allowing the {@link FileOperation} to use 4-byte rather
  *       than 8-byte 'references'.</p>
  *

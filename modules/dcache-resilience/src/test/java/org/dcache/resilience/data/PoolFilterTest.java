@@ -85,56 +85,56 @@ public final class PoolFilterTest extends TestBase {
     }
 
     @Test
-    public void shouldMatchPnfsOperationWhenParentMatchesParentPool()
+    public void shouldMatchFileOperationWhenParentMatchesParentPool()
                     throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, true, false, false, null, null,
                         null, null);
-        givenPnfsOperationWith("resilient_pool-0", null, null);
+        givenFileOperationWith("resilient_pool-0", null, null);
         assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
-    public void shouldMatchPnfsOperationWhenSourceMatchesSourcePool()
+    public void shouldMatchFileOperationWhenSourceMatchesSourcePool()
                     throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, false, true, false, null, null,
                         null, null);
-        givenPnfsOperationWith(null, "resilient_pool-0", null);
+        givenFileOperationWith(null, "resilient_pool-0", null);
         assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
-    public void shouldMatchPnfsOperationWhenTargetMatchesTargetPool()
+    public void shouldMatchFileOperationWhenTargetMatchesTargetPool()
                     throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, false, false, true, null, null,
                         null, null);
-        givenPnfsOperationWith(null, null, "resilient_pool-0");
+        givenFileOperationWith(null, null, "resilient_pool-0");
         assertTrue(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
-    public void shouldNotMatchPnfsOperationWhenParentDoesNotMatchParentPool()
+    public void shouldNotMatchFileOperationWhenParentDoesNotMatchParentPool()
                     throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, true, false, false, null, null,
                         null, null);
-        givenPnfsOperationWith(null, null, null);
+        givenFileOperationWith(null, null, null);
         assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
-    public void shouldNotMatchPnfsOperationWhenSourceDoesNotMatchSourcePool()
+    public void shouldNotMatchFileOperationWhenSourceDoesNotMatchSourcePool()
                     throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, false, true, false, null, null,
                         null, null);
-        givenPnfsOperationWith(null, null, null);
+        givenFileOperationWith(null, null, null);
         assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
 
     @Test
-    public void shouldNotMatchPnfsOperationWhenTargetDoesNotMatchTargetPool()
+    public void shouldNotMatchFileOperationWhenTargetDoesNotMatchTargetPool()
                     throws CacheException {
         givenFilterWith("resilient_pool-0", null, null, false, false, true, null, null,
                         null, null);
-        givenPnfsOperationWith(null, null, null);
+        givenFileOperationWith(null, null, null);
         assertFalse(filter.matches(fileOperation, poolInfoMap));
     }
 
@@ -293,7 +293,7 @@ public final class PoolFilterTest extends TestBase {
         }
     }
 
-    private void givenPnfsOperationWith(String parent, String source, String target)
+    private void givenFileOperationWith(String parent, String source, String target)
                     throws CacheException {
         fileOperation = new FileOperation(aReplicaOnlineFileWithNoTags().getPnfsId(), 1, 2L);
 
