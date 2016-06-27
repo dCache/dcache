@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -33,19 +35,10 @@ import static org.dcache.pool.classic.IoRequestState.*;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
 
-/**
- *
- * @since 1.9.11
- */
-public class MoverRequestScheduler implements Runnable {
-
+public class MoverRequestScheduler
+{
     private static final Logger _log =
             LoggerFactory.getLogger(MoverRequestScheduler.class);
-
-    /**
-     * A worker thread for request queue processing.
-     */
-    private final Thread _worker;
 
     /**
      * The name of IoScheduler.
@@ -106,9 +99,6 @@ public class MoverRequestScheduler implements Runnable {
         _queue = new PriorityBlockingQueue<>(16, comparator);
 
         _semaphore.setMaxPermits(2);
-
-        _worker = new Thread(this, _name);
-        _worker.start();
     }
 
     /**
@@ -171,6 +161,14 @@ public class MoverRequestScheduler implements Runnable {
                                       priority);
     }
 
+    /**
+     * Add a request to the scheduler.
+     *
+     * Returns true if the caller acquired a job slot and must send the job to execution.
+     *
+     * @param request
+     * @return
+     */
     private synchronized boolean submit(PrioritizedRequest request)
     {
         if (_jobs.put(request.getId(), request) != null) {
@@ -183,6 +181,22 @@ public class MoverRequestScheduler implements Runnable {
             _queue.add(request);
             return false;
         }
+    }
+
+    /**
+     * Returns the next job or releases a job slot. If a non-null value is returned, the caller
+     * must submit the job to execution. Should only be caller by a caller than currently holds
+     * a job slot.
+     *
+     * @return
+     */
+    private synchronized PrioritizedRequest nextOrRelease()
+    {
+        PrioritizedRequest request = _queue.poll();
+        if (request == null) {
+            _semaphore.release();
+        }
+        return request;
     }
 
     private synchronized int nextId() {
@@ -276,45 +290,41 @@ public class MoverRequestScheduler implements Runnable {
      * @throws NoSuchElementException
      */
     public void cancel(int id) throws NoSuchElementException {
-        PrioritizedRequest wrapper;
-        wrapper = _jobs.get(id);
-        if (wrapper == null) {
+        PrioritizedRequest request = _jobs.get(id);
+        if (request == null) {
             throw new NoSuchElementException("Job " + id + " not found");
         }
-        cancel(wrapper);
+        request.kill();
+        if (_queue.remove(request)) {
+            postprocessWithoutJobSlot(request);
+        }
     }
 
-    private void cancel(final PrioritizedRequest request)
+    private void postprocessWithoutJobSlot(PrioritizedRequest request)
     {
-        try (CDC ignored = request.getCdc().restore()) {
-            boolean wasQueued = _queue.remove(request);
-            request.kill();
-            if (wasQueued) {
-                /*
-                 * The request was still in the queue. Post processing is still applied to close
-                 * the transfer and to notify billing and door.
-                 */
-                request.getMover().close(
-                        new CompletionHandler<Void, Void>() {
-                    @Override
-                    public void completed(Void result, Void attachment) {
-                        release();
-                    }
+        try (CDC ignore = request.getCdc().restore()) {
+            request.getMover().close(
+                    new CompletionHandler<Void, Void>()
+                    {
+                        @Override
+                        public void completed(Void result, Void attachment)
+                        {
+                            release();
+                        }
 
-                    @Override
-                    public void failed(Throwable exc, Void attachment) {
-                        release();
-                    }
+                        @Override
+                        public void failed(Throwable exc, Void attachment)
+                        {
+                            release();
+                        }
 
-                    private void release() {
-                        request.done();
-                        _jobs.remove(request.getId());
-                        _moverByRequests.remove(request.getDoorUniqueId());
-                    }
-
-                });
-            }
-            request.kill();
+                        private void release()
+                        {
+                            request.done();
+                            _jobs.remove(request.getId());
+                            _moverByRequests.remove(request.getDoorUniqueId());
+                        }
+                    });
         }
     }
 
@@ -338,49 +348,46 @@ public class MoverRequestScheduler implements Runnable {
      */
     public void setMaxActiveJobs(int maxJobs) {
         _semaphore.setMaxPermits(maxJobs);
-    }
-
-    /**
-     * Shutdown the scheduler. All subsequent execution request will be
-     * rejected.
-     */
-    public synchronized void shutdown() throws InterruptedException
-    {
-        if (!_shutdown) {
-            _shutdown = true;
-            _worker.interrupt();
-            _jobs.values().forEach(this::cancel);
-
-            _log.info("Waiting for movers on queue '{}' to finish", _name);
-            if (!_semaphore.tryAcquire(_semaphore.getMaxPermits(), 2000L, TimeUnit.MILLISECONDS)) {
-                // This is often due to a mover not reacting to interrupt or the transfer
-                // doing a lengthy checksum calculation during post processing.
-                String versions =
-                        _jobs.values().stream()
-                                .map(PrioritizedRequest::getMover)
-                                .map(Mover::getProtocolInfo)
-                                .map(ProtocolInfo::getVersionString)
-                                .collect(joining(","));
-                _log.warn("Failed to terminate some movers prior to shutdown: {}", versions);
-            }
+        PrioritizedRequest request;
+        while (_semaphore.tryAcquire() && (request = nextOrRelease()) != null) {
+            sendToExecution(request);
         }
     }
 
-    @Override
-    public void run() {
-        try {
-            while (!_shutdown) {
-                _semaphore.acquire();
-                try {
-                    final PrioritizedRequest request = _queue.take();
-                    sendToExecution(request);
-                } catch (RuntimeException | Error | InterruptedException e) {
-                    _semaphore.release();
-                    throw e;
-                }
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    /**
+     * Shutdown the scheduler. All subsequent execution request will be rejected.
+     */
+    public void shutdown() throws InterruptedException
+    {
+        checkState(!_shutdown);
+        _shutdown = true;
+
+        /* Drain jobs from the queue so they will never be started. Has to be done
+         * before killing jobs as otherwise the queued jobs will immediatley fill
+         * the freed job slot.
+         */
+        Collection<PrioritizedRequest> toBeCancelled = new ArrayList<>();
+        _queue.drainTo(toBeCancelled);
+
+        /* Kill both the jobs that were queued and which are running. */
+        _jobs.values().forEach(PrioritizedRequest::kill);
+
+        /* Jobs that were queued were never submitted for execution and thus we
+         * manually trigger postprocessing.
+         */
+        toBeCancelled.forEach(this::postprocessWithoutJobSlot);
+
+        _log.info("Waiting for movers on queue '{}' to finish", _name);
+        if (!_semaphore.tryAcquire(_semaphore.getMaxPermits(), 2, TimeUnit.SECONDS)) {
+            // This is often due to a mover not reacting to interrupt or the transfer
+            // doing a lengthy checksum calculation during post processing.
+            String versions =
+                    _jobs.values().stream()
+                            .map(PrioritizedRequest::getMover)
+                            .map(Mover::getProtocolInfo)
+                            .map(ProtocolInfo::getVersionString)
+                            .collect(joining(","));
+            _log.warn("Failed to terminate some movers prior to shutdown: {}", versions);
         }
     }
 
@@ -401,30 +408,36 @@ public class MoverRequestScheduler implements Runnable {
                             postprocess();
                         }
 
-                        private void postprocess() {
-                            request.getMover().close(
-                                    new CompletionHandler<Void, Void>()
-                                    {
-                                        @Override
-                                        public void completed(Void result, Void attachment)
+                        private void postprocess()
+                        {
+                            try (CDC ignore = request.getCdc().restore()) {
+                                request.getMover().close(
+                                        new CompletionHandler<Void, Void>()
                                         {
-                                            release();
-                                        }
+                                            @Override
+                                            public void completed(Void result, Void attachment)
+                                            {
+                                                release();
+                                            }
 
-                                        @Override
-                                        public void failed(Throwable exc, Void attachment)
-                                        {
-                                            release();
-                                        }
+                                            @Override
+                                            public void failed(Throwable exc, Void attachment)
+                                            {
+                                                release();
+                                            }
 
-                                        private void release()
-                                        {
-                                            request.done();
-                                            _jobs.remove(request.getId());
-                                            _moverByRequests.remove(request.getDoorUniqueId());
-                                            _semaphore.release();
-                                        }
-                                    });
+                                            private void release()
+                                            {
+                                                request.done();
+                                                _jobs.remove(request.getId());
+                                                _moverByRequests.remove(request.getDoorUniqueId());
+                                                PrioritizedRequest nextRequest = nextOrRelease();
+                                                if (nextRequest != null) {
+                                                    sendToExecution(nextRequest);
+                                                }
+                                            }
+                                        });
+                            }
                         }
                     });
         }
