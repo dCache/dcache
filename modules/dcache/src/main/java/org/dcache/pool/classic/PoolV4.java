@@ -1956,7 +1956,7 @@ public class PoolV4
     private String mover_set_max_active(MoverRequestScheduler js, int active)
             throws IllegalArgumentException
     {
-        checkArgument(active > 0, "<maxActiveMovers> must be >= 0");
+        checkArgument(active >= 0, "<maxActiveMovers> must be >= 0");
         js.setMaxActiveJobs(active);
 
         return "Max Active Io Movers set to " + active;
