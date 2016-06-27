@@ -152,10 +152,12 @@ public class JobTimeoutManager
     public class JtmGoCommand implements Callable<String>
     {
         @Override
-        public synchronized String call()
+        public String call()
                 throws IllegalMonitorStateException
         {
-            notifyAll();
+            synchronized (JobTimeoutManager.this) {
+                JobTimeoutManager.this.notifyAll();
+            }
             return "";
         }
     }
@@ -212,7 +214,7 @@ public class JobTimeoutManager
         long  total;
 
         @Override
-        public synchronized String call() throws IllegalArgumentException
+        public String call() throws IllegalArgumentException
         {
             if (queueName == null) {
                 for (SchedulerEntry entry: _schedulers) {
