@@ -4,12 +4,13 @@ import java.util.List;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitAccess;
-import diskCacheV111.poolManager.PoolSelectionUnitCommands;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
+
 import org.dcache.util.Args;
 
 public class PoolMonitorHelper {
@@ -32,9 +33,7 @@ public class PoolMonitorHelper {
     public static void prepareSelectionUnit(PoolSelectionUnit unit,
                                             PoolSelectionUnitAccess access,
                                             List<String> pools) throws CommandException {
-        PoolSelectionUnitCommands commands = new PoolSelectionUnitCommands();
-        commands.setPsuAccess(access);
-        CommandInterpreter ci = new CommandInterpreter(commands);
+        CommandInterpreter ci = new CommandInterpreter(access);
 
         ci.command( new Args("psu create unit -store  *@*" )  );
         ci.command( new Args("psu create unit -protocol */*" )  );

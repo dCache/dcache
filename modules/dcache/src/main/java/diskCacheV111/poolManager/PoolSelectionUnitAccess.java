@@ -4,8 +4,6 @@ import com.google.common.collect.ImmutableList;
 
 import java.net.UnknownHostException;
 
-import dmg.cells.nucleus.CellSetupProvider;
-
 /**
  * Pulled out of the PoolSelectionUnit implementation. An abstraction
  * layer between the command-line and the actual implementation which
@@ -13,7 +11,7 @@ import dmg.cells.nucleus.CellSetupProvider;
  *
  * Created by arossi on 2/19/15.
  */
-public interface PoolSelectionUnitAccess extends CellSetupProvider {
+public interface PoolSelectionUnitAccess {
 
     void addLink(String linkName, String poolName);
 

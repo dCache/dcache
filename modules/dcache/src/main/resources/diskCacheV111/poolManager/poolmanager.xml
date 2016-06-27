@@ -114,9 +114,4 @@
       </bean>
     </property>
   </bean>
-
-  <bean id="poolManagerCLI" class="diskCacheV111.poolManager.PoolSelectionUnitCommands">
-    <description>Provides commands for cell</description>
-    <property name="psuAccess" ref="psu"/>
-  </bean>
 </beans>

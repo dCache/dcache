@@ -12,7 +12,6 @@ import java.util.Set;
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
-import diskCacheV111.poolManager.PoolSelectionUnitCommands;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
@@ -31,13 +30,10 @@ import static org.junit.Assert.*;
 public class PoolSelectionUnitTest {
 
     private final PoolSelectionUnitV2 _psu = new PoolSelectionUnitV2();
-    private final PoolSelectionUnitCommands _commands = new PoolSelectionUnitCommands();
-    private final CommandInterpreter _ci = new CommandInterpreter(_commands);
+    private final CommandInterpreter _ci = new CommandInterpreter(_psu);
 
     @Before
     public void setUp() throws Exception {
-        _commands.setPsuAccess(_psu);
-
         // storage units
 
         _ci.command(new Args("psu create unit -store  h1:u1@osm"));
@@ -786,9 +782,7 @@ public class PoolSelectionUnitTest {
         throws CommandException
     {
         PoolSelectionUnitV2 psu = new PoolSelectionUnitV2();
-        PoolSelectionUnitCommands commands = new PoolSelectionUnitCommands();
-        commands.setPsuAccess(psu);
-        CommandInterpreter ci = new CommandInterpreter(commands);
+        CommandInterpreter ci = new CommandInterpreter(psu);
 
         ci.command(new Args("psu create unit -store *@*"));
 
