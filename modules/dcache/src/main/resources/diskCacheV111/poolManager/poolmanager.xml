@@ -115,15 +115,8 @@
     </property>
   </bean>
 
-  <bean id="PsuAccess" class="org.dcache.resilience.util.PoolSelectionUnitDecorator">
-    <description>Implements interface to which the cell commands delegate</description>
-    <property name="delegate" ref="psu"/>
-    <property name="psu" ref="psu"/>
-    <property name="costModule" ref="cm"/>
-  </bean>
-
   <bean id="poolManagerCLI" class="diskCacheV111.poolManager.PoolSelectionUnitCommands">
     <description>Provides commands for cell</description>
-    <property name="psuAccess" ref="PsuAccess"/>
+    <property name="psuAccess" ref="psu"/>
   </bean>
 </beans>

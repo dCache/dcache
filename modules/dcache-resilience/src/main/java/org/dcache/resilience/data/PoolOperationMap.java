@@ -90,7 +90,6 @@ import org.dcache.resilience.util.MapInitializer;
 import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationStatistics;
 import org.dcache.resilience.util.PoolScanTask;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.util.RunnableModule;
 
 /**
@@ -853,7 +852,7 @@ public class PoolOperationMap extends RunnableModule {
         operation.lastUpdate = System.currentTimeMillis();
         operation.group = null;
         operation.unit = null;
-        operation.psuAction = SelectionAction.NONE;
+        operation.psuAction = PoolOperation.SelectionAction.NONE;
         operation.forceScan = false;
         operation.resetChildren();
         if (poolInfoMap.isResilientPool(pool)) {

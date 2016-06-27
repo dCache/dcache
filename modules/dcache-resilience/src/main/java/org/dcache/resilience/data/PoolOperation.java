@@ -62,7 +62,6 @@ package org.dcache.resilience.data;
 import diskCacheV111.util.CacheException;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.PoolScanTask;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 
 /**
  * <p>Object stored in the {@link PoolOperationMap}.</p>
@@ -84,6 +83,13 @@ public final class PoolOperation {
         NOP,            // REMAIN IN CURRENT QUEUE
         UP_TO_DOWN,     // PROMOTE TO WAITING
         DOWN_TO_UP     // CANCEL ANY CURRENT DOWN AND PROMOTE TO WAITING
+    }
+
+    public enum SelectionAction {
+        NONE,
+        ADD,
+        REMOVE,
+        MODIFY
     }
 
     boolean                 forceScan;     // Overrides non-handling of restarts

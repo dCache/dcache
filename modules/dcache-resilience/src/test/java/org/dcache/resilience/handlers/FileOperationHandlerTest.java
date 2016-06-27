@@ -77,9 +77,10 @@ import org.dcache.resilience.TestSynchronousExecutor.Mode;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileUpdate;
 import org.dcache.resilience.data.MessageType;
+import org.dcache.resilience.data.PoolOperation;
 import org.dcache.resilience.data.PoolStateUpdate;
 import org.dcache.resilience.data.StorageUnitConstraints;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
+import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
@@ -480,7 +481,7 @@ public final class FileOperationHandlerTest extends TestBase
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
-                        MessageType.POOL_STATUS_DOWN, SelectionAction.REMOVE);
+                           MessageType.POOL_STATUS_DOWN, SelectionAction.REMOVE);
     }
 
     private void givenAllPoolsOfflineExceptSourceAndTarget()

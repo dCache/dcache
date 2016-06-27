@@ -77,7 +77,7 @@ import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
 import org.dcache.resilience.util.LocationSelector;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
+import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.vehicles.FileAttributes;
 
 /**

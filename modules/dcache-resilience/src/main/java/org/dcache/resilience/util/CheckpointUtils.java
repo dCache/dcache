@@ -85,7 +85,7 @@ import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperation;
 import org.dcache.resilience.handlers.FileOperationHandler;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
+import org.dcache.resilience.data.PoolOperation.SelectionAction;
 
 /**
  * <p>Static methods for writing and reading data for checkpointing purposes.</p>

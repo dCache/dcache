@@ -67,7 +67,7 @@ import org.dcache.pool.classic.Cancellable;
 import org.dcache.resilience.data.MessageType;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.PoolOperationHandler;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
+import org.dcache.resilience.data.PoolOperation.SelectionAction;
 
 /**
  * <p>Simple wrapper for calling the {@link PoolOperationHandler) method.

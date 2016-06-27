@@ -83,7 +83,7 @@ import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
 import org.dcache.resilience.util.ExceptionMessage;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
+import org.dcache.resilience.data.PoolOperation.SelectionAction;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.util.SqlHelper.tryToClose;

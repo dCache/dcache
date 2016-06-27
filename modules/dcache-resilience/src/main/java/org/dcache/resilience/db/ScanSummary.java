@@ -60,7 +60,7 @@ documents or software obtained from this server.
 package org.dcache.resilience.db;
 
 import org.dcache.resilience.data.MessageType;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
+import org.dcache.resilience.data.PoolOperation.SelectionAction;
 
 /**
  * <p>Simple struct to use during pool scan; shared between handlers, task and
