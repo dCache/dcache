@@ -24,14 +24,15 @@ import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
@@ -60,12 +61,23 @@ public class ChecksumScanner
     private final Map<PnfsId,Iterable<Checksum>> _bad =
         new ConcurrentHashMap<>();
 
-    public void startScrubber()
+    private final Runnable listener = this::onConfigChange;
+
+    private void onConfigChange()
+    {
+        if (_csm.hasPolicy(ChecksumModule.PolicyFlag.SCRUB)) {
+            startScrubber();
+        } else {
+            stopScrubber();
+        }
+    }
+
+    private void startScrubber()
     {
         _scrubber.start();
     }
 
-    public void stopScrubber()
+    private void stopScrubber()
     {
         _scrubber.kill();
     }
@@ -629,12 +641,14 @@ public class ChecksumScanner
     @Override
     public void afterStart()
     {
+        _csm.addListener(listener);
         startScrubber();
     }
 
     @Override
     public void beforeStop()
     {
+        _csm.removeListener(listener);
         stopScrubber();
     }
 }

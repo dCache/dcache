@@ -156,7 +156,6 @@
 
   <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
     <description>Checksum module</description>
-    <property name="checksumScanner" ref="scanner"/>
   </bean>
 
   <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">

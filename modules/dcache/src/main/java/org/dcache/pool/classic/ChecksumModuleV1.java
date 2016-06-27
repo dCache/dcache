@@ -28,6 +28,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
@@ -65,11 +66,16 @@ public class ChecksumModuleV1
     private long _scrubPeriod = TimeUnit.HOURS.toMillis(24L);
     private ChecksumType _defaultChecksumType = ADLER32;
 
-    private ChecksumScanner _scanner;
+    private final CopyOnWriteArrayList<Runnable> listeners = new CopyOnWriteArrayList<>();
 
-    public void setChecksumScanner(ChecksumScanner scanner)
+    public void addListener(Runnable listener)
     {
-        _scanner = scanner;
+        listeners.add(listener);
+    }
+
+    public void removeListener(Runnable listener)
+    {
+        listeners.remove(listener);
     }
 
     public synchronized ChecksumType getDefaultChecksumType()
@@ -318,15 +324,9 @@ public class ChecksumModuleV1
                     }
                     _scrubPeriod = value;
                 }
-
-                if (hasPolicy(SCRUB)) {
-                    _scanner.startScrubber();
-                } else {
-                    _scanner.stopScrubber();
-                }
-
-                return verbose ? getPolicies() : "";
             }
+            listeners.forEach(Runnable::run);
+            return verbose ? getPolicies() : "";
         }
     }
 
@@ -343,10 +343,12 @@ public class ChecksumModuleV1
         @Override
         public String call() throws IllegalArgumentException
         {
+            ChecksumType checksumType = getChecksumType(type);
             synchronized (ChecksumModuleV1.this) {
-                _defaultChecksumType = getChecksumType(type);
-                return "New checksumtype : "+ _defaultChecksumType;
+                _defaultChecksumType = checksumType;
             }
+            listeners.forEach(Runnable::run);
+            return "New checksumtype : "+ checksumType;
         }
     }
 
