@@ -211,13 +211,6 @@ public class FileOperationHandler {
                     throws CacheException {
         LOGGER.trace("handleLocationUpdate {}", data);
 
-        if (fileOpMap.updateCount(data.pnfsId)) {
-            LOGGER.debug("Update of {}: operation already registered, "
-                                         + "count incremented.",
-                         data.pnfsId);
-            return false;
-        }
-
         if (data.pool == null) {
             LOGGER.debug("Update of {} with no location; file has likely "
                                          + "been deleted from namespace.",
@@ -272,13 +265,6 @@ public class FileOperationHandler {
     public boolean handleScannedLocation(FileUpdate data, Integer storageUnit)
                     throws CacheException {
         LOGGER.trace("handleScannedLocation {}", data);
-
-        if (fileOpMap.updateCount(data.pnfsId)) {
-            LOGGER.trace("Update of {}: operation already registered, "
-                                         + "count incremented.",
-                         data.pnfsId);
-            return false;
-        }
 
         /*
          * These must be true during a pool scan.

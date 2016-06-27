@@ -366,7 +366,7 @@ public final class FileOperationMapTest extends TestBase {
     }
 
     private void givenAnotherLocationForPnfsId() {
-        fileOperationMap.updateCount(operation.getPnfsId());
+        fileOperationMap.getOperation(operation.getPnfsId()).incrementCount();
     }
 
     private void setMocks() {
