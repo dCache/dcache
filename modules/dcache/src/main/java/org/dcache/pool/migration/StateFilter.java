@@ -1,16 +1,16 @@
 package org.dcache.pool.migration;
 
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 
 /**
  * Repository entry filter accepting entries in particular states.
  */
 public class StateFilter implements CacheEntryFilter
 {
-    private final EntryState[] _states;
+    private final ReplicaState[] _states;
 
-    public StateFilter(EntryState... states)
+    public StateFilter(ReplicaState... states)
     {
         _states = states;
     }
@@ -18,7 +18,7 @@ public class StateFilter implements CacheEntryFilter
     @Override
     public boolean accept(CacheEntry entry)
     {
-        for (EntryState state: _states) {
+        for (ReplicaState state: _states) {
             if (entry.getState() == state) {
                 return true;
             }

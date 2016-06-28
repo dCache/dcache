@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 
 /**
@@ -25,7 +25,7 @@ public class CacheRepositoryEntryState implements Serializable
     private boolean _error;
     private boolean _removed;
 
-    public CacheRepositoryEntryState(EntryState state, Collection<StickyRecord> sticky)
+    public CacheRepositoryEntryState(ReplicaState state, Collection<StickyRecord> sticky)
     {
         switch (state) {
         case NEW:
@@ -59,27 +59,27 @@ public class CacheRepositoryEntryState implements Serializable
         _sticky = new HashSet<>(sticky);
     }
 
-    public EntryState getState()
+    public ReplicaState getState()
     {
         if (_fromClient) {
-            return EntryState.FROM_CLIENT;
+            return ReplicaState.FROM_CLIENT;
         }
         if (_fromStore) {
-            return EntryState.FROM_STORE;
+            return ReplicaState.FROM_STORE;
         }
         if (_cached) {
-            return EntryState.CACHED;
+            return ReplicaState.CACHED;
         }
         if (_precious) {
-            return EntryState.PRECIOUS;
+            return ReplicaState.PRECIOUS;
         }
         if (_removed) {
-            return EntryState.REMOVED;
+            return ReplicaState.REMOVED;
         }
         if (_error) {
-            return  EntryState.BROKEN;
+            return  ReplicaState.BROKEN;
         }
-        return EntryState.NEW;
+        return ReplicaState.NEW;
     }
 
     public Collection<StickyRecord> stickyRecords()

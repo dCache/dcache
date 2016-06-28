@@ -16,7 +16,7 @@ import org.dcache.vehicles.FileAttributes;
  * Implementations should be thread safe. Callers may synchronize on
  * the object to prevent modifications.
  */
-public interface MetaDataRecord
+public interface ReplicaRecord
 {
     /**
      * Get the PnfsId of this entry.
@@ -31,7 +31,7 @@ public interface MetaDataRecord
 
     FileAttributes getFileAttributes() throws CacheException;
 
-    EntryState getState();
+    ReplicaState getState();
 
     URI getReplicaUri();
 
@@ -124,13 +124,13 @@ public interface MetaDataRecord
         boolean setSticky(String owner, long validTill, boolean overwrite)
                 throws CacheException;
 
-        Void setState(EntryState state) throws CacheException;
+        Void setState(ReplicaState state) throws CacheException;
 
         Void setFileAttributes(FileAttributes attributes) throws CacheException;
 
         FileAttributes getFileAttributes() throws CacheException;
 
-        EntryState getState();
+        ReplicaState getState();
 
         int getLinkCount();
     }

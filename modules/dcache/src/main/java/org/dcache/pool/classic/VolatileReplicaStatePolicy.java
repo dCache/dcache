@@ -3,7 +3,7 @@ package org.dcache.pool.classic;
 import java.util.Collections;
 import java.util.List;
 
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
@@ -20,8 +20,8 @@ public class VolatileReplicaStatePolicy implements ReplicaStatePolicy
     }
 
     @Override
-    public EntryState getTargetState(FileAttributes fileAttributes)
+    public ReplicaState getTargetState(FileAttributes fileAttributes)
     {
-        return EntryState.CACHED;
+        return ReplicaState.CACHED;
     }
 }

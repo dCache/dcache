@@ -7,14 +7,14 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
 /**
- * The MetaDataStore interface provides an abstraction of how
- * MetaDataRecord objects are created, retrieved and removed.
+ * The ReplicaStore interface provides an abstraction of how
+ * ReplicaRecord objects are created, retrieved and removed.
  *
  * The name is misleading and should be renamed. The reason is that
  * the interface is used as an abstraction over both meta data storage
  * and file storage.
  */
-public interface MetaDataStore extends Closeable
+public interface ReplicaStore extends Closeable
 {
     enum IndexOption
     {
@@ -40,7 +40,7 @@ public interface MetaDataStore extends Closeable
      * @throws CacheException if looking up the entry failed.
      * @throws InterruptedException if the thread is interrupted.
      */
-    MetaDataRecord get(PnfsId id)
+    ReplicaRecord get(PnfsId id)
         throws CacheException, InterruptedException;
 
     /**
@@ -53,7 +53,7 @@ public interface MetaDataStore extends Closeable
      * @throws DuplicateEntryException if entry already exists
      * @throws CacheException if entry creation fails
      */
-    MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
+    ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
         throws DuplicateEntryException, CacheException;
 
     /**

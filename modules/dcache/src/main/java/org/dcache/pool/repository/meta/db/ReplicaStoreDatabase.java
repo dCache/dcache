@@ -19,7 +19,7 @@ import java.util.Properties;
  * MetaDataRepositoryDatabase encapsulates the initialisation of
  * the BerkelyDB used for storing meta data.
  */
-public class MetaDataRepositoryDatabase
+public class ReplicaStoreDatabase
 {
     private static final Logger _log =
         LoggerFactory.getLogger("logger.org.dcache.repository");
@@ -36,7 +36,7 @@ public class MetaDataRepositoryDatabase
     private boolean _failed;
     private boolean _closed;
 
-    public MetaDataRepositoryDatabase(Properties properties, File homeDirectory, boolean readonly)
+    public ReplicaStoreDatabase(Properties properties, File homeDirectory, boolean readonly)
         throws DatabaseException
     {
         EnvironmentConfig envConfig = new EnvironmentConfig(properties);

@@ -16,16 +16,16 @@ import diskCacheV111.vehicles.StorageInfo;
  * MetaDataRepositoryViews encapsulates creation of views into
  * MetaDataRepositoryDatabase.
  */
-class MetaDataRepositoryViews
+class ReplicaStoreView
 {
-    private final MetaDataRepositoryDatabase db;
+    private final ReplicaStoreDatabase db;
     private final StoredMap<String, StorageInfo> storageInfoMap;
     private final StoredMap<String, CacheRepositoryEntryState> stateMap;
     private final EntryBinding<String> keyBinding;
     private final EntryBinding<StorageInfo> storageInfoBinding;
     private final EntryBinding<CacheRepositoryEntryState> stateBinding;
 
-    public MetaDataRepositoryViews(MetaDataRepositoryDatabase db)
+    public ReplicaStoreView(ReplicaStoreDatabase db)
     {
         this.db = db;
         ClassCatalog catalog = db.getClassCatalog();

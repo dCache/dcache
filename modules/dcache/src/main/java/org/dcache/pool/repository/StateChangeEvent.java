@@ -6,22 +6,22 @@ package org.dcache.pool.repository;
  */
 public class StateChangeEvent extends EntryChangeEvent
 {
-    private final EntryState _oldState;
-    private final EntryState _newState;
+    private final ReplicaState _oldState;
+    private final ReplicaState _newState;
 
-    public StateChangeEvent(CacheEntry oldEntry, CacheEntry newEntry, EntryState oldState, EntryState newState)
+    public StateChangeEvent(CacheEntry oldEntry, CacheEntry newEntry, ReplicaState oldState, ReplicaState newState)
     {
         super(oldEntry, newEntry);
         _oldState = oldState;
         _newState = newState;
     }
 
-    public EntryState getOldState()
+    public ReplicaState getOldState()
     {
         return _oldState;
     }
 
-    public EntryState getNewState()
+    public ReplicaState getNewState()
     {
         return _newState;
     }

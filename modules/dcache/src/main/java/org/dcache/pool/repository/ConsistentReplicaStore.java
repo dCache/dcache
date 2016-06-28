@@ -35,17 +35,17 @@ import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 /**
- * Wrapper for a MetaDataStore which encapsulates the logic for
- * recovering MetaDataRecord objects from PnfsManager in case they are
- * missing or broken in a MetaDataStore.
+ * Wrapper for a ReplicaStore which encapsulates the logic for
+ * recovering ReplicaRecord objects from PnfsManager in case they are
+ * missing or broken in a ReplicaStore.
  *
  * Warning: The class is only thread-safe as long as its methods are
  * not invoked concurrently on the same PNFS ID.
  */
-public class ConsistentStore
-    implements MetaDataStore
+public class ConsistentReplicaStore
+    implements ReplicaStore
 {
-    private static final Logger _log = LoggerFactory.getLogger(ConsistentStore.class);
+    private static final Logger _log = LoggerFactory.getLogger(ConsistentReplicaStore.class);
 
     private static final String RECOVERING_MSG =
         "Recovering %1$s...";
@@ -78,19 +78,19 @@ public class ConsistentStore
             EnumSet.of(STORAGEINFO, ACCESS_LATENCY, RETENTION_POLICY, SIZE, CHECKSUM);
 
     private final PnfsHandler _pnfsHandler;
-    private final MetaDataStore _metaDataStore;
+    private final ReplicaStore _replicaStore;
     private final ChecksumModule _checksumModule;
     private final ReplicaStatePolicy _replicaStatePolicy;
     private String _poolName;
 
-    public ConsistentStore(PnfsHandler pnfsHandler,
-                           ChecksumModule checksumModule,
-                           MetaDataStore metaDataStore,
-                           ReplicaStatePolicy replicaStatePolicy)
+    public ConsistentReplicaStore(PnfsHandler pnfsHandler,
+                                  ChecksumModule checksumModule,
+                                  ReplicaStore replicaStore,
+                                  ReplicaStatePolicy replicaStatePolicy)
     {
         _pnfsHandler = pnfsHandler;
         _checksumModule = checksumModule;
-        _metaDataStore = metaDataStore;
+        _replicaStore = replicaStore;
         _replicaStatePolicy = replicaStatePolicy;
     }
 
@@ -119,7 +119,7 @@ public class ConsistentStore
     @Override
     public Set<PnfsId> index(IndexOption... options) throws CacheException
     {
-        return _metaDataStore.index(options);
+        return _replicaStore.index(options);
     }
 
     /**
@@ -128,10 +128,10 @@ public class ConsistentStore
      * entry is reconstructed with information from PNFS.
      */
     @Override
-    public MetaDataRecord get(PnfsId id)
+    public ReplicaRecord get(PnfsId id)
         throws IllegalArgumentException, CacheException, InterruptedException
     {
-        MetaDataRecord entry = _metaDataStore.get(id);
+        ReplicaRecord entry = _replicaStore.get(id);
         if (entry != null && isBroken(entry)) {
             _log.warn(String.format(RECOVERING_MSG, id));
 
@@ -145,7 +145,7 @@ public class ConsistentStore
                 case FROM_STORE:
                 case REMOVED:
                 case DESTROYED:
-                    _metaDataStore.remove(id);
+                    _replicaStore.remove(id);
                     _pnfsHandler.clearCacheLocation(id);
                     _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
                     return null;
@@ -157,7 +157,7 @@ public class ConsistentStore
             } catch (CacheException e) {
                 switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:
-                    _metaDataStore.remove(id);
+                    _replicaStore.remove(id);
                     _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
                     return null;
 
@@ -165,7 +165,7 @@ public class ConsistentStore
                     throw e;
 
                 default:
-                    entry.update(r -> r.setState(EntryState.BROKEN));
+                    entry.update(r -> r.setState(ReplicaState.BROKEN));
                     _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                     id.toString(),
                                     _poolName),
@@ -173,7 +173,7 @@ public class ConsistentStore
                     break;
                 }
             } catch (NoSuchAlgorithmException e) {
-                entry.update(r -> r.setState(EntryState.BROKEN));
+                entry.update(r -> r.setState(ReplicaState.BROKEN));
                 _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                 id.toString(),
                                 _poolName),
@@ -184,21 +184,21 @@ public class ConsistentStore
         return entry;
     }
 
-    private boolean isBroken(MetaDataRecord entry) throws CacheException
+    private boolean isBroken(ReplicaRecord entry) throws CacheException
     {
         FileAttributes attributes = entry.getFileAttributes();
-        EntryState state = entry.getState();
+        ReplicaState state = entry.getState();
         return !attributes.isDefined(FileAttribute.SIZE) ||
                attributes.getSize() != entry.getReplicaSize() ||
-               state != EntryState.CACHED && state != EntryState.PRECIOUS;
+               state != ReplicaState.CACHED && state != ReplicaState.PRECIOUS;
     }
 
-    private MetaDataRecord rebuildEntry(MetaDataRecord entry)
+    private ReplicaRecord rebuildEntry(ReplicaRecord entry)
             throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException
     {
            PnfsId id = entry.getPnfsId();
 
-           EntryState state = entry.getState();
+           ReplicaState state = entry.getState();
 
            _log.warn(String.format(FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
            FileAttributes attributesInNameSpace = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
@@ -246,7 +246,7 @@ public class ConsistentStore
             /* If file size was not registered in the name space, we now replay the registration just as it would happen
              * in WriteHandleImpl. This includes initializing access latency, retention policy, and checksums.
              */
-            if (state == EntryState.FROM_CLIENT || state == EntryState.BROKEN || state == EntryState.NEW) {
+            if (state == ReplicaState.FROM_CLIENT || state == ReplicaState.BROKEN || state == ReplicaState.NEW) {
                 if (attributesInNameSpace.isUndefined(ACCESS_LATENCY)) {
                     /* Access latency must have been injected by space manager, so we hope we still
                      * got it stored on the pool.
@@ -307,8 +307,8 @@ public class ConsistentStore
             /* If not already precious or cached, we move the entry to
              * the target state of a newly uploaded file.
              */
-            if (state != EntryState.CACHED && state != EntryState.PRECIOUS) {
-                EntryState targetState =
+            if (state != ReplicaState.CACHED && state != ReplicaState.PRECIOUS) {
+                ReplicaState targetState =
                         _replicaStatePolicy.getTargetState(attributesInNameSpace);
                 List<StickyRecord> stickyRecords =
                         _replicaStatePolicy.getStickyRecords(attributesInNameSpace);
@@ -334,10 +334,10 @@ public class ConsistentStore
      * it is overwritten.
      */
     @Override
-    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
+    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
         throws DuplicateEntryException, CacheException
     {
-        return _metaDataStore.create(id, flags);
+        return _replicaStore.create(id, flags);
     }
 
     /**
@@ -346,7 +346,7 @@ public class ConsistentStore
     @Override
     public void remove(PnfsId id) throws CacheException
     {
-        _metaDataStore.remove(id);
+        _replicaStore.remove(id);
     }
 
     /**
@@ -355,19 +355,19 @@ public class ConsistentStore
     @Override
     public boolean isOk()
     {
-        return _metaDataStore.isOk();
+        return _replicaStore.isOk();
     }
 
     @Override
     public void close()
     {
-        _metaDataStore.close();
+        _replicaStore.close();
     }
 
     @Override
     public String toString()
     {
-        return _metaDataStore.toString();
+        return _replicaStore.toString();
     }
 
     /**
@@ -377,7 +377,7 @@ public class ConsistentStore
     @Override
     public long getFreeSpace()
     {
-        return _metaDataStore.getFreeSpace();
+        return _replicaStore.getFreeSpace();
     }
 
     /**
@@ -387,11 +387,11 @@ public class ConsistentStore
     @Override
     public long getTotalSpace()
     {
-        return _metaDataStore.getTotalSpace();
+        return _replicaStore.getTotalSpace();
     }
 
-    public MetaDataStore getStore()
+    public ReplicaStore getStore()
     {
-        return _metaDataStore;
+        return _replicaStore;
     }
 }

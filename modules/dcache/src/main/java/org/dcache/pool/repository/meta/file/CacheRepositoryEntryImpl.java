@@ -27,15 +27,15 @@ import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileRepositoryChannel;
-import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
 import org.dcache.vehicles.FileAttributes;
 
-public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.UpdatableRecord
+public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.UpdatableRecord
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
     private final CacheRepositoryEntryState _state;
@@ -178,13 +178,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.
     }
 
     @Override
-    public synchronized EntryState getState()
+    public synchronized ReplicaState getState()
     {
         return _state.getState();
     }
 
     @Override
-    public synchronized Void setState(EntryState state)
+    public synchronized Void setState(ReplicaState state)
         throws CacheException
     {
         try {

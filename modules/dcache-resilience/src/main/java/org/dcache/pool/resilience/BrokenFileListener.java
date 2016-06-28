@@ -61,7 +61,7 @@ package org.dcache.pool.resilience;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
@@ -87,7 +87,7 @@ public final class BrokenFileListener implements StateChangeListener {
 
     @Override
     public void stateChanged(StateChangeEvent event) {
-        if (event.getNewState() == EntryState.BROKEN) {
+        if (event.getNewState() == ReplicaState.BROKEN) {
             corruptFileTopic.notify(new CorruptFileMessage(poolName,
                                                            event.getPnfsId()));
         }

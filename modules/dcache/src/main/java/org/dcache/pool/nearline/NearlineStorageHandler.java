@@ -88,7 +88,7 @@ import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
@@ -354,7 +354,7 @@ public class NearlineStorageHandler
     @Override
     public void stateChanged(StateChangeEvent event)
     {
-        if (event.getNewState() == EntryState.REMOVED) {
+        if (event.getNewState() == ReplicaState.REMOVED) {
             PnfsId pnfsId = event.getPnfsId();
             stageRequests.cancel(pnfsId);
             flushRequests.cancel(pnfsId);
@@ -804,7 +804,7 @@ public class NearlineStorageHandler
                 notifyNamespace(pnfsId, fileAttributesForNotification);
 
                 try {
-                    repository.setState(pnfsId, EntryState.CACHED);
+                    repository.setState(pnfsId, ReplicaState.CACHED);
                 } catch (IllegalTransitionException ignored) {
                     /* Apparently the file is no longer precious. Most
                      * likely it got deleted, which is fine, since the
@@ -916,7 +916,7 @@ public class NearlineStorageHandler
         private void removeFile(PnfsId pnfsId)
         {
             try {
-                repository.setState(pnfsId, EntryState.REMOVED);
+                repository.setState(pnfsId, ReplicaState.REMOVED);
             } catch (IllegalTransitionException f) {
                 LOGGER.warn("File not found in name space, but failed to remove {}: {}",
                             pnfsId, f.getMessage());
@@ -988,8 +988,8 @@ public class NearlineStorageHandler
             descriptor =
                     repository.createEntry(
                             fileAttributes,
-                            EntryState.FROM_STORE,
-                            EntryState.CACHED,
+                            ReplicaState.FROM_STORE,
+                            ReplicaState.CACHED,
                             Collections.<StickyRecord>emptyList(),
                             EnumSet.noneOf(Repository.OpenFlags.class));
             LOGGER.debug("Stage request created for {}.", pnfsId);

@@ -18,10 +18,9 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.MetaDataRecord;
-import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.v3.RepositoryException;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -33,7 +32,7 @@ import static java.util.stream.Collectors.toSet;
  * access method.
  */
 public class FileMetaDataRepository
-    implements MetaDataStore
+    implements ReplicaStore
 {
     private static final Logger _log =
         LoggerFactory.getLogger("logger.org.dcache.repository");
@@ -117,7 +116,7 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
+    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
         throws DuplicateEntryException, CacheException
     {
         try {
@@ -147,7 +146,7 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public MetaDataRecord get(PnfsId id)
+    public ReplicaRecord get(PnfsId id)
         throws CacheException
     {
         Path dataFile = _fileStore.get(id);

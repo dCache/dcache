@@ -25,20 +25,20 @@ import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.elementsEqual;
 import static com.google.common.collect.Iterables.filter;
-import static org.dcache.pool.repository.EntryState.*;
+import static org.dcache.pool.repository.ReplicaState.*;
 
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.
  */
-public class CacheRepositoryEntryImpl implements MetaDataRecord
+public class CacheRepositoryEntryImpl implements ReplicaRecord
 {
     private static final Logger _log =
         LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
@@ -48,14 +48,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             ImmutableList.of(new StickyRecord("system", -1));
 
     private final PnfsId _pnfsId;
-    private final AbstractBerkeleyDBMetaDataRepository _repository;
+    private final AbstractBerkeleyDBReplicaStore _repository;
 
     /**
      * Sticky records held by the file.
      */
     private ImmutableList<StickyRecord> _sticky;
 
-    private EntryState _state;
+    private ReplicaState _state;
 
     private long _creationTime = System.currentTimeMillis();
 
@@ -65,7 +65,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
     private long _size;
 
-    public CacheRepositoryEntryImpl(AbstractBerkeleyDBMetaDataRepository repository, PnfsId pnfsId)
+    public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId)
     {
         _repository = repository;
         _pnfsId = pnfsId;
@@ -74,7 +74,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _lastAccess = _creationTime;
     }
 
-    public CacheRepositoryEntryImpl(AbstractBerkeleyDBMetaDataRepository repository, PnfsId pnfsId, EntryState state,
+    public CacheRepositoryEntryImpl(AbstractBerkeleyDBReplicaStore repository, PnfsId pnfsId, ReplicaState state,
                                     Collection<StickyRecord> sticky, BasicFileAttributes attributes)
     {
         _repository = repository;
@@ -103,7 +103,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized int incrementLinkCount()
     {
-        EntryState state = getState();
+        ReplicaState state = getState();
         if (state == REMOVED || state == DESTROYED) {
             throw new IllegalStateException("Entry is marked as removed");
         }
@@ -209,7 +209,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized EntryState getState()
+    public synchronized ReplicaState getState()
     {
         return _state;
     }
@@ -254,7 +254,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     public synchronized <T> T update(Update<T> update) throws CacheException
     {
         T result;
-        EntryState state = _state;
+        ReplicaState state = _state;
         ImmutableList<StickyRecord> sticky = _sticky;
         Transaction transaction = _repository.beginTransaction();
         try {
@@ -350,7 +350,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
 
         @Override
-        public Void setState(EntryState state) throws CacheException
+        public Void setState(ReplicaState state) throws CacheException
         {
             if (_state != state) {
                 if (_state.isMutable() && !state.isMutable()) {
@@ -379,7 +379,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         }
 
         @Override
-        public EntryState getState()
+        public ReplicaState getState()
         {
             return CacheRepositoryEntryImpl.this.getState();
         }

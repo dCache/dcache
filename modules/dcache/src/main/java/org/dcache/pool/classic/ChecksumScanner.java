@@ -32,7 +32,7 @@ import dmg.util.command.Command;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
@@ -439,8 +439,8 @@ public class ChecksumScanner
         {
             for (PnfsId id : repository) {
                 try {
-                    if (_repository.getState(id) == EntryState.CACHED ||
-                            _repository.getState(id) == EntryState.PRECIOUS) {
+                    if (_repository.getState(id) == ReplicaState.CACHED ||
+                        _repository.getState(id) == ReplicaState.PRECIOUS) {
                         ReplicaDescriptor handle =
                             _repository.openEntry(id, EnumSet.of(OpenFlags.NOATIME));
                         try {
@@ -459,7 +459,7 @@ public class ChecksumScanner
                                     poolName,
                                     e.getMessage());
                     try {
-                        _repository.setState(id, EntryState.BROKEN);
+                        _repository.setState(id, ReplicaState.BROKEN);
                     } catch (CacheException f) {
                         _log.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
                     }

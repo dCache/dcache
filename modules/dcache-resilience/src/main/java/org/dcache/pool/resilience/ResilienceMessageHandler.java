@@ -61,13 +61,12 @@ package org.dcache.pool.resilience;
 
 import java.util.concurrent.ExecutorService;
 
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
 import org.dcache.cells.MessageReply;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.resilience.ForceSystemStickyBitMessage;
@@ -97,7 +96,7 @@ public final class ResilienceMessageHandler implements CellMessageReceiver {
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
             try {
-                repository.setState(message.getPnfsId(), EntryState.REMOVED);
+                repository.setState(message.getPnfsId(), ReplicaState.REMOVED);
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);

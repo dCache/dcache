@@ -30,7 +30,7 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.ChecksumModule;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
@@ -216,7 +216,7 @@ public class P2PClient
 
     public synchronized int newCompanion(String sourcePoolName,
                                          FileAttributes fileAttributes,
-                                         EntryState targetState,
+                                         ReplicaState targetState,
                                          List<StickyRecord> stickyRecords,
                                          CacheFileAvailable callback,
                                          boolean forceSourceMode,
@@ -241,7 +241,7 @@ public class P2PClient
         if (_pnfs == null) {
             throw new IllegalStateException("PNFS stub not initialized");
         }
-        if (_repository.getState(fileAttributes.getPnfsId()) != EntryState.NEW) {
+        if (_repository.getState(fileAttributes.getPnfsId()) != ReplicaState.NEW) {
             throw new IllegalStateException("Replica already exists");
         }
 
@@ -408,8 +408,8 @@ public class P2PClient
             FileAttributes fileAttributes = new FileAttributes();
             fileAttributes.setPnfsId(pnfsId);
             List<StickyRecord> stickyRecords = Collections.emptyList();
-            newCompanion(pool, fileAttributes, EntryState.CACHED, stickyRecords, null,
-                    false, null);
+            newCompanion(pool, fileAttributes, ReplicaState.CACHED, stickyRecords, null,
+                         false, null);
             return "Transfer Initiated";
         }
     }

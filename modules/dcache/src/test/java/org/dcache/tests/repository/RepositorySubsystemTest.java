@@ -43,11 +43,11 @@ import org.dcache.pool.classic.SpaceSweeper2;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FlatFileStore;
 import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -55,14 +55,14 @@ import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.meta.file.FileMetaDataRepository;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.v5.ReplicaRepository;
 import org.dcache.tests.cells.CellEndpointHelper;
 import org.dcache.tests.cells.CellStubHelper;
 import org.dcache.tests.cells.Message;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
-import static org.dcache.pool.repository.EntryState.*;
+import static org.dcache.pool.repository.ReplicaState.*;
 import static org.junit.Assert.*;
 
 public class RepositorySubsystemTest
@@ -95,9 +95,9 @@ public class RepositorySubsystemTest
     private PnfsHandler pnfs;
 
     private Account account;
-    private CacheRepositoryV5 repository;
+    private ReplicaRepository repository;
     private SpaceSweeper2 sweeper;
-    private MetaDataStore metaDataStore;
+    private ReplicaStore replicaStore;
 
     private Path metaRoot;
     private Path dataRoot;
@@ -119,7 +119,7 @@ public class RepositorySubsystemTest
     }
 
     private void createEntry(final FileAttributes attributes,
-                             final EntryState state,
+                             final ReplicaState state,
                              final List<StickyRecord> sticky)
         throws Throwable
     {
@@ -137,10 +137,10 @@ public class RepositorySubsystemTest
             {
                 ReplicaDescriptor handle =
                         repository.createEntry(attributes,
-                                EntryState.FROM_CLIENT,
-                                state,
-                                sticky,
-                                EnumSet.noneOf(OpenFlags.class));
+                                               ReplicaState.FROM_CLIENT,
+                                               state,
+                                               sticky,
+                                               EnumSet.noneOf(OpenFlags.class));
                 try {
                     handle.allocate(attributes.getSize());
                     createFile(handle, attributes.getSize());
@@ -187,12 +187,12 @@ public class RepositorySubsystemTest
     {
         FairQueueAllocation allocator = new FairQueueAllocation();
         FileStore fileStore = new FlatFileStore(dataRoot);
-        metaDataStore =
+        replicaStore =
             new FileMetaDataRepository(fileStore, metaRoot);
 
         account = new Account();
         sweeper = new SpaceSweeper2();
-        repository = new CacheRepositoryV5();
+        repository = new ReplicaRepository();
 
         allocator.setAccount(account);
         repository.setCellEndpoint(cell);
@@ -200,7 +200,7 @@ public class RepositorySubsystemTest
         repository.setAllocator(allocator);
         repository.setPnfsHandler(pnfs);
         repository.setAccount(account);
-        repository.setMetaDataStore(metaDataStore);
+        repository.setReplicaStore(replicaStore);
         repository.setExecutor(Executors.newSingleThreadScheduledExecutor());
         repository.setSynchronousNotification(true);
         repository.addListener(this);
@@ -253,14 +253,14 @@ public class RepositorySubsystemTest
         initRepository();
         repository.init();
         repository.load();
-        createEntry(attributes1, EntryState.PRECIOUS,
+        createEntry(attributes1, ReplicaState.PRECIOUS,
                     Arrays.asList(new StickyRecord("system", 0)));
-        createEntry(attributes2, EntryState.CACHED,
+        createEntry(attributes2, ReplicaState.CACHED,
                     Arrays.asList(new StickyRecord("system", 0)));
-        createEntry(attributes3, EntryState.CACHED,
+        createEntry(attributes3, ReplicaState.CACHED,
                     Arrays.asList(new StickyRecord("system", -1)));
         repository.shutdown();
-        metaDataStore.close();
+        replicaStore.close();
 
         /* Create repository.
          */
@@ -277,7 +277,7 @@ public class RepositorySubsystemTest
     {
         sweeper.stop();
         repository.shutdown();
-        metaDataStore.close();
+        replicaStore.close();
         if (metaRoot != null) {
             deleteDirectory(metaRoot);
         }
@@ -292,7 +292,7 @@ public class RepositorySubsystemTest
         stateChangeEvents.add(event);
     }
 
-    public void expectStateChangeEvent(PnfsId id, EntryState oldState, EntryState newState)
+    public void expectStateChangeEvent(PnfsId id, ReplicaState oldState, ReplicaState newState)
     {
         StateChangeEvent event = stateChangeEvents.poll();
         assertNotNull(event);
@@ -319,14 +319,14 @@ public class RepositorySubsystemTest
     }
 
     private void assertCacheEntry(CacheEntry entry, PnfsId id,
-                                  long size, EntryState state)
+                                  long size, ReplicaState state)
     {
         assertEquals(id, entry.getPnfsId());
         assertEquals(size, entry.getReplicaSize());
         assertEquals(state, entry.getState());
     }
 
-    private void assertCanOpen(PnfsId id, long size, EntryState state)
+    private void assertCanOpen(PnfsId id, long size, ReplicaState state)
     {
         try {
             ReplicaDescriptor handle =
@@ -760,8 +760,8 @@ public class RepositorySubsystemTest
     private void createEntry4(final long overallocation,
                               final boolean failSetAttributes,
                               final boolean cancel,
-                              final EntryState transferState,
-                              final EntryState finalState)
+                              final ReplicaState transferState,
+                              final ReplicaState finalState)
         throws Throwable
     {
         new CellStubHelper(cell) {
@@ -951,7 +951,7 @@ public class RepositorySubsystemTest
         assertFalse(repository.getEntry(id2).isSticky());
         repository.setSticky(id2, "system", now + 500, true);
         assertTrue(repository.getEntry(id2).isSticky());
-        Thread.currentThread().sleep(600 + CacheRepositoryV5.EXPIRATION_CLOCKSHIFT_EXTRA_TIME);
+        Thread.currentThread().sleep(600 + ReplicaRepository.EXPIRATION_CLOCKSHIFT_EXTRA_TIME);
         assertFalse(repository.getEntry(id2).isSticky());
     }
 

@@ -49,11 +49,11 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.MetaDataCache;
-import org.dcache.pool.repository.MetaDataRecord;
-import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.ReplicaStoreCache;
+import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceRecord;
@@ -70,9 +70,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
-import static org.dcache.pool.repository.EntryState.NEW;
-import static org.dcache.pool.repository.EntryState.PRECIOUS;
-import static org.dcache.pool.repository.EntryState.REMOVED;
+import static org.dcache.pool.repository.ReplicaState.NEW;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
+import static org.dcache.pool.repository.ReplicaState.REMOVED;
 import static org.dcache.util.ByteUnit.GiB;
 
 
@@ -83,7 +83,7 @@ import static org.dcache.util.ByteUnit.GiB;
  * before the load method finishes. Other methods of the Repository
  * interface will fail until load has completed.
  */
-public class CacheRepositoryV5
+public class ReplicaRepository
     extends AbstractCellComponent
     implements Repository, CellCommandListener, CellSetupProvider
 {
@@ -100,7 +100,7 @@ public class CacheRepositoryV5
      */
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(CacheRepositoryV5.class);
+            LoggerFactory.getLogger(ReplicaRepository.class);
 
     /**
      * Time in millisecs added to each sticky expiration task.  We
@@ -137,7 +137,7 @@ public class CacheRepositoryV5
      * Meta data about files in the pool.
      */
     @GuardedBy("_stateLock")
-    private MetaDataStore _store;
+    private ReplicaStore _store;
 
     /**
      * Current state of the repository.
@@ -326,12 +326,12 @@ public class CacheRepositoryV5
         }
     }
 
-    public void setMetaDataStore(MetaDataStore store)
+    public void setReplicaStore(ReplicaStore store)
     {
         _stateLock.readLock().lock();
         try {
             checkUninitialized();
-            _store = new MetaDataCache(store, new StateChangeListener()
+            _store = new ReplicaStoreCache(store, new StateChangeListener()
 
             {
                 @Override
@@ -499,9 +499,9 @@ public class CacheRepositoryV5
             LOGGER.info("Checking meta data for {} files.", fileCount);
             int cnt = 0;
             for (PnfsId id: ids) {
-                MetaDataRecord entry = readMetaDataRecord(id);
+                ReplicaRecord entry = readReplicaRecord(id);
                 if (entry != null)  {
-                    EntryState state = entry.getState();
+                    ReplicaState state = entry.getState();
                     LOGGER.debug("{} {}", id, state);
                 }
                 _initializationProgress = ((float) cnt) / fileCount;
@@ -547,8 +547,8 @@ public class CacheRepositoryV5
 
     @Override
     public ReplicaDescriptor createEntry(FileAttributes fileAttributes,
-                                   EntryState transferState,
-                                   EntryState targetState,
+                                   ReplicaState transferState,
+                                   ReplicaState targetState,
                                    List<StickyRecord> stickyRecords,
                                    Set<OpenFlags> flags)
         throws CacheException
@@ -583,7 +583,7 @@ public class CacheRepositoryV5
 
             LOGGER.info("Creating new entry for {}", id);
 
-            MetaDataRecord entry = _store.create(id, flags);
+            ReplicaRecord entry = _store.create(id, flags);
             return entry.update(r -> {
                 r.setFileAttributes(fileAttributes);
                 r.setState(transferState);
@@ -611,7 +611,7 @@ public class CacheRepositoryV5
             checkInitialized();
 
             FileAttributes fileAttributes;
-            MetaDataRecord entry = getMetaDataRecord(id);
+            ReplicaRecord entry = getReplicaRecord(id);
             synchronized (entry) {
                 switch (entry.getState()) {
                 case NEW:
@@ -641,7 +641,7 @@ public class CacheRepositoryV5
              * sure to remove any stray pointers.
              */
             try {
-                MetaDataRecord entry = _store.create(id, EnumSet.noneOf(OpenFlags.class));
+                ReplicaRecord entry = _store.create(id, EnumSet.noneOf(OpenFlags.class));
                 entry.update(r -> r.setState(REMOVED));
             } catch (DuplicateEntryException concurrentCreation) {
                 return openEntry(id, flags);
@@ -662,7 +662,7 @@ public class CacheRepositoryV5
         try {
             checkInitialized();
 
-            MetaDataRecord entry = getMetaDataRecord(id);
+            ReplicaRecord entry = getReplicaRecord(id);
             synchronized (entry) {
                 if (entry.getState() == NEW) {
                     throw new FileNotInCacheException("File is incomplete");
@@ -689,9 +689,9 @@ public class CacheRepositoryV5
         try {
             checkInitialized();
 
-            MetaDataRecord entry;
+            ReplicaRecord entry;
             try {
-                entry = getMetaDataRecord(id);
+                entry = getReplicaRecord(id);
             } catch (FileNotInCacheException e) {
                 /* Attempts to set a sticky bit on a missing file may
                  * indicate a stale registration in the name space.
@@ -750,7 +750,7 @@ public class CacheRepositoryV5
     }
 
     @Override
-    public void setState(PnfsId id, EntryState state)
+    public void setState(PnfsId id, ReplicaState state)
         throws IllegalArgumentException, InterruptedException, CacheException
     {
         if (id == null) {
@@ -762,14 +762,14 @@ public class CacheRepositoryV5
             checkOpen();
 
             try {
-                MetaDataRecord entry = getMetaDataRecord(id);
+                ReplicaRecord entry = getReplicaRecord(id);
                 entry.update(r -> {
-                    EntryState source = r.getState();
+                    ReplicaState source = r.getState();
                     switch (source) {
                     case NEW:
                     case REMOVED:
                     case DESTROYED:
-                        if (state == EntryState.REMOVED) {
+                        if (state == ReplicaState.REMOVED) {
                             /* File doesn't exist or is already
                              * deleted. That's all we care about.
                              */
@@ -844,14 +844,14 @@ public class CacheRepositoryV5
     }
 
     @Override
-    public EntryState getState(PnfsId id)
+    public ReplicaState getState(PnfsId id)
         throws CacheException, InterruptedException
     {
         _stateLock.readLock().lock();
         try {
             checkInitialized();
             try {
-                return getMetaDataRecord(id).getState();
+                return getReplicaRecord(id).getState();
             } catch (FileNotInCacheException e) {
                 return NEW;
             }
@@ -924,7 +924,7 @@ public class CacheRepositoryV5
         }
     }
 
-    @GuardedBy("getMetaDataRecord(entry.getPnfsid())")
+    @GuardedBy("getReplicaRecord(entry.getPnfsid())")
     protected void updateRemovable(CacheEntry entry)
     {
         PnfsId id = entry.getPnfsId();
@@ -943,10 +943,10 @@ public class CacheRepositoryV5
      * @throw FileNotInCacheException in case file is not in
      *        repository
      */
-    private MetaDataRecord getMetaDataRecord(PnfsId pnfsId)
+    private ReplicaRecord getReplicaRecord(PnfsId pnfsId)
         throws CacheException, InterruptedException
     {
-        MetaDataRecord entry = _store.get(pnfsId);
+        ReplicaRecord entry = _store.get(pnfsId);
         if (entry == null) {
             throw new FileNotInCacheException("Entry not in repository : "
                                               + pnfsId);
@@ -958,7 +958,7 @@ public class CacheRepositoryV5
      * Reads an entry from the meta data store. Retries indefinitely
      * in case of timeouts.
      */
-    private MetaDataRecord readMetaDataRecord(PnfsId id)
+    private ReplicaRecord readReplicaRecord(PnfsId id)
         throws CacheException, InterruptedException
     {
         /* In case of communication problems with the pool, there is
@@ -1045,7 +1045,7 @@ public class CacheRepositoryV5
         {
             try {
                 _tasks.remove(_id);
-                MetaDataRecord entry = _store.get(_id);
+                ReplicaRecord entry = _store.get(_id);
                 if (entry != null) {
                     Collection<StickyRecord> removed = entry.removeExpiredStickyFlags();
                     if (removed.isEmpty()) {

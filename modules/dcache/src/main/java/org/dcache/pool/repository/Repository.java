@@ -74,8 +74,8 @@ public interface Repository
      * @throws CacheException in case of other errors
      */
     ReplicaDescriptor createEntry(FileAttributes fileAttributes,
-                                  EntryState transferState,
-                                  EntryState targetState,
+                                  ReplicaState transferState,
+                                  ReplicaState targetState,
                                   List<StickyRecord> sticky,
                                   Set<OpenFlags> flags)
         throws CacheException;
@@ -154,7 +154,7 @@ public interface Repository
      * @throws InterruptedException if thread was interrupted
      * @throws CacheException in case of other errors
      */
-    EntryState getState(PnfsId id)
+    ReplicaState getState(PnfsId id)
         throws InterruptedException,
                CacheException;
 
@@ -174,7 +174,7 @@ public interface Repository
      * @throws InterruptedException if thread was interrupted
      * @throws CacheException in case of other errors
      */
-    void setState(PnfsId id, EntryState state)
+    void setState(PnfsId id, ReplicaState state)
         throws IllegalArgumentException, InterruptedException, CacheException;
 
     /**

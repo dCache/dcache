@@ -16,7 +16,7 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.repository.Account;
-import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.SpaceRecord;
 
 class CheckHealthTask implements Runnable
@@ -24,7 +24,7 @@ class CheckHealthTask implements Runnable
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckHealthTask.class);
     public static final int GRACE_PERIOD_ON_FREE = 60_000;
 
-    private CacheRepositoryV5 _repository;
+    private ReplicaRepository _repository;
 
     /**
      * Shared repository account object for tracking space.
@@ -34,7 +34,7 @@ class CheckHealthTask implements Runnable
     /**
      * Meta data about files in the pool.
      */
-    private MetaDataStore _metaDataStore;
+    private ReplicaStore _replicaStore;
 
     /**
      * Command string to execute periodically to check the health of the file system,
@@ -42,7 +42,7 @@ class CheckHealthTask implements Runnable
      */
     private String[] _commands = {};
 
-    public void setRepository(CacheRepositoryV5 repository)
+    public void setRepository(ReplicaRepository repository)
     {
         _repository = repository;
     }
@@ -52,9 +52,9 @@ class CheckHealthTask implements Runnable
         _account = account;
     }
 
-    public void setMetaDataStore(MetaDataStore store)
+    public void setReplicaStore(ReplicaStore store)
     {
-        _metaDataStore = store;
+        _replicaStore = store;
     }
 
     public void setCommand(String s)
@@ -73,7 +73,7 @@ class CheckHealthTask implements Runnable
         case CLOSED:
             break;
         case OPEN:
-            if (!_metaDataStore.isOk()) {
+            if (!_replicaStore.isOk()) {
                 _repository.fail(FaultAction.DISABLED, "I/O test failed");
             }
 
@@ -187,7 +187,7 @@ class CheckHealthTask implements Runnable
         /* At any time the file system must have at least as much free
          * space as shows in the account. Thus invariantly
          *
-         *      _metaDataStore.getFreeSpace >= _account.getFree
+         *      _replicaStore.getFreeSpace >= _account.getFree
          *
          * Taking the monitor lock on the account object prevents
          * anybody else from allocating space from the account. Hence
@@ -203,8 +203,8 @@ class CheckHealthTask implements Runnable
              * last delete.
              */
             if (account.getTimeOfLastFree() > System.currentTimeMillis() - GRACE_PERIOD_ON_FREE) {
-                long free = _metaDataStore.getFreeSpace();
-                long total = _metaDataStore.getTotalSpace();
+                long free = _replicaStore.getFreeSpace();
+                long total = _replicaStore.getTotalSpace();
 
                 if (total == 0) {
                     LOGGER.debug("Java reported file system size as 0. Skipping file system size check.");

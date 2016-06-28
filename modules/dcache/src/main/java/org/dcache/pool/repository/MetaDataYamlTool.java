@@ -14,14 +14,14 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
-public class MetaDataStoreYamlTool
+public class MetaDataYamlTool
 {
-    static MetaDataStore createStore(Class<? extends MetaDataStore> clazz,
-                                     FileStore fileStore, File poolDir)
+    static ReplicaStore createStore(Class<? extends ReplicaStore> clazz,
+                                    FileStore fileStore, File poolDir)
         throws NoSuchMethodException, InstantiationException,
                IllegalAccessException, InvocationTargetException
     {
-        Constructor<? extends MetaDataStore> constructor =
+        Constructor<? extends ReplicaStore> constructor =
             clazz.getConstructor(FileStore.class, File.class, Boolean.TYPE);
         return constructor.newInstance(fileStore, poolDir, true);
     }
@@ -30,7 +30,7 @@ public class MetaDataStoreYamlTool
         throws Exception
     {
         if (args.length != 2) {
-            System.err.println("Synopsis: MetaDataStoreCopyTool DIR TYPE");
+            System.err.println("Synopsis: MetaDataCopyTool DIR TYPE");
             System.err.println();
             System.err.println("Where DIR is the pool directory and TYPE is the meta");
             System.err.println("data store class.");
@@ -39,15 +39,15 @@ public class MetaDataStoreYamlTool
 
         File poolDir = new File(args[0]);
         FileStore fileStore = new DummyFileStore(DummyFileStore.Mode.ALL_EXIST);
-        try (MetaDataStore metaStore =
-                     createStore(Class.forName(args[1]).asSubclass(MetaDataStore.class), fileStore, poolDir)) {
+        try (ReplicaStore metaStore =
+                     createStore(Class.forName(args[1]).asSubclass(ReplicaStore.class), fileStore, poolDir)) {
             metaStore.init();
 
             PrintWriter out = new PrintWriter(System.out);
             PrintWriter error = new PrintWriter(System.err);
-            for (PnfsId id : metaStore.index(MetaDataStore.IndexOption.META_ONLY)) {
+            for (PnfsId id : metaStore.index(ReplicaStore.IndexOption.META_ONLY)) {
                 try {
-                    MetaDataRecord record = metaStore.get(id);
+                    ReplicaRecord record = metaStore.get(id);
                     if (record == null) {
                         continue;
                     }

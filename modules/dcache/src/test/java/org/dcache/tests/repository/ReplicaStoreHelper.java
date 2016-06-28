@@ -22,11 +22,11 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.DuplicateEntryException;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.MetaDataRecord;
-import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
@@ -35,11 +35,12 @@ import org.dcache.vehicles.FileAttributes;
 
 import static java.util.stream.Collectors.toList;
 
-public class MetaDataRepositoryHelper implements MetaDataStore {
+public class ReplicaStoreHelper implements ReplicaStore
+{
 
 
 
-    public static class CacheRepositoryEntryImpl implements MetaDataRecord, MetaDataRecord.UpdatableRecord {
+    public static class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.UpdatableRecord {
         private final PnfsId _pnfsId;
 
         private long _creationTime = System.currentTimeMillis();
@@ -50,7 +51,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
         private long _size;
 
-        private EntryState _state;
+        private ReplicaState _state;
 
         private List<StickyRecord> _sticky = new ArrayList<>();
 
@@ -66,7 +67,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
                     Files.getFileAttributeView(path, BasicFileAttributeView.class).readAttributes();
             _lastAccess = attributes.lastModifiedTime().toMillis();
             _size = attributes.size();
-            _state = EntryState.NEW;
+            _state = ReplicaState.NEW;
             _fileAttributes = new FileAttributes();
         }
 
@@ -133,13 +134,13 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized EntryState getState()
+        public synchronized ReplicaState getState()
         {
             return _state;
         }
 
         @Override
-        public Void setState(EntryState state)
+        public Void setState(ReplicaState state)
         {
             _state = state;
             return null;
@@ -221,16 +222,16 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
 
-    private final Map<PnfsId, MetaDataRecord> _entryList = new HashMap<>();
+    private final Map<PnfsId, ReplicaRecord> _entryList = new HashMap<>();
     private final FileStore _repository;
-    public MetaDataRepositoryHelper(FileStore repository) {
+    public ReplicaStoreHelper(FileStore repository) {
         _repository = repository;
     }
 
     @Override
-    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws DuplicateEntryException, RepositoryException {
+    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws DuplicateEntryException, RepositoryException {
         try {
-            MetaDataRecord entry = new CacheRepositoryEntryImpl(_repository, id);
+            ReplicaRecord entry = new CacheRepositoryEntryImpl(_repository, id);
             _entryList.put(id, entry);
             return entry;
         } catch (IOException e) {
@@ -239,7 +240,7 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
     }
 
     @Override
-    public MetaDataRecord get(PnfsId id) throws RepositoryException
+    public ReplicaRecord get(PnfsId id) throws RepositoryException
     {
         try {
             if (!Files.exists(_repository.get(id))) {

@@ -27,7 +27,7 @@ public interface CacheEntry
      *
      * @return entry state
      */
-    EntryState getState();
+    ReplicaState getState();
 
     /**
      *

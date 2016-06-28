@@ -2,7 +2,7 @@ package org.dcache.pool.classic;
 
 import java.util.List;
 
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
@@ -14,5 +14,5 @@ import org.dcache.vehicles.FileAttributes;
 public interface ReplicaStatePolicy
 {
     List<StickyRecord> getStickyRecords(FileAttributes fileAttributes);
-    EntryState getTargetState(FileAttributes fileAttributes);
+    ReplicaState getTargetState(FileAttributes fileAttributes);
 }

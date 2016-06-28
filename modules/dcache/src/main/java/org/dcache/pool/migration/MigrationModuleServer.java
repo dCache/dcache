@@ -28,7 +28,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.p2p.P2PClient;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
@@ -36,8 +36,8 @@ import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.pool.repository.EntryState.CACHED;
-import static org.dcache.pool.repository.EntryState.PRECIOUS;
+import static org.dcache.pool.repository.ReplicaState.CACHED;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
 
 /**
  * Server component of migration module.
@@ -172,7 +172,7 @@ public class MigrationModuleServer
         private final PnfsId _pnfsId;
         private final FileAttributes _fileAttributes;
         private final List<StickyRecord> _stickyRecords;
-        private final EntryState _targetState;
+        private final ReplicaState _targetState;
         private final String _pool;
         private final boolean _computeChecksumOnUpdate;
         private final boolean _forceSourceMode;
@@ -218,8 +218,8 @@ public class MigrationModuleServer
         public synchronized void start()
             throws IOException, CacheException, InterruptedException
         {
-            EntryState state = _repository.getState(_pnfsId);
-            if (state == EntryState.NEW) {
+            ReplicaState state = _repository.getState(_pnfsId);
+            if (state == ReplicaState.NEW) {
                 if (_isMetaOnly) {
                     throw new CacheException(CacheException.FILE_NOT_IN_REPOSITORY, "Pool does not contain " + _pnfsId);
                 }
@@ -293,7 +293,7 @@ public class MigrationModuleServer
 
                 disableInterrupt();
 
-                EntryState state = _repository.getState(_pnfsId);
+                ReplicaState state = _repository.getState(_pnfsId);
                 switch (state) {
                 case CACHED:
                     if (_targetState == PRECIOUS) {

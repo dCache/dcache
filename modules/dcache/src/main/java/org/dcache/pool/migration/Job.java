@@ -33,7 +33,7 @@ import dmg.cells.nucleus.DelayedReply;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -563,15 +563,15 @@ public class Job
         }
     }
 
-    private EntryState getTargetState(CacheEntry entry)
+    private ReplicaState getTargetState(CacheEntry entry)
     {
         switch (_definition.targetMode.state) {
         case SAME:
             return entry.getState();
         case CACHED:
-            return EntryState.CACHED;
+            return ReplicaState.CACHED;
         case PRECIOUS:
-            return EntryState.PRECIOUS;
+            return ReplicaState.PRECIOUS;
         default:
             throw new IllegalStateException("Unsupported target mode");
         }
@@ -651,7 +651,7 @@ public class Job
     public void stateChanged(StateChangeEvent event)
     {
         PnfsId pnfsId = event.getPnfsId();
-        if (event.getNewState() == EntryState.REMOVED) {
+        if (event.getNewState() == ReplicaState.REMOVED) {
             _lock.lock();
             try {
                 remove(pnfsId);
@@ -890,7 +890,7 @@ public class Job
                 break;
             case DELETE:
                 if (!isPinned(entry)) {
-                    repository.setState(pnfsId, EntryState.REMOVED);
+                    repository.setState(pnfsId, ReplicaState.REMOVED);
                     break;
                 }
                 // Fall through
@@ -903,14 +903,14 @@ public class Job
                         repository.setSticky(pnfsId, owner, 0, true);
                     }
                 }
-                repository.setState(pnfsId, EntryState.CACHED);
+                repository.setState(pnfsId, ReplicaState.CACHED);
                 break;
             case CACHED:
                 applySticky(pnfsId, mode.stickyRecords);
-                repository.setState(pnfsId, EntryState.CACHED);
+                repository.setState(pnfsId, ReplicaState.CACHED);
                 break;
             case PRECIOUS:
-                repository.setState(pnfsId, EntryState.PRECIOUS);
+                repository.setState(pnfsId, ReplicaState.PRECIOUS);
                 applySticky(pnfsId, mode.stickyRecords);
                 break;
             }

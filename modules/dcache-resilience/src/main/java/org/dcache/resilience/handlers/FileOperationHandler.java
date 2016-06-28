@@ -83,7 +83,7 @@ import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.PoolSelectionStrategy;
 import org.dcache.pool.migration.Task;
 import org.dcache.pool.migration.TaskParameters;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.resilience.data.FileOperation;
 import org.dcache.resilience.data.FileOperationMap;
@@ -329,7 +329,7 @@ public class FileOperationHandler {
                         1);
 
         Task task = new Task(taskParameters, completionHandler, source, pnfsId,
-                             EntryState.CACHED, ONLINE_STICKY_RECORD,
+                             ReplicaState.CACHED, ONLINE_STICKY_RECORD,
                              Collections.EMPTY_LIST, attributes,
                              attributes.getAccessTime());
         LOGGER.trace("Created migration task for {}: {}.", pnfsId, task);

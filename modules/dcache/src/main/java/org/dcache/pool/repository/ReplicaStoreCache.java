@@ -22,34 +22,34 @@ import org.dcache.pool.repository.v5.CacheEntryImpl;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.pool.repository.EntryState.DESTROYED;
-import static org.dcache.pool.repository.EntryState.NEW;
+import static org.dcache.pool.repository.ReplicaState.DESTROYED;
+import static org.dcache.pool.repository.ReplicaState.NEW;
 
 /**
- * Cache of MetaDataRecords.
+ * Cache of ReplicaRecords.
  *
- * The class decorates another MetaDataStore. The cache assumes that
- * it has exclusive access to the inner MetaDataStore. The inner
- * MetaDataStore must be thread-safe, however the cache will never
- * concurrently invoke several methods of the inner MetaDataStore
+ * The class decorates a ReplicaStore. The cache assumes that
+ * it has exclusive access to the inner ReplicaStore. The inner
+ * ReplicaStore must be thread-safe, however the cache will never
+ * concurrently invoke several methods of the inner ReplicaStore
  * using the same PNFS ID.
  *
- * The cache guarantees that it always returns the same MetaDataRecord
+ * The cache guarantees that it always returns the same ReplicaStore
  * instance for a given entry.
  *
  * The cache submits state change events to a StateChangeListener. The
  * listener is called from the thread making the modification and with
- * the MetaDataRecord locked. Care must be taken in the listener to
+ * the ReplicaRecord locked. Care must be taken in the listener to
  * not cause deadlocks or slow down the store.
  */
-public class MetaDataCache
-    implements MetaDataStore
+public class ReplicaStoreCache
+    implements ReplicaStore
 {
-    /** Map of cached MetaDataRecords.
+    /** Map of cached ReplicaRecords.
      */
     private final ConcurrentMap<PnfsId,Monitor> _entries;
 
-    private final MetaDataStore _inner;
+    private final ReplicaStore _inner;
     private final StateChangeListener _stateChangeListener;
     private final FaultListener _faultListener;
 
@@ -58,7 +58,7 @@ public class MetaDataCache
     /**
      * Constructs a new cache.
      */
-    public MetaDataCache(MetaDataStore inner, StateChangeListener stateChangeListener, FaultListener faultListener)
+    public ReplicaStoreCache(ReplicaStore inner, StateChangeListener stateChangeListener, FaultListener faultListener)
     {
         _inner = inner;
         _stateChangeListener = stateChangeListener;
@@ -69,7 +69,7 @@ public class MetaDataCache
     /**
      * Encapsulates operations on meta data records, ensuring sequential
      * access to any particular record. The class delegates operations to
-     * both the store and to the decorated MetaDataRecord.
+     * both the store and to the decorated ReplicaRecord.
      *
      * Correctness follows by observing that
      *
@@ -92,17 +92,17 @@ public class MetaDataCache
      * The point from which the condition in item 1 is true is marked by
      * assertions in the code.
      */
-    private class Monitor implements MetaDataRecord
+    private class Monitor implements ReplicaRecord
     {
         private final PnfsId _id;
-        private MetaDataRecord _record;
+        private ReplicaRecord _record;
 
         private Monitor(PnfsId id)
         {
             _id = id;
         }
 
-        private synchronized MetaDataRecord get()
+        private synchronized ReplicaRecord get()
                 throws InterruptedException, CacheException
         {
             if (_entries.get(_id) != this) {
@@ -122,7 +122,7 @@ public class MetaDataCache
             return this;
         }
 
-        private synchronized MetaDataRecord create(Set<Repository.OpenFlags> flags)
+        private synchronized ReplicaRecord create(Set<Repository.OpenFlags> flags)
                 throws CacheException
         {
             if (_entries.get(_id) != this || _record != null) {
@@ -197,7 +197,7 @@ public class MetaDataCache
         }
 
         @Override
-        public EntryState getState()
+        public ReplicaState getState()
         {
             try {
                 return _record.getState();
@@ -268,7 +268,7 @@ public class MetaDataCache
         public synchronized int decrementLinkCount()
         {
             int cnt = _record.decrementLinkCount();
-            if (cnt == 0 && _record.getState() == EntryState.REMOVED) {
+            if (cnt == 0 && _record.getState() == ReplicaState.REMOVED) {
                 destroy();
             }
             return cnt;
@@ -362,7 +362,7 @@ public class MetaDataCache
                                     }
 
                                     @Override
-                                    public Void setState(EntryState state) throws CacheException
+                                    public Void setState(ReplicaState state) throws CacheException
                                     {
                                         if (r.getState() != state) {
                                             CacheEntry oldEntry = new CacheEntryImpl(_record);
@@ -371,7 +371,7 @@ public class MetaDataCache
                                             _stateChangeListener.stateChanged(
                                                     new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(),
                                                                          newEntry.getState()));
-                                            if (r.getLinkCount() == 0 && state == EntryState.REMOVED) {
+                                            if (r.getLinkCount() == 0 && state == ReplicaState.REMOVED) {
                                                 destroy();
                                             }
                                         }
@@ -391,7 +391,7 @@ public class MetaDataCache
                                     }
 
                                     @Override
-                                    public EntryState getState()
+                                    public ReplicaState getState()
                                     {
                                         return r.getState();
                                     }
@@ -412,7 +412,7 @@ public class MetaDataCache
         }
     }
 
-    public MetaDataRecord get(PnfsId id)
+    public ReplicaRecord get(PnfsId id)
             throws CacheException, InterruptedException
     {
         try {
@@ -425,7 +425,7 @@ public class MetaDataCache
     }
 
     @Override
-    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws CacheException
+    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws CacheException
     {
         try {
             return _entries.computeIfAbsent(id, Monitor::new).create(flags);

@@ -28,7 +28,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 import org.dcache.util.FireAndForgetTask;
@@ -64,7 +64,7 @@ public class Task
 
     private final TaskParameters _parameters;
     private final PnfsId _pnfsId;
-    private final EntryState _targetState;
+    private final ReplicaState _targetState;
     private final List<StickyRecord> _targetStickyRecords;
     private final List<StickyRecord> _pinsToMove;
     private final FileAttributes _fileAttributes;
@@ -79,7 +79,7 @@ public class Task
                 TaskCompletionHandler callbackHandler,
                 String source,
                 PnfsId pnfsId,
-                EntryState targetState,
+                ReplicaState targetState,
                 List<StickyRecord> targetStickyRecords,
                 List<StickyRecord> pinsToMove,
                 FileAttributes fileAttributes,

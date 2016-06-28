@@ -274,7 +274,7 @@ poolConvertMeta() # $1 = domain, $2 = cell, $3 = type
         fail 2 "Cannot convert pool '$name', as it is already of type $src."
     fi
 
-    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataStoreCopyTool "$path" "$src" "$3" || fail 1
+    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataCopyTool "$path" "$src" "$3" || fail 1
 
     printp ""\
            "The pool meta data database of '$name' was converted from
@@ -291,7 +291,7 @@ poolDumpYaml() # $1 = domain, $2 = cell
     classpath=$(getProperty dcache.paths.classpath "$1" "$2")
     path=$(getProperty pool.path "$1" "$2")
     type=$(getProperty pool.plugins.meta "$1" "$2")
-    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataStoreYamlTool "$path" "$type"
+    CLASSPATH="$classpath" quickJava org.dcache.pool.repository.MetaDataYamlTool "$path" "$type"
 }
 
 if [ $# -eq 0 ]; then

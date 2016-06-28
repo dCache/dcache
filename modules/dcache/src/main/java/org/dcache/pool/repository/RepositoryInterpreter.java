@@ -255,7 +255,7 @@ public class RepositoryInterpreter
             for (PnfsId id: _repository) {
                 try {
                     CacheEntry entry = _repository.getEntry(id);
-                    EntryState state = entry.getState();
+                    ReplicaState state = entry.getState();
                     if (siFilter != null) {
                         FileAttributes attributes = entry.getFileAttributes();
                         String siValue = attributes.isDefined(FileAttribute.STORAGECLASS)
@@ -266,11 +266,11 @@ public class RepositoryInterpreter
                         }
                     }
                     if (format.length() == 0 ||
-                        (notcached && state != EntryState.CACHED) ||
-                        (precious && state == EntryState.PRECIOUS) ||
+                        (notcached && state != ReplicaState.CACHED) ||
+                        (precious && state == ReplicaState.PRECIOUS) ||
                         (sticky && entry.isSticky()) ||
-                        (broken && state == EntryState.BROKEN) ||
-                        (cached && state == EntryState.CACHED) ||
+                        (broken && state == ReplicaState.BROKEN) ||
+                        (cached && state == ReplicaState.CACHED) ||
                         (used && entry.getLinkCount() > 0)) {
 
                         sb.append(entry).append('\n');
@@ -352,7 +352,7 @@ public class RepositoryInterpreter
                     if (fileAttributes.isDefined(FileAttribute.STORAGECLASS)) {
                         String sc = fileAttributes.getStorageClass();
                         if (sc.equals(storageClassName)) {
-                            _repository.setState(id, EntryState.REMOVED);
+                            _repository.setState(id, ReplicaState.REMOVED);
                             cnt++;
                         }
                     }
@@ -389,9 +389,9 @@ public class RepositoryInterpreter
         public String call() throws Exception
         {
             CacheEntry entry = _repository.getEntry(pnfsId);
-            if (isForced || entry.getState() == EntryState.CACHED && !entry.isSticky()) {
+            if (isForced || entry.getState() == ReplicaState.CACHED && !entry.isSticky()) {
                 _log.warn("rep rm: removing {}", pnfsId);
-                _repository.setState(pnfsId, EntryState.REMOVED);
+                _repository.setState(pnfsId, ReplicaState.REMOVED);
                 return "Removed " + pnfsId;
             } else {
                 return "File is not removable; use -force to override";
@@ -410,7 +410,7 @@ public class RepositoryInterpreter
         @Override
         public String call() throws Exception
         {
-            _repository.setState(pnfsId, EntryState.PRECIOUS);
+            _repository.setState(pnfsId, ReplicaState.PRECIOUS);
             return "";
         }
     }
@@ -427,7 +427,7 @@ public class RepositoryInterpreter
         @Override
         public String call() throws Exception
         {
-            _repository.setState(pnfsId, EntryState.CACHED);
+            _repository.setState(pnfsId, ReplicaState.CACHED);
             return "";
         }
     }
@@ -443,7 +443,7 @@ public class RepositoryInterpreter
         @Override
         public String call() throws Exception
         {
-            _repository.setState(pnfsId, EntryState.BROKEN);
+            _repository.setState(pnfsId, ReplicaState.BROKEN);
             return "";
         }
     }
@@ -505,7 +505,7 @@ public class RepositoryInterpreter
 
         private boolean isPrecious(CacheEntry entry)
         {
-            return entry.getState() == EntryState.PRECIOUS;
+            return entry.getState() == ReplicaState.PRECIOUS;
         }
 
         private boolean isSticky(CacheEntry entry)
@@ -530,9 +530,9 @@ public class RepositoryInterpreter
             statistics.remove(store);
         }
 
-        private synchronized void updateStatistics(EntryChangeEvent event, EntryState oldState, EntryState newState)
+        private synchronized void updateStatistics(EntryChangeEvent event, ReplicaState oldState, ReplicaState newState)
         {
-            if (oldState == EntryState.CACHED || oldState == EntryState.PRECIOUS) {
+            if (oldState == ReplicaState.CACHED || oldState == ReplicaState.PRECIOUS) {
                 CacheEntry oldEntry = event.getOldEntry();
                 Statistics stats = getStatistics(oldEntry.getFileAttributes());
                 stats.bytes -= oldEntry.getReplicaSize();
@@ -553,7 +553,7 @@ public class RepositoryInterpreter
                     removeStatistics(oldEntry.getFileAttributes());
                 }
             }
-            if (newState == EntryState.CACHED || newState == EntryState.PRECIOUS) {
+            if (newState == ReplicaState.CACHED || newState == ReplicaState.PRECIOUS) {
                 CacheEntry newEntry = event.getNewEntry();
                 Statistics stats = getStatistics(newEntry.getFileAttributes());
                 stats.bytes += newEntry.getReplicaSize();

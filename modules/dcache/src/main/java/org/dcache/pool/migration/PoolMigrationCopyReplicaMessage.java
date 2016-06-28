@@ -6,7 +6,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 import java.util.UUID;
 
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
@@ -22,7 +22,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     private static final long serialVersionUID = 6328444770149191656L;
 
     private final FileAttributes _fileAttributes;
-    private final EntryState _state;
+    private final ReplicaState _state;
     private final List<StickyRecord> _stickyRecords;
     private final boolean _computeChecksumOnUpdate;
     private final boolean _forceSourceMode;
@@ -31,7 +31,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
 
     public PoolMigrationCopyReplicaMessage(UUID uuid, String pool,
                                            FileAttributes fileAttributes,
-                                           EntryState state,
+                                           ReplicaState state,
                                            List<StickyRecord> stickyRecords,
                                            boolean computeChecksumOnUpdate,
                                            boolean forceSourceMode,
@@ -47,7 +47,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
         _isMetaOnly = isMetaOnly;
     }
 
-    public EntryState getState()
+    public ReplicaState getState()
     {
         return _state;
     }

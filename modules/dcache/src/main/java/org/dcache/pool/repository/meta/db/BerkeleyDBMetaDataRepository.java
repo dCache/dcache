@@ -26,7 +26,7 @@ import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
-import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 
@@ -37,7 +37,7 @@ import static java.util.Arrays.asList;
  *
  * Uses a FileStore implementatino as the backing store for the data files.
  */
-public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBMetaDataRepository
+public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
 {
     private static final String REMOVING_REDUNDANT_META_DATA =
             "Removing redundant meta data for %s.";
@@ -107,7 +107,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBMetaDataRepo
     }
 
     @Override
-    public MetaDataRecord get(PnfsId id) throws CacheException
+    public ReplicaRecord get(PnfsId id) throws CacheException
     {
         try {
             Path path = _fileStore.get(id);
@@ -135,7 +135,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBMetaDataRepo
      * TODO: The entry is not persistent yet!
      */
     @Override
-    public MetaDataRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
+    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
             throws CacheException
     {
         try {

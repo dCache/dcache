@@ -99,14 +99,14 @@ import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.v5.ReplicaRepository;
 import org.dcache.util.Args;
 import org.dcache.util.IoPriority;
 import org.dcache.util.Version;
@@ -157,7 +157,7 @@ public class PoolV4
 
     private PnfsHandler _pnfs;
     private StorageClassContainer _storageQueue;
-    private CacheRepositoryV5 _repository;
+    private ReplicaRepository _repository;
 
     private Account _account;
 
@@ -320,7 +320,7 @@ public class PoolV4
     }
 
     @Required
-    public void setRepository(CacheRepositoryV5 repository)
+    public void setRepository(ReplicaRepository repository)
     {
         assertNotRunning("Cannot set repository after initialization");
         if (_repository != null) {
@@ -554,7 +554,7 @@ public class PoolV4
         @Override
         public void stateChanged(StateChangeEvent event)
         {
-            if (event.getOldState() == EntryState.FROM_CLIENT) {
+            if (event.getOldState() == ReplicaState.FROM_CLIENT) {
                 PnfsId id = event.getPnfsId();
                 if (_hasTapeBackend) {
                     _pnfs.putPnfsFlag(id, "h", "yes");
@@ -574,14 +574,14 @@ public class PoolV4
         public void stateChanged(StateChangeEvent event)
         {
             PnfsId id = event.getPnfsId();
-            EntryState from = event.getOldState();
-            EntryState to = event.getNewState();
+            ReplicaState from = event.getOldState();
+            ReplicaState to = event.getNewState();
 
             if (from == to) {
                 return;
             }
 
-            if (to == EntryState.PRECIOUS) {
+            if (to == ReplicaState.PRECIOUS) {
                 _log.debug("Adding {} to flush queue", id);
 
                 if (_hasTapeBackend) {
@@ -597,7 +597,7 @@ public class PoolV4
                         _log.error("Error adding {} to flush queue: {}", id, e.getMessage());
                     }
                 }
-            } else if (from == EntryState.PRECIOUS) {
+            } else if (from == ReplicaState.PRECIOUS) {
                 _log.debug("Removing {} from flush queue", id);
                 if (!_storageQueue.removeCacheEntry(id)) {
                     _log.info("File {} not found in flush queue", id);
@@ -612,7 +612,7 @@ public class PoolV4
         @Override
         public void stateChanged(StateChangeEvent event)
         {
-            if (_reportOnRemovals && event.getNewState() == EntryState.REMOVED) {
+            if (_reportOnRemovals && event.getNewState() == ReplicaState.REMOVED) {
                 CacheEntry entry = event.getNewEntry();
                 RemoveFileInfoMessage msg =
                     new RemoveFileInfoMessage(getCellAddress().toString(), entry.getPnfsId());
@@ -722,13 +722,13 @@ public class PoolV4
             if (message instanceof PoolAcceptFileMessage) {
                 List<StickyRecord> stickyRecords =
                         _replicaStatePolicy.getStickyRecords(attributes);
-                EntryState targetState =
+                ReplicaState targetState =
                         _replicaStatePolicy.getTargetState(attributes);
                 handle = _repository.createEntry(attributes,
-                        EntryState.FROM_CLIENT,
-                        targetState,
-                        stickyRecords,
-                        EnumSet.of(Repository.OpenFlags.CREATEFILE));
+                                                 ReplicaState.FROM_CLIENT,
+                                                 targetState,
+                                                 stickyRecords,
+                                                 EnumSet.of(Repository.OpenFlags.CREATEFILE));
             } else {
                 Set<Repository.OpenFlags> openFlags =
                         message.isPool2Pool()
@@ -798,10 +798,10 @@ public class PoolV4
         @Override
         public void stateChanged(StateChangeEvent event)
         {
-            EntryState from = event.getOldState();
-            EntryState to = event.getNewState();
+            ReplicaState from = event.getOldState();
+            ReplicaState to = event.getNewState();
 
-            if (to == EntryState.CACHED || to == EntryState.PRECIOUS) {
+            if (to == ReplicaState.CACHED || to == ReplicaState.PRECIOUS) {
                 switch (from) {
                 case FROM_CLIENT:
                     initiateReplication(event.getPnfsId(), "write");
@@ -1037,15 +1037,15 @@ public class PoolV4
         CompanionFileAvailableCallback callback =
             new CompanionFileAvailableCallback(msg);
 
-        EntryState targetState = EntryState.CACHED;
+        ReplicaState targetState = ReplicaState.CACHED;
         int fileMode = msg.getDestinationFileStatus();
         if (fileMode != Pool2PoolTransferMsg.UNDETERMINED) {
             if (fileMode == Pool2PoolTransferMsg.PRECIOUS) {
-                targetState = EntryState.PRECIOUS;
+                targetState = ReplicaState.PRECIOUS;
             }
         } else if (!_hasTapeBackend && !_isVolatile
                    && (_p2pFileMode == P2P_PRECIOUS)) {
-            targetState = EntryState.PRECIOUS;
+            targetState = ReplicaState.PRECIOUS;
         }
 
         List<StickyRecord> stickyRecords = Collections.emptyList();
@@ -1175,11 +1175,11 @@ public class PoolV4
             try {
                 PnfsId pnfsId = new PnfsId(fileList[i]);
                 if (!_cleanPreciousFiles && _hasTapeBackend
-                    && (_repository.getState(pnfsId) == EntryState.PRECIOUS)) {
+                    && (_repository.getState(pnfsId) == ReplicaState.PRECIOUS)) {
                     counter++;
                     _log.error("Replica " + fileList[i] + " kept (precious)");
                 } else {
-                    _repository.setState(pnfsId, EntryState.REMOVED);
+                    _repository.setState(pnfsId, ReplicaState.REMOVED);
                     fileList[i] = null;
                 }
             } catch (IllegalTransitionException e) {
@@ -1211,14 +1211,14 @@ public class PoolV4
             switch (_repository.getState(pnfsId)) {
             case PRECIOUS:
                 if (msg.isCached()) {
-                    _repository.setState(pnfsId, EntryState.CACHED);
+                    _repository.setState(pnfsId, ReplicaState.CACHED);
                 }
                 msg.setSucceeded();
                 break;
 
             case CACHED:
                 if (msg.isPrecious()) {
-                    _repository.setState(pnfsId, EntryState.PRECIOUS);
+                    _repository.setState(pnfsId, ReplicaState.PRECIOUS);
                 }
                 msg.setSucceeded();
                 break;
@@ -1597,7 +1597,7 @@ public class PoolV4
                 _pnfs.addCacheLocation(id);
             } catch (FileNotFoundCacheException e) {
                 try {
-                    _repository.setState(id, EntryState.REMOVED);
+                    _repository.setState(id, ReplicaState.REMOVED);
                     _log.info("File not found in PNFS; removed " + id);
                 } catch (InterruptedException | CacheException f) {
                     _log.error("File not found in PNFS, but failed to remove "

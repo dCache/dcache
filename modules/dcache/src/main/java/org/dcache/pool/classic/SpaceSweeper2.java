@@ -31,7 +31,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
@@ -93,7 +93,7 @@ public class SpaceSweeper2
     @Override
     public boolean isRemovable(CacheEntry entry)
     {
-        return entry.getState() == EntryState.CACHED && !entry.isSticky();
+        return entry.getState() == ReplicaState.CACHED && !entry.isSticky();
     }
 
     /**
@@ -356,7 +356,7 @@ public class SpaceSweeper2
 
                 long size = entry.getReplicaSize();
                 _log.debug("Sweeper removes {}.", id);
-                _repository.setState(id, EntryState.REMOVED);
+                _repository.setState(id, ReplicaState.REMOVED);
                 deleted += size;
             } catch (IllegalTransitionException | FileNotInCacheException e) {
                 /* Normal if file got removed just as we wanted to

@@ -8,7 +8,7 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -61,11 +61,11 @@ public class NoCachedFilesSpaceSweeper
     public void stateChanged(StateChangeEvent event)
     {
         try {
-            if (event.getNewState() == EntryState.CACHED) {
+            if (event.getNewState() == ReplicaState.CACHED) {
                 PnfsId id = event.getPnfsId();
                 CacheEntry entry = event.getNewEntry();
                 if (!entry.isSticky()) {
-                    _repository.setState(id, EntryState.REMOVED);
+                    _repository.setState(id, ReplicaState.REMOVED);
                     _log.debug(entry.getPnfsId() + " : removed.");
                 }
             }

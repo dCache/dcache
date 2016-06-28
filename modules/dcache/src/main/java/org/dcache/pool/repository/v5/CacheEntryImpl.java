@@ -7,15 +7,15 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
 public class CacheEntryImpl implements CacheEntry
 {
     private final long _size;
-    private final EntryState _state;
+    private final ReplicaState _state;
     private final long _created_at;
     private final long _accessed_at;
     private final int _linkCount;
@@ -23,7 +23,7 @@ public class CacheEntryImpl implements CacheEntry
     private final Collection<StickyRecord> _sticky;
     private final FileAttributes _fileAttributes;
 
-    public CacheEntryImpl(MetaDataRecord entry) throws CacheException
+    public CacheEntryImpl(ReplicaRecord entry) throws CacheException
     {
         synchronized (entry) {
             _size = entry.getReplicaSize();
@@ -65,7 +65,7 @@ public class CacheEntryImpl implements CacheEntry
      * @see CacheEntry#getState()
      */
     @Override
-    public EntryState getState()
+    public ReplicaState getState()
     {
         return _state;
     }
@@ -121,16 +121,16 @@ public class CacheEntryImpl implements CacheEntry
 
         return getPnfsId() +
                " <" +
-               ((_state == EntryState.CACHED) ? "C" : "-") +
-               ((_state == EntryState.PRECIOUS) ? "P" : "-") +
-               ((_state == EntryState.FROM_CLIENT) ? "C" : "-") +
-               ((_state == EntryState.FROM_STORE) ? "S" : "-") +
+               ((_state == ReplicaState.CACHED) ? "C" : "-") +
+               ((_state == ReplicaState.PRECIOUS) ? "P" : "-") +
+               ((_state == ReplicaState.FROM_CLIENT) ? "C" : "-") +
+               ((_state == ReplicaState.FROM_STORE) ? "S" : "-") +
                "-" +
                "-" +
-               ((_state == EntryState.REMOVED) ? "R" : "-") +
-               ((_state == EntryState.DESTROYED) ? "D" : "-") +
+               ((_state == ReplicaState.REMOVED) ? "R" : "-") +
+               ((_state == ReplicaState.DESTROYED) ? "D" : "-") +
                (isSticky() ? "X" : "-") +
-               ((_state == EntryState.BROKEN) ? "E" : "-") +
+               ((_state == ReplicaState.BROKEN) ? "E" : "-") +
                "-" +
                "L(0)[" + _linkCount + "]" +
                "> " +

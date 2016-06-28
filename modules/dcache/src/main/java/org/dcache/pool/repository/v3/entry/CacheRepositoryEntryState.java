@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.entry.state.Sticky;
 
@@ -33,14 +33,14 @@ public class CacheRepositoryEntryState
     // possible states of entry in the repository
 
     private final Sticky _sticky = new Sticky();
-    private EntryState _state;
+    private ReplicaState _state;
 
     // data, control and SI- files locations
     private final Path _controlFile;
 
     public CacheRepositoryEntryState(Path controlFile) throws IOException {
         _controlFile = controlFile;
-        _state = EntryState.NEW;
+        _state = ReplicaState.NEW;
 
         // read state from file
         try {
@@ -61,7 +61,7 @@ public class CacheRepositoryEntryState
         return removed;
     }
 
-    public void setState(EntryState state)
+    public void setState(ReplicaState state)
         throws IOException
     {
         if (state == _state) {
@@ -72,45 +72,45 @@ public class CacheRepositoryEntryState
         case NEW:
             throw new IllegalStateException("Entry is " + _state);
         case FROM_CLIENT:
-            if (_state != EntryState.NEW) {
+            if (_state != ReplicaState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case FROM_STORE:
-            if (_state != EntryState.NEW) {
+            if (_state != ReplicaState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case FROM_POOL:
-            if (_state != EntryState.NEW) {
+            if (_state != ReplicaState.NEW) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case CACHED:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == ReplicaState.REMOVED ||
+                _state == ReplicaState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case PRECIOUS:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == ReplicaState.REMOVED ||
+                _state == ReplicaState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case BROKEN:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == ReplicaState.REMOVED ||
+                _state == ReplicaState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case REMOVED:
-            if (_state == EntryState.DESTROYED) {
+            if (_state == ReplicaState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case DESTROYED:
-            if (_state != EntryState.REMOVED) {
+            if (_state != ReplicaState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
         }
@@ -119,7 +119,7 @@ public class CacheRepositoryEntryState
         makeStatePersistent();
     }
 
-    public EntryState getState()
+    public ReplicaState getState()
     {
         return _state;
     }
@@ -133,7 +133,7 @@ public class CacheRepositoryEntryState
     public boolean setSticky(String owner, long expire, boolean overwrite)
         throws IllegalStateException, IOException
     {
-        if (_state == EntryState.REMOVED || _state == EntryState.DESTROYED) {
+        if (_state == ReplicaState.REMOVED || _state == ReplicaState.DESTROYED) {
             throw new IllegalStateException("Entry in removed state");
         }
 
@@ -200,7 +200,7 @@ public class CacheRepositoryEntryState
     private void loadState() throws IOException
     {
         try (BufferedReader in = Files.newBufferedReader(_controlFile)) {
-            _state = EntryState.BROKEN;
+            _state = ReplicaState.BROKEN;
 
             String line;
             while ((line = in.readLine()) != null) {
@@ -233,22 +233,22 @@ public class CacheRepositoryEntryState
                 }
 
                 if (line.equals("precious")) {
-                    _state = EntryState.PRECIOUS;
+                    _state = ReplicaState.PRECIOUS;
                     continue;
                 }
 
                 if (line.equals("cached")) {
-                    _state = EntryState.CACHED;
+                    _state = ReplicaState.CACHED;
                     continue;
                 }
 
                 if (line.equals("from_client")) {
-                    _state = EntryState.FROM_CLIENT;
+                    _state = ReplicaState.FROM_CLIENT;
                     continue;
                 }
 
                 if (line.equals("from_store")) {
-                    _state = EntryState.FROM_STORE;
+                    _state = ReplicaState.FROM_STORE;
                     continue;
                 }
 
@@ -257,18 +257,18 @@ public class CacheRepositoryEntryState
                  */
 
                 if (line.equals("receiving.store")) {
-                    _state = EntryState.FROM_STORE;
+                    _state = ReplicaState.FROM_STORE;
                     continue;
                 }
 
                 if (line.equals("receiving.cient")) {
-                    _state = EntryState.FROM_CLIENT;
+                    _state = ReplicaState.FROM_CLIENT;
                     continue;
                 }
 
                 // in case of some one fixed the spelling
                 if (line.equals("receiving.client")) {
-                    _state = EntryState.FROM_CLIENT;
+                    _state = ReplicaState.FROM_CLIENT;
                     continue;
                 }
 
@@ -297,14 +297,14 @@ public class CacheRepositoryEntryState
                             expire = Long.parseLong(stickyOptions[2]);
                         } catch (NumberFormatException nfe) {
                             // bad number
-                            _state = EntryState.BROKEN;
+                            _state = ReplicaState.BROKEN;
                             return;
                         }
 
                         break;
                     default:
                         _log.info("Unknow number of arguments in {} [{}]", _controlFile, line);
-                        _state = EntryState.BROKEN;
+                        _state = ReplicaState.BROKEN;
                         return;
                     }
 

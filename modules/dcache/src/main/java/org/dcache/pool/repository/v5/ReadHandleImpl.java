@@ -10,7 +10,7 @@ import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
@@ -22,11 +22,11 @@ import static com.google.common.collect.Iterables.unmodifiableIterable;
 class ReadHandleImpl implements ReplicaDescriptor
 {
     private final PnfsHandler _pnfs;
-    private final MetaDataRecord _entry;
+    private final ReplicaRecord _entry;
     private FileAttributes _fileAttributes;
     private boolean _open;
 
-    ReadHandleImpl(PnfsHandler pnfs, MetaDataRecord entry, FileAttributes fileAttributes)
+    ReadHandleImpl(PnfsHandler pnfs, ReplicaRecord entry, FileAttributes fileAttributes)
     {
         _pnfs = checkNotNull(pnfs);
         _entry = checkNotNull(entry);

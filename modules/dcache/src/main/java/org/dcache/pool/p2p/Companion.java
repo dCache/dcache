@@ -56,7 +56,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.movers.ChecksumChannel;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -101,7 +101,7 @@ class Companion
     private final String _sourcePoolName;
     private final String _destinationPoolCellname;
     private final String _destinationPoolCellDomainName;
-    private final EntryState _targetState;
+    private final ReplicaState _targetState;
     private final List<StickyRecord> _stickyRecords;
     private final CacheFileAvailable _callback;
     private final ScheduledExecutorService _executor;
@@ -165,7 +165,7 @@ class Companion
               String sourcePoolName,
               String destinationPoolCellname,
               String destinationPoolCellDomainName,
-              EntryState targetState,
+              ReplicaState targetState,
               List<StickyRecord> stickyRecords,
               CacheFileAvailable callback,
               boolean forceSourceMode,
@@ -378,7 +378,7 @@ class Companion
     {
         return _repository.createEntry(
                 _fileAttributes,
-                EntryState.FROM_POOL,
+                ReplicaState.FROM_POOL,
                 _targetState,
                 _stickyRecords,
                 EnumSet.of(Repository.OpenFlags.CREATEFILE));

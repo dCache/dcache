@@ -9,11 +9,11 @@ public class IllegalTransitionException
 {
     private static final long serialVersionUID = 3255241915388346655L;
     private final PnfsId _pnfsId;
-    private final EntryState _source;
-    private final EntryState _target;
+    private final ReplicaState _source;
+    private final ReplicaState _target;
 
     public IllegalTransitionException(PnfsId pnfsId,
-                                      EntryState source, EntryState target)
+                                      ReplicaState source, ReplicaState target)
     {
         super("Transition from " + source + " to " + target + " is not allowed");
         _pnfsId = pnfsId;
@@ -21,12 +21,12 @@ public class IllegalTransitionException
         _target = target;
     }
 
-    public EntryState getSourceState()
+    public ReplicaState getSourceState()
     {
         return _source;
     }
 
-    public EntryState getTargetState()
+    public ReplicaState getTargetState()
     {
         return _target;
     }

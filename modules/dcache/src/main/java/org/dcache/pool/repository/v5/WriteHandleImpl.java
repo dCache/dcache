@@ -18,8 +18,8 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.Allocator;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
@@ -49,13 +49,13 @@ class WriteHandleImpl implements ReplicaDescriptor
     private static final long HOLD_TIME = 5 * 60 * 1000; // 5 minutes
 
     /** Callback for resilience handling.  Pool name can be accessed here */
-    private final CacheRepositoryV5 _repository;
+    private final ReplicaRepository _repository;
 
     /** Space allocation is delegated to this allocator. */
     private final Allocator _allocator;
 
     /** The handler provides access to this entry. */
-    private final MetaDataRecord _entry;
+    private final ReplicaRecord _entry;
 
     /** File attributes of the file being written. */
     private final FileAttributes _fileAttributes;
@@ -67,10 +67,10 @@ class WriteHandleImpl implements ReplicaDescriptor
     private final List<StickyRecord> _stickyRecords;
 
     /** The entry state used during transfer. */
-    private final EntryState _initialState;
+    private final ReplicaState _initialState;
 
     /** The entry state used when the handle is committed. */
-    private EntryState _targetState;
+    private ReplicaState _targetState;
 
     /** The state of the write handle. */
     private HandleState _state;
@@ -84,12 +84,12 @@ class WriteHandleImpl implements ReplicaDescriptor
     /** Last access time of new replica. */
     private Long _atime;
 
-    WriteHandleImpl(CacheRepositoryV5 repository,
+    WriteHandleImpl(ReplicaRepository repository,
                     Allocator allocator,
                     PnfsHandler pnfs,
-                    MetaDataRecord entry,
+                    ReplicaRecord entry,
                     FileAttributes fileAttributes,
-                    EntryState targetState,
+                    ReplicaState targetState,
                     List<StickyRecord> stickyRecords)
     {
         _repository = checkNotNull(repository);
@@ -103,8 +103,8 @@ class WriteHandleImpl implements ReplicaDescriptor
         _state = HandleState.OPEN;
         _allocated = 0;
 
-        checkState(_initialState != EntryState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
-        checkState(_initialState == EntryState.FROM_CLIENT || _fileAttributes.isDefined(SIZE));
+        checkState(_initialState != ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
+        checkState(_initialState == ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(SIZE));
     }
 
     private synchronized void setState(HandleState state)
@@ -273,7 +273,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                 /* PnfsManager detects conflicting checksums and will fail the update. */
             attributesToUpdate.setChecksums(_fileAttributes.getChecksums());
         }
-        if (_initialState == EntryState.FROM_CLIENT) {
+        if (_initialState == ReplicaState.FROM_CLIENT) {
             attributesToUpdate.setAccessLatency(_fileAttributes.getAccessLatency());
             attributesToUpdate.setRetentionPolicy(_fileAttributes.getRetentionPolicy());
             if (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0) {
@@ -287,9 +287,9 @@ class WriteHandleImpl implements ReplicaDescriptor
 
     private void verifyFileSize(long length) throws CacheException
     {
-        assert _initialState == EntryState.FROM_CLIENT || _fileAttributes.isDefined(SIZE);
-        if ((_initialState != EntryState.FROM_CLIENT ||
-                (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0)) &&
+        assert _initialState == ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(SIZE);
+        if ((_initialState != ReplicaState.FROM_CLIENT ||
+             (_fileAttributes.isDefined(SIZE) && _fileAttributes.getSize() > 0)) &&
                 _fileAttributes.getSize() != length) {
             throw new FileCorruptedCacheException(_fileAttributes.getSize(), length);
         }
@@ -321,7 +321,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                  * disk space. Thus to give other clients time to access the
                  * file, we mark it sticky for a short amount of time.
                  */
-                if (_targetState == EntryState.CACHED && _stickyRecords.isEmpty()) {
+                if (_targetState == ReplicaState.CACHED && _stickyRecords.isEmpty()) {
                     long now = System.currentTimeMillis();
                     r.setSticky("self", now + HOLD_TIME, false);
                 }
@@ -341,7 +341,7 @@ class WriteHandleImpl implements ReplicaDescriptor
              * will take care of removing the file.
              */
             if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                _targetState = EntryState.REMOVED;
+                _targetState = ReplicaState.REMOVED;
             }
             throw e;
         }
@@ -364,15 +364,15 @@ class WriteHandleImpl implements ReplicaDescriptor
         /* Files from tape or from another pool are deleted in case of
          * errors.
          */
-        if (_initialState == EntryState.FROM_POOL ||
-            _initialState == EntryState.FROM_STORE) {
-            _targetState = EntryState.REMOVED;
+        if (_initialState == ReplicaState.FROM_POOL ||
+            _initialState == ReplicaState.FROM_STORE) {
+            _targetState = ReplicaState.REMOVED;
         }
 
         /* Unless replica is to be removed, register cache location and
          * other attributes.
          */
-        if (_targetState != EntryState.REMOVED) {
+        if (_targetState != ReplicaState.REMOVED) {
             try {
                 /* We register cache location separately in the failure flow, because
                  * updating other attributes (such as checksums) may itself trigger
@@ -383,7 +383,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                 registerFileAttributesInNameSpace();
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                    _targetState = EntryState.REMOVED;
+                    _targetState = ReplicaState.REMOVED;
                 } else {
                     _log.warn("Failed to register {} after failed replica creation: {}",
                             _fileAttributes, e.getMessage());
@@ -391,9 +391,9 @@ class WriteHandleImpl implements ReplicaDescriptor
             }
         }
 
-        if (_targetState == EntryState.REMOVED) {
+        if (_targetState == ReplicaState.REMOVED) {
             try {
-                _entry.update(r -> r.setState(EntryState.REMOVED));
+                _entry.update(r -> r.setState(ReplicaState.REMOVED));
             } catch (CacheException e) {
                 _log.warn("Failed to remove replica: {}", e.getMessage());
             }
@@ -406,7 +406,7 @@ class WriteHandleImpl implements ReplicaDescriptor
                       _entry.getPnfsId(),
                       _repository.getPoolName());
             try {
-                _entry.update(r -> r.setState(EntryState.BROKEN));
+                _entry.update(r -> r.setState(ReplicaState.BROKEN));
             } catch (CacheException e) {
                 _log.warn("Failed to mark replica as broken: {}", e.getMessage());
             }

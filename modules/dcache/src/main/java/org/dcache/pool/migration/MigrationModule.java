@@ -44,7 +44,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Glob;
@@ -754,11 +754,11 @@ public class MigrationModule
             }
 
             if (state == null) {
-                filters.add(new StateFilter(EntryState.CACHED, EntryState.PRECIOUS));
+                filters.add(new StateFilter(ReplicaState.CACHED, ReplicaState.PRECIOUS));
             } else if (state.equals("cached")) {
-                filters.add(new StateFilter(EntryState.CACHED));
+                filters.add(new StateFilter(ReplicaState.CACHED));
             } else if (state.equals("precious")) {
-                filters.add(new StateFilter(EntryState.PRECIOUS));
+                filters.add(new StateFilter(ReplicaState.PRECIOUS));
             } else {
                 throw new IllegalArgumentException(state + ": Invalid state");
             }
