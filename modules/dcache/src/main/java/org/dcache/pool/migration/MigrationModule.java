@@ -137,6 +137,8 @@ public class MigrationModule
     private static final Expression FALSE_EXPRESSION =
         new Expression(Token.FALSE);
 
+    private boolean _isStarted;
+
     static {
         TRUE_EXPRESSION.setType(Type.BOOLEAN);
         FALSE_EXPRESSION.setType(Type.BOOLEAN);
@@ -179,6 +181,16 @@ public class MigrationModule
     public void setPinManagerStub(CellStub stub)
     {
         _context.setPinManagerStub(stub);
+    }
+
+    /**
+     * Implements CellLifeCycleAware interface.
+     */
+    @Override
+    public synchronized void afterStart()
+    {
+        _isStarted = true;
+        _jobs.values().stream().filter(j -> j.getState() == Job.State.NEW).forEach(Job::start);
     }
 
     /** Returns the job with the given id. */
@@ -861,11 +873,16 @@ public class MigrationModule
             }
 
             if (id == null) {
-                do {
-                    id = String.valueOf(_counter++);
-                } while (_jobs.containsKey(id));
+                synchronized (MigrationModule.this) {
+                    do {
+                        id = String.valueOf(_counter++);
+                    } while (_jobs.containsKey(id));
+                }
             } else {
-                Job job = _jobs.get(id);
+                Job job;
+                synchronized (MigrationModule.this) {
+                    job = _jobs.get(id);
+                }
                 if (job != null) {
                     switch (job.getState()) {
                     case FAILED:
@@ -880,9 +897,15 @@ public class MigrationModule
 
             Job job = new Job(_context, definition);
             job.setConcurrency(concurrency);
-            _jobs.put(id, job);
 
-            _commands.put(job, commandLine);
+            synchronized (MigrationModule.this) {
+                _commands.put(job, commandLine);
+                _jobs.put(id, job);
+                if (_isStarted) {
+                    job.start();
+                }
+            }
+
             return getJobSummary(id);
         }
     }
@@ -984,18 +1007,20 @@ public class MigrationModule
         @Override
         public String call()
         {
-            Iterator<Job> i = _jobs.values().iterator();
-            while (i.hasNext()) {
-                Job job = i.next();
-                switch (job.getState()) {
-                case CANCELLED:
-                case FAILED:
-                case FINISHED:
-                    i.remove();
-                    _commands.remove(job);
-                    break;
-                default:
-                    break;
+            synchronized (MigrationModule.this) {
+                Iterator<Job> i = _jobs.values().iterator();
+                while (i.hasNext()) {
+                    Job job = i.next();
+                    switch (job.getState()) {
+                    case CANCELLED:
+                    case FAILED:
+                    case FINISHED:
+                        i.remove();
+                        _commands.remove(job);
+                        break;
+                    default:
+                        break;
+                    }
                 }
             }
             return "";
@@ -1010,8 +1035,10 @@ public class MigrationModule
         public String call() throws NoSuchElementException
         {
             StringBuilder s = new StringBuilder();
-            for (String id: _jobs.keySet()) {
-                s.append(getJobSummary(id)).append('\n');
+            synchronized (MigrationModule.this) {
+                for (String id : _jobs.keySet()) {
+                    s.append(getJobSummary(id)).append('\n');
+                }
             }
             return s.toString();
         }
@@ -1054,13 +1081,15 @@ public class MigrationModule
         public String call()
                 throws NoSuchElementException
         {
-            Job job = getJob(id);
-            String command = _commands.get(job);
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            pw.println("Command    : " + command);
-            job.getInfo(pw);
-            return sw.toString();
+            synchronized (MigrationModule.this) {
+                Job job = getJob(id);
+                String command = _commands.get(job);
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                pw.println("Command    : " + command);
+                job.getInfo(pw);
+                return sw.toString();
+            }
         }
     }
 
@@ -1098,7 +1127,7 @@ public class MigrationModule
     public synchronized void printSetup(PrintWriter pw)
     {
         pw.println("#\n# MigrationModule\n#");
-        for (Job job: _jobs.values()) {
+        _commands.forEach((job, cmd) -> {
             if (job.getDefinition().isPermanent) {
                 switch (job.getState()) {
                 case CANCELLED:
@@ -1108,11 +1137,11 @@ public class MigrationModule
                 case FINISHED:
                     break;
                 default:
-                    pw.println(_commands.get(job));
+                    pw.println(cmd);
                     break;
                 }
             }
-        }
+        });
     }
 
     public synchronized boolean isActive(PnfsId id)
