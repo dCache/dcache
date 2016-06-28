@@ -274,12 +274,16 @@
   <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
         destroy-method="cancelAll">
     <description>Replica migration module client</description>
-    <property name="repository" ref="rep"/>
-    <property name="executor" ref="workerThreadPool"/>
-    <property name="pnfsStub" ref="pnfsStub"/>
-    <property name="poolStub" ref="poolStub"/>
-    <property name="poolManagerStub" ref="poolManagerStub"/>
-    <property name="pinManagerStub" ref="pinManagerStub"/>
+    <constructor-arg>
+        <bean class="org.dcache.pool.migration.MigrationContextImpl">
+            <property name="repository" ref="rep"/>
+            <property name="executor" ref="workerThreadPool"/>
+            <property name="pnfsStub" ref="pnfsStub"/>
+            <property name="poolStub" ref="poolStub"/>
+            <property name="poolManagerStub" ref="poolManagerStub"/>
+            <property name="pinManagerStub" ref="pinManagerStub"/>
+        </bean>
+    </constructor-arg>
   </bean>
 
   <bean id="migration-server"

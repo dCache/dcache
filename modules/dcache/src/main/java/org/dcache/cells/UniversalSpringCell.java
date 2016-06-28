@@ -33,6 +33,7 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
 
 import java.beans.PropertyDescriptor;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,9 +41,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
-import java.nio.file.Files;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,8 +73,11 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.services.SetupInfoMessage;
+import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
+import dmg.util.CommandPanicException;
+import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -88,6 +90,8 @@ import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.nio.file.Files.readAllLines;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Universal cell for building complex cells from simpler components.
@@ -225,8 +229,12 @@ public class UniversalSpringCell
         createContext();
 
         /* The setup may be provided as static configuration in the
-         * domain context, as a setup file on disk or through a setup
-         * controller cell.
+         * domain context.
+         */
+        executeSetupContext();
+
+        /* The setup may be provided as a setup file on disk or through a
+         * setup controller cell.
          */
         executeSetup();
     }
@@ -292,19 +300,41 @@ public class UniversalSpringCell
     private synchronized void executeSetup()
         throws IOException, CommandException
     {
-        executeSetupContext();
+        if (_setupFile != null && _setupFile.isFile()) {
+            List<String> lines = readAllLines(_setupFile.toPath());
 
-        if( _setupFile != null && _setupFile.isFile() ) {
-            List<CellSetupProvider> providers = new ArrayList<>();
-            try {
-                for (CellSetupProvider provider : _setupProviders.values()) {
-                    provider.beforeSetup();
-                    providers.add(provider);
+            List<CellSetupProvider> providers = _setupProviders.values().stream().collect(toList());
+            List<CellSetupProvider> shadowProviders = providers.stream().map(CellSetupProvider::mock).collect(toList());
+            CommandInterpreter shadowInterpreter = new CommandInterpreter();
+            shadowProviders.forEach(shadowInterpreter::addCommandListener);
+
+            executeSetup(shadowInterpreter, shadowProviders, _setupFile.toString(), lines);
+            executeSetup(_setupInterpreter, providers, _setupFile.toString(), lines);
+        }
+    }
+
+    private void executeSetup(CommandInterpreter interpreter, List<CellSetupProvider> providers, String source, List<String> lines)
+            throws IOException, CommandException
+    {
+        try (Closeable ignored = () -> Lists.reverse(providers).forEach(CellSetupProvider::afterSetup)) {
+            providers.forEach(CellSetupProvider::beforeSetup);
+            int lineCount = 0;
+            for (String line : lines) {
+                ++lineCount;
+
+                line = line.trim();
+                if (line.length() == 0) {
+                    continue;
                 }
-                executeSetup(_setupFile.toString(), Files.readAllLines(_setupFile.toPath()));
-            } finally {
-                for (CellSetupProvider provider : Lists.reverse(providers)) {
-                    provider.afterSetup();
+                if (line.charAt(0) == '#') {
+                    continue;
+                }
+                try {
+                    interpreter.command(new Args(line));
+                } catch (CommandPanicException e) {
+                    throw new CommandPanicException("Error at " + source + ":" + lineCount + ": " + e.getMessage(), e);
+                } catch (CommandException e) {
+                    throw new CommandThrowableException("Error at " + source + ":" + lineCount + ": " + e.getMessage(), e);
                 }
             }
         }
@@ -433,28 +463,6 @@ public class UniversalSpringCell
         }
         if (!source.renameTo(dest)) {
             throw new IOException("Failed to rename" + source);
-        }
-    }
-
-    private void executeSetup(String source, List<String> lines)
-        throws IOException, CommandException
-    {
-        int lineCount = 0;
-        for (String line: lines) {
-            ++lineCount;
-
-            line = line.trim();
-            if (line.length() == 0) {
-                continue;
-            }
-            if (line.charAt(0) == '#') {
-                continue;
-            }
-            try {
-                _setupInterpreter.command(new Args(line));
-            } catch (CommandException e) {
-                throw new CommandException("Error at " + source + ":" + lineCount + ": " + e.getMessage());
-            }
         }
     }
 

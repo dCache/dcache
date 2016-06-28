@@ -15,11 +15,6 @@ import java.lang.annotation.Target;
  * although the command processing and setup file generation could be split
  * over multiple implementing classes.
  *
- * <p>Implementations must have a default constructor and must be instantiable
- * outside a regular cell context. The setup commands must be executable even
- * if the instance is otherwise unconfigured. This allows setup files to be
- * processed and tested before applying them to the real cell.
- *
  * <p>The interface provides notification points before and after the
  * setup file is executed. Note that the setup may be executed
  * during normal operation.
@@ -47,5 +42,25 @@ public interface CellSetupProvider
      * Invoked after the setup file has been executed.
      */
     default void afterSetup() {}
+
+    /**
+     * Returns a mock object of this setup provider. A mock object
+     * can process setup commands and print the setup, but it will
+     * have no other side effects.
+     *
+     * By default it uses the default constructor of the implementing
+     * class to create an otherwise uninitialized object. If such an
+     * instance would violate the above definitions of a mock object,
+     * the default behaviour must be overridden.
+     */
+    default CellSetupProvider mock()
+    {
+        try {
+            return getClass().newInstance();
+        } catch (InstantiationException | IllegalAccessException e){
+            throw new RuntimeException(
+                    "Bug detected: CellSetupProviders must provide a public default constructor: " + e, e);
+        }
+    }
 }
 

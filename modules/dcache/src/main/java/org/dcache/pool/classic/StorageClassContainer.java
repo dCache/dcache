@@ -256,6 +256,14 @@ public class StorageClassContainer
         pw.println("   Requests : " + getRequestCount());
     }
 
+    @Override
+    public CellSetupProvider mock()
+    {
+        StorageClassContainer mock = new StorageClassContainer();
+        mock.setNearlineStorageHandler(_storageHandler);
+        return mock;
+    }
+
     //////////////////////////////////////////////////////////////////////////////////
     //
     //   the interpreter

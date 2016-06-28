@@ -1,7 +1,24 @@
+/*
+ * dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.dcache.pool.migration;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 
 import diskCacheV111.util.PnfsId;
@@ -9,103 +26,25 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 
-/**
- * Describes the context of migration jobs.
- */
-public class MigrationContext
+public interface MigrationContext
 {
-    private String _poolName;
-    private ScheduledExecutorService _executor;
-    private CellStub _pool;
-    private CellStub _pnfs;
-    private CellStub _poolManager;
-    private CellStub _pinManager;
-    private Repository _repository;
-    private final ConcurrentMap<PnfsId,PnfsId> _locks =
-        new ConcurrentHashMap<>();
+    String getPoolName();
 
-    public String getPoolName()
-    {
-        return _poolName;
-    }
+    ScheduledExecutorService getExecutor();
 
-    public void setPoolName(String poolName)
-    {
-        _poolName = poolName;
-    }
+    CellStub getPoolStub();
 
-    public ScheduledExecutorService getExecutor()
-    {
-        return _executor;
-    }
+    CellStub getPnfsStub();
 
-    public void setExecutor(ScheduledExecutorService executor)
-    {
-        _executor = executor;
-    }
+    CellStub getPoolManagerStub();
 
-    public CellStub getPoolStub()
-    {
-        return _pool;
-    }
+    CellStub getPinManagerStub();
 
-    public void setPoolStub(CellStub pool)
-    {
-        _pool = pool;
-    }
+    Repository getRepository();
 
-    public CellStub getPnfsStub()
-    {
-        return _pnfs;
-    }
+    boolean lock(PnfsId pnfsId);
 
-    public void setPnfsStub(CellStub pnfs)
-    {
-        _pnfs = pnfs;
-    }
+    void unlock(PnfsId pnfsId);
 
-    public CellStub getPoolManagerStub()
-    {
-        return _poolManager;
-    }
-
-    public void setPoolManagerStub(CellStub poolManager)
-    {
-        _poolManager = poolManager;
-    }
-
-    public CellStub getPinManagerStub()
-    {
-        return _pinManager;
-    }
-
-    public void setPinManagerStub(CellStub pinManager)
-    {
-        _pinManager = pinManager;
-    }
-
-    public Repository getRepository()
-    {
-        return _repository;
-    }
-
-    public void setRepository(Repository repository)
-    {
-        _repository = repository;
-    }
-
-    public boolean lock(PnfsId pnfsId)
-    {
-        return (_locks.put(pnfsId, pnfsId) == null);
-    }
-
-    public void unlock(PnfsId pnfsId)
-    {
-        _locks.remove(pnfsId);
-    }
-
-    public boolean isActive(PnfsId pnfsId)
-    {
-        return _locks.containsKey(pnfsId);
-    }
+    boolean isActive(PnfsId pnfsId);
 }

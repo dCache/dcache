@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,7 +30,6 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -46,7 +44,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
-import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Glob;
 import org.dcache.util.expression.Expression;
@@ -132,7 +129,7 @@ public class MigrationModule
 
     private final Map<String,Job> _jobs = new HashMap<>();
     private final Map<Job,String> _commands = new HashMap<>();
-    private final MigrationContext _context = new MigrationContext();
+    private final MigrationContext _context;
 
     private static final Expression TRUE_EXPRESSION =
         new Expression(Token.TRUE);
@@ -148,41 +145,9 @@ public class MigrationModule
 
     private int _counter = 1;
 
-    @Override
-    public void setCellAddress(CellAddressCore address)
+    private MigrationModule(MigrationContext context)
     {
-        super.setCellAddress(address);
-        _context.setPoolName(address.getCellName());
-    }
-
-    public void setRepository(Repository repository)
-    {
-        _context.setRepository(repository);
-    }
-
-    public void setExecutor(ScheduledExecutorService executor)
-    {
-        _context.setExecutor(executor);
-    }
-
-    public void setPnfsStub(CellStub stub)
-    {
-        _context.setPnfsStub(stub);
-    }
-
-    public void setPoolManagerStub(CellStub stub)
-    {
-        _context.setPoolManagerStub(stub);
-    }
-
-    public void setPoolStub(CellStub stub)
-    {
-        _context.setPoolStub(stub);
-    }
-
-    public void setPinManagerStub(CellStub stub)
-    {
-        _context.setPinManagerStub(stub);
+        _context = context;
     }
 
     /**
@@ -1156,6 +1121,29 @@ public class MigrationModule
     public void beforeSetup()
     {
         _jobs.values().stream().filter(j -> j.getDefinition().isPermanent).forEach(j -> j.cancel(true));
+    }
+
+    @Override
+    public CellSetupProvider mock()
+    {
+        return new MigrationModule(new MigrationContextDecorator(_context) {
+            @Override
+            public boolean lock(PnfsId pnfsId)
+            {
+                return false;
+            }
+
+            @Override
+            public void unlock(PnfsId pnfsId)
+            {
+            }
+
+            @Override
+            public boolean isActive(PnfsId pnfsId)
+            {
+                return true;
+            }
+        });
     }
 
     public synchronized boolean isActive(PnfsId id)
