@@ -190,7 +190,8 @@
 
   <bean id="jtm" class="org.dcache.pool.classic.JobTimeoutManager"
           init-method="start" destroy-method="stop">
-    <description>Job timeout manager</description>
+      <description>Job timeout manager</description>
+      <property name="ioQueueManager" ref="io-queue-manager"/>
   </bean>
 
   <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
@@ -306,8 +307,7 @@
   <bean id="io-queue-manager" class="org.dcache.pool.classic.IoQueueManager"
           destroy-method="shutdown" depends-on="transfer-services">
     <description>Requests IO manager</description>
-    <constructor-arg ref="jtm" />
-    <constructor-arg value="p2p,${pool.queues}" />
+    <property name="queues" value="${pool.queues}"/>
   </bean>
 
   <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverMapTransferService"

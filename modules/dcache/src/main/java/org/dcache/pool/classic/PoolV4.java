@@ -11,14 +11,12 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -47,7 +45,6 @@ import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -84,7 +81,6 @@ import dmg.cells.nucleus.Reply;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
-import dmg.util.command.Option;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -132,11 +128,6 @@ public class PoolV4
 
     private static final Pattern TAG_PATTERN =
         Pattern.compile("([^=]+)=(\\S*)\\s*");
-
-    /**
-     * The name of a queue used by pool-to-pool transfers.
-     */
-    private static final String P2P_QUEUE_NAME= "p2p";
 
     private static final Logger _log = LoggerFactory.getLogger(PoolV4.class);
 
@@ -639,7 +630,6 @@ public class PoolV4
                 : (_dupRequest == DUP_REQ_IGNORE)
                 ? "ignore"
                       : "refresh"));
-        _ioQueue.printSetup(pw);
     }
 
     @Override
@@ -696,7 +686,7 @@ public class PoolV4
             pw.println("Inventory         : " + _hybridCurrent);
         }
 
-        for (MoverRequestScheduler js : _ioQueue.getQueues()) {
+        for (MoverRequestScheduler js : _ioQueue.queues()) {
             pw.println("Mover Queue (" + js.getName() + ") "
                        + js.getActiveJobs() + "(" + js.getMaxActiveJobs()
                        + ")/" + js.getQueueSize());
@@ -759,7 +749,7 @@ public class PoolV4
         if (message instanceof PoolAcceptFileMessage) {
             return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> createMover(envelope, message), IoPriority.HIGH);
         } else if (message.isPool2Pool()) {
-            return _ioQueue.getOrCreateMover(P2P_QUEUE_NAME, doorUniqueId, () -> createMover(envelope, message), IoPriority.HIGH);
+            return _ioQueue.getOrCreateMover(IoQueueManager.P2P_QUEUE_NAME, doorUniqueId, () -> createMover(envelope, message), IoPriority.HIGH);
         } else {
             return _ioQueue.getOrCreateMover(queueName, doorUniqueId, () -> createMover(envelope, message), IoPriority.REGULAR);
         }
@@ -991,7 +981,8 @@ public class PoolV4
         try {
             int id = kill.getMoverId();
             MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
-            mover_kill(js, id);
+            _log.info("Killing mover " + id);
+            js.cancel(id);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
             _log.info(e.toString());
@@ -1485,12 +1476,12 @@ public class PoolV4
         info.getSpaceInfo().setParameter(_breakEven, space.getGap());
         info.setMoverCostFactor(_moverCostFactor);
 
-        for (MoverRequestScheduler js : _ioQueue.getQueues()) {
+        for (MoverRequestScheduler js : _ioQueue.queues()) {
             /*
              * we skip p2p queue as it is handled differently
              * FIXME: no special cases
              */
-            if(js.getName().equals(P2P_QUEUE_NAME)) {
+            if(js.getName().equals(IoQueueManager.P2P_QUEUE_NAME)) {
                 continue;
             }
 
@@ -1506,7 +1497,7 @@ public class PoolV4
                                     _p2pClient.getMaxActiveJobs(),
                                     _p2pClient.getQueueSize());
 
-        MoverRequestScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
+        MoverRequestScheduler p2pQueue = _ioQueue.getPoolToPoolQueue();
         info.setP2pServerQueueSizes(p2pQueue.getActiveJobs(),
                                     p2pQueue.getMaxActiveJobs(),
                                     p2pQueue.getQueueSize());
@@ -1887,224 +1878,6 @@ public class PoolV4
         _cleaningInterval = Integer.parseInt(args.argv(0));
         _log.info("set cleaning interval to " + _cleaningInterval);
         return "";
-    }
-
-    public static final String hh_mover_ls = "[-binary [jobId] ]";
-    public static final String hh_p2p_ls = "[-binary [jobId] ]";
-
-    @Command(name = "mover set max active",
-            hint = "set the maximum number of active client transfers",
-            description = "Set the maximum number of allowed concurrent transfers. " +
-                    "If any further requests are send after the set maximum value is " +
-                    "reach, these requests will be queued. A classic usage will be " +
-                    "to set the maximum number of client concurrent transfer request " +
-                    "allowed.\n\n" +
-                    "Note that, this set maximum value will also be used by the cost " +
-                    "module for calculating the performance cost.")
-    public class MoverSetMaxActiveCommand implements Callable<String>
-    {
-        @Argument(metaVar = "maxActiveMovers",
-                usage = "Specify the maximum number of active client transfers.")
-        int maxActiveIoMovers;
-
-        @Option(name = "queue", metaVar = "queueName",
-                usage = "Specify the mover queue name to operate on. If unspecified, " +
-                        "the default mover queue is assumed.")
-        String queueName;
-
-        @Override
-        public String call() throws IllegalArgumentException
-        {
-            if (queueName == null) {
-                return mover_set_max_active(_ioQueue.getDefaultQueue(), maxActiveIoMovers);
-            }
-
-            MoverRequestScheduler js = _ioQueue.getQueue(queueName);
-
-            if (js == null) {
-                return "Not found : " + queueName;
-            }
-
-            return mover_set_max_active(js, maxActiveIoMovers);
-        }
-    }
-
-    @Command(name = "p2p set max active",
-            hint = "set the maximum number of active pool-to-pool server transfers",
-            description = "Set the maximum number of active pool-to-pool " +
-                    "(server-side) concurrent transfers allowed. Any further " +
-                    "requests will be queued. This value will also be used by " +
-                    "the cost module for calculating the performance cost.")
-    public class P2pSetMaxActiveCommand implements Callable<String>
-    {
-        @Argument(usage = "The maximum number of active pool-to-pool server transfers")
-        int maxActiveP2PTransfers;
-
-        @Override
-        public String call() throws IllegalArgumentException
-        {
-            MoverRequestScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
-            return mover_set_max_active(p2pQueue, maxActiveP2PTransfers);
-        }
-    }
-
-    private String mover_set_max_active(MoverRequestScheduler js, int active)
-            throws IllegalArgumentException
-    {
-        checkArgument(active >= 0, "<maxActiveMovers> must be >= 0");
-        js.setMaxActiveJobs(active);
-
-        return "Max Active Io Movers set to " + active;
-    }
-
-    @Command(name = "mover queue ls",
-            hint = "list all mover queues in this pool",
-            description = "List information about the mover queues in this pool. " +
-                    "Only the names of the mover queues are listed if the option '-l' " +
-                    "is not specified.")
-    public class MoverQueueLsCommand implements Callable<Serializable>
-    {
-        @Option(name = "l",
-                usage = "Get additional information on the mover queues. " +
-                        "The returned information comprises of: the name of the " +
-                        "mover queue, number of active transfer, maximum number " +
-                        "of allowed transfer and the length of the queued transfer.")
-        boolean l;
-
-        @Override
-        public Serializable call()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            if (l) {
-                for (MoverRequestScheduler js : _ioQueue.getQueues()) {
-                    sb.append(js.getName())
-                            .append(" ").append(js.getActiveJobs())
-                            .append(" ").append(js.getMaxActiveJobs())
-                            .append(" ").append(js.getQueueSize()).append("\n");
-                }
-            } else {
-                for (MoverRequestScheduler js : _ioQueue.getQueues()) {
-                    sb.append(js.getName()).append("\n");
-                }
-            }
-            return sb.toString();
-        }
-    }
-
-    public Object ac_mover_ls_$_0_1(Args args)
-            throws NoSuchElementException, NumberFormatException
-    {
-        String queueName = args.getOpt("queue");
-        boolean binary = args.hasOption("binary");
-
-        if (binary && args.argc() > 0) {
-            int id = Integer.parseInt(args.argv(0));
-            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
-            return js.getJobInfo(id);
-        }
-
-        if (queueName == null) {
-            return mover_ls(_ioQueue.getQueues(), binary);
-        }
-
-        if (queueName.length() == 0) {
-            StringBuilder sb = new StringBuilder();
-            for (MoverRequestScheduler js : _ioQueue.getQueues()) {
-                sb.append("[").append(js.getName()).append("]\n");
-                sb.append(mover_ls(js, binary).toString());
-            }
-            return sb.toString();
-        }
-
-        MoverRequestScheduler js = _ioQueue.getQueue(queueName);
-        if (js == null) {
-            throw new NoSuchElementException(queueName);
-        }
-
-        return mover_ls(js, binary);
-
-    }
-
-    public Object ac_p2p_ls_$_0_1(Args args)
-            throws NoSuchElementException, NumberFormatException
-    {
-        MoverRequestScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
-
-        boolean binary = args.hasOption("binary");
-        if (binary && args.argc() > 0) {
-            int id = Integer.parseInt(args.argv(0));
-            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
-            return js.getJobInfo(id);
-        }
-
-        return mover_ls(p2pQueue, binary);
-    }
-
-    private Object mover_ls(MoverRequestScheduler js, boolean binary) {
-        return mover_ls(Arrays.asList(js), binary);
-    }
-
-    private Object mover_ls(Collection<MoverRequestScheduler> jobSchedulers, boolean binary) {
-
-        if (binary) {
-            List<IoJobInfo> list = new ArrayList<>();
-            for (MoverRequestScheduler js : jobSchedulers) {
-                list.addAll(js.getJobInfos());
-            }
-            return list.toArray(new IoJobInfo[list.size()]);
-        } else {
-            StringBuffer sb = new StringBuffer();
-            for (MoverRequestScheduler js : jobSchedulers) {
-                js.printJobQueue(sb);
-            }
-            return sb.toString();
-        }
-    }
-
-    @Command(name = "mover remove",
-            hint = "#OBSOLETE command",
-            description = "This command is obsolete, please use: \n" +
-                    "\t mover kill <jobid>")
-    public class MoverRemoveCommand implements Callable<String>
-    {
-        @Argument(metaVar = "jobId", required = false)
-        String id;
-
-        @Override
-        public String call()
-        {
-            return "This command is obsolete. Please use: \n\tmover kill " +
-                    (id==null ? "<jobid>":id);
-        }
-    }
-
-    @Command(name = "mover kill",
-            hint = "terminate a file transfer connection",
-            description = "Interrupt a specified file transfer in progress by " +
-                    "terminating the request. This is particularly useful when " +
-                    "the transfer request is stuck and blocking other requests.")
-    public class MoverKillCommand implements Callable<String>
-    {
-        @Argument(metaVar = "jobId",
-                usage = "Specify the job number of the transfer request to kill.")
-        int id;
-
-        @Override
-        public String call() throws NoSuchElementException, IllegalArgumentException
-        {
-            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
-            mover_kill(js, id);
-            return "Kill initialized";
-        }
-    }
-
-    private void mover_kill(MoverRequestScheduler js, int id)
-        throws NoSuchElementException
-    {
-
-        _log.info("Killing mover " + id);
-        js.cancel(id);
     }
 
     @Command(name = "set heartbeat",
