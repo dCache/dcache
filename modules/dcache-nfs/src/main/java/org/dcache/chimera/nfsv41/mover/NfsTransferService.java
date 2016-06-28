@@ -28,6 +28,7 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 
 import dmg.util.command.Command;
@@ -60,7 +61,7 @@ import org.dcache.xdr.OncRpcException;
  * @since 1.9.11
  */
 public class NfsTransferService extends AbstractCellComponent
-        implements MoverFactory, TransferService<NfsMover>, CellCommandListener
+        implements MoverFactory, TransferService<NfsMover>, CellCommandListener, CellInfoProvider
 {
     private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
     private NFSv4MoverHandler _nfsIO;

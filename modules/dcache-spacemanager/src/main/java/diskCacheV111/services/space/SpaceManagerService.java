@@ -88,6 +88,7 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
@@ -116,7 +117,7 @@ public final class SpaceManagerService
         extends AbstractCellComponent
         implements CellCommandListener,
         CellMessageReceiver,
-        Runnable
+        Runnable, CellInfoProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SpaceManagerService.class);
 

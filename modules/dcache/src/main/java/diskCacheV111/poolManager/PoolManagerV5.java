@@ -52,6 +52,8 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellVersion;
@@ -74,8 +76,7 @@ import static java.util.stream.Collectors.toList;
 
 public class PoolManagerV5
     extends AbstractCellComponent
-    implements CellCommandListener,
-               CellMessageReceiver
+    implements CellCommandListener, CellMessageReceiver, CellLifeCycleAware, CellInfoProvider
 {
     private static final Version VERSION = Version.of(PoolManagerV5.class);
     private int  _writeThreads;

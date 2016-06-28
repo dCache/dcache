@@ -9,10 +9,10 @@ public interface CellLifeCycleAware
     /**
      * Called just after the cell has been started.
      */
-    void afterStart();
+    default void afterStart() {}
 
     /**
      * Called just before the cell is killed.
      */
-    void beforeStop();
+    default void beforeStop() {}
 }

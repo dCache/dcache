@@ -34,6 +34,7 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.FaultAction;
@@ -49,7 +50,7 @@ import org.dcache.util.CDCExecutorServiceDecorator;
 
 public abstract class AbstractMoverProtocolTransferService
         extends AbstractCellComponent
-        implements TransferService<MoverProtocolMover>,MoverFactory
+        implements TransferService<MoverProtocolMover>,MoverFactory, CellInfoProvider
 {
     private static final Logger LOGGER =
         LoggerFactory.getLogger(MoverMapTransferService.class);

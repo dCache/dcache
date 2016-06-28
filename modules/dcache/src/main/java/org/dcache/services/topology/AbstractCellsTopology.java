@@ -13,6 +13,7 @@ import java.util.Queue;
 import diskCacheV111.util.CacheException;
 
 import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellTunnelInfo;
 
@@ -24,7 +25,7 @@ import org.dcache.cells.CellStub;
  * building topology maps.
  */
 public class AbstractCellsTopology
-    extends AbstractCellComponent
+    extends AbstractCellComponent implements CellInfoProvider
 {
     private static final Logger _log =
         LoggerFactory.getLogger(AbstractCellsTopology.class);

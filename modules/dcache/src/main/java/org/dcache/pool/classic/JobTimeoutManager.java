@@ -11,11 +11,12 @@ import diskCacheV111.vehicles.JobInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.command.Command;
 
 public class JobTimeoutManager
         extends AbstractCellComponent
-        implements Runnable, CellCommandListener
+        implements Runnable, CellCommandListener, CellInfoProvider
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(JobTimeoutManager.class);

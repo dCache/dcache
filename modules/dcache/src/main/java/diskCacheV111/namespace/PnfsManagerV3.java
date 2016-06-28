@@ -66,6 +66,7 @@ import diskCacheV111.vehicles.StorageInfos;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
@@ -108,7 +109,7 @@ import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsManagerV3
     extends AbstractCellComponent
-    implements CellCommandListener, CellMessageReceiver
+    implements CellCommandListener, CellMessageReceiver, CellInfoProvider
 {
     private static final Logger _log =
         LoggerFactory.getLogger(PnfsManagerV3.class);

@@ -32,6 +32,8 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.CellEventListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellRoute;
@@ -54,7 +56,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 public class LoginBrokerPublisher
     extends AbstractCellComponent
-    implements CellCommandListener, CellMessageReceiver, CellEventListener
+    implements CellCommandListener, CellMessageReceiver, CellEventListener, CellLifeCycleAware, CellInfoProvider
 {
     private static final Logger _log =
             LoggerFactory.getLogger(LoginBrokerPublisher.class);

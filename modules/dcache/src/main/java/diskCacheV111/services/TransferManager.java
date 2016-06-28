@@ -32,6 +32,7 @@ import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.SerializationException;
@@ -42,7 +43,6 @@ import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 /**
@@ -51,7 +51,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public abstract class TransferManager extends AbstractCellComponent
                                       implements CellCommandListener,
-                                                 CellMessageReceiver
+                                                 CellMessageReceiver, CellInfoProvider
 {
     private static final Logger log = LoggerFactory.getLogger(TransferManager.class);
     private final Map<Long, TransferManagerHandler> _activeTransfers =

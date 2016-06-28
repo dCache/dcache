@@ -35,6 +35,8 @@ import java.util.concurrent.ScheduledFuture;
 import diskCacheV111.srm.dcache.SrmRequestCredentialMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 
 import org.dcache.auth.FQAN;
@@ -46,7 +48,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class CredentialService
     extends AbstractCellComponent
-    implements CellMessageReceiver
+    implements CellMessageReceiver, CellLifeCycleAware, CellInfoProvider
 {
     private Logger LOGGER = LoggerFactory.getLogger(CredentialService.class);
 

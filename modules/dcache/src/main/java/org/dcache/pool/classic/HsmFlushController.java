@@ -1,6 +1,5 @@
 package org.dcache.pool.classic;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
 import diskCacheV111.vehicles.PoolFlushGainControlMessage;
 
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
@@ -53,7 +53,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class HsmFlushController
         extends AbstractCellComponent
-        implements CellMessageReceiver, CellCommandListener, CellInfoAware, CellSetupProvider
+        implements CellMessageReceiver, CellCommandListener, CellInfoAware, CellSetupProvider, CellInfoProvider
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(HsmFlushController.class);

@@ -22,6 +22,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
@@ -54,7 +55,7 @@ import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
  */
 public class MigrationModuleServer
     extends AbstractCellComponent
-    implements CellMessageReceiver
+    implements CellMessageReceiver, CellInfoProvider
 {
     private static final Logger _log =
         LoggerFactory.getLogger(MigrationModuleServer.class);

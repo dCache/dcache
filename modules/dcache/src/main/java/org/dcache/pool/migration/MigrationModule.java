@@ -33,6 +33,8 @@ import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
@@ -111,7 +113,7 @@ import static org.parboiled.errors.ErrorUtils.printParseErrors;
  */
 public class MigrationModule
     extends AbstractCellComponent
-    implements CellCommandListener, CellMessageReceiver, CellSetupProvider
+    implements CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider
 {
     private static final PoolManagerPoolInformation DUMMY_POOL =
         new PoolManagerPoolInformation("pool", new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE), 0);

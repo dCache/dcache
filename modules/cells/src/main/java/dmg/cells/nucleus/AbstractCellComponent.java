@@ -1,47 +1,15 @@
 package dmg.cells.nucleus;
 
-import java.io.PrintWriter;
 import java.util.Map;
 
 import org.dcache.util.Args;
 
 public class AbstractCellComponent
-    implements CellInfoProvider,
-        CellMessageSender,
-        CellLifeCycleAware,
-        CellIdentityAware,
-        CellArgsAware
+    implements CellMessageSender, CellIdentityAware, CellArgsAware
 {
     private CellEndpoint _endpoint;
     private CellAddressCore _cellAddress;
     private Args _cellArgs;
-
-    /**
-     * Implements CellInfoProvider interface.
-     */
-    @Override
-    public void getInfo(PrintWriter pw) {}
-
-    /**
-     * Implements CellInfoProvider interface.
-     */
-    @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
-    }
-
-    /**
-     * Implements CellLifeCycleAware interface.
-     */
-    @Override
-    public void afterStart() {}
-
-    /**
-     * Implements CellLifeCycleAware interface.
-     */
-    @Override
-    public void beforeStop() {}
 
     /**
      * Implements CellMessageSender interface.

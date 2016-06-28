@@ -166,6 +166,7 @@ import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -246,7 +247,7 @@ import static org.dcache.util.NetworkUtils.isInetAddress;
  */
 public final class Storage
     extends AbstractCellComponent
-    implements AbstractStorageElement, CellMessageReceiver
+    implements AbstractStorageElement, CellMessageReceiver, CellInfoProvider
 {
     private static final Logger _log = LoggerFactory.getLogger(Storage.class);
 

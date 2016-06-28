@@ -34,6 +34,7 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellInfoProvider;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultAction;
@@ -46,7 +47,7 @@ import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
-public class DefaultPostTransferService extends AbstractCellComponent implements PostTransferService
+public class DefaultPostTransferService extends AbstractCellComponent implements PostTransferService, CellInfoProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPostTransferService.class);
 

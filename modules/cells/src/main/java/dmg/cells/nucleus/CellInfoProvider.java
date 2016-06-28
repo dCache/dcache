@@ -16,7 +16,7 @@ public interface CellInfoProvider
      * Provides information in clear text by appending it to the
      * PrintWriter.
      */
-    void getInfo(PrintWriter pw);
+    default void getInfo(PrintWriter pw) {}
 
     /**
      * Provides information in binary form by updating or replacing
@@ -25,5 +25,8 @@ public interface CellInfoProvider
      * CellInfo. Care must be taken that existing information is not
      * discarded in the process.
      */
-    CellInfo getCellInfo(CellInfo info);
+    default CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
+    }
 }

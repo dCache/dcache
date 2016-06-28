@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.StorageClassFlushInfo;
@@ -25,6 +23,7 @@ import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
@@ -50,7 +49,7 @@ import static java.util.stream.Collectors.toCollection;
  */
 public class StorageClassContainer
     extends AbstractCellComponent
-    implements CellCommandListener, CellSetupProvider
+    implements CellCommandListener, CellSetupProvider, CellInfoProvider
 {
     private final Map<String, StorageClassInfo> _storageClasses = new HashMap<>();
     private final Map<PnfsId, StorageClassInfo> _pnfsIds = new HashMap<>();

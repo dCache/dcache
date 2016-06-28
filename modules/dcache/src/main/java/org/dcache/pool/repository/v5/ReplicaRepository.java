@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,6 +36,7 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -85,7 +85,7 @@ import static org.dcache.util.ByteUnit.GiB;
  */
 public class ReplicaRepository
     extends AbstractCellComponent
-    implements Repository, CellCommandListener, CellSetupProvider
+    implements Repository, CellCommandListener, CellSetupProvider, CellInfoProvider
 {
     /* Implementation note
      * -------------------

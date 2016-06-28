@@ -23,6 +23,7 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 
 import dmg.cells.nucleus.CellSetupProvider;
@@ -40,7 +41,7 @@ import static java.util.stream.Collectors.*;
 
 public class P2PClient
     extends AbstractCellComponent
-    implements CellMessageReceiver, CellCommandListener, CellSetupProvider
+    implements CellMessageReceiver, CellCommandListener, CellSetupProvider, CellInfoProvider
 {
     private final Map<Integer, Companion> _companions = new HashMap<>();
     private ScheduledExecutorService _executor;

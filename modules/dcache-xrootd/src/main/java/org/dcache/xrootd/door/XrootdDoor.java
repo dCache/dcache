@@ -57,6 +57,7 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
@@ -103,7 +104,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 public class XrootdDoor
     extends AbstractCellComponent
     implements CellMessageReceiver,
-               CellCommandListener
+               CellCommandListener, CellInfoProvider
 {
     public static final String XROOTD_PROTOCOL_STRING = "Xrootd";
     public static final int XROOTD_PROTOCOL_MAJOR_VERSION = 2;

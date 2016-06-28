@@ -76,6 +76,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
@@ -114,7 +115,7 @@ import static org.dcache.namespace.FileType.*;
  */
 public class DcacheResourceFactory
     extends AbstractCellComponent
-    implements ResourceFactory, CellMessageReceiver, CellCommandListener
+    implements ResourceFactory, CellMessageReceiver, CellCommandListener, CellInfoProvider
 {
     private static final Logger _log =
         LoggerFactory.getLogger(DcacheResourceFactory.class);

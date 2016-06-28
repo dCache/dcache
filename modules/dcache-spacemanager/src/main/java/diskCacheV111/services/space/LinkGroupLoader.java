@@ -32,6 +32,8 @@ import diskCacheV111.util.VOInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 
@@ -41,7 +43,7 @@ import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.poolmanager.Utils;
 
 public class LinkGroupLoader
-        extends AbstractCellComponent implements CellCommandListener, CuratorFrameworkAware
+        extends AbstractCellComponent implements CellCommandListener, CuratorFrameworkAware, CellLifeCycleAware, CellInfoProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkGroupLoader.class);
     private static final long EAGER_LINKGROUP_UPDATE_PERIOD = 1000;
