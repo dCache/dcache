@@ -181,17 +181,8 @@ public class LegacyAdminShellCommand implements Command, Runnable
                 result = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
                          "); the service log file contains additional information. Please " +
                          "contact support@dcache.org.";
-            } catch (CommandThrowableException e) {
-                result = e.getTargetException().getMessage();
-                if(result == null) {
-                    result = e.getTargetException().getClass().getSimpleName() + ": (null)";
-                }
             } catch (CommandException e) {
-                result =
-                    "There is a bug here, please report to support@dcache.org: "
-                    + e.getMessage();
-                _logger.warn("Unexpected exception, please report this "
-                        + "bug to support@dcache.org");
+                result = e.getMessage();
             } catch (NoRouteToCellException e) {
                 result =
                     "Cell name does not exist or cell is not started: "

@@ -837,8 +837,6 @@ public class CellAdapter
                     if (o == null) {
                         return;
                     }
-                } catch (CommandThrowableException e) {
-                    o = e.getCause();
                 } catch (CommandPanicException e) {
                     o = e;
                     _log.error("Command failed due to a bug, please contact support@dcache.org.", e);

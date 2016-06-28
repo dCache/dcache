@@ -15,7 +15,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 
 import diskCacheV111.admin.UserAdminShell;
-import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
@@ -25,7 +24,6 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
-import dmg.util.CommandThrowableException;
 
 import org.dcache.util.Strings;
 
@@ -120,19 +118,8 @@ public class NoTerminalCommand implements Command, Runnable
                     error = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
                              "); the service log file contains additional information. Please " +
                              "contact support@dcache.org.";
-                } catch (CommandThrowableException e) {
-                    Throwable cause = e.getTargetException();
-                    if (cause instanceof CacheException) {
-                        error = cause.getMessage();
-                    } else {
-                        error = cause.toString();
-                    }
                 } catch (CommandException e) {
-                    error =
-                            "There is a bug here, please report to support@dcache.org: "
-                            + e.getMessage();
-                    _logger.warn("Unexpected exception, please report this "
-                                 + "bug to support@dcache.org");
+                    error = e.getMessage();
                 } catch (NoRouteToCellException e) {
                     error =
                             "Cell name does not exist or cell is not started: "

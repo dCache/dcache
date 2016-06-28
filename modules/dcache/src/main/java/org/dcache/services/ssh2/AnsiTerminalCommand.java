@@ -178,27 +178,14 @@ public class AnsiTerminalCommand implements Command, Runnable {
                     _logger.error("This must be a bug, please report to support@dcache.org.", e);
                 } catch (CommandSyntaxException e) {
                     result = e;
-                } catch (CommandEvaluationException | CommandAclException e) {
-                    result = e.getMessage();
                 } catch (CommandExitException e) {
                     break;
                 } catch (CommandPanicException e) {
                     result = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
                              "); the service log file contains additional information. Please " +
                              "contact support@dcache.org.";
-                } catch (CommandThrowableException e) {
-                    Throwable cause = e.getTargetException();
-                    if (cause instanceof CacheException) {
-                        result = cause.getMessage();
-                    } else {
-                        result = cause.toString();
-                    }
                 } catch (CommandException e) {
-                    result =
-                            "There is a bug here, please report to support@dcache.org: "
-                            + e.getMessage();
-                    _logger.warn("Unexpected exception, please report this "
-                                 + "bug to support@dcache.org");
+                    result = e.getMessage();
                 } catch (NoRouteToCellException e) {
                     result =
                             "Cell name does not exist or cell is not started: "
