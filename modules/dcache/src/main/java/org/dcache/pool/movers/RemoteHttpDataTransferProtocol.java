@@ -164,7 +164,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     // checksums that don't overlap with the on-transfer checksum.
     private ChecksumChannel _remoteSuppliedChecksumChannel;
 
-    private MoverChannel<RemoteHttpDataTransferProtocolInfo> _channel;
+    private volatile MoverChannel<RemoteHttpDataTransferProtocolInfo> _channel;
     private Checksum _remoteSuppliedChecksum;
 
     private CloseableHttpClient _client;
@@ -559,19 +559,22 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     @Override
     public long getLastTransferred()
     {
-        return _channel.getLastTransferred();
+        MoverChannel<RemoteHttpDataTransferProtocolInfo> channel = _channel;
+        return channel == null ? System.currentTimeMillis() : channel.getLastTransferred();
     }
 
     @Override
     public long getBytesTransferred()
     {
-        return _channel.getBytesTransferred();
+        MoverChannel<RemoteHttpDataTransferProtocolInfo> channel = _channel;
+        return channel == null ? 0 : channel.getBytesTransferred();
     }
 
     @Override
     public long getTransferTime()
     {
-        return _channel.getTransferTime();
+        MoverChannel<RemoteHttpDataTransferProtocolInfo> channel = _channel;
+        return channel == null ? 0 : channel.getTransferTime();
     }
 
     @Override
