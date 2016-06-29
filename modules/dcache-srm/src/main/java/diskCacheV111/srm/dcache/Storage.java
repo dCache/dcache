@@ -571,41 +571,40 @@ public final class Storage
         Long callerId = msg.getId();
         _log.debug("handleTransferManagerMessage for callerId="+callerId);
 
-        TransferInfo info = callerIdToHandler.get(callerId);
+        TransferInfo info = callerIdToHandler.remove(callerId);
         if (info == null) {
             _log.error("TransferInfo for callerId="+callerId+"not found");
             return;
         }
 
-        if (msg instanceof TransferCompleteMessage ) {
-            info.callbacks.copyComplete();
-            _log.debug("removing TransferInfo for callerId="+callerId);
-            callerIdToHandler.remove(callerId);
-        } else if (msg instanceof TransferFailedMessage) {
-            Object error =  msg.getErrorObject();
-            if (error instanceof CacheException) {
-                error = ((CacheException) error).getMessage();
-            }
-            SRMException e;
-            switch (msg.getReturnCode()) {
-            case CacheException.PERMISSION_DENIED:
-                e = new SRMAuthorizationException(String.format("Access denied: %s", error));
-                break;
-            case CacheException.FILE_NOT_FOUND:
-                e = new SRMInvalidPathException(String.valueOf(error));
-                break;
-            case CacheException.THIRD_PARTY_TRANSFER_FAILED:
-                e = new SRMException("Transfer failed: " + error);
-                break;
-            default:
-                e = new SRMException(String.format("Transfer failed: %s [%d]",
-                                                   error, msg.getReturnCode()));
-            }
-            info.callbacks.copyFailed(e);
+        _log.debug("removed TransferInfo for callerId={}", callerId);
 
-            _log.debug("removing TransferInfo for callerId="+callerId);
-            callerIdToHandler.remove(callerId);
-        }
+        _executor.execute(() -> {
+            if (msg instanceof TransferCompleteMessage) {
+                info.callbacks.copyComplete();
+            } else if (msg instanceof TransferFailedMessage) {
+                Object error = msg.getErrorObject();
+                if (error instanceof CacheException) {
+                    error = ((CacheException) error).getMessage();
+                }
+                SRMException e;
+                switch (msg.getReturnCode()) {
+                case CacheException.PERMISSION_DENIED:
+                    e = new SRMAuthorizationException(String.format("Access denied: %s", error));
+                    break;
+                case CacheException.FILE_NOT_FOUND:
+                    e = new SRMInvalidPathException(String.valueOf(error));
+                    break;
+                case CacheException.THIRD_PARTY_TRANSFER_FAILED:
+                    e = new SRMException("Transfer failed: " + error);
+                    break;
+                default:
+                    e = new SRMException(String.format("Transfer failed: %s [%d]",
+                                                       error, msg.getReturnCode()));
+                }
+                info.callbacks.copyFailed(e);
+            }
+        });
     }
 
     public void messageArrived(PnfsCreateUploadPath msg)
