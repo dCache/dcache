@@ -57,7 +57,7 @@ import org.dcache.util.ConfigurationMapFactoryBean;
 public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, EnvironmentAware
 {
     protected static final Logger LOGGER =
-        LoggerFactory.getLogger(AbstractBerkeleyDBMetaDataRepository.class);
+        LoggerFactory.getLogger(AbstractBerkeleyDBReplicaStore.class);
     protected static final String DIRECTORY_NAME = "meta";
 
     protected final boolean readOnly;
