@@ -85,6 +85,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.dcache.srm.SRM;
@@ -526,12 +527,13 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     public void turlArrived(String surl, String turl, String remoteRequestId,
             String remoteFileId, Long size)
     {
+        Collection<Long> fileRequestIds;
         synchronized (remoteSurlToFileReqIds) {
-            Collection<Long> fileRequestIds = remoteSurlToFileReqIds.get(surl);
-            if (fileRequestIds == null || fileRequestIds.isEmpty()) {
-                LOG.error("turlArrived for unknown SURL = "+surl+" !!!!!!!");
-                return;
-            }
+            fileRequestIds = remoteSurlToFileReqIds.removeAll(surl);
+        }
+        if (fileRequestIds.isEmpty()) {
+            LOG.error("turlArrived for unknown SURL = {} !!!!!!!", surl);
+        } else {
             for (long id : fileRequestIds) {
                 CopyFileRequest cfr = getFileRequest(id);
                 if (getQosPlugin() != null && cfr.getQOSTicket() != null) {
@@ -558,15 +560,13 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                     }
                 } catch (IllegalStateException | IllegalArgumentException |
                         IllegalStateTransition | InterruptedException e) {
-                    LOG.error("failed to schedule CopyFileRequest {}: {}", cfr,
-                            e.toString());
+                    LOG.error("failed to schedule CopyFileRequest {}: {}", cfr, e.toString());
                     try {
                         cfr.setState(State.FAILED, "Failed to schedule request: " + e.getMessage());
                     } catch (IllegalStateTransition ist) {
-                        LOG.error("Illegal State Transition : {}" + ist.getMessage());
+                        LOG.error("Illegal State Transition : {}", ist.getMessage());
                     }
                 }
-                remoteSurlToFileReqIds.remove(surl, id);
             }
         }
     }
@@ -574,28 +574,24 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     public void turlRetrievalFailed(String surl, String reason,
             String remoteRequestId, String remoteFileId)
     {
+        Collection<Long> fileRequestSet;
         synchronized (remoteSurlToFileReqIds) {
-            Collection<Long> fileRequestSet = remoteSurlToFileReqIds.get(surl);
-            if (fileRequestSet == null || fileRequestSet.isEmpty()) {
-                LOG.error("turlArrived for unknown SURL = "+surl);
-                return;
-            }
+            fileRequestSet = remoteSurlToFileReqIds.removeAll(surl);
+        }
+        if (fileRequestSet.isEmpty()) {
+            LOG.error("turlArrived for unknown SURL = {}", surl);
+        } else {
             for (long id : fileRequestSet) {
                 CopyFileRequest cfr = getFileRequest(id);
-
                 try {
-                    String type = isSourceSrm() && !isSourceLocal() ? "source"
-                            : "destination";
-                    String error = "retrieval of " + type +
-                            " TURL failed with error " + reason;
+                    String type = isSourceSrm() && !isSourceLocal() ? "source" : "destination";
+                    String error = "retrieval of " + type + " TURL failed with error " + reason;
                     LOG.error(error);
                     cfr.setState(State.FAILED, error);
                 } catch (IllegalStateTransition ist) {
-                    LOG.error("Illegal State Transition : " + ist.getMessage());
+                    LOG.error("Illegal State Transition : {}", ist.getMessage());
                 }
                 cfr.saveJob();
-
-                remoteSurlToFileReqIds.remove(surl, id);
             }
         }
         remoteFileRequestDone(surl, remoteRequestId, remoteFileId);
@@ -603,54 +599,50 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
     public void turlsRetrievalFailed(Object reason)
     {
+        ArrayList<Map.Entry<String, Long>> entries;
         synchronized (remoteSurlToFileReqIds) {
-            for (String surl : remoteSurlToFileReqIds.keySet()) {
-                for (long id : remoteSurlToFileReqIds.get(surl)) {
-                    CopyFileRequest cfr = getFileRequest(id);
-                    try {
-                        String type = isSourceSrm() && !isSourceLocal() ? "source"
-                            : "destination";
-                        String error = "retrieval of " + type +
-                                " TURL failed with error " + reason;
-                        LOG.error(error);
-                        cfr.setState(State.FAILED, error);
-                    } catch (IllegalStateTransition ist) {
-                        LOG.error("Illegal State Transition : " + ist.getMessage());
-                    }
-                    cfr.saveJob();
-                    remoteSurlToFileReqIds.remove(surl, id);
-                }
+            entries = new ArrayList<>(remoteSurlToFileReqIds.entries());
+            remoteSurlToFileReqIds.clear();
+        }
+        for (Map.Entry<String, Long> entry : entries) {
+            String surl = entry.getKey();
+            long id = entry.getValue();
+            CopyFileRequest cfr = getFileRequest(id);
+            try {
+                String type = isSourceSrm() && !isSourceLocal() ? "source" : "destination";
+                String error = "retrieval of " + type + " TURL failed with error " + reason;
+                LOG.error(error);
+                cfr.setState(State.FAILED, error);
+            } catch (IllegalStateTransition ist) {
+                LOG.error("Illegal State Transition : {}", ist.getMessage());
             }
+            cfr.saveJob();
         }
     }
 
-    public void remoteFileRequestDone(String surl, String requestId,
-            String fileId)
+    public void remoteFileRequestDone(String surl, String requestId, String fileId)
     {
-        synchronized (remoteSurlToFileReqIds) {
-            try {
-                Scheduler<?> scheduler = Scheduler.getScheduler(schedulerId);
-                RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
-                String caCertificatePath = getConfiguration().getCaCertificatePath();
-                if (isSourceSrm() && !isSourceLocal()) {
-                   RemoteTurlGetterV2.staticReleaseFile(credential,
-                                                        surl, requestId,
-                                                        0,
-                                                        0,
-                                                        caCertificatePath,
-                                                        clientTransport);
-                } else {
-                    RemoteTurlPutterV2.staticPutDone(credential,
-                                                     surl, requestId,
-                                                     0,
-                                                     0,
-                                                     caCertificatePath,
-                                                     clientTransport);
-                }
-            } catch (Exception e) {
-                LOG.error("set remote file status to done failed, surl={}, " +
-                         "requestId={}, fileId={}", surl, requestId, fileId);
+        try {
+            RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
+            String caCertificatePath = getConfiguration().getCaCertificatePath();
+            if (isSourceSrm() && !isSourceLocal()) {
+               RemoteTurlGetterV2.staticReleaseFile(credential,
+                                                    surl, requestId,
+                                                    0,
+                                                    0,
+                                                    caCertificatePath,
+                                                    clientTransport);
+            } else {
+                RemoteTurlPutterV2.staticPutDone(credential,
+                                                 surl, requestId,
+                                                 0,
+                                                 0,
+                                                 caCertificatePath,
+                                                 clientTransport);
             }
+        } catch (Exception e) {
+            LOG.error("set remote file status to done failed, surl={}, " +
+                     "requestId={}, fileId={}", surl, requestId, fileId);
         }
     }
 
