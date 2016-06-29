@@ -837,6 +837,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         private final Inode _nfsInode;
 
+        private ListenableFuture<Void> _redirectFuture;
+
         NfsTransfer(PnfsHandler pnfs, Inode nfsInode, Subject ioSubject) {
             super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  FsPath.ROOT);
             _nfsInode = nfsInode;
@@ -861,26 +863,27 @@ public class NFSv41Door extends AbstractCellComponent implements
                 InterruptedException, ExecutionException,
                 TimeoutException, CacheException {
 
-            ListenableFuture<Void> redirectFuture;
             synchronized (this) {
-                /*
-                 * Check try to re-run the selection if no pool selected yet.
-                 * Restart/ping mover if not running yet.
-                 */
-                if (getPool() == null) {
-                    // we did not select a pool
+                if (_redirectFuture == null || _redirectFuture.isDone()) {
+                    /*
+                     * Check try to re-run the selection if no pool selected yet.
+                     * Restart/ping mover if not running yet.
+                     */
+                    if (getPool() == null) {
+                        // we did not select a pool
 
-                    _log.debug("looking for {} pool for {}", (isWrite() ? "write" : "read"), getPnfsId());
+                        _log.debug("looking for {} pool for {}", (isWrite() ? "write" : "read"), getPnfsId());
 
-                    redirectFuture = selectPoolAndStartMoverAsync(queue, RETRY_POLICY);
-                } else {
-                    // we may re-send the request, but pool will handle it
-                    redirectFuture = startMoverAsync(queue, NFS_REQUEST_BLOCKING);
+                        _redirectFuture = selectPoolAndStartMoverAsync(queue, RETRY_POLICY);
+                    } else {
+                        // we may re-send the request, but pool will handle it
+                        _redirectFuture = startMoverAsync(queue, NFS_REQUEST_BLOCKING);
+                    }
                 }
             }
 
             Stopwatch sw = Stopwatch.createStarted();
-            redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
+            _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
 
             return  waitForRedirect(NFS_REQUEST_BLOCKING - sw.elapsed(TimeUnit.MILLISECONDS));
