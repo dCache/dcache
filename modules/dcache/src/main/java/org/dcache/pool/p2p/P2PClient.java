@@ -324,6 +324,7 @@ public class P2PClient
         }
     }
 
+    @AffectsSetup
     @Command(name="pp set max active",
             hint = "set the maximum number of active pool-to-pool client transfers",
             description = "Set the maximum number of active pool-to-pool " +
@@ -359,6 +360,7 @@ public class P2PClient
         }
     }
 
+    @AffectsSetup
     @Command(name = "pp interface",
             hint = "Specifies the interface used when connecting to other pools.",
             description = "For pool to pool transfers, the destination creates a TCP " +

@@ -41,6 +41,7 @@ import dmg.util.logback.FilterShell;
 
 import org.dcache.util.Args;
 import org.dcache.util.Version;
+import org.dcache.util.cli.CommandExecutor;
 
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
@@ -99,7 +100,7 @@ public class CellAdapter
             if (args instanceof Authorizable) {
                 checkAclPermission((Authorizable) args, args, acls);
             }
-            return super.doExecute(entry, args, acls);
+            return CellAdapter.this.executeCommand(entry.getCommand(), args);
         }
 
         @Override
@@ -216,6 +217,21 @@ public class CellAdapter
     public Serializable command(Args args) throws CommandException
     {
         return _commandInterpreter.command(args);
+    }
+
+    /**
+     * Called to execute admin shell commands. Subclasses may override this to intercept
+     * command execution. Implementations should call CommandExecutor#execute to execute
+     * the command.
+     *
+     * @param command The command to execute
+     * @param args Arguments of the command
+     * @return The return value of the command
+     * @throws CommandException If the command fails
+     */
+    protected Serializable executeCommand(CommandExecutor command, Args args) throws CommandException
+    {
+        return command.execute(args);
     }
 
     /**

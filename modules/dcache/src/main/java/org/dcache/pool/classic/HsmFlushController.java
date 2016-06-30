@@ -270,6 +270,7 @@ public class HsmFlushController
         }
     }
 
+    @AffectsSetup
     @Command(name = "flush set max active",
             description = "Set the maximum number of storage classes to flush simultaneously.")
     class SetMaxActiveCommand implements Callable<String>
@@ -286,6 +287,7 @@ public class HsmFlushController
         }
     }
 
+    @AffectsSetup
     @Command(name = "flush set interval",
             description = "Set the interval at which to flush files to tape")
     class SetIntervalCommand implements Callable<String>
@@ -302,6 +304,7 @@ public class HsmFlushController
         }
     }
 
+    @AffectsSetup
     @Command(name = "flush set retry delay",
             description = "Set the minimum delay before the next flush after a failure.")
     class SetRetryDelayCommand implements Callable<String>

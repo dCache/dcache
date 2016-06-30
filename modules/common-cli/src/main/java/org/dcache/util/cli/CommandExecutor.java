@@ -1,6 +1,7 @@
 package org.dcache.util.cli;
 
 import java.io.Serializable;
+import java.lang.reflect.AnnotatedElement;
 
 import dmg.util.CommandException;
 import dmg.util.command.HelpFormat;
@@ -54,4 +55,9 @@ public interface CommandExecutor
      * @return Result of executing the command.
      */
     Serializable execute(Args arguments) throws CommandException;
+
+    /**
+     * Returns the object (typically a class or a method) that implements the command.
+     */
+    AnnotatedElement getImplementation();
 }

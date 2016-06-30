@@ -1,6 +1,10 @@
 package dmg.cells.nucleus;
 
 import java.io.PrintWriter;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Classes implementing this interface can participate in the creation
@@ -25,6 +29,10 @@ import java.io.PrintWriter;
  */
 public interface CellSetupProvider
 {
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ ElementType.TYPE, ElementType.METHOD })
+    @interface AffectsSetup {}
+
     /**
      * Adds cell shell commands for recreating the current setup.
      */

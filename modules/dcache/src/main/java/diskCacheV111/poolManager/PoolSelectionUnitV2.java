@@ -2484,6 +2484,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_add_link = "<link> <pool>|<pool group>";
 
+    @AffectsSetup
     public String ac_psu_add_link_$_2(Args args)
     {
         addLink(args.argv(0), args.argv(1));
@@ -2492,6 +2493,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_addto_pgroup = "<pool group> <pool>";
 
+    @AffectsSetup
     public String ac_psu_addto_pgroup_$_2(Args args)
     {
         addToPoolGroup(args.argv(0), args.argv(1));
@@ -2500,6 +2502,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_addto_linkGroup = "<link group> <link>";
 
+    @AffectsSetup
     public String ac_psu_addto_linkGroup_$_2(Args args)
     {
         addToLinkGroup(args.argv(0), args.argv(1));
@@ -2508,6 +2511,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_addto_ugroup = "<unit group> <unit>";
 
+    @AffectsSetup
     public String ac_psu_addto_ugroup_$_2(Args args)
     {
         addToUnitGroup(args.argv(0),
@@ -2518,6 +2522,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_clear_im_really_sure = "# don't use this command";
 
+    @AffectsSetup
     public String ac_psu_clear_im_really_sure(Args args)
     {
         clear();
@@ -2526,6 +2531,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_create_link = "<link> <unit group> [...]";
 
+    @AffectsSetup
     public String ac_psu_create_link_$_2_99(Args args)
     {
         String name = args.argv(0);
@@ -2536,6 +2542,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_create_linkGroup = "<group name> [-reset]";
 
+    @AffectsSetup
     public String ac_psu_create_linkGroup_$_1(Args args)
     {
         createLinkGroup(args.argv(0), args.hasOption("reset"));
@@ -2544,6 +2551,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_create_pool = "<pool> [-noping] [-disabled]";
 
+    @AffectsSetup
     public String ac_psu_create_pool_$_1(Args args)
     {
         createPool(args.argv(0),
@@ -2553,6 +2561,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_create_pgroup = "<pool group> [-resilient]";
 
+    @AffectsSetup
     public String ac_psu_create_pgroup_$_1(Args args)
     {
         createPoolGroup(args.argv(0), args.hasOption("resilient"));
@@ -2594,6 +2603,7 @@ public class PoolSelectionUnitV2
             "OPTIONS\n" +
             "\tnone\n";
 
+    @AffectsSetup
     public String ac_psu_create_unit_$_1(Args args)
     {
         createUnit(args.argv(0),
@@ -2606,6 +2616,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_create_ugroup = "<unit group>";
 
+    @AffectsSetup
     public String ac_psu_create_ugroup_$_1(Args args)
     {
         createUnitGroup(args.argv(0));
@@ -2708,6 +2719,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_removefrom_linkGroup
             = "<link group> <link>";
 
+    @AffectsSetup
     public String ac_psu_removefrom_linkGroup_$_2(Args args)
     {
         removeFromLinkGroup(args.argv(0), args.argv(1));
@@ -2716,6 +2728,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_removefrom_pgroup = "<pool group> <pool>";
 
+    @AffectsSetup
     public String ac_psu_removefrom_pgroup_$_2(Args args)
     {
         removeFromPoolGroup(args.argv(0), args.argv(1));
@@ -2725,6 +2738,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_removefrom_ugroup
             = "<unit group> <unit> -net";
 
+    @AffectsSetup
     public String ac_psu_removefrom_ugroup_$_2(Args args)
     {
         removeFromUnitGroup(args.argv(0), args.argv(1),
@@ -2734,6 +2748,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_remove_link = "<link>";
 
+    @AffectsSetup
     public String ac_psu_remove_link_$_1(Args args)
     {
         removeLink(args.argv(0));
@@ -2742,6 +2757,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_remove_linkGroup = "<link group>";
 
+    @AffectsSetup
     public String ac_psu_remove_linkGroup_$_1(Args args)
     {
         removeLinkGroup(args.argv(0));
@@ -2750,6 +2766,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_remove_pool = "<pool>";
 
+    @AffectsSetup
     public String ac_psu_remove_pool_$_1(Args args)
     {
         removePool(args.argv(0));
@@ -2758,6 +2775,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_remove_pgroup = "<pool group>";
 
+    @AffectsSetup
     public String ac_psu_remove_pgroup_$_1(Args args)
     {
         removePoolGroup(args.argv(0));
@@ -2766,6 +2784,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_remove_unit = "<unit> [-net]";
 
+    @AffectsSetup
     public String ac_psu_remove_unit_$_1(Args args)
     {
         removeUnit(args.argv(0), args.hasOption("net"));
@@ -2774,6 +2793,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_remove_ugroup = "<unit group>";
 
+    @AffectsSetup
     public String ac_psu_remove_ugroup_$_1(Args args)
     {
         removeUnitGroup(args.argv(0));
@@ -2791,6 +2811,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_set_allpoolsactive = "on|off";
 
+    @AffectsSetup
     public String ac_psu_set_allpoolsactive_$_1(Args args) throws
             CommandSyntaxException
     {
@@ -2822,6 +2843,7 @@ public class PoolSelectionUnitV2
               + "[-cachepref=<cachepref>] [-p2ppref=<p2ppref>] "
               + "[-section=<section>|NONE]";
 
+    @AffectsSetup
     public String ac_psu_set_link_$_1(Args args)
     {
         setLink(args.argv(0), args.getOption("readpref"),
@@ -2835,6 +2857,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_set_linkGroup_custodialAllowed
             = "<link group> <true|false>";
 
+    @AffectsSetup
     public String ac_psu_set_linkGroup_custodialAllowed_$_2(Args args)
     {
         setLinkGroup(args.argv(0), args.argv(1), null, null, null,
@@ -2845,6 +2868,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_set_linkGroup_nearlineAllowed
             = "<link group> <true|false>";
 
+    @AffectsSetup
     public String ac_psu_set_linkGroup_nearlineAllowed_$_2(Args args)
     {
         setLinkGroup(args.argv(0), null, args.argv(1), null, null,
@@ -2855,6 +2879,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_set_linkGroup_onlineAllowed
             = "<link group> <true|false>";
 
+    @AffectsSetup
     public String ac_psu_set_linkGroup_onlineAllowed_$_2(Args args)
     {
         setLinkGroup(args.argv(0), null, null, args.argv(1), null,
@@ -2865,6 +2890,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_set_linkGroup_outputAllowed
             = "<link group> <true|false>";
 
+    @AffectsSetup
     public String ac_psu_set_linkGroup_outputAllowed_$_2(Args args)
     {
         setLinkGroup(args.argv(0), null, null, null, args.argv(1),
@@ -2875,6 +2901,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_set_linkGroup_replicaAllowed
             = "<link group> <true|false>";
 
+    @AffectsSetup
     public String ac_psu_set_linkGroup_replicaAllowed_$_2(Args args)
     {
         setLinkGroup(args.argv(0), null, null, null, null, args.argv(1));
@@ -2891,6 +2918,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_set_regex = "on | off";
 
+    @AffectsSetup
     public String ac_psu_set_regex_$_1(Args args)
     {
         return setRegex(args.argv(0));
@@ -2898,6 +2926,7 @@ public class PoolSelectionUnitV2
 
     public static final String hh_psu_unlink = "<link> <pool>|<pool group>";
 
+    @AffectsSetup
     @Command(name = "psu set storage unit",
             hint = "define resilience requirements for a storage unit",
             description = "Sets the required number of copies and/or "
@@ -2937,6 +2966,7 @@ public class PoolSelectionUnitV2
         }
     }
 
+    @AffectsSetup
     public String ac_psu_unlink_$_2(Args args)
     {
         unlink(args.argv(0), args.argv(1));

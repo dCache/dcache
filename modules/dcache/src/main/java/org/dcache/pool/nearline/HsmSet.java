@@ -286,11 +286,11 @@ public class HsmSet
         throw new FileNotInCacheException("Pool does not have access to any of the HSM locations " + file.locations());
     }
 
+    @AffectsSetup
     @Command(name = "hsm create", hint = "create nearline storage",
             description = "Creates a nearline storage. A nearline storage is dCache's interface to external " +
                           "storage providers such as tape systems. Files are copied to (flush) and from (stage) " +
-                          "nearline storages."
-    )
+                          "nearline storages.")
     public class CreateCommand implements Callable<String>
     {
         @Argument(index = 0,
@@ -342,6 +342,7 @@ public class HsmSet
         }
     }
 
+    @AffectsSetup
     @Command(name = "hsm set", hint = "set nearline storage options",
             description = "Sets options of a nearline storage. See the nearline storage provider " +
                           "documentation for information on supported options.")
@@ -366,6 +367,7 @@ public class HsmSet
         }
     }
 
+    @AffectsSetup
     @Command(name = "hms unset", hint = "unset nearline storage options",
             description = "Unsets options of a nearline storage.")
     public class UnsetCommand implements Callable<String>
@@ -414,6 +416,7 @@ public class HsmSet
         }
     }
 
+    @AffectsSetup
     @Command(name = "hsm remove", hint = "remove nearlinestorage definition",
             description = "Deletes the nearline storage definition from this pool.")
     public class RemoveCommand implements Callable<String>

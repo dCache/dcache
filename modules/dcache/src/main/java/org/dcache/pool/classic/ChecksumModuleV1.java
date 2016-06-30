@@ -187,6 +187,7 @@ public class ChecksumModuleV1
         }
     }
 
+    @AffectsSetup
     @Command(name = "csm set policy",
             description = "Define the checksum policy of the pool.")
     public class SetPolicyCommand implements Callable<String>
@@ -331,6 +332,7 @@ public class ChecksumModuleV1
         }
     }
 
+    @AffectsSetup
     @Command(name = "csm set checksumtype",
             description = "Sets the default checksum type to compute and store for new files.\n\n" +
                     "Unless the client has specified a checksum of a different type, the default " +

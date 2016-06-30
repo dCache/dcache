@@ -444,6 +444,7 @@ public class StorageClassContainer
         }
     }
 
+    @AffectsSetup
     @Command(name = "queue remove class",
             description = "Delete a flush queue")
     class RemoveQueueCommand implements Callable<String>
@@ -506,6 +507,7 @@ public class StorageClassContainer
         }
     }
 
+    @AffectsSetup
     @Command(name = "queue define class",
             description = "Create a new flush queue.")
     class DefineQueueCommand implements Callable<String>

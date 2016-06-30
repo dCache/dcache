@@ -1082,6 +1082,7 @@ public class ReplicaRepository
          return getCellName();
     }
 
+    @AffectsSetup
     @Command(name = "set max diskspace",
             hint = "set size of pool",
             description = "Sets the maximum disk space to be used by this pool. Overrides " +
@@ -1112,6 +1113,7 @@ public class ReplicaRepository
         }
     }
 
+    @AffectsSetup
     @Command(name = "set gap",
             hint = "set minimum free space target",
             description = "New transfers will not be assigned to a pool once it has less free space than the " +

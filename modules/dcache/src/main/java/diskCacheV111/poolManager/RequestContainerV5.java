@@ -350,6 +350,7 @@ public class RequestContainerV5
                                           "all restores failing; setting the limit to \"unlimited\" will remove\n" +
                                           "the limit.";
     public static final String hh_rc_set_max_restore = "<maxNumberOfRestores>" ;
+    @AffectsSetup
     public String ac_rc_set_max_restore_$_1( Args args ){
        if( args.argv(0).equals("unlimited") ){
           _maxRestore = -1 ;
@@ -404,6 +405,7 @@ public class RequestContainerV5
     "    or has been successful" +
     "";
     public static final String hh_rc_set_poolpingtimer = "<checkPoolFileTimer/seconds>" ;
+    @AffectsSetup
     public String ac_rc_set_poolpingtimer_$_1(Args args ){
        _checkFilePingTimer = 1000L * Long.parseLong(args.argv(0));
         synchronized (_poolPingThread) {
@@ -412,11 +414,13 @@ public class RequestContainerV5
        return "" ;
     }
     public static final String hh_rc_set_retry = "<retryTimer/seconds>" ;
+    @AffectsSetup
     public String ac_rc_set_retry_$_1(Args args ){
        _retryTimer = 1000L * Long.parseLong(args.argv(0));
        return "" ;
     }
     public static final String hh_rc_set_max_retries = "<maxNumberOfRetries>" ;
+    @AffectsSetup
     public String ac_rc_set_max_retries_$_1(Args args ){
        _maxRetries = Integer.parseInt(args.argv(0));
        return "" ;
@@ -454,6 +458,7 @@ public class RequestContainerV5
        return "" ;
     }
     public static final String hh_rc_onerror = "suspend|fail" ;
+    @AffectsSetup
     public String ac_rc_onerror_$_1(Args args ){
        String onerror = args.argv(0) ;
        if( ( ! onerror.equals("suspend") ) &&

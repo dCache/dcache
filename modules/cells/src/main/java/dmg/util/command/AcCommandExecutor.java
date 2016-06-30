@@ -4,6 +4,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 
 import java.io.Serializable;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -179,6 +180,12 @@ class AcCommandExecutor implements CommandExecutor
             throw new CommandPanicException("Exception while invoking " +
                     _method.getName() + ": " + e.toString(), e);
         }
+    }
+
+    @Override
+    public AnnotatedElement getImplementation()
+    {
+        return _method;
     }
 
     @Override

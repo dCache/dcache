@@ -1513,6 +1513,7 @@ public class PoolV4
         return info;
     }
 
+    @AffectsSetup
     @Command(name = "set breakeven", hint = "set the space cost value of a week old file for this pool",
             description = "Set the breakeven parameter which is used within the space " +
                     "cost calculation scheme. This calculation is relevant for determining " +
@@ -1548,6 +1549,7 @@ public class PoolV4
         return _breakEven;
     }
 
+    @AffectsSetup
     @Command(name = "set mover cost factor", hint = "set the selectivity of this pool by movers",
             description = "The mover cost factor controls how much the number of movers " +
                     "affects proportional pool selection.\n\n" +
@@ -1735,6 +1737,7 @@ public class PoolV4
     }
 
     public static final String hh_pool_suppress_hsmload = "on|off";
+    @AffectsSetup
     public String ac_pool_suppress_hsmload_$_1(Args args)
     {
         String mode = args.argv(0);
@@ -1754,6 +1757,7 @@ public class PoolV4
     }
 
     public static final String hh_set_duplicate_request = "none|ignore|refresh";
+    @AffectsSetup
     public String ac_set_duplicate_request_$_1(Args args)
         throws CommandSyntaxException
     {
@@ -1851,6 +1855,7 @@ public class PoolV4
     }
 
     public static final String hh_set_report_remove = "on|off";
+    @AffectsSetup
     public String ac_set_report_remove_$_1(Args args)
         throws CommandSyntaxException
     {
@@ -1882,6 +1887,7 @@ public class PoolV4
         return "";
     }
 
+    @AffectsSetup
     @Command(name = "set heartbeat",
             hint = "set time interval for sending this pool cost info",
             description = "Set the regular time interval at which this pool " +

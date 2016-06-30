@@ -270,6 +270,7 @@ public class MigrationModule
         return id;
     }
 
+    @AffectsSetup
     @Command(name="migration concurrency",
             description ="Adjust the concurrency of a job.")
     public class MigrationConcurrencyCommand implements Callable<String>
@@ -289,6 +290,7 @@ public class MigrationModule
         }
     }
 
+    @AffectsSetup
     @Command(name="migration copy",
             description = "Copies files to other pools. Unless filter options are specified, " +
                     "all files on the source pool are copied.\n\n" +
@@ -985,6 +987,7 @@ public class MigrationModule
         }
     }
 
+    @AffectsSetup
     @Command(name="migration cancel",
             description ="Cancels a migration job.")
     public class MigrationCancelCommand implements Callable<String>

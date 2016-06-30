@@ -195,6 +195,7 @@ public class IoQueueManager
         }
     }
 
+    @AffectsSetup
     @Command(name = "mover set max active",
             hint = "set the maximum number of active client transfers",
             description = "Set the maximum number of allowed concurrent transfers. " +
@@ -231,6 +232,7 @@ public class IoQueueManager
         }
     }
 
+    @AffectsSetup
     @Command(name = "p2p set max active",
             hint = "set maximum number of active pool-to-pool transfers",
             description = "Set the maximum number of concurrent active pool-to-pool " +
@@ -249,6 +251,7 @@ public class IoQueueManager
         }
     }
 
+    @AffectsSetup
     @Command(name = "mover queue create", hint = "create mover queue",
             description= "Creates a new mover queue. If the queue already exists, the command changes " +
                          "the queue order if it differs from the current value.\n\n" +
@@ -273,6 +276,7 @@ public class IoQueueManager
         }
     }
 
+    @AffectsSetup
     @Command(name = "mover queue delete", hint = "delete mover queue",
             description = "Deletes a mover queue. The 'regular' and 'p2p' queues cannot be deleted.")
     public class MoverDeleteQueueCommand extends DelayedCommand<String>
@@ -318,6 +322,7 @@ public class IoQueueManager
         }
     }
 
+    @AffectsSetup
     @Command(name = "jtm set timeout",
             hint = "set transfer inactivity limits",
             description = "Set the transfer timeout for a specified queue or all queues in " +

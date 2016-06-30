@@ -39,6 +39,7 @@ public class RequestContainerExecutor
               new LinkedBlockingQueue<>(128));
     }
 
+    @AffectsSetup
     @Command(name = "rc set max threads", hint = "set request container thread limit",
              description = "Sets the maximum number of requests allocated for " +
                      "processing read requests.")

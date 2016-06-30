@@ -198,6 +198,7 @@ public class PartitionManager
         return _partitions;
     }
 
+    @AffectsSetup
     @Command(name = "pm set",
             hint = "set partition parameters",
             description = "Set one or more parameters on a partition. If no partition " +
@@ -265,6 +266,7 @@ public class PartitionManager
         }
     }
 
+    @AffectsSetup
     @Command(name = "pm create",
             hint = "create a new partition",
             description = "Creates a pool manager partition named <partition> of <type>. " +
@@ -306,6 +308,7 @@ public class PartitionManager
         }
     }
 
+    @AffectsSetup
     @Command(name = "pm destroy",
             hint = "remove a partition",
             description = "Remove the specified pool manager partition. Links using the " +

@@ -11,6 +11,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 
 import java.io.Serializable;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -159,6 +160,12 @@ public class AnnotatedCommandExecutor implements CommandExecutor
             throw new CommandThrowableException(
                     e.toString() + " from " + _command.name(), e);
         }
+    }
+
+    @Override
+    public AnnotatedElement getImplementation()
+    {
+        return _constructor.getDeclaringClass();
     }
 
     private Callable<? extends Serializable> createInstance()

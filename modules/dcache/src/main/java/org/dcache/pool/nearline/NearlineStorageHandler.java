@@ -1153,6 +1153,7 @@ public class NearlineStorageHandler
         }
     }
 
+    @AffectsSetup
     @Command(name = "rh set timeout",
             hint = "set restore timeout",
             description = "Set restore timeout for the HSM script. When the timeout expires " +
@@ -1202,6 +1203,7 @@ public class NearlineStorageHandler
         }
     }
 
+    @AffectsSetup
     @Command(name = "st set timeout",
             hint = "set store timeout",
             description = "Set store timeout for the HSM script. When the timeout expires " +
@@ -1251,6 +1253,7 @@ public class NearlineStorageHandler
         }
     }
 
+    @AffectsSetup
     @Command(name = "rm set timeout",
             hint = "set tape remove timeout",
             description = "Set remove timeout for the HSM script. When the timeout expires " +
