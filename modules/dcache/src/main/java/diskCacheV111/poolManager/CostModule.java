@@ -25,8 +25,6 @@ public interface CostModule {
      */
     void messageArrived( CellMessage cellMessage ) ;
 
-    boolean isActive() ;
-
     /**
      * Obtain the PoolCostInfo associated with the named pool.  If the pool is unknown
      * then null is returned.

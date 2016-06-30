@@ -1,5 +1,3 @@
-// $Id: CostModuleV1.java,v 1.21 2007-08-01 20:19:23 tigran Exp $
-
 package diskCacheV111.poolManager ;
 
 import com.google.common.collect.ImmutableMap;
@@ -19,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import diskCacheV111.pools.CostCalculatable;
@@ -38,11 +37,12 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 
 import org.dcache.cells.CellMessageDispatcher;
 import org.dcache.namespace.FileAttribute;
@@ -58,16 +58,12 @@ public class CostModuleV1
                CellInfoProvider,
                CellSetupProvider
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(CostModuleV1.class);
 
     private static final long serialVersionUID = -267023006449629909L;
 
     private final Map<String, Entry> _hash = new HashMap<>() ;
-    private boolean _isActive = true ;
-    private boolean _update = true ;
-    private boolean _magic = true ;
-    private boolean _debug;
     private boolean _cachedPercentileCostCutIsValid;
     private double _cachedPercentileCostCut;
     private double _cachedPercentileFraction;
@@ -127,10 +123,6 @@ public class CostModuleV1
 
     public synchronized void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage msg)
     {
-        if (! _update) {
-            return;
-        }
-
         CellAddressCore poolAddress = envelope.getSourceAddress();
         String poolName = msg.getPoolName();
         PoolV2Mode poolMode = msg.getPoolMode();
@@ -239,11 +231,6 @@ public class CostModuleV1
             if (msg instanceof PoolAcceptFileMessage && attributes.isDefined(FileAttribute.SIZE)) {
                 pinned = -msg.getFileAttributes().getSize();
             }
-        } else if (!msg.isReply() && !_magic) {
-            diff = 1;
-            if (msg instanceof PoolAcceptFileMessage && attributes.isDefined(FileAttribute.SIZE)) {
-                pinned = msg.getFileAttributes().getSize();
-            }
         }
 
         queue.modifyQueue(diff);
@@ -251,7 +238,9 @@ public class CostModuleV1
 
         considerInvalidatingCache(currentPerformanceCost, costInfo);
 
-        xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")) , poolName, diff, pinned, msg);
+        LOGGER.trace("CostModuleV1 : Mover{} queue of {} modified by {}/{} due to {}",
+                     (requestedQueueName == null ? "" : ("(" + requestedQueueName + ")")),
+                     poolName, diff, pinned, ((Object) msg).getClass().getName());
     }
 
     public synchronized void messageToForward(DoorTransferFinishedMessage msg)
@@ -287,7 +276,9 @@ public class CostModuleV1
 
         queue.modifyQueue(diff);
         considerInvalidatingCache(currentPerformanceCost, costInfo);
-        xsay("Mover"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, pinned, msg);
+        LOGGER.trace("CostModuleV1 : Mover{} queue of {} modified by {}/{} due to {}",
+                     (requestedQueueName == null ? "" : ("(" + requestedQueueName + ")")),
+                     poolName, diff, pinned, ((Object) msg).getClass().getName());
     }
 
     public synchronized void messageToForward(PoolFetchFileMessage msg)
@@ -320,15 +311,12 @@ public class CostModuleV1
         queue.modifyQueue(diff);
          spaceInfo.modifyPinnedSpace(pinned);
          considerInvalidatingCache(currentPerformanceCost, costInfo);
-         xsay("Restore", poolName, diff, pinned, msg);
+        LOGGER.trace("CostModuleV1 : Restore queue of {} modified by {}/{} due to {}",
+                     poolName, diff, pinned, ((Object) msg).getClass().getName());
     }
 
     public synchronized void messageToForward(PoolMgrSelectPoolMsg msg)
     {
-         if (!_magic) {
-             return;
-         }
-
          if (!msg.isReply()) {
              return;
          }
@@ -364,13 +352,13 @@ public class CostModuleV1
          queue.modifyQueue(diff);
          spaceInfo.modifyPinnedSpace(pinned);
          considerInvalidatingCache(currentPerformanceCost, costInfo);
-         xsay("Mover (magic)"+(requestedQueueName==null?"":("("+requestedQueueName+")")), poolName, diff, pinned, msg);
+        LOGGER.trace("CostModuleV1 : Mover{} queue of {} modified by {}/{} due to {}",
+                     (requestedQueueName == null ? "" : ("(" + requestedQueueName + ")")),
+                     poolName, diff, pinned, ((Object) msg).getClass().getName());
     }
 
     public synchronized void messageToForward(Pool2PoolTransferMsg msg)
     {
-        _log.debug( "Pool2PoolTransferMsg : reply="+msg.isReply());
-
         String sourceName = msg.getSourcePoolName();
         Entry source = _hash.get(sourceName);
         if (source == null) {
@@ -408,8 +396,10 @@ public class CostModuleV1
         considerInvalidatingCache(currentDestinationPerformanceCost,
                 destinationCostInfo);
 
-        xsay("P2P client (magic)", destinationName, diff, pinned, msg);
-        xsay("P2P server (magic)", sourceName, diff, 0, msg);
+        LOGGER.trace("CostModuleV1 : P2P client queue of {} modified by {}/{} due to {}",
+                     destinationName, diff, pinned, ((Object) msg).getClass().getName());
+        LOGGER.trace("CostModuleV1 : P2P server queue of {} modified by {}/{} due to {}",
+                     sourceName, diff, 0, ((Object) msg).getClass().getName());
     }
 
     /**
@@ -420,47 +410,6 @@ public class CostModuleV1
     public void messageArrived(CellMessage cellMessage)
     {
         _handlers.call(cellMessage);
-    }
-
-    @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
-    }
-
-    @Override
-    public void getInfo(PrintWriter pw)
-    {
-        pw.append( "Submodule : CostModule (cm) : ").println(getClass().getName());
-        pw.append(" Debug   : ").println(_debug?"on":"off");
-        pw.append(" Update  : ").println(_update?"on":"off");
-        pw.append(" Active  : ").println(_isActive?"yes":"no");
-        pw.append(" Magic   : ").println(_magic?"yes":"no");
-    }
-
-    @Override
-    public void beforeSetup()
-    {
-    }
-
-    @Override
-    public void afterSetup()
-    {
-    }
-
-    @Override
-    public void printSetup(PrintWriter pw)
-    {
-        pw.println("cm set debug "+(_debug?"on":"off"));
-        pw.println("cm set update "+(_update?"on":"off"));
-        pw.println("cm set magic "+(_magic?"on":"off"));
-    }
-
-    private void xsay(String queue, String pool, int diff, long pinned, Object obj)
-    {
-        if (_debug) {
-            _log.debug("CostModuleV1 : "+queue+" queue of "+pool+" modified by "+diff+"/" + pinned + " due to "+obj.getClass().getName());
-        }
     }
 
    @Override
@@ -482,11 +431,11 @@ public class CostModuleV1
    private double calculatePercentileCostCut(double fraction)
    {
        if( _hash.isEmpty()) {
-           _log.debug( "no pools available");
+           LOGGER.debug("no pools available");
            return 0;
        }
 
-       _log.debug( "{} pools available", _hash.size());
+       LOGGER.debug("{} pools available", _hash.size());
 
        double poolCosts[] = new double[_hash.size()];
 
@@ -502,11 +451,6 @@ public class CostModuleV1
    }
 
 
-
-
-   @Override
-   public boolean isActive(){ return _isActive ; }
-
     public static final String hh_cm_info = "";
     public String ac_cm_info(Args args)
     {
@@ -515,42 +459,62 @@ public class CostModuleV1
         return s.toString();
     }
 
-   public static final String hh_cm_set_debug = "on|off" ;
-   public String ac_cm_set_debug_$_1( Args args ){
-     if( args.argv(0).equals("on") ){ _debug = true ; }
-     else if( args.argv(0).equals("off") ){ _debug = false ; }
-     else {
-         throw new IllegalArgumentException("on|off");
-     }
-     return "";
-   }
-   public static final String hh_cm_set_active = "on|off" ;
-   public String ac_cm_set_active_$_1( Args args ){
-     if( args.argv(0).equals("on") ){ _isActive = true ; }
-     else if( args.argv(0).equals("off") ){ _isActive = false ; }
-     else {
-         throw new IllegalArgumentException("on|off");
-     }
-     return "";
-   }
-   public static final String hh_cm_set_update = "on|off" ;
-   public String ac_cm_set_update_$_1( Args args ){
-     if( args.argv(0).equals("on") ){ _update = true ; }
-     else if( args.argv(0).equals("off") ){ _update = false ; }
-     else {
-         throw new IllegalArgumentException("on|off");
-     }
-     return "";
-   }
-   public static final String hh_cm_set_magic = "on|off" ;
-   public String ac_cm_set_magic_$_1( Args args ){
-     if( args.argv(0).equals("on") ){ _magic = true ; }
-     else if( args.argv(0).equals("off") ){ _magic = false ; }
-     else {
-         throw new IllegalArgumentException("on|off");
-     }
-     return "";
-   }
+    @Command(name = "cm set debug")
+    @Deprecated
+    public class SetDebugCommand implements Callable<String>
+    {
+        @Argument
+        String value;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            return "The 'cm set debug' command is obsolete.";
+        }
+    }
+
+    @Command(name = "cm set active")
+    @Deprecated
+    public class SetActiveCommand implements Callable<String>
+    {
+        @Argument
+        String value;
+
+        @Override
+        public String call() throws Exception
+        {
+            return "The 'cm set active' command is obsolete.";
+        }
+    }
+
+    @Command(name = "cm set update")
+    @Deprecated
+    public class SetUpdateCommand implements Callable<String>
+    {
+        @Argument
+        String value;
+
+        @Override
+        public String call() throws Exception
+        {
+            return "The 'cm set update' command is obsolete.";
+        }
+    }
+
+    @Command(name = "cm set magic")
+    @Deprecated
+    public class SetMagicCommand implements Callable<String>
+    {
+        @Argument
+        String value;
+
+        @Override
+        public String call() throws Exception
+        {
+            return "The 'cm set magic' command is obsolete.";
+        }
+    }
+
    public static final String hh_cm_fake = "<poolName> [off] | [-cpu=<cpuCost>|off]" ;
    public synchronized String ac_cm_fake_$_1_2( Args args ){
       String poolName = args.argv(0) ;
@@ -623,7 +587,7 @@ public class CostModuleV1
     {
         Collection<PoolCostInfo> costInfos = new ArrayList<>();
         for (Entry entry: _hash.values()) {
-            if (entry.isValid() || !_update) {
+            if (entry.isValid()) {
                 costInfos.add(entry.getPoolCostInfo());
             }
         }
@@ -634,7 +598,7 @@ public class CostModuleV1
     public synchronized PoolCostInfo getPoolCostInfo(String poolName)
     {
         Entry entry = _hash.get(poolName);
-        if (entry != null && (entry.isValid() || !_update)) {
+        if (entry != null && entry.isValid()) {
             return entry.getPoolCostInfo();
         }
         return null;
@@ -644,7 +608,7 @@ public class CostModuleV1
     public synchronized PoolInfo getPoolInfo(String pool)
     {
         Entry entry = _hash.get(pool);
-        if (entry != null && (entry.isValid() || !_update)) {
+        if (entry != null && entry.isValid()) {
             return entry.getPoolInfo();
         }
         return null;
@@ -657,7 +621,7 @@ public class CostModuleV1
         Map<String,PoolInfo> map = new HashMap<>();
         for (String pool: pools) {
             Entry entry = _hash.get(pool);
-            if (entry != null && (entry.isValid() || !_update)) {
+            if (entry != null && entry.isValid()) {
                 map.put(pool, entry.getPoolInfo());
             }
         }

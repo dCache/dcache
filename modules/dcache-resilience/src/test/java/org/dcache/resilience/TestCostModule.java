@@ -156,11 +156,6 @@ final class TestCostModule implements CostModule {
     }
 
     @Override
-    public boolean isActive() {
-        return true;
-    }
-
-    @Override
     public void messageArrived(CellMessage cellMessage) {
         //NOP
     }
