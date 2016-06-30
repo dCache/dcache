@@ -206,15 +206,11 @@ public class PartitionManager
                           "that explicitly redefine the parameters.\n\n" +
 
                           "Setting a parameter to the value 'off' resets it back to inherited " +
-                          "value or back to the default parameter value.\n\n" +
-
-                          "Different partitions have different parameters and their corresponding " +
-                          "values, but a small set of parameters are common to all partition types. " +
-                          "Use 'pm ls -a' to see all available parameters and their current value.",
-            allowAnyOption = true)
+                          "value or back to the default parameter value.")
     public class PmSetCommand implements Callable<String>
     {
-        @CommandLine
+        @CommandLine(allowAnyOption = true,
+                usage = "Partition type specific options. Use 'pm ls -a' to discover available options.")
         Args args;
 
         @Argument(required = false,

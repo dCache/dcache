@@ -21,6 +21,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 import java.io.PrintWriter;
@@ -187,6 +188,10 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                 }
                 signature.append(" ");
             }
+            CommandLine commandLine = field.getAnnotation(CommandLine.class);
+            if (commandLine != null && commandLine.allowAnyOption()) {
+                signature.append(valuespec(commandLine.valueSpec())).append(" ");
+            }
         }
 
         for (Field field: AnnotatedCommandUtils.getArguments(clazz)) {
@@ -295,36 +300,43 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
             writer.println(heading("OPTIONS"));
             for (Map.Entry<String,Collection<Field>> category: options.asMap().entrySet()) {
                 if (!category.getKey().isEmpty()) {
+                    writer.println();
                     writer.append("       ").println(heading(category.getKey() + ":"));
                 }
                 for (Field field: category.getValue()) {
                     Class<?> type = field.getType();
                     Option option = field.getAnnotation(Option.class);
-                    writer.append("       ").append(literal("  -" + option.name()));
-                    if (!type.isArray()) {
-                        if (!Boolean.class.equals(type) && !Boolean.TYPE
-                                .equals(type)) {
-                            writer.append("=").append(getMetaVar(type, option));
+                    if (option != null) {
+                        writer.append("       ").append(literal("  -" + option.name()));
+                        if (!type.isArray()) {
+                            if (!Boolean.class.equals(type) && !Boolean.TYPE.equals(type)) {
+                                writer.append("=").append(getMetaVar(type, option));
+                            }
+                        } else if (option.separator().isEmpty()) {
+                            writer.append("=").append(getMetaVar(type.getComponentType(), option));
+                            writer.append(value("..."));
+                        } else {
+                            String metaVar = getMetaVar(type.getComponentType(), option);
+                            writer.append("=").append(metaVar);
+                            writer.append("[").append(option.separator()).append(metaVar).append("]");
+                            writer.append(value("..."));
                         }
-                    } else if (option.separator().isEmpty()) {
-                        writer.append("=").append(getMetaVar(type
-                                .getComponentType(), option));
-                        writer.append(value("..."));
-                    } else {
-                        String metaVar = getMetaVar(type
-                                .getComponentType(), option);
-                        writer.append("=").append(metaVar);
-                        writer.append("[").append(option.separator())
-                                .append(metaVar).append("]");
-                        writer.append(value("..."));
+                        writer.println();
+                        String usage = option.usage();
+                        if (!option.required()) {
+                            usage = Joiner.on(' ').join(usage, getDefaultDescription(instance, field));
+                        }
+                        if (!usage.isEmpty()) {
+                            writer.append(Strings.wrap("              ", usage, WIDTH));
+                        }
                     }
-                    writer.println();
-                    String usage = option.usage();
-                    if (!option.required()) {
-                        usage = Joiner.on(' ').join(usage, getDefaultDescription(instance, field));
-                    }
-                    if (!usage.isEmpty()) {
-                        writer.append(Strings.wrap("              ", usage, WIDTH));
+                    CommandLine cmd = field.getAnnotation(CommandLine.class);
+                    if (cmd != null && cmd.allowAnyOption()) {
+                        writer.append("       ").append(valuespec(cmd.valueSpec())).println();
+                        String usage = cmd.usage();
+                        if (!usage.isEmpty()) {
+                            writer.append(Strings.wrap("              ", usage, WIDTH));
+                        }
                     }
                 }
             }

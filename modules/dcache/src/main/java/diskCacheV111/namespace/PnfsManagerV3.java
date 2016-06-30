@@ -655,15 +655,15 @@ public class PnfsManagerV3
 
     }
 
-    @Command(name = "flags set", allowAnyOption = true, hint = "set flags",
+    @Command(name = "flags set", hint = "set flags",
             description = "Files in dCache can be associated with arbitrary key-value pairs called " +
                           "flags. This command allows one or more flags to be set on a file.")
     class FlagsSetCommand implements Callable<String>
     {
-        @Argument(valueSpec = "PATH|PNFSID -FLAG=VALUE...")
+        @Argument(valueSpec = "PATH|PNFSID")
         PnfsIdOrPath file;
 
-        @CommandLine
+        @CommandLine(allowAnyOption = true,  usage = "Flags to modify.")
         Args args;
 
         @Override
@@ -677,15 +677,15 @@ public class PnfsManagerV3
         }
     }
 
-    @Command(name = "flags remove", allowAnyOption = true, hint = "clear flags",
+    @Command(name = "flags remove", hint = "clear flags",
             description = "Files in dCache can be associated with arbitrary key-value pairs called " +
                           "flags. This command allows one or more flags to be cleared on a file.")
     class FlagsRemoveCommand implements Callable<String>
     {
-        @Argument(valueSpec = "PATH|PNFSID -FLAG...")
+        @Argument(valueSpec = "PATH|PNFSID")
         PnfsIdOrPath file;
 
-        @CommandLine
+        @CommandLine(allowAnyOption = true, valueSpec = "-KEY ...", usage = "Flags to clear.")
         Args args;
 
         @Override
@@ -700,7 +700,7 @@ public class PnfsManagerV3
         }
     }
 
-    @Command(name = "flags ls", allowAnyOption = true, hint = "list flags",
+    @Command(name = "flags ls", hint = "list flags",
             description = "Files in dCache can be associated with arbitrary key-value pairs called " +
                           "flags. This command lists the flags of a file.")
     class FlagsListCommand implements Callable<String>

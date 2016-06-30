@@ -38,13 +38,14 @@ public class AnnotatedCommandUtils
                     return field.getAnnotation(Argument.class).index();
                 }
             };
-    private static final Function<Field,String> GET_OPTION_NAME =
+    private static final Function<Field,String> GET_NAME =
             new Function<Field,String>()
             {
                 @Override
                 public String apply(Field field)
                 {
-                    return field.getAnnotation(Option.class).name();
+                    Option option = field.getAnnotation(Option.class);
+                    return option != null ? option.name() : String.valueOf(Character.MAX_VALUE);
                 }
             };
 
@@ -59,12 +60,16 @@ public class AnnotatedCommandUtils
     {
         Multimap<String,Field> options =
                 TreeMultimap.create(Ordering.natural(),
-                        Ordering.natural().onResultOf(GET_OPTION_NAME));
+                        Ordering.natural().onResultOf(GET_NAME));
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
                 if (option != null) {
                     options.put(option.category(), field);
+                }
+                CommandLine cmd = field.getAnnotation(CommandLine.class);
+                if (cmd != null) {
+                    options.put(cmd.category(), field);
                 }
             }
         }

@@ -64,6 +64,7 @@ import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
 import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
@@ -2141,11 +2142,15 @@ public class CellShell extends CommandInterpreter
     //
     //   domain class loader routines
     //
-    @Command(name = "set classloader", hint = "obsolete", allowAnyOption = true)
+    @Command(name = "set classloader", hint = "obsolete")
+    @Deprecated
     public class SetClassloaderCommand implements Callable<String>
     {
         @Argument
         String[] args;
+
+        @CommandLine(allowAnyOption = true)
+        Args cmd;
 
         @Override
         public String call() throws IllegalArgumentException
@@ -2154,11 +2159,15 @@ public class CellShell extends CommandInterpreter
         }
     }
 
-    @Command(name = "show classloader", hint = "obsolete", allowAnyOption = true)
+    @Command(name = "show classloader", hint = "obsolete")
+    @Deprecated
     public class ShowClassloaderCommand implements Callable<String>
     {
         @Argument
         String[] args;
+
+        @CommandLine(allowAnyOption = true)
+        Args cmd;
 
         @Override
         public String call()

@@ -225,6 +225,8 @@ public class AnnotatedCommandExecutor implements CommandExecutor
     {
         Set<String> optionNames = new HashSet<>();
 
+        boolean allowAnyOption = false;
+
         List<Handler> handlers = Lists.newArrayList();
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field field: c.getDeclaredFields()) {
@@ -242,6 +244,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                 CommandLine commandLine = field.getAnnotation(CommandLine.class);
                 if (commandLine != null) {
                     handlers.add(createFieldHandler(command, field, commandLine));
+                    allowAnyOption |= commandLine.allowAnyOption();
                 }
             }
         }
@@ -252,7 +255,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
             handlers.add(new MaxArgumentsHandler(maxArgs));
         }
 
-        if (!command.allowAnyOption()) {
+        if (!allowAnyOption) {
             handlers.add(new CheckOptionsKnownHandler(optionNames));
         }
 

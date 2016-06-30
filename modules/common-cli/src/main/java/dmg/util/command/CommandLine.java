@@ -16,4 +16,27 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface CommandLine
 {
+    /**
+     * Whether to allow any option or only those enumerated by @Option annotations.
+     */
+    boolean allowAnyOption() default false;
+
+    /**
+     * See {@link Option#valueSpec()}.
+     */
+    String valueSpec() default "[-KEY[=VALUE]] ...";
+
+    /**
+     * Help string used to display the usage screen.
+     *
+     * <p>
+     * If this value is empty, the option will not be displayed
+     * in the usage screen.
+     */
+    String usage() default "";
+
+    /**
+     * Category descriptor used to group options in help output.
+     */
+    String category() default "";
 }

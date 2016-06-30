@@ -33,9 +33,4 @@ public @interface Command
      * ACL specification of the command.
      */
     String[] acl() default {};
-
-    /**
-     * Whether to allow any option or only those enumerated by @Option annotations.
-     */
-    boolean allowAnyOption() default false;
 }

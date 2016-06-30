@@ -693,7 +693,7 @@ public class UserAdminShell
 
     }
 
-    @Command(name = "\\sn", hint = "send pnfsmanager command", allowAnyOption = true,
+    @Command(name = "\\sn", hint = "send pnfsmanager command",
             acl = {"cell.*.execute", "cell.PnfsManager.execute"},
             description = "Sends COMMAND to the pnfsmanager service. Use \\sn help for a list of supported commands.")
     class NameSpaceCommand implements Callable<Serializable>
@@ -701,7 +701,7 @@ public class UserAdminShell
         @Argument(usage = "A pnfsmanager command.")
         String[] command;
 
-        @CommandLine
+        @CommandLine(allowAnyOption = true, valueSpec = "[OPTIONS]")
         Args args;
 
         @Override
@@ -711,7 +711,7 @@ public class UserAdminShell
         }
     }
 
-    @Command(name = "\\sp", hint = "send poolmanager command", allowAnyOption = true,
+    @Command(name = "\\sp", hint = "send poolmanager command",
             acl = {"cell.*.execute", "cell.PoolManager.execute"},
             description = "Sends COMMAND to the poolmanager service. Use \\sp help for a list of supported commands.")
     class PoolManagerCommand implements Callable<Serializable>
@@ -719,7 +719,7 @@ public class UserAdminShell
         @Argument(usage = "A poolmanager command.")
         String[] command;
 
-        @CommandLine
+        @CommandLine(allowAnyOption = true, valueSpec = "[OPTIONS]")
         Args args;
 
         @Override
@@ -729,7 +729,7 @@ public class UserAdminShell
         }
     }
 
-    @Command(name = "\\s", hint = "send command", allowAnyOption = true,
+    @Command(name = "\\s", hint = "send command",
             description = "Sends COMMAND to one or more cells.")
     class SendCommand implements Callable<Serializable>
     {
@@ -741,7 +741,7 @@ public class UserAdminShell
         @Argument(index = 1, usage = "A cell command.")
         String[] command;
 
-        @CommandLine
+        @CommandLine(allowAnyOption = true, valueSpec = "[OPTIONS]")
         Args args;
 
         @Override
@@ -770,7 +770,7 @@ public class UserAdminShell
         }
     }
 
-    @Command(name = "\\sl", hint = "send to locations", allowAnyOption = true,
+    @Command(name = "\\sl", hint = "send to locations",
             description = "Sends COMMAND to all pools hosting a copy of the given file. If the " +
                           "string $1 occurs in the command, the string is replaced by the PNFS ID " +
                           "of the given file.")
@@ -783,7 +783,7 @@ public class UserAdminShell
         @Argument(index = 1, usage = "A pool command. $1 is substituted for the PNFS ID.")
         String[] command;
 
-        @CommandLine
+        @CommandLine(allowAnyOption = true, valueSpec = "[OPTIONS]")
         Args args;
 
         @Override
