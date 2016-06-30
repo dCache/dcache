@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 
 import diskCacheV111.util.FileNotInCacheException;
@@ -39,15 +40,16 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.Formats;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
 
-import org.dcache.pool.nearline.script.ScriptNearlineStorage;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.NearlineStorageProvider;
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static java.util.Collections.unmodifiableSet;
@@ -284,112 +286,171 @@ public class HsmSet
         throw new FileNotInCacheException("Pool does not have access to any of the HSM locations " + file.locations());
     }
 
-    public static final String hh_hsm_create = "<type> [<name> [<provider>]] [-<key>=<value>] ...";
-    public synchronized String ac_hsm_create_$_1_3(Args args)
+    @Command(name = "hsm create", hint = "create nearline storage",
+            description = "Creates a nearline storage. A nearline storage is dCache's interface to external " +
+                          "storage providers such as tape systems. Files are copied to (flush) and from (stage) " +
+                          "nearline storages."
+    )
+    public class CreateCommand implements Callable<String>
     {
-        String type = args.argv(0);
-        String instance = (args.argc() == 1) ? type : args.argv(1);
-        String provider = (args.argc() == 3) ? args.argv(2) : DEFAULT_PROVIDER;
-        if (_isReadingSetup) {
-            if (_newConfig.containsKey(instance)) {
-                throw new IllegalArgumentException("Nearline storage already exists: " + instance);
-            }
-            HsmInfo info = _hsm.get(instance);
-            if (info == null) {
-                info = new HsmInfo(instance, type, provider);
-            }
-            info.scanOptions(args);
-            _newConfig.put(instance, info);
-        } else {
-            if (_hsm.containsKey(instance)) {
-                throw new IllegalArgumentException("Nearline storage already exists: " + instance);
-            }
-            HsmInfo info = new HsmInfo(instance, type, provider);
-            info.scanOptions(args);
-            _hsm.put(instance, info);
-        }
-        return "";
-    }
+        @Argument(index = 0,
+                usage = "The nearline storage type is usually determined by the storage-info-extractor " +
+                        "used by the pnfs manager. This matches the string after the @ in a storage unit and " +
+                        "is typically either 'osm' or 'enstore'.")
+        String type;
 
-    public static final String hh_hsm_set = "<name> [-<key>=<value>] ...";
-    public synchronized String ac_hsm_set_$_1_2(Args args)
-    {
-        HsmInfo info;
-        if (_isReadingSetup) {
-            String type = args.argv(0);
-            String instance = (args.argc() == 1) ? type : args.argv(1);
-            info = _newConfig.get(instance);
-            if (info == null) {
-                info = _hsm.get(instance);
-                if (info == null) {
-                    /* For backwards compatibility with old pool setup files
-                     * we auto-create HSMs.
-                     */
-                    info = new HsmInfo(instance, type, DEFAULT_PROVIDER);
+        @Argument(index = 1, required = false,
+                usage = "Uniquely identifies the nearline storage. Defaults to the HSM type, " +
+                        "but should be set if interfaces with multiple nearline storages. If " +
+                        "multiple pools interact with the same nearline storage, these should " +
+                        "use the same instance name.")
+        String instance;
+
+        @Argument(index = 2, required = false,
+                usage = "Nearline storage providers are pluggable drivers for the nearline storage interface. " +
+                        "The provider handles flushing to and staging from the nearline storage as well " +
+                        "deleting files.")
+        String provider = DEFAULT_PROVIDER;
+
+        @CommandLine(allowAnyOption = true,
+                usage = "Provider specific options.")
+        Args options;
+
+        @Override
+        public String call() throws Exception
+        {
+            String instance = (this.instance == null) ? type : this.instance;
+            if (_isReadingSetup) {
+                if (_newConfig.containsKey(instance)) {
+                    throw new IllegalArgumentException("Nearline storage already exists: " + instance);
                 }
+                HsmInfo info = _hsm.get(instance);
+                if (info == null) {
+                    info = new HsmInfo(instance, type, provider);
+                }
+                info.scanOptions(options);
                 _newConfig.put(instance, info);
+            } else {
+                if (_hsm.containsKey(instance)) {
+                    throw new IllegalArgumentException("Nearline storage already exists: " + instance);
+                }
+                HsmInfo info = new HsmInfo(instance, type, provider);
+                info.scanOptions(options);
+                _hsm.put(instance, info);
             }
-        } else {
-            String instance = args.argv(0);
-            info = _hsm.get(instance);
+            return "";
+        }
+    }
+
+    @Command(name = "hsm set", hint = "set nearline storage options",
+            description = "Sets options of a nearline storage. See the nearline storage provider " +
+                          "documentation for information on supported options.")
+    public class SetCommand implements Callable<String>
+    {
+        @Argument(usage = "Nearline storage instance name.")
+        String instance;
+
+        @CommandLine(allowAnyOption = true,
+                usage = "Provider specific options.")
+        Args options;
+
+        @Override
+        public String call() throws Exception
+        {
+            HsmInfo info = _isReadingSetup ? _newConfig.get(instance) : _hsm.get(instance);
             if (info == null) {
-                throw new IllegalArgumentException("No such nearline storage: " + instance + ". You may need to run 'hsm create'.");
+                throw new IllegalArgumentException(instance + ": No such nearline storage. You may need to run 'hsm create'.");
             }
+            info.scanOptions(options);
+            return "";
         }
-        info.scanOptions(args);
-        return "";
     }
 
-    public static final String hh_hsm_unset = "<name> [-<key>] ...";
-    public synchronized String ac_hsm_unset_$_1(Args args)
+    @Command(name = "hms unset", hint = "unset nearline storage options",
+            description = "Unsets options of a nearline storage.")
+    public class UnsetCommand implements Callable<String>
     {
-        String instance = args.argv(0);
-        HsmInfo info = _isReadingSetup ? _newConfig.get(instance) : _hsm.get(instance);
-        if (info == null) {
-            throw new IllegalArgumentException("No such nearline storage: " + instance + ". You may need to run 'hsm create'.");
+        @Argument(usage = "Nearline storage instance name.")
+        String instance;
+
+        @CommandLine(allowAnyOption = true, valueSpec = "-KEY ...",
+                usage = "Provider specific options.")
+        Args options;
+
+        @Override
+        public String call() throws Exception
+        {
+            HsmInfo info = _isReadingSetup ? _newConfig.get(instance) : _hsm.get(instance);
+            if (info == null) {
+                throw new IllegalArgumentException(instance + ": No such nearline storage. You may need to run 'hsm create'.");
+            }
+            info.scanOptionsUnset(options);
+            return "";
         }
-        info.scanOptionsUnset(args);
-        return "";
+
     }
 
-    public static final String hh_hsm_ls = "[<name>] ...";
-    public String ac_hsm_ls_$_0_99(Args args)
+    @Command(name = "hsm ls", hint = "list nearline storages",
+            description = "Lists all nearline storages defined on this pool.")
+    public class LsCommand implements Callable<String>
     {
-       StringBuilder sb = new StringBuilder();
-       if (args.argc() > 0) {
-          for (int i = 0; i < args.argc(); i++) {
-             printInfos(sb, args.argv(i));
-          }
-       } else {
-           for (String name : _hsm.keySet()) {
-               printInfos(sb, name);
-           }
-       }
-       return sb.toString();
+        @Argument(usage = "Limit output to these instances.")
+        String[] instances;
+
+        @Override
+        public String call() throws Exception
+        {
+            StringBuilder sb = new StringBuilder();
+            if (instances.length > 0) {
+                for (String instance : instances) {
+                    printInfos(sb, instance);
+                }
+            } else {
+                for (String name : _hsm.keySet()) {
+                    printInfos(sb, name);
+                }
+            }
+            return sb.toString();
+        }
     }
 
-    public static final String hh_hsm_remove = "<name>";
-    public synchronized String ac_hsm_remove_$_1(Args args)
+    @Command(name = "hsm remove", hint = "remove nearlinestorage definition",
+            description = "Deletes the nearline storage definition from this pool.")
+    public class RemoveCommand implements Callable<String>
     {
-        HsmInfo info = (_isReadingSetup ? _newConfig : _hsm).remove(args.argv(0));
-        if (info != null) {
-            info.shutdown();
+        @Argument(usage = "Nearline storage instance name.")
+        String instance;
+
+        @Override
+        public String call() throws Exception
+        {
+            HsmInfo info = (_isReadingSetup ? _newConfig : _hsm).remove(instance);
+            if (info != null) {
+                info.shutdown();
+            }
+            return "";
         }
-        return "";
     }
 
-    public static final String hh_hsm_show_providers = "# show available nearline storage providers";
-    public synchronized String ac_hsm_show_providers(Args args)
+    @Command(name = "hsm show providers", hint = "list available providers",
+            description = "Nearline storage providers are pluggable. Third party plugins may " +
+                          "use the nearline storage SPI to implement custom nearline storage " +
+                          "drivers.")
+    public class ShowProvidersCommand implements Callable<String>
     {
-        ColumnWriter writer = new ColumnWriter();
-        writer.header("PROVIDER").left("provider").space();
-        writer.header("DESCRIPTION").left("description");
-        for (NearlineStorageProvider provider : PROVIDERS) {
-            writer.row()
-                    .value("provider", provider.getName())
-                    .value("description", provider.getDescription());
+        @Override
+        public String call() throws Exception
+        {
+            ColumnWriter writer = new ColumnWriter();
+            writer.header("PROVIDER").left("provider").space();
+            writer.header("DESCRIPTION").left("description");
+            for (NearlineStorageProvider provider : PROVIDERS) {
+                writer.row()
+                        .value("provider", provider.getName())
+                        .value("description", provider.getDescription());
+            }
+            return writer.toString();
         }
-        return writer.toString();
     }
 
     @Override
