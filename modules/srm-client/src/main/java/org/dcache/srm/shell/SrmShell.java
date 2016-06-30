@@ -259,7 +259,7 @@ public class SrmShell extends ShellApplication
         case TPermissionMode._R:
             return "r--";
         case TPermissionMode._RX:
-            return "rx-";
+            return "r-x";
         case TPermissionMode._RW:
             return "rw--";
         case TPermissionMode._RWX:
