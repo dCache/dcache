@@ -80,9 +80,6 @@ public class HsmSet
     private final ConcurrentMap<String, HsmInfo> _newConfig = Maps.newConcurrentMap();
     private final ConcurrentMap<String, HsmInfo> _hsm = Maps.newConcurrentMap();
     private boolean _isReadingSetup;
-    private Integer _legacyRemoveConcurrency;
-    private Integer _legacyStoreConcurrency;
-    private Integer _legacyRestoreConcurrency;
 
     private NearlineStorageProvider findProvider(String name)
     {
@@ -381,30 +378,6 @@ public class HsmSet
         return "";
     }
 
-    public static final String hh_rh_set_max_active = "# Deprecated";
-    public synchronized String ac_rh_set_max_active_$_1(Args args)
-    {
-        checkState(_isReadingSetup, "Legacy command only supported in pool setup file.");
-        _legacyRestoreConcurrency = Integer.parseInt(args.argv(0));
-        return "";
-    }
-
-    public static final String hh_st_set_max_active = "# Deprecated";
-    public synchronized String ac_st_set_max_active_$_1(Args args)
-    {
-        checkState(_isReadingSetup, "Legacy command only supported in pool setup file.");
-        _legacyStoreConcurrency = Integer.parseInt(args.argv(0));
-        return "";
-    }
-
-    public static final String hh_rm_set_max_active = "# Deprecated";
-    public synchronized String ac_rm_set_max_active_$_1(Args args)
-    {
-        checkState(_isReadingSetup, "Legacy command only supported in pool setup file.");
-        _legacyRemoveConcurrency = Integer.parseInt(args.argv(0));
-        return "";
-    }
-
     public static final String hh_hsm_show_providers = "# show available nearline storage providers";
     public synchronized String ac_hsm_show_providers(Args args)
     {
@@ -454,25 +427,6 @@ public class HsmSet
     public synchronized void afterSetup()
     {
         _isReadingSetup = false;
-
-        /* Apply legacy limits.
-         */
-        for (HsmInfo info : _newConfig.values()) {
-            if (info.getProvider().equals(DEFAULT_PROVIDER)) {
-                if (_legacyRestoreConcurrency != null) {
-                    info.setAttribute(ScriptNearlineStorage.CONCURRENT_GETS, String.valueOf(_legacyRestoreConcurrency));
-                }
-                if (_legacyStoreConcurrency != null) {
-                    info.setAttribute(ScriptNearlineStorage.CONCURRENT_PUTS, String.valueOf(_legacyStoreConcurrency));
-                }
-                if (_legacyRemoveConcurrency != null) {
-                    info.setAttribute(ScriptNearlineStorage.CONCURRENT_REMOVES, String.valueOf(_legacyRemoveConcurrency));
-                }
-            }
-        }
-        _legacyRestoreConcurrency = null;
-        _legacyStoreConcurrency = null;
-        _legacyRemoveConcurrency = null;
 
         /* Remove the stores that are not in the new configuration.
          */

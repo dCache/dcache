@@ -7,12 +7,6 @@ csm set policy -onread=off -onwrite=on -onflush=on -onrestore=on -ontransfer=on 
 flush set max active 100
 flush set interval 60
 flush set retry delay 60
-#
-# HsmStorageHandler2(org.dcache.pool.classic.HsmStorageHandler2)
-#
-rh set max active 0
-st set max active 0
-rm set max active 1
 rh set timeout 14400
 st set timeout 14400
 rm set timeout 14400
