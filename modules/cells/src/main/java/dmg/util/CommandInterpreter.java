@@ -3,6 +3,7 @@ package dmg.util;
 import dmg.util.command.AcCommandScanner;
 
 import org.dcache.util.Args;
+import org.dcache.util.cli.AnnotatedCommandScanner;
 
 /**
  *   Scans a specified object and makes a special set
@@ -46,18 +47,21 @@ public class CommandInterpreter extends org.dcache.util.cli.CommandInterpreter
 {
     public CommandInterpreter()
     {
+        addCommandScanner(new AnnotatedCommandScanner());
         addCommandScanner(new AcCommandScanner());
+        addCommandListener(this);
     }
 
     public CommandInterpreter(Object commandListener)
     {
-        super(commandListener);
+        addCommandScanner(new AnnotatedCommandScanner());
         addCommandScanner(new AcCommandScanner());
+        addCommandListener(commandListener);
     }
 
     /**
      * Is a convenient method of <code>command(Args args)</code>.
-     * All Exceptions are catched and converted to a meaningful
+     * All Exceptions are caught and converted to a meaningful
      * String except the CommandExitException which allows the
      * corresponding object to signal a kind
      * of final state. This method should be overwritten to

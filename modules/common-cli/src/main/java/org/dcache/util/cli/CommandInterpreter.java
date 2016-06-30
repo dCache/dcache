@@ -1,11 +1,10 @@
 package org.dcache.util.cli;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -21,57 +20,26 @@ import org.dcache.util.Args;
 
 /**
  * Support for commands, where a command is an Args-based request to some named
- * entity that provides a String response.
+ * entity that provides a Serializable response.
  *
  * Commands are found by scanning one or more command-listener objects.  The
  * process of discovering these commands is abstracted, and provided by one or
- * more CommandScanner objects.  The AnnotatedCommandScanner is always included,
- * which looks for subclasses of the supplied object's class that are
- * instantiated to process a command.  For further details, see {@link
- * AnnotatedCommandScanner}.
+ * more CommandScanner objects.
  *
- * The first command-listener object is scanned in the constructor.  By default
- * the CommandInterpreter itself is scanned; this allows subclassing of
- * CommandInterpreter by the class providing the commands.  There is also a
- * constructor that allows the scanning an arbitrary command-listener if
- * CommandInterpreter is used directly or the subclass contains no commands.
- *
- * Additional command-listener objects and additional CommandScanners may be
- * added after CommandInterpreter is created.
+ * Command-listener objects and CommandScanners are added after CommandInterpreter
+ * is created.
  */
 public class CommandInterpreter
 {
     private final CommandEntry _rootEntry = new CommandEntry("");
 
-    private ImmutableList<CommandScanner> _scanners =
-            ImmutableList.of((CommandScanner)new AnnotatedCommandScanner());
+    private final List<CommandScanner> _scanners = new ArrayList<>();
 
-    private ImmutableSet<Object> _commandListeners = ImmutableSet.of();
-
-    /**
-     * Default constructor to be used if the inspected class
-     * is has inherited the CommandInterpreter.
-     *
-     */
-    public CommandInterpreter() {
-        addCommandListener(this);
-    }
-
-    /**
-     * Creates an interpreter on top of the specified object.
-     * @params commandListener is the object which will be inspected.
-     * @return the CommandInterpreter connected to the
-     *         specified object.
-     */
-    public CommandInterpreter(Object commandListener) {
-        addCommandListener(commandListener);
-    }
+    private final List<Object> _commandListeners = new ArrayList<>();
 
     protected synchronized void addCommandScanner(CommandScanner scanner)
     {
-        _scanners = ImmutableList.<CommandScanner>builder().
-                addAll(_scanners).add(scanner).build();
-
+        _scanners.add(scanner);
         for (Object commandListener : _commandListeners) {
             addCommands(scanner.scan(commandListener));
         }
@@ -87,8 +55,7 @@ public class CommandInterpreter
             addCommands(scanner.scan(commandListener));
         }
 
-        _commandListeners = ImmutableSet.builder().addAll(_commandListeners).
-                add(commandListener).build();
+        _commandListeners.add(commandListener);
     }
 
     private void addCommands(Map<List<String>,? extends CommandExecutor> commands)

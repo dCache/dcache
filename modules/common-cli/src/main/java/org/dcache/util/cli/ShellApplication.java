@@ -58,8 +58,10 @@ public abstract class ShellApplication implements Closeable
 
     public ShellApplication() throws Exception
     {
-        commandInterpreter = new CommandInterpreter(this);
+        commandInterpreter = new CommandInterpreter();
+        commandInterpreter.addCommandScanner(new AnnotatedCommandScanner());
         commandInterpreter.addCommandListener(commandInterpreter.new HelpCommands());
+        commandInterpreter.addCommandListener(this);
         hasConsole = System.console() != null;
         isAnsiSupported = console.getTerminal().isAnsiSupported() && hasConsole;
     }
