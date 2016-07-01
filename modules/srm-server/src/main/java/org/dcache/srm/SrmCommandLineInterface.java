@@ -134,7 +134,7 @@ public class SrmCommandLineInterface
         this.config = configuration;
     }
 
-    public static final String fh_cancel = " Syntax: cancel <id> ";
+    public static final String fh_cancel = " Syntax: cancel <id>. Note that <id> may need escaping.";
     public static final String hh_cancel = " <id> ";
 
     public String ac_cancel_$_1(Args args)
@@ -253,7 +253,9 @@ public class SrmCommandLineInterface
         @Option(name = "l", usage = "Show more details.")
         boolean verbose;
 
-        @Argument(usage = "Request ID", metaVar = "id", required = false)
+        @Argument(usage = "The request ID.  Note that IDs that start with '-' " +
+                "must be escaped; e.g., 'ls \\-1234', 'ls \"-1234\"' or " +
+                "'ls -- -1234'", metaVar = "id", required = false)
         Long id;
 
         @Override
@@ -546,7 +548,7 @@ public class SrmCommandLineInterface
     }
 
     public static final String fh_set_job_priority = " Syntax: set priority <requestId> <priority>" +
-            "will set priority for the requestid";
+            "will set priority for the requestid.  Note that <requestId> may require escaping.";
     public static final String hh_set_job_priority = " <requestId> <priority>";
 
     public String ac_set_job_priority_$_2(Args args)
