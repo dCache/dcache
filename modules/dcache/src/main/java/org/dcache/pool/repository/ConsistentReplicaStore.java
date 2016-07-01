@@ -14,9 +14,13 @@ import java.util.Set;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileIsNewCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.TimeoutCacheException;
+
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.namespace.FileAttribute;
@@ -28,11 +32,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
-import static org.dcache.namespace.FileAttribute.ACCESS_LATENCY;
-import static org.dcache.namespace.FileAttribute.CHECKSUM;
-import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
-import static org.dcache.namespace.FileAttribute.SIZE;
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * Wrapper for a ReplicaStore which encapsulates the logic for
@@ -73,9 +73,11 @@ public class ConsistentReplicaStore
         "Missing access latency for %1$s.";
     private static final String MISSING_RETENTION_POLICY =
         "Missing retention policy for %1$s.";
+    private static final String EMPTY_FILE_IS_NEW_MSG =
+        "Recovering: Removed empty file %1$s because name space entry is still new.";
 
     private final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =
-            EnumSet.of(STORAGEINFO, ACCESS_LATENCY, RETENTION_POLICY, SIZE, CHECKSUM);
+            EnumSet.of(STORAGEINFO, LOCATIONS, ACCESS_LATENCY, RETENTION_POLICY, SIZE, CHECKSUM);
 
     private final PnfsHandler _pnfsHandler;
     private final ReplicaStore _replicaStore;
@@ -136,12 +138,12 @@ public class ConsistentReplicaStore
             _log.warn(String.format(RECOVERING_MSG, id));
 
             try {
-                /* It is safe to remove FROM_STORE files: We have a
-                 * copy on HSM anyway. Files in REMOVED or DESTROYED
-                 * were about to be deleted, so we can finish the
-                 * job.
+                /* It is safe to remove FROM_STORE/FROM_POOL replicas: We have
+                 * another copy anyway. Files in REMOVED or DESTROYED
+                 * were about to be deleted, so we can finish the job.
                  */
                 switch (entry.getState()) {
+                case FROM_POOL:
                 case FROM_STORE:
                 case REMOVED:
                 case DESTROYED:
@@ -154,25 +156,17 @@ public class ConsistentReplicaStore
                 entry = rebuildEntry(entry);
             } catch (IOException e) {
                 throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage(), e);
-            } catch (CacheException e) {
-                switch (e.getRc()) {
-                case CacheException.FILE_NOT_FOUND:
-                    _replicaStore.remove(id);
-                    _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
-                    return null;
-
-                case CacheException.TIMEOUT:
-                    throw e;
-
-                default:
-                    entry.update(r -> r.setState(ReplicaState.BROKEN));
-                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
-                                    id.toString(),
-                                    _poolName),
-                                    String.format(BAD_MSG, id, e.getMessage()));
-                    break;
-                }
-            } catch (NoSuchAlgorithmException e) {
+            } catch (FileNotFoundCacheException e) {
+                _replicaStore.remove(id);
+                _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
+                return null;
+            } catch (FileIsNewCacheException e) {
+                _replicaStore.remove(id);
+                _log.warn("Recovering: Removed {}: {}", id, e.getMessage());
+                return null;
+            } catch (TimeoutCacheException e) {
+                throw e;
+            } catch (CacheException | NoSuchAlgorithmException e) {
                 entry.update(r -> r.setState(ReplicaState.BROKEN));
                 _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                 id.toString(),
@@ -196,6 +190,7 @@ public class ConsistentReplicaStore
     private ReplicaRecord rebuildEntry(ReplicaRecord entry)
             throws CacheException, InterruptedException, IOException, NoSuchAlgorithmException
     {
+           long length = entry.getReplicaSize();
            PnfsId id = entry.getPnfsId();
 
            ReplicaState state = entry.getState();
@@ -203,13 +198,19 @@ public class ConsistentReplicaStore
            _log.warn(String.format(FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
            FileAttributes attributesInNameSpace = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
 
+           /* As a special case, empty files upon client upload are deleted, except if we already managed to
+            * register it in the name space.
+            */
+           if (entry.getState() == ReplicaState.FROM_CLIENT && length == 0 && !attributesInNameSpace.getLocations().contains(_poolName)) {
+               throw new FileIsNewCacheException("Client upload is empty.");
+           }
+
             /* If the intended file size is known, then compare it
              * to the actual file size on disk. Fail in case of a
              * mismatch. Notice we do this before the checksum check,
              * as it is a lot cheaper than the checksum check and we
              * may thus safe some time for incomplete files.
              */
-            long length = entry.getReplicaSize();
             if (attributesInNameSpace.isDefined(FileAttribute.SIZE) && attributesInNameSpace.getSize() != length) {
                 String message = String.format(BAD_SIZE_MSG,
                                                id,

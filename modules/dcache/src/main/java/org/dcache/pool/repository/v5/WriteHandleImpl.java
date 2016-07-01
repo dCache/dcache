@@ -369,6 +369,13 @@ class WriteHandleImpl implements ReplicaDescriptor
             _targetState = ReplicaState.REMOVED;
         }
 
+        /* If nothing was uploaded, we delete the replica and leave the name space
+         * entry it is virgin state.
+         */
+        if (length == 0) {
+            _targetState = ReplicaState.REMOVED;
+        }
+
         /* Unless replica is to be removed, register cache location and
          * other attributes.
          */
