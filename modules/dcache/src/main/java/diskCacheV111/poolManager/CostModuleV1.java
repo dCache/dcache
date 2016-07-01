@@ -9,9 +9,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,7 +35,6 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
@@ -55,7 +52,6 @@ public class CostModuleV1
                CostModule,
                CellCommandListener,
                CellMessageReceiver,
-               CellInfoProvider,
                CellSetupProvider
 {
     private static final Logger LOGGER =
@@ -449,15 +445,6 @@ public class CostModuleV1
 
        return poolCosts [ (int) Math.floor(fraction * _hash.size())];
    }
-
-
-    public static final String hh_cm_info = "";
-    public String ac_cm_info(Args args)
-    {
-        StringWriter s = new StringWriter();
-        getInfo(new PrintWriter(s));
-        return s.toString();
-    }
 
     @Command(name = "cm set debug")
     @Deprecated
