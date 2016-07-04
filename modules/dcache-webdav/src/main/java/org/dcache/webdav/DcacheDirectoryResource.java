@@ -1,5 +1,6 @@
 package org.dcache.webdav;
 
+import com.google.common.collect.ImmutableSet;
 import io.milton.http.Auth;
 import io.milton.http.HttpManager;
 import io.milton.http.LockInfo;
@@ -10,15 +11,21 @@ import io.milton.http.Request;
 import io.milton.http.exceptions.BadRequestException;
 import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
+import io.milton.property.PropertySource.PropertyMetaData;
+import io.milton.property.PropertySource.PropertySetException;
 import io.milton.resource.CollectionResource;
 import io.milton.resource.DeletableResource;
 import io.milton.resource.GetableResource;
 import io.milton.resource.LockingCollectionResource;
 import io.milton.resource.MakeCollectionableResource;
+import io.milton.resource.MultiNamespaceCustomPropertyResource;
 import io.milton.resource.PutableResource;
 import io.milton.resource.Resource;
 import io.milton.servlet.ServletRequest;
-import org.eclipse.jetty.io.EofException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.namespace.QName;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,18 +34,22 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import diskCacheV111.services.space.Space;
+import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
+
+import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
 
 /**
  * Exposes dCache directories as resources in the Milton WebDAV
@@ -47,8 +58,19 @@ import org.dcache.vehicles.FileAttributes;
 public class DcacheDirectoryResource
     extends DcacheResource
     implements PutableResource, GetableResource, DeletableResource,
-               MakeCollectionableResource, LockingCollectionResource
+               MakeCollectionableResource, LockingCollectionResource,
+               MultiNamespaceCustomPropertyResource
 {
+    private static final Logger LOG = LoggerFactory.getLogger(DcacheDirectoryResource.class);
+
+    private static final String DAV_NAMESPACE_URI = "DAV:";
+
+    private static final QName QUOTA_AVAILABLE = new QName(DAV_NAMESPACE_URI, "quota-available-bytes");
+    private static final QName QUOTA_USED = new QName(DAV_NAMESPACE_URI, "quota-used-bytes");
+    private static final ImmutableSet<QName> QUOTA_PROPERTIES = ImmutableSet.of(QUOTA_AVAILABLE, QUOTA_USED);
+
+    private static final PropertyMetaData READONLY_LONG = new PropertyMetaData(READ_ONLY, Long.class);
+
     public DcacheDirectoryResource(DcacheResourceFactory factory,
                                    FsPath path, FileAttributes attributes)
     {
@@ -199,5 +221,47 @@ public class DcacheDirectoryResource
          * overwrites the empty site.
          */
         return createNullLock();
+    }
+
+    @Override
+    public Object getProperty(QName name)
+    {
+        try {
+            if (name.equals(QUOTA_AVAILABLE)) {
+                return _factory.spaceForPath(_path).getAvailableSpaceInBytes();
+            }
+
+            if (name.equals(QUOTA_USED)) {
+                Space space = _factory.spaceForPath(_path);
+                return space.getUsedSizeInBytes() + space.getAllocatedSpaceInBytes();
+            }
+        } catch (SpaceException e) {
+            // this path has no space, treat as if property does not exist.
+        }
+
+        return null;
+    }
+
+    @Override
+    public void setProperty(QName name, Object value) throws PropertySetException, NotAuthorizedException
+    {
+        /* All properties are read-only, so any invocation is a Milton bug. */
+        throw new RuntimeException("Attempt to update property " + name);
+    }
+
+    @Override
+    public PropertyMetaData getPropertyMetaData(QName name)
+    {
+        return QUOTA_PROPERTIES.contains(name) && _factory.isSpaceManaged(_path)
+                ? READONLY_LONG
+                : PropertyMetaData.UNKNOWN;
+    }
+
+    @Override
+    public List<QName> getAllPropertyNames()
+    {
+        return _factory.isSpaceManaged(_path)
+                ? new ArrayList(QUOTA_PROPERTIES)
+                : Collections.emptyList();
     }
 }

@@ -81,6 +81,10 @@
       <property name="destination" value="${webdav.service.billing}"/>
   </bean>
 
+  <bean id="space-stub" class="org.dcache.cells.CellStub">
+      <description>SpaceManager communication stub</description>
+      <property name="destination" value="${webdav.service.spacemanager}"/>
+  </bean>
 
   <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
       <description>Client stub for directory listing</description>
@@ -179,6 +183,22 @@
         <description>Exposes dCache resources to Milton WebDAV library</description>
 
         <property name="pnfsStub" ref="pnfs-stub"/>
+        <property name="spaceLookupCache">
+            <bean class="org.dcache.space.ReservationCaches" factory-method="buildSpaceLookupCache">
+                <constructor-arg index="0" ref="space-stub"/>
+                <constructor-arg index="1" ref="scheduled-thread-pool"/>
+            </bean>
+        </property>
+        <property name="writeTokenCache">
+            <bean class="org.dcache.space.ReservationCaches" factory-method="buildWriteTokenLookupCache">
+                <constructor-arg index="0">
+                    <bean class="diskCacheV111.util.PnfsHandler">
+                        <constructor-arg ref="pnfs-stub"/>
+                    </bean>
+                </constructor-arg>
+                <constructor-arg index="1" ref="scheduled-thread-pool"/>
+            </bean>
+        </property>
         <property name="poolManagerStub">
             <bean class="org.dcache.poolmanager.PoolManagerStub">
                 <property name="handler" ref="pool-manager-handler"/>

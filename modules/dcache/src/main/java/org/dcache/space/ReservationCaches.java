@@ -69,6 +69,8 @@ import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
@@ -81,6 +83,7 @@ import javax.security.auth.Subject;
 
 import java.security.Principal;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -88,17 +91,28 @@ import java.util.concurrent.Executor;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileIsNewCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.PnfsMessage;
+import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.util.CacheExceptionFactory;
+import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -250,6 +264,58 @@ public class ReservationCaches
                                                 public void success(GetSpaceMetaData message)
                                                 {
                                                     future.set(Optional.fromNullable(message.getSpaces()[0]));
+                                                }
+
+                                                @Override
+                                                public void failure(int rc, Object error)
+                                                {
+                                                    CacheException exception = CacheExceptionFactory.exceptionOf(
+                                                            rc, Objects.toString(error, null));
+                                                    future.setException(exception);
+                                                }
+                                            }, executor);
+                                    return future;
+                                }
+                            });
+    }
+
+    /**
+     * Cache queries to discover if a directory has the "WriteToken" tag set.
+     */
+    public static LoadingCache<FsPath,java.util.Optional<String>> buildWriteTokenLookupCache(PnfsHandler pnfs, Executor executor)
+    {
+        return CacheBuilder.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(10, MINUTES)
+                    .refreshAfterWrite(5, MINUTES)
+                    .recordStats()
+                    .build(new CacheLoader<FsPath,java.util.Optional<String>>()
+                            {
+                                private java.util.Optional<String> writeToken(FileAttributes attr)
+                                {
+                                    StorageInfo info = attr.getStorageInfo();
+                                    return java.util.Optional.ofNullable(info.getMap().get("writeToken"));
+                                }
+
+                                @Override
+                                public java.util.Optional<String> load(FsPath path)
+                                        throws CacheException, NoRouteToCellException, InterruptedException
+                                {
+                                    return writeToken(pnfs.getFileAttributes(path, EnumSet.of(FileAttribute.STORAGEINFO)));
+                                }
+
+                                @Override
+                                public ListenableFuture<java.util.Optional<String>> reload(FsPath path, java.util.Optional<String> old)
+                                {
+                                    PnfsGetFileAttributes message = new PnfsGetFileAttributes(path.toString(), EnumSet.of(FileAttribute.STORAGEINFO));
+                                    SettableFuture<java.util.Optional<String>> future = SettableFuture.create();
+                                    CellStub.addCallback(pnfs.requestAsync(message),
+                                            new AbstractMessageCallback<PnfsGetFileAttributes>()
+                                            {
+                                                @Override
+                                                public void success(PnfsGetFileAttributes message)
+                                                {
+                                                    future.set(writeToken(message.getFileAttributes()));
                                                 }
 
                                                 @Override

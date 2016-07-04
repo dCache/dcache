@@ -4,6 +4,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -51,11 +53,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -111,7 +116,6 @@ import static com.google.common.collect.Iterables.cycle;
 import static com.google.common.collect.Iterables.limit;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.dcache.auth.attributes.LoginAttributes.getUserRoot;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.util.ByteUnit.KiB;
@@ -165,6 +169,12 @@ public class DcacheResourceFactory
     private final Map<Integer,HttpTransfer> _transfers =
         Maps.newConcurrentMap();
 
+    /**
+     * Cache of the current status of space reservations.
+     */
+    private LoadingCache<String,com.google.common.base.Optional<Space>> _spaceLookupCache;
+    private LoadingCache<FsPath,Optional<String>> _writeTokenCache;
+
     private ListDirectoryHandler _list;
 
     private ScheduledExecutorService _executor;
@@ -207,6 +217,18 @@ public class DcacheResourceFactory
         throws UnknownHostException
     {
         _internalAddress = InetAddress.getLocalHost();
+    }
+
+    @Required
+    public void setSpaceLookupCache(LoadingCache<String,com.google.common.base.Optional<Space>> cache)
+    {
+        _spaceLookupCache = cache;
+    }
+
+    @Required
+    public void setWriteTokenCache(LoadingCache<FsPath,Optional<String>> cache)
+    {
+        _writeTokenCache = cache;
     }
 
     @Required
@@ -1262,7 +1284,6 @@ public class DcacheResourceFactory
         }
     }
 
-
     private boolean isPropfindRequest()
     {
         return HttpManager.request().getMethod() == Request.Method.PROPFIND;
@@ -1271,6 +1292,44 @@ public class DcacheResourceFactory
     FileLocality calculateLocality(FileAttributes attributes, String clientIP)
     {
         return _poolMonitor.getFileLocality(attributes, clientIP);
+    }
+
+    private Optional<Space> lookupSpaceById(String id)
+    {
+        try {
+            return Optional.ofNullable(_spaceLookupCache.get(id).orNull());
+        } catch (ExecutionException e) {
+            Throwable t = e.getCause();
+            Throwables.throwIfUnchecked(t);
+            _log.warn("Failed to fetch space statistics for {}: {}", id, t.toString());
+            return Optional.empty();
+        }
+    }
+
+    private Optional<String> lookupWriteToken(FsPath path)
+    {
+        try {
+            return _writeTokenCache.get(path);
+        } catch (ExecutionException e) {
+            Throwable t = e.getCause();
+            Throwables.throwIfUnchecked(t);
+            _log.warn("Failed to query for WriteToken tag on {}: {}", path, t.toString());
+            return Optional.empty();
+        }
+    }
+
+    public Space spaceForPath(FsPath path) throws SpaceException
+    {
+        return lookupWriteToken(path)
+                .flatMap(this::lookupSpaceById)
+                .orElseThrow(() -> new SpaceException("Path not under space management"));
+    }
+
+    public boolean isSpaceManaged(FsPath path)
+    {
+        return lookupWriteToken(path)
+                .flatMap(this::lookupSpaceById)
+                .isPresent();
     }
 
     /**
