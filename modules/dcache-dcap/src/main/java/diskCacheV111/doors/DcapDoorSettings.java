@@ -93,6 +93,8 @@ public class DcapDoorSettings
     @Option(name = "check", defaultValue = "true")
     protected boolean isCheckStrict;
 
+    // A string with the following format:
+    // majorMin.minorMin[.bugfixMin[-packageMin]][:majorMax.minorMax[.bugfix[-packageMax]]
     @Option(name = "clientVersion")
     protected String clientVersion;
 
