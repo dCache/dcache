@@ -35,9 +35,9 @@ import org.dcache.restful.util.ServletContextHandlerAttributes;
 @Path("/qos-management/qos/")
 public class QosManagement {
 
-    private static final String DISK = "disk";
-    private static final String TAPE = "tape";
-    private static final String DISK_TAPE = "disk+tape";
+    public static final String DISK = "disk";
+    public static final String TAPE = "tape";
+    public static final String DISK_TAPE = "disk+tape";
 
 
     /**
