@@ -1,11 +1,14 @@
 package org.dcache.restful.qos;
 
 
+import diskCacheV111.util.*;
+import org.dcache.poolmanager.RemotePoolMonitor;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.servlet.ServletContext;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Path;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -24,19 +27,13 @@ import java.util.EnumSet;
 import java.util.Set;
 
 
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.PnfsHandler;
-
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * Created by sahakya on 7/5/16.
+ * Query current QoS for a file or  change the current QoS
  */
 
 @Path("/qos-management/namespace")
@@ -44,6 +41,9 @@ public class QosManagementNamespace {
 
     @Context
     ServletContext ctx;
+
+    @Context
+    HttpServletRequest request;
 
     /**
      * Gets the current status of the object, (including transition status), for the object specified by path.
@@ -55,20 +55,32 @@ public class QosManagementNamespace {
     @GET
     @Path("{requestPath : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getQosStatus(@PathParam("requestPath") String requestPath) throws CacheException {
+    public BackendCapabilityResponse getQosStatus(@PathParam("requestPath") String requestPath) throws CacheException {
 
-        JSONObject jsonResponse = new JSONObject();
-
-
+        BackendCapabilityResponse response = new BackendCapabilityResponse();
         try {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
 
-            //TODO  get QoS for the specified file
-            getPath(requestPath);
+            //get the locality of the specified file
+            RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
+            FileLocality fileLocality = remotePoolMonitor.getFileLocality(getFileAttributes(requestPath), request.getRemoteHost());
 
-
+            switch (fileLocality) {
+                case NEARLINE:
+                    response.setQoS(QosManagement.TAPE);
+                    break;
+                case ONLINE:
+                    response.setQoS(QosManagement.DISK);
+                    break;
+                case ONLINE_AND_NEARLINE:
+                    response.setQoS(QosManagement.DISK_TAPE);
+                    break;
+                default:
+                    // error cases
+                    throw new InternalServerErrorException();
+            }
         } catch (PermissionDeniedCacheException e) {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
                 throw new NotAuthorizedException(e);
@@ -80,13 +92,9 @@ public class QosManagementNamespace {
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
         }
-
-        jsonResponse.put("status", "200");
-        jsonResponse.put("message", "successful");
-        jsonResponse.put("current_qos", "-");
-        return jsonResponse.toString();
-
+        return response;
     }
+
 
     /**
      * Starts a object transition to the specified QoS.
@@ -116,7 +124,7 @@ public class QosManagementNamespace {
 
 
             //TODO  get QoS (locality) for the specified file
-            getPath(requestPath);
+            getFileAttributes(requestPath);
 
         } catch (PermissionDeniedCacheException e) {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
@@ -139,7 +147,7 @@ public class QosManagementNamespace {
     }
 
     //TODO  get QoS (locality) for the specified file
-    public FileAttributes getPath(String requestPath) throws CacheException {
+    public FileAttributes getFileAttributes(String requestPath) throws CacheException {
 
 
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
@@ -152,8 +160,6 @@ public class QosManagementNamespace {
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
 
         FileAttributes namespaceAttrributes = handler.getFileAttributes(path, attributes);
-
-
         return namespaceAttrributes;
     }
 
