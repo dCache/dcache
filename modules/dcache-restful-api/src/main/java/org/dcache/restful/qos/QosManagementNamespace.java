@@ -1,8 +1,8 @@
 package org.dcache.restful.qos;
 
 
-import diskCacheV111.util.*;
-import org.dcache.poolmanager.RemotePoolMonitor;
+
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -23,6 +23,7 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.BadRequestException;
 
+import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -31,6 +32,20 @@ import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.vehicles.FileAttributes;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+
+import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileType;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.poolmanager.RemotePoolMonitor;
+
 
 /**
  * Query current QoS for a file or  change the current QoS
@@ -111,7 +126,7 @@ public class QosManagementNamespace {
     public String changeQosStatus(@PathParam("requestPath") String requestPath, String requestQuery) throws CacheException {
 
 
-        JSONObject jsonResponse = new JSONObject(requestQuery);
+        JSONObject jsonResponse = new JSONObject();
 
         try {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
@@ -119,12 +134,27 @@ public class QosManagementNamespace {
             }
 
             JSONObject jsonRequest = new JSONObject(requestQuery);
-            String currentQos = (String) jsonRequest.get("current_qos").toString();
-            String target_Qos = (String) jsonRequest.get("target_Qos").toString();
+            String update = jsonRequest.get("update").toString();
 
 
-            //TODO  get QoS (locality) for the specified file
-            getFileAttributes(requestPath);
+            FileAttributes fileAttributes = getFileAttributes(requestPath);
+
+            if (fileAttributes.getFileType() == FileType.REGULAR) {
+
+                //get the locality of the specified file
+                RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
+                String fileLocality = remotePoolMonitor.getFileLocality(fileAttributes, request.getRemoteHost()).toString();
+
+                // "NEARLINE" = TAPE for CDMI spec. and tape can have only ["DISK + TAPE"] transitional status
+                if ("NEARLINE".equals(fileLocality) && update.equalsIgnoreCase(QosManagement.DISK_TAPE)){
+                    pin(fileAttributes);
+                }else  {
+                    throw new BadRequestException();
+                }
+            } else {
+                // not supported for directories
+                throw new BadRequestException();
+            }
 
         } catch (PermissionDeniedCacheException e) {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
@@ -146,9 +176,7 @@ public class QosManagementNamespace {
 
     }
 
-    //TODO  get QoS (locality) for the specified file
     public FileAttributes getFileAttributes(String requestPath) throws CacheException {
-
 
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
         FsPath path;
@@ -162,6 +190,17 @@ public class QosManagementNamespace {
         FileAttributes namespaceAttrributes = handler.getFileAttributes(path, attributes);
         return namespaceAttrributes;
     }
+
+    public void pin(FileAttributes fileAttributes) {
+
+        CellStub pinManagerStub = ServletContextHandlerAttributes.getPinManager(ctx);
+        DCapProtocolInfo protocolInfo =
+                new DCapProtocolInfo("HTTP", 3, 0, new InetSocketAddress(request.getRemoteHost(), 0));
+        PinManagerPinMessage message =
+                new PinManagerPinMessage(fileAttributes, protocolInfo, null, -1);
+        pinManagerStub.notify(message);
+    }
+
 
 
 }
