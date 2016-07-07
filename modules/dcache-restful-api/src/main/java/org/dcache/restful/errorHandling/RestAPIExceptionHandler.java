@@ -8,7 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  *
@@ -21,15 +20,13 @@ public class RestAPIExceptionHandler extends ErrorHandler
     {
         int code = response.getStatus();
         String message = HttpStatus.getMessage(code);
-        String xHttp = request.getHeader("X-Requested-With");
 
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
         response.setHeader("content-type", "application/json");
 
-        if (Objects.equals(xHttp, "XMLHttpRequest") && code == 401) {
-            response.setHeader("X-Requested-With", "handled");
+        if (code == 401) {
             response.setHeader("WWW-Authenticate", "");
         }
 
