@@ -85,7 +85,14 @@ public class StateMaintainerTests
     @Test(timeout = 10_000)
     public void shouldIncrementAfterSubmittingUpdate() throws InterruptedException
     {
-        willAnswer(i -> {wait(); return null;}).given(_caretaker).processUpdate(anyObject());
+        Object monitor = new Object();
+
+        willAnswer(a -> {
+                synchronized (monitor) {
+                    monitor.wait();
+                }
+                return null;
+            }).given(_caretaker).processUpdate(anyObject());
 
         _maintainer.enqueueUpdate(new StateUpdate());
 
