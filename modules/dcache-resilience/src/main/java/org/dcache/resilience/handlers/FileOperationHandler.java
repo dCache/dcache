@@ -579,7 +579,7 @@ public class FileOperationHandler {
                 Integer pool = operation.getTarget();
                 if (pool == null || !poolInfoMap.isPoolViable(pool, true)) {
                     target = locationSelector.selectRemoveTarget(operation,
-                                                                 locations, tags);
+                                    readableLocations, tags);
                 }
                 LOGGER.trace("target to remove: {}", target);
             } else if (missing > 0) {
@@ -593,7 +593,7 @@ public class FileOperationHandler {
                 pool = operation.getTarget();
                 if (pool == null || !poolInfoMap.isPoolViable(pool, true)) {
                     target = locationSelector.selectCopyTarget(operation, gindex,
-                                                               locations, tags);
+                                    readableLocations, tags);
                 }
                 LOGGER.trace("target to copy: {}", target);
             } else {
