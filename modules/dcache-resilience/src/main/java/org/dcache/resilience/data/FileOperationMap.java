@@ -1077,7 +1077,7 @@ public class FileOperationMap extends RunnableModule {
         FileOperation present = index.get(pnfsId);
 
         if (present != null) {
-            present.incrementCount();
+            present.updateOperation(operation);
             return false;
         }
 

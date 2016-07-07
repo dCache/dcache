@@ -571,6 +571,30 @@ public final class FileOperation {
         this.task = task;
     }
 
+    /**
+     * <p>When another operation for this file/pnfsid is to be
+     *    queued, we simply overwrite the appropriate fields on
+     *    this one.</p>
+     */
+    void updateOperation(FileOperation operation) {
+        if (operation.storageUnit != NIL) {
+            storageUnit = operation.storageUnit;
+        }
+
+        if (operation.checkSticky) {
+            checkSticky = true;
+        }
+
+        /*
+         *  The incoming count can be safely added to this one;
+         *  if the count exceeds the necessary number of operations
+         *  to achieve what this operation must, the count will
+         *  be zeroed out anyway when the correct replica state
+         *  is reached.
+         */
+        opCount += operation.opCount;
+    }
+
     boolean updateOperation(CacheException error) {
         synchronized (this) {
             if (isInTerminalState()) {
