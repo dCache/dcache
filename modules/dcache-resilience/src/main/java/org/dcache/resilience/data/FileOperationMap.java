@@ -86,7 +86,6 @@ import org.dcache.resilience.handlers.PoolTaskCompletionHandler;
 import org.dcache.resilience.util.CacheExceptionUtils;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 import org.dcache.resilience.util.CheckpointUtils;
-import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
@@ -871,10 +870,6 @@ public class FileOperationMap extends RunnableModule {
             }
         } catch (InterruptedException e) {
             LOGGER.trace("Consumer was interrupted.");
-        } catch (Exception e) {
-            LOGGER.error("Consumer thread failed, "
-                            + "resilience is no longer running: {}.",
-                            new ExceptionMessage(e));
         }
 
         LOGGER.info("Exiting pnfs operation consumer.");
