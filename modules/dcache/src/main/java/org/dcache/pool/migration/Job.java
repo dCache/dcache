@@ -42,6 +42,8 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.expression.Expression;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * Encapsulates a job as defined by a user command.
  *
@@ -67,6 +69,7 @@ import org.dcache.util.expression.Expression;
  *
  * Jobs can be in any of the following states:
  *
+ * NEW            Job has not been started yet
  * INITIALIZING   Initial scan of repository
  * RUNNING        Job runs (schedules new tasks)
  * SLEEPING       A task failed; no tasks are scheduled for 10 seconds
@@ -83,7 +86,7 @@ import org.dcache.util.expression.Expression;
 public class Job
     extends AbstractStateChangeListener implements TaskCompletionHandler
 {
-    enum State { INITIALIZING, RUNNING, SLEEPING, PAUSED, SUSPENDED,
+    enum State { NEW, INITIALIZING, RUNNING, SLEEPING, PAUSED, SUSPENDED,
             STOPPING, CANCELLING, CANCELLED, FINISHED, FAILED }
 
     private static final Logger _log = LoggerFactory.getLogger(Job.class);
@@ -91,7 +94,6 @@ public class Job
     private final Set<PnfsId> _queued = new LinkedHashSet<>();
     private final Map<PnfsId,Long> _sizes = new HashMap<>();
     private final Map<PnfsId,Task> _running = new HashMap<>();
-    private final Future<?> _refreshTask;
     private final BlockingQueue<Error> _errors = new ArrayBlockingQueue<>(15);
     private final Map<PoolMigrationJobCancelMessage,DelayedReply> _cancelRequests =
         new HashMap<>();
@@ -107,15 +109,14 @@ public class Job
     private volatile State _state;
     private int _concurrency;
 
+    private Future<?> _refreshTask;
+
     public Job(MigrationContext context, JobDefinition definition)
     {
-        ScheduledExecutorService executor = context.getExecutor();
-        long refreshPeriod = definition.refreshPeriod;
-
         _context = context;
         _definition = definition;
         _concurrency = 1;
-        _state = State.INITIALIZING;
+        _state = State.NEW;
 
         _taskParameters = new TaskParameters(context.getPoolStub(), context.getPnfsStub(), context.getPinManagerStub(),
                                              context.getExecutor(), definition.selectionStrategy,
@@ -124,18 +125,29 @@ public class Job
                                              definition.maintainAtime, definition.replicas);
 
         _pinPrefix = context.getPinManagerStub().getDestinationPath().getDestinationAddress().getCellName();
+    }
 
-        _refreshTask =
-            executor.scheduleWithFixedDelay(new FireAndForgetTask(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        _definition.sourceList.refresh();
-                        _definition.poolList.refresh();
-                    }
-                }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
+    public void start()
+    {
+        _lock.lock();
+        try {
+            checkState(_state == State.NEW);
+            _state = State.INITIALIZING;
 
-        executor.submit(new FireAndForgetTask(new Runnable() {
+            long refreshPeriod = _definition.refreshPeriod;
+            ScheduledExecutorService executor = _context.getExecutor();
+
+            _refreshTask =
+                    executor.scheduleWithFixedDelay(new FireAndForgetTask(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            _definition.sourceList.refresh();
+                            _definition.poolList.refresh();
+                        }
+                    }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
+
+            executor.submit(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -151,6 +163,9 @@ public class Job
                     }
                 }
             }));
+        } finally {
+            _lock.unlock();
+        }
     }
 
     public JobDefinition getDefinition()
@@ -205,6 +220,8 @@ public class Job
 
             if (total > 0) {
                 switch (getState()) {
+                case NEW:
+                    break;
                 case RUNNING:
                 case SUSPENDED:
                 case CANCELLING:
@@ -492,7 +509,7 @@ public class Job
     {
         if (_state == State.CANCELLING && _running.isEmpty()) {
             setState(State.CANCELLED);
-        } else if (_state != State.INITIALIZING && !_definition.isPermanent
+        } else if (_state != State.INITIALIZING && _state != State.NEW && !_definition.isPermanent
                    && _queued.isEmpty() && _running.isEmpty()) {
             setState(State.FINISHED);
         } else if (_state == State.STOPPING && _running.isEmpty()) {
