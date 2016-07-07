@@ -130,29 +130,6 @@ public final class StorageUnitInfoExtractor {
     }
 
     /**
-     * <p>Checks to make sure that a resilient storage unit is not associated
-     *      with non-resilient pool groups.</p>
-     */
-    public static void validate(StorageUnit unit, PoolSelectionUnit psu) {
-        validate(unit, getNonResilientGroups(psu), psu);
-    }
-
-    /**
-     * <p>Checks to make sure that resilient storage units are not associated
-     *      with non-resilient pool groups.</p>
-     */
-    public static void validateAllStorageUnits(PoolSelectionUnit psu) {
-        Set<SelectionPoolGroup> nonresilient = getNonResilientGroups(psu);
-        psu.getUnitGroups().values()
-                           .stream()
-                           .map(SelectionUnitGroup::getMemeberUnits)
-                           .flatMap(Collection::stream)
-                           .filter(StorageUnit.class::isInstance)
-                           .map(StorageUnit.class::cast)
-                           .forEach((u) -> validate(u, nonresilient, psu));
-    }
-
-    /**
      * <p>Checks to make sure that resilient storage unit constraints can
      *      be met by all resilient groups to which it is linked.</p>
      */
@@ -180,34 +157,6 @@ public final class StorageUnitInfoExtractor {
         return getStorageUnitsInGroup(poolGroup, psu).stream()
                         .filter((sunit) -> sunit.getName().equals(storageUnit))
                         .findAny().isPresent();
-    }
-
-    /**
-     * <p> We should not allow resilient storage units to be linked to
-     *      non-resilient pool groups, because the behavior is undefined
-     *      -- that is, the storage class is attempting to turn the pool
-     *      group into a resilient one.  This would defeat the use of pool
-     *      groups to determine which pools to select for replication. </p>
-     *
-     * <p>Note also that a pool group is defined as resilient or non-resilient
-     *      for its lifetime (the attribute cannot be changed).</p>
-     */
-    private static void validate(StorageUnit unit,
-                                 Set<SelectionPoolGroup> nonresilient,
-                                 PoolSelectionUnit psu) {
-        if (unit.getRequiredCopies() == 1) {
-            return;
-        }
-
-        if (nonresilient.stream()
-                        .filter((g) -> hasStorageUnit(g.getName(),
-                                                      unit.getName(), psu))
-                        .findAny().isPresent()) {
-            throw new IllegalStateException(String.format("Resilient storage unit %s "
-                            + "is linked to the following non-resilient pool groups: %s; "
-                            + "this would potentially cause inconsistent behaviour "
-                            + "and is thus prohibited.", unit.getName(), nonresilient));
-        }
     }
 
     /**
