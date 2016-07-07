@@ -100,6 +100,12 @@
 	class="org.dcache.util.ConfigurationMapFactoryBean">
       <property name="prefix" value="frontend.custom-response-header"/>
   </bean>
+    <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
+        <description>Pin manager cell stub</description>
+        <property name="timeout" value="${frontend.service.pinmanager.timeout}"/>
+        <property name="timeoutUnit" value="${frontend.service.pinmanager.timeout.unit}"/>
+        <property name="destination" value="${frontend.service.pinmanager}"/>
+    </bean>
 
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
         <description>List of handlers for HTTP requests</description>
@@ -165,6 +171,9 @@
                                                                value-ref="pnfs-stub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PM}"
                                                                value-ref="pool-monitor"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
+                                                               value-ref= "pinManagerStub"/>
+
                                                     </map>
                                                 </constructor-arg>
                                             </bean>
