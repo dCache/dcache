@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
@@ -519,6 +520,17 @@ public final class SpaceManagerService
             message.setFailedConditionally(CacheException.INVALID_ARGS, e.getMessage());
         } catch (DeadlockLoserDataAccessException e) {
             throw e;
+        } catch (DuplicateKeyException e) {
+            /* For PoolAcceptFileMessage, a duplicate key failure is most likely caused by
+             * the door resubmitting the message. We trust the door that it doesn't submit
+             * these to several pools.
+             */
+            if ((message instanceof PoolAcceptFileMessage) && !message.isReply()) {
+                LOGGER.info("Ignoring exception due to possibly duplicated PoolAcceptFileMessage: {}",
+                            e.getMessage());
+            } else {
+                throw e;
+            }
         } catch (DataAccessException e) {
             LOGGER.error("Message processing failed: {}", e.toString());
             message.setFailedConditionally(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
