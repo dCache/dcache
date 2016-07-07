@@ -2,6 +2,7 @@ package org.dcache.restful;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import org.dcache.restful.qos.QosManagement;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -24,6 +25,8 @@ public class DcacheRestApplication extends ResourceConfig
 
         //register application resources controller
         register(FileResources.class);
+        register(QosManagement.class);
+
 
         //register filters
         register(ResponseHeaderFilter.class);
