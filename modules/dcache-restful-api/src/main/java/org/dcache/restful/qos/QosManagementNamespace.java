@@ -1,8 +1,6 @@
 package org.dcache.restful.qos;
 
 
-
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -23,7 +21,10 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.BadRequestException;
 
+
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -32,7 +33,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.vehicles.FileAttributes;
-import diskCacheV111.vehicles.DCapProtocolInfo;
+
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -45,7 +46,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.poolmanager.RemotePoolMonitor;
-
+import diskCacheV111.vehicles.HttpProtocolInfo;
 
 /**
  * Query current QoS for a file or  change the current QoS
@@ -123,8 +124,8 @@ public class QosManagementNamespace {
     @Path("{requestPath : .*}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public String changeQosStatus(@PathParam("requestPath") String requestPath, String requestQuery) throws CacheException {
-
+    public String changeQosStatus(@PathParam("requestPath") String requestPath, String requestQuery) throws CacheException,
+            URISyntaxException{
 
         JSONObject jsonResponse = new JSONObject();
 
@@ -139,22 +140,11 @@ public class QosManagementNamespace {
 
             FileAttributes fileAttributes = getFileAttributes(requestPath);
 
-            if (fileAttributes.getFileType() == FileType.REGULAR) {
-
-                //get the locality of the specified file
-                RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-                String fileLocality = remotePoolMonitor.getFileLocality(fileAttributes, request.getRemoteHost()).toString();
-
-                // "NEARLINE" = TAPE for CDMI spec. and tape can have only ["DISK + TAPE"] transitional status
-                if ("NEARLINE".equals(fileLocality) && update.equalsIgnoreCase(QosManagement.DISK_TAPE)){
-                    pin(fileAttributes);
-                }else  {
-                    throw new BadRequestException();
-                }
-            } else {
-                // not supported for directories
+            if (fileAttributes.getFileType() == FileType.DIR &&
+                    ! ("NEARLINE".equals(getLocality(fileAttributes)) && update.equalsIgnoreCase(QosManagement.DISK_TAPE))) {
                 throw new BadRequestException();
             }
+            pin(fileAttributes);
 
         } catch (PermissionDeniedCacheException e) {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
@@ -166,7 +156,7 @@ public class QosManagementNamespace {
             throw new NotFoundException(e);
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
-        } catch (BadRequestException | JSONException e) {
+        } catch ( JSONException e) {
             throw new BadRequestException(e);
         }
 
@@ -191,16 +181,28 @@ public class QosManagementNamespace {
         return namespaceAttrributes;
     }
 
-    public void pin(FileAttributes fileAttributes) {
+
+
+    public void pin(FileAttributes fileAttributes) throws URISyntaxException {
 
         CellStub pinManagerStub = ServletContextHandlerAttributes.getPinManager(ctx);
-        DCapProtocolInfo protocolInfo =
-                new DCapProtocolInfo("HTTP", 3, 0, new InetSocketAddress(request.getRemoteHost(), 0));
+        HttpProtocolInfo protocolInfo =
+                new HttpProtocolInfo("Http", 1, 1,
+                        new InetSocketAddress(request.getRemoteHost(), 0),
+                        null, null, null,
+                        new URI("http", request.getRemoteHost(), null, null));
+
         PinManagerPinMessage message =
                 new PinManagerPinMessage(fileAttributes, protocolInfo, null, -1);
         pinManagerStub.notify(message);
     }
 
+
+    public String getLocality (FileAttributes fileAttributes){
+        //get the locality of the specified file
+        RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
+        return remotePoolMonitor.getFileLocality(fileAttributes, request.getRemoteHost()).toString();
+    }
 
 
 }
