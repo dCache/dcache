@@ -311,6 +311,7 @@ public class MoverRequestScheduler implements Runnable {
                             {
                                 request.done();
                                 _jobs.remove(request.getId());
+                                _moverByRequests.remove(request.getDoorUniqueId());
                             }
 
                         });
