@@ -1,21 +1,27 @@
 package org.dcache.restful.resources.namespace;
 
 import com.google.common.collect.Range;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -39,6 +45,9 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
 /**
  * RestFul API to  provide files/folders manipulation operations
@@ -176,6 +185,57 @@ public class FileResources {
             throw new InternalServerErrorException(ex);
         }
         return fileAttributes;
+    }
+
+    @POST
+    @Path("{value : .*}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response cmrResources (@PathParam("value") String path, String requestPayload)
+    {
+        JSONObject reqPayload = new JSONObject(requestPayload);
+        String action = (String) reqPayload.get("action");
+        PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+        try {
+            switch (action) {
+                case "mkdir":
+                    String folderName = (String) reqPayload.get("name");
+                    checkArgument(!folderName.contains("/"), "The folderName cannot contain forward slash.");
+                    checkArgument(!folderName.isEmpty(), "The folderName cannot be empty.");
+
+                    String newPath;
+                    if (path == null || path.isEmpty()) {
+                        newPath = "/" + folderName;
+                    } else {
+                        newPath = "/" + path + "/" + folderName;
+                    }
+
+                    handler.createPnfsDirectory(newPath);
+                    break;
+                case "mv":
+                    String dest = (String) reqPayload.get("destination");
+                    FsPath source = FsPath.ROOT.resolve(path);
+                    FsPath target = source.parent().resolve(dest);
+                    handler.renameEntry(source.toString(), target.toString(), true);
+                    break;
+                default:
+                    throw new IllegalArgumentException("The request body must contain the action to be perform. " +
+                            "See the documentation for details.");
+            }
+        } catch (FileNotFoundCacheException e) {
+            throw new NotFoundException(e);
+        } catch (PermissionDeniedCacheException e) {
+            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+                throw new NotAuthorizedException(e);
+            } else {
+                throw new ForbiddenException(e);
+            }
+        } catch (JSONException | IllegalArgumentException | CacheException e) {
+            throw new BadRequestException(e);
+        } catch (Exception e) {
+            throw new InternalServerErrorException(e);
+        }
+        return successfulResponse(Response.Status.CREATED);
     }
 
     /**

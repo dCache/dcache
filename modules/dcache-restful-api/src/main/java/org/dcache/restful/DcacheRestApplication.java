@@ -2,7 +2,6 @@ package org.dcache.restful;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
-import org.dcache.restful.qos.QosManagement;
 import org.glassfish.jersey.message.GZipEncoder;
 import org.glassfish.jersey.message.filtering.EntityFilteringFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -10,6 +9,7 @@ import org.glassfish.jersey.server.filter.EncodingFilter;
 
 import org.dcache.restful.filters.ResponseHeaderFilter;
 import org.dcache.restful.providers.ObjectMapperProvider;
+import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.resources.namespace.FileResources;
 
 /**
