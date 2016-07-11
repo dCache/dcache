@@ -16,6 +16,7 @@ import org.slf4j.MDC;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -84,6 +85,10 @@ public class Transfer implements Comparable<Transfer>
     private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
 
     protected final PnfsHandler _pnfs;
+
+    /**
+     * Point in time when this transfer is created.
+     */
     protected final long _startedAt;
     protected final FsPath _path;
     protected final Subject _subject;
@@ -1282,5 +1287,14 @@ public class Transfer implements Comparable<Transfer>
             future.cancel(true);
             throw e;
         }
+    }
+
+    /**
+     * Get timestamp when this transfer was created.
+     * @return timestamp, when transfer was created.
+     */
+    public long getCreationTime()
+    {
+        return _startedAt;
     }
 }

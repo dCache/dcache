@@ -46,6 +46,10 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -848,7 +852,12 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String toString() {
-            return String.format("    %s : %s %s@%s, OS=%s,cl=[%s]",
+
+            ZoneId timeZone = ZoneId.systemDefault();
+
+            return String.format("    %s : %s : %s %s@%s, OS=%s,cl=[%s]",
+                    DateTimeFormatter.ISO_OFFSET_DATE_TIME
+                            .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(getCreationTime()), timeZone)),
                     getPnfsId(),
                     isWrite() ? "WRITE" : "READ",
                     getMoverId(),
