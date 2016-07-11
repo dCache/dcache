@@ -68,6 +68,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import org.dcache.resilience.TestBase;
 import org.dcache.resilience.TestSynchronousExecutor;
@@ -113,6 +114,14 @@ public class PoolInfoChangeHandlerTest extends TestBase {
         wirePoolOperationMap();
         wirePoolOperationHandler();
         poolOperationMap.loadPools();
+
+        poolInfoMap.getResilientPools().stream()
+                   .forEach((p) -> {
+                            PoolV2Mode mode = new PoolV2Mode(PoolV2Mode.ENABLED);
+                            PoolStateUpdate update = new PoolStateUpdate(p, mode);
+                            poolInfoMap.updatePoolStatus(update);
+                            poolOperationMap.update(update);
+                   });
 
         ResilienceMessageHandler handler = new ResilienceMessageHandler();
         handler.setCounters(counters);
@@ -397,6 +406,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     private void whenPoolIsWaitingToBeScanned(String pool) {
         PoolOperation operation = new PoolOperation();
         operation.state = State.WAITING;
+        operation.currStatus = PoolStatusForResilience.ENABLED;
         poolOperationMap.waiting.put(pool, operation);
     }
 
