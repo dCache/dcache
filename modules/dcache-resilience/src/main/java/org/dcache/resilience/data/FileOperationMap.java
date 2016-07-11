@@ -90,7 +90,6 @@ import org.dcache.resilience.util.CheckpointUtils;
 import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
-import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.util.RunnableModule;
 import org.dcache.vehicles.FileAttributes;
@@ -549,9 +548,7 @@ public class FileOperationMap extends RunnableModule {
          * <p>Task is submitted to an appropriate executor service.</p>
          */
         private void submit(FileOperation operation) {
-            int remove = SelectionAction.REMOVE.ordinal();
             operation.setTask(new ResilientFileTask(operation.getPnfsId(),
-                            operation.getSelectionAction() == remove,
                             operation.getRetried(),
                             operationHandler));
             operation.setState(FileOperation.RUNNING);

@@ -86,17 +86,17 @@ public final class PoolOperation {
         DOWN_TO_UP     // CANCEL ANY CURRENT DOWN AND PROMOTE TO WAITING
     }
 
-    boolean forceScan;     // Overrides non-handling of restarts
-    long lastUpdate;
-    long lastScan;
-    Integer group;         // Only set when the psuAction != NONE
-    Integer unit;          // Only set when the psuAction == MODIFY
-    State state;
-    SelectionAction psuAction;
+    boolean                 forceScan;     // Overrides non-handling of restarts
+    long                    lastUpdate;
+    long                    lastScan;
+    Integer                 group;         // Only set when the psuAction != NONE
+    Integer                 unit;          // Only set when the psuAction == MODIFY
+    State                   state;
+    SelectionAction         psuAction;
     PoolStatusForResilience lastStatus;
     PoolStatusForResilience currStatus;
-    PoolScanTask task;
-    CacheException exception;
+    PoolScanTask            task;
+    CacheException          exception;
 
     private int children;
     private int completed;

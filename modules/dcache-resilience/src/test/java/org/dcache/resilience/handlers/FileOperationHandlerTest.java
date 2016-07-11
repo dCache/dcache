@@ -100,7 +100,6 @@ public final class FileOperationHandlerTest extends TestBase
     String               storageUnit;
     Integer              originalTarget;
     Integer              originalSource;
-    boolean suppressAlarm = false;
     boolean rmMessageFailure = false;
 
     @Override
@@ -569,7 +568,6 @@ public final class FileOperationHandlerTest extends TestBase
         } else {
             update = new FileUpdate(pnfsId, null, type, false);
         }
-        suppressAlarm = action == SelectionAction.REMOVE;
     }
 
     private void shutPoolDown(String pool) {
@@ -655,13 +653,12 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     private void whenTaskIsCreatedAndCalled() {
-        task = new ResilientFileTask(update.pnfsId, false, 0,
+        task = new ResilientFileTask(update.pnfsId, 0,
                                      fileOperationHandler);
         task.call();
     }
 
     private void whenVerifyIsRun() {
-        verifyType = fileOperationHandler.handleVerification(attributes,
-                                                             suppressAlarm).name();
+        verifyType = fileOperationHandler.handleVerification(attributes).name();
     }
 }

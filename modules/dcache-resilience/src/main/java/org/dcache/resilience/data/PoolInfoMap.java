@@ -327,6 +327,23 @@ public class PoolInfoMap {
         return diff;
     }
 
+
+    public int getCountableLocations(Collection<String> locations) {
+        read.lock();
+        int countable = 0;
+        try {
+            for (String location : locations) {
+                PoolInformation info = poolInfo.get(getPoolIndex(location));
+                if (info != null && info.isInitialized() && info.isCountable()) {
+                    ++countable;
+                }
+            }
+        } finally {
+            read.unlock();
+        }
+        return countable;
+    }
+
     public String getGroup(Integer group) {
         read.lock();
         try {
@@ -354,6 +371,19 @@ public class PoolInfoMap {
         }
     }
 
+
+    public Set<String> getMemberLocations(Integer gindex,
+                                          Collection<String> locations) {
+        read.lock();
+        try {
+            Set<String> pools = getPools(getPoolsOfGroup(gindex));
+            return locations.stream().filter(pools::contains)
+                            .collect(Collectors.toSet());
+        } finally {
+            read.unlock();
+        }
+    }
+
     /**
      * @param writable location is writable if true, readable if false.
      * @return all pool group pools which qualify.
@@ -364,26 +394,6 @@ public class PoolInfoMap {
             Set<Integer> members = ImmutableSet.copyOf(poolGroupToPool.get(gindex));
             members = getValidLocations(members, writable);
             return getPools(members);
-        } finally {
-            read.unlock();
-        }
-    }
-
-    /**
-     * @param writable location is writable if true, readable if false.
-     * @return all the locations belonging to the given pool group which
-     * qualify.
-     */
-    public Set<String> getMemberPools(Integer gindex,
-                                      Collection<String> locations,
-                                      boolean writable) {
-        read.lock();
-        try {
-            Set<Integer> members = ImmutableSet.copyOf(poolGroupToPool.get(gindex));
-            Set<Integer> valid = getValidLocations(getPoolIndices(locations),
-                                                   writable);
-            valid = Sets.intersection(valid, members);
-            return getPools(valid);
         } finally {
             read.unlock();
         }
@@ -497,6 +507,17 @@ public class PoolInfoMap {
         }
     }
 
+    public Set<String> getReadableLocations(Collection<String> locations) {
+        read.lock();
+        try {
+            return locations.stream()
+                            .filter((l) -> isPoolViable(getPoolIndex(l), false))
+                            .collect(Collectors.toSet());
+        } finally {
+            read.unlock();
+        }
+    }
+
     public Integer getResilientPoolGroup(Integer pool) {
         read.lock();
         try {
@@ -579,31 +600,13 @@ public class PoolInfoMap {
         return tags;
     }
 
-    public int getCountableLocations(Collection<String> locations) {
-        read.lock();
-        int countable = 0;
-        try {
-            for (String location : locations) {
-                PoolInformation info = poolInfo.get(getPoolIndex(location));
-                if (info != null && info.isInitialized() && info.isCountable()) {
-                    ++countable;
-                }
-            }
-        } finally {
-            read.unlock();
-        }
-        return countable;
-    }
-
     public Set<Integer> getValidLocations(Collection<Integer> locations,
                                           boolean writable) {
         read.lock();
         try {
-            return locations.stream().filter((i) -> {
-                PoolInformation info = poolInfo.get(i);
-                return info != null && info.isInitialized()
-                                && (writable ? info.canWrite() : info.canRead());
-            }).collect(Collectors.toSet());
+            return locations.stream()
+                            .filter((i) -> isPoolViable(i, writable))
+                            .collect(Collectors.toSet());
         } finally {
             read.unlock();
         }

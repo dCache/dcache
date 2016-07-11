@@ -244,8 +244,8 @@ public final class LocationSelectorTest extends TestBase {
     }
 
     private void whenReadableMemberLocationsAreRequested() {
-        collection = locationSelector.getReadableMemberLocations(group,
-                        attributes.getLocations());
+        collection = poolInfoMap.getMemberLocations(group, attributes.getLocations());
+        collection = poolInfoMap.getReadableLocations(collection);
     }
 
     private void whenRemoveTargetIsSelected() {
