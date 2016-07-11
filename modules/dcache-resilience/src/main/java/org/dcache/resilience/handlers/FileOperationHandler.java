@@ -400,7 +400,7 @@ public class FileOperationHandler {
 
         /*
          *  Note that the location-dependent checks are run on this thread
-         *  instead of being pre-checked by the PnfsOperationMap consumer thread
+         *  instead of being pre-checked by the FileOperationMap consumer thread
          *  because they require a call to the database.
          */
         try {

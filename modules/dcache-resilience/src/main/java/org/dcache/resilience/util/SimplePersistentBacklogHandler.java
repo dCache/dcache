@@ -162,7 +162,7 @@ public final class SimplePersistentBacklogHandler
         }
 
         /**
-         * <p>Only pnfs-based messages are stored.</p>
+         * <p>Only file operation messages are stored.</p>
          */
         private void saveToBacklog(Serializable message) {
             String pnfsid;

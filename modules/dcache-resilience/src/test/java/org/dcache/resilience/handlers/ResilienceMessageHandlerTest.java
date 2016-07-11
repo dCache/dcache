@@ -137,7 +137,7 @@ public final class ResilienceMessageHandlerTest extends TestBase {
         handler.processBackloggedMessage(message);
         /*
          *  Without artificially altering the call structure of the
-         *  handler, verification of the actual pnfsOperationHandler method
+         *  handler, verification of the actual FileOperationHandler method
          * call is not possible here as the message handler creates an
          * anonymous struct-type object on the fly to pass as parameter.
          */
@@ -156,7 +156,7 @@ public final class ResilienceMessageHandlerTest extends TestBase {
         handler.processBackloggedMessage(message);
         /*
          *  Without artificially altering the call structure of the
-         *  handler, verification of the actual pnfsOperationHandler method
+         *  handler, verification of the actual FileOperationHandler method
          * call is not possible here as the message handler creates an
          * anonymous struct-type object on the fly to pass as parameter.
          */

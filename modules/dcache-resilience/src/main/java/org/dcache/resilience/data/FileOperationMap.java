@@ -873,10 +873,10 @@ public class FileOperationMap extends RunnableModule {
             LOGGER.trace("Consumer was interrupted.");
         }
 
-        LOGGER.info("Exiting pnfs operation consumer.");
+        LOGGER.info("Exiting file operation consumer.");
         clear();
 
-        LOGGER.info("Pnfs operation queues and index cleared.");
+        LOGGER.info("File operation queues and index cleared.");
     }
 
     /**
@@ -896,7 +896,7 @@ public class FileOperationMap extends RunnableModule {
     }
 
     /**
-     *  <p>"Pnfs sweep:" the main queue update sequence (run by the consumer).</p>
+     *  <p>"File operation sweep:" the main queue update sequence (run by the consumer).</p>
      */
     @VisibleForTesting
     public void scan() {
@@ -904,7 +904,7 @@ public class FileOperationMap extends RunnableModule {
         terminalOperationProcessor.processTerminated();
         waitingOperationProcessor.processWaiting();
         long end = System.currentTimeMillis();
-        counters.recordPnfsSweep(end, end - start);
+        counters.recordFileOpSweep(end, end - start);
     }
 
     public void setCheckpointExpiry(long checkpointExpiry) {

@@ -78,7 +78,7 @@ import org.dcache.resilience.data.PoolInfoMap;
  * <p>Manages the selection of locations from the underlying pool map
  *      information.  Encapsulates the logic involved in extracting
  *      sets of valid readable or writable pools in connection with
- *      the verify, copy and remove phases of the pnfs operation.</p>
+ *      the verify, copy and remove phases of the file operation.</p>
  */
 public final class LocationSelector {
     private static final Logger LOGGER = LoggerFactory.getLogger(
@@ -154,7 +154,7 @@ public final class LocationSelector {
 
     /**
      * <p>Filters first the writable pools in the pool group which do
-     *      not yet have a copy of this pnfsid, then applies any tag-induced
+     *      not yet have a copy of this file, then applies any tag-induced
      *      partitioning on the basis of the tags of copies that already exist.
      *      From that list, it then chooses the pool using the
      *      configured poolSelectionStrategy.</p>
@@ -164,8 +164,7 @@ public final class LocationSelector {
                     Collection<String> locations, Set<Integer> tried,
                     Collection<String> oneCopyPer) throws LocationSelectionException {
         /*
-         *  Writable locations in the pool group without a copy of this
-         *  pnfsId.
+         *  Writable locations in the pool group without a copy of this file.
          */
         Set<String> possible = getEligibleCopyTargets(gindex, locations, tried);
 
@@ -213,7 +212,7 @@ public final class LocationSelector {
 
     /**
      * <p>Filters first the writable pools in the pool group which contain a
-     *      copy of this pnfsid, then applies any tag-induced partitioning on
+     *      copy of this file, then applies any tag-induced partitioning on
      *      the basis of the tags of copies that already exist to select a
      *      maximally constrained pool.  If more than one pool has the same
      *      weight, one of them is chosen randomly.</p>
