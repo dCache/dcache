@@ -30,15 +30,14 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
-import dmg.util.command.CommandLine;
-import dmg.util.command.Option;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
+import dmg.util.command.Option;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.IoQueueManager;
@@ -258,6 +257,15 @@ public class MigrationModule
                 // error.
             }
         }
+    }
+
+    private synchronized String nextId()
+    {
+        String id;
+        do {
+            id = String.valueOf(_counter++);
+        } while (_jobs.containsKey(id));
+        return id;
     }
 
     @Command(name="migration concurrency",
@@ -873,33 +881,30 @@ public class MigrationModule
                 throw new IllegalArgumentException(targetMode + ": Invalid value");
             }
 
-            if (id == null) {
-                synchronized (MigrationModule.this) {
-                    do {
-                        id = String.valueOf(_counter++);
-                    } while (_jobs.containsKey(id));
-                }
-            } else {
-                Job job;
-                synchronized (MigrationModule.this) {
-                    job = _jobs.get(id);
-                }
-                if (job != null) {
-                    switch (job.getState()) {
-                    case FAILED:
-                    case CANCELLED:
-                    case FINISHED:
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Job id is already in use: " + id);
+            synchronized (MigrationModule.this) {
+                if (id == null) {
+                    id = nextId();
+                } else {
+                    Job job = _jobs.get(id);
+                    if (job != null) {
+                        switch (job.getState()) {
+                        case FAILED:
+                        case CANCELLED:
+                        case FINISHED:
+                            break;
+                        case CANCELLING:
+                            _jobs.put(nextId(), job);
+                            _jobs.remove(id);
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Job id is already in use: " + id);
+                        }
                     }
                 }
-            }
 
-            Job job = new Job(_context, definition);
-            job.setConcurrency(concurrency);
+                Job job = new Job(_context, definition);
+                job.setConcurrency(concurrency);
 
-            synchronized (MigrationModule.this) {
                 _commands.put(job, commandLine);
                 _jobs.put(id, job);
                 if (_isStarted) {
@@ -1143,6 +1148,12 @@ public class MigrationModule
                 }
             }
         });
+    }
+
+    @Override
+    public void beforeSetup()
+    {
+        _jobs.values().stream().filter(j -> j.getDefinition().isPermanent).forEach(j -> j.cancel(true));
     }
 
     public synchronized boolean isActive(PnfsId id)

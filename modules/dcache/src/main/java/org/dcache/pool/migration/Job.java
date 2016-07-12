@@ -144,15 +144,34 @@ public class Job
                     }), 0, refreshPeriod, TimeUnit.MILLISECONDS);
 
             executor.submit(new FireAndForgetTask(() -> {
-                State state = State.FAILED;
                 try {
                     _context.getRepository().addListener(Job.this);
                     populate();
-                    state = State.RUNNING;
+
+                    _lock.lock();
+                    try {
+                        if (getState() == State.INITIALIZING) {
+                            setState(State.RUNNING);
+                        }
+                    } finally {
+                        _lock.unlock();
+                    }
                 } catch (InterruptedException e) {
                     _log.error("Migration job was interrupted");
                 } finally {
-                    setState(state);
+                    _lock.lock();
+                    try {
+                        switch (getState()) {
+                        case INITIALIZING:
+                            setState(State.FAILED);
+                            break;
+                        case CANCELLING:
+                            schedule();
+                            break;
+                        }
+                    } finally {
+                        _lock.unlock();
+                    }
                 }
             }));
         } finally {
@@ -289,6 +308,9 @@ public class Job
                 try {
                     _lock.lock();
                     try {
+                        if (_state != State.INITIALIZING) {
+                            break;
+                        }
                         CacheEntry entry = repository.getEntry(pnfsId);
                         if (accept(entry)) {
                             add(entry);
@@ -317,17 +339,18 @@ public class Job
     {
         _lock.lock();
         try {
-            if (_state != State.RUNNING && _state != State.SUSPENDED &&
-                _state != State.CANCELLING && _state != State.STOPPING &&
-                _state != State.SLEEPING && _state != State.PAUSED) {
-                throw new IllegalStateException("The job cannot be cancelled in its present state");
-            }
-            if (_running.isEmpty()) {
+            if (_state == State.CANCELLED ||
+                _state == State.FAILED ||
+                _state == State.FINISHED) {
+                for (Map.Entry<PoolMigrationJobCancelMessage,DelayedReply> entry: _cancelRequests.entrySet()) {
+                    entry.getValue().reply(entry.getKey());
+                }
+            } else  if (_state != State.INITIALIZING && _running.isEmpty()) {
                 setState(State.CANCELLED);
             } else {
                 setState(State.CANCELLING);
                 if (force) {
-                    for (Task task: _running.values()) {
+                    for (Task task : _running.values()) {
                         task.cancel();
                     }
                 }
@@ -472,6 +495,7 @@ public class Job
                     for (Map.Entry<PoolMigrationJobCancelMessage,DelayedReply> entry: _cancelRequests.entrySet()) {
                         entry.getValue().reply(entry.getKey());
                     }
+                    _cancelRequests.clear();
                     break;
                 }
             }
@@ -795,21 +819,15 @@ public class Job
 
     public Object messageArrived(PoolMigrationJobCancelMessage message)
     {
-        State state = _state;
-        if (state == State.FINISHED || state == State.FAILED || state == State.CANCELLED) {
-            message.setSucceeded();
-            return message;
-        } else {
-            DelayedReply reply = new DelayedReply();
-            _lock.lock();
-            try {
-                _cancelRequests.put(message, reply);
-                cancel(message.isForced());
-            } finally {
-                _lock.unlock();
-            }
-            return reply;
+        DelayedReply reply = new DelayedReply();
+        _lock.lock();
+        try {
+            _cancelRequests.put(message, reply);
+            cancel(message.isForced());
+        } finally {
+            _lock.unlock();
         }
+        return reply;
     }
 
     /** Message handler. Delegates to proper task .*/
