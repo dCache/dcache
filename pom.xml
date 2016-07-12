@@ -872,7 +872,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>logback-test-config</artifactId>
-            <version>${version.dcache}</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
