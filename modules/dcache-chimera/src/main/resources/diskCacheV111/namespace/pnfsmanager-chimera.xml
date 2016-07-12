@@ -96,6 +96,7 @@
       <property name="permissionHandler" ref="permission-handler"/>
       <property name="inheritFileOwnership" value="${pnfsmanager.enable.inherit-file-ownership}"/>
       <property name="verifyAllLookups" value="${pnfsmanager.enable.full-path-permission-check}"/>
+      <property name="allowMoveToDirectoryWithDifferentStorageClass" value="${pnfsmanager.enable.move-to-directory-with-different-storageclass}"/>
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
       <property name="aclEnabled" value="${pnfsmanager.enable.acl}"/>

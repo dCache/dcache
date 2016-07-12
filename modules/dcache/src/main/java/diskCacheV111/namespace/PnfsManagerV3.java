@@ -266,6 +266,10 @@ public class PnfsManagerV3
         _nameSpaceProvider = provider;
     }
 
+    public NameSpaceProvider getNameSpaceProvider() {
+        return _nameSpaceProvider;
+    }
+
     @Required
     public void setQueueMaxSize(int maxSize)
     {

@@ -81,6 +81,7 @@ import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Strings.nullToEmpty;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
@@ -104,6 +105,7 @@ public class ChimeraNameSpaceProvider
     private boolean _inheritFileOwnership;
     private boolean _verifyAllLookups;
     private boolean _aclEnabled;
+    private boolean _allowMoveToDirectoryWithDifferentStorageClass;
     private PermissionHandler _permissionHandler;
     private String _uploadDirectory;
     private String _uploadSubDirectory;
@@ -138,6 +140,12 @@ public class ChimeraNameSpaceProvider
     public void setVerifyAllLookups(boolean verify)
     {
         _verifyAllLookups = verify;
+    }
+
+    @Required
+    public void setAllowMoveToDirectoryWithDifferentStorageClass(boolean allow)
+    {
+        _allowMoveToDirectoryWithDifferentStorageClass = allow;
     }
 
     @Required
@@ -493,8 +501,24 @@ public class ChimeraNameSpaceProvider
              */
             File source = new File(sourcePath);
             ExtendedInode sourceDir = pathToInode(subject, source.getParent());
-            FileAttributes sourceDirAttributes =
-                getFileAttributesForPermissionHandler(sourceDir);
+            Set<FileAttribute> attributes = EnumSet.noneOf(FileAttribute.class);
+            attributes.addAll(_permissionHandler.getRequiredAttributes());
+            if (!_allowMoveToDirectoryWithDifferentStorageClass) {
+                attributes.add(FileAttribute.STORAGECLASS);
+                attributes.add(FileAttribute.CACHECLASS);
+            }
+            FileAttributes sourceDirAttributes = getFileAttributes(sourceDir,attributes);
+
+            ExtendedInode inode;
+            if (pnfsId != null) {
+                inode = new ExtendedInode(_fs, pnfsId, STAT);
+            } else {
+                if (!Subjects.isRoot(subject) &&
+                    _permissionHandler.canLookup(subject, sourceDirAttributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + sourcePath);
+                }
+                inode = sourceDir.inodeOf(source.getName(), STAT);
+            }
 
             /* Resolve the target directory.
              */
@@ -507,25 +531,26 @@ public class ChimeraNameSpaceProvider
                     destDirAttributes = sourceDirAttributes;
                 } else {
                     destDir = pathToInode(subject, dest.getParent());
-                    destDirAttributes =
-                        getFileAttributesForPermissionHandler(destDir);
+                    destDirAttributes = getFileAttributes(destDir,attributes);
+                    if (!_allowMoveToDirectoryWithDifferentStorageClass) {
+                        FileAttributes sourceAttributes = sourceDirAttributes;
+                        if (inode.isDirectory()) {
+                            sourceAttributes =
+                                getFileAttributes(new ExtendedInode(_fs, inode),attributes);
+                        }
+                            if (!(nullToEmpty(destDirAttributes.getStorageClass()).
+                                  equals(nullToEmpty(sourceAttributes.getStorageClass())) &&
+                                  nullToEmpty(destDirAttributes.getCacheClass()).
+                                  equals(nullToEmpty(sourceAttributes.getCacheClass())))) {
+                            throw new PermissionDeniedCacheException("Mv denied: " +
+                                                                   dest.getParent() +
+                                                                   " has different storage tags; use cp.");
+                        }
+                    }
                 }
             } catch (FileNotFoundHimeraFsException e) {
                 throw new NotDirCacheException("No such directory: " +
                                                dest.getParent());
-            }
-
-            /* Resolve the source file.
-             */
-            ExtendedInode inode;
-            if (pnfsId != null) {
-                inode = new ExtendedInode(_fs, pnfsId, STAT);
-            } else {
-                if (!Subjects.isRoot(subject) &&
-                    _permissionHandler.canLookup(subject, sourceDirAttributes) != ACCESS_ALLOWED) {
-                    throw new PermissionDeniedCacheException("Access denied: " + sourcePath);
-                }
-                inode = sourceDir.inodeOf(source.getName(), STAT);
             }
 
             /* Permission checks.

@@ -35,6 +35,7 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -113,6 +114,7 @@ public class PnfsManagerTest
                                                                 StorageInfo.DEFAULT_RETENTION_POLICY));
         chimera.setInheritFileOwnership(true);
         chimera.setVerifyAllLookups(true);
+        chimera.setAllowMoveToDirectoryWithDifferentStorageClass(true);
         chimera.setPermissionHandler(new PosixPermissionHandler());
         chimera.setAclEnabled(false);
         chimera.setFileSystem(_fs);
@@ -170,6 +172,44 @@ public class PnfsManagerTest
         assertThat(request.getReturnCode(), is(0));
         assertThat(request.getFileAttributes().getAccessLatency(), is(AccessLatency.NEARLINE));
         assertThat(request.getFileAttributes().getRetentionPolicy(), is(RetentionPolicy.CUSTODIAL));
+    }
+
+    @Test
+    public void testMoveEntry() throws Exception {
+
+        PnfsCreateDirectoryMessage pnfsCreateDirectoryMessage = new PnfsCreateDirectoryMessage("/pnfs/testRoot/testMoveEntry");
+        _pnfsManager.createDirectory(pnfsCreateDirectoryMessage);
+        assertTrue("failed to create a directory", pnfsCreateDirectoryMessage.getReturnCode() == 0 );
+
+        FsInode srcInode   =  _fs.mkdir("/pnfs/testRoot/testMoveEntry/sourceDirectory");
+        byte[] srcTagData  = "foo".getBytes();
+        _fs.setTag(srcInode, "sGroup",srcTagData, 0, srcTagData.length);
+
+        FsInode dstInode   =  _fs.mkdir("/pnfs/testRoot/testMoveEntry/destinationDirectory");
+        byte[] dstTagData  = "bar".getBytes();
+        _fs.setTag(dstInode, "sGroup",dstTagData, 0, dstTagData.length);
+
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testMoveEntry/sourceDirectory/sourceFile");
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
+
+        PnfsRenameMessage pnfsRenameMessage = new PnfsRenameMessage("/pnfs/testRoot/testMoveEntry/sourceDirectory/sourceFile",
+                                                                    "/pnfs/testRoot/testMoveEntry/destinationDirectory/destinationFile",false);
+
+        _pnfsManager.rename(pnfsRenameMessage);
+        assertTrue("failed to move file to directory", pnfsRenameMessage.getReturnCode() == 0 );
+
+        ChimeraNameSpaceProvider provider = (ChimeraNameSpaceProvider) _pnfsManager.getNameSpaceProvider();
+        provider.setAllowMoveToDirectoryWithDifferentStorageClass(false);
+        pnfsRenameMessage = new PnfsRenameMessage("/pnfs/testRoot/testMoveEntry/destinationDirectory/destinationFile",
+                                                  "/pnfs/testRoot/testMoveEntry/sourceDirectory/sourceFile",false);
+        _pnfsManager.rename(pnfsRenameMessage);
+         assertTrue("succeeded to move file to directory with different tag, a failure", pnfsRenameMessage.getReturnCode() != 0 );
+
+        pnfsRenameMessage = new PnfsRenameMessage("/pnfs/testRoot/testMoveEntry/destinationDirectory",
+                                                  "/pnfs/testRoot/testMoveEntry/sourceDirectory/destinationDirectory",false);
+        _pnfsManager.rename(pnfsRenameMessage);
+         assertTrue("succeeded to move directory to directory with different tag, a failure", pnfsRenameMessage.getReturnCode() != 0 );
     }
 
     @Test

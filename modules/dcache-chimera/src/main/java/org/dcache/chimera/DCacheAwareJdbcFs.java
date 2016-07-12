@@ -59,11 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.chimera;
 
+import com.google.common.base.Throwables;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.security.auth.Subject;
 import javax.sql.DataSource;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.AccessController;
 import java.sql.SQLException;
@@ -72,6 +76,7 @@ import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
@@ -104,6 +109,13 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
     private CellStub billingStub;
     private PnfsHandler pnfsHandler;
     private CellAddressCore myAddress;
+    private boolean queryPnfsManagerOnRename;
+
+    @Required
+    public void setQueryPnfsManagerOnRename(boolean yes)
+    {
+        queryPnfsManagerOnRename = yes;
+    }
 
     public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager) throws ChimeraFsException, SQLException
     {
@@ -226,5 +238,28 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
         }
 
         return locality.toString();
+    }
+
+    @Override
+    public boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
+        if (!queryPnfsManagerOnRename) {
+            return super.rename(inode,srcDir,source,destDir,dest);
+        }
+        boolean rc = true;
+        try {
+            String sourceDirectory = inode2path(srcDir);
+            File sourcePath = new File(sourceDirectory,source);
+            String destinationDirectory = inode2path(destDir);
+            File destinationPath = new File(destinationDirectory,dest);
+            pnfsHandler.renameEntry(sourcePath.getCanonicalPath(),destinationPath.getCanonicalPath(),true);
+        }
+        catch (PermissionDeniedCacheException e) {
+            throw new PermissionDeniedChimeraFsException(e.getMessage());
+        }
+        catch (CacheException | IOException e) {
+            Throwables.propagateIfInstanceOf(e, ChimeraFsException.class);
+            throw new ChimeraFsException(e.getMessage(),e);
+        }
+        return rc;
     }
 }
