@@ -71,6 +71,7 @@
         <version.wicket>7.3.0</version.wicket>
         <version.xrootd4j>3.0.5</version.xrootd4j>
         <version.jersey>2.22.2</version.jersey>
+        <version.dcache-view>1.0.0</version.dcache-view>
         <version.dcache>${project.version}</version.dcache>
 
         <!-- BouncyCastle seems to change the naming convention of
@@ -666,6 +667,12 @@
                     <artifactId>bcprov-jdk16</artifactId>
                   </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.dcache</groupId>
+                <artifactId>dcache-view</artifactId>
+                <version>${version.dcache-view}</version>
             </dependency>
 
             <dependency>
