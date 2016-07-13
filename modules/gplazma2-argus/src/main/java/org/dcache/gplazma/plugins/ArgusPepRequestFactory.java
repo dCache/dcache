@@ -8,7 +8,7 @@ import org.glite.authz.common.model.Resource;
 import org.glite.authz.common.model.Subject;
 import org.glite.authz.pep.profile.AuthorizationProfile;
 
-import static org.glite.authz.common.profile.AuthorizationProfileConstants.*;
+import static org.glite.authz.common.profile.CommonXACMLAuthorizationProfileConstants.*;
 
 public class ArgusPepRequestFactory {
 
