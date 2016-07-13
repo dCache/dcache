@@ -1,7 +1,6 @@
 package org.dcache.cells;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
@@ -65,19 +64,14 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellMessageSender;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
-import dmg.cells.services.SetupInfoMessage;
-import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
-import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -89,7 +83,6 @@ import org.dcache.vehicles.BeanQueryMessage;
 import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static java.nio.file.Files.readAllLines;
 import static java.util.stream.Collectors.toList;
 
@@ -166,16 +159,6 @@ public class UniversalSpringCell
     private final CommandInterpreter _setupInterpreter = new CommandInterpreter();
 
     /**
-     * Cell name of the setup controller.
-     */
-    private String _setupController;
-
-    /**
-     * Setup class used for sending a setup to the setup controller.
-     */
-    private String _setupClass;
-
-    /**
      * Setup to execute during start and to which to save the setup.
      */
     private File _setupFile;
@@ -201,19 +184,12 @@ public class UniversalSpringCell
         Args args = getArgs();
         checkArgument(args.argc() > 0, "Configuration location missing");
 
-        _setupController = args.getOpt("setupController");
-        LOGGER.info("Setup controller set to "
-                    + (_setupController == null ? "none" : _setupController));
         _setupFile =
                 (!args.hasOption("setupFile"))
                 ? null
                 : new File(args.getOpt("setupFile"));
-        _setupClass = args.getOpt("setupClass");
 
-        checkArgument(_setupController == null || _setupClass != null,
-                      "Setup class must be specified when a setup controller is used");
-
-        if (_setupFile != null || _setupClass != null) {
+        if (_setupFile != null) {
             addCommandListener(new SetupCommandListener());
         }
 
@@ -471,9 +447,6 @@ public class UniversalSpringCell
         @Command(name = "save", hint = "save service configuration")
         public class SaveCommand implements Callable<String>
         {
-            @Option(name = "sc", usage = "Cell address of setup controller.")
-            String controller;
-
             @Option(name = "file", usage = "Path of setup file.")
             File file;
 
@@ -481,44 +454,21 @@ public class UniversalSpringCell
             public String call()
                     throws IOException, IllegalArgumentException
             {
-                if ("none".equals(controller)) {
-                    controller = null;
-                    file = _setupFile;
-                } else if (file == null && controller == null) {
-                    controller = _setupController;
+                if (file == null) {
                     file = _setupFile;
                 }
 
-                checkArgument(file != null || controller != null,
-                              "Either a setup controller or setup file must be specified.");
+                File path = file.getAbsoluteFile();
+                File directory = path.getParentFile();
+                File temp = File.createTempFile(path.getName(), null, directory);
+                temp.deleteOnExit();
 
-                if (controller != null) {
-                    checkState(!Strings.isNullOrEmpty(_setupClass),
-                               "Cannot save to a setup controller since the cell has no setup class.");
-
-                    StringWriter sw = new StringWriter();
-                    printSetup(new PrintWriter(sw));
-
-                    SetupInfoMessage info =
-                            new SetupInfoMessage("put", getCellName(),
-                                                 _setupClass, sw.toString());
-
-                    sendMessage(new CellMessage(new CellPath(controller), info));
+                try (PrintWriter pw = new PrintWriter(new FileWriter(temp))) {
+                    printSetup(pw);
                 }
 
-                if (file != null) {
-                    File path = file.getAbsoluteFile();
-                    File directory = path.getParentFile();
-                    File temp = File.createTempFile(path.getName(), null, directory);
-                    temp.deleteOnExit();
 
-                    try (PrintWriter pw = new PrintWriter(new FileWriter(temp))) {
-                        printSetup(pw);
-                    }
-
-
-                    renameWithBackup(temp, path);
-                }
+                renameWithBackup(temp, path);
 
                 return "";
             }
