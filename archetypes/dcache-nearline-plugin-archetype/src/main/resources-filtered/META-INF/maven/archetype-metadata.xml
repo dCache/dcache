@@ -47,7 +47,7 @@
         <fileSet filtered="true" encoding="UTF-8">
             <directory>src/main/resources</directory>
             <includes>
-                <include>**/org.dcache.xrootd.plugins.ChannelHandlerProvider</include>
+                <include>**/org.dcache.pool.nearline.spi.NearlineStorageProvider</include>
             </includes>
         </fileSet>
     </fileSets>
