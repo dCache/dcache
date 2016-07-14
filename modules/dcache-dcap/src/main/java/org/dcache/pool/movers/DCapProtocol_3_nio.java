@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
@@ -45,13 +44,17 @@ import org.dcache.vehicles.FileAttributes;
 import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.ByteUnit.MiB;
 
-
 public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArgsAware
 {
     private static Logger _log = LoggerFactory.getLogger(DCapProtocol_3_nio.class);
     private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
     private static final Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
     private static final int INC_SPACE = MiB.toBytes(50);
+
+    /**
+     * Max request size that client sent by client that we will accept.
+     */
+    private static final long MAX_REQUEST_SIZE = MiB.toBytes(8);
 
     private final Map<String,Object> _context;
     private final CellEndpoint     _cell;
@@ -68,7 +71,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private long    _ioError         = -1;
     private PnfsId  _pnfsId;
     private int     _sessionId       = -1;
-    private boolean _wasChanged;
 
     private  Checksum  _clientChecksum;
     private ChecksumFactory _checksumFactory;
@@ -185,14 +187,14 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     //
     //   helper class to use nio channels for input requests.
     //
-    private class RequestBlock {
+    private static class RequestBlock {
 
         private ByteBuffer _buffer;
         private int _commandSize;
         private int _commandCode;
 
         private RequestBlock(){
-            _buffer = ByteBuffer.allocate(16384);
+            _buffer = ByteBuffer.allocate(64);
         }
         private void read(SocketChannel channel) throws Exception {
 
@@ -203,17 +205,35 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             _buffer.rewind();
             _commandSize = _buffer.getInt();
 
-            if(_commandSize < 4) {
-                throw new
-                        CacheException(44, "Protocol Violation (cl<4)");
+            if (_commandSize < 4) {
+                throw new CacheException(44, "Protocol Violation (cl<4)");
             }
 
-            try {
-        	_buffer.clear().limit(_commandSize);
-            }catch(IllegalArgumentException iae) {
-        	_log.error("Command size excided command block size : " + _commandSize + "/" + _buffer.capacity());
-        	throw iae;
+            if (_commandSize > _buffer.capacity()) {
+
+                if (_commandSize > MAX_REQUEST_SIZE) {
+                    /*
+                     * well, protocol tells nothing about command block size limit (my bad).
+                     * but we will send "protocol violation" to indicate client that we cant handle it.
+                     */
+                    _log.warn("Command size excided command block size : {}/{}", _commandSize, MAX_REQUEST_SIZE);
+                    // eat the data to keep TCP send buffer on the client side happy
+                    int n = 0;
+                    while (n < _commandSize) {
+                        _buffer.clear();
+                        n += channel.read(_buffer);
+                    }
+                    throw new CacheException(44, "Protocol Violation: request block too big (" + _commandSize + ")");
+                }
+
+                _log.info("Growing command block size from: {} to: {}", _buffer.capacity(), _commandSize);
+
+                // we don't need any cind of synchronization as mover single threaded.
+                _buffer = ByteBuffer.allocate(_commandSize);
             }
+
+            _buffer.clear().limit(_commandSize);
+
             fillBuffer(channel);
             _buffer.rewind();
             _commandCode = _buffer.getInt();
@@ -427,21 +447,18 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                 }
 
                 //
-                // get size of next command
+                // read and process DCAP request
                 //
-                try{
-
+                try {
                     requestBlock.read(socketChannel);
-
-                    _log.debug("Request Block : {}", requestBlock);
-
-                }catch(EOFException eofe){
-                    _log.debug("Dataconnection closed by peer : {}", eofe.toString());
-                    throw eofe;
-                }catch(BufferUnderflowException bue){
-                    throw new
-                        CacheException(43,"Protocol Violation (csl<4)");
+                } catch (CacheException e) {
+                    // CacheException thrown only on protocol violation.
+                    cntOut.writeACK(9, e.getRc(), e.getMessage());
+                    socketChannel.write(cntOut.buffer());
+                    continue;
                 }
+
+                _log.debug("Request Block : {}", requestBlock);
 
                 _lastTransferred    = System.currentTimeMillis();
 
@@ -738,6 +755,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             // clear interrupted state
             Thread.interrupted();
             ioException = new InterruptedException(ee.getMessage());
+        } catch (EOFException e) {
+            _log.debug("Dataconnection closed by peer : {}", e.toString());
+            ioException = e;
         }catch(Exception e){
             ioException = e;
         }finally{
@@ -991,7 +1011,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             if(rest < 0) {
                 break;
             }
-            _wasChanged = true;
+
             while(rest > 0 ){
 
                 size = _bigBuffer.capacity() > rest ?
