@@ -17,6 +17,7 @@ check -strong poolmanager.pool-monitor.update-period
 check -strong poolmanager.pool-monitor.update-period.unit
 check -strong poolmanager.pool-monitor.max-updates-per-second
 check poolmanager.setup.file
+check poolmanager.setup.zookeeper
 
 # External settings
 exec file:${dcache.paths.share}/cells/stage.fragment poolmanager PoolManager
@@ -70,6 +71,7 @@ create org.dcache.cells.UniversalSpringCell ${poolmanager.cell.name} \
    "!poolmanager.defaults \
     classpath:diskCacheV111/poolManager/poolmanager.xml \
     -setupFile=${poolmanager.setup.file} \
+    -setupNode=${poolmanager.setup.zookeeper} \
     -consume=${poolmanager.cell.consume} \
     -subscribe=${poolmanager.cell.subscribe} \
     -cellClass=PoolManager \
