@@ -8,6 +8,15 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
+import org.apache.curator.framework.recipes.cache.NodeCache;
+import org.apache.curator.framework.recipes.cache.NodeCacheListener;
+import org.apache.curator.utils.CloseableUtils;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.BadVersionException;
+import org.apache.zookeeper.KeeperException.NoNodeException;
+import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.AbstractNestablePropertyAccessor;
@@ -31,11 +40,16 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.PropertySource;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.beans.PropertyDescriptor;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -77,13 +91,17 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
+import org.dcache.util.cli.CommandExecutor;
 import org.dcache.vehicles.BeanQueryAllPropertiesMessage;
 import org.dcache.vehicles.BeanQueryMessage;
 import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.file.Files.readAllLines;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.readAllBytes;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -163,9 +181,20 @@ public class UniversalSpringCell
      */
     private File _setupFile;
 
+    private SetupManager _setupManager;
+
     public UniversalSpringCell(String cellName, String arguments)
     {
         super(cellName, arguments);
+    }
+
+    @Override
+    protected Serializable executeCommand(CommandExecutor command, Args args) throws CommandException
+    {
+        if (command.getImplementation().isAnnotationPresent(CellSetupProvider.AffectsSetup.class)) {
+            return _setupManager.execute(command, args);
+        }
+        return super.executeCommand(command, args);
     }
 
     @Override
@@ -187,10 +216,20 @@ public class UniversalSpringCell
         _setupFile =
                 (!args.hasOption("setupFile"))
                 ? null
-                : new File(args.getOpt("setupFile"));
+                : new File(args.getOption("setupFile"));
 
         if (_setupFile != null) {
             addCommandListener(new SetupCommandListener());
+        }
+
+        /* The setup may be provided as a setup file on disk or through zookeeper.
+         */
+        if (args.hasOption("setupNode")) {
+            _setupManager = new ZooKeeperSetupManager(_setupFile, args.getOption("setupNode"));
+        } else if (_setupFile != null) {
+            _setupManager = new LocalSetupManager(_setupFile);
+        } else {
+            _setupManager = new InMemorySetupManager();
         }
 
         /* To ensure that all required file systems are mounted, the
@@ -209,10 +248,9 @@ public class UniversalSpringCell
          */
         executeSetupContext();
 
-        /* The setup may be provided as a setup file on disk or through a
-         * setup controller cell.
+        /* Starting the setup manager loads the external setup.
          */
-        executeSetup();
+        _setupManager.start();
     }
 
     @Override
@@ -232,6 +270,7 @@ public class UniversalSpringCell
     public void cleanUp()
     {
         super.cleanUp();
+        _setupManager.close();
         for (CellLifeCycleAware bean: _lifeCycleAware.values()) {
             bean.beforeStop();
         }
@@ -273,36 +312,45 @@ public class UniversalSpringCell
         }
     }
 
-    private synchronized void executeSetup()
-        throws IOException, CommandException
+    private List<CellSetupProvider> getSetupProviders()
     {
-        if (_setupFile != null && _setupFile.isFile()) {
-            List<String> lines = readAllLines(_setupFile.toPath());
-
-            List<CellSetupProvider> providers = _setupProviders.values().stream().collect(toList());
-            List<CellSetupProvider> shadowProviders = providers.stream().map(CellSetupProvider::mock).collect(toList());
-            CommandInterpreter shadowInterpreter = new CommandInterpreter();
-            shadowProviders.forEach(shadowInterpreter::addCommandListener);
-
-            executeSetup(shadowInterpreter, shadowProviders, _setupFile.toString(), lines);
-            executeSetup(_setupInterpreter, providers, _setupFile.toString(), lines);
-        }
+        return _setupProviders.values().stream().collect(toList());
     }
 
-    private void executeSetup(CommandInterpreter interpreter, List<CellSetupProvider> providers, String source, List<String> lines)
-            throws IOException, CommandException
+    private byte[] loadSetup(File file) throws IOException, CommandException
+    {
+        byte[] data = readAllBytes(file.toPath());
+        testSetup(file.toString(), data);
+        return data;
+    }
+
+    private void testSetup(String source, byte[] data)
+            throws CommandException
+    {
+        List<CellSetupProvider> providers = getSetupProviders();
+        List<CellSetupProvider> mockProviders = providers.stream().map(CellSetupProvider::mock).collect(toList());
+        CommandInterpreter mockInterpreter = new CommandInterpreter();
+        mockProviders.forEach(mockInterpreter::addCommandListener);
+        executeSetup(mockInterpreter, mockProviders, source, data);
+    }
+
+    private void executeSetup(String source, byte[] data)
+            throws CommandException
+    {
+        executeSetup(_setupInterpreter, getSetupProviders(), source, data);
+    }
+
+    private void executeSetup(CommandInterpreter interpreter, List<CellSetupProvider> providers, String source, byte[] data)
+            throws CommandException
     {
         try (Closeable ignored = () -> Lists.reverse(providers).forEach(CellSetupProvider::afterSetup)) {
             providers.forEach(CellSetupProvider::beforeSetup);
-            int lineCount = 0;
-            for (String line : lines) {
-                ++lineCount;
-
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(new ByteArrayInputStream(data), UTF_8));
+            int lineCount = 1;
+            for (String line = in.readLine(); line != null; line = in.readLine(), lineCount++) {
                 line = line.trim();
-                if (line.length() == 0) {
-                    continue;
-                }
-                if (line.charAt(0) == '#') {
+                if (line.isEmpty() || line.charAt(0) == '#') {
                     continue;
                 }
                 try {
@@ -313,6 +361,8 @@ public class UniversalSpringCell
                     throw new CommandThrowableException("Error at " + source + ":" + lineCount + ": " + e.getMessage(), e);
                 }
             }
+        } catch (IOException e) {
+            Throwables.propagate(e); // Should not be possible
         }
     }
 
@@ -448,16 +498,12 @@ public class UniversalSpringCell
         public class SaveCommand implements Callable<String>
         {
             @Option(name = "file", usage = "Path of setup file.")
-            File file;
+            File file = _setupFile;
 
             @Override
             public String call()
                     throws IOException, IllegalArgumentException
             {
-                if (file == null) {
-                    file = _setupFile;
-                }
-
                 File path = file.getAbsoluteFile();
                 File directory = path.getParentFile();
                 File temp = File.createTempFile(path.getName(), null, directory);
@@ -466,7 +512,6 @@ public class UniversalSpringCell
                 try (PrintWriter pw = new PrintWriter(new FileWriter(temp))) {
                     printSetup(pw);
                 }
-
 
                 renameWithBackup(temp, path);
 
@@ -492,7 +537,7 @@ public class UniversalSpringCell
                 if (_setupFile != null && !_setupFile.exists()) {
                     return String.format("Setup file [%s] does not exist", _setupFile);
                 }
-                executeSetup();
+                _setupManager.load(_setupFile);
                 return "";
             }
         }
@@ -1116,6 +1161,272 @@ public class UniversalSpringCell
         @Override
         protected BeanWrapperImpl newNestedPropertyAccessor(Object object, String nestedPath) {
             return new RestrictedBeanWrapper(object, nestedPath, this);
+        }
+    }
+
+    /**
+     * Setup related operations are delegated to an implementation of this interface.
+     */
+    private interface SetupManager
+    {
+        /** Called on startup. Should load the initial setup. */
+        void start() throws Exception;
+
+        /** Called on shutdown. Should release any resources held. */
+        void close();
+
+        /**
+         * Called when a setup command is issued. The implementation should execute the given command
+         * and optionally synchronize it with external representations.
+         */
+        Serializable execute(CommandExecutor command, Args args) throws CommandException;
+
+        /**
+         * Called when the admin issues the reload command. Implementations should parse
+         * the given file and update the configuration accordingly.
+         */
+        void load(File file) throws IOException, CommandException;
+    }
+
+    /**
+     * Setup manager without any external representation of the setup.
+     */
+    private class InMemorySetupManager implements SetupManager
+    {
+        @Override
+        public void start()
+        {
+        }
+
+        @Override
+        public void close()
+        {
+        }
+
+        @Override
+        public Serializable execute(CommandExecutor command, Args args) throws CommandException
+        {
+            return command.execute(args);
+        }
+
+        @Override
+        public void load(File file) throws IOException, CommandException
+        {
+        }
+    }
+
+    /**
+     * Setup manager that uses a local file as a configuration source.
+     */
+    private class LocalSetupManager implements SetupManager
+    {
+        private final File _file;
+
+        public LocalSetupManager(File file)
+        {
+            _file = file;
+        }
+
+        @Override
+        public void start() throws IOException, CommandException
+        {
+            if (_file != null && _file.isFile()) {
+                load(_file);
+            }
+        }
+
+        @Override
+        public void close()
+        {
+        }
+
+        @Override
+        public Serializable execute(CommandExecutor command, Args args) throws CommandException
+        {
+            return command.execute(args);
+        }
+
+        @Override
+        public void load(File file) throws IOException, CommandException
+        {
+            executeSetup(file.toString(), loadSetup(file));
+        }
+    }
+
+    /**
+     * Setup manager that uses an local file as an initial configuration source and afterwards
+     * keeps the current setup in sync with a zookeeper node.
+     */
+    private class ZooKeeperSetupManager implements NodeCacheListener, SetupManager
+    {
+        private final CuratorFramework _curator;
+
+        /**
+         * Local file containing the persistent setup.
+         */
+        private final File _file;
+
+        /**
+         * Path to ZooKeeper node to keep in sync with the current setup.
+         */
+        private final String _node;
+
+        /**
+         * Cache of the ZooKeeper node identified by {@code _node}.
+         */
+        private final NodeCache _cache;
+
+        /**
+         * Stat of the last value loaded from the ZooKeeper node identified by {@code _node}.
+         */
+        private Stat _current;
+
+        public ZooKeeperSetupManager(File file, String node)
+        {
+            _curator = getCuratorFramework();
+            _file = file;
+            _node = node;
+            _cache = new NodeCache(_curator, _node);
+            _cache.getListenable().addListener(this);
+        }
+
+        @Override
+        public synchronized void start() throws Exception
+        {
+            byte[] data;
+            if (_file != null && _file.isFile()) {
+                data = loadSetup(_file);
+            } else {
+                data = getCurrentSetup();
+            }
+
+            // Seed setup in zookeeper
+            try {
+                _curator.create().creatingParentContainersIfNeeded().forPath(_node, data);
+            } catch (KeeperException.NodeExistsException e) {
+                LOGGER.info("Not seeding setup in ZooKeeper as such a setup already exists.");
+            }
+
+            // Blocking start of the setup node cache - the service fails to start if zookeeper is unavailable
+            _cache.start(true);
+
+            // Load initial setup from zookeeper
+            ChildData currentData = _cache.getCurrentData();
+            if (currentData == null) {
+                throw new CommandPanicException("Setup reload failed because " + _node + " in ZooKeeper disappeared. Service must be restarted.");
+            }
+            apply(currentData);
+        }
+
+        @Override
+        public void close()
+        {
+            CloseableUtils.closeQuietly(_cache);
+        }
+
+        @Override
+        public synchronized Serializable execute(CommandExecutor command, Args args) throws CommandException
+        {
+            Serializable result = command.execute(args);
+
+            /* REVISIT: _current is null if start was not called yet - this happens because the setup context is
+             * executed before starting the setup manager.
+             */
+            if (_current != null) {
+                try {
+                    byte[] data = getCurrentSetup();
+                    _current = _curator.setData().withVersion(_current.getVersion()).forPath(_node, data);
+                } catch (BadVersionException e) {
+                    try {
+                        _cache.rebuild();
+                    } catch (Exception suppressed) {
+                        e.addSuppressed(e);
+                    }
+                    rollback(e);
+                    throw new CommandThrowableException(
+                            "Setup command failed due to concurrent update in ZooKeeper.", e);
+                } catch (NoNodeException e) {
+                    rollback(e);
+                    throw new CommandPanicException(
+                            "Setup command failed because " + _node + " in ZooKeeper disappeared. Service must be restarted.", e);
+                } catch (KeeperException e) {
+                    rollback(e);
+                    throw new CommandThrowableException(
+                            "Setup command fail due to ZooKeeper failure: " + e.getMessage(), e);
+                } catch (InterruptedException e) {
+                    rollback(e);
+                    throw new CommandThrowableException("Setup command was interrupted.", e);
+                } catch (Exception e) {
+                    rollback(e);
+                    throw new CommandPanicException("Setup command failed unexpectedly: " + e, e);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public void load(File file) throws IOException, CommandException
+        {
+            try {
+                _curator.setData().forPath(_node, loadSetup(file));
+            } catch (NoNodeException e) {
+                throw new CommandPanicException("Setup reload failed because " + _node + " in ZooKeeper disappeared. Service must be restarted.", e);
+            } catch (KeeperException e) {
+                throw new CommandThrowableException("Setup reload fail due to ZooKeeper failure: " + e.getMessage(), e);
+            } catch (InterruptedException e) {
+                throw new CommandThrowableException("Setup reload was interrupted.", e);
+            } catch (Exception e) {
+                throw new CommandPanicException("Setup reload failed unexpectedly: " + e, e);
+            }
+        }
+
+        @Override
+        public synchronized void nodeChanged() throws Exception
+        {
+            ChildData newData = _cache.getCurrentData();
+            if (newData == null) {
+                LOGGER.error("Setup node " + _node + " in ZooKeeper disappeared. Service must be restarted.");
+                kill();
+            } else if (newData.getStat().getVersion() > _current.getVersion()) {
+                apply(newData);
+            }
+        }
+
+        private void rollback(Exception cause) throws CommandPanicException
+        {
+            try {
+                ChildData currentData = _cache.getCurrentData();
+                if (currentData == null) {
+                    kill();
+                    throw new CommandPanicException("Setup node " + _node + " in ZooKeeper disappeared.");
+                }
+                apply(currentData);
+            } catch (CommandException e) {
+                e.addSuppressed(cause);
+                throw new CommandPanicException("Saving setup to ZooKeeper failed (" + cause.getMessage() + "); however the rollback failed too (" + e.getMessage() + "). Service must be restarted.", e);
+            }
+        }
+
+        private byte[] getCurrentSetup()
+        {
+            try {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                printSetup(pw);
+                pw.close();
+                sw.close();
+                return sw.getBuffer().toString().getBytes(UTF_8);
+            } catch (IOException e) {
+                throw Throwables.propagate(e); // Should not be possible
+            }
+        }
+
+        @GuardedBy("this")
+        private void apply(ChildData setup) throws CommandException
+        {
+            testSetup("zookeeper:" + _node, setup.getData());
+            executeSetup("zookeeper:" + _node, setup.getData());
+            _current = setup.getStat();
         }
     }
 }
