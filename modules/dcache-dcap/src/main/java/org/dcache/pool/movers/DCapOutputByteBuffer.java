@@ -1,11 +1,8 @@
-// $Id: DCapOutputByteBuffer.java,v 1.2 2007-05-24 13:51:05 tigran Exp $
-
 package org.dcache.pool.movers ;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+
 import java.nio.ByteBuffer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DCapOutputByteBuffer  {
 
@@ -25,7 +22,7 @@ public class DCapOutputByteBuffer  {
             putInt(DCapConstants.IOCMD_ACK).
             putInt(command).
             putInt(0);
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
     public void writeACK( long location )
     {
@@ -35,7 +32,7 @@ public class DCapOutputByteBuffer  {
             putInt(DCapConstants.IOCMD_SEEK).
             putInt(0).
             putLong(location) ;
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
     public void writeACK( long location , long size )
     {
@@ -46,26 +43,20 @@ public class DCapOutputByteBuffer  {
             putInt(0).
             putLong(location).
             putLong(size);
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
-    public void writeACK( int command , int returnCode , String message)
-        throws IOException {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream() ;
-        DataOutputStream dos = new DataOutputStream(baos) ;
-        dos.writeUTF(message) ;
-        dos.flush() ;
-        dos.close() ;
-        byte [] msgBytes = baos.toByteArray() ;
-        int len = 4 + 4 + 4 + msgBytes.length ;
+    public void writeACK( int command , int returnCode , String message) {
+        byte [] msgBytes = message.getBytes(UTF_8);
+        int len = 4 + 4 + 4 + 2 + msgBytes.length ;
         //         len = ( (len-1) / 8 + 1 ) * 8 ;
         _buffer.clear();
         _buffer.putInt(len).
             putInt(DCapConstants.IOCMD_ACK).
             putInt(command).
             putInt(returnCode).
+            putShort((short)msgBytes.length).
             put(msgBytes,0,msgBytes.length) ;
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
     public void writeFIN(int command)
     {
@@ -74,38 +65,33 @@ public class DCapOutputByteBuffer  {
             putInt(DCapConstants.IOCMD_FIN).
             putInt(command).
             putInt(0);
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
-    public void writeFIN( int command , int returnCode , String message)
-        throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream() ;
-        DataOutputStream dos = new DataOutputStream(baos) ;
-        dos.writeUTF(message) ;
-        dos.flush() ;
-        dos.close() ;
-        byte [] msgBytes = baos.toByteArray() ;
-        int len = 4 + 4 + 4 + msgBytes.length ;
-        //         len = ( (len-1) / 8 + 1 ) * 8 ;
+    public void writeFIN( int command , int returnCode , String message) {
+        byte [] msgBytes = message.getBytes(UTF_8);
+        int len = 4 + 4 + 4 + 2 + msgBytes.length ;
+
         _buffer.clear();
         _buffer.putInt(len).
             putInt(DCapConstants.IOCMD_FIN).
             putInt(command).
             putInt(returnCode).
+            putShort((short)msgBytes.length).
             put(msgBytes,0,msgBytes.length) ;
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
     public void writeDATA_HEADER()
     {
         _buffer.clear();
         _buffer.putInt(4).
             putInt(DCapConstants.IOCMD_DATA) ;
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
     public void writeDATA_TRAILER()
     {
         _buffer.clear();
         _buffer.putInt(-1) ;
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
     public void writeDATA_BLOCK( byte [] data , int offset , int size )
     {
@@ -113,12 +99,12 @@ public class DCapOutputByteBuffer  {
         _buffer.clear();
         _buffer.putInt( size ).
             put( data , offset , size ) ;
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
     public void writeEND_OF_BLOCK(){
         _buffer.clear();
         _buffer.putInt( 0 ).
             putInt( -1 ) ;
-        _buffer.limit(_buffer.position()).position(0);
+        _buffer.flip();
     }
 }
