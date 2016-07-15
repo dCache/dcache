@@ -337,7 +337,7 @@ public abstract class TestBase implements Cancellable {
 
     protected void createNewPool(String name) {
         if (newPoolMonitor != null) {
-            newSelectionUnit.psu.createPool(name, false, false);
+            newSelectionUnit.psu.createPool(name, false, false, false);
             newSelectionUnit.psu.setPoolEnabled(name);
             Pool pool = (Pool)newSelectionUnit.getPool(name);
             pool.setPoolMode(new PoolV2Mode(PoolV2Mode.ENABLED));

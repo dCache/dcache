@@ -273,7 +273,7 @@ final class TestSelectionUnit implements PoolSelectionUnit {
             String prefix = TestData.POOL_TYPE[i];
             for (int k = 0; k < TestData.POOL_COUNT[i]; ++k) {
                 String pool = prefix + k;
-                psu.createPool(pool, false, false);
+                psu.createPool(pool, false, false, false);
                 psu.setActive(pool, true);
                 psu.setPoolEnabled(pool);
                 psu.getPool(pool).setPoolMode(

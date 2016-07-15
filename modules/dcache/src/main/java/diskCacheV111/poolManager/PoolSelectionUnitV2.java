@@ -301,6 +301,9 @@ public class PoolSelectionUnitV2
                         if (!pool.isEnabled()) {
                             pw.append(" -disabled");
                         }
+                        if (pool.isReadOnly()) {
+                            pw.append(" -rdonly");
+                        }
                         pw.println();
                     });
             pw.println();
@@ -1155,7 +1158,7 @@ public class PoolSelectionUnitV2
         return retVal;
     }
 
-    public void createPool(String name, boolean isNoPing, boolean isDisabled) {
+    public void createPool(String name, boolean isNoPing, boolean isDisabled, boolean isReadOnly) {
         wlock();
         try {
             if (_pools.get(name) != null) {
@@ -1163,13 +1166,9 @@ public class PoolSelectionUnitV2
             }
 
             Pool pool = new Pool(name);
-            if (isNoPing) {
-                pool.setPing(false);
-            }
-
-            if (isDisabled) {
-                pool.setEnabled(false);
-            }
+            pool.setPing(!isNoPing);
+            pool.setEnabled(!isDisabled);
+            pool.setReadOnly(isReadOnly);
 
             _pools.put(pool.getName(), pool);
         } finally {
@@ -2555,7 +2554,7 @@ public class PoolSelectionUnitV2
     public String ac_psu_create_pool_$_1(Args args)
     {
         createPool(args.argv(0),
-                   args.hasOption("noping"), args.hasOption("disabled"));
+                   args.hasOption("noping"), args.hasOption("disabled"), args.hasOption("rdonly"));
         return "";
     }
 
@@ -2911,6 +2910,7 @@ public class PoolSelectionUnitV2
     public static final String hh_psu_set_pool =
             "<pool glob> enabled|disabled|ping|noping|rdonly|notrdonly";
 
+    @AffectsSetup
     public String ac_psu_set_pool_$_2(Args args)
     {
         return setPool(args.argv(0), args.argv(1));

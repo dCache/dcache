@@ -27,7 +27,7 @@ public interface PoolSelectionUnitAccess {
 
     void createLinkGroup(String groupName, boolean isReset);
 
-    void createPool(String name, boolean isNoPing, boolean isDisabled);
+    void createPool(String name, boolean isNoPing, boolean isDisabled, boolean isReadOnly);
 
     void createPoolGroup(String name, boolean isResilient);
 
