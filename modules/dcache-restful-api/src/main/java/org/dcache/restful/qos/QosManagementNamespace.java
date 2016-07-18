@@ -140,7 +140,7 @@ public class QosManagementNamespace {
 
             FileAttributes fileAttributes = getFileAttributes(requestPath);
 
-            if (fileAttributes.getFileType() == FileType.DIR &&
+            if (fileAttributes.getFileType() != FileType.REGULAR ||
                     ! ("NEARLINE".equals(getLocality(fileAttributes)) && update.equalsIgnoreCase(QosManagement.DISK_TAPE))) {
                 throw new BadRequestException();
             }
@@ -199,10 +199,9 @@ public class QosManagementNamespace {
 
 
     public String getLocality (FileAttributes fileAttributes){
+
         //get the locality of the specified file
         RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
         return remotePoolMonitor.getFileLocality(fileAttributes, request.getRemoteHost()).toString();
     }
-
-
 }
