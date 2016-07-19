@@ -38,6 +38,7 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
@@ -72,8 +73,7 @@ import static java.util.Collections.unmodifiableSet;
  * compatibility, the type may serve as an instance name.
  */
 public class HsmSet
-    implements CellCommandListener,
-               CellSetupProvider
+    implements CellCommandListener, CellSetupProvider, CellLifeCycleAware
 {
     private static final ServiceLoader<NearlineStorageProvider> PROVIDERS =
             ServiceLoader.load(NearlineStorageProvider.class);

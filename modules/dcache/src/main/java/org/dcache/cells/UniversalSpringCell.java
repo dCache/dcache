@@ -45,7 +45,6 @@ import javax.annotation.concurrent.GuardedBy;
 import java.beans.PropertyDescriptor;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -91,8 +90,6 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
-import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
 import org.dcache.util.cli.CommandExecutor;
 import org.dcache.vehicles.BeanQueryAllPropertiesMessage;
@@ -312,11 +309,6 @@ public class UniversalSpringCell
         }
     }
 
-    private List<CellSetupProvider> getSetupProviders()
-    {
-        return _setupProviders.values().stream().collect(toList());
-    }
-
     private byte[] loadSetup(File file) throws IOException, CommandException
     {
         byte[] data = readAllBytes(file.toPath());
@@ -327,24 +319,32 @@ public class UniversalSpringCell
     private void testSetup(String source, byte[] data)
             throws CommandException
     {
-        List<CellSetupProvider> providers = getSetupProviders();
-        List<CellSetupProvider> mockProviders = providers.stream().map(CellSetupProvider::mock).collect(toList());
         CommandInterpreter mockInterpreter = new CommandInterpreter();
-        mockProviders.forEach(mockInterpreter::addCommandListener);
-        executeSetup(mockInterpreter, mockProviders, source, data);
+        _setupProviders.values().stream().map(CellSetupProvider::mock).forEach(mockInterpreter::addCommandListener);
+        executeSetup(mockInterpreter, source, data);
     }
 
     private void executeSetup(String source, byte[] data)
             throws CommandException
     {
-        executeSetup(_setupInterpreter, getSetupProviders(), source, data);
+        try {
+            _lifeCycleAware.values().forEach(CellLifeCycleAware::beforeSetup);
+            try {
+                executeSetup(_setupInterpreter, source, data);
+            } finally {
+                _lifeCycleAware.values().forEach(CellLifeCycleAware::afterSetup);
+            }
+        } catch (RuntimeException e) {
+            kill();
+            throw new CommandPanicException("Possible bug detected during setup execution " +
+                                            "and service must be restarted: " + e.toString(), e);
+        }
     }
 
-    private void executeSetup(CommandInterpreter interpreter, List<CellSetupProvider> providers, String source, byte[] data)
+    private void executeSetup(CommandInterpreter interpreter, String source, byte[] data)
             throws CommandException
     {
-        try (Closeable ignored = () -> Lists.reverse(providers).forEach(CellSetupProvider::afterSetup)) {
-            providers.forEach(CellSetupProvider::beforeSetup);
+        try {
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(new ByteArrayInputStream(data), UTF_8));
             int lineCount = 1;

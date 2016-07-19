@@ -40,6 +40,7 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
@@ -53,7 +54,8 @@ import org.dcache.vehicles.FileAttributes;
 import static java.util.Comparator.comparing;
 
 public class PoolSelectionUnitV2
-        implements Serializable, PoolSelectionUnit, PoolSelectionUnitAccess, CellSetupProvider, CellCommandListener
+        implements Serializable, PoolSelectionUnit, PoolSelectionUnitAccess, CellSetupProvider,
+        CellCommandListener, CellLifeCycleAware
 {
     private static final String __version = "$Id: PoolSelectionUnitV2.java,v 1.42 2007-10-25 14:03:54 tigran Exp $";
     private static final Logger _log = LoggerFactory.getLogger(PoolSelectionUnitV2.class);

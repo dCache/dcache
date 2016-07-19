@@ -64,14 +64,4 @@ public class RequestContainerExecutor
     {
         pw.append("rc set max threads ").println(getMaximumPoolSize());
     }
-
-    @Override
-    public void beforeSetup()
-    {
-    }
-
-    @Override
-    public void afterSetup()
-    {
-    }
 }

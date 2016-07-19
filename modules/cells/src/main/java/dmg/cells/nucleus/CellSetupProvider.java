@@ -14,13 +14,6 @@ import java.lang.annotation.Target;
  * <p>A CellSetupProvider should be able to process its own setup commands,
  * although the command processing and setup file generation could be split
  * over multiple implementing classes.
- *
- * <p>The interface provides notification points before and after the
- * setup file is executed. Note that the setup may be executed
- * during normal operation.
- *
- * <p>Note that UniversalSpringCell will invoke the notification
- * methods no matter whether a setup file is actually defined or not.
  */
 public interface CellSetupProvider
 {
@@ -32,16 +25,6 @@ public interface CellSetupProvider
      * Adds cell shell commands for recreating the current setup.
      */
     default void printSetup(PrintWriter pw) {}
-
-    /**
-     * Invoked before the setup file is executed.
-     */
-    default void beforeSetup() {}
-
-    /**
-     * Invoked after the setup file has been executed.
-     */
-    default void afterSetup() {}
 
     /**
      * Returns a mock object of this setup provider. A mock object

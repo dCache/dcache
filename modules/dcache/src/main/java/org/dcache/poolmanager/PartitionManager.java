@@ -15,13 +15,14 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.CommandException;
-
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
+
 import org.dcache.util.Args;
 
 import static com.google.common.base.Predicates.*;
@@ -41,9 +42,7 @@ import static com.google.common.collect.Maps.*;
  * partition.
  */
 public class PartitionManager
-    implements Serializable,
-               CellCommandListener,
-               CellSetupProvider
+    implements Serializable, CellCommandListener, CellSetupProvider, CellLifeCycleAware
 {
     private static final long serialVersionUID = 3245564135066081407L;
 
@@ -426,11 +425,6 @@ public class PartitionManager
     public void beforeSetup()
     {
         clear();
-    }
-
-    @Override
-    public void afterSetup()
-    {
     }
 
     @Override
