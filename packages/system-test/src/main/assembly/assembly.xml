@@ -8,6 +8,7 @@
                 <exclude>*:*:war:*</exclude>
                 <exclude>saxon:saxon:*:*</exclude>
                 <exclude>org.dcache:dcache-plugin-hsqldb:zip:*</exclude>
+                <exclude>org.dcache:dcache-view:jar:*</exclude>
             </excludes>
             <outputDirectory>share/classes</outputDirectory>
             <useProjectArtifact>false</useProjectArtifact>
@@ -37,6 +38,15 @@
                 <include>org.dcache:dcache-plugin-hsqldb:zip:*</include>
             </includes>
             <outputDirectory>plugins</outputDirectory>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+            <unpack>true</unpack>
+        </dependencySet>
+        <dependencySet>
+            <includes>
+                <include>org.dcache:dcache-view:jar:*</include>
+            </includes>
+            <outputDirectory>share</outputDirectory>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
             <unpack>true</unpack>
