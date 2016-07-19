@@ -11,12 +11,26 @@ import java.lang.annotation.Target;
  * and processing of cell setup files. Cell setup files are batch files,
  * which when executed recreate the current settings.
  *
- * <p>A CellSetupProvider should be able to process its own setup commands,
- * although the command processing and setup file generation could be split
- * over multiple implementing classes.
+ * <p>Setups are processed using a CommandInterpreter configured to recognize
+ * both {@code ac_} methods as well as annotated commands. A CellSetupProvider
+ * should be able to process its own setup commands, although the command
+ * processing and setup file generation could be split over multiple
+ * implementing classes.
+ *
+ * <p>Commands that affect the generated setup in any way should be annotated
+ * with @AffectsSetup. This also includes commands that are not written
+ * to the generated setup, but still affect the setup in some fashion.
  */
 public interface CellSetupProvider
 {
+    /**
+     * CommandInterpreter commands that affect the generated setup in some fashion
+     * must be annotated with {@code AffectsSetup}. Execution of such commands may
+     * trigger synchronization of the setup with external services.
+     *
+     * <p>Commands annotated in this fashion will be executed sequentially, although
+     * non-annotated commands and messages may still be executed concurrently.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @interface AffectsSetup {}

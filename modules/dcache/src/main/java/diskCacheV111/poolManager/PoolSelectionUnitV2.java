@@ -83,8 +83,6 @@ public class PoolSelectionUnitV2
     private boolean _useRegex;
     private boolean _allPoolsActive;
 
-    private transient CopyOnWriteArrayList<Runnable> _onChangeListeners = new CopyOnWriteArrayList<>();
-
     /**
      * Ok, this is the critical part of PoolManager, but (!!!) the whole select
      * path is READ-ONLY, unless we change setup. So ReadWriteLock is what we
@@ -96,18 +94,6 @@ public class PoolSelectionUnitV2
     private final Lock _psuWriteLock = _psuReadWriteLock.writeLock();
 
     private final NetHandler _netHandler = new NetHandler();
-
-    @Override
-    public void addChangeListener(Runnable runnable)
-    {
-        _onChangeListeners.add(runnable);
-    }
-
-    @Override
-    public void removeChangeListener(Runnable runnable)
-    {
-        _onChangeListeners.remove(runnable);
-    }
 
     @Override
     public Map<String, SelectionLink> getLinks() {
@@ -2468,9 +2454,6 @@ public class PoolSelectionUnitV2
     protected void wunlock()
     {
         _psuWriteLock.unlock();
-        if (!_psuReadWriteLock.isWriteLockedByCurrentThread()) {
-            _onChangeListeners.stream().forEach(Runnable::run);
-        }
     }
 
     protected void rlock()
@@ -3034,13 +3017,6 @@ public class PoolSelectionUnitV2
         return matchLinkGroupsXml(args.getOpt("linkGroup"),
                                   args.argv(0), args.argv(1), args.argv(2), args.argv(3),
                                   args.argv(4));
-    }
-
-    private void readObject(ObjectInputStream stream)
-            throws IOException, ClassNotFoundException
-    {
-        stream.defaultReadObject();
-        _onChangeListeners = new CopyOnWriteArrayList<>();
     }
 
     private void writeObject(ObjectOutputStream stream) throws IOException

@@ -112,10 +112,6 @@ public class PoolManagerV5
     private TimeUnit _poolMonitorUpdatePeriodUnit;
     private double _poolMonitorMaxUpdatesPerSecond;
 
-    public PoolManagerV5()
-    {
-    }
-
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
     {
         _selectionUnit = selectionUnit;
@@ -187,8 +183,6 @@ public class PoolManagerV5
         }
         _poolMonitorThread = new PoolMonitorThread();
         _log.info("Watchdog : {}", _watchdog);
-
-        _poolMonitor.getPoolSelectionUnit().addChangeListener(_poolMonitorThread.ON_CHANGE);
     }
 
     @Override
@@ -198,13 +192,18 @@ public class PoolManagerV5
         _poolMonitorThread.start();
     }
 
+    @Override
+    public void setupChanged(int version)
+    {
+        _poolMonitorThread.onChange();
+    }
+
     public void shutdown() throws InterruptedException
     {
         if (_watchdog != null) {
             _watchdog.interrupt();
         }
         if (_poolMonitorThread != null) {
-            _poolMonitor.getPoolSelectionUnit().removeChangeListener(_poolMonitorThread.ON_CHANGE);
             _poolMonitorThread.interrupt();
         }
         _executor.shutdown();
@@ -298,8 +297,6 @@ public class PoolManagerV5
 
     private class PoolMonitorThread extends Thread
     {
-        final Runnable ON_CHANGE = this::onChange;
-
         private boolean isChanged;
 
         private final RateLimiter limiter = RateLimiter.create(_poolMonitorMaxUpdatesPerSecond);
@@ -430,6 +427,8 @@ public class PoolManagerV5
          * mode has changed.
          */
         if (changed) {
+            _poolMonitorThread.onChange();
+
             /* For compatibility with previous versions of dCache, a pool
              * marked DISABLED, but without any other DISABLED_ flags set
              * is considered fully disabled.

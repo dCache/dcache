@@ -122,16 +122,6 @@ final class TestSelectionUnit implements PoolSelectionUnit {
     }
 
     @Override
-    public void addChangeListener(Runnable runnable) {
-        psu.addChangeListener(runnable);
-    }
-
-    @Override
-    public void removeChangeListener(Runnable runnable) {
-        psu.removeChangeListener(runnable);
-    }
-
-    @Override
     public String getNetIdentifier(String address) throws UnknownHostException {
         return psu.getNetIdentifier(address);
     }

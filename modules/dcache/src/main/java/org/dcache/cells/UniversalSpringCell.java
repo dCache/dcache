@@ -99,7 +99,6 @@ import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.readAllBytes;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Universal cell for building complex cells from simpler components.
@@ -1193,8 +1192,10 @@ public class UniversalSpringCell
      */
     private class InMemorySetupManager implements SetupManager
     {
+        private int version;
+
         @Override
-        public void start()
+        public void start() throws IOException, CommandException
         {
         }
 
@@ -1204,21 +1205,30 @@ public class UniversalSpringCell
         }
 
         @Override
-        public Serializable execute(CommandExecutor command, Args args) throws CommandException
+        public synchronized Serializable execute(CommandExecutor command, Args args) throws CommandException
         {
-            return command.execute(args);
+            Serializable result = command.execute(args);
+            notifyListeners();
+            return result;
         }
 
         @Override
         public void load(File file) throws IOException, CommandException
         {
         }
+
+        @GuardedBy("this")
+        protected void notifyListeners()
+        {
+            version++;
+            _lifeCycleAware.values().forEach(b -> b.setupChanged(version));
+        }
     }
 
     /**
      * Setup manager that uses a local file as a configuration source.
      */
-    private class LocalSetupManager implements SetupManager
+    private class LocalSetupManager extends InMemorySetupManager
     {
         private final File _file;
 
@@ -1236,20 +1246,10 @@ public class UniversalSpringCell
         }
 
         @Override
-        public void close()
-        {
-        }
-
-        @Override
-        public Serializable execute(CommandExecutor command, Args args) throws CommandException
-        {
-            return command.execute(args);
-        }
-
-        @Override
-        public void load(File file) throws IOException, CommandException
+        public synchronized void load(File file) throws IOException, CommandException
         {
             executeSetup(file.toString(), loadSetup(file));
+            notifyListeners();
         }
     }
 
@@ -1427,6 +1427,7 @@ public class UniversalSpringCell
             testSetup("zookeeper:" + _node, setup.getData());
             executeSetup("zookeeper:" + _node, setup.getData());
             _current = setup.getStat();
+            _lifeCycleAware.values().forEach(b -> b.setupChanged(_current.getVersion()));
         }
     }
 }

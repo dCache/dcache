@@ -42,4 +42,15 @@ public interface CellLifeCycleAware
      * {@see beforeSetup}
      */
     default void afterSetup() {}
+
+    /**
+     * Called after the setup has changed.
+     *
+     * <p>In contrast to the {@code beforeSetup} and {@code afterSetup} methods, this method is
+     * also called after individual setup affecting commands have been invoked. When processing
+     * an entire setup, this method is only called once after {@code afterSetup} was called.
+     *
+     * @param version A version number uniquely identifying the current setup
+     */
+    default void setupChanged(int version) {}
 }
