@@ -1,8 +1,6 @@
 package org.dcache.restful.qos;
 
 
-import diskCacheV111.util.*;
-import org.dcache.poolmanager.RemotePoolMonitor;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -23,6 +21,10 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.BadRequestException;
 
+
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -31,6 +33,20 @@ import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.vehicles.FileAttributes;
+
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileLocality;
+import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.PnfsHandler;
+
+import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileType;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.poolmanager.RemotePoolMonitor;
+import diskCacheV111.vehicles.HttpProtocolInfo;
 
 /**
  * Query current QoS for a file or  change the current QoS
@@ -108,10 +124,10 @@ public class QosManagementNamespace {
     @Path("{requestPath : .*}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public String changeQosStatus(@PathParam("requestPath") String requestPath, String requestQuery) throws CacheException {
+    public String changeQosStatus(@PathParam("requestPath") String requestPath, String requestQuery) throws CacheException,
+            URISyntaxException{
 
-
-        JSONObject jsonResponse = new JSONObject(requestQuery);
+        JSONObject jsonResponse = new JSONObject();
 
         try {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
@@ -119,12 +135,16 @@ public class QosManagementNamespace {
             }
 
             JSONObject jsonRequest = new JSONObject(requestQuery);
-            String currentQos = (String) jsonRequest.get("current_qos").toString();
-            String target_Qos = (String) jsonRequest.get("target_Qos").toString();
+            String update = jsonRequest.get("update").toString();
 
 
-            //TODO  get QoS (locality) for the specified file
-            getFileAttributes(requestPath);
+            FileAttributes fileAttributes = getFileAttributes(requestPath);
+
+            if (fileAttributes.getFileType() != FileType.REGULAR ||
+                    ! ("NEARLINE".equals(getLocality(fileAttributes)) && update.equalsIgnoreCase(QosManagement.DISK_TAPE))) {
+                throw new BadRequestException();
+            }
+            pin(fileAttributes);
 
         } catch (PermissionDeniedCacheException e) {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
@@ -136,7 +156,7 @@ public class QosManagementNamespace {
             throw new NotFoundException(e);
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
-        } catch (BadRequestException | JSONException e) {
+        } catch ( JSONException e) {
             throw new BadRequestException(e);
         }
 
@@ -146,9 +166,7 @@ public class QosManagementNamespace {
 
     }
 
-    //TODO  get QoS (locality) for the specified file
     public FileAttributes getFileAttributes(String requestPath) throws CacheException {
-
 
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
         FsPath path;
@@ -164,4 +182,26 @@ public class QosManagementNamespace {
     }
 
 
+
+    public void pin(FileAttributes fileAttributes) throws URISyntaxException {
+
+        CellStub pinManagerStub = ServletContextHandlerAttributes.getPinManager(ctx);
+        HttpProtocolInfo protocolInfo =
+                new HttpProtocolInfo("Http", 1, 1,
+                        new InetSocketAddress(request.getRemoteHost(), 0),
+                        null, null, null,
+                        new URI("http", request.getRemoteHost(), null, null));
+
+        PinManagerPinMessage message =
+                new PinManagerPinMessage(fileAttributes, protocolInfo, null, -1);
+        pinManagerStub.notify(message);
+    }
+
+
+    public String getLocality (FileAttributes fileAttributes){
+
+        //get the locality of the specified file
+        RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
+        return remotePoolMonitor.getFileLocality(fileAttributes, request.getRemoteHost()).toString();
+    }
 }
