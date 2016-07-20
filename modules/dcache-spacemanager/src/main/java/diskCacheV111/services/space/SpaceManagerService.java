@@ -44,6 +44,7 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -88,11 +89,14 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.ForwardingReply;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.Reply;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.FQANPrincipal;
@@ -246,7 +250,7 @@ public final class SpaceManagerService
             executor.awaitTermination(1, TimeUnit.SECONDS);
         } finally {
             for (Runnable runnable : executor.shutdownNow()) {
-                notifyShutdown(((FibonacciBackoffMessageProcessor) runnable).getEnvelope());
+                ((FibonacciBackoffMessageProcessor) runnable).notifyShutdown();
             }
         }
     }
@@ -395,91 +399,58 @@ public final class SpaceManagerService
                message instanceof DoorTransferFinishedMessage;
     }
 
-    public void messageArrived(final CellMessage envelope,
-                               final Message message)
+    public Reply messageArrived(Message message) throws CacheException
     {
-        LOGGER.trace("messageArrived : type={} value={} from {}",
-                     message.getClass().getName(), message, envelope.getSourcePath());
-
-        if (!message.isReply()) {
-            if (!isNotificationMessage(message) && !isSpaceManagerMessage(message)) {
-                messageToForward(envelope, message);
-            } else if (isSpaceManagerEnabled) {
-                executor.execute(new FibonacciBackoffMessageProcessor(executor, envelope)
+        if (message.isReply()) {
+            return null;
+        } else if (!isNotificationMessage(message) && !isSpaceManagerMessage(message)) {
+            return messageToForward(message);
+        } else if (isSpaceManagerEnabled) {
+            return new FibonacciBackoffMessageProcessor(executor)
+            {
+                @Override
+                public void process() throws DeadlockLoserDataAccessException
                 {
-                    @Override
-                    public void process() throws DeadlockLoserDataAccessException
-                    {
-                        if (!isStopped || isImportantMessage(message)) {
-                            processMessage(message);
-                            if (message.getReplyRequired()) {
-                                returnMessage(envelope);
-                            }
-                        } else {
-                            notifyShutdown(envelope);
+                    if (!isStopped || isImportantMessage(message)) {
+                        processMessage(message);
+                        if (message.getReplyRequired()) {
+                            returnMessage();
                         }
+                    } else {
+                        notifyShutdown();
                     }
-                });
-            } else if (message.getReplyRequired()) {
-                message.setReply(1, "Space manager is disabled in configuration");
-                returnMessage(envelope);
-            }
+                }
+            };
+        } else {
+            throw new CacheException(1, "Space manager is disabled in configuration");
         }
     }
 
-    public void messageToForward(final CellMessage envelope, final Message message)
+    public Reply messageToForward(Message message)
     {
-        LOGGER.trace("messageToForward: type={} value={} from {} going to {}",
-                     message.getClass().getName(),
-                     message,
-                     envelope.getSourcePath(),
-                     envelope.getDestinationPath());
+        boolean isEnRouteToDoor = message.isReply() || message instanceof DoorTransferFinishedMessage;
 
-        final boolean isEnRouteToDoor = message.isReply() || message instanceof DoorTransferFinishedMessage;
-        if (!isEnRouteToDoor) {
-            envelope.getDestinationPath().insert(poolManager);
-        }
-
-        if (envelope.nextDestination()) {
-            if (isSpaceManagerEnabled && isInterceptedMessage(message)) {
-                executor.execute(new FibonacciBackoffMessageProcessor(executor, envelope)
+        if (isSpaceManagerEnabled && isInterceptedMessage(message)) {
+            return new FibonacciBackoffMessageProcessor(executor)
+            {
+                @Override
+                public void process() throws DeadlockLoserDataAccessException
                 {
-                    @Override
-                    public void process() throws DeadlockLoserDataAccessException
-                    {
-                        if (!isStopped || isImportantMessage(message)) {
-                            processMessage(message);
-                            if (message.getReturnCode() != 0 && !isEnRouteToDoor) {
-                                envelope.revertDirection();
-                            }
-                        } else {
-                            notifyShutdown(envelope);
+                    if (!isStopped || isImportantMessage(message)) {
+                        processMessage(message);
+                        if (message.getReturnCode() == 0 || isEnRouteToDoor) {
+                            forwardMessage(isEnRouteToDoor ? null : poolManager);
+                        } else if (message.getReplyRequired()) {
+                            returnMessage();
                         }
-
-                        forwardMessage(envelope, isEnRouteToDoor);
+                    } else {
+                        notifyShutdown();
                     }
-                });
-            } else {
-                forwardMessage(envelope, isEnRouteToDoor);
-            }
+                }
+            };
+        } else {
+            return new ForwardingReply(message).via(isEnRouteToDoor ? null : poolManager);
         }
-    }
-
-    private void notifyShutdown(CellMessage envelope)
-    {
-        envelope.setMessageObject(new NoRouteToCellException(envelope, "Space manager is shutting down."));
-        returnMessage(envelope);
-    }
-
-    private void returnMessage(CellMessage envelope)
-    {
-        envelope.revertDirection();
-        sendMessage(envelope);
-    }
-
-    private void forwardMessage(CellMessage envelope, boolean isEnRouteToDoor)
-    {
-        sendMessage(envelope);
     }
 
     private void processMessage(Message message) throws DeadlockLoserDataAccessException
@@ -1156,17 +1127,18 @@ public final class SpaceManagerService
      * reenqueues the request if processing fails while blocking the thread with
      * a Fibonacci backoff.
      */
-    private abstract class FibonacciBackoffMessageProcessor implements Runnable
+    private abstract class FibonacciBackoffMessageProcessor implements Runnable, Reply
     {
-        private final CellMessage envelope;
         private final Executor executor;
         private long previous = 0;
         private long current = 1;
 
-        public FibonacciBackoffMessageProcessor(Executor executor, CellMessage envelope)
+        private CellMessage envelope;
+        private CellEndpoint endpoint;
+
+        public FibonacciBackoffMessageProcessor(Executor executor)
         {
             this.executor = executor;
-            this.envelope = envelope;
         }
 
         public CellMessage getEnvelope()
@@ -1185,6 +1157,14 @@ public final class SpaceManagerService
             previous = current;
             current = next;
             return previous;
+        }
+
+        @Override
+        public void deliver(CellEndpoint endpoint, CellMessage envelope)
+        {
+            this.endpoint = endpoint;
+            this.envelope = envelope;
+            executor.execute(this);
         }
 
         @Override
@@ -1212,8 +1192,31 @@ public final class SpaceManagerService
                     executor.execute(this);
                 }
             } catch (InterruptedException e) {
-                notifyShutdown(envelope);
+                notifyShutdown();
             }
+        }
+
+        protected void returnMessage()
+        {
+            envelope.revertDirection();
+            endpoint.sendMessage(envelope);
+        }
+
+        protected void forwardMessage(CellPath address)
+        {
+            if (address != null) {
+                envelope.getDestinationPath().insert(address);
+            }
+            if (!envelope.nextDestination()) {
+                throw new RuntimeException("Envelope cannot be forwarded as it has no next address: " + envelope);
+            }
+            endpoint.sendMessage(envelope);
+        }
+
+        protected void notifyShutdown()
+        {
+            envelope.setMessageObject(new NoRouteToCellException(envelope, "Space manager is shutting down."));
+            returnMessage();
         }
     }
 }
