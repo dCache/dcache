@@ -43,11 +43,11 @@
       <artifactId>cells</artifactId>
       <version>${project.version}</version>
     </dependency>
-      <dependency>
-          <groupId>org.dcache</groupId>
-          <artifactId>dcache-restful-api</artifactId>
-          <version>${project.version}</version>
-      </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>dcache-restful-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
         <groupId>io.milton</groupId>
         <artifactId>milton-server-ce</artifactId>
@@ -96,6 +96,10 @@
         <groupId>org.italiangrid</groupId>
         <artifactId>voms-api-java</artifactId>
     </dependency>
+      <dependency>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+      </dependency>
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-asl</artifactId>

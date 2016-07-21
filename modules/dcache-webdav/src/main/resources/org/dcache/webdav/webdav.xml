@@ -139,6 +139,16 @@
       <property name="defaultVerification" value="${webdav.enable.third-party.requiring-verification-by-default}"/>
   </bean>
 
+  <bean id="oidc-client-ids"
+      class="org.dcache.util.ConfigurationMapFactoryBean">
+    <property name="prefix" value="webdav.oidc.client.id"/>
+  </bean>
+
+  <bean id="oidc-client-secrets"
+      class="org.dcache.util.ConfigurationMapFactoryBean">
+    <property name="prefix" value="webdav.oidc.client.secret"/>
+  </bean>
+
   <bean id="3rd-party-copy-filter" class="org.dcache.webdav.transfer.CopyFilter">
       <description>Handles requests for 3rd-party copies</description>
 
@@ -146,6 +156,8 @@
       <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
       <property name="pathMapper" ref="path-mapper"/>
+      <property name="oidClientIds" ref="oidc-client-ids"/>
+      <property name="oidClientSecrets" ref="oidc-client-secrets"/>
   </bean>
 
   <bean id="dispatch-filter"

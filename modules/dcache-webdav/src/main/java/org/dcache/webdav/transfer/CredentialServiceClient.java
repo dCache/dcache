@@ -17,18 +17,39 @@
  */
 package org.dcache.webdav.transfer;
 
+import com.google.common.base.Charsets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.auth.AuthenticationException;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.BasicHttpContext;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.srm.CredentialServiceAnnouncement;
@@ -42,6 +63,9 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.auth.OpenIdClientSecret;
+import org.dcache.auth.StaticOpenIdCredential;
+import org.dcache.auth.StaticOpenIdCredential.Builder;
 import org.dcache.cells.CellStub;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -53,6 +77,10 @@ public class CredentialServiceClient
     implements CellMessageReceiver, CellLifeCycleAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CredentialServiceClient.class);
+
+    private static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:token-exchange";
+    private static final String TOKEN_TYPE = "urn:ietf:params:oauth:token-type:access_token";
+    private static final String SCOPE = "offline_access openid profile email";
 
     private CellStub topic;
 
@@ -112,6 +140,86 @@ public class CredentialServiceClient
         }
 
         return bestRemainingLifetime < units.toMillis(minimumValidity) ? null : bestCredential;
+    }
+
+    public StaticOpenIdCredential getDelegatedCredential(String token,
+                                                         ImmutableMap<String, OpenIdClientSecret> clientSecrets)
+            throws InterruptedException, ErrorResponseException
+    {
+        HttpClient client = HttpClientBuilder.create().build();
+        for (Map.Entry<String, OpenIdClientSecret> entry: clientSecrets.entrySet())
+        {
+            String host = entry.getKey();
+            String id = entry.getValue().getId();
+            String secret = entry.getValue().getSecret();
+
+            try {
+                JSONObject json = delegateOpenIdCredential(client,
+                                                           buildRequest(token,
+                                                                        host,
+                                                                        id,
+                                                                        secret));
+
+                return createOidcCredential(host, id, secret, json);
+            } catch (AuthenticationException | IOException | JSONException e) {
+                LOGGER.warn("Fail Token Delegation with Openid Provider {}", host);
+            }
+        }
+        return null;
+    }
+
+    private HttpPost buildRequest(String token, String host, String clientId, String clientSecret)
+            throws UnsupportedEncodingException, AuthenticationException
+    {
+        UsernamePasswordCredentials clientCreds = new UsernamePasswordCredentials(clientId, clientSecret);
+        BasicScheme scheme = new BasicScheme(Charsets.UTF_8);
+
+        HttpPost post = new HttpPost(tokenEndPoint(host));
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("grant_type", GRANT_TYPE));
+        params.add(new BasicNameValuePair("audience", clientId));
+        params.add(new BasicNameValuePair("subject_token", token));
+        params.add(new BasicNameValuePair("subject_token_type", TOKEN_TYPE));
+        params.add(new BasicNameValuePair("scope", SCOPE));
+
+        post.setEntity(new UrlEncodedFormEntity(params));
+        post.addHeader(scheme.authenticate(clientCreds, post, new BasicHttpContext()));
+        return post;
+    }
+
+    private JSONObject delegateOpenIdCredential(HttpClient client, HttpPost post) throws IOException
+    {
+        HttpResponse response = client.execute(post);
+        if (response.getStatusLine().getStatusCode() == 200) {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            response.getEntity().writeTo(os);
+            return new JSONObject(new String(os.toByteArray(), Charsets.UTF_8));
+        } else {
+            throw new IOException("Http Request Error (" +
+                    response.getStatusLine().getStatusCode() + "): [" +
+                    response.getStatusLine().getReasonPhrase() + "]");
+        }
+    }
+
+    private StaticOpenIdCredential createOidcCredential(String host,
+                                                        String clientId,
+                                                        String clientSecret,
+                                                        JSONObject json)
+    {
+        return new Builder().accessToken(json.getString("access_token"))
+                            .expiry(json.getLong("expires_in"))
+                            .refreshToken(json.getString("refresh_token"))
+                            .issuedTokenType(json.getString("issued_token_type"))
+                            .scope(json.getString("scope"))
+                            .tokenType(json.getString("token_type"))
+                            .clientCredential(new OpenIdClientSecret(clientId, clientSecret))
+                            .provider(tokenEndPoint(host))
+                            .build();
+    }
+
+    private String tokenEndPoint(String hostname)
+    {
+        return "https://" + hostname + "/token";
     }
 
     private static long calculateRemainingLifetime(X509Certificate[] certificates)

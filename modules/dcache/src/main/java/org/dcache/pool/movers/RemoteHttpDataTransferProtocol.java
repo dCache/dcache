@@ -3,6 +3,7 @@ package org.dcache.pool.movers;
 import com.google.common.base.Optional;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
@@ -34,6 +35,8 @@ import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 
+import org.dcache.auth.OpenIdCredential;
+import org.dcache.auth.OpenIdCredentialRefreshable;
 import org.dcache.pool.movers.MoverChannel.AllocatorMode;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -147,6 +150,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
      */
     private static final int MAX_REDIRECTIONS = 20;
 
+    private static final String AUTH_BEARER = "Bearer ";
+
     // REVISIT: we may wish to generate a value based on the algorithms dCache
     // supports
     private static final String WANT_DIGEST_VALUE = "adler32;q=1, md5;q=0.8";
@@ -219,13 +224,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private void receiveFile(final RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
-        HttpGet get = new HttpGet(info.getUri());
-        get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
-        info.getHeaders().forEach(get::addHeader);
-        get.setConfig(RequestConfig.custom()
-                              .setConnectTimeout(CONNECTION_TIMEOUT)
-                              .setSocketTimeout(SOCKET_TIMEOUT)
-                              .build());
+        HttpGet get = buildGetRequest(info);
 
         try (CloseableHttpResponse response = _client.execute(get)) {
             StatusLine statusLine = response.getStatusLine();
@@ -278,6 +277,17 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
     }
 
+    private HttpGet buildGetRequest(RemoteHttpDataTransferProtocolInfo info) {
+        HttpGet get = new HttpGet(info.getUri());
+        get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
+        addHeadersToRequest(info, get);
+        get.setConfig(RequestConfig.custom()
+                              .setConnectTimeout(CONNECTION_TIMEOUT)
+                              .setSocketTimeout(SOCKET_TIMEOUT)
+                              .build());
+        return get;
+    }
+
     private RepositoryChannel decorateForChecksumCalculation(RepositoryChannel
             baseChannel)
     {
@@ -321,7 +331,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         URI location = info.getUri();
 
         for (int attempt = 0; attempt < MAX_REDIRECTIONS; attempt++) {
-            HttpPut put = buildPutRequest(location, info.getHeaders(), length);
+            HttpPut put = buildPutRequest(info, length);
 
             try (CloseableHttpResponse response = _client.execute(put)) {
                 StatusLine status = response.getStatusLine();
@@ -371,20 +381,20 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 "number of redirections; last location was " + location);
     }
 
-    private HttpPut buildPutRequest(URI location, Map<String,String> extraHeaders, long length)
+    private HttpPut buildPutRequest(RemoteHttpDataTransferProtocolInfo info, long length)
     {
-        HttpPut request = new HttpPut(location);
-        request.setConfig(RequestConfig.custom()
+        HttpPut put = new HttpPut(info.getUri());
+        put.setConfig(RequestConfig.custom()
                                   .setConnectTimeout(CONNECTION_TIMEOUT)
                                   .setExpectContinueEnabled(true)
                                   .setSocketTimeout(0)
                                   .build());
-        extraHeaders.forEach(request::addHeader);
-        request.setEntity(new InputStreamEntity(Channels.newInputStream(_channel), length));
+        addHeadersToRequest(info, put);
+        put.setEntity(new InputStreamEntity(Channels.newInputStream(_channel), length));
 
         // FIXME add SO_KEEPALIVE setting
 
-        return request;
+        return put;
     }
 
     private void verifyRemoteFile(RemoteHttpDataTransferProtocolInfo info)
@@ -416,7 +426,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 }
                 isFirstAttempt = false;
 
-                HttpHead head = buildHeadRequest(info.getUri(), info.getHeaders());
+                HttpHead head = buildHeadRequest(info);
                 try (CloseableHttpResponse response = _client.execute(head)) {
                     StatusLine status = response.getStatusLine();
 
@@ -454,16 +464,16 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 "to provide length after " + (t_max / 1_000) + "s");
     }
 
-    private HttpHead buildHeadRequest(URI location, Map<String,String> extraHeaders)
+    private HttpHead buildHeadRequest(RemoteHttpDataTransferProtocolInfo info)
     {
-        HttpHead request = new HttpHead(location);
-        request.addHeader("Want-Digest", WANT_DIGEST_VALUE);
-        request.setConfig(RequestConfig.custom()
+        HttpHead head = new HttpHead(info.getUri());
+        head.addHeader("Want-Digest", WANT_DIGEST_VALUE);
+        head.setConfig(RequestConfig.custom()
                                   .setConnectTimeout(CONNECTION_TIMEOUT)
                                   .setSocketTimeout(SOCKET_TIMEOUT)
                                   .build());
-        extraHeaders.forEach(request::addHeader);
-        return request;
+        addHeadersToRequest(info, head);
+        return head;
     }
 
     private void checkChecksums(RemoteHttpDataTransferProtocolInfo info,
@@ -531,12 +541,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private void deleteRemoteFile(String why, RemoteHttpDataTransferProtocolInfo info)
             throws ThirdPartyTransferFailedCacheException
     {
-        HttpDelete delete = new HttpDelete(info.getUri());
-        delete.setConfig(RequestConfig.custom()
-                                 .setConnectTimeout(CONNECTION_TIMEOUT)
-                                 .setSocketTimeout(SOCKET_TIMEOUT)
-                                 .build());
-        info.getHeaders().forEach(delete::addHeader);
+        HttpDelete delete = buildDeleteRequest(info);
 
         try (CloseableHttpResponse response = _client.execute(delete)) {
             StatusLine status = response.getStatusLine();
@@ -555,6 +560,27 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
     }
 
+    private HttpDelete buildDeleteRequest(RemoteHttpDataTransferProtocolInfo info) {
+        HttpDelete delete = new HttpDelete(info.getUri());
+        delete.setConfig(RequestConfig.custom()
+                                 .setConnectTimeout(CONNECTION_TIMEOUT)
+                                 .setSocketTimeout(SOCKET_TIMEOUT)
+                                 .build());
+        addHeadersToRequest(info, delete);
+
+        return delete;
+    }
+
+    private void addHeadersToRequest(RemoteHttpDataTransferProtocolInfo info,
+                                    HttpRequest request)
+    {
+        info.getHeaders().forEach(request::addHeader);
+        if (info.hasTokenCredential()) {
+            request.addHeader("Authorization",
+                    AUTH_BEARER +
+                            new OpenIdCredentialRefreshable(info.getTokenCredential(), _client).getBearerToken());
+        }
+    }
 
     @Override
     public long getLastTransferred()

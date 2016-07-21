@@ -7,6 +7,8 @@ import java.net.InetSocketAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
+import org.dcache.auth.OpenIdCredential;
+
 /**
  * Provides information for HTTP transfer of a file using SSL/TLS encryption.
  */
@@ -35,6 +37,16 @@ public class RemoteHttpsDataTransferProtocolInfo extends RemoteHttpDataTransferP
         super(protocol, major, minor, addr, url, isVerificationRequired, headers);
         key = privateKey;
         certChain = certificateChain;
+    }
+
+    public RemoteHttpsDataTransferProtocolInfo(String protocol, int major,
+                                               int minor, InetSocketAddress addr, String url,
+                                               boolean isVerificationRequired, ImmutableMap<String,String> headers,
+                                               OpenIdCredential token)
+    {
+        super(protocol, major, minor, addr, url, isVerificationRequired, headers, token);
+        key = null;
+        certChain = null;
     }
 
     public boolean hasCredential()
