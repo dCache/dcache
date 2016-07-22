@@ -85,6 +85,12 @@
       <property name="authorizationPolicy" ref="pdp"/>
   </bean>
 
+
+    <bean id="query-pin-processor" class="org.dcache.pinmanager.QueryRequestProcessor">
+        <description>Processes unpin requests</description>
+        <property name="dao" ref="dao"/>
+    </bean>
+
   <bean id="move-pin-processor" class="org.dcache.pinmanager.MovePinRequestProcessor">
       <description>Processes pin extension requests</description>
       <property name="dao" ref="dao"/>
