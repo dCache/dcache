@@ -8,10 +8,8 @@ import com.sleepycat.je.OperationFailureException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
@@ -24,7 +22,6 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.DuplicateEntryException;
-import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.Repository;
@@ -110,11 +107,10 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     public ReplicaRecord get(PnfsId id) throws CacheException
     {
         try {
-            Path path = _fileStore.get(id);
-            BasicFileAttributes attributes =
-                    Files.getFileAttributeView(path, BasicFileAttributeView.class).readAttributes();
+
+            BasicFileAttributes attributes = _fileStore.getFileAttributeView(id).readAttributes();
             if (!attributes.isRegularFile()) {
-                throw new DiskErrorCacheException("Not a regular file: " + path);
+                throw new DiskErrorCacheException("Not a regular file: " + _fileStore.get(id));
             }
             return CacheRepositoryEntryImpl.load(this, id, attributes);
         } catch (EnvironmentFailureException e) {
@@ -139,14 +135,14 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
             throws CacheException
     {
         try {
-            Path dataFile = _fileStore.get(id);
-            if (Files.exists(dataFile)) {
+
+            if (_fileStore.contains(id)) {
                 throw new DuplicateEntryException(id);
             }
             views.getStorageInfoMap().remove(id.toString());
             views.getStateMap().remove(id.toString());
             if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
-                Files.createFile(dataFile);
+                _fileStore.create(id);
             }
             return new CacheRepositoryEntryImpl(this, id);
         } catch (IOException e) {
@@ -158,9 +154,9 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     @Override
     public void remove(PnfsId id) throws CacheException
     {
-        Path f = _fileStore.get(id);
+
         try {
-            Files.deleteIfExists(f);
+            _fileStore.remove(id);
         } catch (IOException e) {
             throw new DiskErrorCacheException("Failed to delete " + id);
         }
@@ -182,15 +178,6 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     {
         return _fileStore.isOk() && super.isOk();
 
-    }
-
-    /**
-     * Requests a data file from the CacheRepository. Used by the
-     * entries to obtain a data file.
-     */
-    private Path getPath(PnfsId id)
-    {
-        return _fileStore.get(id);
     }
 
     /**
@@ -235,15 +222,18 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     @Override
     public void setLastModifiedTime(PnfsId pnfsId, long time) throws IOException
     {
-        Path path = getPath(pnfsId);
-        Files.setLastModifiedTime(path, FileTime.fromMillis(time));
+        _fileStore.getFileAttributeView(pnfsId)
+                .setTimes(FileTime.fromMillis(time), null, null);
     }
 
     @Override
     public long getFileSize(PnfsId pnfsId) throws IOException
     {
         try {
-            return Files.size(getPath(pnfsId));
+            return _fileStore
+                    .getFileAttributeView(pnfsId)
+                    .readAttributes()
+                    .size();
         } catch (NoSuchFileException e) {
             return 0;
         }
@@ -252,12 +242,12 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     @Override
     public URI getUri(PnfsId pnfsId)
     {
-        return getPath(pnfsId).toUri();
+        return _fileStore.get(pnfsId);
     }
 
     @Override
     public RepositoryChannel openChannel(PnfsId pnfsId, IoMode mode) throws IOException
     {
-        return new FileRepositoryChannel(getPath(pnfsId), mode.toOpenString());
+        return _fileStore.openDataChannel(pnfsId, mode);
     }
 }

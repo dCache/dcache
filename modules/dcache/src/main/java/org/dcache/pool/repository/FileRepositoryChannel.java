@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.file.FileSystems;
+
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
@@ -34,10 +34,6 @@ public class FileRepositoryChannel implements RepositoryChannel {
      * by querying the underlying file system.
      */
     private final long _fileSize;
-
-    public FileRepositoryChannel(String file, String mode) throws FileNotFoundException, IOException {
-        this(FileSystems.getDefault().getPath(file), mode);
-    }
 
     /**
      * Creates a {@link RepositortyChannel} to read from, and optionally to

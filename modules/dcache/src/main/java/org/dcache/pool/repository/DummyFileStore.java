@@ -21,10 +21,13 @@ package org.dcache.pool.repository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 
 import diskCacheV111.util.PnfsId;
+import org.dcache.pool.movers.IoMode;
 
 /**
  * File store to be used with meta data utilities. Returns the same temporary file for
@@ -46,9 +49,35 @@ class DummyFileStore implements FileStore
     }
 
     @Override
-    public Path get(PnfsId id)
+    public BasicFileAttributeView getFileAttributeView(PnfsId id) throws IOException {
+        return Files.getFileAttributeView(file, BasicFileAttributeView.class);
+    }
+
+    @Override
+    public URI create(PnfsId id) throws IOException {
+        // NOP (already created)
+        return get(id);
+    }
+
+    @Override
+    public RepositoryChannel openDataChannel(PnfsId id, IoMode mode) throws IOException {
+        return new FileRepositoryChannel(file, mode.toOpenString());
+    }
+
+    @Override
+    public URI get(PnfsId id)
     {
-        return file;
+        return file.toUri();
+    }
+
+    @Override
+    public boolean contains(PnfsId id) {
+        return true;
+    }
+
+    @Override
+    public void remove(PnfsId id) {
+        // NOP
     }
 
     @Override

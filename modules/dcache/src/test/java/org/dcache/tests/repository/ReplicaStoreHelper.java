@@ -2,9 +2,6 @@ package org.dcache.tests.repository;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,7 +20,6 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.ReplicaState;
-import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaStore;
@@ -62,9 +58,7 @@ public class ReplicaStoreHelper implements ReplicaStore
         {
             _repository = repository;
             _pnfsId = pnfsId;
-            Path path = _repository.get(_pnfsId);
-            BasicFileAttributes attributes =
-                    Files.getFileAttributeView(path, BasicFileAttributeView.class).readAttributes();
+            BasicFileAttributes attributes = repository.getFileAttributeView(pnfsId).readAttributes();
             _lastAccess = attributes.lastModifiedTime().toMillis();
             _size = attributes.size();
             _state = ReplicaState.NEW;
@@ -155,13 +149,13 @@ public class ReplicaStoreHelper implements ReplicaStore
         @Override
         public synchronized URI getReplicaUri()
         {
-            return _repository.get(_pnfsId).toUri();
+            return _repository.get(_pnfsId);
         }
 
         @Override
         public RepositoryChannel openChannel(IoMode mode) throws IOException
         {
-            return new FileRepositoryChannel(_repository.get(_pnfsId), mode.toOpenString());
+            return _repository.openDataChannel(_pnfsId, mode);
         }
 
         @Override
@@ -243,7 +237,7 @@ public class ReplicaStoreHelper implements ReplicaStore
     public ReplicaRecord get(PnfsId id) throws RepositoryException
     {
         try {
-            if (!Files.exists(_repository.get(id))) {
+            if (!_repository.contains(id)) {
                 return null;
             }
             return _entryList.containsKey(id) ? _entryList.get(id) : new CacheRepositoryEntryImpl(_repository, id);
@@ -271,7 +265,7 @@ public class ReplicaStoreHelper implements ReplicaStore
     public void remove(PnfsId id) throws DiskErrorCacheException
     {
         try {
-            Files.deleteIfExists(_repository.get(id));
+            _repository.remove(id);
             _entryList.remove(id);
         } catch (IOException e) {
             throw new DiskErrorCacheException(

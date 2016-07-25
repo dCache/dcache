@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -122,9 +123,8 @@ public class FileMetaDataRepository
         try {
             Path controlFile = _metadir.resolve(id.toString());
             Path siFile = _metadir.resolve("SI-" + id.toString());
-            Path dataFile = _fileStore.get(id);
 
-            if (Files.exists(dataFile)) {
+            if (_fileStore.contains(id)) {
                 throw new DuplicateEntryException(id);
             }
 
@@ -135,10 +135,10 @@ public class FileMetaDataRepository
             Files.deleteIfExists(siFile);
 
             if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
-                Files.createFile(dataFile);
+                _fileStore.create(id);
             }
 
-            return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
+            return new CacheRepositoryEntryImpl(id, controlFile, _fileStore, siFile);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
                     "Failed to create new entry " + id + ": " + e.getMessage(), e);
@@ -149,14 +149,13 @@ public class FileMetaDataRepository
     public ReplicaRecord get(PnfsId id)
         throws CacheException
     {
-        Path dataFile = _fileStore.get(id);
-        if (!Files.isRegularFile(dataFile)) {
+        if (!_fileStore.contains(id)) {
             return null;
         }
         try {
             Path siFile = _metadir.resolve("SI-" + id.toString());
             Path controlFile = _metadir.resolve(id.toString());
-            return new CacheRepositoryEntryImpl(id, controlFile, dataFile, siFile);
+            return new CacheRepositoryEntryImpl(id, controlFile, _fileStore, siFile);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
                     "Failed to read meta data for " + id + ": " + e.getMessage(), e);
@@ -167,7 +166,11 @@ public class FileMetaDataRepository
     public void remove(PnfsId id)
             throws CacheException
     {
-        deleteIfExists(_fileStore.get(id));
+        try {
+            _fileStore.remove(id);
+        } catch (IOException e) {
+            throw new DiskErrorCacheException("Failed to remove " + id + ": " + e.getMessage(), e);
+        }
         deleteIfExists(_metadir.resolve(id.toString()));
         deleteIfExists(_metadir.resolve("SI-" + id.toString()));
     }

@@ -8,13 +8,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
 import diskCacheV111.util.AccessLatency;
@@ -28,6 +25,7 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.tests.repository.ReplicaStoreHelper;
 import org.dcache.vehicles.FileAttributes;
 
@@ -87,9 +85,11 @@ public class ConsistentReplicaStoreTest
     private void givenStoreHasFileOfSize(PnfsId pnfsId, long size)
             throws IOException
     {
-        Path path = _fileStore.get(pnfsId);
-        try (OutputStream stream = Files.newOutputStream(path, StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW)) {
-            stream.write(new byte[(int) size]);
+        _fileStore.create(pnfsId);
+        try (RepositoryChannel channel = _fileStore.openDataChannel(pnfsId, IoMode.WRITE)) {
+            ByteBuffer buf = ByteBuffer.allocate((int)size);
+            buf.limit(buf.capacity());
+            channel.write(buf);
         }
     }
 
@@ -190,7 +190,7 @@ public class ConsistentReplicaStoreTest
 
         // and the replica is deleted
         assertThat(_replicaStore.get(PNFSID), is(nullValue()));
-        assertThat(Files.exists(_fileStore.get(PNFSID)), is(false));
+        assertThat(_fileStore.contains(PNFSID), is(false));
 
         // and the name space entry is not touched
         verify(_pnfs, never())
@@ -219,7 +219,7 @@ public class ConsistentReplicaStoreTest
 
         // and the replica is deleted
         assertThat(_replicaStore.get(PNFSID), is(nullValue()));
-        assertThat(Files.exists(_fileStore.get(PNFSID)), is(false));
+        assertThat(_fileStore.contains(PNFSID), is(false));
 
         // and the name space entry is not touched
         verify(_pnfs, never())
@@ -280,7 +280,7 @@ public class ConsistentReplicaStoreTest
 
         // and the replica is deleted
         assertThat(_replicaStore.get(PNFSID), is(nullValue()));
-        assertThat(Files.exists(_fileStore.get(PNFSID)), is(false));
+        assertThat(_fileStore.contains(PNFSID), is(false));
 
         // and the location is cleared
         verify(_pnfs).clearCacheLocation(PNFSID);

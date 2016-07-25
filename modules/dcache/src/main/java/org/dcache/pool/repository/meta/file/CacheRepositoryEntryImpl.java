@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collection;
@@ -28,7 +27,7 @@ import diskCacheV111.vehicles.StorageInfos;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaState;
-import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
@@ -57,19 +56,19 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     private final Path _siFile;
 
     /**
-     * data file
+     * File store used for data file.
      */
-    private final Path _dataFile;
+    private final FileStore _fileStore;
 
 
 
-    public CacheRepositoryEntryImpl(PnfsId pnfsId, Path controlFile, Path dataFile, Path siFile) throws IOException
+    public CacheRepositoryEntryImpl(PnfsId pnfsId, Path controlFile, FileStore fileStore, Path siFile) throws IOException
     {
 
         _pnfsId = pnfsId;
         _controlFile = controlFile;
         _siFile = siFile;
-        _dataFile = dataFile;
+        _fileStore = fileStore;
 
         _state = new CacheRepositoryEntryState(_controlFile);
 
@@ -83,8 +82,9 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
         }
 
         try {
-            BasicFileAttributes attributes =
-                    Files.getFileAttributeView(_dataFile, BasicFileAttributeView.class).readAttributes();
+            BasicFileAttributes attributes = _fileStore
+                    .getFileAttributeView(pnfsId)
+                    .readAttributes();
             _lastAccess = attributes.lastModifiedTime().toMillis();
             _size = attributes.size();
         } catch (FileNotFoundException | NoSuchFileException fnf) {
@@ -129,13 +129,13 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     @Override
     public synchronized URI getReplicaUri()
     {
-        return _dataFile.toUri();
+        return _fileStore.get(_pnfsId);
     }
 
     @Override
     public RepositoryChannel openChannel(IoMode mode) throws IOException
     {
-        return new FileRepositoryChannel(_dataFile, mode.toOpenString());
+        return _fileStore.openDataChannel(_pnfsId, mode);
     }
 
     @Override
@@ -147,9 +147,11 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     public synchronized void setLastAccessTime(long time) throws CacheException
     {
         try {
-            Files.setLastModifiedTime(_dataFile, FileTime.fromMillis(time));
+            _fileStore
+                    .getFileAttributeView(_pnfsId)
+                    .setTimes(FileTime.fromMillis(time), null, null);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to set modification time: " + _dataFile, e);
+            throw new DiskErrorCacheException("Failed to set modification time: " + _pnfsId, e);
         }
         _lastAccess = System.currentTimeMillis();
     }
@@ -163,7 +165,9 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     public synchronized long getReplicaSize()
     {
         try {
-            return _state.getState().isMutable() ? Files.size(_dataFile) : _size;
+            return _state.getState().isMutable() ?
+                    _fileStore.getFileAttributeView(_pnfsId).readAttributes().size()
+                    : _size;
         } catch (NoSuchFileException e) {
             return 0;
         } catch (IOException e) {
@@ -190,7 +194,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
         try {
             if (_state.getState().isMutable() && !state.isMutable()) {
                 try {
-                    _size = Files.size(_dataFile);
+                    _size = _fileStore.getFileAttributeView(_pnfsId).readAttributes().size();
                 } catch (NoSuchFileException e) {
                     _size = 0;
                 }

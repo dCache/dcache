@@ -15,6 +15,7 @@ import java.net.ProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.file.FileSystems;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -732,7 +733,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                     new GFtpProtocol_2_nio(null);
 
             RepositoryChannel fileChannel =
-                    new FileRepositoryChannel(args.argv(0),
+                    new FileRepositoryChannel(FileSystems.getDefault().getPath(args.argv(0)),
                                               role == Role.Sender ? "r" : "rw");
 
             Mode mode =
