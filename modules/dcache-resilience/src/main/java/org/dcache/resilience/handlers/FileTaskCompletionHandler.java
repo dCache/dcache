@@ -119,7 +119,7 @@ public final class FileTaskCompletionHandler implements TaskCompletionHandler {
                                 maxRetries), e);
         }
 
-        LOGGER.trace(AlarmMarkerFactory.getMarker(
+        LOGGER.error(AlarmMarkerFactory.getMarker(
                                         PredefinedAlarm.FAILED_REPLICATION,
                                         pnfsId.toString()),
                         ABORT_REPLICATION_LOG_MESSAGE, pnfsId,
