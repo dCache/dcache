@@ -1,6 +1,7 @@
 package org.dcache.cells;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ObjectArrays;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
@@ -9,6 +10,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -209,16 +211,17 @@ public class CellStub
      * thrown.
      *
      * @param  msg     the message object to send
+     * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
      *       timeout occurred, the object in the reply was of the wrong
      *       type, or the return code was non-zero.
      */
-    public <T extends Message> T sendAndWait(T msg)
+    public <T extends Message> T sendAndWait(T msg, CellEndpoint.SendFlag... flags)
         throws CacheException, InterruptedException
     {
-        return getMessage(send(msg));
+        return getMessage(send(msg, flags));
     }
 
     /**
@@ -230,16 +233,17 @@ public class CellStub
      *
      * @param  msg     the message object to send
      * @param  timeout in milliseconds to wait for a reply
+     * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
      *       timeout occurred, the object in the reply was of the wrong
      *       type, or the return code was non-zero.
      */
-    public <T extends Message> T sendAndWait(T msg, long timeout)
+    public <T extends Message> T sendAndWait(T msg, long timeout, CellEndpoint.SendFlag... flags)
         throws CacheException, InterruptedException
     {
-        return getMessage(send(msg, timeout));
+        return getMessage(send(msg, timeout, flags));
     }
 
     /**
@@ -251,16 +255,17 @@ public class CellStub
      *
      * @param  path    the destination cell
      * @param  msg     the message object to send
+     * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
      *       timeout occurred, the object in the reply was of the wrong
      *       type, or the return code was non-zero.
      */
-    public <T extends Message> T sendAndWait(CellPath path, T msg)
+    public <T extends Message> T sendAndWait(CellPath path, T msg, CellEndpoint.SendFlag... flags)
         throws CacheException, InterruptedException
     {
-        return getMessage(send(path, msg));
+        return getMessage(send(path, msg, flags));
     }
 
     /**
@@ -270,23 +275,24 @@ public class CellStub
      *
      * @param  msg     the message object to send
      * @param  type    the expected type of the reply
+     * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
      *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
-    public <T> T sendAndWait(Serializable msg, Class<T> type)
+    public <T> T sendAndWait(Serializable msg, Class<T> type, CellEndpoint.SendFlag... flags)
         throws CacheException, InterruptedException
     {
-        return get(send(msg, type));
+        return get(send(msg, type, flags));
     }
 
 
-    public <T> T sendAndWait(CellPath path, Serializable msg, Class<T> type)
+    public <T> T sendAndWait(CellPath path, Serializable msg, Class<T> type, CellEndpoint.SendFlag... flags)
        throws CacheException, InterruptedException
     {
-       return get(send(path, msg, type));
+       return get(send(path, msg, type, flags));
     }
 
 
@@ -297,17 +303,18 @@ public class CellStub
      *
      * @param  msg     the message object to send
      * @param  type    the expected type of the reply
-     * @param  timeout  the time to wait for the reply
+     * @param  timeout the time to wait for the reply
+     * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
      *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
-    public <T> T sendAndWait(Serializable msg, Class<T> type, long timeout)
+    public <T> T sendAndWait(Serializable msg, Class<T> type, long timeout, CellEndpoint.SendFlag... flags)
         throws CacheException, InterruptedException
     {
-        return get(send(msg, type, timeout));
+        return get(send(msg, type, timeout, flags));
     }
 
 
@@ -321,17 +328,18 @@ public class CellStub
      *
      * @param  path    the destination cell
      * @param  msg     the message object to send
-     * @param  timeout  the time to wait for the reply
+     * @param  timeout the time to wait for the reply
+     * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
      *       timeout occurred, the object in the reply was of the wrong
      *       type, or the return code was non-zero.
      */
-    public <T extends Message> T sendAndWait(CellPath path, T msg, long timeout)
+    public <T extends Message> T sendAndWait(CellPath path, T msg, long timeout, CellEndpoint.SendFlag... flags)
         throws CacheException, InterruptedException
     {
-        return getMessage(send(path, msg, timeout));
+        return getMessage(send(path, msg, timeout, flags));
     }
 
 
@@ -343,68 +351,74 @@ public class CellStub
      * @param  path    the destination cell
      * @param  msg     the message object to send
      * @param  type    the expected type of the reply
-     * @param  timeout  the time to wait for the reply
+     * @param  timeout the time to wait for the reply
+     * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
      * @throws CacheException If the message could not be sent, a
      *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
-    public <T> T sendAndWait(CellPath path, Serializable msg, Class<T> type, long timeout)
+    public <T> T sendAndWait(CellPath path, Serializable msg, Class<T> type, long timeout, CellEndpoint.SendFlag... flags)
         throws CacheException, InterruptedException
     {
-        return get(send(path, msg, type, timeout));
+        return get(send(path, msg, type, timeout, flags));
     }
 
-    public <T extends Message> ListenableFuture<T> send(T message)
+    public <T extends Message> ListenableFuture<T> send(T message, CellEndpoint.SendFlag... flags)
     {
-        return send(_destination, message);
+        return send(_destination, message, flags);
     }
 
-    public <T extends Message> ListenableFuture<T> send(T message, long timeout)
+    public <T extends Message> ListenableFuture<T> send(T message, long timeout, CellEndpoint.SendFlag... flags)
     {
-        return send(_destination, message, timeout);
+        return send(_destination, message, timeout, flags);
     }
 
-    public <T extends Message> ListenableFuture<T> send(CellPath destination, T message)
+    public <T extends Message> ListenableFuture<T> send(CellPath destination, T message, CellEndpoint.SendFlag... flags)
     {
-        return send(destination, message, getTimeoutInMillis());
+        return send(destination, message, getTimeoutInMillis(), flags);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Message> ListenableFuture<T> send(CellPath destination, T message, long timeout)
+    public <T extends Message> ListenableFuture<T> send(CellPath destination, T message, long timeout, CellEndpoint.SendFlag... flags)
     {
         message.setReplyRequired(true);
-        return send(destination, message, (Class<T>) message.getClass(), timeout);
+        return send(destination, message, (Class<T>) message.getClass(), timeout, flags);
     }
 
-    public <T> ListenableFuture<T> send(Serializable message, Class<T> type)
+    public <T> ListenableFuture<T> send(Serializable message, Class<T> type, CellEndpoint.SendFlag... flags)
     {
-        return send(_destination, message, type);
+        return send(_destination, message, type, flags);
     }
 
     public <T> ListenableFuture<T> send(
-            CellPath destination, Serializable message, Class<T> type)
+            CellPath destination, Serializable message, Class<T> type, CellEndpoint.SendFlag... flags)
     {
-        return send(destination, message, type, getTimeoutInMillis());
+        return send(destination, message, type, getTimeoutInMillis(), flags);
     }
 
     public <T> ListenableFuture<T> send(
-            Serializable message, Class<T> type, long timeout)
+            Serializable message, Class<T> type, long timeout, CellEndpoint.SendFlag... flags)
     {
-        return send(_destination, message, type, timeout);
+        return send(_destination, message, type, timeout, flags);
     }
 
     public <T> ListenableFuture<T> send(
-            CellPath destination, Serializable message, Class<T> type, long timeout)
+            CellPath destination, Serializable message, Class<T> type, long timeout, CellEndpoint.SendFlag... flags)
     {
         CellMessage envelope = new CellMessage(checkNotNull(destination), checkNotNull(message));
         Semaphore concurrency = _concurrency;
         CallbackFuture<T> future = new CallbackFuture<>(type, concurrency);
         concurrency.acquireUninterruptibly();
         _rateLimiter.acquire();
-        _endpoint.sendMessage(envelope, future, MoreExecutors.directExecutor(), timeout, _flags);
+        _endpoint.sendMessage(envelope, future, MoreExecutors.directExecutor(), timeout, mergeFlags(_flags, flags));
         return future;
+    }
+
+    private CellEndpoint.SendFlag[] mergeFlags(CellEndpoint.SendFlag[] a, CellEndpoint.SendFlag[] b)
+    {
+        return (a.length == 0) ? b : (b.length == 0) ? a : ObjectArrays.concat(a, b, CellEndpoint.SendFlag.class);
     }
 
     /**

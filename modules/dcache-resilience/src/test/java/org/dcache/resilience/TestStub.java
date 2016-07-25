@@ -126,12 +126,12 @@ final class TestStub extends CellStub {
     }
 
     @Override public <T extends Message> ListenableFuture<T> send(CellPath destination,
-                                                                  T message) {
-        return send(message);
+                                                                  T message, CellEndpoint.SendFlag... flags) {
+        return send(message, flags);
     }
 
     @Override
-    public <T extends Message> ListenableFuture<T> send(final T message) {
+    public <T extends Message> ListenableFuture<T> send(final T message, CellEndpoint.SendFlag... flags) {
         ListenableFutureTask<T> future;
         callable = new Callable<T>() {
             @Override
