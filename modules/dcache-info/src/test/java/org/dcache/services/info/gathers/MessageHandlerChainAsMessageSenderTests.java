@@ -17,8 +17,6 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
 
-import org.dcache.util.Args;
-
 import static org.junit.Assert.*;
 
 /**
@@ -72,18 +70,10 @@ public class MessageHandlerChainAsMessageSenderTests {
 
         @Override
         public void sendMessage(CellMessage envelope, CellMessageAnswerable callback,
-                                Executor executor, long timeout)
+                                Executor executor, long timeout, SendFlag... flags)
                 throws SerializationException
         {
             _sendMessages.add( envelope);
-        }
-
-        @Override
-        public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
-                                                        Executor executor, long timeout)
-                throws SerializationException
-        {
-            _sendMessages.add(envelope);
         }
 
         public List<CellMessage> getSentMessages() {

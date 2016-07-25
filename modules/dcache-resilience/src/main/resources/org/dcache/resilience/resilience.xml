@@ -90,7 +90,7 @@
       <property name="destination" value="${resilience.service.pinmanager}"/>
       <property name="timeout" value="${resilience.service.pinmanager.timeout}"/>
       <property name="timeoutUnit" value="${resilience.service.pinmanager.timeout.unit}"/>
-      <property name="retryOnNoRouteToCell" value="true"/>
+      <property name="flags" value="#{ T(dmg.cells.nucleus.CellEndpoint.SendFlag).RETRY_ON_NO_ROUTE_TO_CELL }"/>
     </bean>
 
     <bean id="Pools" class="org.dcache.cells.CellStub">

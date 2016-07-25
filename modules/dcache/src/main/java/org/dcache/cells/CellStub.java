@@ -48,7 +48,7 @@ public class CellStub
     private CellPath _destination;
     private long _timeout = 30000;
     private TimeUnit _timeoutUnit = MILLISECONDS;
-    private boolean _retryOnNoRouteToCell;
+    private CellEndpoint.SendFlag[] _flags = {};
     private volatile Semaphore _concurrency = new UnlimitedSemaphore();
     private volatile RateLimiter _rateLimiter = RateLimiter.create(Double.POSITIVE_INFINITY);
 
@@ -135,36 +135,9 @@ public class CellStub
         return _timeoutUnit.toMillis(_timeout);
     }
 
-    /**
-     * Set the value of the retryOnNoRouteCell property, which
-     * determines whether to retry on failure to route the message to
-     * the destination.
-     *
-     * If set to false, failure to send the message will cause a
-     * TimeoutCacheException to be reported right away. If set to
-     * true, failure to send the message to the destination cell will
-     * be retried until the timeout has been reached. Once the timeout
-     * is reached, a TimeoutCacheException is thrown. This is useful
-     * for destinations for which communication failure is known to be
-     * temporary.
-     *
-     * Limitations: This property currently only has an effect on the
-     * sendAndWait method. Asynchronous message delivery always
-     * reports a no route error in case of communication failure.
-     */
-    public void setRetryOnNoRouteToCell(boolean retry)
+    public void setFlags(CellEndpoint.SendFlag... flags)
     {
-        _retryOnNoRouteToCell = retry;
-    }
-
-    /**
-     * Returns the value of the retryOnNoRouteCell property, which
-     * determines whether to retry on failure to route the message to
-     * the destination.
-     */
-    public boolean getRetryOnNoRouteToCell()
-    {
-        return _retryOnNoRouteToCell;
+        _flags = flags;
     }
 
     /**
@@ -430,11 +403,7 @@ public class CellStub
         CallbackFuture<T> future = new CallbackFuture<>(type, concurrency);
         concurrency.acquireUninterruptibly();
         _rateLimiter.acquire();
-        if (_retryOnNoRouteToCell) {
-            _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, MoreExecutors.directExecutor(), timeout);
-        } else {
-            _endpoint.sendMessage(envelope, future, MoreExecutors.directExecutor(), timeout);
-        }
+        _endpoint.sendMessage(envelope, future, MoreExecutors.directExecutor(), timeout, _flags);
         return future;
     }
 

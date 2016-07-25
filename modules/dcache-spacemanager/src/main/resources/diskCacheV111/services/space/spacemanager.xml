@@ -38,7 +38,7 @@
     <property name="destination" value="${spacemanager.service.pnfsmanager}"/>
     <property name="timeout" value="${spacemanager.service.pnfsmanager.timeout}"/>
     <property name="timeoutUnit" value="${spacemanager.service.pnfsmanager.timeout.unit}"/>
-    <property name="retryOnNoRouteToCell" value="true"/>
+    <property name="flags" value="#{ T(dmg.cells.nucleus.CellEndpoint.SendFlag).RETRY_ON_NO_ROUTE_TO_CELL }"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">

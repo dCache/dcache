@@ -69,11 +69,13 @@ import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
+
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
+
 import org.dcache.cells.CellStub;
 
 final class TestStub extends CellStub {
@@ -93,16 +95,8 @@ final class TestStub extends CellStub {
 
             @Override
             public void sendMessage(CellMessage envelope,
-                            CellMessageAnswerable callback, Executor executor,
-                            long timeout) throws SerializationException {
-
-            }
-
-            @Override
-            public void sendMessageWithRetryOnNoRouteToCell(
-                            CellMessage envelope,
-                            CellMessageAnswerable callback, Executor executor,
-                            long timeout) throws SerializationException {
+                                    CellMessageAnswerable callback, Executor executor,
+                                    long timeout, SendFlag... flags) throws SerializationException {
 
             }
 

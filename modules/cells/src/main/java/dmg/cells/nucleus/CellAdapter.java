@@ -43,6 +43,7 @@ import org.dcache.util.Args;
 import org.dcache.util.Version;
 import org.dcache.util.cli.CommandExecutor;
 
+import static java.util.Arrays.asList;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
@@ -451,24 +452,16 @@ public class CellAdapter
     }
 
     @Override
-    public void sendMessageWithRetryOnNoRouteToCell(CellMessage msg,
-                                                    CellMessageAnswerable callback,
-                                                    Executor executor,
-                                                    long timeout)
-        throws SerializationException
-    {
-        CellMessageAnswerable retryingCallback =
-                new RetryingCellMessageAnswerable(msg, callback, executor, timeout);
-        sendMessage(msg, retryingCallback, executor, timeout);
-    }
-
-    @Override
     public void sendMessage(CellMessage msg,
                             CellMessageAnswerable callback,
                             Executor executor,
-                            long timeout)
+                            long timeout,
+                            SendFlag... flags)
         throws SerializationException
     {
+        if (asList(flags).contains(SendFlag.RETRY_ON_NO_ROUTE_TO_CELL)) {
+            callback = new RetryingCellMessageAnswerable(msg, callback, executor, timeout);
+        }
         getNucleus().sendMessage(msg, true, true, callback, executor, timeout);
     }
 

@@ -17,7 +17,6 @@ import dmg.util.command.Command;
 
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
-import org.dcache.util.Args;
 
 public class MessageProcessingMonitor
     implements CellCommandListener, CellMessageSender
@@ -142,15 +141,7 @@ public class MessageProcessingMonitor
 
         @Override
         public void sendMessage(CellMessage envelope, CellMessageAnswerable callback,
-                                Executor executor, long timeout)
-        {
-            throw new UnsupportedOperationException("Cannot use callback for reply");
-        }
-
-        @Override
-        public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
-                                                        Executor executor, long timeout)
-                throws SerializationException
+                                Executor executor, long timeout, SendFlag... flags)
         {
             throw new UnsupportedOperationException("Cannot use callback for reply");
         }

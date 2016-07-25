@@ -67,7 +67,8 @@ public class CellEndpointHelper implements CellEndpoint
     }
 
     @Override
-    public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout)
+    public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor,
+                            long timeout, SendFlag... flags)
             throws SerializationException
     {
         envelope.addSourceAddress(_address);
@@ -78,14 +79,6 @@ public class CellEndpointHelper implements CellEndpoint
         } else {
             callback.answerArrived(envelope, answer);
         }
-    }
-
-    @Override
-    public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
-                                                    Executor executor, long timeout)
-            throws SerializationException
-    {
-        sendMessage(envelope, callback, executor, timeout);
     }
 
     @Override

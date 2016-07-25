@@ -83,7 +83,7 @@ public class MockCellEndpoint implements CellEndpoint
     }
 
     @Override
-    public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout)
+    public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout, SendFlag... flags)
             throws SerializationException
     {
         envelope.addSourceAddress(address);
@@ -111,13 +111,6 @@ public class MockCellEndpoint implements CellEndpoint
                 action.messageArrived(envelope);
             }
         }
-    }
-
-    @Override
-    public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout)
-            throws SerializationException
-    {
-        sendMessage(envelope, callback, executor, timeout);
     }
 
     @Override

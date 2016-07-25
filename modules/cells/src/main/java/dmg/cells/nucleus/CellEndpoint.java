@@ -19,6 +19,15 @@ import java.util.concurrent.Executor;
  */
 public interface CellEndpoint
 {
+    enum SendFlag
+    {
+        /**
+         * In case of failure to deliver the message, delivery is transparently
+         * retried as long as the timeout has not expired.
+         */
+        RETRY_ON_NO_ROUTE_TO_CELL
+    }
+
     /**
      * Sends <code>envelope</code>.
      *
@@ -48,43 +57,16 @@ public interface CellEndpoint
      *                 as soon as the message arrives.
      * @param executor the executor to run the callback in
      * @param timeout  is the timeout in msec.
+     * @param flags    flags affecting how the message is sent
      * @exception SerializationException if the payload object of this
      *            message is not serializable.
      */
     void sendMessage(CellMessage envelope,
                      CellMessageAnswerable callback,
                      Executor executor,
-                     long timeout)
+                     long timeout,
+                     SendFlag... flags)
         throws SerializationException;
-
-    /**
-     * Sends <code>envelope</code>. The <code>callback</code> argument
-     * (which must be non-null) specifies an object which is informed as
-     * soon as an has answer arrived or if the timeout has expired.
-     *
-     * In case of failure to deliver the message, delivery is transparently
-     * retried as long as the timeout has not expired.
-     *
-     * The callback is run in the supplied executor. The executor may
-     * execute the callback inline, but such an executor must only be
-     * used if the callback is non-blocking, and the callback should
-     * refrain from CPU heavy operations. Care should be taken that
-     * the executor isn't blocked by tasks waiting for the callback;
-     * such tasks could lead to a deadlockk.
-     *
-     * @param envelope the cell message to be sent.
-     * @param callback specifies an object class which will be informed
-     *                 as soon as the message arrives.
-     * @param executor the executor to run the callback in
-     * @param timeout  is the timeout in msec.
-     * @exception SerializationException if the payload object of this
-     *            message is not serializable.
-     */
-    void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope,
-                                             CellMessageAnswerable callback,
-                                             Executor executor,
-                                             long timeout)
-            throws SerializationException;
 
     /**
      * Returns the domain context. The domain context is shared by all

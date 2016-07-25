@@ -63,7 +63,7 @@ public class PnfsHandler
         stub.setDestinationPath(path);
         stub.setTimeout(DEFAULT_PNFS_TIMEOUT);
         stub.setTimeoutUnit(TimeUnit.MILLISECONDS);
-        stub.setRetryOnNoRouteToCell(true);
+        stub.setFlags(CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL);
         return stub;
     }
 

@@ -768,7 +768,8 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
     public void sendMessage(CellMessage envelope,
                             CellMessageAnswerable callback,
                             Executor executor,
-                            long timeout)
+                            long timeout,
+                            SendFlag... flags)
         throws SerializationException
     {
         envelope.addSourceAddress(_address);
@@ -778,14 +779,6 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
         } else {
             callback.answerTimedOut(envelope);
         }
-    }
-
-    @Override
-    public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
-                                                    Executor executor, long timeout)
-            throws SerializationException
-    {
-        sendMessage(envelope, callback, executor, timeout);
     }
 
     @Override
