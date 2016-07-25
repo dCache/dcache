@@ -20,6 +20,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.LongAdder;
 
 import dmg.cells.network.PingMessage;
 import dmg.util.Authorizable;
@@ -82,6 +83,8 @@ public class CellAdapter
     public static final String MAX_MESSAGES_QUEUED = "cell.max-messages-queued";
 
     private final CellVersion _version = new CellVersion(Version.of(this));
+
+    private final LongAdder _routeAddedCounter = new LongAdder();
 
     private final CellNucleus _nucleus;
     private final Gate _startGate = new Gate(false);
@@ -460,7 +463,7 @@ public class CellAdapter
         throws SerializationException
     {
         if (asList(flags).contains(SendFlag.RETRY_ON_NO_ROUTE_TO_CELL)) {
-            callback = new RetryingCellMessageAnswerable(msg, callback, executor, timeout);
+            callback = new RetryingCellMessageAnswerable(msg, callback, executor, timeout, _routeAddedCounter.longValue());
         }
         getNucleus().sendMessage(msg, true, true, callback, executor, timeout);
     }
@@ -604,7 +607,12 @@ public class CellAdapter
      *   belongs to the CellEventListener Interface
      */
     @Override
-    public void routeAdded(CellEvent ce) {}
+    public void routeAdded(CellEvent ce)
+    {
+        _routeAddedCounter.increment();
+        _nucleus.runDeferredTasksNow();
+    }
+
     /**
      *   belongs to the CellEventListener Interface
      */
@@ -1017,15 +1025,20 @@ public class CellAdapter
     private class RetryingCellMessageAnswerable implements CellMessageAnswerable, Runnable
     {
         private final long deadline;
+
+        private final long cnt;
+
         private final CellMessageAnswerable callback;
         private final CellMessage msg;
         private final Executor executor;
 
-        public RetryingCellMessageAnswerable(CellMessage msg, CellMessageAnswerable callback, Executor executor, long timeout)
+        public RetryingCellMessageAnswerable(CellMessage msg, CellMessageAnswerable callback, Executor executor,
+                                             long timeout, long cnt)
         {
             this.callback = callback;
             this.msg = msg;
             this.executor = executor;
+            this.cnt = cnt;
             deadline = addWithInfinity(System.currentTimeMillis(), timeout);
         }
 
@@ -1040,10 +1053,12 @@ public class CellAdapter
         {
             if (!(exception instanceof NoRouteToCellException)) {
                 callback.exceptionArrived(request, exception);
-            } else if (deadline > System.currentTimeMillis()) {
+            } else if (deadline <= System.currentTimeMillis()) {
+                callback.answerTimedOut(request);
+            } else if (cnt == _routeAddedCounter.longValue()){
                 _nucleus.invokeLater(this);
             } else {
-                callback.answerTimedOut(request);
+                sendMessage(msg, this, executor, subWithInfinity(deadline, System.currentTimeMillis()));
             }
         }
 

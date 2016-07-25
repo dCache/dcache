@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,11 +28,16 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -90,16 +96,17 @@ public class CellNucleus implements ThreadFactory
      * it is important that the timer is not used for long-running or
      * blocking tasks, nor for time critical tasks.
      */
-    private static final Timer _timer = new Timer("Cell maintenance task timer", true);
+    private static final ScheduledExecutorService _timer = Executors.newSingleThreadScheduledExecutor(
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("Cell maintenance task timer").build());
 
     /**
      * Task for calling the Cell nucleus message timeout mechanism.
      */
-    private final TimerTask _timeoutTask;
+    private Future<?> _timeoutTask;
 
     private Pinboard _pinboard;
     private FilterThresholdSet _loggingThresholds;
-    private final Queue<Runnable> _deferredTasks = Queues.synchronizedQueue(new ArrayDeque<>());
+    private final BlockingQueue<Runnable> _deferredTasks = new LinkedBlockingQueue<>();
     private volatile long _lastQueueTime;
     private final CellCuratorFramework _curatorFramework;
 
@@ -152,21 +159,6 @@ public class CellNucleus implements ThreadFactory
         _curatorFramework = (curatorFramework != null)
                             ? new CellCuratorFramework(curatorFramework, _messageExecutor)
                             : null;
-
-        _timeoutTask = new TimerTask() {
-            @Override
-            public void run()
-            {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    try {
-                        executeMaintenanceTasks();
-                    } catch (Throwable e) {
-                        Thread t = Thread.currentThread();
-                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                    }
-                }
-            }
-        };
 
         LOGGER.info("Created {}", name);
     }
@@ -474,9 +466,7 @@ public class CellNucleus implements ThreadFactory
         }
 
         // Execute delayed operations
-        for (Runnable task : consumingIterable(_deferredTasks)) {
-            task.run();
-        }
+        consumingIterable(_deferredTasks).forEach(Runnable::run);
 
         return size;
     }
@@ -780,7 +770,12 @@ public class CellNucleus implements ThreadFactory
 
     void invokeLater(Runnable runnable)
     {
-        _deferredTasks.add(runnable);
+        _deferredTasks.add(wrapLoggingContext(runnable));
+    }
+
+    void runDeferredTasksNow()
+    {
+        _timer.execute(() -> consumingIterable(_deferredTasks).forEach(Runnable::run));
     }
 
     @Override @Nonnull
@@ -906,7 +901,8 @@ public class CellNucleus implements ThreadFactory
 
     private Void doStart() throws Exception
     {
-        _timer.schedule(_timeoutTask, 20000, 20000);
+        _timeoutTask = _timer.scheduleWithFixedDelay(wrapLoggingContext((Runnable) this::executeMaintenanceTasks),
+                                                     20, 20, TimeUnit.SECONDS);
         StartEvent event = new StartEvent(new CellPath(_cellName), 0);
         _cell.prepareStartup(event);
         __cellGlue.addCell(_cellName, this);
@@ -934,7 +930,7 @@ public class CellNucleus implements ThreadFactory
             /* Stop executing deferred tasks.
              */
             if (_timeoutTask != null) {
-                _timeoutTask.cancel();
+                _timeoutTask.cancel(false);
             }
 
             /* Shut down cell.

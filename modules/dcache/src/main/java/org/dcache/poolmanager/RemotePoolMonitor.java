@@ -37,11 +37,9 @@ import diskCacheV111.util.FileLocality;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.ProtocolInfo;
 
-import dmg.cells.nucleus.CellEvent;
-import dmg.cells.nucleus.CellEventListener;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellRoute;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
@@ -54,20 +52,14 @@ import static org.dcache.util.MathUtils.subWithInfinity;
  * PoolMonitor that delegates to a PoolMonitor obtained from pool manager.
  */
 public class RemotePoolMonitor
-        implements PoolMonitor, CellLifeCycleAware, CellMessageReceiver, CellEventListener
+        implements PoolMonitor, CellLifeCycleAware, CellMessageReceiver
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemotePoolMonitor.class);
-
-    private enum LastEvent
-    {
-        NONE, REQUEST_SUBMITTED, ROUTE_ADDED, NOROUTE
-    }
 
     private long lastRefreshTime;
     private CellStub poolManagerStub;
     private PoolMonitor poolMonitor;
     private long refreshCount;
-    private LastEvent lastEvent = LastEvent.NONE;
 
     @Required
     public void setPoolManagerStub(CellStub stub)
@@ -76,37 +68,9 @@ public class RemotePoolMonitor
     }
 
     @Override
-    public synchronized void routeAdded(CellEvent ce)
-    {
-        if (((CellRoute) ce.getSource()).getRouteType() == CellRoute.DOMAIN) {
-            if (lastEvent == LastEvent.NOROUTE) {
-                afterStart();
-            } else {
-                lastEvent = LastEvent.ROUTE_ADDED;
-            }
-        }
-    }
-
-    @Override
-    public void cellCreated(CellEvent ce)
-    {
-    }
-
-    @Override
-    public void cellDied(CellEvent ce)
-    {
-    }
-
-    @Override
-    public void routeDeleted(CellEvent ce)
-    {
-    }
-
-    @Override
     public synchronized void afterStart()
     {
-        lastEvent = LastEvent.REQUEST_SUBMITTED;
-        CellStub.addCallback(poolManagerStub.send(new PoolManagerGetPoolMonitor()),
+        CellStub.addCallback(poolManagerStub.send(new PoolManagerGetPoolMonitor(), CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL),
                              new AbstractMessageCallback<PoolManagerGetPoolMonitor>()
                              {
                                  @Override
@@ -118,13 +82,7 @@ public class RemotePoolMonitor
                                  @Override
                                  public void timeout(String message)
                                  {
-                                     synchronized (RemotePoolMonitor.this) {
-                                         if (lastEvent == LastEvent.ROUTE_ADDED) {
-                                             afterStart();
-                                         } else {
-                                             lastEvent = LastEvent.NOROUTE;
-                                         }
-                                     }
+                                     afterStart();
                                  }
 
                                  @Override

@@ -406,6 +406,7 @@ public class CoreRoutingManager
     @Override
     public synchronized void routeAdded(CellEvent ce)
     {
+        super.routeAdded(ce);
         CellRoute cr = (CellRoute) ce.getSource();
         CellAddressCore target = cr.getTarget();
         LOG.info("Got 'route added' event: {}", cr);
