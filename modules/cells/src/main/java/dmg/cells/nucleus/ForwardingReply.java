@@ -51,9 +51,6 @@ public class ForwardingReply implements Reply
         if (address != null) {
             envelope.getDestinationPath().insert(address);
         }
-        if (!envelope.nextDestination()) {
-            throw new RuntimeException("Envelope cannot be forwarded as it has no next address: " + envelope);
-        }
         envelope.setMessageObject(message);
         endpoint.sendMessage(envelope);
     }

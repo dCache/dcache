@@ -274,7 +274,6 @@ public class      SystemCell
 
    @Override
    public void messageToForward( CellMessage msg ){
-        msg.nextDestination() ;
         try{
            sendMessage( msg ) ;
            _packetsForwarded ++ ;

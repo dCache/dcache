@@ -325,7 +325,6 @@ public class CoreRoutingManager
             if (role == CellDomainRole.SATELLITE && tunnel != null) {
                 msg.getDestinationPath().insert(new CellPath(nucleus.getCellName(),
                                                              tunnel.getRemoteCellDomainInfo().getCellDomainName()));
-                msg.nextDestination();
                 nucleus.sendMessage(msg, false, true);
             } else {
                 Map<String, Collection<String>> domains = new HashMap<>();

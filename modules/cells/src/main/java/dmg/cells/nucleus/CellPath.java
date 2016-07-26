@@ -108,26 +108,25 @@ public final class CellPath implements Cloneable, Serializable
     }
 
     /**
-     * Adds a cell path &lt;path&gt; after the current position.
+     * Adds a cell path &lt;path&gt; at the current position.
      */
     public synchronized void insert(CellPath path)
     {
-        _list.addAll(_position + 1, path._list);
+        _list.addAll(_position, path._list);
     }
 
     /**
      * Increment the current cell position by one.
      *
-     * @return true if the cell hops could be shifted, false if
-     * current cell was the final destination.
+     * @return true if the path was not at the last position before the call, false otherwise.
      */
     public synchronized boolean next()
     {
-        if (_position >= (_list.size() - 1)) {
-            return false;
+        int size = _list.size();
+        if (_position < size) {
+            _position++;
         }
-        _position++;
-        return true;
+        return _position < size;
     }
 
     /**
@@ -157,7 +156,7 @@ public final class CellPath implements Cloneable, Serializable
 
     public synchronized boolean isFinalDestination()
     {
-        return _position >= (_list.size() - 1);
+        return _position >= _list.size();
     }
 
     public synchronized boolean isFirstDestination()
@@ -262,21 +261,24 @@ public final class CellPath implements Cloneable, Serializable
             return "[empty]";
         }
         int position = _position;
-        if (position >= size || position < 0) {
+        if (position > size || position < 0) {
             return "[INVALID]";
         }
 
         StringBuilder sb = new StringBuilder(size * 16);
 
         sb.append("[");
+
         CellAddressCore address;
         int i = 0;
-        for (; i < position; i++) {
-            address = _list.get(i);
-            sb.append(address.getCellName()).append("@").append(address.getCellDomainName());
-            sb.append(":");
+        if (position < size) {
+            for (; i < position; i++) {
+                address = _list.get(i);
+                sb.append(address.getCellName()).append("@").append(address.getCellDomainName());
+                sb.append(":");
+            }
+            sb.append(">");
         }
-        sb.append(">");
         address = _list.get(i);
         sb.append(address.getCellName()).append("@").append(address.getCellDomainName());
         for (i++; i < size; i++) {

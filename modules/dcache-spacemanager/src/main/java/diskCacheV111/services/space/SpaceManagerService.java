@@ -1207,9 +1207,6 @@ public final class SpaceManagerService
             if (address != null) {
                 envelope.getDestinationPath().insert(address);
             }
-            if (!envelope.nextDestination()) {
-                throw new RuntimeException("Envelope cannot be forwarded as it has no next address: " + envelope);
-            }
             endpoint.sendMessage(envelope);
         }
 

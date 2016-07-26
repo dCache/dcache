@@ -532,7 +532,6 @@ public class CellAdapter
      *
      */
     public void messageToForward(CellMessage msg) {
-        msg.nextDestination();
         try {
             _nucleus.sendMessage(msg, true, true);
         } catch (RuntimeException e) {
@@ -891,7 +890,6 @@ public class CellAdapter
                 }
             }
         } else if (obj instanceof PingMessage) {
-            msg.nextDestination();
             _nucleus.sendMessage(msg, true, true);
          } else {
             UOID uoid = msg.getUOID();

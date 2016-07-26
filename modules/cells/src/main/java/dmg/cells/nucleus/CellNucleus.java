@@ -51,6 +51,7 @@ import dmg.util.logback.RootFilterThresholds;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.BoundedExecutor;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
@@ -328,6 +329,8 @@ public class CellNucleus implements ThreadFactory
                              boolean remotely)
         throws SerializationException
     {
+        checkArgument(!msg.isFinalDestination(), "Message has no next destination: %s", msg.getDestinationPath());
+
         if (!msg.isStreamMode()) {
             // Have to do this first to log the right UOID
             msg.touch();
@@ -502,6 +505,8 @@ public class CellNucleus implements ThreadFactory
                             long timeout)
         throws SerializationException
     {
+        checkArgument(!msg.isFinalDestination(), "Message has no next destination: %s", msg.getDestinationPath());
+
         // Have to do this first to log the right UOID
         if (!msg.isStreamMode()) {
             msg.touch();
@@ -1021,6 +1026,7 @@ public class CellNucleus implements ThreadFactory
             _eventQueueSize.decrementAndGet();
             try (CDC ignored = _lock.getCdc().restore()) {
                 try {
+                    _message.getDestinationPath().next();
                     CellMessageAnswerable callback = _lock.getCallback();
                     CellMessage request = _lock.getMessage();
                     try {
@@ -1076,11 +1082,12 @@ public class CellNucleus implements ThreadFactory
                     if (_event instanceof RoutedMessageEvent) {
                         _cell.messageArrived(_event);
                     } else {
-                        CDC.setMessageContext(_event.getMessage());
+                        CellMessage msg = _event.getMessage();
+                        CDC.setMessageContext(msg);
+                        msg.getDestinationPath().next();
                         try {
                             _cell.messageArrived(_event);
                         } catch (RuntimeException e) {
-                            CellMessage msg = _event.getMessage();
                             if (!msg.isReply()) {
                                 msg.revertDirection();
                                 msg.setMessageObject(e);
