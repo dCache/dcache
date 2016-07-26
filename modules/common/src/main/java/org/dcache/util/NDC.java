@@ -2,6 +2,8 @@ package org.dcache.util;
 
 import org.slf4j.MDC;
 
+import java.util.Map;
+
 /**
  * The class emulates the Nested Diagnostic Context of Log4j.
  *
@@ -118,5 +120,9 @@ public class NDC
         }
 
         return top;
+    }
+
+    public static String ndcFromMdc(Map<String, String> mdc) {
+        return mdc.get(KEY_NDC);
     }
 }
