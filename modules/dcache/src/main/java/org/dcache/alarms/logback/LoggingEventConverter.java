@@ -72,13 +72,13 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import dmg.cells.nucleus.CDC;
-
 import org.dcache.alarms.Alarm;
 import org.dcache.alarms.AlarmDefinition;
 import org.dcache.alarms.AlarmDefinitionsMap;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.alarms.dao.LogEntry;
+import org.dcache.util.NDC;
 import org.dcache.util.NetworkUtils;
 
 /**
@@ -195,11 +195,17 @@ final class LoggingEventConverter {
             domain = mdc.get(CDC.MDC_DOMAIN);
         }
 
+        String info = event.getFormattedMessage();
+        String ndc = NDC.ndcFromMdc(mdc);
+        if (ndc != null && !ndc.isEmpty()) {
+            info = "[" + ndc + "] " + info;
+        }
+
         LogEntry entry = new LogEntry();
+        entry.setInfo(info);
         Long timestamp = event.getTimeStamp();
         entry.setFirstArrived(timestamp);
         entry.setLastUpdate(timestamp);
-        entry.setInfo(event.getFormattedMessage());
         entry.setHost(host);
         entry.setDomain(domain);
         entry.setService(service);
