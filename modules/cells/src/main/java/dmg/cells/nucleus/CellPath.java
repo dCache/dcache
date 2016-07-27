@@ -1,7 +1,5 @@
 package dmg.cells.nucleus;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import java.io.Serializable;
@@ -118,6 +116,11 @@ public final class CellPath implements Cloneable, Serializable
     public synchronized void insert(CellPath path)
     {
         _list.addAll(_position, path._list);
+    }
+
+    public synchronized void insert(CellAddressCore address)
+    {
+        _list.add(_position, address);
     }
 
     /**

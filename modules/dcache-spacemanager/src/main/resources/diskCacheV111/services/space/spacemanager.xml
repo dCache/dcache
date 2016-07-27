@@ -135,6 +135,11 @@
     <property name="shouldDeleteStoredFileRecord" value="false" />
     <property name="shouldReturnFlushedSpaceToReservation" value="true" />
     <property name="authorizationPolicy" ref="authz-policy" />
+    <property name="poolManagerHandler">
+        <bean class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
+            <property name="poolManager" ref="pool-manager-stub"/>
+        </bean>
+    </property>
+    <property name="serviceAddress" value="${spacemanager.cell.service}"/>
   </bean>
-
 </beans>

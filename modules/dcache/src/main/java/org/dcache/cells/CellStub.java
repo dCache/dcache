@@ -602,14 +602,13 @@ public class CellStub
     /**
      * Adapter class to turn a CellMessageAnswerable callback into a ListenableFuture.
      */
-    static class CallbackFuture<T> extends AbstractFuture<T> implements CellMessageAnswerable
+    static class CallbackFuture<T> extends FutureCellMessageAnswerable<T>
     {
-        private final Class<? extends T> _type;
         private final Semaphore _concurrency;
 
         CallbackFuture(Class<? extends T> type, Semaphore concurrency)
         {
-            _type = type;
+            super(type);
             _concurrency = concurrency;
         }
 
@@ -633,35 +632,6 @@ public class CellStub
             return result;
         }
 
-        @Override
-        public void answerArrived(CellMessage request, CellMessage answer)
-        {
-            Object o = answer.getMessageObject();
-            if (_type.isInstance(o)) {
-                set(_type.cast(o));
-            } else if (o instanceof Exception) {
-                exceptionArrived(request, (Exception) o);
-            } else {
-                setException(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                                "Unexpected reply: " + o));
-            }
-        }
-
-        @Override
-        public void answerTimedOut(CellMessage request)
-        {
-            setException(new TimeoutCacheException("Request to " + request.getDestinationPath() + " timed out."));
-        }
-
-        @Override
-        public void exceptionArrived(CellMessage request, Exception exception)
-        {
-            if (exception.getClass() == CacheException.class) {
-                CacheException e = (CacheException) exception;
-                exception = CacheExceptionFactory.exceptionOf(e.getRc(), e.getMessage(), e);
-            }
-            setException(exception);
-        }
     }
 
     /** NOP semaphore. Internal to CellStub; not a complete implementation. */

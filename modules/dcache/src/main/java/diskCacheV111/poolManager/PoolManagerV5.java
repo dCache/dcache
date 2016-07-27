@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
@@ -48,9 +49,11 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
+
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -58,13 +61,17 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
+
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolLinkGroupInfo;
+import org.dcache.poolmanager.PoolMgrGetHandler;
+import org.dcache.poolmanager.PoolMgrGetUpdatedHandler;
 import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.RemotePoolManagerHandler;
 import org.dcache.poolmanager.SerializablePoolMonitor;
 import org.dcache.poolmanager.Utils;
 import org.dcache.util.Args;
@@ -112,31 +119,37 @@ public class PoolManagerV5
     private TimeUnit _poolMonitorUpdatePeriodUnit;
     private double _poolMonitorMaxUpdatesPerSecond;
 
+    @Required
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
     {
         _selectionUnit = selectionUnit;
     }
 
+    @Required
     public void setCostModule(CostModule costModule)
     {
         _costModule = costModule;
     }
 
+    @Required
     public void setPoolMonitor(SerializablePoolMonitor poolMonitor)
     {
         _poolMonitor = poolMonitor;
     }
 
+    @Required
     public void setRequestContainer(RequestContainerV5 requestContainer)
     {
         _requestContainer = requestContainer;
     }
 
+    @Required
     public void setPoolStatusTopic(CellStub stub)
     {
         _poolStatusTopic = stub;
     }
 
+    @Required
     public void setQuotaManager(CellStub stub)
     {
         if (stub == null) {
@@ -148,26 +161,31 @@ public class PoolManagerV5
         }
     }
 
+    @Required
     public void setPnfsHandler(PnfsHandler pnfsHandler)
     {
         _pnfsHandler = pnfsHandler;
     }
 
+    @Required
     public void setPoolMonitorTopic(CellStub stub)
     {
         _poolMonitorTopic = stub;
     }
 
+    @Required
     public void setPoolMonitorUpdatePeriod(long period)
     {
         _poolMonitorUpdatePeriod = period;
     }
 
+    @Required
     public void setPoolMonitorUpdatePeriodUnit(TimeUnit unit)
     {
         _poolMonitorUpdatePeriodUnit = unit;
     }
 
+    @Required
     public void setPoolMonitorMaxUpdatesPerSecond(double maxUpdatesPerSecond)
     {
         _poolMonitorMaxUpdatesPerSecond = maxUpdatesPerSecond;
@@ -597,6 +615,17 @@ public class PoolManagerV5
                                 null)));
         msg.setSucceeded();
         return msg;
+    }
+
+    public PoolMgrGetHandler messageArrived(PoolMgrGetHandler message)
+    {
+        message.setHandler(new RemotePoolManagerHandler(getCellAddress()));
+        return message;
+    }
+
+    public void messageArrived(PoolMgrGetUpdatedHandler message)
+    {
+        // The selector never changes, so don't reply
     }
 
     private static class XProtocolInfo implements IpProtocolInfo {

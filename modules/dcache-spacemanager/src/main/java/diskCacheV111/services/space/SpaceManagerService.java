@@ -28,6 +28,8 @@
 package diskCacheV111.services.space;
 
 import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -44,7 +46,6 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -67,9 +68,6 @@ import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import diskCacheV111.services.space.message.Release;
 import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.util.AccessLatency;
-
-import static diskCacheV111.util.CacheException.*;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -83,18 +81,20 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolManagerMessage;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.ForwardingReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 
@@ -103,8 +103,12 @@ import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.cells.FutureReply;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
+import org.dcache.poolmanager.PoolMgrGetHandler;
+import org.dcache.poolmanager.PoolMgrGetUpdatedHandler;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.util.CDCExecutorServiceDecorator;
@@ -115,13 +119,13 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.util.concurrent.Futures.catchingAsync;
+import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
 import static java.util.stream.Collectors.toList;
 
 public final class SpaceManagerService
         extends AbstractCellComponent
-        implements CellCommandListener,
-        CellMessageReceiver,
-        Runnable, CellInfoProvider
+        implements CellCommandListener, CellMessageReceiver, Runnable, CellInfoProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SpaceManagerService.class);
 
@@ -147,6 +151,21 @@ public final class SpaceManagerService
     private long perishedSpacePurgeDelay;
     private int threads;
     private volatile boolean isStopped;
+
+    private CellAddressCore serviceAddress;
+    private PoolManagerHandlerSubscriber poolManagerHandler;
+
+    @Required
+    public void setServiceAddress(CellAddressCore serviceAddress)
+    {
+        this.serviceAddress = serviceAddress;
+    }
+
+    @Required
+    public void setPoolManagerHandler(PoolManagerHandlerSubscriber poolManagerHandler)
+    {
+        this.poolManagerHandler = poolManagerHandler;
+    }
 
     @Required
     public void setPoolManager(CellPath poolManager)
@@ -399,13 +418,45 @@ public final class SpaceManagerService
                message instanceof DoorTransferFinishedMessage;
     }
 
+    public Reply messageArrived(CellMessage envelope, PoolMgrGetHandler message)
+    {
+        return new FutureReply<>(message, forward(envelope, message));
+    }
+
+    public Reply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message)
+    {
+        PoolMgrGetUpdatedHandler messageToForward =
+                new PoolMgrGetUpdatedHandler(SpaceManagerHandler.extractWrappedVersion(message.getVersion()));
+        ListenableFuture<PoolMgrGetHandler> result = forward(envelope, messageToForward);
+        ListenableFuture<PoolMgrGetHandler> resultWithSilentTimeout =
+                catchingAsync(result, TimeoutCacheException.class, t -> Futures.immediateFuture(null));
+        return new FutureReply<>(message, resultWithSilentTimeout);
+    }
+
+    protected ListenableFuture<PoolMgrGetHandler> forward(CellMessage envelope, PoolMgrGetHandler message)
+    {
+        ListenableFuture<PoolMgrGetHandler> response =
+                poolManagerHandler.sendAsync(getCellEndpoint(), message, envelope.getTtl() - envelope.getLocalAge());
+        return Futures.transform(response, this::decorateHandler);
+    }
+
+    private PoolMgrGetHandler decorateHandler(PoolMgrGetHandler message)
+    {
+        if (isSpaceManagerEnabled) {
+            message.setHandler(new SpaceManagerHandler(serviceAddress, message.getHandler()));
+        }
+        return message;
+    }
+
     public Reply messageArrived(Message message) throws CacheException
     {
         if (message.isReply()) {
             return null;
         } else if (!isNotificationMessage(message) && !isSpaceManagerMessage(message)) {
             return messageToForward(message);
-        } else if (isSpaceManagerEnabled) {
+        } else if (!isSpaceManagerEnabled) {
+            throw new CacheException(1, "Space manager is disabled in configuration");
+        } else {
             return new FibonacciBackoffMessageProcessor(executor)
             {
                 @Override
@@ -421,8 +472,6 @@ public final class SpaceManagerService
                     }
                 }
             };
-        } else {
-            throw new CacheException(1, "Space manager is disabled in configuration");
         }
     }
 
@@ -438,8 +487,16 @@ public final class SpaceManagerService
                 {
                     if (!isStopped || isImportantMessage(message)) {
                         processMessage(message);
-                        if (message.getReturnCode() == 0 || isEnRouteToDoor) {
-                            forwardMessage(isEnRouteToDoor ? null : poolManager);
+                        if (isEnRouteToDoor) {
+                            forwardMessage(null);
+                        } else if (message.getReturnCode() == 0) {
+                            if (message instanceof PoolManagerMessage) {
+                                poolManagerHandler.send(endpoint, envelope, (PoolManagerMessage) message);
+                            } else if (message instanceof PoolIoFileMessage) {
+                                poolManagerHandler.start(endpoint, envelope, (PoolIoFileMessage) message);
+                            } else {
+                                forwardMessage(poolManager);
+                            }
                         } else if (message.getReplyRequired()) {
                             returnMessage();
                         }
@@ -449,7 +506,18 @@ public final class SpaceManagerService
                 }
             };
         } else {
-            return new ForwardingReply(message).via(isEnRouteToDoor ? null : poolManager);
+            if (isEnRouteToDoor) {
+                return CellEndpoint::sendMessage;
+            } else if (message instanceof PoolMgrSelectWritePoolMsg) {
+                return (endpoint, envelope) -> poolManagerHandler.send(endpoint, envelope, (PoolManagerMessage) message);
+            } else if (message instanceof PoolIoFileMessage) {
+                return (endpoint, envelope) -> poolManagerHandler.start(endpoint, envelope, (PoolIoFileMessage) message);
+            } else {
+                return (endpoint, envelope) -> {
+                    envelope.getDestinationPath().insert(poolManager);
+                    endpoint.sendMessage(envelope);
+                };
+            }
         }
     }
 
@@ -1127,14 +1195,15 @@ public final class SpaceManagerService
      * reenqueues the request if processing fails while blocking the thread with
      * a Fibonacci backoff.
      */
-    private abstract class FibonacciBackoffMessageProcessor implements Runnable, Reply
+    private abstract static class FibonacciBackoffMessageProcessor implements Runnable, Reply
     {
         private final Executor executor;
         private long previous = 0;
         private long current = 1;
 
-        private CellMessage envelope;
-        private CellEndpoint endpoint;
+        protected CellMessage envelope;
+
+        protected CellEndpoint endpoint;
 
         public FibonacciBackoffMessageProcessor(Executor executor)
         {
