@@ -822,6 +822,11 @@
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
             </dependency>
+            <dependency>
+                <groupId>org.dcache</groupId>
+                <artifactId>rados4j</artifactId>
+                <version>0.0.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

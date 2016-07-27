@@ -100,11 +100,6 @@
     <constructor-arg value="${pool.name}"/>
   </bean>
 
-  <bean id="file-store" class="org.dcache.pool.repository.FlatFileStore">
-    <description>Store for pool files</description>
-    <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
-  </bean>
-
   <bean id="replica-store" class="org.dcache.pool.repository.ConsistentReplicaStore" init-method="init">
       <constructor-arg ref="csm"/>
       <constructor-arg ref="pnfs"/>
@@ -487,4 +482,21 @@
 
     <task:scheduler id="healthcheck-scheduler"/>
   </beans>
+
+  <beans profile="backend-ceph">
+      <bean id="file-store" class="org.dcache.pool.repository.ceph.CephFileStore">
+          <description>Ceph-based back-end store for pool</description>
+          <constructor-arg index="0" value="${pool.name}"/>
+          <constructor-arg index="1" value="${pool.backend.ceph.cluster}"/>
+          <constructor-arg index="2" value="${pool.backend.ceph.config}"/>
+      </bean>
+  </beans>
+
+  <beans profile="backend-posix">
+      <bean id="file-store" class="org.dcache.pool.repository.FlatFileStore">
+          <description>Store for pool files</description>
+          <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
+      </bean>
+  </beans>
+
 </beans>
