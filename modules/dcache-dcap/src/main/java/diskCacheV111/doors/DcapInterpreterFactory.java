@@ -27,6 +27,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
+import org.dcache.util.OptionParser;
 
 /**
  * Factory to support DCAP with the {@link LineBasedDoor}.
@@ -35,18 +36,18 @@ import org.dcache.util.Args;
  */
 public class DcapInterpreterFactory implements LineBasedInterpreterFactory
 {
-    private Args args;
+    protected final DcapDoorSettings settings = new DcapDoorSettings();
 
     @Override
     public void configure(Args args) throws ConfigurationException
     {
-        this.args = args;
+        new OptionParser(args).inject(settings).init();
     }
 
     @Override
     public LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress, StreamEngine engine,
                                        Executor executor)
     {
-        return new DcapLineBasedInterpreterAdapter(endpoint, myAddress, engine, new Args(args));
+        return new DcapLineBasedInterpreterAdapter(endpoint, myAddress, engine, settings);
     }
 }

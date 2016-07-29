@@ -65,6 +65,11 @@ public final class CellPath implements Cloneable, Serializable
         this(0, Lists.newArrayList(address));
     }
 
+    public CellPath(CellPath path, CellAddressCore... addresses)
+    {
+        this(0, Stream.concat(path._list.stream(), Stream.of(addresses)).collect(toList()));
+    }
+
     public CellPath(String cellName, String domainName)
     {
         this(new CellAddressCore(cellName, domainName));

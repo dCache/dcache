@@ -61,12 +61,12 @@ public class DcapLineBasedInterpreterAdapter implements LineBasedInterpreter, Ce
 
     private boolean hasExited;
 
-    public DcapLineBasedInterpreterAdapter(CellEndpoint endpoint, CellAddressCore myAddress, StreamEngine engine, Args args)
+    public DcapLineBasedInterpreterAdapter(CellEndpoint endpoint, CellAddressCore myAddress, StreamEngine engine, DcapDoorSettings settings)
     {
         out = new PrintWriter(engine.getWriter(), true);
         clientAddress = engine.getInetAddress();
         subject = engine.getSubject();
-        interpreter = new DCapDoorInterpreterV3(endpoint, myAddress, new Args(args), out, subject, clientAddress);
+        interpreter = new DCapDoorInterpreterV3(endpoint, myAddress, settings, out, subject, clientAddress);
     }
 
     @Override

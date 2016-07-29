@@ -10,19 +10,17 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+
 import javax.security.auth.Subject;
 
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -30,7 +28,6 @@ import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DCapUrl;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
@@ -70,20 +67,17 @@ import org.dcache.acl.ACL;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACLParser;
-import org.dcache.auth.CachingLoginStrategy;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.UnionLoginStrategy;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerPinMessage;
-import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -97,6 +91,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     public static final Logger _log =
         LoggerFactory.getLogger(DCapDoorInterpreterV3.class);
+
+    private final DcapDoorSettings _settings;
 
     /**
      * Ascii commands supported by this interpreter.
@@ -153,14 +149,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private final CellEndpoint _cell        ;
     private final CellAddressCore _cellAddress;
     private String      _ourName     = "server" ;
-    private final ConcurrentMap<Integer,SessionHandler> _sessions =
-        new ConcurrentHashMap<>();
-    private String  _poolManagerName;
-    private String  _pnfsManagerName;
+    private final ConcurrentMap<Integer,SessionHandler> _sessions = new ConcurrentHashMap<>();
 
-    private final CellStub _gPlazmaStub;
-    private CellStub _pinManagerStub;
-    private CellStub _poolMgrStub;
+    private final CellStub _pinManagerStub;
+    private final CellStub _poolMgrStub;
 
     /**
      * The client PID set through the hello command. Only used for
@@ -184,27 +176,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private int     _majorVersion;
     private int     _minorVersion;
-    private Date    _startedTS;
+    private final Date    _startedTS;
     private Date    _lastCommandTS;
 
-    /**
-     * If false, then authorization checks on read and write
-     * operations are bypassed for non URL operations. If true, then
-     * such operations are subject to authorization checks.
-     */
-    private boolean _authorizationRequired;
-
-    /**
-     * If true, then the Subject of the request must have a UID and
-     * GID. If false, then a Subject without a UID and GID (i.e. a
-     * Nobody) will be allowed to proceed, but only allowed to perform
-     * operations authorized to world.
-     */
-    private boolean _authorizationStrong;
-
-    private final UnionLoginStrategy.AccessLevel _anonymousAccessLevel;
-
-    private final CellPath _billingCellPath;
     private final InetAddress _clientAddress;
 
     /**
@@ -215,35 +189,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private final LoginStrategy _loginStrategy;
 
-    /**
-     * Tape Protection
-     */
-    private final String _stageConfigurationFilePath;
-    private final CheckStagePermission _checkStagePermission;
-
-    private boolean _strictSize;
-    private String  _poolProxy;
-    private Version _minClientVersion = new Version(0, 0);
-    private Version _maxClientVersion = new Version(Integer.MAX_VALUE, Integer.MAX_VALUE);
-    private boolean _checkStrict      = true ;
-    private long    _poolRetry;
-    private String  _hsmManager;
-
-    private boolean _truncateAllowed;
-    private String  _ioQueueName;
-    private boolean _ioQueueAllowOverwrite;
-
     // flag defined in batch file to allow/disallow AccessLatency and RetentionPolicy re-definition
 
-    private boolean _isAccessLatencyOverwriteAllowed;
-    private boolean _isRetentionPolicyOverwriteAllowed;
-    private final Restriction _doorRestriction;
-
-    public DCapDoorInterpreterV3(CellEndpoint cell, CellAddressCore address, Args args,
+    public DCapDoorInterpreterV3(CellEndpoint cell, CellAddressCore address, DcapDoorSettings settings,
             PrintWriter pw, Subject subject, InetAddress clientAddress)
     {
-        _out  = pw ;
-        _cell = cell ;
+        _out  = pw;
+        _cell = cell;
         _cellAddress = address;
         _authenticatedSubject = new Subject(true,
                                             subject.getPrincipals(),
@@ -251,118 +203,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                             subject.getPrivateCredentials());
 
         _clientAddress = clientAddress;
-        String auth = args.getOpt("authorization") ;
-        _authorizationStrong   = ( auth != null ) && auth.equals("strong") ;
-        _authorizationRequired = ( auth != null ) &&
-        ( auth.equals("strong") || auth.equals("required") ) ;
 
-        _log.debug("Authorization required:  {}", _authorizationRequired);
-        _log.debug("Authorization strong: {}", _authorizationStrong);
+        _settings = settings;
+        _poolMgrStub = settings.createPoolManagerStub(cell);
+        _pinManagerStub = settings.createPinManagerStub(cell);
+        _loginStrategy = settings.createLoginStrategy(cell);
 
-        String anon = args.getOpt("anonymous-access");
-        _anonymousAccessLevel = ( anon != null ) ? UnionLoginStrategy.AccessLevel.valueOf(anon.toUpperCase()) :
-            UnionLoginStrategy.AccessLevel.READONLY;
-        _log.debug("Anonymous access level : {}", _anonymousAccessLevel);
-
-        _pnfsManagerName = args.getOpt("pnfsManager");
-        _poolManagerName = args.getOpt("poolManager");
-        _poolProxy = args.getOpt("poolProxy");
-
-        if (_poolProxy != null) {
-            _log.debug("Pool Proxy set to {}", _poolProxy);
-        }
-
-        // allow file truncating
-        String truncate = args.getOpt("truncate");
-        _truncateAllowed = (truncate != null) && truncate.equals("true") ;
-
-        _isAccessLatencyOverwriteAllowed = args.hasOption("allow-access-policy-overwrite") ;
-        _log.debug("Allowed to overwrite AccessLatency: {}", _isAccessLatencyOverwriteAllowed);
-
-        _isRetentionPolicyOverwriteAllowed = args.hasOption("allow-retention-policy-overwrite");
-        _log.debug("Allowed to overwrite RetentionPolicy: {}", _isRetentionPolicyOverwriteAllowed);
-
-        _poolMgrStub = new CellStub(cell, new CellPath(_poolManagerName), 20000);
-        _pinManagerStub = new CellStub(cell, new CellPath(args.getOpt("pinManager")));
-        _gPlazmaStub = new CellStub(_cell, new CellPath(args.getOpt("gplazma")), 30000);
-        _billingCellPath = new CellPath(args.getOpt("billing"));
-
-        _checkStrict     = args.hasOption("check") &&
-        ( args.getOpt("check").equals("strict") ) ;
-
-        _strictSize      = args.hasOption("strict-size") ;
-
-        _hsmManager      = args.getOpt("hsm") ;
-
-        _startedTS = new Date() ;
-        //
-        //   client version restrictions
-        //
-        String restriction = (String)_cell.getDomainContext().get("dCapDoor-clientVersion");
-        installVersionRestrictions(
-        restriction==null?args.getOpt("clientVersion"):restriction ) ;
-
-        String poolRetryValue = (String)_cell.getDomainContext().get("dCapDoor-poolRetry") ;
-        poolRetryValue = poolRetryValue == null ?
-        (String)_cell.getDomainContext().get("poolRetry") :poolRetryValue;
-        poolRetryValue = poolRetryValue == null ?
-        args.getOpt("poolRetry") : poolRetryValue ;
-
-        if( poolRetryValue != null ) {
-            try {
-                _poolRetry = Long.parseLong(poolRetryValue) * 1000L;
-            } catch (NumberFormatException e) {
-                _log.error("Problem in setting PoolRetry Value: {}", e);
-            }
-        }
-        _log.debug("PoolRetry timer set to {} seconds", _poolRetry/1000L);
-
-        _ioQueueName = args.getOpt("io-queue") ;
-        _ioQueueName = ( _ioQueueName == null ) || ( _ioQueueName.length() == 0 ) ? null : _ioQueueName ;
-        _log.debug("IoQueueName = {}",
-                   (_ioQueueName==null) ? "<undefined>" : _ioQueueName);
-
-        String tmp = args.getOpt("io-queue-overwrite") ;
-        _ioQueueAllowOverwrite = ( tmp != null ) && tmp.equals("allowed" ) ;
-        _log.debug("IoQueueName : overwrite : {}",
-                   _ioQueueAllowOverwrite ? "allowed" : "denied");
-
-        String check = (String)_cell.getDomainContext().get("dCapDoor-check");
-        if( check != null ) {
-            _checkStrict = check.equals("strict");
-        }
-
-        String ro = args.getOpt("read-only");
-        boolean isReadonly = Objects.equals(ro, "true");
-        _doorRestriction = isReadonly ? Restrictions.readOnly() : Restrictions.none();
-
-        if (isReadonly) {
-            _log.debug("Door is configured as read-only");
-        }
-        else {
-            _log.debug("Door is configured as read/write");
-        }
-
-        _stageConfigurationFilePath = args.getOpt("stageConfigurationFilePath");
-        _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
-        _log.debug("Check : {}", _checkStrict ? "Strict" : "Fuzzy");
-
-        _loginStrategy = createLoginStrategy();
+        _startedTS = new Date();
     }
 
-    private LoginStrategy createLoginStrategy()
-    {
-        UnionLoginStrategy union = new UnionLoginStrategy();
-
-        if (_authorizationStrong || _authorizationRequired) {
-            union.setLoginStrategies(Collections.<LoginStrategy>singletonList(new RemoteLoginStrategy(_gPlazmaStub)));
-        }
-
-        if (!_authorizationStrong ) {
-            union.setAnonymousAccess(_anonymousAccessLevel);
-        }
-        return new CachingLoginStrategy(union, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-    }
 
     private LoginReply login(String user)
         throws CacheException
@@ -383,10 +232,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         return login;
     }
 
-    private static class Version implements Comparable<Version> {
+    static class Version implements Comparable<Version> {
         private final int _major;
         private final int _minor;
-        private Version( String versionString ){
+        Version( String versionString ){
             StringTokenizer st = new StringTokenizer(versionString,".");
             _major = Integer.parseInt(st.nextToken());
             _minor = Integer.parseInt(st.nextToken());
@@ -398,7 +247,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         @Override
         public String toString(){ return ""+_major+"."+_minor ; }
-        private Version( int major , int minor ){
+        Version( int major , int minor ){
             _major = major ;
             _minor = minor ;
         }
@@ -420,25 +269,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
 
 
-    }
-    private void installVersionRestrictions( String versionString ){
-        //
-        //   majorMin.minorMin[:majorMax.minorMax]
-        //
-        if( versionString == null ){
-            _log.debug("Client Version not restricted");
-            return ;
-        }
-        _log.debug("Client Version Restricted to : {}", versionString);
-        try{
-            StringTokenizer st = new StringTokenizer(versionString,":");
-            _minClientVersion  = new Version( st.nextToken() ) ;
-            if (st.countTokens() > 0) {
-                _maxClientVersion  =  new Version(st.nextToken());
-            }
-        } catch (Exception e) {
-            _log.error("Client Version : syntax error (limits ignored) : {} : {}", versionString, e.toString());
-        }
     }
     public synchronized void println( String str ){
         _log.debug("(DCapDoorInterpreterV3) toclient(println) : {}", str);
@@ -488,7 +318,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         version = new Version( _majorVersion , _minorVersion ) ;
         _log.debug("Client Version : {}", version);
-        if (version.compareTo(_minClientVersion) < 0 || (version.compareTo(_maxClientVersion) > 0)) {
+        if (version.compareTo(_settings.getMinClientVersion()) < 0 || (version.compareTo(
+                _settings.getMaxClientVersion()) > 0)) {
 
             String error = "Client version rejected : "+version ;
             _log.error(error);
@@ -842,7 +673,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             LoginReply login = login(_vargs.getOpt("role"));
             _subject = login.getSubject();
             _origin = Subjects.getOrigin(_subject);
-            _authz = Restrictions.concat(_doorRestriction, login.getRestriction());
+            _authz = Restrictions.concat(_settings.getDoorRestriction(), login.getRestriction());
             _info.setSubject(_subject);
         }
 
@@ -1074,8 +905,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throws CacheException
         {
             super.doLogin();
-            _pnfs = new PnfsHandler(_cell, new CellPath(_pnfsManagerName));
-            if (_isUrl || _authorizationRequired) {
+            _pnfs = new PnfsHandler(_cell, _settings.getPnfsManager());
+            if (_isUrl || _settings.isAuthorizationRequired()) {
                 _pnfs.setSubject(_subject);
                 _pnfs.setRestriction(_authz);
             }
@@ -1668,7 +1499,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                         }
 
 
-                        if( _checkStrict ){
+                        if(_settings.isCheckStrict()){
 
                             SpreadAndWait<PoolCheckFileMessage> controller = new SpreadAndWait<>(new CellStub(_cell, null, 10000));
                             for( String pool: result ){
@@ -1734,6 +1565,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private Integer          _moverId;
         private boolean          _isHsmRequest;
         private boolean          _overwrite;
+        private boolean          _strictSize;
         private String           _checksumString;
         private boolean          _truncate;
         private boolean          _isNew;
@@ -1776,7 +1608,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _isHsmRequest = args.hasOption("hsm");
             if( _isHsmRequest ){
                 _log.debug("Hsm Feature Requested");
-                if( _hsmManager == null ) {
+                if(_settings.getHsmManager() == null ) {
                     throw new
                             CacheException(105, "Hsm Support Not enabled");
                 }
@@ -1786,7 +1618,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _strictSize     = args.hasOption("strict-size") ;
             _checksumString = args.getOpt("checksum") ;
             _truncFile      = args.getOpt("truncate");
-            _truncate       = ( _truncFile != null ) && _truncateAllowed  ;
+            _truncate       = ( _truncFile != null ) && _settings.isTruncateAllowed();
 
             _protocolInfo.isPassive(_passive);
             _accessLatency = args.getOpt("access-latency");
@@ -1967,7 +1799,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
                 // adjust accessLatency and retention policy if it' allowed and defined
 
-                if( _isAccessLatencyOverwriteAllowed && _accessLatency != null ) {
+                if(_settings.isAccessLatencyOverwriteAllowed() && _accessLatency != null ) {
                     try {
                         AccessLatency accessLatency = AccessLatency.getAccessLatency(_accessLatency);
                         _fileAttributes.setAccessLatency(accessLatency);
@@ -1975,7 +1807,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     }catch(IllegalArgumentException e) { /* bad AccessLatency ignored*/}
                 }
 
-                if( _isRetentionPolicyOverwriteAllowed && _retentionPolicy != null ) {
+                if(_settings.isRetentionPolicyOverwriteAllowed() && _retentionPolicy != null ) {
                     try {
                         RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(_retentionPolicy);
                         _fileAttributes.setRetentionPolicy(retentionPolicy);
@@ -1988,7 +1820,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 // try to get some space to store the file.
                 //
                 getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes, _protocolInfo, getPreallocated());
-                getPoolMessage.setIoQueueName(_ioQueueName );
+                getPoolMessage.setIoQueueName(_settings.getIoQueueName());
                 if( _path != null ) {
                     getPoolMessage.setBillingPath(_info.getBillingPath());
                 }
@@ -2017,7 +1849,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                EnumSet<RequestContainerV5.RequestState> allowedStates;
                try {
                    allowedStates =
-                       _checkStagePermission.canPerformStaging(_subject, _fileAttributes)
+                       _settings.getCheckStagePermission().canPerformStaging(_subject, _fileAttributes)
                        ? RequestContainerV5.allStates
                        : RequestContainerV5.allStatesExceptStage;
                } catch (IOException e) {
@@ -2029,7 +1861,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                                 _protocolInfo,
                                                 _readPoolSelectionContext,
                                                 allowedStates);
-               getPoolMessage.setIoQueueName(_ioQueueName );
+               getPoolMessage.setIoQueueName(_settings.getIoQueueName());
 
                 _info.setFileSize(_fileAttributes.getSize());
             }
@@ -2041,10 +1873,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             getPoolMessage.setSubject(_subject);
             getPoolMessage.setId(_sessionId);
             try {
-                _cell.sendMessage(new CellMessage(new CellPath(_isHsmRequest
-                                                               ? _hsmManager
-                                                               : _poolManagerName) ,
-                                                  getPoolMessage));
+                _cell.sendMessage(new CellMessage(_isHsmRequest ? _settings.getHsmManager() : _settings.getPoolManager(), getPoolMessage));
             } catch (RuntimeException ie) {
                 sendReply( "fileAttributesAvailable" , 2 ,
                            ie.toString() ) ;
@@ -2052,7 +1881,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return ;
             }
             setStatus( "WaitingForGetPool" ) ;
-            setTimer(_poolRetry) ;
+            setTimer(_settings.getPoolRetry()) ;
 
         }
 
@@ -2121,10 +1950,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
             if (reply.getReturnCode() != 0) {
-                if (_poolRetry == 0) {
+                if (_settings.getPoolRetry() == 0) {
                     again(true);
                 } else {
-                    setTimer(_poolRetry);
+                    setTimer(_settings.getPoolRetry());
                 }
                 return;
             }
@@ -2171,12 +2000,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             // current request is a initiator for the pool request
             // we need this to trace back pool billing information
             poolMessage.setInitiator( _info.getTransaction() );
-            if( _ioQueueName != null ) {
-                poolMessage.setIoQueueName(_ioQueueName);
+            if(_settings.getIoQueueName() != null ) {
+                poolMessage.setIoQueueName(_settings.getIoQueueName());
             }
-            if( _ioQueueAllowOverwrite &&
-                ( _ioHandlerQueue != null     ) &&
-                ( _ioHandlerQueue.length() > 0 )    ) {
+            if(_settings.isIoQueueAllowOverwrite() &&
+               ( _ioHandlerQueue != null     ) &&
+               ( _ioHandlerQueue.length() > 0 )    ) {
                 poolMessage.setIoQueueName(_ioHandlerQueue);
             }
 
@@ -2188,11 +2017,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             try{
                 CellPath toPool;
                 CellAddressCore poolAddress = reply.getPoolAddress();
-                if( _poolProxy == null ){
+                if(_settings.getPoolProxy() == null ){
                     toPool = new CellPath(poolAddress);
                 }else{
-                    toPool = new CellPath(_poolProxy);
-                    toPool.add(poolAddress);
+                    toPool = new CellPath(_settings.getPoolProxy(), poolAddress);
                 }
                 _cell.sendMessage(new CellMessage(toPool, poolMessage));
                 _poolRequestDone = true ;
@@ -2349,11 +2177,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     _fileAttributes.getPnfsId(), _protocolInfo, _authz);
 
             poolIoFileMessage.setId(_sessionId);
-            if (_ioQueueName != null) {
-                poolIoFileMessage.setIoQueueName(_ioQueueName);
+            if (_settings.getIoQueueName() != null) {
+                poolIoFileMessage.setIoQueueName(_settings.getIoQueueName());
             }
-            if (_ioQueueAllowOverwrite && (_ioHandlerQueue != null)
-                    && (_ioHandlerQueue.length() > 0)) {
+            if (_settings.isIoQueueAllowOverwrite() && (_ioHandlerQueue != null)
+                && (_ioHandlerQueue.length() > 0)) {
                 poolIoFileMessage.setIoQueueName(_ioHandlerQueue);
             }
 
@@ -2507,9 +2335,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         pw.println( " ----- DCapDoorInterpreterV3 ----------" ) ;
         pw.println( "      User = " + Subjects.getDisplayName(_authenticatedSubject));
         pw.println( "  Version  = "+_majorVersion+"/"+_minorVersion ) ;
-        pw.println( "  VLimits  = "+
-        (_minClientVersion==null?"*":_minClientVersion.toString() ) +":" +
-        (_maxClientVersion==null?"*":_maxClientVersion.toString() ) ) ;
+        pw.println("  VLimits  = " + _settings.getMinClientVersion() + ":" + _settings.getMaxClientVersion());
         pw.println( "   Started = "+_startedTS ) ;
         pw.println( "   Last at = "+_lastCommandTS ) ;
 
@@ -2563,6 +2389,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     private void postToBilling(DoorRequestInfoMessage info) {
-        _cell.sendMessage(new CellMessage(_billingCellPath, info));
+        _cell.sendMessage(new CellMessage(_settings.getBilling(), info));
     }
 }
