@@ -153,7 +153,7 @@ public class ConsistentReplicaStore
 
                 entry = rebuildEntry(entry);
             } catch (IOException e) {
-                throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage());
+                throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage(), e);
             } catch (CacheException e) {
                 switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:
