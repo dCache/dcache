@@ -2293,8 +2293,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public void removeUs() {
-            if( _moverId != null ) {
-                PoolMoverKillMessage message = new PoolMoverKillMessage(_pool, _moverId);
+            Integer moverId = _moverId;
+            if (moverId != null) {
+                PoolMoverKillMessage message = new PoolMoverKillMessage(_pool, moverId);
                 message.setReplyRequired(false);
 
                 _cell.sendMessage(new CellMessage(new CellPath(_pool), message));

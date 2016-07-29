@@ -80,7 +80,7 @@ set env arguments-kerberos "${paths-when-readonly-is-${dcap.authz.readonly}} -lo
                                             '${dcap.authn.kerberos.service-principle-name}'\\\""
 
 create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
-            "${dcap.net.port} diskCacheV111.doors.DCapDoor \
+            "${dcap.net.port} diskCacheV111.doors.DcapInterpreterFactory \
              -listen=${dcap.net.listen} \
              -consume=${dcap.cell.consume} \
              -lookupPool=${dcap.cell.name.dir} \

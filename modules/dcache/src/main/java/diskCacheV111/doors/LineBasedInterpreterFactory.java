@@ -27,9 +27,36 @@ import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
 
+/**
+ * Factory of implementations of {@link LineBasedInterpreter}.
+ *
+ * <p>To be used with {@link LineBasedDoor}.
+ */
 public interface LineBasedInterpreterFactory
 {
+    /**
+     * Injects the cell command line arguments.
+     *
+     * <p>The factory may use this to initialize itself.
+     */
     void configure(Args args) throws ConfigurationException;
+
+    /**
+     * Creates a fully initialized interpreter.
+     *
+     * <p>The interpreter should communicate with dCache though the given endpoint.
+     * Replies to be sent to the client can be sent through the {@link StreamEngine}
+     * provided.
+     *
+     * <p>The interpreter may use the given executor for background operations.
+     *
+     * @param endpoint Cell endpoint of the line based door
+     * @param myAddress Cell address of the line based door
+     * @param engine Connection to the client
+     * @param executor Executor for background operations
+     * @return Fully initialized interpreter
+     * @throws Exception If the interpreter could not be initialized
+     */
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
             StreamEngine engine, Executor executor) throws Exception;
 }

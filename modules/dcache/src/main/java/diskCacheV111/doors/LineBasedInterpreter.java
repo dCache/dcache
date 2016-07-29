@@ -1,6 +1,7 @@
-/* dCache - http://www.dcache.org/
+/*
+ * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,9 +20,31 @@ package diskCacheV111.doors;
 
 import dmg.util.CommandExitException;
 
+/**
+ * Protocol interpreter to be used with a {@link LineBasedDoor}.
+ *
+ * <p>Suitable for line oriented protocols like FTP and DCAP. The methods of this interface are
+ * called sequentially.
+ *
+ * <p>Implementations may optionally implement {@link dmg.cells.nucleus.CellCommandListener},
+ * {@link dmg.cells.nucleus.CellMessageReceiver} and {@link dmg.cells.nucleus.CellInfoProvider}
+ * to participate in other operations of the door. The methods of those interface will be called
+ * concurrently with the methods of this interface.
+ *
+ * @see LineBasedInterpreterFactory
+ */
 public interface LineBasedInterpreter
 {
-    void init() throws Exception;
+    /**
+     * Process an command line read from the client.
+     *
+     * @param cmd
+     * @throws CommandExitException To terminate the connection to the door.
+     */
     void execute(String cmd) throws CommandExitException;
+
+    /**
+     * Signals that the connection with the client is being terminated.
+     */
     void shutdown();
 }
