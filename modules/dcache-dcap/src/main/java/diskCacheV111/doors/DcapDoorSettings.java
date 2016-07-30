@@ -35,6 +35,8 @@ import org.dcache.auth.UnionLoginStrategy;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
+import org.dcache.poolmanager.PoolManagerHandler;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Option;
 
@@ -77,10 +79,6 @@ public class DcapDoorSettings
             description = "Cell address of hsm manager",
             defaultValue = "hsm")
     protected CellPath hsmManager;
-
-    @Option(name = "poolProxy",
-            description = "Cell address of a proxy for pool requests")
-    protected CellPath poolProxy;
 
     @Option(name = "truncate")
     protected boolean isTruncateAllowed;
@@ -179,11 +177,6 @@ public class DcapDoorSettings
         return poolManager;
     }
 
-    public CellPath getPoolProxy()
-    {
-        return poolProxy;
-    }
-
     public CellPath getPinManager()
     {
         return pinManager;
@@ -272,9 +265,14 @@ public class DcapDoorSettings
         return new CachingLoginStrategy(union, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
-    public CellStub createPoolManagerStub(CellEndpoint endpoint)
+    public PoolManagerStub createPoolManagerStub(CellEndpoint cellEndpoint, PoolManagerHandler handler)
     {
-        return new CellStub(endpoint, poolManager, 20000);
+        PoolManagerStub stub = new PoolManagerStub();
+        stub.setCellEndpoint(cellEndpoint);
+        stub.setHandler(handler);
+        stub.setMaximumPoolManagerTimeout(20000);
+        stub.setMaximumPoolManagerTimeoutUnit(TimeUnit.MILLISECONDS);
+        return stub;
     }
 
     public CellStub createPinManagerStub(CellEndpoint cell)

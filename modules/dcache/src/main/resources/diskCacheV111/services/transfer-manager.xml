@@ -12,6 +12,7 @@
                            http://www.springframework.org/schema/util/spring-util.xsd">
 
   <context:property-placeholder/>
+  <context:annotation-config/>
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
       <description>Undeliverable message logger</description>
@@ -23,13 +24,26 @@
         <property name="timeoutUnit" value="${transfermanagers.service.billing.timeout.unit}"/>
   </bean>
 
-  <bean id="poolmanager" class="org.dcache.cells.CellStub">
-    <property name="destination" value="${transfermanagers.service.poolmanager}"/>
-    <property name="timeout" value="${transfermanagers.service.poolmanager.timeout}"/>
-    <property name="timeoutUnit" value="${transfermanagers.service.poolmanager.timeout.unit}"/>
-  </bean>
+    <bean id="poolmanager" class="org.dcache.poolmanager.PoolManagerStub">
+        <property name="handler" ref="poolManagerHandler"/>
+        <property name="maximumPoolManagerTimeout" value="${transfermanagers.service.poolmanager.timeout}"/>
+        <property name="maximumPoolManagerTimeoutUnit" value="${transfermanagers.service.poolmanager.timeout.unit}"/>
+        <property name="maximumPoolTimeout" value="${transfermanagers.service.pool.timeout}"/>
+        <property name="maximumPoolTimeoutUnit" value="${transfermanagers.service.pool.timeout.unit}"/>
+    </bean>
 
-  <bean id="pnfsmanager" class="org.dcache.cells.CellStub">
+    <bean id="poolManagerHandler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
+        <description>Pool manager client</description>
+        <property name="poolManager">
+            <bean class="org.dcache.cells.CellStub">
+                <property name="destination" value="${transfermanagers.service.poolmanager}"/>
+                <property name="timeout" value="${transfermanagers.service.poolmanager.timeout}"/>
+                <property name="timeoutUnit" value="${transfermanagers.service.poolmanager.timeout.unit}"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="pnfsmanager" class="org.dcache.cells.CellStub">
     <property name="destination" value="${transfermanagers.service.pnfsmanager}"/>
     <property name="timeout" value="${transfermanagers.service.pnfsmanager.timeout}"/>
     <property name="timeoutUnit" value="${transfermanagers.service.pnfsmanager.timeout.unit}"/>
@@ -65,7 +79,6 @@
         <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
         <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
         <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
-        <property name="poolProxy" value="${transfermanagers.service.poolmanager}"/>
         <property name="maxNumberOfDeleteRetries" value="1"/>
         <property name="overwrite" value="false"/>
     </bean>
@@ -111,7 +124,6 @@
         <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
         <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
         <property name="persistenceManagerFactory" ref="pmf"/>
-        <property name="poolProxy" value="${transfermanagers.service.poolmanager}"/>
         <property name="maxNumberOfDeleteRetries" value="1"/>
         <property name="overwrite" value="false"/>
     </bean>

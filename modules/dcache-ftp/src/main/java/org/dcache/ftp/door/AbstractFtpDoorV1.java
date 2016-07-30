@@ -189,6 +189,9 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.poolmanager.PoolManagerHandler;
+import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Args;
 import org.dcache.util.AsynchronousRedirectedTransfer;
@@ -541,8 +544,9 @@ public abstract class AbstractFtpDoorV1
     protected PnfsId _fileId; // Id of the file to be renamed
     private String _symlinkPath; // User-supplied path of new symlink
     protected String _xferMode = "S";
+    protected PoolManagerHandler _poolManagerHandler;
+    protected PoolManagerStub _poolManagerStub;
     protected CellStub _billingStub;
-    protected CellStub _poolManagerStub;
     protected CellStub _poolStub;
     protected CellStub _gPlazmaStub;
     protected TransferRetryPolicy _readRetryPolicy;
@@ -1124,6 +1128,11 @@ public abstract class AbstractFtpDoorV1
         _executor = executor;
     }
 
+    public void setPoolManagerHandler(PoolManagerHandler poolManagerHandler)
+    {
+        _poolManagerHandler = poolManagerHandler;
+    }
+
     public void init() throws Exception
     {
         _clientDataAddress =
@@ -1137,7 +1146,7 @@ public abstract class AbstractFtpDoorV1
         _preferredProtocol = Protocol.fromAddress(_clientDataAddress.getAddress());
 
         _billingStub = _settings.createBillingStub(_cellEndpoint);
-        _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint);
+        _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint, _poolManagerHandler);
         _poolStub = _settings.createPoolStub(_cellEndpoint);
         _gPlazmaStub = _settings.createGplazmaStub(_cellEndpoint);
 

@@ -115,7 +115,15 @@
   <bean id="door" class="org.dcache.xrootd.door.XrootdDoor">
     <description>Gateway between xrootd protocol handler and dCache</description>
     <property name="poolStub" ref="pool-stub"/>
-    <property name="poolManagerStub" ref="pool-manager-stub"/>
+    <property name="poolManagerStub">
+      <bean class="org.dcache.poolmanager.PoolManagerStub">
+        <property name="handler" ref="pool-manager-handler"/>
+        <property name="maximumPoolManagerTimeout" value="${xrootd.service.poolmanager.timeout}"/>
+        <property name="maximumPoolManagerTimeoutUnit" value="${xrootd.service.poolmanager.timeout.unit}"/>
+        <property name="maximumPoolTimeout" value="${xrootd.service.pool.timeout}"/>
+        <property name="maximumPoolTimeoutUnit" value="${xrootd.service.pool.timeout.unit}"/>
+      </bean>
+    </property>
     <property name="billingStub" ref="billing-stub"/>
     <property name="writePaths" value="${xrootd.authz.write-paths}"/>
     <property name="readPaths" value="${xrootd.authz.read-paths}"/>
@@ -125,6 +133,11 @@
     <property name="moverTimeoutUnit" value="${xrootd.mover.timeout.unit}"/>
     <property name="executor" ref="scheduled-thread-pool"/>
     <property name="poolMonitor" ref="pool-monitor"/>
+  </bean>
+
+  <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
+    <description>Pool manager client</description>
+    <property name="poolManager" ref="pool-manager-stub"/>
   </bean>
 
   <bean id="anonymous-loginstrategy" class="org.dcache.auth.AnonymousLoginStrategy">

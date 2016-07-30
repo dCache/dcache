@@ -35,7 +35,7 @@ import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
 import org.dcache.auth.Subjects;
-import org.dcache.util.Args;
+import org.dcache.poolmanager.PoolManagerHandler;
 
 /**
  * Class to adapt the DCapDoorInterpreterV3 to the LineBasedInterpreter interface.
@@ -61,12 +61,13 @@ public class DcapLineBasedInterpreterAdapter implements LineBasedInterpreter, Ce
 
     private boolean hasExited;
 
-    public DcapLineBasedInterpreterAdapter(CellEndpoint endpoint, CellAddressCore myAddress, StreamEngine engine, DcapDoorSettings settings)
+    public DcapLineBasedInterpreterAdapter(CellEndpoint endpoint, CellAddressCore myAddress, StreamEngine engine,
+                                           DcapDoorSettings settings, PoolManagerHandler handler)
     {
         out = new PrintWriter(engine.getWriter(), true);
         clientAddress = engine.getInetAddress();
         subject = engine.getSubject();
-        interpreter = new DCapDoorInterpreterV3(endpoint, myAddress, settings, out, subject, clientAddress);
+        interpreter = new DCapDoorInterpreterV3(endpoint, myAddress, settings, out, subject, clientAddress, handler);
     }
 
     @Override

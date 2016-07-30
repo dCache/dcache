@@ -32,6 +32,7 @@ import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.GuardedBy;
 
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import diskCacheV111.util.CacheException;
@@ -49,6 +50,7 @@ import org.dcache.cells.CellStub;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Futures.*;
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static dmg.cells.nucleus.CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL;
 
 /**
@@ -80,6 +82,10 @@ public class PoolManagerHandlerSubscriber
 
     private SettableFuture<Void> startGate = SettableFuture.create();
 
+    /**
+     * Sets the cell stub used to query the PoolManagerHandler.
+     * @param poolManager
+     */
     @Required
     public void setPoolManager(CellStub poolManager)
     {
@@ -186,6 +192,20 @@ public class PoolManagerHandlerSubscriber
     public void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg)
     {
         withCurrent(handler -> handler.send(endpoint, envelope, msg), endpoint, envelope, msg);
+    }
+
+    @Override
+    public String toString()
+    {
+        ListenableFuture<SerializablePoolManagerHandler> current = this.current;
+        if (current.isDone()) {
+            try {
+                return getUninterruptibly(current).toString();
+            } catch (ExecutionException e) {
+                return e.getCause().toString();
+            }
+        }
+        return "unavailable";
     }
 
     private <T extends Message> ListenableFuture<T> withCurrent(AsyncFunction<SerializablePoolManagerHandler, T> f)

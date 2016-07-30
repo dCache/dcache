@@ -1,5 +1,7 @@
 package dmg.cells.services.login;
 
+import dmg.cells.nucleus.CellEndpoint;
+
 import org.dcache.util.Args;
 
 /**
@@ -25,10 +27,11 @@ public interface LoginCellProvider
      *
      * @param name Identifier for a type of login cell
      * @param args Arguments for the login cell
+     * @param parentEndpoint Endpoint of parent login manager
      * @param parentCellName Name of the parent login manager
      * @return A new LoginCellFactory
      * @see LoginCellFactory#stop
      */
-    LoginCellFactory createFactory(String name, Args args, String parentCellName)
+    LoginCellFactory createFactory(String name, Args args, CellEndpoint parentEndpoint, String parentCellName)
         throws IllegalArgumentException;
 }

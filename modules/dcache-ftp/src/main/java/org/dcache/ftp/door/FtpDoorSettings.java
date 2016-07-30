@@ -1,6 +1,5 @@
 package org.dcache.ftp.door;
 
-import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.PnfsHandler;
@@ -9,6 +8,8 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.CellStub;
+import org.dcache.poolmanager.PoolManagerHandler;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Option;
 import org.dcache.util.OptionParser;
 import org.dcache.util.PortRange;
@@ -322,9 +323,16 @@ public class FtpDoorSettings
         return new CellStub(cellEndpoint, null, poolTimeout, poolTimeoutUnit);
     }
 
-    public CellStub createPoolManagerStub(CellEndpoint cellEndpoint)
+    public PoolManagerStub createPoolManagerStub(CellEndpoint cellEndpoint, PoolManagerHandler handler)
     {
-        return new CellStub(cellEndpoint, poolManager, poolManagerTimeout, poolManagerTimeoutUnit);
+        PoolManagerStub stub = new PoolManagerStub();
+        stub.setCellEndpoint(cellEndpoint);
+        stub.setHandler(handler);
+        stub.setMaximumPoolManagerTimeout(poolManagerTimeout);
+        stub.setMaximumPoolManagerTimeoutUnit(poolManagerTimeoutUnit);
+        stub.setMaximumPoolTimeout(poolTimeout);
+        stub.setMaximumPoolTimeoutUnit(poolTimeoutUnit);
+        return stub;
     }
 
     public PnfsHandler createPnfsHandler(CellEndpoint cellEndpoint)

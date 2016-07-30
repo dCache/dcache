@@ -163,35 +163,48 @@
       <property name="prefix" value="webdav.custom-response-header"/>
   </bean>
 
-  <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory">
-      <description>Exposes dCache resources to Milton WebDAV library</description>
+    <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory">
+        <description>Exposes dCache resources to Milton WebDAV library</description>
 
-      <property name="pnfsStub" ref="pnfs-stub"/>
-      <property name="poolManagerStub" ref="pool-manager-stub"/>
-      <property name="poolStub" ref="pool-stub"/>
-      <property name="billingStub" ref="billing-stub"/>
-      <property name="missingFileStrategy" ref="missing-file-strategy"/>
-      <property name="listHandler" ref="list-handler"/>
-      <property name="executor" ref="scheduled-thread-pool"/>
-      <property name="pathMapper" ref="path-mapper"/>
-      <property name="allowedPaths" value="${webdav.authz.allowed-paths}"/>
-      <property name="anonymousListing" value="${webdav.authz.anonymous-listing}"/>
-      <property name="ioQueue" value="${webdav.mover.queue}"/>
-      <property name="moverTimeout" value="${webdav.mover.timeout}"/>
-      <property name="moverTimeoutUnit" value="${webdav.mover.timeout.unit}"/>
-      <property name="killTimeout" value="${webdav.mover.kill-timeout}"/>
-      <property name="killTimeoutUnit" value="${webdav.mover.kill-timeout.unit}"/>
-      <property name="transferConfirmationTimeout" value="${webdav.mover.transfer-confirmation-timeout}"/>
-      <property name="transferConfirmationTimeoutUnit" value="${webdav.mover.transfer-confirmation-timeout.unit}"/>
-      <property name="internalAddress" value="${webdav.net.internal}"/>
-      <property name="templateResource" value="${webdav.templates.html}"/>
-      <property name="templateConfig" ref="template-config"/>
-      <property name="staticContentPath" value="${webdav.static-content.uri}"/>
-      <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
-      <property name="redirectOnWriteEnabled" value="${webdav.redirect.on-write}"/>
-      <property name="overwriteAllowed" value="${webdav.enable.overwrite}"/>
-      <property name="poolMonitor" ref="pool-monitor"/>
-  </bean>
+        <property name="pnfsStub" ref="pnfs-stub"/>
+        <property name="poolManagerStub">
+            <bean class="org.dcache.poolmanager.PoolManagerStub">
+                <property name="handler" ref="pool-manager-handler"/>
+                <property name="maximumPoolManagerTimeout" value="${webdav.service.poolmanager.timeout}"/>
+                <property name="maximumPoolManagerTimeoutUnit" value="${webdav.service.poolmanager.timeout.unit}"/>
+                <property name="maximumPoolTimeout" value="${webdav.service.pool.timeout}"/>
+                <property name="maximumPoolTimeoutUnit" value="${webdav.service.pool.timeout.unit}"/>
+            </bean>
+        </property>
+        <property name="poolStub" ref="pool-stub"/>
+        <property name="billingStub" ref="billing-stub"/>
+        <property name="missingFileStrategy" ref="missing-file-strategy"/>
+        <property name="listHandler" ref="list-handler"/>
+        <property name="executor" ref="scheduled-thread-pool"/>
+        <property name="pathMapper" ref="path-mapper"/>
+        <property name="allowedPaths" value="${webdav.authz.allowed-paths}"/>
+        <property name="anonymousListing" value="${webdav.authz.anonymous-listing}"/>
+        <property name="ioQueue" value="${webdav.mover.queue}"/>
+        <property name="moverTimeout" value="${webdav.mover.timeout}"/>
+        <property name="moverTimeoutUnit" value="${webdav.mover.timeout.unit}"/>
+        <property name="killTimeout" value="${webdav.mover.kill-timeout}"/>
+        <property name="killTimeoutUnit" value="${webdav.mover.kill-timeout.unit}"/>
+        <property name="transferConfirmationTimeout" value="${webdav.mover.transfer-confirmation-timeout}"/>
+        <property name="transferConfirmationTimeoutUnit" value="${webdav.mover.transfer-confirmation-timeout.unit}"/>
+        <property name="internalAddress" value="${webdav.net.internal}"/>
+        <property name="templateResource" value="${webdav.templates.html}"/>
+        <property name="templateConfig" ref="template-config"/>
+        <property name="staticContentPath" value="${webdav.static-content.uri}"/>
+        <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
+        <property name="redirectOnWriteEnabled" value="${webdav.redirect.on-write}"/>
+        <property name="overwriteAllowed" value="${webdav.enable.overwrite}"/>
+        <property name="poolMonitor" ref="pool-monitor"/>
+    </bean>
+
+    <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
+        <description>Pool manager client</description>
+        <property name="poolManager" ref="pool-manager-stub"/>
+    </bean>
 
     <bean id="http-manager" class="org.dcache.webdav.HttpManagerFactory">
         <description>Milton WebDAV library</description>

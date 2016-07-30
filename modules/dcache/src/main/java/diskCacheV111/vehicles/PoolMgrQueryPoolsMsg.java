@@ -12,15 +12,16 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class PoolMgrQueryPoolsMsg extends Message {
+public class PoolMgrQueryPoolsMsg extends PoolManagerMessage
+{
+   private static final long serialVersionUID = 2891200690839001621L;
+
    private final DirectionType _accessType  ;
 
    private final String _netUnitName;
    private final String _protocolUnitName;
    private final FileAttributes _fileAttributes;
    private List<String> []_poolList;
-
-   private static final long serialVersionUID = 4739697573589962019L;
 
     public PoolMgrQueryPoolsMsg(DirectionType accessType,
             String protocolUnit,

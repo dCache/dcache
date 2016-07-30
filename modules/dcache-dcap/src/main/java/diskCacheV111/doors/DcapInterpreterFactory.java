@@ -26,6 +26,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
+import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.util.Args;
 import org.dcache.util.OptionParser;
 
@@ -46,8 +47,8 @@ public class DcapInterpreterFactory implements LineBasedInterpreterFactory
 
     @Override
     public LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress, StreamEngine engine,
-                                       Executor executor)
+                                       Executor executor, PoolManagerHandler poolManagerHandler)
     {
-        return new DcapLineBasedInterpreterAdapter(endpoint, myAddress, engine, settings);
+        return new DcapLineBasedInterpreterAdapter(endpoint, myAddress, engine, settings, poolManagerHandler);
     }
 }

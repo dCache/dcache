@@ -376,7 +376,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         log.debug("PoolMgrSelectPoolMsg: " + request);
         setState(WAITING_FOR_POOL_INFO_STATE);
         manager.persist(this);
-        CellStub.addCallback(manager.getPoolManagerStub().send(request), this, executor);
+        CellStub.addCallback(manager.getPoolManagerStub().sendAsync(request), this, executor);
     }
 
     public void poolInfoArrived(PoolMgrSelectPoolMsg pool_info)
@@ -417,16 +417,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         poolMessage.setId(id);
         setState(WAITING_FIRST_POOL_REPLY_STATE);
         manager.persist(this);
-        CellPath poolCellPath;
-        String poolProxy = manager.getPoolProxy();
-        if (poolProxy == null) {
-            poolCellPath = new CellPath(poolAddress);
-        } else {
-            poolCellPath = new CellPath(poolProxy);
-            poolCellPath.add(poolAddress);
-        }
-
-        CellStub.addCallback(manager.getPoolStub().send(poolCellPath, poolMessage), this, executor);
+        CellStub.addCallback(manager.getPoolManagerStub().startAsync(poolAddress, poolMessage), this, executor);
     }
 
     public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)

@@ -78,6 +78,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.poolmanager.PoolManagerHandler;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -152,7 +154,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private final ConcurrentMap<Integer,SessionHandler> _sessions = new ConcurrentHashMap<>();
 
     private final CellStub _pinManagerStub;
-    private final CellStub _poolMgrStub;
+    private final PoolManagerStub _poolMgrStub;
 
     /**
      * The client PID set through the hello command. Only used for
@@ -192,7 +194,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     // flag defined in batch file to allow/disallow AccessLatency and RetentionPolicy re-definition
 
     public DCapDoorInterpreterV3(CellEndpoint cell, CellAddressCore address, DcapDoorSettings settings,
-            PrintWriter pw, Subject subject, InetAddress clientAddress)
+                                 PrintWriter pw, Subject subject, InetAddress clientAddress,
+                                 PoolManagerHandler poolManagerHandler)
     {
         _out  = pw;
         _cell = cell;
@@ -205,7 +208,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _clientAddress = clientAddress;
 
         _settings = settings;
-        _poolMgrStub = settings.createPoolManagerStub(cell);
+        _poolMgrStub = settings.createPoolManagerStub(cell, poolManagerHandler);
         _pinManagerStub = settings.createPinManagerStub(cell);
         _loginStrategy = settings.createLoginStrategy(cell);
 
@@ -1481,7 +1484,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                            _protocolName ,
                                            _destination ,
                                            _fileAttributes);
-                List<String>[] lists = _poolMgrStub.sendAndWait(query).getPools();
+                List<String>[] lists = CellStub.getMessage(_poolMgrStub.sendAsync(query)).getPools();
                 Set<String> assumedHash = new HashSet<>(_assumedLocations);
                 List<String> result = new ArrayList<>();
 
@@ -1873,7 +1876,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             getPoolMessage.setSubject(_subject);
             getPoolMessage.setId(_sessionId);
             try {
-                _cell.sendMessage(new CellMessage(_isHsmRequest ? _settings.getHsmManager() : _settings.getPoolManager(), getPoolMessage));
+                if (_isHsmRequest) {
+                    _cell.sendMessage(new CellMessage(_settings.getHsmManager(), getPoolMessage));
+                } else {
+                    _poolMgrStub.send(getPoolMessage);
+                }
             } catch (RuntimeException ie) {
                 sendReply( "fileAttributesAvailable" , 2 ,
                            ie.toString() ) ;
@@ -2015,14 +2022,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return ;
             }
             try{
-                CellPath toPool;
-                CellAddressCore poolAddress = reply.getPoolAddress();
-                if(_settings.getPoolProxy() == null ){
-                    toPool = new CellPath(poolAddress);
-                }else{
-                    toPool = new CellPath(_settings.getPoolProxy(), poolAddress);
-                }
-                _cell.sendMessage(new CellMessage(toPool, poolMessage));
+                _poolMgrStub.start(reply.getPoolAddress(), poolMessage);
                 _poolRequestDone = true ;
             }catch(RuntimeException ie){
                 sendReply( "poolMgrGetPoolArrived" , 2 ,

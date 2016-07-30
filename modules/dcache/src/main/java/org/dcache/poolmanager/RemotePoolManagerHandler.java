@@ -91,6 +91,12 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler
         return callback;
     }
 
+    @Override
+    public String toString()
+    {
+        return destination.toString();
+    }
+
     protected static class Version implements SerializablePoolManagerHandler.Version
     {
         private static final long serialVersionUID = 2150977133489318602L;

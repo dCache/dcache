@@ -65,6 +65,7 @@ import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.NDC;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
@@ -168,7 +169,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * Cell communication helper.
      */
     private CellStub _poolStub;
-    private CellStub _poolManagerStub;
+    private PoolManagerStub _poolManagerStub;
     private CellStub _billingStub;
     private PnfsHandler _pnfsHandler;
 
@@ -226,7 +227,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         _poolStub = stub;
     }
 
-    public void setPoolManagerStub(CellStub stub)
+    public void setPoolManagerStub(PoolManagerStub stub)
     {
         _poolManagerStub = stub;
     }
@@ -471,7 +472,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                         transfer.setCellName(this.getCellName());
                         transfer.setDomainName(this.getCellDomainName());
                         transfer.setBillingStub(_billingStub);
-                        transfer.setPoolStub(_poolManagerStub);
+                        transfer.setPoolStub(_poolStub);
                         transfer.setPoolManagerStub(_poolManagerStub);
                         transfer.setPnfsId(pnfsId);
                         transfer.setClientAddress(remote);

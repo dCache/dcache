@@ -33,10 +33,11 @@ import dmg.cells.nucleus.CellMessageReceiver;
 
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicy;
+import org.dcache.util.TransferRetryPolicies;
 
 import static org.dcache.util.ByteUnit.KiB;
 
@@ -59,7 +60,7 @@ public class CopyManager extends AbstractCellComponent
     private int _numTransfers;
 
     private PnfsHandler _pnfsHandler;
-    private CellStub _poolManager;
+    private PoolManagerStub _poolManager;
     private CellStub _poolStub;
 
     public void init()
@@ -143,12 +144,7 @@ public class CopyManager extends AbstractCellComponent
                   _queue.size());
         pw.printf("max number of active transfers  : %d\n",
                   getMaxTransfers());
-        pw.printf("PoolManager  : %s\n",
-                  _poolManager.getDestinationPath());
-        pw.printf("PoolManager timeout : %d %s\n",
-                  _poolManager.getTimeout(), _poolManager.getTimeoutUnit());
-        pw.printf("Pool timeout  : %d %s\n",
-                  _poolStub.getTimeout(), _poolStub.getTimeoutUnit());
+        pw.printf("PoolManager  : %s\n", _poolManager);
         pw.printf("Mover timeout  : %d seconds",
                   _moverTimeoutUnit.toSeconds(_moverTimeout));
     }
@@ -360,11 +356,11 @@ public class CopyManager extends AbstractCellComponent
 
                 _target.setProtocolInfo(createTargetProtocolInfo(_target));
                 _target.setLength(_source.getLength());
-                _target.selectPoolAndStartMover("pp", new TransferRetryPolicy(1, 0, _poolManager.getTimeoutInMillis()));
+                _target.selectPoolAndStartMover("pp", TransferRetryPolicies.tryOncePolicy());
                 _target.waitForRedirect(timeout);
 
                 _source.setProtocolInfo(createSourceProtocolInfo(_target.getRedirect(), _target.getId()));
-                _source.selectPoolAndStartMover("p2p", new TransferRetryPolicy(1, 0, _poolManager.getTimeoutInMillis()));
+                _source.selectPoolAndStartMover("p2p", TransferRetryPolicies.tryOncePolicy());
 
                 if (!_source.waitForMover(timeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
@@ -432,7 +428,7 @@ public class CopyManager extends AbstractCellComponent
     }
 
     /** Setter for property max_transfers.
-     * @param max_transfers New value of property max_transfers.
+     * @param maxTransfers New value of property max_transfers.
      */
     public synchronized void setMaxTransfers(int maxTransfers)
     {
@@ -478,7 +474,7 @@ public class CopyManager extends AbstractCellComponent
         return null;
     }
 
-    public void setPoolManager(CellStub poolManager) {
+    public void setPoolManager(PoolManagerStub poolManager) {
         _poolManager = poolManager;
     }
 

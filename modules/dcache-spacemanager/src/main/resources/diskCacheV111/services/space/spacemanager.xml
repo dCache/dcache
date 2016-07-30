@@ -28,6 +28,11 @@
     <property name="timeoutUnit" value="${spacemanager.service.poolmanager.timeout.unit}"/>
   </bean>
 
+    <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
+        <description>Pool manager client</description>
+        <property name="poolManager" ref="pool-manager-stub"/>
+    </bean>
+
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
     <description>Maintains runtime information about all pools</description>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
@@ -111,35 +116,32 @@
     <property name="executor" ref="executor"/>
   </bean>
 
-  <bean id="spacemanager" class="diskCacheV111.services.space.SpaceManagerService"
-         init-method="start" destroy-method="stop">
-    <description>Space manager</description>
-    <property name="database" ref="database"/>
-    <property name="linkGroupLoader" ref="linkgroup-loader"/>
-    <property name="pnfsHandler" ref="pnfs"/>
-    <property name="poolManager" value="${spacemanager.service.poolmanager}"/>
-    <property name="poolMonitor" ref="pool-monitor"/>
-    <property name="maxThreads" value="${spacemanager.limits.threads}"/>
-    <property name="executor" ref="executor"/>
-    <property name="perishedSpacePurgeDelay"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${spacemanager.perished-space-purge-delay},
-                     '${spacemanager.perished-space-purge-delay.unit}')}" />
-    <property name="spaceManagerEnabled"
-              value="${spacemanager.enable.space-reservation}" />
-    <property name="expireSpaceReservationsPeriod"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${spacemanager.expire-space-reservation.period},
-                     '${spacemanager.expire-space-reservation.period.unit}')}" />
-    <property name="allowUnreservedUploadsToLinkGroups" value="${spacemanager.enable.unreserved-uploads-to-linkgroups}" />
-    <property name="shouldDeleteStoredFileRecord" value="false" />
-    <property name="shouldReturnFlushedSpaceToReservation" value="true" />
-    <property name="authorizationPolicy" ref="authz-policy" />
-    <property name="poolManagerHandler">
-        <bean class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
-            <property name="poolManager" ref="pool-manager-stub"/>
-        </bean>
-    </property>
-    <property name="serviceAddress" value="${spacemanager.cell.service}"/>
-  </bean>
+    <bean id="spacemanager" class="diskCacheV111.services.space.SpaceManagerService"
+          init-method="start" destroy-method="stop">
+        <description>Space manager</description>
+        <property name="database" ref="database"/>
+        <property name="linkGroupLoader" ref="linkgroup-loader"/>
+        <property name="pnfsHandler" ref="pnfs"/>
+        <property name="poolManager" value="${spacemanager.service.poolmanager}"/>
+        <property name="poolMonitor" ref="pool-monitor"/>
+        <property name="maxThreads" value="${spacemanager.limits.threads}"/>
+        <property name="executor" ref="executor"/>
+        <property name="perishedSpacePurgeDelay"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                       ${spacemanager.perished-space-purge-delay},
+                       '${spacemanager.perished-space-purge-delay.unit}')}"/>
+        <property name="spaceManagerEnabled"
+                  value="${spacemanager.enable.space-reservation}"/>
+        <property name="expireSpaceReservationsPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                       ${spacemanager.expire-space-reservation.period},
+                       '${spacemanager.expire-space-reservation.period.unit}')}"/>
+        <property name="allowUnreservedUploadsToLinkGroups"
+                  value="${spacemanager.enable.unreserved-uploads-to-linkgroups}"/>
+        <property name="shouldDeleteStoredFileRecord" value="false"/>
+        <property name="shouldReturnFlushedSpaceToReservation" value="true"/>
+        <property name="authorizationPolicy" ref="authz-policy"/>
+        <property name="poolManagerHandler" ref="pool-manager-handler"/>
+        <property name="serviceAddress" value="${spacemanager.cell.service}"/>
+    </bean>
 </beans>

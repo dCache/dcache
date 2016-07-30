@@ -167,18 +167,31 @@
           init-method="init" destroy-method="destroy" depends-on="rpcbind">
         <description>dCache implementation of NFSv4.1 MDS</description>
         <property name="poolStub" ref="pool-stub"/>
-        <property name="poolManagerStub" ref="poolManagerStub"/>
+        <property name="poolManagerStub">
+            <bean class="org.dcache.poolmanager.PoolManagerStub">
+                <property name="handler" ref="pool-manager-handler"/>
+                <property name="maximumPoolManagerTimeout" value="${nfs.service.poolmanager.timeout}"/>
+                <property name="maximumPoolManagerTimeoutUnit" value="${nfs.service.poolmanager.timeout.unit}"/>
+                <property name="maximumPoolTimeout" value="${nfs.service.pool.timeout}"/>
+                <property name="maximumPoolTimeoutUnit" value="${nfs.service.pool.timeout.unit}"/>
+            </bean>
+        </property>
         <property name="billingStub" ref="billing-stub"/>
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="fileSystemProvider" ref="fileSystem"/>
-        <property name="ioQueue" value="${nfs.mover.queue}" />
-        <property name="exportFile" ref="export" />
-        <property name="idMapper" ref="id-mapper" />
-        <property name="portNumber" value="${nfs.net.port}" />
-        <property name="versions" value="${nfs.version}" />
-        <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}" />
-        <property name="loginBrokerPublisher" ref="lb" />
-        <property name="vfsCacheConfig" ref="cache-config" />
+        <property name="ioQueue" value="${nfs.mover.queue}"/>
+        <property name="exportFile" ref="export"/>
+        <property name="idMapper" ref="id-mapper"/>
+        <property name="portNumber" value="${nfs.net.port}"/>
+        <property name="versions" value="${nfs.version}"/>
+        <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}"/>
+        <property name="loginBrokerPublisher" ref="lb"/>
+        <property name="vfsCacheConfig" ref="cache-config"/>
+    </bean>
+
+    <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
+        <description>Pool manager client</description>
+        <property name="poolManager" ref="poolManagerStub"/>
     </bean>
 
     <bean id="cache-config" class="org.dcache.nfs.vfs.VfsCacheConfig">

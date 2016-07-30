@@ -88,6 +88,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
 import org.dcache.util.PingMoversTask;
@@ -170,7 +171,7 @@ public class DcacheResourceFactory
     private TimeUnit _transferConfirmationTimeoutUnit = MILLISECONDS;
     private int _bufferSize = 65536;
     private CellStub _poolStub;
-    private CellStub _poolManagerStub;
+    private PoolManagerStub _poolManagerStub;
     private CellStub _billingStub;
     private PnfsHandler _pnfs;
     private String _ioQueue;
@@ -440,8 +441,9 @@ public class DcacheResourceFactory
 
     /**
      * Sets the cell stub for PoolManager communication.
+     * @param stub
      */
-    public void setPoolManagerStub(CellStub stub)
+    public void setPoolManagerStub(PoolManagerStub stub)
     {
         _poolManagerStub = stub;
     }

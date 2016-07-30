@@ -39,10 +39,9 @@ import dmg.cells.nucleus.SerializationException;
 import dmg.util.TimebasedCounter;
 
 import org.dcache.cells.CellStub;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 /**
@@ -63,7 +62,7 @@ public abstract class TransferManager extends AbstractCellComponent
     protected static long nextMessageID;
     private String _tLogRoot;
     private CellStub _pnfsManager;
-    private CellStub _poolManager;
+    private PoolManagerStub _poolManager;
     private CellStub _poolStub;
     private CellStub _billingStub;
     private boolean _overwrite;
@@ -76,7 +75,6 @@ public abstract class TransferManager extends AbstractCellComponent
     private String _ioQueueName; // multi io queue option
     private TimebasedCounter idGenerator = new TimebasedCounter();
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
-    private String _poolProxy;
     private final ExecutorService executor =
             new CDCExecutorServiceDecorator<>(Executors.newCachedThreadPool());
     private PersistenceManagerFactory _pmf;
@@ -105,14 +103,9 @@ public abstract class TransferManager extends AbstractCellComponent
         pw.printf("number of active transfers : %d\n", _numTransfers);
         pw.printf("max number of active transfers  : %d\n", getMaxTransfers());
         pw.printf("PoolManager  : %s\n", _poolManager);
-        pw.printf("PoolManager timeout : %d seconds\n", MILLISECONDS.toSeconds(_poolManager.getTimeoutInMillis()));
-        pw.printf("PnfsManager timeout : %d seconds\n", MILLISECONDS.toSeconds(_pnfsManager.getTimeoutInMillis()));
-        pw.printf("Pool timeout  : %d seconds\n", MILLISECONDS.toSeconds(_poolStub.getTimeoutInMillis()));
         pw.printf("next id  : %d seconds\n", nextMessageID);
         pw.printf("io-queue  : %s\n", _ioQueueName);
         pw.printf("maxNumberofDeleteRetries  : %d\n", _maxNumberOfDeleteRetries);
-        pw.printf("Pool Proxy : %s\n",
-                (_poolProxy == null ? "not set" : ("set to " + _poolProxy)));
     }
 
     public String ac_set_maxNumberOfDeleteRetries_$_1(Args args)
@@ -432,7 +425,7 @@ public abstract class TransferManager extends AbstractCellComponent
         return _overwrite;
     }
 
-    public CellStub getPoolManagerStub()
+    public PoolManagerStub getPoolManagerStub()
     {
         return _poolManager;
     }
@@ -505,16 +498,11 @@ public abstract class TransferManager extends AbstractCellComponent
         super.sendMessage(envelope);
     }
 
-    public String getPoolProxy()
-    {
-        return _poolProxy;
-    }
-
     public void setBilling(CellStub billingStub) {
         _billingStub = billingStub;
     }
 
-    public void setPoolManager(CellStub poolManager) {
+    public void setPoolManager(PoolManagerStub poolManager) {
         _poolManager = poolManager;
     }
 
@@ -536,10 +524,6 @@ public abstract class TransferManager extends AbstractCellComponent
 
     public void setIoQueueName(String ioQueueName) {
         _ioQueueName = ioQueueName;
-    }
-
-    public void setPoolProxy(String poolProxy) {
-        _poolProxy = poolProxy;
     }
 
     public void setMaxNumberOfDeleteRetries(int maxNumberOfDeleteRetries) {

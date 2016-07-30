@@ -75,6 +75,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
@@ -128,7 +129,7 @@ public class XrootdDoor
     private List<FsPath> _writePaths = Collections.singletonList(FsPath.ROOT);
 
     private CellStub _poolStub;
-    private CellStub _poolManagerStub;
+    private PoolManagerStub _poolManagerStub;
     private CellStub _billingStub;
 
     private PoolMonitor _poolMonitor;
@@ -162,7 +163,7 @@ public class XrootdDoor
     }
 
     @Required
-    public void setPoolManagerStub(CellStub stub)
+    public void setPoolManagerStub(PoolManagerStub stub)
     {
         _poolManagerStub = stub;
     }

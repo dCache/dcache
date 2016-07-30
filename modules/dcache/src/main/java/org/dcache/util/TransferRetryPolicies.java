@@ -27,6 +27,14 @@ public final class TransferRetryPolicies
     }
 
     /**
+     * Create a {@link TransferRetryPolicy} with no retries in case of errors.
+     */
+    public static TransferRetryPolicy tryOncePolicy()
+    {
+        return new TransferRetryPolicy(1, 0, Long.MAX_VALUE);
+    }
+
+    /**
      * Create a {@link TransferRetryPolicy} this which will let {@link
      * Transfer} to start a transfer with in given timeout. No retries
      * performed in case of errors.

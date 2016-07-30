@@ -44,29 +44,41 @@ public class CellMessage implements Cloneable , Serializable {
   private Object      _session;
   private static final int   ORIGINAL_MODE  = 0 ;
   private static final int   STREAM_MODE    = 1 ;
-  private static final int   DUMMY_MODE     = 2 ;
   private transient long _receivedAt;
 
-  public CellMessage(CellAddressCore address, Serializable msg) {
-      this(msg, new CellPath(address));
-  }
+    public CellMessage(CellAddressCore address, Serializable msg)
+    {
+        this(new CellPath(address));
+        _message = msg;
+    }
 
-  public CellMessage(CellPath addr, Serializable msg) {
-      this(msg, addr.clone());
-  }
+    public CellMessage(CellAddressCore address)
+    {
+        this(new CellPath(address));
+    }
 
-  private CellMessage(Serializable msg, CellPath path) {
-     _destination  = path;
-     _message      = msg;
-     _source       = new CellPath();
-     _creationTime = System.currentTimeMillis();
-     _receivedAt   = _creationTime;
-     _mode         = ORIGINAL_MODE;
-     _umid         = new UOID();
-     _lastUmid     = _umid;
-     _session      = CDC.getSession();
-     _messageStream = null;
-  }
+    public CellMessage(CellPath path, Serializable msg)
+    {
+        this(path.clone());
+        _message = msg;
+    }
+
+    public CellMessage(CellPath path)
+    {
+        this();
+        _destination = path;
+    }
+
+    public CellMessage()
+    {
+        _source = new CellPath();
+        _creationTime = System.currentTimeMillis();
+        _receivedAt = _creationTime;
+        _mode = ORIGINAL_MODE;
+        _umid = new UOID();
+        _lastUmid = _umid;
+        _session = CDC.getSession();
+    }
 
   @Override
   public String toString(){
@@ -146,12 +158,6 @@ public boolean equals( Object obj ){
           _receivedAt = System.currentTimeMillis();
       }
   }
-
-    public CellMessage()
-    {
-        _mode = DUMMY_MODE;
-        _messageStream = null;
-    }
 
     /**
      * The method does not copy the message object - only the encoded message

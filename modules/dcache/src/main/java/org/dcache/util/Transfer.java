@@ -13,10 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import javax.security.auth.Subject;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -27,7 +28,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.security.auth.Subject;
 
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.CacheException;
@@ -53,15 +53,18 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
+
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.TimebasedCounter;
+
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
@@ -95,7 +98,7 @@ public class Transfer implements Comparable<Transfer>
     protected final long _id;
     protected final Object _session;
 
-    protected CellStub _poolManager;
+    protected PoolManagerStub _poolManager;
     protected CellStub _pool;
     protected CellStub _billing;
     protected CheckStagePermission _checkStagePermission;
@@ -234,7 +237,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Sets CellStub for PoolManager.
      */
-    public synchronized void setPoolManagerStub(CellStub stub)
+    public synchronized void setPoolManagerStub(PoolManagerStub stub)
     {
         _poolManager = stub;
     }
@@ -882,24 +885,6 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Selects a pool suitable for the transfer.
      */
-    public final void selectPool()
-            throws CacheException, InterruptedException
-    {
-        selectPool(_poolManager.getTimeoutInMillis());
-    }
-
-    /**
-     * Selects a pool suitable for the transfer.
-     */
-    private void selectPool(long timeout)
-            throws CacheException, InterruptedException
-    {
-        getCancellable(selectPoolAsync(timeout));
-    }
-
-    /**
-     * Selects a pool suitable for the transfer.
-     */
     public ListenableFuture<Void> selectPoolAsync(long timeout)
     {
         FileAttributes fileAttributes = getFileAttributes();
@@ -919,7 +904,7 @@ public class Transfer implements Comparable<Transfer>
             request.setBillingPath(getBillingPath());
             request.setTransferPath(getTransferPath());
 
-            ListenableFuture<PoolMgrSelectWritePoolMsg> reply = _poolManager.send(request, timeout);
+            ListenableFuture<PoolMgrSelectWritePoolMsg> reply = _poolManager.sendAsync(request, timeout);
             setStatusUntil("PoolManager: Selecting pool", reply);
 
             return CellStub.transform(reply,
@@ -950,7 +935,7 @@ public class Transfer implements Comparable<Transfer>
             request.setBillingPath(getBillingPath());
             request.setTransferPath(getTransferPath());
 
-            ListenableFuture<PoolMgrSelectReadPoolMsg> reply = _poolManager.send(request, timeout);
+            ListenableFuture<PoolMgrSelectReadPoolMsg> reply = _poolManager.sendAsync(request, timeout);
             setStatusUntil("PoolManager: Selecting pool", reply);
             return CellStub.transform(reply,
                                       (PoolMgrSelectReadPoolMsg msg) -> {
@@ -961,28 +946,6 @@ public class Transfer implements Comparable<Transfer>
                                           return immediateFuture(null);
                                       });
         }
-    }
-
-    /**
-     * Creates a mover for the transfer.
-     *
-     * @param queue The mover queue of the transfer; may be null
-     */
-    public final void startMover(String queue)
-            throws CacheException, InterruptedException
-    {
-        startMover(queue, _pool.getTimeoutInMillis());
-    }
-
-    /**
-     * Creates a mover for the transfer.
-     *
-     * @param queue The mover queue of the transfer; may be null
-     */
-    public final void startMover(String queue, long timeout)
-            throws CacheException, InterruptedException
-    {
-        getCancellable(startMoverAsync(queue, timeout));
     }
 
     /**
@@ -1019,13 +982,7 @@ public class Transfer implements Comparable<Transfer>
         message.setId(_id);
         message.setSubject(_subject);
 
-        /* As always, PoolIoFileMessage has to be sent via the
-         * PoolManager (which could be the SpaceManager).
-         */
-        CellPath poolPath = _poolManager.getDestinationPath().clone();
-        poolPath.add(getPoolAddress());
-
-        ListenableFuture<PoolIoFileMessage> reply = _pool.send(poolPath, message, timeout);
+        ListenableFuture<PoolIoFileMessage> reply = _poolManager.startAsync(getPoolAddress(), message, timeout);
         setStatusUntil("Pool " + pool + ": Creating mover", reply);
         return CellStub.transform(reply, (PoolIoFileMessage msg) -> {
             setMoverId(msg.getMoverId());
@@ -1163,14 +1120,19 @@ public class Transfer implements Comparable<Transfer>
         _isBillingNotified = true;
     }
 
+    private static long getTimeoutFor(long deadline)
+    {
+        return subWithInfinity(deadline, System.currentTimeMillis());
+    }
+
     private static long getTimeoutFor(CellStub stub, long deadline)
     {
-        return Math.min(subWithInfinity(deadline, System.currentTimeMillis()), stub.getTimeoutInMillis());
+        return Math.min(getTimeoutFor(deadline), stub.getTimeoutInMillis());
     }
 
     private static long getTimeoutFor(PnfsHandler pnfs, long deadline)
     {
-        return Math.min(subWithInfinity(deadline, System.currentTimeMillis()), pnfs.getPnfsTimeout());
+        return Math.min(getTimeoutFor(deadline), pnfs.getPnfsTimeout());
     }
 
     /**
@@ -1194,9 +1156,9 @@ public class Transfer implements Comparable<Transfer>
         long deadLine = addWithInfinity(System.currentTimeMillis(), policy.getTotalTimeOut());
 
         AsyncFunction<Void, Void> selectPool =
-                ignored -> selectPoolAsync(getTimeoutFor(_poolManager, deadLine));
+                ignored -> selectPoolAsync(getTimeoutFor(deadLine));
         AsyncFunction<Void, Void> startMover =
-                ignored -> startMoverAsync(queue, getTimeoutFor(_pool, deadLine));
+                ignored -> startMoverAsync(queue, getTimeoutFor(deadLine));
         AsyncFunction<Void, Void> readNameSpaceEntry =
                 ignored -> readNameSpaceEntryAsync(false, getTimeoutFor(_pnfs, deadLine));
 
@@ -1208,7 +1170,7 @@ public class Transfer implements Comparable<Transfer>
                     private long start = System.currentTimeMillis();
 
                     @Override
-                    public ListenableFuture<Void> apply (CacheException t) throws Exception
+                    public ListenableFuture<Void> apply(CacheException t) throws Exception
                     {
                         count++;
 
@@ -1272,7 +1234,7 @@ public class Transfer implements Comparable<Transfer>
                 };
 
         return catchingAsync(transformAsync(
-                selectPoolAsync(getTimeoutFor(_poolManager, deadLine)), startMover), CacheException.class, retry);
+                selectPoolAsync(getTimeoutFor(deadLine)), startMover), CacheException.class, retry);
     }
 
     /**

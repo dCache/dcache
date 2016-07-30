@@ -104,7 +104,6 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -loginBroker=${dcap.service.loginbroker}  \
              -pnfsManager=${dcap.service.pnfsmanager} \
              -poolManager=${dcap.service.poolmanager}  \
-             -poolProxy=${dcap.service.poolmanager} \
              -pinManager=${dcap.service.pinmanager} \
              -gplazma=\"${dcap.service.gplazma}\" \
              -billing=\"${dcap.service.billing}\" \

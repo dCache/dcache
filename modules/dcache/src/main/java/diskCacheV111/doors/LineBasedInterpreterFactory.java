@@ -25,6 +25,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
+import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.util.Args;
 
 /**
@@ -54,9 +55,10 @@ public interface LineBasedInterpreterFactory
      * @param myAddress Cell address of the line based door
      * @param engine Connection to the client
      * @param executor Executor for background operations
+     * @param poolManager Handler for pool manager communication
      * @return Fully initialized interpreter
      * @throws Exception If the interpreter could not be initialized
      */
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-            StreamEngine engine, Executor executor) throws Exception;
+                                StreamEngine engine, Executor executor, PoolManagerHandler poolManager) throws Exception;
 }

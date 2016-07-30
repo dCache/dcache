@@ -5,6 +5,7 @@ import java.lang.reflect.Modifier;
 
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -41,7 +42,7 @@ public class LegacyLoginCellProvider implements LoginCellProvider
     }
 
     @Override
-    public LoginCellFactory createFactory(String name, Args args, String parentCellName)
+    public LoginCellFactory createFactory(String name, Args args, CellEndpoint parentEndpoint, String parentCellName)
     {
         try {
             Class<? extends CellAdapter> loginClass = Class.forName(name).asSubclass(CellAdapter.class);

@@ -191,6 +191,7 @@ public class LoginManager
 
         _loginCellFactory = new LoginCellFactoryBuilder()
                 .setName(loginCell)
+                .setCellEndpoint(this)
                 .setLoginManagerName(getCellName())
                 .setArgs(childArgs)
                 .build();
