@@ -2,7 +2,11 @@
 
 package diskCacheV111.util;
 
+import com.google.common.hash.Funnel;
+import com.google.common.hash.PrimitiveSink;
+
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -321,6 +325,23 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(4);
+        }
+    }
+
+    public static Funnel<PnfsId> funnel()
+    {
+        return PnfsIdFunnel.INSTANCE;
+    }
+
+    private enum PnfsIdFunnel implements Funnel<PnfsId> {
+        INSTANCE;
+
+        @Override
+        public void funnel(PnfsId from, PrimitiveSink into) {
+            if (from._domain != null) {
+                into.putString(from._domain, StandardCharsets.US_ASCII);
+            }
+            into.putBytes(from._a);
         }
     }
 }

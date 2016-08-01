@@ -114,4 +114,8 @@
       </bean>
     </property>
   </bean>
+
+  <bean id="poolmanager-handler-publisher" class="diskCacheV111.poolManager.PoolManagerHandlerPublisher">
+    <property name="serviceName" value="${poolmanager.cell.service}"/>
+  </bean>
 </beans>

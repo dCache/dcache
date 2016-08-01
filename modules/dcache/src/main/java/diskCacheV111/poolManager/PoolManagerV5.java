@@ -53,7 +53,6 @@ import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -68,10 +67,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolLinkGroupInfo;
-import org.dcache.poolmanager.PoolMgrGetHandler;
-import org.dcache.poolmanager.PoolMgrGetUpdatedHandler;
 import org.dcache.poolmanager.PoolSelector;
-import org.dcache.poolmanager.RemotePoolManagerHandler;
 import org.dcache.poolmanager.SerializablePoolMonitor;
 import org.dcache.poolmanager.Utils;
 import org.dcache.util.Args;
@@ -615,17 +611,6 @@ public class PoolManagerV5
                                 null)));
         msg.setSucceeded();
         return msg;
-    }
-
-    public PoolMgrGetHandler messageArrived(PoolMgrGetHandler message)
-    {
-        message.setHandler(new RemotePoolManagerHandler(getCellAddress()));
-        return message;
-    }
-
-    public void messageArrived(PoolMgrGetUpdatedHandler message)
-    {
-        // The selector never changes, so don't reply
     }
 
     private static class XProtocolInfo implements IpProtocolInfo {
