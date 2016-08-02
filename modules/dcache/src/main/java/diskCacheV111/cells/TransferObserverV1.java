@@ -1,5 +1,6 @@
 package diskCacheV111.cells;
 
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -622,7 +623,7 @@ public class TransferObserverV1
         tmp = tmp.contains("known") ? "?" : tmp ;
         page.td("process", tmp);
 
-        String poolName = transfer.session().getPool() ;
+        String poolName = Strings.emptyToNull(transfer.session().getPool());
         if (poolName == null || poolName.equals("<unknown>")) {
             poolName = "N.N.";
         }
