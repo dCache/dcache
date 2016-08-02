@@ -19,7 +19,6 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
 import org.dcache.pool.movers.MoverProtocol;
-import org.dcache.util.Args;
 
 public class MoverMapTransferService extends AbstractMoverProtocolTransferService
         implements CellCommandListener, EnvironmentAware

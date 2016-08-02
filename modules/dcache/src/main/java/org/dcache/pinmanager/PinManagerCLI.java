@@ -28,7 +28,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 
-import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.command.Argument;
@@ -40,7 +39,6 @@ import org.dcache.pinmanager.model.Pin;
 import org.dcache.vehicles.FileAttributes;
 
 public class PinManagerCLI
-    extends AbstractCellComponent
     implements CellCommandListener, CellInfoProvider
 {
     private static final AtomicInteger _counter =

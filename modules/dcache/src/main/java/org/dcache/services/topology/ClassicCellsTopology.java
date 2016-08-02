@@ -4,8 +4,10 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 
 import dmg.cells.network.CellDomainNode;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.util.command.Command;
 
 /**
@@ -14,16 +16,24 @@ import dmg.util.command.Command;
  */
 public class ClassicCellsTopology
     extends AbstractCellsTopology
-    implements CellsTopology,
-               CellCommandListener
+    implements CellsTopology, CellCommandListener, CellIdentityAware
 {
     private volatile CellDomainNode[] _infoMap;
+
+    private CellAddressCore _cellAddress;
+
+    @Override
+    public void setCellAddress(CellAddressCore address)
+    {
+
+        _cellAddress = address;
+    }
 
     public void update()
         throws InterruptedException
     {
         Collection<CellDomainNode> nodes =
-                buildTopologyMap(getCellDomainName()).values();
+                buildTopologyMap(_cellAddress.getCellDomainName()).values();
         _infoMap = nodes.toArray(new CellDomainNode[nodes.size()]);
     }
 

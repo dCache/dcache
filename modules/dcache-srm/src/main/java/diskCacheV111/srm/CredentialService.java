@@ -34,7 +34,8 @@ import java.util.concurrent.ScheduledFuture;
 
 import diskCacheV111.srm.dcache.SrmRequestCredentialMessage;
 
-import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
@@ -47,8 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class CredentialService
-    extends AbstractCellComponent
-    implements CellMessageReceiver, CellLifeCycleAware, CellInfoProvider
+    implements CellMessageReceiver, CellLifeCycleAware, CellInfoProvider, CellIdentityAware
 {
     private Logger LOGGER = LoggerFactory.getLogger(CredentialService.class);
 
@@ -60,6 +60,14 @@ public class CredentialService
     private CellStub _topic;
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _task;
+
+    private CellAddressCore _cellAddress;
+
+    @Override
+    public void setCellAddress(CellAddressCore address)
+    {
+        _cellAddress = address;
+    }
 
     @Required
     public void setHttpsPort(int port)
@@ -145,11 +153,11 @@ public class CredentialService
 
     public CredentialServiceAnnouncement messageArrived(CredentialServiceRequest message)
     {
-        return new CredentialServiceAnnouncement(_delegationEndpoint, getCellAddress());
+        return new CredentialServiceAnnouncement(_delegationEndpoint, _cellAddress);
     }
 
     private void publish()
     {
-        _topic.notify(new CredentialServiceAnnouncement(_delegationEndpoint, getCellAddress()));
+        _topic.notify(new CredentialServiceAnnouncement(_delegationEndpoint, _cellAddress));
     }
 }

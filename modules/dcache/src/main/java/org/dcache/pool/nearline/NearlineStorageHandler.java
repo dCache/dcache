@@ -70,8 +70,9 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
-import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellSetupProvider;
@@ -90,9 +91,9 @@ import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
@@ -113,8 +114,7 @@ import static org.dcache.namespace.FileAttribute.*;
  * Entry point to and management interface for the nearline storage subsystem.
  */
 public class NearlineStorageHandler
-        extends AbstractCellComponent
-        implements CellCommandListener, StateChangeListener, CellSetupProvider, CellLifeCycleAware, CellInfoProvider
+        implements CellCommandListener, StateChangeListener, CellSetupProvider, CellLifeCycleAware, CellInfoProvider, CellIdentityAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NearlineStorageHandler.class);
 
@@ -140,6 +140,14 @@ public class NearlineStorageHandler
      * Set of flush script error codes which have to be silently ignored.
      */
     private final Set<Integer> suppressedStoreErrors = Collections.synchronizedSet(newHashSet());
+
+    private CellAddressCore cellAddress;
+
+    @Override
+    public void setCellAddress(CellAddressCore address)
+    {
+        cellAddress = address;
+    }
 
     @Required
     public void setScheduledExecutor(ScheduledExecutorService executor)
@@ -727,7 +735,7 @@ public class NearlineStorageHandler
         public FlushRequestImpl(NearlineStorage nearlineStorage, PnfsId pnfsId) throws CacheException, InterruptedException
         {
             super(nearlineStorage);
-            infoMsg = new StorageInfoMessage(getCellAddress().toString(), pnfsId, false);
+            infoMsg = new StorageInfoMessage(cellAddress.toString(), pnfsId, false);
             descriptor = repository.openEntry(pnfsId, NO_FLAGS);
             String path = descriptor.getFileAttributes().getStorageInfo().getKey("path");
             if (path != null) {
@@ -984,7 +992,7 @@ public class NearlineStorageHandler
         {
             super(storage);
             PnfsId pnfsId = fileAttributes.getPnfsId();
-            infoMsg = new StorageInfoMessage(getCellAddress().toString(), pnfsId, true);
+            infoMsg = new StorageInfoMessage(cellAddress.toString(), pnfsId, true);
             infoMsg.setStorageInfo(fileAttributes.getStorageInfo());
             infoMsg.setFileSize(fileAttributes.getSize());
             descriptor =

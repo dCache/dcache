@@ -26,7 +26,11 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
 import diskCacheV111.vehicles.PoolFlushGainControlMessage;
 
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
@@ -34,12 +38,6 @@ import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoAware;
-import dmg.cells.nucleus.CellMessageReceiver;
 
 import org.dcache.util.FireAndForgetTask;
 
@@ -52,7 +50,6 @@ import static com.google.common.base.Preconditions.checkArgument;
  * on multiple pools.
  */
 public class HsmFlushController
-        extends AbstractCellComponent
         implements CellMessageReceiver, CellCommandListener, CellInfoAware, CellSetupProvider, CellInfoProvider
 {
     private static final Logger LOGGER =

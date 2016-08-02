@@ -34,8 +34,9 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 
-import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
@@ -49,12 +50,12 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.ReplicaStoreCache;
-import org.dcache.pool.repository.ReplicaRecord;
-import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaRecord;
+import org.dcache.pool.repository.ReplicaState;
+import org.dcache.pool.repository.ReplicaStore;
+import org.dcache.pool.repository.ReplicaStoreCache;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
@@ -65,14 +66,10 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
-import static org.dcache.pool.repository.ReplicaState.NEW;
-import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
-import static org.dcache.pool.repository.ReplicaState.REMOVED;
+import static org.dcache.pool.repository.ReplicaState.*;
 import static org.dcache.util.ByteUnit.GiB;
 
 
@@ -84,8 +81,7 @@ import static org.dcache.util.ByteUnit.GiB;
  * interface will fail until load has completed.
  */
 public class ReplicaRepository
-    extends AbstractCellComponent
-    implements Repository, CellCommandListener, CellSetupProvider, CellInfoProvider
+    implements Repository, CellCommandListener, CellSetupProvider, CellInfoProvider, CellIdentityAware
 {
     /* Implementation note
      * -------------------
@@ -138,6 +134,9 @@ public class ReplicaRepository
      */
     @GuardedBy("_stateLock")
     private ReplicaStore _store;
+
+    @GuardedBy("_stateLock")
+    private String _poolName;
 
     /**
      * Current state of the repository.
@@ -240,6 +239,32 @@ public class ReplicaRepository
         State state = _state;
         if (state != State.INITIALIZED && state != State.LOADING && state != State.OPEN) {
             throw new IllegalStateException("Operation not allowed while repository is in state " + state);
+        }
+    }
+
+    @Override
+    public void setCellAddress(CellAddressCore address)
+    {
+        _stateLock.readLock().lock();
+        try {
+            checkUninitialized();
+            _poolName = address.getCellName();
+        } finally {
+            _stateLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get pool name to which repository belongs.
+     * @return pool name.
+     */
+    public String getPoolName()
+    {
+        _stateLock.readLock().lock();
+        try {
+            return _poolName;
+        } finally {
+            _stateLock.readLock().unlock();
         }
     }
 
@@ -1071,15 +1096,6 @@ public class ReplicaRepository
                 Thread.currentThread().interrupt();
             }
         }
-    }
-
-    /**
-     * Get pool name to which repository belongs.
-     * @return pool name.
-     */
-    public String getPoolName()
-    {
-         return getCellName();
     }
 
     @AffectsSetup

@@ -195,7 +195,6 @@ public class RepositorySubsystemTest
         repository = new ReplicaRepository();
 
         allocator.setAccount(account);
-        repository.setCellEndpoint(cell);
         repository.setCellAddress(address);
         repository.setAllocator(allocator);
         repository.setPnfsHandler(pnfs);

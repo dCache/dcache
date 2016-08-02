@@ -17,7 +17,6 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellTunnelInfo;
 
-import dmg.cells.nucleus.AbstractCellComponent;
 import org.dcache.cells.CellStub;
 
 /**
@@ -25,7 +24,7 @@ import org.dcache.cells.CellStub;
  * building topology maps.
  */
 public class AbstractCellsTopology
-    extends AbstractCellComponent implements CellInfoProvider
+    implements CellInfoProvider
 {
     private static final Logger _log =
         LoggerFactory.getLogger(AbstractCellsTopology.class);

@@ -21,7 +21,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 
-import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
@@ -48,7 +47,6 @@ import static java.util.stream.Collectors.toCollection;
  * Each queue is represented by a StorageClassInfo object.
  */
 public class StorageClassContainer
-    extends AbstractCellComponent
     implements CellCommandListener, CellSetupProvider, CellInfoProvider
 {
     private final Map<String, StorageClassInfo> _storageClasses = new HashMap<>();

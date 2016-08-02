@@ -88,13 +88,13 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
-import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
@@ -125,8 +125,7 @@ import static diskCacheV111.util.CacheException.NO_POOL_CONFIGURED;
 import static java.util.stream.Collectors.toList;
 
 public final class SpaceManagerService
-        extends AbstractCellComponent
-        implements CellCommandListener, CellMessageReceiver, Runnable, CellInfoProvider
+        implements CellCommandListener, CellMessageSender, CellMessageReceiver, Runnable, CellInfoProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SpaceManagerService.class);
 
@@ -155,6 +154,14 @@ public final class SpaceManagerService
 
     private CellAddressCore serviceAddress;
     private PoolManagerHandlerSubscriber poolManagerHandler;
+
+    private CellEndpoint endpoint;
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        this.endpoint = endpoint;
+    }
 
     @Required
     public void setServiceAddress(CellAddressCore serviceAddress)
@@ -437,7 +444,7 @@ public final class SpaceManagerService
     protected ListenableFuture<PoolMgrGetHandler> forward(CellMessage envelope, PoolMgrGetHandler message)
     {
         ListenableFuture<PoolMgrGetHandler> response =
-                poolManagerHandler.sendAsync(getCellEndpoint(), message, envelope.getTtl() - envelope.getLocalAge());
+                poolManagerHandler.sendAsync(endpoint, message, envelope.getTtl() - envelope.getLocalAge());
         return Futures.transform(response, this::decorateHandler);
     }
 

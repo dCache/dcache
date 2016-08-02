@@ -27,7 +27,9 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 
@@ -60,8 +62,8 @@ import org.dcache.xdr.OncRpcException;
  *
  * @since 1.9.11
  */
-public class NfsTransferService extends AbstractCellComponent
-        implements MoverFactory, TransferService<NfsMover>, CellCommandListener, CellInfoProvider
+public class NfsTransferService
+        implements MoverFactory, TransferService<NfsMover>, CellCommandListener, CellInfoProvider, CellIdentityAware
 {
     private static final Logger _log = LoggerFactory.getLogger(NfsTransferService.class);
     private NFSv4MoverHandler _nfsIO;
@@ -82,6 +84,14 @@ public class NfsTransferService extends AbstractCellComponent
      * file to store TCP port number used by pool.
      */
     private File _tcpPortFile;
+
+    private CellAddressCore _cellAddress;
+
+    @Override
+    public void setCellAddress(CellAddressCore address)
+    {
+        _cellAddress = address;
+    }
 
     public void init() throws IOException, GSSException, OncRpcException {
 
@@ -113,7 +123,7 @@ public class NfsTransferService extends AbstractCellComponent
             retry--;
             portRange = new PortRange(minTcpPort, maxTcpPort);
             try {
-                _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName(), _door, _bootVerifier);
+                _nfsIO = new NFSv4MoverHandler(portRange, _withGss, _cellAddress.getCellName(), _door, _bootVerifier);
                 bound = true;
             } catch (BindException e) {
                 bindException = e;
@@ -206,7 +216,7 @@ public class NfsTransferService extends AbstractCellComponent
             final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
             final InetSocketAddress[] localSocketAddresses = localSocketAddresses(mover);
             _door.notify(directDoorPath,
-                         new PoolPassiveIoFileMessage<>(getCellName(), localSocketAddresses, legacyStateId,
+                         new PoolPassiveIoFileMessage<>(_cellAddress.getCellName(), localSocketAddresses, legacyStateId,
                                                         _bootVerifier));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill

@@ -50,8 +50,8 @@ import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 
-import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellArgsAware;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -78,8 +78,7 @@ import org.dcache.vehicles.FileAttributes;
 import static java.util.stream.Collectors.toList;
 
 public class PoolManagerV5
-    extends AbstractCellComponent
-    implements CellCommandListener, CellMessageReceiver, CellLifeCycleAware, CellInfoProvider
+    implements CellCommandListener, CellMessageReceiver, CellLifeCycleAware, CellInfoProvider, CellArgsAware
 {
     private static final Version VERSION = Version.of(PoolManagerV5.class);
     private int  _writeThreads;
@@ -114,6 +113,14 @@ public class PoolManagerV5
     private long _poolMonitorUpdatePeriod;
     private TimeUnit _poolMonitorUpdatePeriodUnit;
     private double _poolMonitorMaxUpdatesPerSecond;
+
+    private Args _args;
+
+    @Override
+    public void setCellArgs(Args args)
+    {
+        _args = args;
+    }
 
     @Required
     public void setPoolSelectionUnit(PoolSelectionUnit selectionUnit)
@@ -189,7 +196,7 @@ public class PoolManagerV5
 
     public void init()
     {
-        String watchdogParam = getArgs().getOpt("watchdog");
+        String watchdogParam = _args.getOpt("watchdog");
         if (watchdogParam != null && watchdogParam.length() > 0) {
             _watchdog = new WatchdogThread(watchdogParam);
         } else {
