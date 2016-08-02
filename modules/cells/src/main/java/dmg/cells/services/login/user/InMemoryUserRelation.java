@@ -8,7 +8,7 @@ import java.util.Vector;
 
 public class InMemoryUserRelation implements UserRelationable {
 
-   private class DEnumeration implements Enumeration<String> {
+   private static class DEnumeration implements Enumeration<String> {
        @Override
        public boolean hasMoreElements(){ return false ; }
        @Override
@@ -37,7 +37,7 @@ public class InMemoryUserRelation implements UserRelationable {
           return _childs == null ? new DEnumeration() : _childs.keys() ;
       }
       private boolean hasChildren(){
-         return ( _childs != null ) && ( _childs.size() > 0 ) ;
+         return ( _childs != null ) && (!_childs.isEmpty()) ;
       }
       private boolean isParent(String parent){
           return ( _parents != null ) && ( _parents.get(parent)!=null ) ;

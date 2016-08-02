@@ -37,7 +37,7 @@ public class      CdbDirectoryContainer
        CdbElementable.class
    } ;
    private final Hashtable<String, ElementEntry> _table      = new Hashtable<>() ;
-   private class  ElementEntry {
+   private static class  ElementEntry {
 
        private CdbLockable   _lockable;
        private int           _refCounter;
@@ -230,7 +230,7 @@ public class      CdbDirectoryContainer
        // this is done automatically on creation of entry )
        //
        synchronized( _table ){
-          _table.put( name , new ElementEntry( element ) ) ;
+          _table.put(name , new ElementEntry(element)) ;
        }
        //
        // return the write access

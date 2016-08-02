@@ -320,14 +320,14 @@ public class Crypt {
 */
 public static String byteToHexString( byte b ) {
       String str = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
-      return str.length() == 1 ? "0"+str : str ;
+      return str.length() == 1 ? '0' + str : str ;
    }
    public static String byteToHexString(byte [] bytes ) {
 	      
 		  StringBuilder sb = new StringBuilder(bytes.length +1);
 
        for (byte aByte : bytes) {
-           sb.append(byteToHexString(aByte)).append(" ");
+           sb.append(byteToHexString(aByte)).append(' ');
        }
 	       return sb.toString() ;    
   }

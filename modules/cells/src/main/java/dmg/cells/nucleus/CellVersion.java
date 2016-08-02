@@ -26,7 +26,7 @@ public class CellVersion implements Serializable
     {
         _revision = revision;
         _release = release;
-        _version = _release + "(" + _revision + ")";
+        _version = _release + '(' + _revision + ')';
     }
 
     public String getRelease()

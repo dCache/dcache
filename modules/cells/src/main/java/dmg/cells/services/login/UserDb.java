@@ -48,9 +48,9 @@ public class UserDb extends CdbGLock  {
                 break;
             case "show-user": {
                 UserHandle user = _db.getUserByName(args[1]);
-                System.out.println(user.toString());
+                System.out.println(user);
                 System.out.println("Global prives : ");
-                System.out.println(_db.getUserPrivileges(args[1]).toString());
+                System.out.println(_db.getUserPrivileges(args[1]));
                 break;
             }
             case "get-parents":
@@ -259,7 +259,7 @@ public class UserDb extends CdbGLock  {
        }
        if( i < parents.length ) {
            throw new
-                   IllegalArgumentException("would create loop >" + groupName + "-" + userName + "<");
+                   IllegalArgumentException("would create loop >" + groupName + '-' + userName + '<');
        }
 
        boolean isGroup ;

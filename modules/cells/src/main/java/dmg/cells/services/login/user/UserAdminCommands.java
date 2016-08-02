@@ -175,11 +175,11 @@ public class UserAdminCommands
            StringBuilder sb = new StringBuilder() ;
            sb.append( "Parents : \n" ) ;
            while( ep.hasMoreElements() ){
-              sb.append("  ").append(ep.nextElement()).append("\n") ;
+              sb.append("  ").append(ep.nextElement()).append('\n') ;
            }
            sb.append( "Elements : \n" ) ;
            while( ee.hasMoreElements() ){
-              sb.append("  ").append(ee.nextElement()).append("\n") ;
+              sb.append("  ").append(ee.nextElement()).append('\n') ;
            }
            return sb.toString() ;
         }else{
@@ -199,7 +199,7 @@ public class UserAdminCommands
     private String sendAscii( Enumeration<String> e ){
         StringBuilder sb = new StringBuilder() ;
         while( e.hasMoreElements() ){
-           sb.append( e.nextElement()).append("\n") ;
+           sb.append( e.nextElement()).append('\n') ;
         }
         return sb.toString() ;
     }
@@ -269,7 +269,7 @@ public class UserAdminCommands
         while( e.hasMoreElements() ){
             String user = e.nextElement();
             boolean perm = dict.getPermission(user) ;
-            sb.append(user).append(" -> ").append(perm).append("\n");
+            sb.append(user).append(" -> ").append(perm).append('\n');
             hash.put( user , perm) ;
         }
         return !args.hasOption("binary") ?
@@ -283,7 +283,7 @@ public class UserAdminCommands
         if( args.hasOption("binary") ) {
             return ok;
         }
-        return  ( ok ? "Allowed" : "Denied" ) + "\n" ;
+        return ( ok ? "Allowed" : "Denied" ) + '\n';
     }
     public static final String hh_show_principal = "<principalName>" ;
     public Object ac_show_principal_$_1( Args args )
@@ -295,7 +295,7 @@ public class UserAdminCommands
            while( e.hasMoreElements() ){
                String user = e.nextElement();
                sb.append(user).append(" -> ").append(dict.valueOf(user))
-                       .append("\n") ;
+                       .append('\n') ;
            }
            return sb.toString() ;
         }else{

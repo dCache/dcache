@@ -126,7 +126,7 @@
          }else if( obj instanceof Byte ){
             return ((Byte)obj).intValue() ;
          }else{
-            System.out.println( "Got telnet control : "+obj.toString() ) ;
+            System.out.println("Got telnet control : " + obj) ;
          }
       }
    }

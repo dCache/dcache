@@ -10,7 +10,7 @@ public class RoutedMessageEvent extends MessageEvent {
 
     public RoutedMessageEvent( CellMessage msg ){ super( msg ) ; } 
     public String toString(){
-      return "RoutedMessageEvent(source="+getSource().toString()+")" ;
+      return "RoutedMessageEvent(source=" + getSource() + ')';
     }
 }
  

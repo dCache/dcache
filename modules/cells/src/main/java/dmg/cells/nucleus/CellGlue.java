@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.retry.RetryOneTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +60,7 @@ class CellGlue
     {
         String cellDomainNameLocal = cellDomainName;
 
-        if ((cellDomainName == null) || (cellDomainName.equals(""))) {
+        if (cellDomainName == null || cellDomainName.isEmpty()) {
             cellDomainNameLocal = "*";
         }
 
@@ -529,7 +528,7 @@ class CellGlue
             CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),
                                                    new NoRouteToCellException(msg,
                                                                               "Route for >" + routeTarget +
-                                                                              "< not found at >" + _cellDomainName + "<"));
+                                                                              "< not found at >" + _cellDomainName + '<'));
             envelope.setLastUOID(msg.getUOID());
             envelope.addSourceAddress(_domainAddress);
             sendMessage(envelope, true, true);

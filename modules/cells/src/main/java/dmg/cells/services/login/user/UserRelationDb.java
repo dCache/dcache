@@ -4,7 +4,6 @@ package dmg.cells.services.login.user  ;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -14,7 +13,7 @@ import java.util.Vector;
 
 public class UserRelationDb {
 
-    private class DEnumeration<T> implements Enumeration<T> {
+    private static class DEnumeration<T> implements Enumeration<T> {
         @Override
         public boolean hasMoreElements(){ return false ; }
         @Override
@@ -82,9 +81,9 @@ public class UserRelationDb {
        return acl ;
     }
     public void display(){
-        for (String name : _elements.keySet()) {
-            ElementItem item = _elements.get(name);
-            System.out.println(name);
+        for (Map.Entry<String, ElementItem> entry : _elements.entrySet()) {
+            ElementItem item = entry.getValue();
+            System.out.println(entry.getKey());
             Enumeration<String> e = item.parents();
             while (e.hasMoreElements()) {
                 System.out.println("   p:" + e.nextElement());
@@ -112,7 +111,7 @@ public class UserRelationDb {
                 String line;
                 while ((line = br.readLine()) != null) {
                     String name = line.trim();
-                    if (name.length() == 0) {
+                    if (name.isEmpty()) {
                         continue;
                     }
                     if (name.charAt(0) == '#') {

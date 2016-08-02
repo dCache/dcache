@@ -20,12 +20,12 @@ public class AclException
         super( message ) ;
     }
     public AclException( String principal , String acl ){
-        super( "Acl >"+acl+"< denied for >"+principal+"<" ) ;
+        super("Acl >" + acl + "< denied for >" + principal + '<') ;
         _acl       = acl ;
         _principal = principal ;
     }
     public AclException( Authorizable auth , String acl ){
-        super( "Acl >"+acl+"< denied for >"+auth.getAuthorizedPrincipal()+"<" ) ;
+        super("Acl >" + acl + "< denied for >" + auth.getAuthorizedPrincipal() + '<') ;
         _acl       = acl ;
         _principal = auth.getAuthorizedPrincipal() ;
     }

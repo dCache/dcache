@@ -309,7 +309,7 @@ public class LoginManager
         } else {
             StringBuilder sb = new StringBuilder();
             for (String child : _children.keySet()) {
-                sb.append(child).append("\n");
+                sb.append(child).append('\n');
             }
             return sb.toString();
         }
@@ -372,7 +372,7 @@ public class LoginManager
         public void run()
         {
             LOGGER.info("Sending 'listening on {} {}'", getCellName(), _port);
-            sendMessage(new CellMessage(_path, "listening on " + getCellName() + " " + _port),
+            sendMessage(new CellMessage(_path, "listening on " + getCellName() + ' ' + _port),
                         this, MoreExecutors.directExecutor(), 5000);
         }
 
@@ -475,12 +475,12 @@ public class LoginManager
         pw.println("  KeepAlive      : " + (_keepAlive.getKeepAlive() / 1000L));
 
         if (_maxLogin > -1) {
-            pw.println("  Logins/max     : " + _children.size() + "/" + _maxLogin);
+            pw.println("  Logins/max     : " + _children.size() + '/' + _maxLogin);
         }
 
         if (_locationManager != null) {
             pw.println("  Location Mgr   : " + _locationManager +
-                    " (" + (_sending ? "Sending" : "Informed") + ")");
+                       " (" + (_sending ? "Sending" : "Informed") + ')');
         }
 
         if (_loginBrokerPublisher != null) {
@@ -803,7 +803,7 @@ public class LoginManager
         {
             Thread t = Thread.currentThread();
             InetSocketAddress remoteSocketAddress = (InetSocketAddress) _socket.getRemoteSocketAddress();
-            NDC.push(toUriString(remoteSocketAddress.getAddress()) + ":" + remoteSocketAddress.getPort());
+            NDC.push(toUriString(remoteSocketAddress.getAddress()) + ':' + remoteSocketAddress.getPort());
             try {
                 LOGGER.info("acceptThread ({}): creating protocol engine", t);
 

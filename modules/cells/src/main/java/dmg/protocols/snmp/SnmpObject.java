@@ -89,7 +89,7 @@ abstract class SnmpObject {
       SnmpObject snmp = SnmpObject.generate( b , 0 , b.length ) ;
       System.out.println( " Got class  : "+snmp.getClass().getName() ) ;
       System.out.println( " CodeLength : "+snmp.getCodedLength() ) ;
-      System.out.println( " Value      : \n"+snmp.toString() ) ;
+      System.out.println(" Value      : \n" + snmp) ;
       b = snmp.getSnmpBytes() ;
       output  =  SnmpObjectHeader._print( b , 0 , b.length ) ;
       System.out.println( output ) ;

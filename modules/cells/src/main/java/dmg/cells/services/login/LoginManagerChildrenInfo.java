@@ -35,12 +35,12 @@ public class LoginManagerChildrenInfo implements Serializable {
    public String toString(){
       StringBuilder sb = new StringBuilder() ;
       sb.append("Cell=").append(_cellName).
-         append(";Domain=").append(_cellDomainName).append(";") ;
+         append(";Domain=").append(_cellDomainName).append(';') ;
       if( _children == null ) {
           return sb.toString();
       }
        for (String child : _children) {
-           sb.append(child).append(";");
+           sb.append(child).append(';');
        }
       return sb.toString() ;
    }

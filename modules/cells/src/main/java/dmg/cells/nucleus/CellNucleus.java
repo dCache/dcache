@@ -1,7 +1,6 @@
 package dmg.cells.nucleus;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -17,7 +16,6 @@ import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -25,10 +23,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -132,7 +126,7 @@ public class CellNucleus implements ThreadFactory
             if (cellName.length() == 1) {
                 cellName = "$-" + getUnique();
             } else {
-                cellName = cellName.substring(0, cellName.length() - 1) + "-" + getUnique();
+                cellName = cellName.substring(0, cellName.length() - 1) + '-' + getUnique();
             }
         }
 
@@ -786,7 +780,7 @@ public class CellNucleus implements ThreadFactory
     @Override @Nonnull
     public Thread newThread(@Nonnull Runnable target)
     {
-        return newThread(target, getCellName() + "-" + _threadCounter.getAndIncrement());
+        return newThread(target, getCellName() + '-' + _threadCounter.getAndIncrement());
     }
 
     @Nonnull
@@ -864,7 +858,7 @@ public class CellNucleus implements ThreadFactory
                 long queueTime = _lastQueueTime;
                 if (msg.getTtl() < queueTime) {
                     CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),
-                            new NoRouteToCellException(msg, getCellName() + "@" + getCellDomainName() +
+                            new NoRouteToCellException(msg, getCellName() + '@' + getCellDomainName() +
                                                             " is busy (its estimated response time of " +
                                                             queueTime + " ms is longer than the message TTL of " +
                                                             msg.getTtl() + " ms)."));

@@ -304,7 +304,7 @@ public class LoginBrokerPublisher
         pw.println("    Root             : " + Strings.nullToEmpty(_root));
         pw.println("    Read paths       : " + _readPaths + (_readEnabled ? "" : " (disabled)"));
         pw.println("    Write paths      : " + _writePaths  + (_writeEnabled ? "" : " (disabled)"));
-        pw.println("    Update Time      : " + _brokerUpdateTime + " " + _brokerUpdateTimeUnit);
+        pw.println("    Update Time      : " + _brokerUpdateTime + ' ' + _brokerUpdateTimeUnit);
         pw.println("    Update Threshold : " + ((int) (_brokerUpdateThreshold * 100.0)) + " %");
         pw.println("    Last event       : " + _lastEvent);
     }

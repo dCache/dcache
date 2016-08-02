@@ -31,7 +31,7 @@ public class LegacyLoginCellFactory extends AbstractService implements LoginCell
             throws InvocationTargetException
     {
         try {
-            CellAdapter cell = _loginConstructor.newInstance(_cellName + "-" + userName + "*", engine);
+            CellAdapter cell = _loginConstructor.newInstance(_cellName + '-' + userName + '*', engine);
             cell.start().get();
             return cell;
         } catch (InstantiationException | IllegalAccessException e) {

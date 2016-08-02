@@ -15,7 +15,7 @@ public class KillEvent extends CellEvent {
     public CellPath getKiller(){ return (CellPath)getSource() ; }
     public long getTimeout(){ return _timeout ; }
     public String toString(){
-      return "KillEvent(source="+getSource().toString()+
-             ";timeout="+_timeout+")" ;
+      return "KillEvent(source=" + getSource() +
+             ";timeout=" + _timeout + ')';
     }
 }

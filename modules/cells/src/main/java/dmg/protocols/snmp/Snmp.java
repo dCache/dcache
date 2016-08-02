@@ -267,7 +267,7 @@ public class      Snmp
              _id     = _request.getRequestID().intValue() ;
              for( int i = 0 ; (i<3) && ( _result == null ) ; i++ ){
                 try{
-                  say("Sending ..."+packet+"\n");
+                  say("Sending ..." + packet + '\n');
                   _socket.send( packet ) ;
                   say("Send Ready; Waiting\n");
                   _receiveLock.wait(3000) ;
@@ -319,7 +319,7 @@ public class      Snmp
               _receiveLock.notifyAll() ;
            }
         }catch( Exception ee ){
-           esay( "Exception \n"+ee.toString() ) ;
+           esay("Exception \n" + ee) ;
         }
       }
    }
@@ -342,15 +342,15 @@ public class      Snmp
 
     int errorStatus = request.getErrorStatus().intValue() ;
     if( errorStatus != 0 ){
-       _outputText.append( oid.toString()+": Error status = "+errorStatus+
-                           " Error index = "+
-                           request.getErrorIndex().intValue()+"\n" ) ;
+       _outputText.append(oid + ": Error status = " + errorStatus +
+                          " Error index = " +
+                          request.getErrorIndex().intValue() + '\n') ;
        return null ;
     }
     if( _special == 0 ){
        _typeChoice.select( cls ) ;
        _valueText.setText( value.toString() ) ;
-       _outputText.append( oid.toString()+": ("+cls+") :"+ value+"\n" ) ;
+       _outputText.append(oid + ": (" + cls + ") :" + value + '\n') ;
        _oidText.setText( oid.toString() ) ;
     }else if( _special == 1 ){
        if( request.varBindListSize() < 7 ){
@@ -363,7 +363,7 @@ public class      Snmp
        StringBuilder sb = new StringBuilder() ;
        for( int  i= 0 ; i < 7 ; i++ ) {
            sb.append(__sysAll[i]).append(" : ")
-                   .append(request.varBindValueAt(i)).append("\n");
+                   .append(request.varBindValueAt(i)).append('\n');
        }
 
        _outputText.setText( sb.toString() ) ;
@@ -422,10 +422,10 @@ public class      Snmp
         esay( "Argument error" ) ;
         return ;
      }
-     say( "Host : "+_argHost+"\n"  ) ;
-     say( "Port : "+_argPort+"\n"  ) ;
-     say( "OID  : "+_argOID+"\n"  ) ;
-     say( "Community  : "+_argCommunity+"\n"  ) ;
+     say("Host : " + _argHost + '\n') ;
+     say("Port : " + _argPort + '\n') ;
+     say("OID  : " + _argOID + '\n') ;
+     say("Community  : " + _argCommunity + '\n') ;
      int type = _isNext ? SnmpObjectHeader.GetNextRequest :
                           SnmpObjectHeader.GetRequest ;
      SnmpRequest request ;

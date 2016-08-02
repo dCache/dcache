@@ -31,11 +31,11 @@ public abstract class Releases
 
     public static short getRelease(String version)
     {
-        int i = version.indexOf(".");
+        int i = version.indexOf('.');
         if (i < 0) {
             throw new NumberFormatException("Invalid dCache version: " + version);
         }
-        int j = version.indexOf(".", i + 1);
+        int j = version.indexOf('.', i + 1);
         return j < 0
                ? (short) (Short.parseShort(version.substring(0, i)) << 8)
                : (short) ((Short.parseShort( version.substring(0, i)) << 8) | Short.parseShort(version.substring(i + 1, j)));

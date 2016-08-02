@@ -13,7 +13,6 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellNucleus;
 
 import org.dcache.util.Args;
-import org.dcache.util.ByteUnit;
 
 import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.ByteUnit.MiB;
@@ -78,7 +77,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
         }
         if ((var = _args.getOpt("output")) != null) {
             _output = true;
-            if (!var.equals("")) {
+            if (!var.isEmpty()) {
                 _outputFile = var;
             }
         }
@@ -107,11 +106,11 @@ public class MemoryWatch extends CellAdapter implements Runnable {
          if( _outputFile != null ){
            try{
              PrintWriter pw;
-             String    name = _outputFile + "." +( _current % _generations ) ;
+             String    name = _outputFile + '.' + (_current % _generations ) ;
              File      f    = new File(name) ;
              if( f.exists() && ( f.length() > _maxFileSize ) ){
                 _current++ ;
-                name = _outputFile + "." +( _current % _generations ) ;
+                name = _outputFile + '.' + (_current % _generations ) ;
                 pw = new PrintWriter(
                           new FileWriter( name , false ) ) ;
              }else{
@@ -142,8 +141,8 @@ public class MemoryWatch extends CellAdapter implements Runnable {
             _runtime.gc() ;
             long fm = _runtime.freeMemory() ;
             long tm = _runtime.totalMemory() ;
-            say( " free "+fm+ " total "+tm+" used "+(tm-fm)+
-                 " "+(new Date()).toString() ) ;
+            say(" free " + fm + " total " + tm + " used " + (tm-fm) +
+                ' ' + (new Date()).toString() ) ;
          try{
             long update ;
             synchronized(_lock){
@@ -160,8 +159,8 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    public void getInfo( PrintWriter pw ){
       super.getInfo(pw);
       pw.println("Output  : "+
-                 (_output?
-                    ""+(_outputFile==null?"<stdout>":_outputFile):
+                 (_output ?
+                  (_outputFile == null ? "<stdout>" : _outputFile) :
                     "disabled" ) ) ;
       pw.println("Update  : "+_update+" seconds" ) ;
    }

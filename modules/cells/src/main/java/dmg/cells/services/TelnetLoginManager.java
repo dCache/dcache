@@ -157,7 +157,7 @@ public class      TelnetLoginManager
        String name = Subjects.getDisplayName(engine.getSubject());
        _log.info( "acceptThread ("+t+
                      "): connection created for user "+name ) ;
-       String cellName = "tn-"+name+"*" ;
+       String cellName = "tn-" + name + '*';
 
         _loginCellClass.getConstructor(String.class, StreamEngine.class).newInstance(cellName, engine);
     }catch( Exception e ){
@@ -201,7 +201,7 @@ public class      TelnetLoginManager
   //
    @Override
    public boolean isHostOk( InetAddress host ){
-      _log.info( "Request for host "+host+" ("+host.getHostName()+")" ) ;
+      _log.info("Request for host " + host + " (" + host.getHostName() + ')') ;
       if( _opt_dummy ) {
           return true;
       }

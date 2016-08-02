@@ -75,7 +75,7 @@ public class CommandInterpreterTest extends CommandInterpreter {
    public String ac_set_sync_$_1( Args args ){
       StringBuilder sb = new StringBuilder() ;
       for( int i= 0 ; i < args.optc() ; i++ ) {
-          sb.append(" Option : ").append(args.optv(i)).append("\n");
+          sb.append(" Option : ").append(args.optv(i)).append('\n');
       }
       return sb.toString() ;
    }

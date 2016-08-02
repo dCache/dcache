@@ -19,7 +19,6 @@
 
 package dmg.cells.services;
 
-import com.google.common.collect.Iterables;
 import com.google.common.net.HostAndPort;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -33,10 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -54,7 +50,6 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.services.login.LoginManager;
 import dmg.cells.zookeeper.PathChildrenCache;
 import dmg.util.CommandException;
-import dmg.util.CommandInterpreter;
 import dmg.util.command.Command;
 
 import org.dcache.util.Args;
@@ -75,7 +70,6 @@ public class LocationManager extends CellAdapter
 
     private final CoreDomains coreDomains;
     private final Args args;
-    private final CellNucleus nucleus;
     private final CellDomainRole role;
     private final Client client;
 
@@ -269,7 +263,6 @@ public class LocationManager extends CellAdapter
         super(name, "System", args);
 
         this.args = getArgs();
-        nucleus = getNucleus();
         coreDomains = new CoreDomains(getCellDomainName(), getCuratorFramework());
 
         if (this.args.hasOption("role")) {
@@ -326,7 +319,7 @@ public class LocationManager extends CellAdapter
     {
         String cellName = "l*";
         String cellClass = "dmg.cells.network.LocationMgrTunnel";
-        String cellArgs = args + " " + cellClass + " " + "-prot=raw" + " -lm=" + getCellName() + " -role=" + role;
+        String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -lm=" + getCellName() + " -role=" + role;
         LOGGER.info("Starting acceptor with arguments: {}", cellArgs);
         LoginManager c = new LoginManager(cellName, "System", cellArgs);
         c.start().get();
@@ -336,18 +329,18 @@ public class LocationManager extends CellAdapter
 
     private String startConnector(String remoteDomain, HostAndPort address) throws ExecutionException, InterruptedException
     {
-        String cellName = "c-" + remoteDomain + "*";
+        String cellName = "c-" + remoteDomain + '*';
         String clientKey = args.getOpt("clientKey");
-        clientKey = (clientKey != null) && (clientKey.length() > 0) ? ("-clientKey=" + clientKey) : "";
+        clientKey = (clientKey != null) && (!clientKey.isEmpty()) ? ("-clientKey=" + clientKey) : "";
         String clientName = args.getOpt("clientUserName");
-        clientName = (clientName != null) && (clientName.length() > 0) ? ("-clientUserName=" + clientName) : "";
+        clientName = (clientName != null) && (!clientName.isEmpty()) ? ("-clientUserName=" + clientName) : "";
 
         String cellArgs =
-                "-domain=" + remoteDomain + " "
-                + "-lm=" + getCellName() + " "
-                + "-role=" + role + " "
-                + "-where=" + address + " "
-                + clientKey + " "
+                "-domain=" + remoteDomain + ' '
+                + "-lm=" + getCellName() + ' '
+                + "-role=" + role + ' '
+                + "-where=" + address + ' '
+                + clientKey + ' '
                 + clientName;
         LOGGER.info("Starting connector with {}", cellArgs);
         LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs);

@@ -27,7 +27,7 @@ public class ServiceRequest implements Serializable  {
    }
    public String toString(){
       if( _object instanceof String ){
-        return "Service Request ("+_uoid+") : "+_object.toString() ;
+        return "Service Request (" + _uoid + ") : " + _object;
       }else{
         return "Service Request ("+_uoid+") : "+_object.getClass().getName() ;
       }

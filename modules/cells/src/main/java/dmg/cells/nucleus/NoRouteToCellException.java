@@ -23,7 +23,7 @@ public class NoRouteToCellException extends Exception
     @Override
     public String toString()
     {
-        return "NoRouteToCell[" + getMessage() + "]";
+        return "NoRouteToCell[" + getMessage() + ']';
     }
 
     @Override

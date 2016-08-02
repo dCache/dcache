@@ -19,9 +19,6 @@ public class SnmpTimeTicks extends SnmpInteger {
     int min  = (int) ( v % 60  ) ; v /= 60 ;
     int hour = (int) ( v % 24  ) ; v /= 24 ;
     int days = (int) v ;
-    return ""+days+" Days "
-             +hour+" Hours "
-             +min+" Minutes "
-             +sec+":"+msec+" Seconds";
+    return days + " Days " + hour + " Hours " + min + " Minutes " + sec + ":" + msec + " Seconds";
   }
 }  

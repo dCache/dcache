@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 
 import org.dcache.util.ColumnWriter;
 
-import static com.google.common.collect.Iterables.*;
 import static java.util.stream.Collectors.toList;
 
 public class CellRoutingTable implements Serializable
@@ -46,7 +45,7 @@ public class CellRoutingTable implements Serializable
         switch (route.getRouteType()) {
         case CellRoute.EXACT:
         case CellRoute.ALIAS:
-            dest = route.getCellName() + "@" + route.getDomainName();
+            dest = route.getCellName() + '@' + route.getDomainName();
             synchronized (_exact) {
                 if (!_exact.put(dest, route)) {
                     throw new IllegalArgumentException("Duplicated route entry for : " + dest);
@@ -100,7 +99,7 @@ public class CellRoutingTable implements Serializable
         switch (route.getRouteType()) {
         case CellRoute.EXACT:
         case CellRoute.ALIAS:
-            dest = route.getCellName() + "@" + route.getDomainName();
+            dest = route.getCellName() + '@' + route.getDomainName();
             synchronized (_exact) {
                 if (!_exact.remove(dest, route)) {
                     throw new IllegalArgumentException("Route entry not found for : " + dest);
@@ -206,7 +205,7 @@ public class CellRoutingTable implements Serializable
         String domainName = addr.getCellDomainName();
         Optional<CellRoute> route;
         synchronized (_exact) {
-            route = _exact.get(cellName + "@" + domainName).stream().findFirst();
+            route = _exact.get(cellName + '@' + domainName).stream().findFirst();
         }
         if (route.isPresent()) {
             return route.get();

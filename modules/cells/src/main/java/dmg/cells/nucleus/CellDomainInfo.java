@@ -59,7 +59,7 @@ public class CellDomainInfo implements Serializable
 
     public String toString()
     {
-        return _domainName + "," + _version + "," + _role;
+        return _domainName + ',' + _version + ',' + _role;
     }
 
     private void readObject(java.io.ObjectInputStream stream)

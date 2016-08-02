@@ -34,23 +34,23 @@ public class Formats {
        int left  = diff / 2 ;
        int right = diff - left ;
        for( i = 0 ; i < left ; i++ ) {
-           sb.append(" ");
+           sb.append(' ');
        }
        sb.append( in ) ;
        for( i = 0 ; i < right ; i++ ) {
-           sb.append(" ");
+           sb.append(' ');
        }
     }else if( ( flags & RIGHT ) > 0 ){
        int diff = field - in.length() ;
        for( i = 0 ; i < diff ; i++ ) {
-           sb.append(" ");
+           sb.append(' ');
        }
        sb.append( in ) ;
     }else{
        sb.append( in ) ;
        int diff = field - in.length() ;
        for( i = 0 ; i < diff ; i++ ) {
-           sb.append(" ");
+           sb.append(' ');
        }
     }
     return sb.toString() ;
@@ -125,7 +125,7 @@ public class Formats {
 
             /* Unless we already replaced in once in the current stack, replace any placeholders in the value */
             if (keyValue == null || stack.contains(keyName)) {
-                out.append("${").append(keyName).append("}");
+                out.append("${").append(keyName).append('}');
             } else {
                 stack.push(keyName);
                 replaceKeywords(keyValue.toCharArray(), out, replaceable, stack);
@@ -222,7 +222,7 @@ public class Formats {
     if ( condition.startsWith("*") ) {
       // removing the joker
       condition = condition.substring( 1 ) ;
-      int nextJoker = condition.indexOf("*") ;
+      int nextJoker = condition.indexOf('*') ;
       if ( nextJoker == -1 ) {
         return endsWith( subject, condition ) ;
       } else {
@@ -237,7 +237,7 @@ public class Formats {
         }
       }
     } else {
-      int nextJoker = condition.indexOf("*") ;
+      int nextJoker = condition.indexOf('*') ;
       if ( nextJoker == -1 ) {
         return equals( subject, condition ) ;
       } else {
@@ -257,7 +257,7 @@ public class Formats {
   private static boolean startsWith( String subject, String term ) {
      int riddle ;
      subject = subject.substring( 0, term.length() ) ;
-     while ( ( riddle = term.indexOf("?")) != -1 ) {
+     while (( riddle = term.indexOf('?')) != -1 ) {
        term = removeChar(term,riddle) ;
        subject = removeChar(subject,riddle) ;
      }
@@ -271,7 +271,7 @@ public class Formats {
       return false ;
     }
     subject = subject.substring( subject.length() - term.length() ) ;
-    while ( ( riddle = term.indexOf("?")) != -1 ) {
+    while (( riddle = term.indexOf('?')) != -1 ) {
       term = removeChar(term,riddle) ;
       subject = removeChar(subject,riddle) ;
     }
@@ -300,7 +300,7 @@ public class Formats {
   }
   private static boolean equals( String subject, String term ) {
      int riddle ;
-     while ( ( riddle = term.indexOf("?")) != -1 ) {
+     while (( riddle = term.indexOf('?')) != -1 ) {
              term = removeChar(term,riddle) ;
              subject = removeChar(subject,riddle) ;
      }

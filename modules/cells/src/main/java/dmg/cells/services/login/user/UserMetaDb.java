@@ -14,7 +14,7 @@ import java.util.StringTokenizer;
 
 public class UserMetaDb {
 
-   private class UserMetaItem implements UserMetaDictionary {
+   private static class UserMetaItem implements UserMetaDictionary {
        private String    _name;
        private Hashtable<String, String> _attr    = new Hashtable<>() ;
        private UserMetaItem( String name ){ _name = name ; }
@@ -91,7 +91,7 @@ public class UserMetaDb {
    private void _storeUser( String userName , UserMetaItem item )
            throws DatabaseException {
 
-      File file = new File( _userMetaDir , "."+userName ) ;
+      File file = new File(_userMetaDir , '.' + userName ) ;
       PrintWriter pw;
       try{
            pw = new PrintWriter(
@@ -103,7 +103,7 @@ public class UserMetaDb {
       Enumeration<String> e = item.getAttributes() ;
       while( e.hasMoreElements() ){
           String key = e.nextElement();
-          pw.println(key+"="+item.getAttribute(key)) ;
+          pw.println(key + '=' + item.getAttribute(key)) ;
       }
       pw.close() ;
       file.renameTo( new File( _userMetaDir , userName ) ) ;
@@ -127,7 +127,7 @@ public class UserMetaDb {
         }
         String line;
         StringTokenizer st;
-        UserMetaItem    item = new UserMetaItem( userName ) ;
+        UserMetaItem    item = new UserMetaItem(userName);
         String key, value;
         try{
            while( ( line = br.readLine() ) != null ){
@@ -153,7 +153,7 @@ public class UserMetaDb {
        try{
           getUser( userName ) ;
        }catch(Exception ii){
-          UserMetaItem item = new UserMetaItem(userName) ;
+          UserMetaItem item = new UserMetaItem(userName);
           item.addAttribute( "type" , "user" ) ;
           putUser( userName , item ) ;
           return ;
@@ -168,7 +168,7 @@ public class UserMetaDb {
        try{
           getUser( groupName ) ;
        }catch(Exception ii){
-          UserMetaItem item = new UserMetaItem(groupName) ;
+          UserMetaItem item = new UserMetaItem(groupName);
           item.addAttribute( "type" , "group" ) ;
           putUser( groupName , item ) ;
           return ;

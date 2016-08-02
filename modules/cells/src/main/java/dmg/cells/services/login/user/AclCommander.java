@@ -58,7 +58,7 @@ public class AclCommander extends CommandInterpreter {
     public String ac_id_$_0_1( Args args )throws Exception {
        checkDatabase() ;
        if( args.argc() == 0 ) {
-           return _user + "\n";
+           return _user + '\n';
        }
        _user = args.argv(0) ;
        return "" ;
@@ -196,7 +196,7 @@ public class AclCommander extends CommandInterpreter {
         if( inherits == null ) {
             System.out.println("<resolved>");
         } else {
-            System.out.println("<inherits=" + inherits + ">");
+            System.out.println("<inherits=" + inherits + '>');
         }
         while( e.hasMoreElements() ){
             String user = e.nextElement();
@@ -253,7 +253,7 @@ public class AclCommander extends CommandInterpreter {
             throw new Exception("UserDb not open");
         }
         boolean ok = _aclDb.check(args.argv(0),args.argv(1),_userDb);
-        return  ( ok ? "Allowed" : "Denied" ) + "\n" ;
+        return ( ok ? "Allowed" : "Denied" ) + '\n';
     }
     private void checkDatabase() throws Exception {
            if( ( _userMetaDb != null ) &&

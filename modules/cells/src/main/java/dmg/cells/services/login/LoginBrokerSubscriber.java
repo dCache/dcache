@@ -294,9 +294,9 @@ public class LoginBrokerSubscriber
                     sb.append(info);
                     if (showTime) {
                         sb.append(entry.getDelay(MILLISECONDS)).append(" ms;");
-                        sb.append(entry.isValid() ? "VALID" : "INVALID").append(";");
+                        sb.append(entry.isValid() ? "VALID" : "INVALID").append(';');
                     }
-                    sb.append("\n");
+                    sb.append('\n');
                 }
             }
             return sb.toString();

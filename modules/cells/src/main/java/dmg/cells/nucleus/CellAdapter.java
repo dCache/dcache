@@ -560,7 +560,7 @@ public class CellAdapter
      */
     public Serializable commandArrived(String str, CommandSyntaxException cse) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Syntax Error : ").append(cse.getMessage()).append("\n");
+        sb.append("Syntax Error : ").append(cse.getMessage()).append('\n');
         String help  = cse.getHelpText();
         if (help != null) {
             sb.append("Help : \n");
@@ -654,7 +654,7 @@ public class CellAdapter
         {
             if (lng || full) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(getInfo()).append("\n");
+                sb.append(getInfo()).append('\n');
                 Map<UOID,CellLock > map = _nucleus.getWaitQueue();
                 if (! map.isEmpty()) {
                     sb.append("\nWe are waiting for the following messages\n");
@@ -662,7 +662,7 @@ public class CellAdapter
                 for (Map.Entry<UOID,CellLock > entry : map.entrySet()) {
                     Object    key   = entry.getKey();
                     CellLock  lock  = entry.getValue();
-                    sb.append(key.toString()).append(" r=");
+                    sb.append(key).append(" r=");
                     long res = subWithInfinity(lock.getTimeout(), System.currentTimeMillis());
                     sb.append(res/1000).append(" sec;");
                     CellMessage msg = lock.getMessage();
@@ -673,11 +673,11 @@ public class CellAdapter
                         if (obj != null) {
                             sb.append("msg=").append(obj.getClass().getName());
                             if (full) {
-                                sb.append("/").append(obj.toString());
+                                sb.append('/').append(obj);
                             }
                         }
                     }
-                    sb.append("\n");
+                    sb.append('\n');
                 }
                 return sb.toString();
             } else {
@@ -793,8 +793,8 @@ public class CellAdapter
             }
 
             File dump = new File(dir,
-                                 getCellDomainName()+"-"+
-                                 getCellName()+"-"+
+                                 getCellDomainName() + '-' +
+                                 getCellName() + '-' +
                                  Long.toHexString(System.currentTimeMillis()));
             pinboard.dump(dump);
         } catch (IOException e) {
@@ -948,25 +948,25 @@ public class CellAdapter
             return "Sorry, can't exit";
         } catch (CommandThrowableException cte) {
             StringBuilder sb = new StringBuilder();
-            sb.append(cte.getMessage()).append("\n");
+            sb.append(cte.getMessage()).append('\n');
             Throwable t = cte.getTargetException();
             sb.append(t.getClass().getName()).append(" : ")
-                    .append(t.getMessage()).append("\n");
+                    .append(t.getMessage()).append('\n');
             return sb.toString();
         } catch (CommandPanicException cpe) {
             StringBuilder sb = new StringBuilder();
-            sb.append("Panic : ").append(cpe.getMessage()).append("\n");
+            sb.append("Panic : ").append(cpe.getMessage()).append('\n');
             Throwable t = cpe.getTargetException();
             sb.append(t.getClass().getName()).append(" : ")
-                    .append(t.getMessage()).append("\n");
+                    .append(t.getMessage()).append('\n');
             return sb.toString();
         } catch (Exception e) {
-            return "??? : "+e.toString();
+            return "??? : " + e;
         }
     }
 
     private CellPath _aclPath    = new CellPath("acm");
-    private long     _aclTimeout = 10000L;
+    private static final long ACL_TIMEOUT = 10_000L;
     protected void checkAclPermission(Authorizable auth, Object command, String [] acls) throws CommandException {
 
         String user = auth.getAuthorizedPrincipal();
@@ -1000,9 +1000,9 @@ public class CellAdapter
         CellMessage reply;
 
         try {
-            reply = _nucleus.sendAndWait(new CellMessage(_aclPath, request), _aclTimeout);
+            reply = _nucleus.sendAndWait(new CellMessage(_aclPath, request), ACL_TIMEOUT);
             if (reply == null) {
-                throw new CommandException("Error in acl handling : Acl Request timed out (" + _aclPath + ")");
+                throw new CommandException("Error in acl handling : Acl Request timed out (" + _aclPath + ')');
             }
 
         } catch (NoRouteToCellException | ExecutionException | InterruptedException e) {

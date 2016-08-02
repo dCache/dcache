@@ -260,6 +260,6 @@ public class LogbackShell
             throw new IllegalArgumentException("Appender " + appenderName + " does not support encoders");
         }
 
-        return "pattern of appender " + loggerName + "." + appenderName + " set to " + encoder.getPattern();
+        return "pattern of appender " + loggerName + '.' + appenderName + " set to " + encoder.getPattern();
     }
 }

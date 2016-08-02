@@ -116,12 +116,12 @@ class AcCommandExecutor implements CommandExecutor
             } else {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < _minArgs; i++) {
-                    sb.append(" <arg-").append(i).append(">");
+                    sb.append(" <arg-").append(i).append('>');
                 }
                 if (_maxArgs != _minArgs) {
                     sb.append(" [ ");
                     for (int i = _minArgs; i < _maxArgs; i++) {
-                        sb.append(" <arg-").append(i).append(">");
+                        sb.append(" <arg-").append(i).append('>');
                     }
                     sb.append(" ] ");
                 }
@@ -170,15 +170,14 @@ class AcCommandExecutor implements CommandExecutor
                 }
 
                 if (!declared) {
-                    throw new CommandPanicException("Command failed: " + te.toString(),  te);
+                    throw new CommandPanicException("Command failed: " + te, te);
                 }
             }
 
-            throw new CommandThrowableException(te.toString() + " from " + _method.getName(),
-                    te);
+            throw new CommandThrowableException(te + " from " + _method.getName(), te);
         } catch (IllegalAccessException e) {
             throw new CommandPanicException("Exception while invoking " +
-                    _method.getName() + ": " + e.toString(), e);
+                                            _method.getName() + ": " + e, e);
         }
     }
 

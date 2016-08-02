@@ -83,8 +83,8 @@ public class CellMessage implements Cloneable , Serializable {
   @Override
   public String toString(){
     StringBuilder sb = new StringBuilder() ;
-    sb.append( "<CM: S=" ).append( _source.toString() ).
-       append( ";D=").append( _destination.toString() ) ;
+    sb.append( "<CM: S=" ).append(_source).
+       append( ";D=").append(_destination) ;
     if( _mode == ORIGINAL_MODE ) {
         sb.append(";C=").
                 append(_message.getClass().getName());
@@ -99,7 +99,7 @@ public class CellMessage implements Cloneable , Serializable {
     if (_ttl < Long.MAX_VALUE) {
         sb.append(";TTL=").append(_ttl);
     }
-    sb.append( ">" ) ;
+    sb.append('>') ;
     return sb.toString() ;
   }
   @Override

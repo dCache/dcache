@@ -74,7 +74,7 @@ public class LocationManagerConnector
         } catch (UnresolvedAddressException e) {
             throw new IOException("Unable to resolve " + _address, e);
         } catch (IOException e) {
-            throw new IOException("Failed to connect to " + _address + ": " + e.toString(), e);
+            throw new IOException("Failed to connect to " + _address + ": " + e, e);
         }
         socket.setKeepAlive(true);
 
@@ -90,7 +90,7 @@ public class LocationManagerConnector
          * terminated by interrupting it.
          */
         Args args = getArgs();
-        String name = getCellName() + "*";
+        String name = getCellName() + '*';
         Random random = new Random();
         try {
             while (true) {

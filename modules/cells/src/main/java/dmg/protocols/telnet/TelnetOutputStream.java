@@ -50,10 +50,11 @@
      private static final int cctSUB  = 6 ;
      private static final int cctESC  = 7 ;
 
-     private final byte willEcho[] = { telnetIAC , telnetWILL , 3 ,
-                               telnetIAC , telnetWILL , telnetOptionEcho } ;
-     private final byte wontEcho[] = { telnetIAC , telnetWONT , 3 ,
-                               telnetIAC , telnetWONT , telnetOptionEcho } ;
+     private final byte[] willEcho = {telnetIAC, telnetWILL, 3,
+             telnetIAC, telnetWILL, telnetOptionEcho};
+
+     private final byte[] wontEcho = {telnetIAC, telnetWONT, 3,
+             telnetIAC, telnetWONT, telnetOptionEcho};
     //
     // class variables
     //

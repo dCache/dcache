@@ -157,7 +157,7 @@ public class      StreamLoginCell
    }
    public int execute( String command )
    {
-      if( command.equals("") ) {
+      if(command.isEmpty()) {
           return 0;
       }
       if( _destination == null ){
@@ -194,10 +194,10 @@ public class      StreamLoginCell
                  printObject( msg.getMessageObject() ) ;
              }else{
                 sendMessage(msg )  ;
-                print( "Msg UOID ="+msg.getUOID()+"\n" )  ;
+                print("Msg UOID =" + msg.getUOID() + '\n')  ;
              }
          }catch( InterruptedException | NoRouteToCellException | ExecutionException | RuntimeException ex ){
-             print( "Problem : "+ex+"\n" )  ;
+             print("Problem : " + ex + '\n')  ;
              ex.printStackTrace() ;
          }
 
@@ -219,8 +219,8 @@ public class      StreamLoginCell
               }
 
               print(output = o.toString());
-              if ((output.length() > 0) &&
-                      (output.charAt(output.length() - 1) != '\n')
+              if ((!output.isEmpty()) &&
+                  (output.charAt(output.length() - 1) != '\n')
 
                       ) {
                   print("\n");
@@ -228,8 +228,7 @@ public class      StreamLoginCell
           }
       }else{
          print( output =  obj.toString() ) ;
-         if( ( output.length() > 0 ) &&
-             ( output.charAt(output.length()-1) != '\n' ) ) {
+         if(!output.isEmpty() && output.charAt(output.length()-1) != '\n') {
              print("\n");
          }
       }
@@ -238,7 +237,7 @@ public class      StreamLoginCell
   //
   // the cell implemetation
   //
-   public String toString(){ return Subjects.getDisplayName(_subject)+"@"+_host ; }
+   public String toString(){ return Subjects.getDisplayName(_subject) + '@' + _host ; }
    @Override
    public void getInfo( PrintWriter pw ){
      pw.println( "            Stream LoginCell" ) ;

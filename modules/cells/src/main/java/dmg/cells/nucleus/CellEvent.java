@@ -45,6 +45,6 @@ public class  CellEvent {
         case CELL_ROUTE_DELETED_EVENT : m = "CELL_ROUTE_DELETED_EVENT"; break;
         default : m = "UNKNOWN";
       }
-      return "Event("+m+","+_source.toString()+")";
+      return "Event(" + m + ',' + _source + ')';
     }
 }

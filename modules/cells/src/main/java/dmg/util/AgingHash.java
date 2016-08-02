@@ -28,7 +28,7 @@ public class AgingHash {
          _key   = key ;
       }
       public String toString(){
-         return "("+_key+":"+_value+")" ;
+         return "(" + _key + ':' + _value + ')';
       }
       private void link(){
           _next     = _first ;
@@ -127,30 +127,30 @@ public class AgingHash {
       Node node;
       StringBuilder sb = new StringBuilder() ;
       for( node = _first ; node != null ; node = node._next ){
-         sb.append(node.toString()).append(";") ;
+         sb.append(node).append(';') ;
       }
-      sb.append("[").append(_first).append(";").append(_last).append("]");
+      sb.append('[').append(_first).append(';').append(_last).append(']');
       return sb.toString() ;
    }
    public static void main( String [] args ){
       AgingHash hash = new AgingHash(3) ;
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
       hash.put("1","1");
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
       hash.put("2","2");
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
       hash.put("3","3");
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
       hash.put("4","4");
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
       hash.put("5","5");
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
       hash.remove("4");
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
       hash.remove("3");
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
       hash.remove("5");
-      System.out.println( hash.toString() ) ;
+      System.out.println(hash) ;
 
    }
 

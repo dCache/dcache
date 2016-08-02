@@ -79,7 +79,7 @@ public class       UserSecurityCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.info( ">"+command+"< request from "+user );
+            _log.info('>' + command + "< request from " + user );
             //FIXME: refactoring required
             try{
               if( command.equals( "check-password" ) ) {
@@ -120,7 +120,7 @@ public class       UserSecurityCell
   private Serializable execAuthorizedString( String user , String command )
           throws Exception {
 
-       if( ( user == null ) || ( user.length() == 0 ) ) {
+       if( user == null || user.isEmpty()) {
            throw new
                    Exception("Not authenticated");
        }
@@ -261,7 +261,7 @@ public class       UserSecurityCell
           _userDb.removeContainer( user ) ;
           _aclDb.removeAclItem( "group."+user+".access" ) ;
        }catch( Exception ee ){
-          _log.warn( args.toString()+" : "+ee ) ;
+          _log.warn(args + " : " + ee ) ;
            //
            // not an error
            //
@@ -330,7 +330,7 @@ public class       UserSecurityCell
         while( e.hasMoreElements() ){
             String user = e.nextElement();
             sb.append(user).append(" -> ").append(dict.getPermission(user))
-                    .append("\n");
+                    .append('\n');
         }
         return sb.toString() ;
     }

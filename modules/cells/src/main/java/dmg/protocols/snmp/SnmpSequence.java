@@ -40,14 +40,14 @@ public class SnmpSequence extends SnmpObject {
   public String toString( String type ){
      SnmpObject snmp;
      StringBuilder sb = new StringBuilder();
-     sb.append(type).append("\n");
+     sb.append(type).append('\n');
      for( int i = 0 ; i < _vector.size() ; i++ ){
         snmp = _vector.elementAt(i);
         sb.append("Class : ").append(snmp.getClass().getName());
         if( snmp instanceof SnmpSequence ){
-           sb.append("Value : \n").append(snmp.toString()).append("\n");
+           sb.append("Value : \n").append(snmp).append('\n');
         }else{
-           sb.append("Value : ").append(snmp.toString()).append("\n");
+           sb.append("Value : ").append(snmp).append('\n');
         }
 
      }

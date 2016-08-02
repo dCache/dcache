@@ -123,7 +123,7 @@ public class      CdbFileRecord
        _table.put( name , attribute ) ;
    }
    public void setAttibute( String name , int value ){
-       _table.put( name , ""+value ) ;
+       _table.put(name , String.valueOf(value)) ;
    }
    public synchronized Object getAttribute( String name ){
         return _table.get(name) ;
@@ -160,18 +160,18 @@ public class      CdbFileRecord
          String key   = iterator.next();
          Object value = _table.get( key ) ;
          if( value instanceof String ){
-            sb.append(key).append("=").append((String)value) ;
+            sb.append(key).append('=').append((String)value) ;
          }else if( value instanceof String [] ){
-            sb.append(key).append("=") ;
+            sb.append(key).append('=') ;
             String [] values = (String[])value ;
             for( int j = 0 ; j < values.length ; j++ ){
               if( j > 0 ) {
-                  sb.append(",");
+                  sb.append(',');
               }
               sb.append(values[j]);
             }
          }
-         sb.append( ";" ) ;
+         sb.append(';') ;
       }
       return sb.toString() ;
    }
@@ -183,11 +183,11 @@ public class      CdbFileRecord
          String key   = iterator.next();
          Object value = _table.get( key ) ;
          if( value instanceof String ){
-            sb.append(key).append("=").append((String)value).append("\n") ;
+            sb.append(key).append('=').append((String)value).append('\n') ;
          }else if( value instanceof String [] ){
             sb.append(key).append("=List\n") ;
              for (String s : (String[])value) {
-                 sb.append(s).append("\n");
+                 sb.append(s).append('\n');
              }
          }
       }
@@ -247,7 +247,7 @@ public class      CdbFileRecord
                }
                pw.println("***LIST***");
            } else if (o instanceof String) {
-               pw.println(name + "=" + o);
+               pw.println(name + '=' + o);
            }
        }
       pw.close() ;
@@ -348,8 +348,8 @@ public class      CdbFileRecord
            StringBuffer sb;
            for (int i = 0; i < bfids.length; i++) {
                sb = new StringBuffer();
-               str = "" + i;
-               sb.append("U");
+               str = String.valueOf(i);
+               sb.append('U');
                for (int j = 5; j >= str.length(); j--) {
                    sb.append('0');
                }

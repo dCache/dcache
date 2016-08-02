@@ -237,27 +237,27 @@ public class LoginBrokerInfo implements Serializable
     @Nonnull
     public String getIdentifier()
     {
-        return _cellName + "@" + _domainName;
+        return _cellName + '@' + _domainName;
     }
 
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(_cellName).append("@").append(_domainName).append(";");
+        sb.append(_cellName).append('@').append(_domainName).append(';');
         int pos = _protocolEngine.lastIndexOf('.');
         if (pos < 0 || pos == _protocolEngine.length() - 1) {
-            sb.append(_protocolEngine).append(";");
+            sb.append(_protocolEngine).append(';');
         } else {
-            sb.append(_protocolEngine.substring(pos + 1)).append(";");
+            sb.append(_protocolEngine.substring(pos + 1)).append(';');
         }
-        sb.append("{").append(_protocolFamily).append(",").
+        sb.append('{').append(_protocolFamily).append(',').
                 append(_protocolVersion).append("};");
 
-        sb.append("[");
+        sb.append('[');
         Joiner.on(",").appendTo(sb, _addresses);
-        sb.append(":").append(_port).append("]").append(";");
-        sb.append("<");
-        sb.append((int) (_load * 100.)).append(",");
+        sb.append(':').append(_port).append(']').append(';');
+        sb.append('<');
+        sb.append((int) (_load * 100.)).append(',');
         sb.append(_update).append(">;");
 
         return sb.toString();

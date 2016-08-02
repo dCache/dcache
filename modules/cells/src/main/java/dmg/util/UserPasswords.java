@@ -45,14 +45,14 @@ public class UserPasswords extends Hashtable<String,Object> {
 
        String p = _passwdFile.getParent() ;
        p = p == null ? "." : p ;
-       File   pwdFile = new File( p , "."+_passwdFile.getName() ) ;
+       File   pwdFile = new File(p , '.' + _passwdFile.getName() ) ;
        PrintWriter pw = new PrintWriter(
                          new FileWriter( pwdFile ) ) ;
        try{
            for (Object o : values()) {
                Object[] a = (Object[]) o;
                for (int i = 0; (i < a.length) && (a[i] != null); i++) {
-                   pw.print(a[i].toString() + ":");
+                   pw.print(a[i].toString() + ':');
                }
                pw.println("");
            }
@@ -147,7 +147,7 @@ public class UserPasswords extends Hashtable<String,Object> {
                System.exit(4);
            }
            for (int i = 0; (i < record.length) && (record[i] != null); i++) {
-               System.out.print(record[i] + " ");
+               System.out.print(record[i] + ' ');
            }
            System.out.println("");
            break;

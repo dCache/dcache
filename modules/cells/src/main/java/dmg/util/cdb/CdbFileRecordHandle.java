@@ -28,7 +28,7 @@ public class CdbFileRecordHandle extends CdbElementHandle  {
       _record.setAttribute( key , name ) ;
    }
    public void setAttribute( String key , int value ){
-      _record.setAttribute( key , ""+value ) ;
+      _record.setAttribute(key , String.valueOf(value)) ;
    }
    public void addListItem( String attributeName , String itemName ){
       _record.addListItem( attributeName , itemName , false ) ;

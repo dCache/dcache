@@ -112,7 +112,7 @@ public class       UserMgrCell
                                 "unknown" : (String)request[1] ;
          String command       = (String)request[2] ;
          UserPrivileges priv  = _userDb.getUserPrivileges( user ) ;
-         _log.info( ">"+command+"< request from "+user ) ;
+         _log.info('>' + command + "< request from " + user ) ;
          try{
             command  = createMethodName( command ) ;
             Method m = this.getClass().getDeclaredMethod( command , __argListDef ) ;
@@ -238,7 +238,7 @@ public class       UserMgrCell
       String userName = (String)request[3] ;
 
       UserPrivileges privToCheck = _userDb.getUserPrivileges( userName ) ;
-      String p = ""+request[4]+":"+request[5]+":"+request[6] ;
+      String p = request[4] + ":" + request[5] + ":" + request[6];
       response[7] = privToCheck.isAllowed(p);
       return response ;
   }
@@ -454,14 +454,14 @@ public class       UserMgrCell
       if( isGroup ){
          p = "add-allowed:user:"+userName ;
          if( ! priv.isAllowed( p ) ){
-            _log.info( ">"+p+"< denied for "+priv.getUserName() ) ;
+            _log.info('>' + p + "< denied for " + priv.getUserName() ) ;
             throw new
             Exception( "Operation not allowed for "+priv.getUserName() ) ;
          }
       }else{
          p = "add-allowed:user:*";
          if( ! priv.isAllowed( p ) ){
-            _log.info( ">"+p+"< denied for "+priv.getUserName() ) ;
+            _log.info('>' + p + "< denied for " + priv.getUserName() ) ;
             throw new
             Exception( "Operation not allowed for "+priv.getUserName() ) ;
          }

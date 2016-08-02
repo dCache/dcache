@@ -57,6 +57,6 @@ public class CellTunnelInfo implements Serializable
     public String toString()
     {
         return _tunnel + " L[" + (_local != null ? _local.toString() : "Unknown") +
-               "];R[" + (_remote != null ? _remote.toString() : "Unknown") + "]";
+               "];R[" + (_remote != null ? _remote.toString() : "Unknown") + ']';
     }
 }

@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Enumeration;
@@ -15,7 +14,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 public class FileUserRelation implements TopDownUserRelationable {
 
-    private class ListEnumeration implements Enumeration<String> {
+    private static class ListEnumeration implements Enumeration<String> {
         private String [] _list ;
         private int       _position;
         private ListEnumeration( String [] list ){
@@ -73,7 +72,7 @@ public class FileUserRelation implements TopDownUserRelationable {
         }
 
         Hashtable<String, String> hash = loadFile(c) ;
-        if( hash.size() > 0 ) {
+        if(!hash.isEmpty()) {
             throw new
                     DatabaseException(5, "Not empty");
         }
@@ -83,7 +82,7 @@ public class FileUserRelation implements TopDownUserRelationable {
     }
     @Override
     public Enumeration<String> getContainers(){
-       return new ListEnumeration(_dbDir.list((dir, name) -> ! name.startsWith(".")));
+       return new ListEnumeration(_dbDir.list((dir, name) -> !name.startsWith(".")));
     }
     @Override
     public synchronized Enumeration<String> getElementsOf( String container )
@@ -127,7 +126,7 @@ public class FileUserRelation implements TopDownUserRelationable {
     private void storeFile( File file , Map<String, String> hash )
             throws NoSuchElementException {
        PrintWriter pw;
-       File tmpFile = new File( file.getParent() , "."+file.getName() ) ;
+       File tmpFile = new File(file.getParent() , '.' + file.getName() ) ;
        try{
           pw = new PrintWriter( new FileWriter( tmpFile ) ) ;
        }catch(IOException e ){
@@ -135,7 +134,7 @@ public class FileUserRelation implements TopDownUserRelationable {
            NoSuchElementException( "Open error on "+file ) ;
        }
         for (Object o : hash.keySet()) {
-            pw.println(o.toString());
+            pw.println(o);
         }
         pw.close() ;
 
@@ -212,7 +211,7 @@ public class FileUserRelation implements TopDownUserRelationable {
            }
        }
        }catch(Exception e){
-          System.err.println( e.toString() ) ;
+          System.err.println(e) ;
           System.exit(4);
        }
        Enumeration<String> e = db.getContainers() ;

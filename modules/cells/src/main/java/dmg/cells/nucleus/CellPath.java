@@ -180,7 +180,7 @@ public final class CellPath implements Cloneable, Serializable
 
     public synchronized CellAddressCore getCurrent()
     {
-        if ((_list.size() == 0) ||
+        if ((_list.isEmpty()) ||
             (_position < 0) ||
             (_position >= _list.size())) {
             return null;
@@ -200,7 +200,7 @@ public final class CellPath implements Cloneable, Serializable
 
     synchronized void replaceCurrent(CellAddressCore core)
     {
-        if ((_list.size() == 0) ||
+        if ((_list.isEmpty()) ||
             (_position < 0) ||
             (_position >= _list.size())) {
             return;
@@ -233,18 +233,18 @@ public final class CellPath implements Cloneable, Serializable
         CellAddressCore core = _list.get(_position);
 
         if (size == 1) {
-            return "[" + core.toString() + "]";
+            return '[' + core.toString() + ']';
         }
 
         if (_position == 0) {
-            return "[" + core.toString() + ":...(" + (size - 1) + ")...]";
+            return '[' + core.toString() + ":...(" + (size - 1) + ")...]";
         }
         if (_position == (size - 1)) {
-            return "[...(" + (size - 1) + ")...:" + core.toString() + "]";
+            return "[...(" + (size - 1) + ")...:" + core + ']';
         }
 
         return "[...(" + _position + ")...:" +
-               core.toString() +
+               core +
                "...(" + (size - _position - 1) + ")...]";
     }
 
@@ -281,26 +281,26 @@ public final class CellPath implements Cloneable, Serializable
 
         StringBuilder sb = new StringBuilder(size * 16);
 
-        sb.append("[");
+        sb.append('[');
 
         CellAddressCore address;
         int i = 0;
         if (position < size) {
             for (; i < position; i++) {
                 address = _list.get(i);
-                sb.append(address.getCellName()).append("@").append(address.getCellDomainName());
-                sb.append(":");
+                sb.append(address.getCellName()).append('@').append(address.getCellDomainName());
+                sb.append(':');
             }
-            sb.append(">");
+            sb.append('>');
         }
         address = _list.get(i);
-        sb.append(address.getCellName()).append("@").append(address.getCellDomainName());
+        sb.append(address.getCellName()).append('@').append(address.getCellDomainName());
         for (i++; i < size; i++) {
-            sb.append(":");
+            sb.append(':');
             address = _list.get(i);
-            sb.append(address.getCellName()).append("@").append(address.getCellDomainName());
+            sb.append(address.getCellName()).append('@').append(address.getCellDomainName());
         }
-        sb.append("]");
+        sb.append(']');
         return sb.toString();
     }
 

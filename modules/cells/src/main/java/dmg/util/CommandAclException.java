@@ -22,12 +22,12 @@ public class CommandAclException extends CommandException {
         super( message ) ;
     }
     public CommandAclException( String principal , String acl ){
-        super( "Acl >"+acl+"< denied for >"+principal+"<" ) ;
+        super("Acl >" + acl + "< denied for >" + principal + '<') ;
         _acl       = acl ;
         _principal = principal ;
     }
     public CommandAclException( Authorizable auth , String acl ){
-        super( "Acl >"+acl+"< denied for >"+auth.getAuthorizedPrincipal()+"<" ) ;
+        super("Acl >" + acl + "< denied for >" + auth.getAuthorizedPrincipal() + '<') ;
         _acl       = acl ;
         _principal = auth.getAuthorizedPrincipal() ;
     }

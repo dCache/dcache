@@ -87,7 +87,7 @@ public class CellCron implements Runnable {
          return _time;
       }
       public String toString(){
-         return _name+" "+new Date(_time) ;
+         return _name + ' ' + new Date(_time) ;
       }
    }
    public interface TaskRunnable {
@@ -128,7 +128,7 @@ public class CellCron implements Runnable {
          synchronized( _list ){
 
 
-	    if( _list.size() == 0 ){
+	    if(_list.isEmpty()){
 //                 System.out.println("wakeup : nothing" ) ;
 	        _list.wait((5*60*1000));
 		continue ;

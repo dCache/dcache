@@ -34,7 +34,7 @@ public class ControlBufferedReader extends Reader implements InputHandler {
 	}
     }
     @Override
-    public int read(char cbuf[], int off, int len) throws IOException {
+    public int read(char[] cbuf, int off, int len) throws IOException {
 	synchronized (_lock) {
            return _reader.read( cbuf , off , len ) ;
         }

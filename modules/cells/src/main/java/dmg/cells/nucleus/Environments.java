@@ -30,7 +30,7 @@ public class Environments
         Object value = env.get(name);
 
         if (value == null) {
-            throw new IllegalArgumentException("'" + name + "' is not set");
+            throw new IllegalArgumentException('\'' + name + "' is not set");
         }
 
         if (!(value instanceof String)) {

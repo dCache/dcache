@@ -17,6 +17,6 @@ public class StartEvent extends CellEvent
 
     public String toString()
     {
-        return "StartEvent(source=" + getSource() + ";timeout=" + _timeout + ")";
+        return "StartEvent(source=" + getSource() + ";timeout=" + _timeout + ')';
     }
 }

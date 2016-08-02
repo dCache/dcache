@@ -54,14 +54,15 @@ public class  TelnetStreamEngine extends DummyStreamEngine
 
      public  static final byte [] telnetBN = { telnetCR , telnetLF } ;
 
-     private final byte willEcho[] = {
-          telnetIAC , telnetWILL , telnetOptionLine ,
-          telnetIAC , telnetWILL , telnetOptionEcho
-     } ;
-     private final byte wontEcho[] = {
-          telnetIAC , telnetWONT , telnetOptionLine ,
-          telnetIAC , telnetWONT , telnetOptionEcho
-     } ;
+    private final byte[] willEcho = {
+            telnetIAC, telnetWILL, telnetOptionLine,
+            telnetIAC, telnetWILL, telnetOptionEcho
+    };
+
+    private final byte[] wontEcho = {
+            telnetIAC, telnetWONT, telnetOptionLine,
+            telnetIAC, telnetWONT, telnetOptionEcho
+    };
     //
     // class variables
     //
@@ -209,7 +210,7 @@ public class  TelnetStreamEngine extends DummyStreamEngine
       close();
       throw new
       TelnetAuthenticationException(
-          "Not authenticated (host="+host+";user="+user+")" ) ;
+              "Not authenticated (host=" + host + ";user=" + user + ')') ;
 
 
    }

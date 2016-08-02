@@ -145,7 +145,7 @@ public class CellShell extends CommandInterpreter
    public Object getDictionaryEntry( String name ){
        switch (name) {
        case "rc":
-           return "" + _errorCode;
+           return String.valueOf(_errorCode);
        case "rmsg":
            return (_errorMsg == null ? "(0)" : _errorMsg);
        case "thisDomain":
@@ -153,7 +153,7 @@ public class CellShell extends CommandInterpreter
        case "thisCell":
            return _nucleus.getCellName();
        case "nextSequenceNumber":
-           return "" + nextSequenceNumber();
+           return String.valueOf(nextSequenceNumber());
        case "thisHostname":
            try {
                String xname = InetAddress.getLocalHost().getHostName();
@@ -196,8 +196,7 @@ public class CellShell extends CommandInterpreter
          //
          // are we in the define context ...
          //
-         if( ( str.length()   > 0          ) &&
-             ( str.equals(_contextDelimiter)    ) ){
+         if (!str.isEmpty() && str.equals(_contextDelimiter)){
 
              _nucleus.getDomainContext().
                       put( _contextName , _contextString.toString() ) ;
@@ -205,21 +204,20 @@ public class CellShell extends CommandInterpreter
              return null  ;
 
          }
-         _contextString.append( str ).append("\n");
+         _contextString.append( str ).append('\n');
          return null ;
       }else if( _envString != null  ){
          //
          // are we in the define environment
          //
-         if( ( str.length()    > 0         ) &&
-             ( str.equals(_envDelimiter)   ) ){
+         if (!str.isEmpty() && str.equals(_envDelimiter)){
 
              _environment.put( _envName , _envString.toString() ) ;
              _envString = null ;
              return null  ;
 
          }
-         _envString.append( str ).append("\n");
+         _envString.append( str ).append('\n');
          return null ;
       }
       return str ;
@@ -300,7 +298,7 @@ public class CellShell extends CommandInterpreter
             }else if( _helpMode == 2 ){
                String help = cse.getHelpText() ;
                if( help != null ) {
-                   sb.append("\n").append(help).append("\n");
+                   sb.append('\n').append(help).append('\n');
                }
             }
             return sb.toString() ;
@@ -316,14 +314,14 @@ public class CellShell extends CommandInterpreter
             StringBuilder sb = new StringBuilder() ;
             sb.append( cte.getMessage()).append(" -> " ) ;
             Throwable t = cte.getTargetException() ;
-            sb.append( t.getClass().getName()).append(" : ").append(t.getMessage()).append("\n" ) ;
+            sb.append( t.getClass().getName()).append(" : ").append(t.getMessage()).append('\n') ;
             return sb.toString() ;
          }else if( ce instanceof CommandPanicException ){
             CommandPanicException cpe = (CommandPanicException)ce ;
             StringBuilder sb = new StringBuilder() ;
-            sb.append( "Panic : ").append(cpe.getMessage()).append("\n" ) ;
+            sb.append( "Panic : ").append(cpe.getMessage()).append('\n') ;
             Throwable t = cpe.getTargetException() ;
-            sb.append( t.getClass().getName()).append(" : ").append(t.getMessage()).append("\n" ) ;
+            sb.append( t.getClass().getName()).append(" : ").append(t.getMessage()).append('\n') ;
             return sb.toString() ;
          }else{
             return "CommandException  :"+ce.getMessage() ;
@@ -342,7 +340,7 @@ public class CellShell extends CommandInterpreter
    }
    private String commandLine( String c ) throws CommandExitException {
       if( _contextString != null ){
-         _contextString.append( c ).append("\n");
+         _contextString.append( c ).append('\n');
          return "" ;
       }else {
           return super.command(c);
@@ -372,11 +370,11 @@ public class CellShell extends CommandInterpreter
             StringBuilder sb = new StringBuilder();
             if( p != null ){
                 String tmp = p.getImplementationTitle();
-                sb.append("ImplementationTitle:   ").append(tmp==null?"(Unknown)":tmp).append("\n");
+                sb.append("ImplementationTitle:   ").append(tmp==null?"(Unknown)":tmp).append('\n');
                 tmp = p.getImplementationVendor();
-                sb.append("ImplementationVendor:  ").append(tmp==null?"(Unknown)":tmp).append("\n");
+                sb.append("ImplementationVendor:  ").append(tmp==null?"(Unknown)":tmp).append('\n');
                 tmp = p.getImplementationVersion();
-                sb.append("ImplementationVersion: ").append(tmp==null?"(Unknown)":tmp).append("\n");
+                sb.append("ImplementationVersion: ").append(tmp==null?"(Unknown)":tmp).append('\n');
             }else{
                 sb.append("No information found");
             }
@@ -592,7 +590,7 @@ public class CellShell extends CommandInterpreter
             noRoute = true ;
          } catch (ExecutionException ignored) {
          } catch (InterruptedException e) {
-            throw new CommandException(66, "sendAndWait problem : " + e.toString(), e);
+            throw new CommandException(66, "sendAndWait problem : " + e, e);
          }
          if( ( answer != null ) &&
              ( ( o = answer.getMessageObject() ) != null ) &&
@@ -660,9 +658,9 @@ public class CellShell extends CommandInterpreter
        CellAddressCore addr = new CellAddressCore( args.argv(0) ) ;
        CellRoute route = _nucleus.routeFind( addr );
        if( route != null ) {
-           return route.toString() + "\n";
+           return route.toString() + '\n';
        } else {
-           return "No Route To cell : " + addr.toString() + "\n";
+           return "No Route To cell : " + addr + '\n';
        }
    }
    ////////////////////////////////////////////////////////////
@@ -706,12 +704,12 @@ public class CellShell extends CommandInterpreter
                        if (info == null){
                            sb.append(name).append(" (defunc)\n" ) ;
                        } else {
-                           sb.append(info).append( "\n" ) ;
+                           sb.append(info).append('\n') ;
                        }
                    }
                } else {
                    for (String name: list) {
-                       sb.append(name).append("\n");
+                       sb.append(name).append('\n');
                    }
                }
            } else {
@@ -730,7 +728,7 @@ public class CellShell extends CommandInterpreter
                        sb.append("   Queue time   : ").append(info.getExpectedQueueTime()).append(" ms \n");
                        CellVersion version = info.getCellVersion();
                        if (version != null) {
-                           sb.append("   Version      : ").append(version).append("\n");
+                           sb.append("   Version      : ").append(version).append('\n');
                        }
                        sb.append("-- Threads --\n");
                        Thread[] threads = _nucleus.getThreads(aCellName);
@@ -739,13 +737,13 @@ public class CellShell extends CommandInterpreter
                            boolean isAlive = threads[j].isAlive();
                            sb.append(CellInfo.f(threads[j].getName(), 20))
                                    .append(CellInfo
-                                           .f("" + threads[j].getPriority(), 2))
+                                           .f(String.valueOf(threads[j].getPriority()), 2))
                                    .append(isAlive ? "  Alive" : "  Dead")
-                                   .append("\n");
+                                   .append('\n');
                        }
                        sb.append("-- Private Infos --\n");
                    }
-                   sb.append(info.getPrivatInfo()).append("\n");
+                   sb.append(info.getPrivatInfo()).append('\n');
                }
            }
            return sb.toString() ;
@@ -1133,7 +1131,7 @@ public class CellShell extends CommandInterpreter
 
       String levelString = args.getOpt("level") ;
 
-      if( ( levelString != null ) && ( levelString.length() > 0 ) ){
+      if( ( levelString != null ) && (!levelString.isEmpty()) ){
           switch (levelString) {
           case "say":
               _log.info(msg);
@@ -1202,7 +1200,7 @@ public class CellShell extends CommandInterpreter
       return "" ;
    }
    public String ac_id( Args args ){
-      return _nucleus.getCellDomainName()+"\n" ;
+      return _nucleus.getCellDomainName() + '\n';
    }
 
     @Command(name = "check", hint = "check if variables are defined",
@@ -1235,7 +1233,7 @@ public class CellShell extends CommandInterpreter
 
                 if (strong) {
                     String strValue = value.toString();
-                    if (strValue.trim().equals("")) {
+                    if (strValue.trim().isEmpty()) {
                         throw new
                                 CommandException(2, "variable is defined but empty : " + name);
                     }
@@ -1412,7 +1410,7 @@ public class CellShell extends CommandInterpreter
          throw new
          CommandException ( "Not found : "+name ) ;
       }else{
-         return name+"<"+o.getClass().getName()+"> removed\n" ;
+         return name + '<' + o.getClass().getName() + "> removed\n" ;
       }
    }
    ////////////////////////////////////////////////////////////
@@ -1468,7 +1466,7 @@ public class CellShell extends CommandInterpreter
               String name = e.getKey();
               Object o = e.getValue();
             if( o instanceof String ){
-               sb.append(name).append("=") ;
+               sb.append(name).append('=') ;
                String line = (String)o ;
                int len = line.length() ;
                len = len > 40 ? 40 : len ;
@@ -1478,7 +1476,7 @@ public class CellShell extends CommandInterpreter
                if( len == 40 ) {
                    sb.append("...\n");
                } else {
-                   sb.append("\n");
+                   sb.append('\n');
                }
             }else {
                 sb.append(name).append("=<").append(o.getClass().getName())
@@ -1492,7 +1490,7 @@ public class CellShell extends CommandInterpreter
              throw new
                      CommandException(23, "Context name " + name + " not found");
          }
-         sb.append( o.toString() ) ;
+         sb.append(o) ;
       }
       return sb.toString() ;
    }
@@ -1521,7 +1519,7 @@ public class CellShell extends CommandInterpreter
                   if (!list) {
                       int diff = maxLength - name.length();
                       for (int i = 0; i < diff; i++) {
-                          sb.append(".");
+                          sb.append('.');
                       }
                   }
                   Object o = dict.get(name);
@@ -1540,7 +1538,7 @@ public class CellShell extends CommandInterpreter
                       }
                   }
               }
-              sb.append("\n");
+              sb.append('\n');
           }
       }else{
           throw new
@@ -1650,7 +1648,7 @@ public class CellShell extends CommandInterpreter
     {
         if (!s.isEmpty()) {
             out.append(s);
-            if ((s.length() > 0) && (s.charAt(s.length() - 1) != '\n')) {
+            if (!s.isEmpty() && s.charAt(s.length() - 1) != '\n') {
                 out.append('\n');
             }
         }
@@ -1683,7 +1681,7 @@ public class CellShell extends CommandInterpreter
                 /* Skip empty and comment lines.
                  */
                 String s = line.trim();
-                if (s.length() == 0 || s.charAt(0) == '#') {
+                if (s.isEmpty() || s.charAt(0) == '#') {
                     continue;
                 }
 
@@ -1771,7 +1769,7 @@ public class CellShell extends CommandInterpreter
         String loopName = args.getOpt("loop");
         String var;
         if ((var = args.getOpt("ifok")) != null) {
-            if (var.equals("")) {
+            if (var.isEmpty()) {
                 if (_errorCode != 0) {
                     return "";
                 }
@@ -1783,7 +1781,7 @@ public class CellShell extends CommandInterpreter
             }
         }
         if ((var = args.getOpt("ifnotok")) != null) {
-            if (var.equals("")) {
+            if (var.isEmpty()) {
                 if (_errorCode == 0) {
                     return "";
                 }
@@ -1884,7 +1882,7 @@ public class CellShell extends CommandInterpreter
        }
        if( v.size() != 1 ) {
           throw new
-          CommandException( 2 , "Stack position violation ("+v.size()+")" ) ;
+          CommandException( 2 , "Stack position violation (" + v.size() + ')') ;
        }
 
        String result = v.firstElement() ;
@@ -1954,7 +1952,7 @@ public class CellShell extends CommandInterpreter
          try{
             reader = new BufferedReader( new FileReader( file ) ) ;
             while( ( line = reader.readLine() ) != null ) {
-                sb.append(line).append("\n");
+                sb.append(line).append('\n');
             }
          }catch( IOException ioe ){
 
@@ -1996,7 +1994,7 @@ public class CellShell extends CommandInterpreter
          from = new URI(args.argv(0));
          to = new URI(args.argv(1));
       } catch (URISyntaxException e) {
-         throw new CommandException(43, "Invalid URL: "+ e.toString());
+         throw new CommandException(43, "Invalid URL: " + e);
       }
       if (from.equals(to)) {
          throw new CommandException(43, "Source and destination URL must not be the same");
@@ -2008,7 +2006,7 @@ public class CellShell extends CommandInterpreter
               String line;
               StringBuilder sb = new StringBuilder();
               while ((line = in.readLine()) != null) {
-                  sb.append(line).append("\n");
+                  sb.append(line).append('\n');
               }
               source = sb.toString();
           }
@@ -2240,7 +2238,7 @@ public class CellShell extends CommandInterpreter
 
         @Override
         public String getMessage() {
-            return _file.toString() + " does not exist";
+            return _file + " does not exist";
         }
     }
 
@@ -2264,7 +2262,7 @@ public class CellShell extends CommandInterpreter
 
         @Override
         public String getMessage() {
-            return _file.toString() + (_exists ? " is not a normal file" : " does not exist");
+            return _file + (_exists ? " is not a normal file" : " does not exist");
         }
     }
 
@@ -2288,7 +2286,7 @@ public class CellShell extends CommandInterpreter
 
         @Override
         public String getMessage() {
-            return _file.toString() + (_exists ? " is not a directory file" : " does not exist");
+            return _file + (_exists ? " is not a directory file" : " does not exist");
         }
     }
 }

@@ -94,7 +94,7 @@ public class       AclCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.info( ">"+command+"< request from "+user ) ;
+            _log.info('>' + command + "< request from " + user ) ;
             try{
                 switch (command) {
                 case "check-password":

@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import dmg.util.AuthorizedString;
-import dmg.util.DomainInterruptHandler;
 import dmg.util.Gate;
 import dmg.util.command.Command;
 import dmg.util.logback.FilterShell;
@@ -33,7 +32,7 @@ import static org.dcache.util.ByteUnit.MiB;
   */
 public class      SystemCell
     extends    CellAdapter
-    implements Runnable, Thread.UncaughtExceptionHandler
+    implements Thread.UncaughtExceptionHandler
 {
     private static final Logger _log = LoggerFactory.getLogger(SystemCell.class);
 
@@ -48,9 +47,6 @@ public class      SystemCell
                 _packetsForwarded,
                 _packetsReplied,
                 _exceptionCounter;
-   private DomainInterruptHandler _interruptHandler;
-   private Thread                 _interruptThread;
-   private long                   _interruptTimer   = 2000 ;
    private final Runtime                _runtime = Runtime.getRuntime() ;
    private final Gate                   _shutdownLock = new Gate(false);
 
@@ -124,26 +120,6 @@ public class      SystemCell
               ";IOexc="+_exceptionCounter+
               ";MEM="+(tm-fm) ;
    }
-   public int  enableInterrupts( String handlerName ){
-      Class<? extends DomainInterruptHandler> handlerClass;
-      try{
-          handlerClass = Class.forName(handlerName).asSubclass(DomainInterruptHandler.class);
-      }catch( ClassNotFoundException cnfe ){
-          _log.warn( "Couldn't install interrupt handler ("+
-                handlerName+") : "+cnfe ) ;
-         return -1 ;
-      }
-      try{
-          _interruptHandler = handlerClass.newInstance();
-      }catch( Exception ee ){
-          _log.warn( "Couldn't install interrupt handler ("+
-                handlerName+") : "+ee ) ;
-          return -2 ;
-      }
-      _interruptThread = _nucleus.newThread( this ) ;
-      _interruptThread.start() ;
-      return 0 ;
-   }
 
     @Command(name = "get hostname", hint = "show this dCache-domain hostname",
             description = "Returns the hostname of the computer this (dCache) " +
@@ -164,22 +140,6 @@ public class      SystemCell
         }
     }
 
-   @Override
-   public void run(){
-       while( true ){
-          try{
-             Thread.sleep( _interruptTimer ) ;
-             if( _interruptHandler.interruptPending() ) {
-                 break;
-             }
-          }catch( InterruptedException ie ){
-             _log.info( "Interrupt loop was interrupted" ) ;
-             break ;
-          }
-       }
-       _log.info( "Interrupt loop stopped (shutting down system now)" ) ;
-       kill() ;
-   }
     private void shutdownSystem()
     {
         List<String> names = _nucleus.getCellNames();

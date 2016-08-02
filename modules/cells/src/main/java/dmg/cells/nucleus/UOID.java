@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * fact and a lot of things may fail at runtime if this design item is changed.
  */
 
-public class UOID implements Serializable, Cloneable {
+public class UOID implements Serializable {
 
     private static final long serialVersionUID = -5940693996555861085L;
 
@@ -35,19 +35,13 @@ public class UOID implements Serializable, Cloneable {
         _counter = __counter.incrementAndGet();
     }
 
-    @Override
-    public Object clone() {
-        // it's safe to do so, UOID is immutable
-        return this;
-    }
-
     /**
      * creates a hashcode which is more optimal then the object hashCode.
      */
     @Override
     public int hashCode() {
         // System.out.println( " hashCode called " ) ;
-        return (int) (_counter & 0xffffffff);
+        return (int) _counter;
     }
 
     /**
@@ -67,7 +61,7 @@ public class UOID implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        return "<" + _time + ":" + _counter + ">";
+        return "<" + _time + ':' + _counter + '>';
     }
 
     public static void main(String[] args) {
@@ -76,7 +70,7 @@ public class UOID implements Serializable, Cloneable {
             System.out.println(" UOID : " + a);
         } else {
             Date date = new Date(Long.parseLong(args[0]));
-            System.out.println(date.toString());
+            System.out.println(date);
         }
 
     }

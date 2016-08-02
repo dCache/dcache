@@ -62,7 +62,7 @@ public class SnmpServer implements Runnable {
                            p.getAddress(), p.getPort());
                    System.out.println("Sending " + x.length +
                            " bytes to " + p.getAddress() +
-                           ":" + p.getPort());
+                                      ':' + p.getPort());
                    _socket.send(dp);
                }
 

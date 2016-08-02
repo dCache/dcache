@@ -84,7 +84,7 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
 
     @Override
     public String toString() {
-        return _cell + "@" + _domain;
+        return _cell + '@' + _domain;
     }
 
     @Override

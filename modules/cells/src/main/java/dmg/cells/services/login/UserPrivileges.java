@@ -73,7 +73,7 @@ public class UserPrivileges {
        if( last < 0 ){
          base  = "" ;
        }else{
-         base  = check.substring(0,last)+":" ;
+         base  = check.substring(0,last) + ':';
          check = check.substring(last+1) ;
        }
        if( check.length() < 1 ) {
@@ -91,9 +91,9 @@ public class UserPrivileges {
           StringBuilder sb = new StringBuilder() ;
           sb.append( base ) ;
           for( int j = 0 ; j < (i-1) ; j++ ) {
-              sb.append(tokens[j]).append(".");
+              sb.append(tokens[j]).append('.');
           }
-          sb.append( "*" ) ;
+          sb.append('*') ;
           String x = sb.toString() ;
           if( _denied.get( x ) != null ) {
               return false;
@@ -122,14 +122,14 @@ public class UserPrivileges {
            sb.append(x).
                    append(Formats.field(a.next(), dx)).
                    append(Formats.field(d.next(), dx)).
-                   append("\n");
+                   append('\n');
        }
        if( _allowed.size() > m ) {
            while (a.hasNext()) {
                sb.append(x).
                        append(Formats.field(a.next(), dx)).
                        append(Formats.field("", 20)).
-                       append("\n");
+                       append('\n');
            }
        }
        if( _denied.size() > m ) {
@@ -137,7 +137,7 @@ public class UserPrivileges {
                sb.append(x).
                        append(Formats.field("", 20)).
                        append(Formats.field(d.next(), dx)).
-                       append("\n");
+                       append('\n');
            }
        }
 

@@ -33,7 +33,7 @@ public class SnmpInteger extends SnmpObject {
   }
   public long longValue(){ return _value ; }
   public int  intValue(){ return (int)_value ; }
-  public String toString(){ return ""+_value ; }
+  public String toString(){ return String.valueOf(_value); }
   @Override
   public byte [] getSnmpBytes(){
       byte []  b = new byte[8] ;

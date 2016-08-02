@@ -146,7 +146,7 @@ class SnmpObjectHeader {
       for( int i = 0 ; i < len ; i ++ ){
           x = b[off++] ;
           x = ( x < 0 ) ? ( x + 256 ) : x ;
-          sb.append(Integer.toHexString(x)).append(" ");
+          sb.append(Integer.toHexString(x)).append(' ');
       }
       return sb.toString() ;
    }

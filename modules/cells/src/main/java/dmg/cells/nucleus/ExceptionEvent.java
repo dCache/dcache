@@ -15,8 +15,8 @@ public class ExceptionEvent extends CellEvent {
     public CellPath getSender(){ return (CellPath)getSource() ; }
     public Exception   getException(){ return _exception ; }
     public String toString(){
-      return "ExceptionEvent(source="+getSource().toString()+
-             ";Exception="+_exception+")" ;
+      return "ExceptionEvent(source=" + getSource() +
+             ";Exception=" + _exception + ')';
     }
 }
  

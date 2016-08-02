@@ -16,7 +16,7 @@ import java.util.Vector;
 
 public class AclDb {
 
-   private class AclItem implements AcDictionary {
+   private static class AclItem implements AcDictionary {
        private String    _name;
        private Hashtable<String, Boolean> _users    = new Hashtable<>() ;
        private String    _inherits;
@@ -60,7 +60,7 @@ public class AclDb {
        @Override
        public String getInheritance(){ return _inherits ; }
        public AclItem cloneMe(){
-           AclItem item   = new AclItem(_name) ;
+           AclItem item   = new AclItem(_name);
            item._users    = (Hashtable<String, Boolean>)_users.clone() ;
            item._inherits = _inherits ;
            return item ;
@@ -72,7 +72,7 @@ public class AclDb {
       if( ! aclDir.isDirectory() ) {
           throw new
                   IllegalArgumentException("Not a acl DB(not a dir)" + "aclDir \"" + aclDir
-                  .getPath() + " " + aclDir.getName() + "\"");
+                  .getPath() + ' ' + aclDir.getName() + '"');
       }
       _aclDir = aclDir ;
    }
@@ -93,7 +93,7 @@ public class AclDb {
    private void _storeAcl( String aclName , AclItem item )
            throws DatabaseException {
 
-       File file = new File( _aclDir , "."+aclName ) ;
+       File file = new File(_aclDir , '.' + aclName ) ;
        PrintWriter pw;
        try{
            pw = new PrintWriter(
@@ -110,7 +110,7 @@ public class AclDb {
       while( e.hasMoreElements() ){
           String user = e.nextElement();
           Boolean access = item.getUserAccess(user) ;
-          pw.println(user+"="+(access ?"allowed":"denied")) ;
+          pw.println(user + '=' + (access ? "allowed" : "denied")) ;
       }
       pw.close() ;
       file.renameTo( new File( _aclDir , aclName ) ) ;
@@ -150,7 +150,7 @@ public class AclDb {
    }
    public synchronized void createAclItem( String aclItem )
           throws DatabaseException {
-       putAcl( aclItem , new AclItem(aclItem) ) ;
+       putAcl(aclItem , new AclItem(aclItem)) ;
    }
    public synchronized void removeAclItem( String aclItem )
    {
@@ -209,7 +209,7 @@ public class AclDb {
          String e = aclItem.substring(l+1) ;
          array = new String[4] ;
          array[0] = aclItem ;
-         array[1] = a+"."+e+".*" ;
+         array[1] = a + '.' + e + ".*" ;
          array[2] = a+".*.*" ;
          array[3] = "*.*.*" ;
        }else if( ( f + 1 ) == l ){
@@ -247,7 +247,7 @@ public class AclDb {
                if( j >= i ) {
                    sb.append("*.");
                } else {
-                   sb.append(mm[j]).append(".");
+                   sb.append(mm[j]).append('.');
                }
             }
             mask[k++] = sb.toString() ;
@@ -274,7 +274,7 @@ public class AclDb {
          }else if( actionName.equals("*") ){
             array = new String[2+mask.length] ;
              for (String s : mask) {
-                 array[k++] = className + "." + s + "*";
+                 array[k++] = className + '.' + s + '*';
              }
             array[k++] = className+".*.*" ;
          }else if( instanceName.equals("*") ){
@@ -284,8 +284,8 @@ public class AclDb {
          }else{
             array = new String[2+2*mask.length] ;
              for (String s : mask) {
-                 array[k++] = className + "." + s + actionName;
-                 array[k++] = className + "." + s + "*";
+                 array[k++] = className + '.' + s + actionName;
+                 array[k++] = className + '.' + s + '*';
              }
             array[k++] = className+".*.*" ;
          }

@@ -26,7 +26,7 @@ public class SnmpOctetString extends SnmpObject {
        for( int i = off ; i < (off+len); i++ ){
           x = b[i] ;
           x = ( x == 0xa ) || ( x == 0xd ) ? ' ' : x ; 
-          sb.append(Integer.toHexString((x < 0) ? (x + 256) : x)).append(":");
+          sb.append(Integer.toHexString((x < 0) ? (x + 256) : x)).append(':');
        }
        _string = sb.toString() ;
     

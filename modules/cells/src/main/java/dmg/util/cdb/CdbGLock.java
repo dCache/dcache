@@ -4,7 +4,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 public class CdbGLock implements CdbLockListener, CdbLockable {
-   private class LockEntry {
+   private static class LockEntry {
       private class LockEntryDesc {
           private boolean _isWriteLock;
           private int     _counter;
@@ -61,7 +61,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       }
       public String toString(){
          StringBuilder sb = new StringBuilder() ;
-         sb.append(" +Thread : ").append(_thread).append("\n");
+         sb.append(" +Thread : ").append(_thread).append('\n');
          if( _position < 0 ) {
              sb.append("Not assigned ???\n");
          } else{
@@ -71,7 +71,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
                }else{
                    sb.append( (_position==i)?"*":" ") ;
                    sb.append(" Desc[").append(i).append("]=")
-                           .append(_desc[i].toString()).append("\n");
+                           .append(_desc[i]).append('\n');
                }
             }
          }
@@ -98,7 +98,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
    public  String toString(){
       StringBuilder sb = new StringBuilder() ;
       for( int i = 0  ; i < _list.size() ; i++ ){
-         sb.append( _list.elementAt(i).toString() ) ;
+         sb.append(_list.elementAt(i)) ;
       }
       return sb.toString() ;
    }
@@ -195,8 +195,8 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
       //
       // create a new thread lock entry and insert it
       //
-      entry = new LockEntry( ourThread ,
-                            ( flags & CdbLockable.WRITE ) > 0 ) ;
+      entry = new LockEntry(ourThread,
+                            (flags & CdbLockable.WRITE) > 0);
 
       _list.addElement( entry );
       //

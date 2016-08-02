@@ -58,7 +58,7 @@ public abstract class DelayedCommand<T extends Serializable>
                 Method method = ReflectionUtils.getAnyMethod(getClass(), "execute");
                 if (!ReflectionUtils.hasDeclaredException(method, e)) {
                     LOGGER.error("Command failed due to a bug, please contact support@dcache.org.", e);
-                    e = new CommandPanicException("Command failed: " + e.toString(),  e);
+                    e = new CommandPanicException("Command failed: " + e, e);
                 }
             } catch (NoSuchMethodException suppressed) {
                 e.addSuppressed(suppressed);

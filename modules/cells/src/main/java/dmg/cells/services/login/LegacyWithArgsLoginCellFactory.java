@@ -35,7 +35,7 @@ public class LegacyWithArgsLoginCellFactory extends AbstractService implements L
             throws InvocationTargetException
     {
         try {
-            CellAdapter cell = _loginConstructor.newInstance(_cellName + "-" + userName + "*", engine, new Args(_args));
+            CellAdapter cell = _loginConstructor.newInstance(_cellName + '-' + userName + '*', engine, new Args(_args));
             cell.start().get();
             return cell;
         } catch (InstantiationException | IllegalAccessException e) {

@@ -108,7 +108,7 @@ public class SnmpOID extends SnmpObject {
     for( int i = 0 ; i < _arrayLength ; i++ ){
       sb.append("").append(_array[i]);
       if( i < (_arrayLength-1) ) {
-          sb.append(".");
+          sb.append('.');
       }
     }
     return sb.toString() ;

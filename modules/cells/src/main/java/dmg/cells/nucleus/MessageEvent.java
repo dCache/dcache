@@ -19,6 +19,6 @@ public class MessageEvent extends CellEvent
 
     public String toString()
     {
-        return "MessageEvent(source=" + getMessage() + ")";
+        return "MessageEvent(source=" + getMessage() + ')';
     }
 }

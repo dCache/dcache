@@ -73,8 +73,8 @@ public class CellInfo implements Serializable {
   public String toString(){
      return f( _cellName              , 20 ) +
             f( _stateNames[_state].substring(0,1) , 2 ) +
-            f( ""+_eventQueueSize     , 3 ) +
-            f( ""+_threadCount        , 3 ) +
+            f(String.valueOf(_eventQueueSize), 3 ) +
+            f(String.valueOf(_threadCount), 3 ) +
             f( cutClass( _cellClass ) , 20 ) +
             _shortInfo ;
   }
@@ -101,7 +101,7 @@ public class CellInfo implements Serializable {
     sb.append( in ) ;
     int diff = field - in.length() ;
     for( int i = 0 ; i < diff ; i++ ) {
-        sb.append(" ");
+        sb.append(' ');
     }
     return sb.toString() ;
   }

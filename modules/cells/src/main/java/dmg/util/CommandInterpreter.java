@@ -82,7 +82,7 @@ public class CommandInterpreter extends org.dcache.util.cli.CommandInterpreter
             return (String) o;
         } catch (CommandSyntaxException e) {
             StringBuilder sb = new StringBuilder();
-            sb.append("Syntax Error : ").append(e.getMessage()).append("\n");
+            sb.append("Syntax Error : ").append(e.getMessage()).append('\n');
             String help  = e.getHelpText();
             if (help != null) {
                 sb.append("Help : \n");
@@ -93,18 +93,18 @@ public class CommandInterpreter extends org.dcache.util.cli.CommandInterpreter
             throw e;
         } catch (CommandThrowableException e) {
             StringBuilder sb = new StringBuilder();
-            sb.append(e.getMessage()).append("\n");
+            sb.append(e.getMessage()).append('\n');
             Throwable t = e.getTargetException();
-            sb.append(t.getClass().getName()).append(" : ").append(t.getMessage()).append("\n");
+            sb.append(t.getClass().getName()).append(" : ").append(t.getMessage()).append('\n');
             return sb.toString();
         } catch (CommandPanicException e) {
             StringBuilder sb = new StringBuilder();
-            sb.append("Panic : ").append(e.getMessage()).append("\n");
+            sb.append("Panic : ").append(e.getMessage()).append('\n');
             Throwable t = e.getTargetException();
-            sb.append(t.getClass().getName()).append(" : ").append(t.getMessage()).append("\n");
+            sb.append(t.getClass().getName()).append(" : ").append(t.getMessage()).append('\n');
             return sb.toString();
         } catch (CommandException e) {
-            return "??? : " + e.toString();
+            return "??? : " + e;
         }
     }
 }

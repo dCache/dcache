@@ -183,8 +183,8 @@ public class      LoginCell
    }
   public void println( String str ){
      _out.print( str ) ;
-     if( ( str.length() > 0 ) &&
-         ( ! str.substring(str.length()-1).equals("\n") ) ) {
+     if((!str.isEmpty()) &&
+        ( ! str.substring(str.length()-1).equals("\n") ) ) {
          _out.println("");
      }
      _out.flush() ;
@@ -208,7 +208,7 @@ public class      LoginCell
   //
   // the cell implemetation
   //
-   public String toString(){ return Subjects.getDisplayName(_subject)+"@"+_host ; }
+   public String toString(){ return Subjects.getDisplayName(_subject) + '@' + _host ; }
    @Override
    public void getInfo( PrintWriter pw ){
      pw.println( "            Generic Login Cell" ) ;
@@ -240,7 +240,7 @@ public class      LoginCell
            }
            try {
                result = method.invoke(obj);
-               println("    " + method.getName() + " -> " + result.toString());
+               println("    " + method.getName() + " -> " + result);
            } catch (IllegalAccessException | InvocationTargetException e) {
                println("    " + method.getName() + " -> (???)");
            }
