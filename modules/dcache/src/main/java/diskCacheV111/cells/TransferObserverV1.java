@@ -2,6 +2,7 @@ package diskCacheV111.cells;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -156,6 +157,8 @@ public class TransferObserverV1
      *      for conversion into .txt and .html table entries.</p>
      */
     private static class TransferBean extends TransferInfo {
+        private static final long serialVersionUID = 3132576086376551676L;
+
         private final long now;
 
         public TransferBean() {
@@ -570,7 +573,7 @@ public class TransferObserverV1
         tmp = tmp.contains("known") ? "?" : tmp;
         page.td("process", tmp);
 
-        String poolName = transfer.getPool();
+        String poolName = Strings.emptyToNull(transfer.getPool());
         if (poolName == null || poolName.equals("<unknown>")) {
             poolName = "N.N.";
         }
