@@ -9,7 +9,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DoorInfo implements Serializable
 {
-    private String _cellName;
+    private final String _cellName;
     private String _cellDomainName;
     private String _protocolFamily  = "<unknown>";
     private String _protocolVersion = "<unknown>";
@@ -89,7 +89,7 @@ public class DoorInfo implements Serializable
 
     public String toString()
     {
-        return _cellName + "@" + _cellDomainName + ";p=" + _protocolFamily + "-" + _protocolVersion + ";o=" + _owner + "/" + _process + ";";
+        return _cellName + '@' + _cellDomainName + ";p=" + _protocolFamily + '-' + _protocolVersion + ";o=" + _owner + '/' + _process + ';';
     }
 
     private void readObject(java.io.ObjectInputStream stream)

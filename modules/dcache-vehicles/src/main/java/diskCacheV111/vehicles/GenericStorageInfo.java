@@ -225,7 +225,7 @@ public class GenericStorageInfo
                         hsm == null ? "-" : hsm).append(";accessLatency=")
                         .append(ac == null ? "-" : ac.toString()).append(
                         ";retentionPolicy=").append(
-                                rp == null ? "-" : rp.toString()).append(";");
+                                rp == null ? "-" : rp.toString()).append(';');
 
         /*
          * FIXME: extra checks are needed to read old SI files
@@ -234,12 +234,12 @@ public class GenericStorageInfo
             for (Map.Entry<String, String> entry : _keyHash.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
-                sb.append(key).append("=").append(value).append(";");
+                sb.append(key).append('=').append(value).append(';');
             }
         }
         if( _locations != null ) {
             for(URI location : _locations ) {
-                sb.append(location).append(";");
+                sb.append(location).append(';');
             }
         }
         return sb.toString();
@@ -394,7 +394,7 @@ public class GenericStorageInfo
 
             String[] unitParts = storeUnit.split("@");
             if (unitParts.length != 2) {
-                throw new IllegalArgumentException("Invalid format: expected<x:y@z> got <" + storeUnit + ">");
+                throw new IllegalArgumentException("Invalid format: expected<x:y@z> got <" + storeUnit + '>');
             }
             si = new GenericStorageInfo(unitParts[1], unitParts[0]);
         }

@@ -17,7 +17,7 @@ import org.dcache.auth.UserNamePrincipal;
 
 public class SSLTunnelSocket extends Socket implements TunnelSocket
 {
-    private Socket sock;
+    private final Socket sock;
     private Subject _subject = new Subject();
     private boolean verified;
 

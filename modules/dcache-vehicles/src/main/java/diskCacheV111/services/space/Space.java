@@ -15,8 +15,8 @@ public class Space implements Serializable {
     private AccessLatency accessLatency;
     private long linkGroupId;
     private long sizeInBytes;
-    private long usedSizeInBytes;
-    private long allocatedSpaceInBytes;
+    private final long usedSizeInBytes;
+    private final long allocatedSpaceInBytes;
     private long creationTime;
     private Long expirationTime;
     private String description;

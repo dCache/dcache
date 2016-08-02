@@ -8,7 +8,7 @@ public class PoolRemoveFilesFromHSMMessage extends PoolMessage
 {
     private static final long serialVersionUID = 7659588592755172141L;
     private final String _hsm;
-    private Collection<URI> _files;
+    private final Collection<URI> _files;
     private Collection<URI> _succeeded;
     private Collection<URI> _failed;
 
@@ -55,10 +55,9 @@ public class PoolRemoveFilesFromHSMMessage extends PoolMessage
 
     public String toString()
     {
-        StringBuilder sb = new StringBuilder(super.toString());
-        sb.append(";files=").append(_files);
-        sb.append(";succeeded=").append(_succeeded);
-        sb.append(";failed=").append(_failed);
-        return sb.toString();
+        String sb = super.toString() + ";files=" + _files +
+                    ";succeeded=" + _succeeded +
+                    ";failed=" + _failed;
+        return sb;
     }
 }

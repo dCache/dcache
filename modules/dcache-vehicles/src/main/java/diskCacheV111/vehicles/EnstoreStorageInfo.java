@@ -10,8 +10,8 @@ import java.io.ObjectInputStream;
   * attributes.
   */
 public class EnstoreStorageInfo extends GenericStorageInfo {
-   private String _family;
-   private String _group;
+   private final String _family;
+   private final String _group;
    private String _volume   = "<unknown>" ;
    private String _location = "<unknown>" ;
    private String _path;
@@ -39,18 +39,18 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
    public String getPath(){ return _path ; }
    @Override
    public String getStorageClass() {
-      return (_group==null?"None":_group)+"."+
+      return (_group==null?"None":_group) + '.' +
              (_family==null?"None":_family) ;
    }
    public String toString(){
       return
-             super.toString()+
-             ";path="+(_path==null?"<Unknown>":_path)+
-             ";group="+(_group==null?"<Unknown>":_group)+
-             ";family="+(_family==null?"<Unknown>":_family)+
-             ";bfid="+getBitfileId()+
-             ";volume="+_volume+
-             ";location="+_location+";";
+              super.toString() +
+              ";path=" + (_path==null?"<Unknown>":_path) +
+              ";group=" + (_group==null?"<Unknown>":_group) +
+              ";family=" + (_family==null?"<Unknown>":_family) +
+              ";bfid=" + getBitfileId() +
+              ";volume=" + _volume +
+              ";location=" + _location + ';';
    }
    public String getStorageGroup(){ return _group ; }
    public String getFileFamily(){ return _family ; }

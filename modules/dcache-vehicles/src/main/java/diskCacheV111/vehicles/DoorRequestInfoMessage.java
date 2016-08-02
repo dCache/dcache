@@ -17,7 +17,7 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 
     public DoorRequestInfoMessage(CellAddressCore address)
     {
-        this(address.getCellName() + "@" + address.getCellDomainName());
+        this(address.getCellName() + '@' + address.getCellDomainName());
     }
 
     public DoorRequestInfoMessage(String cellName)
@@ -27,7 +27,7 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 
     public DoorRequestInfoMessage(CellAddressCore address, String action)
     {
-        this(address.getCellName() + "@" + address.getCellDomainName(), action);
+        this(address.getCellName() + '@' + address.getCellDomainName(), action);
     }
 
     public DoorRequestInfoMessage(String cellName, String action)
@@ -47,8 +47,8 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 
     public String toString()
     {
-        return getInfoHeader() + " [" + this.getUserInfo() + "] " + getFileInfo() + " " + _transactionTime
-               + " " + getTimeQueued() + " " + getResult();
+        return getInfoHeader() + " [" + this.getUserInfo() + "] " + getFileInfo() + ' ' + _transactionTime
+               + ' ' + getTimeQueued() + ' ' + getResult();
     }
 
     public String getClient()
@@ -95,7 +95,7 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 
     public String getUserInfo()
     {
-        return "\"" + getOwner() + "\":" + getUid() + ":" + getGid() + ":" + _client;
+        return '"' + getOwner() + "\":" + getUid() + ':' + getGid() + ':' + _client;
     }
 
     @Override

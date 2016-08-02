@@ -27,9 +27,9 @@ public class Pool2PoolTransferMsg extends PoolMessage {
     public static final int   PRECIOUS     = 1 ;
     public static final int   CACHED       = 2 ;
 
-    private FileAttributes _fileAttributes;
+    private final FileAttributes _fileAttributes;
 
-    private String      _destinationPoolName;
+    private final String      _destinationPoolName;
     private int         _destinationFileStatus = UNDETERMINED ;
 
     private static final long serialVersionUID = -4227857007512530410L;
@@ -76,7 +76,7 @@ public class Pool2PoolTransferMsg extends PoolMessage {
 
     @Override
     public String getDiagnosticContext() {
-        return super.getDiagnosticContext() + " " + getPnfsId();
+        return super.getDiagnosticContext() + ' ' + getPnfsId();
     }
 
 }

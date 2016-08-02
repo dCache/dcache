@@ -112,7 +112,7 @@ public class PnfsMessage extends Message {
         String diagnosticContext = super.getDiagnosticContext();
         PnfsId pnfsId = getPnfsId();
         if (pnfsId != null) {
-            diagnosticContext = diagnosticContext + " " + pnfsId;
+            diagnosticContext = diagnosticContext + ' ' + pnfsId;
         }
         return diagnosticContext;
     }

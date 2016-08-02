@@ -48,8 +48,8 @@ public class ClientGsiEngine extends InterceptingSSLEngine
     public static final char DELEGATION_CHAR = 'D';
     public static final char NO_DELEGATION_CHAR = '0';
 
-    private boolean isDelegationLimited;
-    private X509Credential credential;
+    private final boolean isDelegationLimited;
+    private final X509Credential credential;
 
     public ClientGsiEngine(SSLEngine delegate, X509Credential credential, boolean isDelegationEnabled, boolean isDelegationLimited)
     {

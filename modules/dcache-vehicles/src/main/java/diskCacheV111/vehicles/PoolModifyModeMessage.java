@@ -6,7 +6,7 @@ import diskCacheV111.pools.PoolV2Mode;
 
 public class PoolModifyModeMessage extends PoolMessage {
 
-    private PoolV2Mode _newMode;
+    private final PoolV2Mode _newMode;
     private int        _statusCode;
     private String     _statusMessage;
 

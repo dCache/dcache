@@ -90,7 +90,7 @@ public class MoverInfoMessage extends PnfsFileInfoMessage
     public String getAdditionalInfo()
     {
         return _dataTransferred + " "
-               + _connectionTime + " "
+               + _connectionTime + ' '
                + _fileCreated + " {"
                + _protocolInfo + "} ["
                + _initiator + "] ";
@@ -98,8 +98,8 @@ public class MoverInfoMessage extends PnfsFileInfoMessage
 
     public String toString()
     {
-        return getInfoHeader() + " " +
-               getFileInfo() + " " +
+        return getInfoHeader() + ' ' +
+               getFileInfo() + ' ' +
                getAdditionalInfo() +
                getResult();
     }

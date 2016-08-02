@@ -118,7 +118,7 @@ public class GsiFrameEngine extends ForwardingSSLEngine
     private class FrameEngine extends ForwardingSSLEngine
     {
         private ByteBuffer buffer = EMPTY;
-        private SSLSession session = new Session();
+        private final SSLSession session = new Session();
 
         @Override
         protected SSLEngine delegate()

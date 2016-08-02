@@ -17,7 +17,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     private final String name;
     private final int minor;
     private final int major;
-    private InetSocketAddress addr;
+    private final InetSocketAddress addr;
     private final String gsiftpUrl;
     private long transferTime;
     private long bytesTransferred;
@@ -25,12 +25,12 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
     private final String gsiftpTranferManagerDomain;
     private boolean emode = true;
     private int streams_num = 5;
-    private int bufferSize;
+    private final int bufferSize;
     private int tcpBufferSize;
     private final String user;
 
-    private PrivateKey key;
-    private X509Certificate[] certChain;
+    private final PrivateKey key;
+    private final X509Certificate[] certChain;
 
     public RemoteGsiftpTransferProtocolInfo(String protocol,
                                             int major,
@@ -141,18 +141,17 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
   @Override
   public String getVersionString()
   {
-    return name+"-"+major+"."+minor ;
+    return name + '-' + major + '.' + minor ;
   }
 
 
   public String toString()
   {
-    StringBuilder sb = new StringBuilder() ;
-    sb.append(getVersionString()).append(" ");
-    sb.append(addr.getAddress().getHostAddress());
-    sb.append(':').append(addr.getPort()) ;
+      String sb = getVersionString() + ' ' +
+                  addr.getAddress().getHostAddress() +
+                  ':' + addr.getPort();
 
-    return sb.toString() ;
+      return sb;
   }
 
   public boolean isFileCheckRequired() { return true; }

@@ -213,7 +213,7 @@ public class CacheException extends Exception
     @Override
     public String toString()
     {
-        return "CacheException(rc=" + _rc + ";msg=" + getMessage() + ")";
+        return "CacheException(rc=" + _rc + ";msg=" + getMessage() + ')';
     }
 }
 

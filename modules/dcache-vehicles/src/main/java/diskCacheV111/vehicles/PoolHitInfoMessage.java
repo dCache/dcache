@@ -47,11 +47,11 @@ public class PoolHitInfoMessage extends PnfsFileInfoMessage {
 
     public String toString()
     {
-		return getInfoHeader()+" "+
-			getFileInfo()+" "+
-			_fileCached+" {"+
-			_protocolInfo+"} "+
-			getResult() ;
+		return getInfoHeader() + ' ' +
+               getFileInfo() + ' ' +
+               _fileCached + " {" +
+               _protocolInfo + "} " +
+               getResult() ;
     }
 
     @Override

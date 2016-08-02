@@ -13,7 +13,7 @@ public abstract class InfoMessage implements Serializable
 {
     private static final SimpleDateFormat __dateFormat = new SimpleDateFormat("MM.dd HH:mm:ss");
 
-    private static AtomicLong COUNTER = new  AtomicLong(0);
+    private static final AtomicLong COUNTER = new  AtomicLong(0);
 
     private final String _cellType;
     private final String _messageType;
@@ -21,9 +21,9 @@ public abstract class InfoMessage implements Serializable
     private long _timeQueued;
     private int _resultCode;
     private String _message = "";
-    private long _timestamp = System.currentTimeMillis();
+    private final long _timestamp = System.currentTimeMillis();
     private String _transaction;
-    private long _transactionID = COUNTER.incrementAndGet();
+    private final long _transactionID = COUNTER.incrementAndGet();
     private Subject _subject;
 
     private static final long serialVersionUID = -8035876156296337291L;
@@ -46,7 +46,7 @@ public abstract class InfoMessage implements Serializable
 
     public String getInfoHeader()
     {
-        return formatTimestamp(new Date(_timestamp)) + " [" + _cellType + ":" + _cellName + ":" + _messageType + "]";
+        return formatTimestamp(new Date(_timestamp)) + " [" + _cellType + ':' + _cellName + ':' + _messageType + ']';
     }
 
     public String getResult()
@@ -56,7 +56,7 @@ public abstract class InfoMessage implements Serializable
 
     public String toString()
     {
-        return getInfoHeader() + " " + getResult();
+        return getInfoHeader() + ' ' + getResult();
     }
 
     public void setResult(int resultCode, String resultMessage)
@@ -114,10 +114,9 @@ public abstract class InfoMessage implements Serializable
     {
 
         if (_transaction == null) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(this.getCellType()).append(":").append(this.getCellName()).append(":");
-            sb.append(this.getTimestamp()).append("-").append(_transactionID);
-            _transaction = sb.toString();
+            String sb = this.getCellType() + ':' + this.getCellName() + ':' +
+                        this.getTimestamp() + '-' + _transactionID;
+            _transaction = sb;
         }
         return _transaction;
     }

@@ -124,8 +124,8 @@ public class PnfsGetFileAttributes extends PnfsMessage {
     @Override
     public String toString()
     {
-        return super.toString() + ";" +
-            ((_fileAttributes == null)
+        return super.toString() + ';' +
+               ((_fileAttributes == null)
              ? "[noMetaData]"
              : _fileAttributes.toString());
     }

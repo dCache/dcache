@@ -36,10 +36,10 @@ public class IoDoorInfo extends DoorInfo
 
         IoDoorEntry[] entries = (IoDoorEntry[]) getDetail();
         if (entries.length > 0) {
-            sb.append("\n");
+            sb.append('\n');
         }
         for (IoDoorEntry entry : entries) {
-            sb.append(entry.toString()).append("\n");
+            sb.append(entry.toString()).append('\n');
         }
         return sb.toString();
     }

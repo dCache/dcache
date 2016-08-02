@@ -35,7 +35,7 @@ public class Base64TokenWriter implements TokenWriter
     @Override
     public void write(byte[] token) throws IOException
     {
-        out.write("enc " + BaseEncoding.base64().encode(token) + "\n");
+        out.write("enc " + BaseEncoding.base64().encode(token) + '\n');
         out.flush();
     }
 

@@ -11,7 +11,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class PoolFetchFileMessage extends PoolMessage {
 
-    private FileAttributes _fileAttributes;
+    private final FileAttributes _fileAttributes;
 
     private static final long serialVersionUID = 1856537534158868883L;
 
@@ -34,6 +34,6 @@ public class PoolFetchFileMessage extends PoolMessage {
 
     @Override
     public String getDiagnosticContext() {
-        return super.getDiagnosticContext() + " " + getPnfsId();
+        return super.getDiagnosticContext() + ' ' + getPnfsId();
     }
 }

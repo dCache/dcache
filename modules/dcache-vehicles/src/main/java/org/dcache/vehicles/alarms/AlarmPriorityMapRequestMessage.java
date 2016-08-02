@@ -86,9 +86,9 @@ public final class AlarmPriorityMapRequestMessage extends Message {
     @Override
     public String toString() {
         return "AlarmPriorityRequestMessage{"
-             + map
-             + "}{"
-             + super.toString()
-             + "}";
+               + map
+               + "}{"
+               + super.toString()
+               + '}';
     }
  }

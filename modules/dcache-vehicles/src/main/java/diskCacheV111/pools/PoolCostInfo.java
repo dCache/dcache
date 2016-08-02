@@ -31,7 +31,7 @@ public class PoolCostInfo implements Serializable {
 
         private static final long serialVersionUID = -7097362707394583875L;
 
-        private String _name;
+        private final String _name;
         private NamedPoolQueueInfo(String name,
                                    int active, int maxActive, int queued,
                                    int readers, int writers)
@@ -47,7 +47,7 @@ public class PoolCostInfo implements Serializable {
         public String getName(){ return _name ; }
         @Override
         public String toString(){
-           return _name+"={"+super.toString()+"}" ;
+           return _name + "={" + super.toString() + '}';
         }
     }
     public class PoolQueueInfo implements Serializable {
@@ -55,10 +55,10 @@ public class PoolCostInfo implements Serializable {
         private static final long serialVersionUID = 1304697767284208011L;
 
         private int _active;
-        private int _maxActive;
+        private final int _maxActive;
         private int _queued;
-        private int _readers;
-        private int _writers;
+        private final int _readers;
+        private final int _writers;
 
         private PoolQueueInfo(int active, int maxActive, int queued, int readers, int writers)
         {
@@ -105,7 +105,15 @@ public class PoolCostInfo implements Serializable {
 
     	private static final long serialVersionUID = -8966065301943351970L;
 
-        private long _total, _free, _precious, _removable, _lru;
+        private final long _total;
+
+        private long _free;
+
+        private final long _precious;
+
+        private final long _removable;
+
+        private final long _lru;
         private long _gap;
         private double _breakEven;
 
@@ -139,12 +147,12 @@ public class PoolCostInfo implements Serializable {
         }
         @Override
         public String toString(){
-           return "t="+_total+
-                  ";f="+_free+
-                  ";p="+_precious+
-                  ";r="+_removable+
-                  ";lru="+_lru+
-                  ";{g="+_gap+";b="+_breakEven+"}" ;
+           return "t=" + _total +
+                  ";f=" + _free +
+                  ";p=" + _precious +
+                  ";r=" + _removable +
+                  ";lru=" + _lru +
+                  ";{g=" + _gap + ";b=" + _breakEven + '}';
         }
         public long getFreeSpace(){ return _free ; }
         public long getTotalSpace(){ return _total ; }
@@ -257,10 +265,10 @@ public class PoolCostInfo implements Serializable {
         sb.append("SP={").append(_space.toString()).append("};");
         sb.append("XM={");
         for( PoolQueueInfo namedPoolQueueInfo : _extendedMoverHash.values() ){
-            sb.append( namedPoolQueueInfo.toString() ).append(";");
+            sb.append( namedPoolQueueInfo.toString() ).append(';');
         }
         sb.append("};");
-        sb.append("}");
+        sb.append('}');
         return sb.toString();
     }
 }

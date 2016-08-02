@@ -5,14 +5,14 @@ package diskCacheV111.vehicles;
 import java.io.Serializable;
 
 public class RestoreHandlerInfo implements Serializable {
-   private String _name ;
-   private int    _clientCount;
-   private int    _retryCount;
-   private long   _started ;
-   private String _pool;
-   private String _status ;
-   private int    _errorCode ;
-   private String _errorMessage ;
+   private final String _name ;
+   private final int    _clientCount;
+   private final int    _retryCount;
+   private final long   _started ;
+   private final String _pool;
+   private final String _status ;
+   private final int    _errorCode ;
+   private final String _errorMessage ;
 
    private static final long serialVersionUID = 5001829329121454794L;
 
@@ -43,11 +43,11 @@ public class RestoreHandlerInfo implements Serializable {
    public int getErrorCode(){ return _errorCode ; }
    public String getErrorMessage(){ return _errorMessage ; }
    public String toString(){
-     return _name+
-            " m="+_clientCount+
-            " ["+_retryCount+"] "+
-            " ["+_pool+"] "+
-            _status+
-            " {"+_errorCode+","+_errorMessage+"}" ;
+     return _name +
+            " m=" + _clientCount +
+            " [" + _retryCount + "] " +
+            " [" + _pool + "] " +
+            _status +
+            " {" + _errorCode + ',' + _errorMessage + '}';
    }
 }

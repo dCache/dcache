@@ -25,10 +25,10 @@ public class IoJobInfo extends JobInfo  {
    public long getLastTransferred(){ return _lastTransferred ; }
    public PnfsId getPnfsId(){ return _pnfsId ; }
    public String toString(){
-      return super.toString()+
-             _pnfsId+
-             ";B="+_bytesTransferred+
-             ";T="+_transferTime+
-             ";L="+((System.currentTimeMillis()-_lastTransferred)/1000)+";";
+      return super.toString() +
+             _pnfsId +
+             ";B=" + _bytesTransferred +
+             ";T=" + _transferTime +
+             ";L=" + ((System.currentTimeMillis()-_lastTransferred)/1000) + ';';
    }
 }

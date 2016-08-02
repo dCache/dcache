@@ -7,7 +7,7 @@ public class PoolManagerGetPoolsByPoolGroupMessage
 {
     private static final long serialVersionUID = 2808625734157545379L;
 
-    private Iterable<String> _poolGroups;
+    private final Iterable<String> _poolGroups;
 
     public PoolManagerGetPoolsByPoolGroupMessage(Iterable<String> poolGroups)
     {

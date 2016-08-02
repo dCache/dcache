@@ -45,9 +45,9 @@ public class ClientGsiEngineDssContextFactory implements DssContextFactory
     private final Set<String> bannedCiphers;
     private final Set<String> bannedProtocols;
     private final SslContextFactory contextFactory;
-    private boolean isDelegationEnabled;
-    private boolean isDelegationLimited;
-    private X509Credential credential;
+    private final boolean isDelegationEnabled;
+    private final boolean isDelegationLimited;
+    private final X509Credential credential;
 
     public ClientGsiEngineDssContextFactory(SslContextFactory contextFactory, X509Credential credential,
                                             String[] bannedCiphers,

@@ -12,7 +12,7 @@ public class PoolManagerPoolInformation
     private static final long serialVersionUID = -279163439475487756L;
 
     private final String _name;
-    private double _cpuCost;
+    private final double _cpuCost;
     private final PoolCostInfo _poolCostInfo;
 
     public PoolManagerPoolInformation(String name, PoolCostInfo poolCostInfo, double cpuCost)

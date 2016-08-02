@@ -13,8 +13,8 @@ import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 public class PoolIoFileMessage extends PoolMessage {
 
-    private FileAttributes _fileAttributes;
-    private ProtocolInfo _protocolInfo;
+    private final FileAttributes _fileAttributes;
+    private final ProtocolInfo _protocolInfo;
     private boolean      _isPool2Pool;
     private String       _ioQueueName;
     private int          _moverId;
@@ -120,6 +120,6 @@ public class PoolIoFileMessage extends PoolMessage {
 
     @Override
     public String getDiagnosticContext() {
-        return super.getDiagnosticContext() + " " + getPnfsId();
+        return super.getDiagnosticContext() + ' ' + getPnfsId();
     }
 }

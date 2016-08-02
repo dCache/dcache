@@ -13,13 +13,13 @@ import java.util.TreeSet;
 import dmg.util.Formats;
 
 public class PoolClassAttraction implements Serializable {
-   private String  _organization ;
-   private String  _storageClass ;
+   private final String  _organization ;
+   private final String  _storageClass ;
    private boolean _isTemplate;
    private Map<String, String> _map;
    private int     _writePreference = -1 ;
    private int     _readPreference  = -1 ;
-   private String  _poolName ;
+   private final String  _poolName ;
    private String  _id;
 
    public static final PoolClassComparator comparatorForWrite =
@@ -81,7 +81,7 @@ public class PoolClassAttraction implements Serializable {
             _map.put( st2.nextToken() , st2.nextToken() ) ;
          }catch(NoSuchElementException nsee){}
        }
-       if( _map.size() == 0 ) {
+       if(_map.isEmpty()) {
            _map = null;
        }
    }
@@ -100,7 +100,7 @@ public class PoolClassAttraction implements Serializable {
        _readPreference  = readPreference ;
    }
    private void makeId(){
-     _id = _poolName+":"+_storageClass+"@"+_organization ;
+     _id = _poolName + ':' + _storageClass + '@' + _organization ;
    }
    public void   setWritePreference( int writePreference ){
       _writePreference = writePreference ;
@@ -120,17 +120,17 @@ public class PoolClassAttraction implements Serializable {
    }
    public String toString(){
      if( ! _isTemplate ){
-      return _id+
-             "={read="+_readPreference+
-             ";write="+_writePreference+"}" ;
+      return _id +
+             "={read=" + _readPreference +
+             ";write=" + _writePreference + '}';
      }else{
         StringBuilder sb = new StringBuilder() ;
         sb.append(_id).append(";t;") ;
         Iterator<Map.Entry<String,String>> i = getSelection() ;
         while( i.hasNext() ){
            Map.Entry<String, String> entry = i.next();
-           sb.append(entry.getKey()).append("=")
-                   .append(entry.getValue()).append(";");
+           sb.append(entry.getKey()).append('=')
+                   .append(entry.getValue()).append(';');
         }
         return sb.toString() ;
      }
@@ -142,10 +142,10 @@ public class PoolClassAttraction implements Serializable {
            append( Formats.field(attr.getOrganization(),10,Formats.LEFT)).
            append( Formats.field(attr.getStorageClass(),30,Formats.LEFT)) ;
         int    p  = attr.getReadPreference() ;
-        String pp = p <= 0 ? "-" : ( ""+p ) ;
+        String pp = p <= 0 ? "-" : (String.valueOf(p)) ;
         sb.append( Formats.field(pp,8,Formats.RIGHT)) ;
         p  = attr.getWritePreference() ;
-        pp = p <= 0 ? "-" : ( ""+p ) ;
+        pp = p <= 0 ? "-" : (String.valueOf(p)) ;
         sb.append( Formats.field(pp,8,Formats.RIGHT)) ;
         return sb.toString();
    }

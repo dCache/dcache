@@ -11,17 +11,17 @@ import java.net.InetSocketAddress;
 public class DCapClientProtocolInfo implements IpProtocolInfo
 {
   private String name  = "Unkown" ;
-  private int    minor;
-  private int    major;
-  private InetSocketAddress addr;
+  private final int    minor;
+  private final int    major;
+  private final InetSocketAddress addr;
   private String gsiftpUrl;
   private long   transferTime;
   private long   bytesTransferred;
   private int    sessionId;
-  private String initiatorCellName;
-  private String initiatorCellDomain;
-  private long id;
-  private int bufferSize;
+  private final String initiatorCellName;
+  private final String initiatorCellDomain;
+  private final long id;
+  private final int bufferSize;
   private int tcpBufferSize;
 
   private static final long serialVersionUID = -8861384829188018580L;
@@ -80,7 +80,7 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
   @Override
   public String getVersionString()
   {
-    return name+"-"+major+"."+minor ;
+    return name + '-' + major + '.' + minor ;
   }
 
   //
@@ -89,12 +89,11 @@ public class DCapClientProtocolInfo implements IpProtocolInfo
 
   public String toString()
   {
-    StringBuilder sb = new StringBuilder() ;
-    sb.append(getVersionString()) ;
-    sb.append(addr.getAddress().getHostAddress());
-    sb.append(':').append(addr.getPort()) ;
+    String sb = getVersionString() +
+                addr.getAddress().getHostAddress() +
+                ':' + addr.getPort();
 
-    return sb.toString() ;
+    return sb;
   }
 
   /** Getter for property gsiftpTranferManagerName.

@@ -7,7 +7,7 @@ package diskCacheV111.vehicles;
 
 public class QuotaMgrCheckQuotaMessage extends Message {
 
-    private String _storageClass;
+    private final String _storageClass;
     private long   _hardQuota;
     private long   _softQuota;
     private long   _spaceUsed;

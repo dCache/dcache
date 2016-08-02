@@ -8,8 +8,8 @@ package diskCacheV111.pools;
  public class StorageClassFlushInfo implements Serializable {
 
     private static final long serialVersionUID = 2092293652873859605L;
-    private String _hsmName;
-    private String _storageClass;
+    private final String _hsmName;
+    private final String _storageClass;
     //
     //  package private
     //
@@ -147,8 +147,8 @@ package diskCacheV111.pools;
 
     public String toString()
     {
-        return _storageClass + "@" + _hsmName + "=" +
-            "{r=" + _requestCount + "/" + _failedRequestCount + "}";
+        return _storageClass + '@' + _hsmName + '=' +
+               "{r=" + _requestCount + '/' + _failedRequestCount + '}';
     }
 }
 

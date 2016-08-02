@@ -57,7 +57,7 @@ public class PoolCheckFileMessage extends PoolCheckMessage implements
 
     @Override
     public String getDiagnosticContext() {
-        return super.getDiagnosticContext() + " " + getPnfsId();
+        return super.getDiagnosticContext() + ' ' + getPnfsId();
     }
 
 }

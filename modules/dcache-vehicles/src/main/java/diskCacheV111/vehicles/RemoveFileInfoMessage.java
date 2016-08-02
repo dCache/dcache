@@ -13,8 +13,8 @@ public class RemoveFileInfoMessage extends PnfsFileInfoMessage
 
     public String toString()
     {
-        return getInfoHeader() + " " +
-               getFileInfo() + " " +
+        return getInfoHeader() + ' ' +
+               getFileInfo() + ' ' +
                getResult();
     }
 

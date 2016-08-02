@@ -155,13 +155,13 @@ public abstract class AbstractBillingRequestMessage<T extends Serializable>
     @Override
     public String toString() {
         return "BillingRequest{"
-            + method
-            + (parameterTypes == null ? "" : Arrays.asList(parameterTypes))
-            + (parameters == null ? "" : Arrays.asList(parameters))
-            + ", return type "
-            + returnType
-            + "}{"
-            + super.toString()
-            + "}";
+               + method
+               + (parameterTypes == null ? "" : Arrays.asList(parameterTypes))
+               + (parameters == null ? "" : Arrays.asList(parameters))
+               + ", return type "
+               + returnType
+               + "}{"
+               + super.toString()
+               + '}';
     }
 }

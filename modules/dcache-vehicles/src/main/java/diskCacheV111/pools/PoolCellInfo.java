@@ -39,10 +39,10 @@ public class PoolCellInfo
      StringBuilder sb = new StringBuilder() ;
      sb.append(super.toString()) ;
      if( _costInfo != null ) {
-         sb.append(";Cost={").append(_costInfo.toString()).append("}");
+         sb.append(";Cost={").append(_costInfo.toString()).append('}');
      }
      if( _tagMap != null ) {
-         sb.append("TagMap={").append(_tagMap.toString()).append("}");
+         sb.append("TagMap={").append(_tagMap.toString()).append('}');
      }
 
      return sb.toString() ;

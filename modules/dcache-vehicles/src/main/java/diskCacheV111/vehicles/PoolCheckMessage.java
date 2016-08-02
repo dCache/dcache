@@ -19,14 +19,14 @@ public class PoolCheckMessage
 
     public String toString(){
       StringBuilder sb = new StringBuilder() ;
-      sb.append(super.toString()).append(";");
+      sb.append(super.toString()).append(';');
       if( _map != null ){
           sb.append("tags={");
           for( Map.Entry<String, String> entry : _map.entrySet()){
              sb.append(entry.getKey()).
-                append("=").
+                append('=').
                 append(entry.getValue()).
-                append(";");
+                append(';');
           }
           sb.append("};");
 

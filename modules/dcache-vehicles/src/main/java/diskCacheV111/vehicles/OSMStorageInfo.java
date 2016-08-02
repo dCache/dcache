@@ -25,7 +25,7 @@ public class OSMStorageInfo extends GenericStorageInfo {
    }
    @Override
    public String getStorageClass() {
-      return (_store==null?"<Unknown>":_store)+":"+
+      return (_store==null?"<Unknown>":_store) + ':' +
              (_group==null?"<Unknown>":_group) ;
    }
    public String getStore(){ return _store ; }
@@ -46,7 +46,7 @@ public class OSMStorageInfo extends GenericStorageInfo {
              "store="+(_store==null?"<Unknown>":_store)+
              ";group="+(_group==null?"<Unknown>":_group)+
              ";bfid="+getBitfileId()+
-             ";" ;
+             ';';
 
    }
 }

@@ -20,10 +20,10 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     private static final String SIMPLE_PNFS_ID_REGEX = "\\p{XDigit}{1,24}";
     // FIXME STAR_PNFS_ID_REGEX is too permissive; overall length should be 24 or less.
     private static final String STAR_PNFS_ID_REGEX = "\\p{XDigit}{1,22}\\*\\p{XDigit}{1,22}";
-    private static final String PNFS_ID_REGEX = "("+SIMPLE_PNFS_ID_REGEX+"|"+STAR_PNFS_ID_REGEX+")";
-    private static final String PNFS_STRING_REGEX = "("+PNFS_ID_REGEX+"(\\..*)?)";
+    private static final String PNFS_ID_REGEX = '(' + SIMPLE_PNFS_ID_REGEX + '|' + STAR_PNFS_ID_REGEX + ')';
+    private static final String PNFS_STRING_REGEX = '(' + PNFS_ID_REGEX + "(\\..*)?)";
     private static final String CHIMERA_ID_REGEX = "\\p{XDigit}{36}";
-    private static final String VALID_ID_REGEX = "^("+PNFS_STRING_REGEX+"|"+CHIMERA_ID_REGEX+")$";
+    private static final String VALID_ID_REGEX = "^(" + PNFS_STRING_REGEX + '|' + CHIMERA_ID_REGEX + ")$";
     private static final Pattern VALID_ID_PATTERN = Pattern.compile( VALID_ID_REGEX);
 
     private static final int OLD_ID_SIZE = 12; // original pnfs
@@ -114,7 +114,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 
     @Override
     public String toString() {
-        return getId() + ((_domain != null) ? "." + _domain : "");
+        return getId() + ((_domain != null) ? '.' + _domain : "");
     }
 
     public String toIdString() {
@@ -167,7 +167,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         String s = Integer.toHexString((b < 0) ? (256 + b) : (int) b)
             .toUpperCase();
         if (s.length() == 1) {
-            return "0" + s;
+            return '0' + s;
         } else {
             return s;
         }
@@ -176,16 +176,16 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     /**
      * Translation table used by bytesToHexString.
      */
-    private static final char valueToHex[] = {
-        '0', '1', '2', '3', '4', '5',
-        '6', '7', '8', '9', 'A', 'B',
-        'C', 'D', 'E', 'F' };
+    private static final char[] valueToHex = {
+            '0', '1', '2', '3', '4', '5',
+            '6', '7', '8', '9', 'A', 'B',
+            'C', 'D', 'E', 'F'};
 
     /**
      * Converts a byte array into the string representation in base 16.
      */
     private static String bytesToHexString(byte[] b) {
-        char result[] = new char[2 * b.length];
+        char[] result = new char[2 * b.length];
         for (int i = 0; i < b.length; i++) {
             int value = (b[i] + 0x100) & 0xFF;
             result[2 * i] = valueToHex[value >> 4];
@@ -225,7 +225,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
             StringBuilder sb = new StringBuilder();
             sb.append(idString.substring(0, p));
             for (int i = 0; i < diff; i++) {
-                sb.append("0");
+                sb.append('0');
             }
             sb.append(idString.substring(p + 1));
             idString = sb.toString();
@@ -236,7 +236,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
             StringBuilder sb = new StringBuilder();
             int m = 2 * OLD_ID_SIZE - idString.length();
             for (int i = 0; i < m; i++) {
-                sb.append("0");
+                sb.append('0');
             }
             sb.append(idString);
             idString = sb.toString();

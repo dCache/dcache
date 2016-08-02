@@ -41,7 +41,7 @@ public class PoolSetStickyMessage extends PoolMessage {
 
     @Override
     public String getDiagnosticContext() {
-        return super.getDiagnosticContext() + " " + getPnfsId();
+        return super.getDiagnosticContext() + ' ' + getPnfsId();
     }
 
 }

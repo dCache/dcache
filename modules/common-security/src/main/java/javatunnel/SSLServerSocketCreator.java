@@ -22,7 +22,7 @@ import org.dcache.util.Args;
 public class SSLServerSocketCreator extends ServerSocketFactory {
 
 
-    private SSLServerSocketFactory ssf;
+    private final SSLServerSocketFactory ssf;
     private UserValidatable uv;
 
     public  SSLServerSocketCreator(String args, Map<?,UserValidatable> map) throws IOException {

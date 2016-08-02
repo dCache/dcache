@@ -17,9 +17,9 @@ import diskCacheV111.vehicles.StorageInfo;
 public class HsmControlGetBfDetailsMsg extends Message  {
 
     private static final long serialVersionUID = -8423976847654758059L;
-    private StorageInfo _storageInfo;
-    private PnfsId      _pnfsId;
-    private String      _detail;
+    private final StorageInfo _storageInfo;
+    private final PnfsId      _pnfsId;
+    private final String      _detail;
     /** Creates a new instance of HsmControlGetBfDetailsMsg
      *
      */
@@ -34,6 +34,6 @@ public class HsmControlGetBfDetailsMsg extends Message  {
 
     @Override
     public String getDiagnosticContext() {
-        return super.getDiagnosticContext() + " " + getPnfsId();
+        return super.getDiagnosticContext() + ' ' + getPnfsId();
     }
 }

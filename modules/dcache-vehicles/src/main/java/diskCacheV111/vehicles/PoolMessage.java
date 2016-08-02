@@ -7,7 +7,7 @@ package diskCacheV111.vehicles;
 
 public class PoolMessage extends Message {
 
-    private String _poolName;
+    private final String _poolName;
 
     private static final long serialVersionUID = 2092239799703859605L;
 

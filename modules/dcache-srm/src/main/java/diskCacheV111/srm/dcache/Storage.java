@@ -1812,7 +1812,7 @@ public final class Storage
         case "https":
             protocolInfo = new RemoteHttpsDataTransferProtocolInfo(
                     "RemoteHttpsDataTransfer",
-                    1, 1, remoteAddr, config.getBuffer_size(),
+                    1, 1, remoteAddr,
                     remoteTURL.toString(), isVerifyRequired(extraInfo),
                     httpHeaders(extraInfo),
                     credential);
@@ -1820,7 +1820,7 @@ public final class Storage
 
         case "http":
             protocolInfo = new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
-                    1, 1, remoteAddr, config.getBuffer_size(),
+                    1, 1, remoteAddr,
                     remoteTURL.toString(), isVerifyRequired(extraInfo),
                     httpHeaders(extraInfo));
             break;

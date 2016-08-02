@@ -18,7 +18,6 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
     private final int    minor;
     private final int    major;
     private final InetSocketAddress addr;
-    private final int bufferSize;  // for compatibility with earlier pools; remove after 2.10 is released
     private final String sourceHttpUrl;
     private final boolean isVerificationRequired;
     private final ImmutableMap<String,String> headers;
@@ -26,7 +25,7 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
     private static final long serialVersionUID = 4482469147378465931L;
 
     public RemoteHttpDataTransferProtocolInfo(String protocol, int major,
-            int minor, InetSocketAddress addr, int buf_size, String url,
+            int minor, InetSocketAddress addr, String url,
             boolean isVerificationRequired, ImmutableMap<String,String> headers)
     {
         this.name  = protocol ;
@@ -34,7 +33,6 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
         this.major = major ;
         this.addr = addr ;
         this.sourceHttpUrl = url;
-        this.bufferSize = buf_size;
         this.isVerificationRequired = isVerificationRequired;
         this.headers = checkNotNull(headers);
     }
@@ -65,7 +63,7 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
     @Override
     public String getVersionString()
     {
-        return name+"-"+major+"."+minor ;
+        return name + '-' + major + '.' + minor ;
     }
 
     public boolean isVerificationRequired()

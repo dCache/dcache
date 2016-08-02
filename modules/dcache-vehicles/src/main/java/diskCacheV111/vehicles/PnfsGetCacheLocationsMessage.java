@@ -34,7 +34,7 @@ public class PnfsGetCacheLocationsMessage extends PnfsMessage {
        if( _cacheLocations != null ) {
            for (String location : _cacheLocations) {
                sb.append(location).
-                       append(",");
+                       append(',');
            }
        }
        return sb.toString() ;

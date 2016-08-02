@@ -9,8 +9,8 @@ public class PoolFlushDoFlushMessage extends PoolFlushControlInfoMessage {
 
     private static final long serialVersionUID = 2092239799703855551L;
 
-    private String  _hsmName;
-    private String  _storageClassName;
+    private final String  _hsmName;
+    private final String  _storageClassName;
     private int     _maxFlushCount;
     private long    _flushId;
     private int     _totalFlushed;
@@ -46,7 +46,7 @@ public class PoolFlushDoFlushMessage extends PoolFlushControlInfoMessage {
     public String toString(){
        StringBuilder sb = new StringBuilder() ;
        sb.append(super.toString()).append(";SC=").
-          append(_storageClassName).append("@").append(_hsmName).
+          append(_storageClassName).append('@').append(_hsmName).
           append(";MAX=").append(_maxFlushCount).append(";id=").
           append(_flushId) ;
        if( _finished ) {

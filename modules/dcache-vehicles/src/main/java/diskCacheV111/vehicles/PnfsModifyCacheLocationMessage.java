@@ -8,7 +8,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PnfsModifyCacheLocationMessage extends PnfsMessage {
 
-    private String _poolName;
+    private final String _poolName;
 
     private static final long serialVersionUID = -7996549495498661141L;
 

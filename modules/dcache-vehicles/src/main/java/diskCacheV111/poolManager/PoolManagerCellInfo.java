@@ -45,6 +45,6 @@ public class PoolManagerCellInfo
     @Override
     public String toString()
     {
-        return super.toString() + " " + _pools;
+        return super.toString() + ' ' + _pools;
     }
 }

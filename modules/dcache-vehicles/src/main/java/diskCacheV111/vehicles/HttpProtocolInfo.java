@@ -27,9 +27,9 @@ public class HttpProtocolInfo implements IpProtocolInfo
     }
 
   private String _name  = "Unkown" ;
-  private int    _minor;
-  private int    _major;
-  private InetSocketAddress _clientSocketAddress;
+  private final int    _minor;
+  private final int    _major;
+  private final InetSocketAddress _clientSocketAddress;
   private long   _transferTime;
   private long   _bytesTransferred;
 
@@ -37,10 +37,10 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private int    _sessionId;
 
   private boolean _writeAllowed;
-  private String httpDoorCellName;
-  private String httpDoorDomainName;
-  private String path;
-  private URI _location;
+  private final String httpDoorCellName;
+  private final String httpDoorDomainName;
+  private final String path;
+  private final URI _location;
 
   private final Disposition _disposition;
 
@@ -116,7 +116,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
   @Override
   public String getVersionString()
   {
-    return _name+"-"+_major+"."+_minor ;
+    return _name + '-' + _major + '.' + _minor ;
   }
 
   //
@@ -144,15 +144,14 @@ public class HttpProtocolInfo implements IpProtocolInfo
 
   public String toString()
   {
-    StringBuilder sb = new StringBuilder() ;
-    sb.append(getVersionString()) ;
-    sb.append(':').append(_clientSocketAddress.getAddress().getHostAddress());
-    sb.append(':').append(_clientSocketAddress.getPort()) ;
-    sb.append(':').append(httpDoorCellName);
-    sb.append(':').append(httpDoorDomainName);
-    sb.append(':').append(path);
+      String sb = getVersionString() +
+                  ':' + _clientSocketAddress.getAddress().getHostAddress() +
+                  ':' + _clientSocketAddress.getPort() +
+                  ':' + httpDoorCellName +
+                  ':' + httpDoorDomainName +
+                  ':' + path;
 
-    return sb.toString() ;
+      return sb;
   }
   //
   // io mode

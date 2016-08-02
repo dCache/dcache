@@ -80,7 +80,7 @@ public class PoolV2Mode implements Serializable {
         if (!isResilienceEnabled()) {
             sb.append(",noresilience");
         }
-        sb.append(")");
+        sb.append(')');
         return sb.toString();
     }
 

@@ -220,7 +220,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine
 
     private class GotDelegatedCredentials implements Callback
     {
-        private int len = 0;
+        private int len;
         private ByteSource data;
 
         @Override

@@ -64,7 +64,7 @@ public class ServerGsiEngineDssContextFactory implements DssContextFactory
     private final Set<String> bannedCiphers;
     private final Set<String> bannedProtocols;
     private final Callable<SSLContext> factory;
-    private KeyPairCache keyPairCache;
+    private final KeyPairCache keyPairCache;
 
     public ServerGsiEngineDssContextFactory(String args) throws Exception
     {

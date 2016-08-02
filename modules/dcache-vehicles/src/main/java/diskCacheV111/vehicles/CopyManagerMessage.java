@@ -14,8 +14,8 @@ public class CopyManagerMessage extends Message
 {
   private int numberOfRetries = 3;
   private int numberOfPerformedRetries;
-  private String srcPnfsPath;
-  private String dstPnfsPath;
+  private final String srcPnfsPath;
+  private final String dstPnfsPath;
   private int returnCode;
   private String description;
   private Restriction restriction;

@@ -33,8 +33,8 @@ class SelfTest {
 
     private static class Sender extends Thread {
 
-        private String _host;
-        private int _port;
+        private final String _host;
+        private final int _port;
         Sender(String host, int port) {
             super("Sender");
             _port = port;
@@ -84,7 +84,7 @@ class SelfTest {
 
     private static class Reciever extends Thread {
 
-        private int _port;
+        private final int _port;
         Reciever(int port) {
             super("Reciever");
             _port = port;

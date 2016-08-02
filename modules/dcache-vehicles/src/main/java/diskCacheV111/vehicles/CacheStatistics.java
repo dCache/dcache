@@ -107,11 +107,7 @@ public class CacheStatistics implements Serializable, Comparable<CacheStatistics
     public int getVersion(){ return _version ; }
 
     public String toPnfsString(){
-	return ""  + _version +
-               "," + _totalAccesses +
-               "," + _accessTime +
-               "," + _score +
-               "," + _halfLife;
+	return _version + "," + _totalAccesses + "," + _accessTime + "," + _score + ',' + _halfLife;
     }
 
     public String toString(){
@@ -163,7 +159,7 @@ public class CacheStatistics implements Serializable, Comparable<CacheStatistics
 	}
     }
 
-    public static void main(String args[]){
+    public static void main(String[] args){
 	CacheStatistics s = new CacheStatistics(args[0]);
 	System.out.println(s.toPnfsString());
     }

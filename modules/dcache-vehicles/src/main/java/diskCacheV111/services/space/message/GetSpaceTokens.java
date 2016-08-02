@@ -29,7 +29,7 @@ public class GetSpaceTokens extends Message{
         return spaceTokens;
     }
 
-    public void setSpaceToken(long spaceTokens[]) {
+    public void setSpaceToken(long[] spaceTokens) {
         this.spaceTokens = spaceTokens;
     }
 

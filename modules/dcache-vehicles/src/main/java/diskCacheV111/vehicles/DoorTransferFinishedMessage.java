@@ -15,7 +15,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @ParametersAreNonnullByDefault
 public class DoorTransferFinishedMessage extends Message {
    private final ProtocolInfo _protocol;
-   private FileAttributes _fileAttributes;
+   private final FileAttributes _fileAttributes;
    private final PnfsId _pnfsId;
    private final String _poolName;
    private final String _ioQueueName;
@@ -57,7 +57,7 @@ public class DoorTransferFinishedMessage extends Message {
 
     @Override
     public String getDiagnosticContext() {
-        return super.getDiagnosticContext() + " " + getPnfsId();
+        return super.getDiagnosticContext() + ' ' + getPnfsId();
     }
 }
 

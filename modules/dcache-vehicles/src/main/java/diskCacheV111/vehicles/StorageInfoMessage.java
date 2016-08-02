@@ -25,10 +25,10 @@ public class StorageInfoMessage extends PnfsFileInfoMessage
 
     public String toString()
     {
-        return getInfoHeader() + " " +
-               getFileInfo() + " " +
-               _transferTime + " " +
-               getTimeQueued() + " " +
+        return getInfoHeader() + ' ' +
+               getFileInfo() + ' ' +
+               _transferTime + ' ' +
+               getTimeQueued() + ' ' +
                getResult();
     }
 

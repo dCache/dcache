@@ -9,7 +9,7 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     private final String _name;
     private final int _minor;
     private final int _major;
-    private InetSocketAddress _addr;
+    private final InetSocketAddress _addr;
     private long _transferTime;
     private long _bytesTransferred;
     private int _sessionId;
@@ -55,7 +55,7 @@ public class DCapProtocolInfo implements IpProtocolInfo {
 
     @Override
     public String getVersionString() {
-        return _name + "-" + _major + "." + _minor;
+        return _name + '-' + _major + '.' + _minor;
     }
 
     //
@@ -80,12 +80,11 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     //
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getVersionString()).append(',');
-        sb.append(_addr.getAddress().getHostAddress());
-        sb.append(":").append(_addr.getPort());
+        String sb = getVersionString() + ',' +
+                    _addr.getAddress().getHostAddress() +
+                    ':' + _addr.getPort();
 
-        return sb.toString();
+        return sb;
     }
 
     //

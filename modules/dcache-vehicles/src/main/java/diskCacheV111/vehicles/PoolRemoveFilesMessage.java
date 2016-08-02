@@ -6,7 +6,7 @@ import java.util.Collection;
 
 public class PoolRemoveFilesMessage extends PoolMessage {
 
-    private final String _filesList[];
+    private final String[] _filesList;
 
     private static final long serialVersionUID = 7090652304453652269L;
 

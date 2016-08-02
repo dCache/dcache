@@ -8,7 +8,6 @@ import javax.annotation.Nonnull;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -60,7 +59,7 @@ public class FileAttributes implements Serializable {
     /**
      * Set of attributes which have been set.
      */
-    private Set<FileAttribute> _definedAttributes =
+    private final Set<FileAttribute> _definedAttributes =
         EnumSet.noneOf(FileAttribute.class);
 
     /**
@@ -508,7 +507,7 @@ public class FileAttributes implements Serializable {
     private <T> Optional<T> toOptional(FileAttribute attribute, T value)
     {
         return isDefined(attribute) ? Optional.of(value) :
-                Optional.<T>absent();
+                Optional.absent();
     }
 
     private void readObject(ObjectInputStream stream)

@@ -23,7 +23,7 @@ public class PoolModifyPersistencyMessage extends PoolMessage {
 
     @Override
     public String getDiagnosticContext() {
-        return super.getDiagnosticContext() + " " + getPnfsId();
+        return super.getDiagnosticContext() + ' ' + getPnfsId();
     }
 }
 

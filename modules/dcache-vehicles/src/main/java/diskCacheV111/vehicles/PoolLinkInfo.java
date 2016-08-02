@@ -70,7 +70,7 @@ public class PoolLinkInfo implements Serializable {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Link(").append(name).append(",").append(availableSpaceInBytes).append(",");
+        sb.append("Link(").append(name).append(',').append(availableSpaceInBytes).append(',');
         sb.append("StorageGroups");
         for (String storageGroup : storageGroups) {
             sb.append('{').append(storageGroup).append('}');

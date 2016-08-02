@@ -440,13 +440,13 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
             case HTTP:
                 return new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
-                        1, 1, address, buffer, _destination.toASCIIString(),
+                        1, 1, address, _destination.toASCIIString(),
                         _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
                         _transferHeaders);
 
             case HTTPS:
                 return new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
-                        1, 1, address, buffer, _destination.toASCIIString(),
+                        1, 1, address, _destination.toASCIIString(),
                         _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
                         _transferHeaders, _privateKey, _certificateChain);
             }

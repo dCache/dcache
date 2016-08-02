@@ -15,8 +15,8 @@ public class VOInfo implements Serializable
     private static final Pattern p1 = Pattern.compile( "(.*)/Role=(.*)");
     private static final Pattern p2 = Pattern.compile( "(.*)()");
 
-    private String voGroup;
-    private String voRole;
+    private final String voGroup;
+    private final String voRole;
 
     public VOInfo(String pattern) {
         Matcher m = getMatcher(pattern);
@@ -67,7 +67,7 @@ public class VOInfo implements Serializable
 
     @Override
     public String toString(){
-        return voGroup+":"+voRole;
+        return voGroup + ':' + voRole;
     }
 
     @Nullable

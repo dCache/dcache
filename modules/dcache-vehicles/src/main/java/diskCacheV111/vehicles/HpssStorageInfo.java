@@ -5,8 +5,8 @@ public class HpssStorageInfo extends GenericStorageInfo {
 
    private static final long serialVersionUID = 4260226401319935542L;
 
-   private String _store;
-   private String _group;
+   private final String _store;
+   private final String _group;
 
    public HpssStorageInfo( String store , String group ){
       setHsm("hpss");
@@ -25,7 +25,7 @@ public class HpssStorageInfo extends GenericStorageInfo {
    }
    @Override
    public String getStorageClass() {
-      return (_store==null?"<Unknown>":_store)+":"+
+      return (_store==null?"<Unknown>":_store) + ':' +
              (_group==null?"<Unknown>":_group) ;
    }
    public String getStore(){ return _store ; }
@@ -46,7 +46,7 @@ public class HpssStorageInfo extends GenericStorageInfo {
              "store="+(_store==null?"<Unknown>":_store)+
              ";group="+(_group==null?"<Unknown>":_group)+
              ";bfid="+getBitfileId()+
-             ";" ;
+             ';';
 
    }
 }

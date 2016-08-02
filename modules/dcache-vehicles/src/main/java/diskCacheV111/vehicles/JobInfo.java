@@ -39,12 +39,12 @@ public class JobInfo implements Serializable {
 
    public String toString(){
       StringBuilder sb = new StringBuilder();
-      sb.append(_jobId).append(";");
-      sb.append(_client).append(":").append(_clientId) ;
+      sb.append(_jobId).append(';');
+      sb.append(_client).append(':').append(_clientId) ;
       synchronized (__format) {
-          sb.append(";").append(__format.format(new Date(_startTime))).
-                  append(";").append(__format.format(new Date(_submitTime))).
-                  append(";").append(_status).append(";") ;
+          sb.append(';').append(__format.format(new Date(_startTime))).
+                  append(';').append(__format.format(new Date(_submitTime))).
+                  append(';').append(_status).append(';') ;
       }
       return sb.toString();
    }

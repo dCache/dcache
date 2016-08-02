@@ -15,7 +15,7 @@ public class PoolManagerPoolModeMessage extends PoolManagerMessage {
     public static final int READ   = 0x10 ;
     public static final int WRITE  = 0x20 ;
     public static final int UNDEFINED = 0 ;
-    private String _poolName;
+    private final String _poolName;
     private int    _poolMode;
     public PoolManagerPoolModeMessage(String poolName ){
          _poolName = poolName ;
@@ -37,10 +37,10 @@ public class PoolManagerPoolModeMessage extends PoolManagerMessage {
            sb.append("Undefined");
        } else{
           if( ( _poolMode & READ  ) != 0 ) {
-              sb.append("R");
+              sb.append('R');
           }
           if( ( _poolMode & WRITE ) != 0 ) {
-              sb.append("W");
+              sb.append('W');
           }
        }
        return sb.toString();

@@ -61,7 +61,7 @@ public class LinkGroup implements Serializable{
         sb.append("replicaAllowed:").append(replicaAllowed).append(' ');
         sb.append("custodialAllowed:").append(custodialAllowed).append(' ');
         sb.append("outputAllowed:").append(outputAllowed).append(' ');
-        sb.append("UpdateTime:").append((new Date(updateTime)).toString()).append("(").append(updateTime).append(")");
+        sb.append("UpdateTime:").append((new Date(updateTime)).toString()).append('(').append(updateTime).append(')');
         return sb.toString();
     }
 

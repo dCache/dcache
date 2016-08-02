@@ -8,7 +8,7 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 public class RemoteTransferManagerMessage extends TransferManagerMessage
 {
     private static final long serialVersionUID = -7005244124485666180L;
-    private IpProtocolInfo _protocolInfo;
+    private final IpProtocolInfo _protocolInfo;
 
     public RemoteTransferManagerMessage(URI uri,
                                         FsPath pnfsPath,

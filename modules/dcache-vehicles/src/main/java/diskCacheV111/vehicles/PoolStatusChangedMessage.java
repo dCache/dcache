@@ -43,7 +43,7 @@ public class PoolStatusChangedMessage extends PoolMessage
                ";status=" + statusString[_state] +
                (_poolMode == null ? "" : (";mode=" + _poolMode.toString())) +
                ";code=(" + _detailCode +
-               (_detailMessage == null ? ")" : ("," + _detailMessage + ")"));
+               (_detailMessage == null ? ")" : (',' + _detailMessage + ')'));
     }
 
     public void setDetail(int code, String message)

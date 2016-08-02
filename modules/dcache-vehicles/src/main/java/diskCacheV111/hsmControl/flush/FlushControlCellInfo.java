@@ -50,7 +50,7 @@ public class FlushControlCellInfo extends CellInfo implements Serializable {
    public List<String> getPoolGroups(){ return _poolGroups ; }
 
    public String toString(){
-      return getCellName()+"@"+getDomainName()+";s="+_status+";c="+_control+";d="+_driverName+
-             ";{pa="+_driverPropertiesAge+";p="+getDriverProperties()+"};";
+      return getCellName() + '@' + getDomainName() + ";s=" + _status + ";c=" + _control + ";d=" + _driverName +
+             ";{pa=" + _driverPropertiesAge + ";p=" + getDriverProperties() + "};";
    }
 }

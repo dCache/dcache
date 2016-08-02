@@ -83,9 +83,9 @@ public class IoDoorEntry implements Serializable
 
     public String toString()
     {
-        return _serialId + ";" + _pnfsId + ";" + _subject + ";"
-                        + _replyHost + ";" + _pool + ";" + _status + ";"
-                        + (System.currentTimeMillis() - _waitingSince) + ";";
+        return _serialId + ";" + _pnfsId + ';' + _subject + ';'
+               + _replyHost + ';' + _pool + ';' + _status + ';'
+               + (System.currentTimeMillis() - _waitingSince) + ';';
     }
 
     private void readObject(java.io.ObjectInputStream stream)

@@ -28,6 +28,6 @@ public abstract class PoolManagerGetPoolsMessage
 
     public Collection<String> getOfflinePools()
     {
-        return (_offlinePools == null) ? Collections.<String>emptyList() : _offlinePools;
+        return (_offlinePools == null) ? Collections.emptyList() : _offlinePools;
     }
 }
