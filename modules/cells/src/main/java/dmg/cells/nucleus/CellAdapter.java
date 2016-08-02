@@ -934,11 +934,9 @@ public class CellAdapter
 
         try {
             if (command instanceof String) {
-                Args args = new Args((String) command);
                 return command(new Args((String) command));
             } else if (command instanceof AuthorizedString) {
-                AuthorizedArgs args = new AuthorizedArgs((AuthorizedString) command);
-                return command(args);
+                return command(new AuthorizedArgs((AuthorizedString) command));
             } else {
                 return "Panic : internal server error 14345";
             }

@@ -202,17 +202,17 @@ public class LogbackShell
             throw new IllegalArgumentException("Logger not found: " + loggerName);
         }
 
-        Appender appender = logger.getAppender(appenderName);
+        Appender<ILoggingEvent> appender = logger.getAppender(appenderName);
         if (appender == null) {
-            throw new IllegalArgumentException("Appender not found: " + appender);
+            throw new IllegalArgumentException("Appender not found: " + appenderName);
         }
 
-        Encoder encoder;
+        Encoder<?> encoder;
         if (appender instanceof ConsoleAppender) {
-            encoder = ((ConsoleAppender)appender).getEncoder();
+            encoder = ((ConsoleAppender<?>)appender).getEncoder();
         } else
         if (appender instanceof FileAppender) {
-            encoder = ((FileAppender)appender).getEncoder();
+            encoder = ((FileAppender<?>)appender).getEncoder();
         } else {
             throw new IllegalArgumentException("Appender " + appenderName + " does not support encoders.");
         }
@@ -241,9 +241,9 @@ public class LogbackShell
             throw new IllegalArgumentException("Logger not found: " + loggerName);
         }
 
-        Appender appender = logger.getAppender(appenderName);
+        Appender<ILoggingEvent> appender = logger.getAppender(appenderName);
         if (appender == null) {
-            throw new IllegalArgumentException("Appender not found: " + appender);
+            throw new IllegalArgumentException("Appender not found: " + appenderName);
         }
 
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
@@ -252,10 +252,10 @@ public class LogbackShell
         encoder.start();
 
         if (appender instanceof ConsoleAppender) {
-            ((ConsoleAppender)appender).setEncoder(encoder);
+            ((ConsoleAppender<ILoggingEvent>)appender).setEncoder(encoder);
         } else
         if (appender instanceof FileAppender) {
-            ((FileAppender)appender).setEncoder(encoder);
+            ((FileAppender<ILoggingEvent>)appender).setEncoder(encoder);
         } else {
             throw new IllegalArgumentException("Appender " + appenderName + " does not support encoders");
         }

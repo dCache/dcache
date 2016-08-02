@@ -227,9 +227,7 @@ public class      CdbFileRecord
                 }
              }
           }
-      }catch(IOException e ){
-         throw e ;
-      }finally{
+      } finally{
          try{ reader.close() ; }catch(Exception ee){}
       }
    }

@@ -218,7 +218,7 @@ public class      TelnetLoginManager
    @Override
    public boolean isPasswordOk( InetAddress host , String user , String passwd ){
       _log.info( "Request for host "+host+" user "+user+" password "+passwd ) ;
-      return passwd.equals("elch") ? true : false ;
+      return passwd.equals("elch");
    }
 }
 

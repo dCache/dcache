@@ -33,7 +33,7 @@ public class Pinboard
 
     public synchronized void dump(StringBuilder sb)
     {
-        _entries.stream().forEach(e -> sb.append(e).append('\n'));
+        _entries.forEach(e -> sb.append(e).append('\n'));
     }
 
     public synchronized void dump(StringBuilder sb, int last)
@@ -44,7 +44,7 @@ public class Pinboard
     public synchronized void dump(File file) throws IOException
     {
         try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-            _entries.stream().forEach(pw::println);
+            _entries.forEach(pw::println);
         }
     }
 

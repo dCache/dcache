@@ -14,6 +14,6 @@ public class SnmpIpNumber extends SnmpInteger {
   }
   public String toString(){
     long v = longValue() ;
-    return ((v >> 24) & 0xff) + "." + ((v >> 16) & 0xff) + "." + ((v >> 8) & 0xff) + "." + ((v) & 0xff);
+    return ((v >> 24) & 0xff) + "." + ((v >> 16) & 0xff) + '.' + ((v >> 8) & 0xff) + '.' + ((v) & 0xff);
   }
 } 

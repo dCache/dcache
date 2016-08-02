@@ -76,53 +76,48 @@ public class UserAdminCommands
        checkDatabase() ;
        String user = args.argv(0) ;
        checkPermission( args , "user."+user+".destroy" ) ;
-       try{
-          UserMetaDictionary dict = _userMetaDb.getDictionary( user ) ;
-          String type = dict.valueOf("type") ;
-          if( type == null ) {
-              throw new
-                      DatabaseException("Principal type not defined in meta database");
-          }
+      UserMetaDictionary dict = _userMetaDb.getDictionary( user ) ;
+      String type = dict.valueOf("type") ;
+      if( type == null ) {
+          throw new
+                  DatabaseException("Principal type not defined in meta database");
+      }
 
-           switch (type) {
-           case "user":
-               try {
-                   Enumeration<String> e = _userDb.getParentsOf(user);
-                   if (e.hasMoreElements()) {
-                       throw new
-                               DatabaseException("Still in groups : " + user);
-                   }
-               } catch (NoSuchElementException eee) {
-                   // no problem : has not been in a group
-               }
-               _userMetaDb.removePrincipal(user);
-
-               break;
-           case "group":
-
-               Enumeration<String> e = _userDb.getElementsOf(user);
-
-               if (e.hasMoreElements()) {
-                   throw new
-                           DatabaseException("Not Empty : " + user);
-               }
-               e = _userDb.getParentsOf(user);
+       switch (type) {
+       case "user":
+           try {
+               Enumeration<String> e = _userDb.getParentsOf(user);
                if (e.hasMoreElements()) {
                    throw new
                            DatabaseException("Still in groups : " + user);
                }
-               _userMetaDb.removePrincipal(user);
-               _userDb.removeContainer(user);
-               _aclDb.removeAclItem("user." + user + ".access");
-
-               break;
-           default:
-               throw new
-                       DatabaseException("Invalid principal type : " + type);
+           } catch (NoSuchElementException eee) {
+               // no problem : has not been in a group
            }
-       }catch(Exception ie ){
-          ie.printStackTrace() ;
-          throw ie ;
+           _userMetaDb.removePrincipal(user);
+
+           break;
+       case "group":
+
+           Enumeration<String> e = _userDb.getElementsOf(user);
+
+           if (e.hasMoreElements()) {
+               throw new
+                       DatabaseException("Not Empty : " + user);
+           }
+           e = _userDb.getParentsOf(user);
+           if (e.hasMoreElements()) {
+               throw new
+                       DatabaseException("Still in groups : " + user);
+           }
+           _userMetaDb.removePrincipal(user);
+           _userDb.removeContainer(user);
+           _aclDb.removeAclItem("user." + user + ".access");
+
+           break;
+       default:
+           throw new
+                   DatabaseException("Invalid principal type : " + type);
        }
        return "" ;
     }

@@ -46,7 +46,6 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellDomainRole;
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.CellEventListener;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.services.login.LoginManager;
 import dmg.cells.zookeeper.PathChildrenCache;
 import dmg.util.CommandException;

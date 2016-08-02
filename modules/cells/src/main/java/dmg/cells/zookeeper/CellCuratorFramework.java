@@ -1162,44 +1162,44 @@ public class CellCuratorFramework implements CuratorFramework
         @Override
         public PathAndBytesable<T> inBackground()
         {
-            return new PathAndBytesableDecorator<T>(inner.inBackground());
+            return new PathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
         public PathAndBytesable<T> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<T>(inner.inBackground(context));
+            return new PathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
         public PathAndBytesable<T> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<T>(inner.inBackground(wrap(callback), executor));
+            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
         public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<T>(inner.inBackground(wrap(callback), context, executor));
+            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
         public PathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<T>(inner.inBackground(wrap(callback), executor));
+            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
         public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context,
                                                 Executor executor)
         {
-            return new PathAndBytesableDecorator<T>(inner.inBackground(wrap(callback), context, executor));
+            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
         public ACLBackgroundPathAndBytesable<T> withMode(CreateMode mode)
         {
-            return new ACLBackgroundPathAndBytesableDecorator<T>(inner.withMode(mode));
+            return new ACLBackgroundPathAndBytesableDecorator<>(inner.withMode(mode));
         }
 
         @Override

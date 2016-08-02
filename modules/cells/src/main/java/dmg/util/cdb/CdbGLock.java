@@ -5,7 +5,7 @@ import java.util.Vector;
 
 public class CdbGLock implements CdbLockListener, CdbLockable {
    private static class LockEntry {
-      private class LockEntryDesc {
+      private static class LockEntryDesc {
           private boolean _isWriteLock;
           private int     _counter;
           private LockEntryDesc( boolean writeLock ){
@@ -23,7 +23,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
 
       private LockEntry( Thread thread , boolean writeLock ){
          _thread   = thread ;
-         _desc[0]  = new LockEntryDesc(writeLock) ;
+         _desc[0]  = new LockEntryDesc(writeLock);
          _position = 0 ;
       }
       public Thread  getThread(){ return _thread ; }
@@ -39,7 +39,7 @@ public class CdbGLock implements CdbLockListener, CdbLockable {
          //
          // prepare the new lock entry
          //
-         _desc[++_position] = new LockEntryDesc(true) ;
+         _desc[++_position] = new LockEntryDesc(true);
       }
 
       public int degrade() throws CdbLockException {

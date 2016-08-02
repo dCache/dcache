@@ -43,7 +43,7 @@ public class      TelnetSAuth_A
       _acmCell   = args.getOpt("acm") ;
 
       String pwdFile = args.getOpt( "pswdfile" ) ;
-      synchronized( this.getClass() ){
+      synchronized (TelnetSAuth_A.class) {
          if( ( __passwordFile == null ) && ( pwdFile != null ) ){
             __passwordFile = new UnixPassword(pwdFile) ;
          }

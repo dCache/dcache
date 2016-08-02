@@ -187,28 +187,9 @@ public class Formats {
 
     public static String replaceKeywords(String in, Replaceable cb)
     {
-        return replaceKeywords(in.toCharArray(), new StringBuilder(in.length()), cb, new ArrayDeque<String>()).toString();
+        return replaceKeywords(in.toCharArray(), new StringBuilder(in.length()), cb, new ArrayDeque<>()).toString();
     }
 
-  public static boolean smatch( String pattern , String text ){
-
-    int pl = pattern.length() ;
-    int tl = text.length() ;
-    int i = 0 ;
-    for( ; ( i < pl ) && ( i < tl ) && ( pattern.charAt(i) != '*' ) &&
-         ( pattern.charAt(i) == text.charAt(i) ) ; i++ ) {
-    }
-    if( ( i == pl ) && ( i == tl ) ) {
-        return true;
-    }
-    if( ( i == pl ) || ( i == tl ) ) {
-        return false;
-    }
-    if( pattern.charAt(i) == '*' ) {
-        return true;
-    }
-    return false ;
-  }
 /**
  * a useful tool which can interpret jokers (*) and wildcards (?) to filter
  * from a given Array of Strings the matching ones.

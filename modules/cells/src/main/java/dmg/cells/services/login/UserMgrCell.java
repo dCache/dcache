@@ -445,9 +445,7 @@ public class       UserMgrCell
       user.open( CdbLockable.READ ) ;
       try{
           isGroup = user.isGroup() ;
-      }catch(Exception e ){
-          throw e ;
-      }finally{
+      } finally{
           user.close( CdbLockable.COMMIT ) ;
       }
       String p ;

@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
@@ -329,8 +330,7 @@ public class CoreRoutingManager
                 Map<String, Collection<String>> domains = new HashMap<>();
                 synchronized (this) {
                     domains.put(getCellDomainName(), new ArrayList<>(localConsumers.values()));
-                    asList(coreTunnels, satelliteTunnels, legacyTunnels)
-                            .stream()
+                    Stream.of(coreTunnels, satelliteTunnels, legacyTunnels)
                             .flatMap(map -> map.values().stream())
                             .map(CellTunnelInfo::getRemoteCellDomainInfo)
                             .map(CellDomainInfo::getCellDomainName)
@@ -506,7 +506,7 @@ public class CoreRoutingManager
 
     private boolean hasAlternativeDefaultRoute(CellRoute route)
     {
-        return asList(nucleus.getRoutingList()).stream()
+        return Stream.of(nucleus.getRoutingList())
                 .filter(r -> r.getRouteType() == CellRoute.DEFAULT)
                 .anyMatch(r -> !r.equals(route));
     }

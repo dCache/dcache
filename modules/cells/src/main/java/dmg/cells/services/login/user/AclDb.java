@@ -36,9 +36,7 @@ public class AclDb {
            return _users.get(user);
        }
        private void merge( String user , Boolean access ){
-           if( _users.get( user ) == null ) {
-               _users.put(user, access);
-           }
+           _users.putIfAbsent(user, access);
        }
        //
        // the AcDictionary interface

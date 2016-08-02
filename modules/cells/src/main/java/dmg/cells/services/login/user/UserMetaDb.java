@@ -49,18 +49,16 @@ public class UserMetaDb {
       }
       _userMetaDir = userMetaDir;
    }
-   public synchronized boolean isGroup(String principalName ){
+   public synchronized boolean isGroup(String principalName )
+   {
        UserMetaItem item;
-       try{
-         item = getUser( principalName ) ;
-       }catch(Exception ii ){
-          return false ;
-       }
-       String type = item.getAttribute("type") ;
-       if( type == null ) {
+       try {
+           item = getUser(principalName);
+       } catch (Exception ii) {
            return false;
        }
-       return type.equals("group") ;
+       String type = item.getAttribute("type");
+       return type != null && type.equals("group");
    }
    public synchronized boolean exists(String principalName ){
        UserMetaItem item;

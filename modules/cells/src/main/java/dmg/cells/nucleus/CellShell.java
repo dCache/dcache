@@ -2,6 +2,7 @@ package dmg.cells.nucleus ;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -103,7 +104,7 @@ public class CellShell extends CommandInterpreter
    private final Map<String, Object> _environment =
            new ConcurrentHashMap<>();
    private CommandInterpreter _externalInterpreter;
-   private List<String>       _argumentVector      = new Vector<>() ;
+   private ImmutableList<String> _argumentVector = ImmutableList.of();
 
    public CellShell( CellNucleus nucleus ){
       _nucleus = nucleus ;
@@ -567,7 +568,7 @@ public class CellShell extends CommandInterpreter
       }
       CellPath destination = new CellPath( cellName ) ;
       long finish = System.currentTimeMillis() + ( waitTime * 1000 ) ;
-      CellMessage answer = null ;
+      CellMessage answer;
       //
       // creating the message now and send it forever does not
       // allow time messurements.
@@ -1666,13 +1667,10 @@ public class CellShell extends CommandInterpreter
     public void execute(String source, Reader in, Writer out, Writer err, Args args)
         throws CommandExitException, IOException
     {
-        List<String> store = _argumentVector;
+        ImmutableList<String> store = _argumentVector;
         int no = 1;
         try {
-            _argumentVector  = new Vector<>();
-            for (int i = 0; i < args.argc(); i++) {
-                _argumentVector.add(args.argv(i));
-            }
+            _argumentVector = args.getArguments();
 
             String line;
             StringBuilder sb = null;
@@ -2224,7 +2222,7 @@ public class CellShell extends CommandInterpreter
     /**
      * Test presence of a file.
      */
-    private class FileExistsTester implements Tester {
+    private static class FileExistsTester implements Tester {
         private final File _file;
 
         FileExistsTester(Args args) {
@@ -2246,7 +2244,7 @@ public class CellShell extends CommandInterpreter
      * Test presence of a file and that the file is
      * not special
      */
-    private class FileIsNormalTester implements Tester {
+    private static class FileIsNormalTester implements Tester {
         private final File _file;
         private boolean _exists;
 
@@ -2270,7 +2268,7 @@ public class CellShell extends CommandInterpreter
      * Test presence of a file and that the file is
      * not special
      */
-    private class FileIsDirectoryTester implements Tester {
+    private static class FileIsDirectoryTester implements Tester {
         private final File _file;
         private boolean _exists;
 

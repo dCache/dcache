@@ -15,7 +15,7 @@ public class InMemoryUserRelation implements UserRelationable {
        public String nextElement(){ return null ;}
    }
 
-   private class ElementItem {
+   private static class ElementItem {
       private Hashtable<String,String> _parents;
       private Hashtable<String,String> _childs;
       private void addParent(String parent){
@@ -134,7 +134,7 @@ public class InMemoryUserRelation implements UserRelationable {
    public void createContainer( String container )
        throws DatabaseException {
        _db.createContainer(container) ;
-       _elements.put( container , new ElementItem() ) ;
+       _elements.put(container , new ElementItem()) ;
    }
    @Override
    public Enumeration<String> getElementsOf( String container )
@@ -220,7 +220,7 @@ public class InMemoryUserRelation implements UserRelationable {
            String container = e.nextElement();
            ElementItem item, x;
            if( ( item = hash.get( container )) == null ){
-              hash.put( container , item = new ElementItem() ) ;
+              hash.put( container , item = new ElementItem()) ;
            }
            try{
               Enumeration<String> f = _db.getElementsOf(container) ;
@@ -228,7 +228,7 @@ public class InMemoryUserRelation implements UserRelationable {
                   String name = f.nextElement();
                   item.addChild(name) ;
                   if( ( x = hash.get(name)) == null ){
-                      hash.put(name , x = new ElementItem() ) ;
+                      hash.put(name , x = new ElementItem()) ;
                   }
                   x.addParent( container ) ;
                }

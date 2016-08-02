@@ -276,9 +276,7 @@ public class UserDb extends CdbGLock  {
        group.open( CdbLockable.WRITE ) ;
          try{
             group.addChild( userName ) ;
-         }catch( IllegalArgumentException iae ){
-            throw iae ;
-         }finally{
+         } finally{
              group.close( CdbLockable.COMMIT ) ;
          }
        try{

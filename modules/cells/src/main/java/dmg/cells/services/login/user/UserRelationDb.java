@@ -19,7 +19,7 @@ public class UserRelationDb {
         @Override
         public T nextElement(){ return null ;}
     }
-    private class ElementItem {
+    private static class ElementItem {
        private Hashtable<String, String> _parents;
        private Hashtable<String, String> _childs;
        private void addParent(String parent){
@@ -35,10 +35,10 @@ public class UserRelationDb {
           _childs.put(child,child) ;
        }
        private Enumeration<String> parents(){
-           return _parents == null ? new DEnumeration<String>() : _parents.keys() ;
+           return _parents == null ? new DEnumeration<>() : _parents.keys() ;
        }
        private Enumeration<String> children(){
-           return _childs == null ? new DEnumeration<String>() : _childs.keys() ;
+           return _childs == null ? new DEnumeration<>() : _childs.keys() ;
        }
     }
     private File      _dbDir;
