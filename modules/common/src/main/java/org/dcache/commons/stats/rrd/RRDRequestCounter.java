@@ -46,15 +46,15 @@ public class RRDRequestCounter {
 
 
     private static final Logger logger = LoggerFactory.getLogger(RRDRequestCounter.class);
-    private RequestCounter counter;
+    private final RequestCounter counter;
 
-    private String rrdFileName;
-    private String rrdFiveminImage;
-    private String rrdHourlyImage;
-    private String rrdDaylyImage;
-    private String rrdMounthlyImage;
-    private String rrdYearlyImage;
-    private String rrdGraphicsHtmlFileName;
+    private final String rrdFileName;
+    private final String rrdFiveminImage;
+    private final String rrdHourlyImage;
+    private final String rrdDaylyImage;
+    private final String rrdMounthlyImage;
+    private final String rrdYearlyImage;
+    private final String rrdGraphicsHtmlFileName;
 
     private int imageWidth = DEFAULT_IMAGE_WIDTH;
     private int imageHeight = DEFAULT_IMAGE_HEIGHT;
@@ -97,7 +97,7 @@ public class RRDRequestCounter {
             throw new IllegalArgumentException("updatePeriodSecs="+updatePeriodSecs+
                     ", should be greater than 0 and less than "+fivemin+" secs");
         }
-        logger.debug("RRDRequestCounter("+rrdDirectory+", "+counter+","+updatePeriodSecs+")");
+        logger.debug("RRDRequestCounter(" + rrdDirectory + ", " + counter + ',' + updatePeriodSecs + ')');
         File dir = new File(rrdDirectory);
         if(!dir.exists() || !dir.isDirectory() || !dir.canWrite() ) {
             throw new AccessControlException("directory "+
@@ -194,7 +194,7 @@ public class RRDRequestCounter {
         sb.append(counter.getTotalRequests()).append(':');
         sb.append(counter.getFailed());
         sample.setAndUpdate(sb.toString());
-        logger.debug("RRDRequestCounter.update() updated with : "+sb.toString());
+        logger.debug("RRDRequestCounter.update() updated with : " + sb);
         rrdDb.close();
         logger.debug("RRDRequestCounter.update() succeeded");
         logger.debug("RRDRequestCounter.update() let us try to fetch data");

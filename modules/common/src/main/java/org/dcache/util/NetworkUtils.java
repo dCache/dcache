@@ -283,7 +283,7 @@ public abstract class NetworkUtils {
      * applied to InetAddresses in our current library version.
      */
     private static String stripScope(String hostName) {
-        int i = hostName.indexOf("%");
+        int i = hostName.indexOf('%');
         if (i > 0) {
             return hostName.substring(0, i);
         }

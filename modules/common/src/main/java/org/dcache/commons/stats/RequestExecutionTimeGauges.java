@@ -109,10 +109,10 @@ public class RequestExecutionTimeGauges<T> {
         try (Formatter formatter = new Formatter(sb)) {
             formatter.format("%-36s %23s %12s %12s %12s %12s %12s",
                     name,
-                    "average\u00B1stderr(" + unitSymbol +")",
-                    "min(" + unitSymbol +")",
-                    "max(" + unitSymbol +")",
-                    "STD(" + unitSymbol +")",
+                             "average\u00B1stderr(" + unitSymbol + ')',
+                             "min(" + unitSymbol + ')',
+                             "max(" + unitSymbol + ')',
+                             "STD(" + unitSymbol + ')',
                     "Samples","Period");
         }
         synchronized(this) {

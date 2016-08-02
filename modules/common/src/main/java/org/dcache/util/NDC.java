@@ -90,8 +90,8 @@ public class NDC
             MDC.put(KEY_NDC, message);
             MDC.put(KEY_POSITIONS, "0");
         } else {
-            MDC.put(KEY_NDC, ndc + " " + message);
-            MDC.put(KEY_POSITIONS, MDC.get(KEY_POSITIONS) + "," + ndc.length());
+            MDC.put(KEY_NDC, ndc + ' ' + message);
+            MDC.put(KEY_POSITIONS, MDC.get(KEY_POSITIONS) + ',' + ndc.length());
         }
     }
 

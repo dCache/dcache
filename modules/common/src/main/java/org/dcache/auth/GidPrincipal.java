@@ -20,8 +20,8 @@ public class GidPrincipal implements GroupPrincipal, Serializable
 {
     private static final long serialVersionUID = 7812225739755920892L;
 
-    private long _gid;
-    private boolean _isPrimaryGroup;
+    private final long _gid;
+    private final boolean _isPrimaryGroup;
 
     public GidPrincipal(long gid, boolean isPrimary) {
         if (gid < 0) {
@@ -52,9 +52,9 @@ public class GidPrincipal implements GroupPrincipal, Serializable
     @Override
     public String toString() {
         if (_isPrimaryGroup) {
-            return (getClass().getSimpleName() + "[" + getName() + ",primary]");
+            return (getClass().getSimpleName() + '[' + getName() + ",primary]");
         } else {
-            return (getClass().getSimpleName() + "[" + getName() + "]");
+            return (getClass().getSimpleName() + '[' + getName() + ']');
         }
     }
 

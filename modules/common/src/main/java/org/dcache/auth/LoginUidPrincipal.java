@@ -15,7 +15,7 @@ public class LoginUidPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 1181951214740569954L;
 
-    private long _uid;
+    private final long _uid;
 
     public LoginUidPrincipal(long uid)
     {
@@ -62,6 +62,6 @@ public class LoginUidPrincipal implements Principal, Serializable
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        return getClass().getSimpleName() + '[' + getName() + ']';
     }
 }

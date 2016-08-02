@@ -10,8 +10,8 @@ public class PasswordCredential implements Serializable
 {
     private static final long serialVersionUID = -8823304503972043526L;
 
-    private String _username;
-    private String _password;
+    private final String _username;
+    private final String _password;
 
     public PasswordCredential(String username, String password)
     {
@@ -32,6 +32,6 @@ public class PasswordCredential implements Serializable
     @Override
     public String toString()
     {
-        return PasswordCredential.class.getSimpleName() + "[user=" + _username + "]";
+        return PasswordCredential.class.getSimpleName() + "[user=" + _username + ']';
     }
 }

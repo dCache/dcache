@@ -68,6 +68,6 @@ public class EntityDefinitionPrincipal implements Principal, Serializable
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        return getClass().getSimpleName() + '[' + getName() + ']';
     }
 }

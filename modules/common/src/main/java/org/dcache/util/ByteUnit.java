@@ -1143,9 +1143,9 @@ public enum ByteUnit
      * @param sourcePrefix the prefix of sourceValue
      * @return the value in this prefix.
      */
-    abstract public long convert(long sourceValue, ByteUnit sourcePrefix);
+    public abstract long convert(long sourceValue, ByteUnit sourcePrefix);
 
-    abstract public double convert(double sourceValue, ByteUnit sourcePrefix);
+    public abstract double convert(double sourceValue, ByteUnit sourcePrefix);
 
     public int convert(int sourceValue, ByteUnit sourcePrefix)
     {
@@ -1163,14 +1163,14 @@ public enum ByteUnit
         return checkedCast(toBytes((long)d));
     }
 
-    abstract public long toBytes(long d);
+    public abstract long toBytes(long d);
 
     public float toBytes(float d)
     {
         return (float) toBytes((double)d);
     }
 
-    abstract public double toBytes(double d);
+    public abstract double toBytes(double d);
 
     public int toKB(int d)
     {

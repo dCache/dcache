@@ -82,6 +82,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -103,9 +104,9 @@ public class KAuthFile {
 
     private static boolean debug;
     private double fileVersion;
-    private HashMap<String, UserAuthRecord> auth_records = new HashMap<>();
-    private HashMap<String, UserPwdRecord> pwd_records = new HashMap<>();
-    private HashMap<String, String> mappings = new HashMap<>();
+    private final HashMap<String, UserAuthRecord> auth_records = new HashMap<>();
+    private final HashMap<String, UserPwdRecord> pwd_records = new HashMap<>();
+    private final HashMap<String, String> mappings = new HashMap<>();
 
 
     private KAuthFile(String filename, boolean convert)
@@ -164,7 +165,7 @@ public class KAuthFile {
                 else {
                     while( (line = reader.readLine()) != null ) {
                         line=line.trim();
-                        if(line.length() == 0) {
+                        if(line.isEmpty()) {
                             break;
                         }
                     }
@@ -201,7 +202,7 @@ public class KAuthFile {
                 }
                 String principal = line.substring(0,last_quote);
                 String default_user_name = line.substring(last_quote+1).trim();
-                if(default_user_name != null && default_user_name.length() != 0) {
+                if(default_user_name != null && !default_user_name.isEmpty()) {
                     mappings.put(principal,default_user_name);
                 }
             }
@@ -243,7 +244,7 @@ public class KAuthFile {
 
         while( (line =reader.readLine()) != null ) {
             line = line.trim();
-            if(line.length() == 0) {
+            if(line.isEmpty()) {
                 break;
             }
             if( line.startsWith("#") ) {
@@ -311,7 +312,7 @@ public class KAuthFile {
         StringBuffer sb = new StringBuffer(header);
         sb.append(mapping_section_header);
 
-        sb.append("version " + VERSION_TO_GENERATE + "\n");
+        sb.append("version " + VERSION_TO_GENERATE + '\n');
 
         List<String> secureIds = new ArrayList<>( mappings.keySet());
         Collections.sort( secureIds);
@@ -352,18 +353,18 @@ public class KAuthFile {
     private static void append(StringBuffer sb, UserPwdRecord record)
     {
         sb.append(PWD_RECORD_MARKER);
-        sb.append(record.Username).append(" ");
-        sb.append(record.Password).append(" ");
-        sb.append(record.readOnlyStr()).append(" ");
-        sb.append(record.UID).append(" ");
+        sb.append(record.Username).append(' ');
+        sb.append(record.Password).append(' ');
+        sb.append(record.readOnlyStr()).append(' ');
+        sb.append(record.UID).append(' ');
         sb.append(Joiner.on(",").skipNulls()
-                        .join(record.GIDs.iterator())).append(" ");
-        sb.append(record.Home).append(" ");
+                        .join(record.GIDs.iterator())).append(' ');
+        sb.append(record.Home).append(' ');
         sb.append(record.Root);
         if (!record.Root.equals(record.FsRoot)) {
-            sb.append(" ").append(record.FsRoot);
+            sb.append(' ').append(record.FsRoot);
         }
-        sb.append("\n");
+        sb.append('\n');
     }
 
     public UserAuthRecord getUserRecord(String username) {
@@ -574,7 +575,7 @@ public class KAuthFile {
         String line;
         while((line  = reader.readLine()) != null) {
             line = line.trim();
-            if( line.startsWith("#") || line.indexOf(":") <= 0 ) {
+            if( line.startsWith("#") || line.indexOf(':') <= 0 ) {
                 line = reader.readLine();
                 continue;
             }
@@ -590,7 +591,7 @@ public class KAuthFile {
     throws IOException {
         String Username;		// invalidate
         line = line.trim();
-        int colon = line.indexOf(":");
+        int colon = line.indexOf(':');
         if( colon <= 0 ) {
             return null;
         }
@@ -689,7 +690,7 @@ public class KAuthFile {
             if(arguments.secureIds != null && !arguments.secureIds.isEmpty()) {
                 System.out.println("secureIds are:");
                 for( String secureId : arguments.secureIds) {
-                    System.out.println("\""+secureId+"\"");
+                    System.out.println('"' + secureId + '"');
                 }
 
                 System.out.println();
@@ -844,7 +845,7 @@ public class KAuthFile {
             if(arguments.secureIds != null && !arguments.secureIds.isEmpty()) {
                 System.out.println("secureIds are:");
                 for( String secureId : arguments.secureIds) {
-                    System.out.println("\""+secureId+"\"");
+                    System.out.println('"' + secureId + '"');
                 }
 
                 System.out.println();
@@ -967,16 +968,15 @@ public class KAuthFile {
         if(arguments.arg1 != null) {
             String secureId = arguments.arg1;
             if( !mappings.containsKey(secureId) ) {
-                throw new IllegalArgumentException("can not find mapping for secureId \""+
-                secureId+"\"");
+                throw new IllegalArgumentException("can not find mapping for secureId \"" +
+                                                   secureId + '"');
             }
-            System.out.println(" SecureId \""+secureId+"\" is mapped to a user "+
-            mappings.get(secureId)+"\n");
+            System.out.println(" SecureId \"" + secureId + "\" is mapped to a user " +
+                               mappings.get(secureId) + '\n');
             return;
         }
-        for( String secureId : mappings.keySet()) {
-            System.out.println(" SecureId \""+secureId+"\" is mapped to a user "+
-            mappings.get(secureId)+"\n");
+        for(Map.Entry<String, String> entry : mappings.entrySet()) {
+            System.out.println(" SecureId \"" + entry.getKey() + "\" is mapped to a user " + entry.getValue() + '\n');
         }
     }
 
@@ -985,10 +985,10 @@ public class KAuthFile {
         if(theuser == null) {
             throw new IllegalArgumentException("user is not specified");
         }
-        for( String secureId : mappings.keySet()) {
-            String user= mappings.get(secureId);
+        for(Map.Entry<String, String> entry : mappings.entrySet()) {
+            String user= entry.getValue();
             if(theuser.equals(user)) {
-                System.out.println("\""+secureId+"\"");
+                System.out.println('"' + entry.getKey() + '"');
             }
         }
     }

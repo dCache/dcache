@@ -28,8 +28,8 @@ import static org.dcache.util.ByteUnit.KiB;
 public class Adler32 extends MessageDigest
 {
 
-   private static int BASE = 65521 ; /* largest prime smaller than 65536 */
-   private java.util.zip.Adler32 _zipAdler;
+   private static final int BASE = 65521 ; /* largest prime smaller than 65536 */
+   private final java.util.zip.Adler32 _zipAdler;
    private long _adler = 1L ;
    public Adler32(){
 

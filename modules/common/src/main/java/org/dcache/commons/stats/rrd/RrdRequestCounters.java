@@ -33,7 +33,7 @@ public class RrdRequestCounters<T> {
     private static final Logger logger = LoggerFactory.getLogger(RrdRequestCounters.class);
     private final Map<T,RRDRequestCounter> rrdcounters =
             new HashMap<>();
-    private RRDRequestCounter totalRequestCounter;
+    private final RRDRequestCounter totalRequestCounter;
     private final RequestCounters<T> requestCounters;
     private static final Timer rrdTimer = new Timer("RrdRequestCounters",true);
     private final String rrdDir;

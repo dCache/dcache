@@ -67,35 +67,34 @@ public class UserPwdRecord extends UserAuthBase {
 
     @Override
     public String toString() {
-        String str = Username + " " +
-            readOnlyStr() + " " +
-            UID + " " +
-            GIDs + " " +
-            Home + " " +
-            Root;
+        String str = Username + ' ' +
+                     readOnlyStr() + ' ' +
+                     UID + ' ' +
+                     GIDs + ' ' +
+                     Home + ' ' +
+                     Root;
         if ( ! Root.equals(FsRoot) ) {
-            str = str + " " + FsRoot;
+            str = str + ' ' + FsRoot;
         }
         return str;
     }
 
     public String toDetailedString() {
-        StringBuilder stringbuffer = new StringBuilder(" User Password Record for ");
-        stringbuffer.append(Username).append(" :\n");
-        stringbuffer.append("  Password Hash = ").append(Password).append('\n');
-        stringbuffer.append("      read-only = ").append(readOnlyStr())
-                    .append("\n");
-        stringbuffer.append("            UID = ").append(UID).append('\n');
-        stringbuffer.append("           GIDs = ").append(GIDs).append('\n');
-        stringbuffer.append("           Home = ").append(Home).append('\n');
-        stringbuffer.append("           Root = ").append(Root).append('\n');
-        stringbuffer.append("         FsRoot = ").append(FsRoot).append('\n');
-        return stringbuffer.toString();
+        String stringbuffer = " User Password Record for " + Username + " :\n" +
+                              "  Password Hash = " + Password + '\n' +
+                              "      read-only = " + readOnlyStr() +
+                              '\n' +
+                              "            UID = " + UID + '\n' +
+                              "           GIDs = " + GIDs + '\n' +
+                              "           Home = " + Home + '\n' +
+                              "           Root = " + Root + '\n' +
+                              "         FsRoot = " + FsRoot + '\n';
+        return stringbuffer;
     }
 
 
 	public String hashPassword(String pwd) {
-		String uandp = "1234567890" + Username + " " + pwd;
+		String uandp = "1234567890" + Username + ' ' + pwd;
 		return Integer.toHexString(uandp.hashCode());
 	}
 

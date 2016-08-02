@@ -56,22 +56,22 @@ public class FQAN implements Serializable {
      */
    private static final String RE_VALID_LABEL = "[a-z]([a-z0-9-]*[a-z0-9])?";
    private static final String RE_RFC_1035_VALUE = RE_VALID_LABEL + "(\\." + RE_VALID_LABEL + ")*";
-   private static final String RE_VALID_VO_VALUE = "/" + RE_RFC_1035_VALUE;
+   private static final String RE_VALID_VO_VALUE = '/' + RE_RFC_1035_VALUE;
    private static final String RE_VALID_GROUP_VALUE = "(/[\\w-]+)*";
    private static final String RE_VALID_ROLE_VALUE = "[\\w-]+";
    private static final String RE_VALID_CAPABILITY_VALUE = "[\\w-]+";
 
-   private static final String RE_VALID_FQAN = "^" +
-        RE_VALID_VO_VALUE + "(" + RE_VALID_GROUP_VALUE + ")?" +
-        "(/Role=" + RE_VALID_ROLE_VALUE + ")?" +
-        "(/Capability=" + RE_VALID_CAPABILITY_VALUE + ")?$";
+   private static final String RE_VALID_FQAN = '^' +
+                                               RE_VALID_VO_VALUE + '(' + RE_VALID_GROUP_VALUE + ")?" +
+                                               "(/Role=" + RE_VALID_ROLE_VALUE + ")?" +
+                                               "(/Capability=" + RE_VALID_CAPABILITY_VALUE + ")?$";
 
    private static final Pattern VALID_FQAN = Pattern.compile( RE_VALID_FQAN);
 
-    private static Pattern p1 = Pattern.compile("(.*)/Role=(.*)/Capability=(.*)");
-    private static Pattern p2 = Pattern.compile("(.*)/Role=(.*)(.*)");
-    private static Pattern p3 = Pattern.compile("(.*)()/Capability=(.*)");
-    private static Pattern p4 = Pattern.compile("(.*)(.*)(.*)");
+    private static final Pattern p1 = Pattern.compile("(.*)/Role=(.*)/Capability=(.*)");
+    private static final Pattern p2 = Pattern.compile("(.*)/Role=(.*)(.*)");
+    private static final Pattern p3 = Pattern.compile("(.*)()/Capability=(.*)");
+    private static final Pattern p4 = Pattern.compile("(.*)(.*)(.*)");
     private transient Matcher m;
 
     //immutable
@@ -119,12 +119,10 @@ public class FQAN implements Serializable {
             return originalFqan;
         }
 
-        StringBuilder filteredFqan = new StringBuilder();
+        String filteredFqan = originalFqan.substring(0, index) +
+                              originalFqan.substring(index + NULL_ROLE.length());
 
-        filteredFqan.append( originalFqan.substring( 0, index));
-        filteredFqan.append( originalFqan.substring( index + NULL_ROLE.length()));
-
-        return filteredFqan.toString();
+        return filteredFqan;
     }
 
     @Override

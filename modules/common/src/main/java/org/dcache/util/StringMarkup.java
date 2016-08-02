@@ -114,7 +114,7 @@ public class StringMarkup
          */
 
         try {
-            uri = new URI(SCHEME_FILE, null, "/"+src, null);
+            uri = new URI(SCHEME_FILE, null, '/' + src, null);
         } catch (URISyntaxException e) {
             throw new RuntimeException("illegal path element: " +
                     e.getMessage(), e);

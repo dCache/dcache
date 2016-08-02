@@ -105,8 +105,8 @@ public class ExponentialBackoffAlgorithmFactory implements
         /**
          * State
          */
-        private long previousDelay = 0L;
-        private int previousAttempts = 0;
+        private long previousDelay;
+        private int previousAttempts;
 
         @Override
         public long getWaitDuration() {
@@ -150,7 +150,7 @@ public class ExponentialBackoffAlgorithmFactory implements
     private TimeUnit maxUnit = TimeUnit.MINUTES;
     private TimeUnit minUnit = TimeUnit.MINUTES;
     private Integer maxAllowedAttempts;
-    private boolean quitAtMaxDelay = false;
+    private boolean quitAtMaxDelay;
 
     @Override
     public IBackoffAlgorithm getAlgorithm() {

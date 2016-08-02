@@ -195,9 +195,9 @@ public class Subnet implements Serializable {
         }
 
         if (_subnetAddress instanceof Inet6Address) {
-            return _subnetAddress.getHostAddress().replaceFirst("(^|:)(0(:|$)){2,}", "::") + "/" + _mask;
+            return _subnetAddress.getHostAddress().replaceFirst("(^|:)(0(:|$)){2,}", "::") + '/' + _mask;
         } else {
-            return _subnetAddress.getHostAddress() + "/" + _mask;
+            return _subnetAddress.getHostAddress() + '/' + _mask;
         }
     }
 

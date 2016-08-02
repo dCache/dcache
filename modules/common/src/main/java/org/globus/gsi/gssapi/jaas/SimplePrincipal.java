@@ -51,11 +51,7 @@ public class SimplePrincipal
             return false;
         }
         String anotherName = ((Principal) another).getName();
-        if (this.name == null) {
-            return (this.name == anotherName);
-        } else {
-            return this.name.equals(anotherName);
-        }
+        return this.name == null ? anotherName == null : this.name.equals(anotherName);
     }
 
     public String toString()

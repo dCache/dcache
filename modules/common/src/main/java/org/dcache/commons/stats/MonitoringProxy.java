@@ -60,7 +60,7 @@ public class MonitoringProxy  <T> implements InvocationHandler {
             throw e;
         } finally {
             if (result instanceof ListenableFuture) {
-                final ListenableFuture future = (ListenableFuture) result;
+                final ListenableFuture<?> future = (ListenableFuture<?>) result;
                 future.addListener(
                         new Runnable()
                         {

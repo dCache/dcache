@@ -296,7 +296,7 @@ public class ColumnWriter
                 if (abbrev) {
                     render(value, DECIMAL.unitsOf(value), out);
                 } else {
-                    out.format("%" + actualWidth + "d", value);
+                    out.format("%" + actualWidth + 'd', value);
                 }
             }
         }

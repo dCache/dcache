@@ -32,10 +32,12 @@ public class FullNamePrincipal implements Principal, Serializable
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (!(o instanceof FullNamePrincipal))
+        }
+        if (!(o instanceof FullNamePrincipal)) {
             return false;
+        }
 
         FullNamePrincipal that = (FullNamePrincipal) o;
 

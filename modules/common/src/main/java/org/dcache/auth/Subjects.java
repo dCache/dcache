@@ -493,9 +493,9 @@ public class Subjects
                     break;
                 default:
                     try {
-                        Class principalClass = Class.forName(type);
-                        Constructor principalConstructor = principalClass.getConstructor(String.class);
-                        principal = (Principal)principalConstructor.newInstance(value);
+                        Class<? extends Principal> principalClass = Class.forName(type).asSubclass(Principal.class);
+                        Constructor<? extends Principal> principalConstructor = principalClass.getConstructor(String.class);
+                        principal = principalConstructor.newInstance(value);
                     } catch (NoSuchMethodException e) {
                         throw new IllegalArgumentException("No matching constructor found: "+type+"(String)");
                     } catch (ClassNotFoundException e) {

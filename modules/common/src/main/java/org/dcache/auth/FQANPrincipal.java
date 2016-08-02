@@ -12,8 +12,8 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
 {
     private static final long serialVersionUID = -4242349585261079835L;
 
-    private FQAN _fqan;
-    private boolean _isPrimary;
+    private final FQAN _fqan;
+    private final boolean _isPrimary;
 
     public FQANPrincipal(String fqan)
     {
@@ -76,9 +76,9 @@ public class FQANPrincipal implements GroupPrincipal, Serializable
     public String toString()
     {
         if (_isPrimary) {
-            return FQANPrincipal.class.getSimpleName() + "[" + _fqan + ",primary]";
+            return FQANPrincipal.class.getSimpleName() + '[' + _fqan + ",primary]";
         } else {
-            return FQANPrincipal.class.getSimpleName() + "[" + _fqan + "]";
+            return FQANPrincipal.class.getSimpleName() + '[' + _fqan + ']';
         }
     }
 }

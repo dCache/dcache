@@ -56,6 +56,6 @@ public class LoAPrincipal implements Principal, Serializable
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        return getClass().getSimpleName() + '[' + getName() + ']';
     }
 }

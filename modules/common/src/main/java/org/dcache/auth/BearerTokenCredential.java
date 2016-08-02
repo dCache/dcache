@@ -25,6 +25,6 @@ public class BearerTokenCredential implements Serializable
     @Override
     public String toString()
     {
-        return BearerTokenCredential.class.getSimpleName() + "[bearerToken=" + _token + "]";
+        return BearerTokenCredential.class.getSimpleName() + "[bearerToken=" + _token + ']';
     }
 }

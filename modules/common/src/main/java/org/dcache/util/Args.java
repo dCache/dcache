@@ -328,7 +328,7 @@ public class Args implements Serializable
             String value = e.getValue();
             s.append('-');
             quote(key, s);
-            if (value.length() > 0) {
+            if (!value.isEmpty()) {
                 s.append('=');
                 quote(value, s);
             }
@@ -357,7 +357,7 @@ public class Args implements Serializable
 
         sb.append("Positional :\n");
         for (int i = 0; i < _arguments.size(); i++) {
-            sb.append(i).append(" -> ").append(_arguments.get(i)).append("\n");
+            sb.append(i).append(" -> ").append(_arguments.get(i)).append('\n');
         }
         sb.append("Options :\n");
 
@@ -366,7 +366,7 @@ public class Args implements Serializable
             if (option.getValue() != null) {
                 sb.append(" -> ").append(option.getValue());
             }
-            sb.append("\n");
+            sb.append('\n');
         }
 
         return sb.toString();

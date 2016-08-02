@@ -88,7 +88,7 @@ public class Crypto
      */
     //    sed -n '/add.*TLS_ECDHE/s/.*add(\([^,]*\).*/        \1,/p'
     //    sun/security/ssl/CipherSuite.java | sort
-    public static final String[] EC_CIPHERS = new String[] {
+    public static final String[] EC_CIPHERS = {
             "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
             "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
             "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
@@ -127,7 +127,7 @@ public class Crypto
      *
      * sed -n 's%^.*add( *"\([^"]*_RC4_[^"]*\)".*%            "\1",%p'  sun/security/ssl/CipherSuite.java|sort
      */
-    public static final String[] RC4_CIPHERS = new String[] {
+    public static final String[] RC4_CIPHERS = {
             "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
             "SSL_DH_anon_WITH_RC4_128_MD5",
             "SSL_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",

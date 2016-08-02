@@ -46,7 +46,7 @@ public class Callables
     public static <T> Callable<T> memoizeWithExpiration(
             Callable<T> delegate, long duration, TimeUnit unit)
     {
-        return new ExpiringMemoizingCallable<T>(delegate, duration, unit);
+        return new ExpiringMemoizingCallable<>(delegate, duration, unit);
     }
 
     /**

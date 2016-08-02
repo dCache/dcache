@@ -182,7 +182,7 @@ public interface AlarmDefinition extends Alarm {
         .add(Alarm.SERVICE_TAG)
         .add(Alarm.HOST_TAG)
         .add(MESSAGE_TAG)
-        .add(GROUP_TAG + "N")
+        .add(GROUP_TAG + 'N')
         .build();
 
     ImmutableList<String> DEFINITIONS

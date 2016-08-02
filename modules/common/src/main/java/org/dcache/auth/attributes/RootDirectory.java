@@ -12,7 +12,7 @@ public class RootDirectory implements LoginAttribute, Serializable
 {
     private static final long serialVersionUID = 3092313442092927909L;
 
-    private String _root;
+    private final String _root;
 
     public RootDirectory(String root)
     {
@@ -47,6 +47,6 @@ public class RootDirectory implements LoginAttribute, Serializable
     @Override
     public String toString()
     {
-        return "RootDirectory[" + _root + "]";
+        return "RootDirectory[" + _root + ']';
     }
 }

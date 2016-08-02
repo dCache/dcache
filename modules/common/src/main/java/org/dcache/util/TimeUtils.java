@@ -287,7 +287,7 @@ public class TimeUtils
         private String leadingZero(Long value) {
             String valueString = String.valueOf(value);
             if (valueString.length() < 2) {
-                return "0" + valueString;
+                return '0' + valueString;
             }
             return valueString;
         }

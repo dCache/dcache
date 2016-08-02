@@ -15,7 +15,7 @@ public class UidPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 1489893133915358418L;
 
-    private long _uid;
+    private final long _uid;
 
     public UidPrincipal(long uid) {
         if (uid < 0) {
@@ -56,6 +56,6 @@ public class UidPrincipal implements Principal, Serializable
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        return getClass().getSimpleName() + '[' + getName() + ']';
     }
 }

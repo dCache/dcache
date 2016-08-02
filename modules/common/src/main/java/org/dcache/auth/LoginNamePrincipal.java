@@ -15,7 +15,7 @@ public class LoginNamePrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = -6665363415876118030L;
 
-    private String _name;
+    private final String _name;
 
     public LoginNamePrincipal(String name)
     {
@@ -53,6 +53,6 @@ public class LoginNamePrincipal implements Principal, Serializable
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        return getClass().getSimpleName() + '[' + getName() + ']';
     }
 }

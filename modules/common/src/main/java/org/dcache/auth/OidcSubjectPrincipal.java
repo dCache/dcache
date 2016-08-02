@@ -48,6 +48,6 @@ public class OidcSubjectPrincipal implements Principal, Serializable
     @Override
     public String toString()
     {
-        return "OidcSubjectPrincipal[" + _sub + "]";
+        return "OidcSubjectPrincipal[" + _sub + ']';
     }
 }

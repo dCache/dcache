@@ -15,7 +15,7 @@ public class UserNamePrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = 1447288627697571301L;
 
-    private String _username;
+    private final String _username;
 
     public UserNamePrincipal(String username) {
         checkArgument(!username.isEmpty(), "Username can't be an empty string");
@@ -47,6 +47,6 @@ public class UserNamePrincipal implements Principal, Serializable
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getName() + "]";
+        return getClass().getSimpleName() + '[' + getName() + ']';
     }
 }

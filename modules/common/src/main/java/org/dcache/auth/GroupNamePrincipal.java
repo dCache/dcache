@@ -6,8 +6,8 @@ public class GroupNamePrincipal implements GroupPrincipal, Serializable
 {
     private static final long serialVersionUID = -9202753005930409597L;
 
-    private String _name;
-    private boolean _isPrimary;
+    private final String _name;
+    private final boolean _isPrimary;
 
     public GroupNamePrincipal(String name)
     {
@@ -60,9 +60,9 @@ public class GroupNamePrincipal implements GroupPrincipal, Serializable
     public String toString()
     {
         if (_isPrimary) {
-            return GroupNamePrincipal.class.getSimpleName() + "[" + getName() + ",primary]";
+            return GroupNamePrincipal.class.getSimpleName() + '[' + getName() + ",primary]";
         } else {
-            return GroupNamePrincipal.class.getSimpleName() + "[" + getName() + "]";
+            return GroupNamePrincipal.class.getSimpleName() + '[' + getName() + ']';
         }
     }
 }

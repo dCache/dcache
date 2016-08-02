@@ -12,7 +12,7 @@ public class HomeDirectory implements LoginAttribute, Serializable
 {
     private static final long serialVersionUID = -1502727254247340036L;
 
-    private String _home;
+    private final String _home;
 
     public HomeDirectory(String home)
     {
@@ -47,6 +47,6 @@ public class HomeDirectory implements LoginAttribute, Serializable
     @Override
     public String toString()
     {
-        return "HomeDirectory[" + _home + "]";
+        return "HomeDirectory[" + _home + ']';
     }
 }

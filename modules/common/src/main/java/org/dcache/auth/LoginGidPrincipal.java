@@ -15,7 +15,7 @@ public class LoginGidPrincipal implements Principal, Serializable
 {
     private static final long serialVersionUID = -719644742571312959L;
 
-    private long _gid;
+    private final long _gid;
 
     public LoginGidPrincipal(long gid)
     {
@@ -44,7 +44,7 @@ public class LoginGidPrincipal implements Principal, Serializable
     @Override
     public String toString()
     {
-        return (getClass().getSimpleName() + "[" + getName() + "]");
+        return (getClass().getSimpleName() + '[' + getName() + ']');
     }
 
     @Override

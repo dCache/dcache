@@ -30,7 +30,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     /**
      * last value fed to the gauge
      */
-    private long lastExecutionTime = 0;
+    private long lastExecutionTime;
     private long startTime;
 
     /**

@@ -122,7 +122,7 @@ public class UserAuthRecord extends UserAuthBase {
         sb.append("             DN = ").append(DN).append('\n');
         sb.append("           FQAN = ").append(getFqan()).append('\n');
 	      sb.append("      read-only = ").append(readOnlyStr())
-                      .append("\n");
+                      .append('\n');
         sb.append("            UID = ").append(UID).append('\n');
         sb.append("           GIDs = ");
         sb.append(Joiner.on(",").skipNulls().join(GIDs.iterator())).append('\n');

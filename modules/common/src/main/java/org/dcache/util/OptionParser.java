@@ -214,7 +214,7 @@ public class OptionParser
         String s;
 
         s = args.getOpt(option.name());
-        if (s != null && (s.length() > 0 || !option.required())) {
+        if (s != null && (!s.isEmpty() || !option.required())) {
             return s;
         }
 
@@ -247,7 +247,7 @@ public class OptionParser
                         Object value;
 //                        this filters empty strings with the result that they
 //                        become null
-                        if (s != null && s.length() > 0) {
+                        if (s != null && !s.isEmpty()) {
                             try {
                                 value = toType(s, field.getType());
                                 field.set(obj, value);
@@ -257,7 +257,7 @@ public class OptionParser
                             } catch (ClassCastException e) {
                                 throw new IllegalArgumentException(
                                         "Invalid value for option " + option.name() + ": Cannot convert '" +
-                                        s + "' to " + field.getType() + ".", e);
+                                        s + "' to " + field.getType() + '.', e);
                             }
                         } else {
                             value = field.get(obj);
@@ -266,10 +266,10 @@ public class OptionParser
                         if (option.log()) {
                             String description = option.description();
                             String unit = option.unit();
-                            if (description.length() == 0) {
+                            if (description.isEmpty()) {
                                 description = option.name();
                             }
-                            if (unit.length() > 0) {
+                            if (!unit.isEmpty()) {
                                 LOGGER.info("{} set to {} {}", description, value, unit);
                             } else {
                                 LOGGER.info("{} set to {}", description, value);

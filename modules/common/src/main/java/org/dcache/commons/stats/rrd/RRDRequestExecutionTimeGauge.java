@@ -44,15 +44,15 @@ public class RRDRequestExecutionTimeGauge {
 
 
     private static final Logger logger = LoggerFactory.getLogger(RRDRequestExecutionTimeGauge.class);
-    private RequestExecutionTimeGauge gauge;
+    private final RequestExecutionTimeGauge gauge;
 
-    private String rrdFileName;
-    private String rrdFiveminImage;
-    private String rrdHourlyImage;
-    private String rrdDaylyImage;
-    private String rrdMounthlyImage;
-    private String rrdYearlyImage;
-    private String rrdGraphicsHtmlFileName;
+    private final String rrdFileName;
+    private final String rrdFiveminImage;
+    private final String rrdHourlyImage;
+    private final String rrdDaylyImage;
+    private final String rrdMounthlyImage;
+    private final String rrdYearlyImage;
+    private final String rrdGraphicsHtmlFileName;
 
     private int imageWidth = DEFAULT_IMAGE_WIDTH;
     private int imageHeight = DEFAULT_IMAGE_HEIGHT;
@@ -96,7 +96,7 @@ public class RRDRequestExecutionTimeGauge {
             throw new IllegalArgumentException("updatePeriodSecs="+updatePeriodSecs+
                     ", should be greater than 0 and less than "+FIVEMIN+" secs");
         }
-        logger.debug("RRDRequestExecutionTimeGauge("+rrdDirectory+", "+gauge+","+updatePeriodSecs+")");
+        logger.debug("RRDRequestExecutionTimeGauge(" + rrdDirectory + ", " + gauge + ',' + updatePeriodSecs + ')');
         if(!rrdDirectory.exists() || !rrdDirectory.isDirectory() || !rrdDirectory.canWrite() ) {
             throw new AccessControlException("directory "+
                     rrdDirectory + " does not exists or is not accessable");
@@ -284,58 +284,57 @@ private static String getGraphicsHtml( String gaugeName, int width, int height) 
         style.append(height);
         style.append("px;\"");
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n");
-        sb.append("<html>\n");
-        sb.append("<head>\n");
-        sb.append("  <meta content=\"text/html; charset=ISO-8859-1\"\n");
-        sb.append(" http-equiv=\"content-type\">\n");
-        sb.append(" <title>Request Execution Time Graphics for ");
-        sb.append(gaugeName);
-        sb.append("</title>\n");
-        sb.append("</head>\n");
-        sb.append("<body>\n");
-        sb.append("<h1> Request Execution Time Graphics for ");
-        sb.append(gaugeName);
-        sb.append("</h1> \n");
-        sb.append("5 Minutes<br>\n");
-        sb.append("<img style=" );
-        sb.append(style);
-        sb.append(" alt=\"5 Minutes\"\n");
-        sb.append(" src=\"images/");
-        sb.append(gaugeName);
-        sb.append(".5min.png\"><br>\n");
-        sb.append("Hour<br>\n");
-        sb.append("<img style=" );
-        sb.append(style);
-        sb.append(" alt=\"Hour\"\n");
-        sb.append(" src=\"images/");
-        sb.append(gaugeName);
-        sb.append(".hour.png\"><br>\n");
-        sb.append("Day<br>\n");
-        sb.append("<img style=" );
-        sb.append(style);
-        sb.append(" alt=\"Day\"\n");
-        sb.append(" src=\"images/");
-        sb.append(gaugeName);
-        sb.append(".day.png\"><br>\n");
-        sb.append("Month<br>\n");
-        sb.append("<img style=" );
-        sb.append(style);
-        sb.append(" alt=\"Month\"\n");
-        sb.append(" src=\"images/");
-        sb.append(gaugeName);
-        sb.append(".month.png\"><br>\n");
-        sb.append("Year<br>\n");
-        sb.append("<img style=" );
-        sb.append(style);
-        sb.append(" alt=\"Year\"\n");
-        sb.append(" src=\"images/");
-        sb.append(gaugeName);
-        sb.append(".year.png\"><br>\n");
-        sb.append("</body>\n");
-        sb.append("</html>");
-        return sb.toString();
+    String sb = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "  <meta content=\"text/html; charset=ISO-8859-1\"\n" +
+                " http-equiv=\"content-type\">\n" +
+                " <title>Request Execution Time Graphics for " +
+                gaugeName +
+                "</title>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "<h1> Request Execution Time Graphics for " +
+                gaugeName +
+                "</h1> \n" +
+                "5 Minutes<br>\n" +
+                "<img style=" +
+                style +
+                " alt=\"5 Minutes\"\n" +
+                " src=\"images/" +
+                gaugeName +
+                ".5min.png\"><br>\n" +
+                "Hour<br>\n" +
+                "<img style=" +
+                style +
+                " alt=\"Hour\"\n" +
+                " src=\"images/" +
+                gaugeName +
+                ".hour.png\"><br>\n" +
+                "Day<br>\n" +
+                "<img style=" +
+                style +
+                " alt=\"Day\"\n" +
+                " src=\"images/" +
+                gaugeName +
+                ".day.png\"><br>\n" +
+                "Month<br>\n" +
+                "<img style=" +
+                style +
+                " alt=\"Month\"\n" +
+                " src=\"images/" +
+                gaugeName +
+                ".month.png\"><br>\n" +
+                "Year<br>\n" +
+                "<img style=" +
+                style +
+                " alt=\"Year\"\n" +
+                " src=\"images/" +
+                gaugeName +
+                ".year.png\"><br>\n" +
+                "</body>\n" +
+                "</html>";
+    return sb;
 
 }
 

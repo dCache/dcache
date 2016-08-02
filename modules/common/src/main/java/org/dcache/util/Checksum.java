@@ -128,7 +128,7 @@ public class Checksum  implements Serializable
 
     public String toString(boolean useStringKey)
     {
-        return (useStringKey ? type.getName() : String.valueOf(type.getType())) + ":" + value;
+        return (useStringKey ? type.getName() : String.valueOf(type.getType())) + ':' + value;
     }
 
     public static String bytesToHexString(byte[] bytes)
@@ -146,7 +146,7 @@ public class Checksum  implements Serializable
     private static byte[] stringToBytes(String str)
     {
         if ((str.length() % 2) != 0) {
-            str = "0" + str;
+            str = '0' + str;
         }
 
         byte[] r = new byte[str.length() / 2];

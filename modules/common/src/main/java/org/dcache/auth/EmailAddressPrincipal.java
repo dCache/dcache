@@ -11,7 +11,7 @@ public class EmailAddressPrincipal implements Principal, Serializable
     private static final long serialVersionUID = -5091924321331479809L;
     // Pattern based on
     // http://stackoverflow.com/questions/624581/what-is-the-best-java-email-address-validation-method
-    private static Pattern EMAIL_PATTERN =
+    private static final Pattern EMAIL_PATTERN =
         Pattern.compile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$", Pattern.CASE_INSENSITIVE);
 
     private final String _email;

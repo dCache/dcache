@@ -1,6 +1,5 @@
 package org.dcache.util;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import org.slf4j.Logger;
@@ -193,7 +192,7 @@ public final class Strings {
     public static String toStringSignature(Method m, Character c) {
         StringBuilder sb = new StringBuilder();
         sb.append(m.getName());
-        sb.append("(");
+        sb.append('(');
         Joiner.on(c).appendTo(sb, transform(asList(m.getParameterTypes()), GET_SIMPLE_NAME));
         sb.append(')');
         return sb.toString();

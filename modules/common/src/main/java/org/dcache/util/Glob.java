@@ -54,12 +54,12 @@ public class Glob implements Serializable
     {
         StringBuilder s = new StringBuilder(glob.length() * 2 + 2);
         int j = 0;
-        s.append("^");
+        s.append('^');
         for (int i = 0; i < glob.length(); i++) {
             switch (glob.charAt(i)) {
             case '?':
                 s.append(Pattern.quote(glob.substring(j, i)));
-                s.append(".");
+                s.append('.');
                 j = i + 1;
                 break;
 
@@ -80,7 +80,7 @@ public class Glob implements Serializable
             }
         }
         s.append(Pattern.quote(glob.substring(j)));
-        s.append("$");
+        s.append('$');
         return Pattern.compile(s.toString());
     }
 
@@ -94,7 +94,7 @@ public class Glob implements Serializable
             switch (glob.charAt(i)) {
             case '?':
                 s.append(Pattern.quote(glob.substring(j, i)));
-                s.append(".");
+                s.append('.');
                 j = i + 1;
                 break;
 

@@ -51,7 +51,7 @@ class GlobBraceParser
     /**
      * Simple lexicographical analyzer with a look ahead of 1.
      */
-    private class Scanner
+    private static class Scanner
     {
         private final StringTokenizer tokenizer;
         private String current;
@@ -138,7 +138,7 @@ class GlobBraceParser
             Iterable<String> left = expandS();
             String token = scanner.next();
             if (!token.equals("}")) {
-                throw new IllegalArgumentException("Expected '}' instead of '" + token + "'");
+                throw new IllegalArgumentException("Expected '}' instead of '" + token + '\'');
             }
             Iterable<String> right = expandE();
             return cartesianProduct(left, right);

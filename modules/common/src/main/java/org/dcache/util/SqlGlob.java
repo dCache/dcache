@@ -57,13 +57,13 @@ public class SqlGlob implements Serializable
             switch (glob.charAt(i)) {
             case '?':
                 s.append(quoteSql(glob.substring(j, i)));
-                s.append("_");
+                s.append('_');
                 j = i + 1;
                 break;
 
             case '*':
                 s.append(quoteSql(glob.substring(j, i)));
-                s.append("%");
+                s.append('%');
                 j = i + 1;
                 break;
 
