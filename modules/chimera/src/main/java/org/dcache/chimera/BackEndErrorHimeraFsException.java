@@ -28,11 +28,11 @@ public class BackEndErrorHimeraFsException extends IOHimeraFsException {
     }
 
     public BackEndErrorHimeraFsException(String msg) {
-        super("BackEndErrorHimeraFsException (" + msg + ")");
+        super("BackEndErrorHimeraFsException (" + msg + ')');
     }
 
     public BackEndErrorHimeraFsException(String msg, Throwable cause)
     {
-        super("BackEndErrorHimeraFsException (" + msg + ")", cause);
+        super("BackEndErrorHimeraFsException (" + msg + ')', cause);
     }
 }

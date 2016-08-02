@@ -110,7 +110,7 @@ public class HFile extends File {
 
     @Override
     public long lastModified() {
-        long mtime = 0l;
+        long mtime = 0L;
         try {
             if (_inode != null) {
                 mtime = _inode.statCache().getMTime();

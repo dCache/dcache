@@ -305,12 +305,16 @@ public class Shell extends ShellApplication
                     String name = entry.getName();
                     Stat stat = entry.getStat();
 
-                    if (name.equals(".")) {
+                    switch (name) {
+                    case ".":
                         dot = entry;
-                    } else if (name.equals("..")) {
+                        break;
+                    case "..":
                         dotdot = entry;
-                    } else {
+                        break;
+                    default:
                         entries.add(entry);
+                        break;
                     }
 
                     totalBlocks = updateTotalBlocks(totalBlocks, stat);
@@ -497,7 +501,7 @@ public class Shell extends ShellApplication
             if (path.isAbsolute()) {
                 fs.mkdir(path.toString());
             } else {
-                fs.mkdir(Shell.this.path + "/" + path);
+                fs.mkdir(Shell.this.path + '/' + path);
             }
             return null;
         }
@@ -556,7 +560,7 @@ public class Shell extends ShellApplication
             if (path.isAbsolute()) {
                 fs.remove(path.toString());
             } else {
-                fs.remove(Shell.this.path + "/" + path);
+                fs.remove(Shell.this.path + '/' + path);
             }
 
             return null;
@@ -636,7 +640,7 @@ public class Shell extends ShellApplication
 
         private String newLineTerminated(String s)
         {
-            return s.endsWith("\n") ? s : s + "\n";
+            return s.endsWith("\n") ? s : s + '\n';
         }
     }
 
@@ -823,7 +827,7 @@ public class Shell extends ShellApplication
 
         private String newLineTerminated(String s)
         {
-            return s.endsWith("\n") ? s : s + "\n";
+            return s.endsWith("\n") ? s : s + '\n';
         }
     }
 
@@ -838,7 +842,7 @@ public class Shell extends ShellApplication
         {
             FsInode inode = lookup(path);
             for (Checksum checksum : fs.getInodeChecksums(inode)) {
-                    console.println(checksum.getType().getName() + ":" + checksum.getValue());
+                    console.println(checksum.getType().getName() + ':' + checksum.getValue());
             }
             return null;
         }

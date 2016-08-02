@@ -88,7 +88,7 @@ public class UnixPermission {
 
     @Override
     public String toString() {
-        char[] modeString = new char[]{'-', '-', '-', '-', '-', '-', '-', '-', '-', '-',};
+        char[] modeString = {'-', '-', '-', '-', '-', '-', '-', '-', '-', '-',};
 
         switch (getType(_mode)) {
             case S_IFLNK:

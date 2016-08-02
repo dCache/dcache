@@ -395,7 +395,7 @@ public class FsInode {
         FsInode otherInode = (FsInode) o;
 
         // FIXME: _jdbcFs it the part of the test
-        return _level == otherInode._level && _ino == otherInode._ino && _type.equals(otherInode._type);
+        return _level == otherInode._level && _ino == otherInode._ino && _type == otherInode._type;
 
         // return this.toFullString().equals( otherInode.toFullString() ) ;
     }

@@ -43,7 +43,7 @@ public class FsInode_PARENT extends FsInode {
         if (_parent.ino() != ino()) {
             byte[] b;
             try {
-                b = (_parent.statCache().getId() + "\n").getBytes();
+                b = (_parent.statCache().getId() + '\n').getBytes();
             } catch (ChimeraFsException e) {
                 return -1;
             }

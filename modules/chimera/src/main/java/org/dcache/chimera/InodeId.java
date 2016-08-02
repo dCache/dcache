@@ -39,16 +39,14 @@ public class InodeId {
 
         UUID newId = UUID.randomUUID();
 
-        StringBuilder idString = new StringBuilder(36);
+        String idString = digits((long) fsId >> 32, 4) +
+                          digits(newId.getMostSignificantBits() >> 32, 8) +
+                          digits(newId.getMostSignificantBits() >> 16, 4) +
+                          digits(newId.getMostSignificantBits(), 4) +
+                          digits(newId.getLeastSignificantBits() >> 48, 4) +
+                          digits(newId.getLeastSignificantBits(), 12);
 
-        idString.append(digits((long) fsId >> 32, 4)).
-                append(digits(newId.getMostSignificantBits() >> 32, 8)).
-                append(digits(newId.getMostSignificantBits() >> 16, 4)).
-                append(digits(newId.getMostSignificantBits(), 4)).
-                append(digits(newId.getLeastSignificantBits() >> 48, 4)).
-                append(digits(newId.getLeastSignificantBits(), 12));
-
-        return idString.toString().toUpperCase();
+        return idString.toUpperCase();
     }
 
     /** Returns val represented by the specified number of hex digits. */
@@ -85,6 +83,6 @@ public class InodeId {
         if (ch >= 'a' && ch <= 'f') {
             return ch - 'a' + 10;
         }
-        throw new NumberFormatException("illegal character '" + ch + "'");
+        throw new NumberFormatException("illegal character '" + ch + '\'');
     }
 }

@@ -38,7 +38,6 @@ import javax.sql.DataSource;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.EnumSet;
@@ -46,7 +45,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -1339,14 +1337,14 @@ public class JdbcFs implements FileSystemProvider {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("DB        : ").append(_dbConnectionsPool).append("\n");
-        sb.append("DB Engine : ").append(databaseProductName).append(" ").append(databaseProductVersion).append("\n");
+        sb.append("DB        : ").append(_dbConnectionsPool).append('\n');
+        sb.append("DB Engine : ").append(databaseProductName).append(' ').append(databaseProductVersion).append('\n');
         try {
-            sb.append("rootID    : ").append(inode2id(new FsInode(this, _sqlDriver.getRootInumber()))).append("\n");
+            sb.append("rootID    : ").append(inode2id(new FsInode(this, _sqlDriver.getRootInumber()))).append('\n');
         } catch (ChimeraFsException e) {
-            sb.append("rootID    : ").append(e.getMessage()).append("\n");
+            sb.append("rootID    : ").append(e.getMessage()).append('\n');
         }
-        sb.append("FsId      : ").append(_fsId).append("\n");
+        sb.append("FsId      : ").append(_fsId).append('\n');
         return sb.toString();
     }
 

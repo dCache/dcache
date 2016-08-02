@@ -26,10 +26,8 @@ public class FsInode_CONST extends FsInode {
 
     public FsInode_CONST(FileSystemProvider fs, long ino) {
         super(fs, ino, FsInodeType.CONST);
-        StringBuilder sb = new StringBuilder(_title);
-        sb.append("\n").append(_fs.getInfo()).append("\n");
 
-        _version = sb.toString().getBytes(Charsets.UTF_8);
+        _version = (_title + '\n' + _fs.getInfo() + '\n').getBytes(Charsets.UTF_8);
     }
 
     @Override

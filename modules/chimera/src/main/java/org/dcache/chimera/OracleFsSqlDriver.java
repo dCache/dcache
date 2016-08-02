@@ -63,7 +63,7 @@ class OracleFsSqlDriver extends FsSqlDriver {
                 rs -> {
                     StringBuilder sb = new StringBuilder();
                     while (rs.next()) {
-                        sb.append("/").append(rs.getString("iname"));
+                        sb.append('/').append(rs.getString("iname"));
                     }
                     return sb.toString();
                 },

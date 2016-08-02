@@ -42,13 +42,13 @@ public class FsInode_PCRC extends FsInode_PGET {
             Iterator<Checksum> it = results.iterator();
             if (it.hasNext()) {
                 Checksum result = it.next();
-                sb.append(result.getType()).append(":").append(
+                sb.append(result.getType()).append(':').append(
                                 result.getValue());
             }
 
             while (it.hasNext()) {
                 Checksum result = it.next();
-                sb.append(", ").append(result.getType()).append(":").append(
+                sb.append(", ").append(result.getType()).append(':').append(
                                 result.getValue());
             }
 

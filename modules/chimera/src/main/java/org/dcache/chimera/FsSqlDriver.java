@@ -283,7 +283,7 @@ public class FsSqlDriver {
             throw new InvalidArgumentChimeraException("Not a file.");
         }
         if (name.equals("..") || name.equals(".")) {
-            throw new InvalidNameChimeraException("bad name: '" + name + "'");
+            throw new InvalidNameChimeraException("bad name: '" + name + '\'');
         }
         return inode.isDirectory() ? removeDir(parent, inode, name) : removeFile(parent, inode, name);
     }
@@ -1477,7 +1477,7 @@ public class FsSqlDriver {
 
         do {
             String fileName = pathFile.getName();
-            if (fileName.length() != 0) {
+            if (!fileName.isEmpty()) {
                 /*
                  * skip multiple '/'
                  */
@@ -1536,7 +1536,7 @@ public class FsSqlDriver {
 
         do {
             String fileName = pathFile.getName();
-            if (fileName.length() != 0) {
+            if (!fileName.isEmpty()) {
                 /* Skip multiple file separators.
                  */
                 pathElements.add(pathFile.getName());

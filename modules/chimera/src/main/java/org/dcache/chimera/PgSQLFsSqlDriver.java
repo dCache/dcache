@@ -135,7 +135,7 @@ public class PgSQLFsSqlDriver extends FsSqlDriver {
         List<String> elements = new ArrayList<>();
         do {
             String fileName = file.getName();
-            if (fileName.length() != 0) {
+            if (!fileName.isEmpty()) {
                 /*
                  * skip multiple '/'
                  */
@@ -173,7 +173,7 @@ public class PgSQLFsSqlDriver extends FsSqlDriver {
          * separator.
          */
         String normalizedPath = normalizePath(path);
-        if (normalizedPath.length() == 0) {
+        if (normalizedPath.isEmpty()) {
             return root;
         }
 

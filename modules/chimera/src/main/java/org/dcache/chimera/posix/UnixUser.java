@@ -70,7 +70,7 @@ public class UnixUser implements User {
         if (_gids.length != 0) {
             sb.append("Gids = ").append(Arrays.toString(_gids));
         }
-        sb.append("Remote Host = ").append(_remoteHost).append(";");
+        sb.append("Remote Host = ").append(_remoteHost).append(';');
 
         return sb.toString();
     }

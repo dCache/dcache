@@ -1,6 +1,5 @@
 package org.dcache.chimera.spi;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.dcache.chimera.ChimeraFsException;
