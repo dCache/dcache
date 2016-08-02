@@ -11,6 +11,7 @@ import java.util.List;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.nullToEmpty;
+import java.util.Map;
 
 /**
  * The class emulates the Nested Diagnostic Context of Log4j.
@@ -128,5 +129,9 @@ public class NDC
         }
 
         return top;
+    }
+
+    public static String ndcFromMdc(Map<String, String> mdc) {
+        return mdc.get(KEY_NDC);
     }
 }
