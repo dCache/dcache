@@ -83,6 +83,7 @@ import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerMessage;
+import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -502,6 +503,27 @@ public final class SpaceManagerService
                         }
                     } else {
                         notifyShutdown();
+                    }
+                }
+
+                @Override
+                protected void notifyShutdown()
+                {
+                    if (message instanceof PoolMgrSelectPoolMsg) {
+                        // OUT_OF_DATE is an explicit signal to resubmit the request with updated information;
+                        // in case of a redundant space manager deployment, the resubmission may go to one of
+                        // the other instances.
+                        message.setFailed(CacheException.OUT_OF_DATE, "Space manager is shutting down.");
+                    } else if (message instanceof DoorTransferFinishedMessage ||
+                               message instanceof PoolAcceptFileMessage) {
+                        // Pass it on as is since space manager will recover from the lost notification eventually
+                    } else {
+                        envelope.setMessageObject(new NoRouteToCellException(envelope, "Space manager is shutting down."));
+                    }
+                    if (isEnRouteToDoor) {
+                        forwardMessage(null);
+                    } else {
+                        returnMessage();
                     }
                 }
             };
