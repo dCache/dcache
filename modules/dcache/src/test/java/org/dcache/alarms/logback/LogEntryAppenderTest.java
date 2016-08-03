@@ -78,6 +78,7 @@ import org.dcache.alarms.jdom.JDomAlarmDefinition;
 import org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -213,7 +214,7 @@ public class LogEntryAppenderTest {
     public void shouldCreateNonAlarmWhenUndefinedErrorWithNoMarkerIsUsed() {
         String message = givenLoggingMessageWhichMatchesType(null);
         whenMessageIsLogged(null, message, null);
-        assertThat(lastEntry.isAlarm(), is(false));
+        assertNull(lastEntry);
     }
 
     @Test
@@ -222,7 +223,7 @@ public class LogEntryAppenderTest {
         Exception exception = givenExceptionWithMessageEmbeddedAt(3, message);
         whenMessageIsLogged(null, exception.getMessage(),
                         exception.getCause());
-        assertThat(lastEntry.isAlarm(), is(false));
+        assertNull(lastEntry);
     }
 
     @Test
@@ -231,7 +232,7 @@ public class LogEntryAppenderTest {
         Exception exception = givenExceptionWithMessageEmbeddedAt(1, message);
         whenMessageIsLogged(null, exception.getMessage(),
                         exception.getCause());
-        assertThat(lastEntry.isAlarm(), is(false));
+        assertNull(lastEntry);
     }
 
     @After

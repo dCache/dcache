@@ -59,14 +59,12 @@
         <property name="emailSubject" value="${alarms.email.subject}"/>
         <property name="emailBufferSize" value="${alarms.email.buffer-size}"/>
         <property name="historyEnabled" value="${alarms.enable.history}"/>
-        <property name="historyThreshold" value="${alarms.history.threshold}"/>
         <property name="historyEncoding" value="${alarms.history.encoding-pattern}"/>
         <property name="historyFile" value="${alarms.history.log-path}"/>
         <property name="historyFileNamePattern" value="${alarms.history.log-file.pattern}"/>
         <property name="historyMaxFileSize" value="${alarms.history.max-file-size}"/>
         <property name="historyMaxIndex" value="${alarms.history.max-index}"/>
         <property name="historyMinIndex" value="${alarms.history.min-index}"/>
-        <property name="storeOnlyAlarms" value="${alarms.db.alarms-only}"/>
     </bean>
 
     <bean id="server" class="org.dcache.alarms.logback.LogEntryServer"

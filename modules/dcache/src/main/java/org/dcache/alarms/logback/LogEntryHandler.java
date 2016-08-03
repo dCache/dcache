@@ -119,17 +119,6 @@ public class LogEntryHandler {
                 event.getMDCPropertyMap().put(MDC_TYPE, entry.getType());
 
                 /*
-                 * The history log parses out all alerts above a certain
-                 * priority. This is just a convenience for sifting messages
-                 * from the normal domain log and recording them them using the
-                 * more specific alert pattern. We exclude events from the alarm
-                 * service itself.
-                 */
-                if (historyEnabled && priority >= historyThreshold.ordinal()) {
-                    historyAppender.doAppend(event);
-                }
-
-                /*
                  * Remote messages which are indeed alarms/alerts can be sent as
                  * email.
                  */
@@ -138,8 +127,14 @@ public class LogEntryHandler {
                 }
 
                 store.put(entry);
-            } else if (!storeOnlyAlarms) {
-                store.put(entry);
+            }
+
+             /**
+              *  Optionally save the event to a rolling log file.
+              *  This is largely here for diagnostic purposes.
+              */
+            if (historyEnabled) {
+                historyAppender.doAppend(event);
             }
         }
     }
@@ -167,11 +162,6 @@ public class LogEntryHandler {
     private LogEntryDAO store;
 
     /**
-     * Exclude non-alarm errors and warnings from being stored.
-     */
-    private boolean storeOnlyAlarms = false;
-
-    /**
      * Optional email appender configuration.
      */
     private SMTPAppender emailAppender;
@@ -194,7 +184,6 @@ public class LogEntryHandler {
      */
     private FileAppender<ILoggingEvent> historyAppender;
     private boolean historyEnabled;
-    private AlarmPriority historyThreshold;
     private String historyEncoding;
     private String historyFile;
     private String historyFileNamePattern;
@@ -286,11 +275,6 @@ public class LogEntryHandler {
         this.historyMinIndex = historyMinIndex;
     }
 
-    public void setHistoryThreshold(String historyThreshold) {
-        Preconditions.checkNotNull(historyThreshold);
-        this.historyThreshold = AlarmPriority.valueOf(historyThreshold.toUpperCase());
-    }
-
     public void setPriorityMap(AlarmPriorityMap priorityMap) {
         this.priorityMap = priorityMap;
     }
@@ -317,10 +301,6 @@ public class LogEntryHandler {
 
     public void setStore(LogEntryDAO store) {
         this.store = store;
-    }
-
-    public void setStoreOnlyAlarms(boolean storeOnlyAlarms) {
-        this.storeOnlyAlarms = storeOnlyAlarms;
     }
 
     public void start() {

@@ -10,7 +10,6 @@ check -strong alarms.db.type
 check -strong alarms.db.url
 check -strong alarms.custom-definitions.path
 check alarms.cell.consume
-check alarms.db.alarms-only
 check alarms.db.xml.path
 check alarms.enable.email
 check alarms.email.smtp-host
@@ -26,7 +25,6 @@ check alarms.email.buffer-size
 check alarms.email.threshold
 check alarms.email.encoding-pattern
 check alarms.enable.history
-check alarms.history.threshold
 check alarms.history.encoding-pattern
 check alarms.history.log-path
 check alarms.history.log-file.pattern
