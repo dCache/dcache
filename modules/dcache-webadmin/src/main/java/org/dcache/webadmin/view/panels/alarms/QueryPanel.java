@@ -64,12 +64,9 @@ import org.apache.wicket.extensions.markup.html.form.DateTextField;
 import org.apache.wicket.extensions.yui.calendar.DatePicker;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.Radio;
-import org.apache.wicket.markup.html.form.RadioGroup;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 
 import java.text.DateFormat;
@@ -92,14 +89,12 @@ public class QueryPanel extends Panel {
 
     private static final long serialVersionUID = -1214958555513880556L;
     private static final String DATE = "yyyy/MM/dd";
-    private boolean initialized = false;
 
     public QueryPanel(String id, final AlarmsPage parent) {
         super(id);
         AlarmTableProvider provider
             = parent.getWebadminApplication().getAlarmDisplayService()
                                              .getDataProvider();
-        addAlarmsGroup(provider);
         addDateFields(provider);
         addPriorityChoice(provider);
         addTypeAutoComplete(provider);
@@ -107,18 +102,6 @@ public class QueryPanel extends Panel {
         addShowClosed(provider);
         addRangeFields(provider);
         add(parent.getRefreshButton());
-        addEnableAutorefresh(parent);
-        initialized = true;
-    }
-
-    private void addAlarmsGroup(AlarmTableProvider provider) {
-        IModel<Boolean> selectAlarmValue = new PropertyModel<>(provider,
-                        "alarm");
-        RadioGroup rgrp = new RadioGroup("selectgroup", selectAlarmValue);
-        rgrp.add(new Radio("all", Model.of((Boolean) null)));
-        rgrp.add(new Radio("alarmsonly", Model.of(true)));
-        rgrp.add(new Radio("noalarms", Model.of(false)));
-        add(rgrp);
     }
 
     private void addDateFields(AlarmTableProvider provider) {
@@ -134,19 +117,6 @@ public class QueryPanel extends Panel {
         dp.setShowOnFieldClick(true);
         ending.add(dp);
         add(ending);
-    }
-
-    private void addEnableAutorefresh(AlarmsPage parent) {
-        IModel<Boolean> autofreshEnabled = new PropertyModel<>(parent,
-                        "autorefreshEnabled");
-        add(new CheckBox("autofreshEnabled", autofreshEnabled) {
-            private static final long serialVersionUID = -5500105320665027261L;
-
-            @Override
-            protected boolean wantOnSelectionChangedNotifications() {
-                return true;
-            }
-        });
     }
 
     private void addExpressionFields(AlarmTableProvider provider) {
@@ -169,9 +139,6 @@ public class QueryPanel extends Panel {
 
         IModel<Integer> to = new PropertyModel<>(provider, "to");
         TextField<Integer> toField = new TextField<Integer>("rangeTo", to);
-        if (!initialized) {
-            toField.setModelObject(100);
-        }
         add(toField);
     }
 

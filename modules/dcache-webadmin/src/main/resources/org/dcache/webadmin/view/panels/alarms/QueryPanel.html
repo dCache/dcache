@@ -6,30 +6,6 @@
         </h3>
         <table>
             <tr>
-                <td><b><wicket:message key="selection" /> </b></td>
-                <td><span wicket:id="selectgroup">
-                        <b><wicket:message key="all" /> </b>
-                        <input
-                            wicket:id="all"
-                            type="radio" />
-                        <b><wicket:message
-                                key="onlyAlarms" /></b>
-                        <input
-                            wicket:id="alarmsonly"
-                            type="radio" />
-                        <b><wicket:message key="noAlarms" /></b>
-                        <input
-                            wicket:id="noalarms"
-                            type="radio" />
-                    </span></td>
-                <td><span>
-                        <b><wicket:message key="showClosed" /> </b>
-                        <input
-                            wicket:id="showClosed"
-                            type="checkbox" />
-                    </span></td>
-            </tr>
-            <tr>
                 <td><b><wicket:message key="dateRange" /> </b></td>
                 <td><b><wicket:message key="beginning" /> </b>
                     <input
@@ -46,7 +22,7 @@
                 <td><input
                         wicket:id="refresh"
                         type="submit"
-                        wicket:message="value:refreshButton" />
+                        wicket:message key="refreshButton" />
                     </td>
             </tr>
             <tr>
@@ -54,11 +30,12 @@
                 <td><input
                         wicket:id="typeField"
                         type="text" /></td>
-                <td>
-                    <b><wicket:message key="autorefresh" /></b>
+                <td><span>
+                    <b><wicket:message key="showClosed" /> </b>
                     <input
-                            wicket:id="autofreshEnabled"
-                            type="checkbox" /></td>
+                            wicket:id="showClosed"
+                            type="checkbox" />
+                    </span></td>
             </tr>
             <tr>
                 <td><b><wicket:message key="filter" /> </b></td>

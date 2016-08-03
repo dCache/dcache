@@ -136,13 +136,12 @@ public class StandardAlarmDisplayService implements AlarmDisplayService {
         Date after = alarmTableProvider.getAfter();
         Date before = alarmTableProvider.getBefore();
         String type = alarmTableProvider.getType();
-        Boolean alarm = alarmTableProvider.isAlarm();
         Integer rangeStart = alarmTableProvider.getFrom();
         Integer rangeEnd = alarmTableProvider.getTo();
 
         AlarmDAOFilter filter
             = AlarmJDOUtils.getFilter(after, before, type,
-                                      alarm, rangeStart, rangeEnd);
+                                      true, rangeStart, rangeEnd);
         Collection<LogEntry> refreshed = access.get(filter);
 
         alarmTableProvider.setMap(getPriorityMap());

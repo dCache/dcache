@@ -74,7 +74,6 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.model.PropertyModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,17 +107,14 @@ public class DisplayPanel extends Panel {
         addAttributeColumns(columns);
         addNotesColumn(columns, provider);
 
-        add(new Label("tableTitle",
-                        new PropertyModel<String>(provider, "tableTitle")));
+        add(new Label("tableTitle", "ALARMS"));
         DataTable<LogEntry, String> table
             = new DataTable<LogEntry, String>("alarms", columns, provider, 100) {
                 private static final long serialVersionUID = -6574880701979145714L;
                 protected Item<LogEntry> newRowItem(final String id,
                                 final int index, final IModel<LogEntry> model) {
                     Item<LogEntry> item = super.newRowItem(id, index, model);
-                    if (provider.isAlarm() == null && model.getObject().isAlarm()) {
-                        item.add(AttributeModifier.replace("style", "color: #880000;"));
-                    }
+                    item.add(AttributeModifier.replace("style", "color: #880000;"));
                     return item;
                 }
             };

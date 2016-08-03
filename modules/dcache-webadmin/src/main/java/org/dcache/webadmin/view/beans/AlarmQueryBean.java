@@ -68,7 +68,7 @@ import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 
 /**
- * Session data bean, for use with {@link getPriority}.
+ * Session data bean.
  *
  * @author arossi
  */
@@ -78,7 +78,6 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
     private final Set<LogEntry> updated = new HashSet<>();
     private final Set<LogEntry> deleted = new HashSet<>();
 
-    private Boolean alarm = true;
     private Date after;
     private Date before;
 
@@ -129,25 +128,12 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
         return priority;
     }
 
-    public String getTableTitle() {
-        if (alarm == null) {
-            return "ALARMS / WARNINGS";
-        } else if (alarm) {
-            return "ALARMS";
-        }
-        return "WARNINGS";
-    }
-
     public Integer getTo() {
         return to;
     }
 
     public String getType() {
         return type;
-    }
-
-    public Boolean isAlarm() {
-        return alarm;
     }
 
     public boolean isShowClosed() {
@@ -164,10 +150,6 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
         } else {
             this.after = new Date(after.getTime());
         }
-    }
-
-    public void setAlarm(Boolean alarm) {
-        this.alarm = alarm;
     }
 
     public void setBefore(Date before) {

@@ -125,20 +125,12 @@ public class AlarmTableProvider extends
         return getAlarmQueryBean().getPriority();
     }
 
-    public String getTableTitle() {
-        return getAlarmQueryBean().getTableTitle();
-    }
-
     public Integer getTo() {
         return getAlarmQueryBean().getTo();
     }
 
     public String getType() {
         return getAlarmQueryBean().getType();
-    }
-
-    public Boolean isAlarm() {
-        return getAlarmQueryBean().isAlarm();
     }
 
     public boolean isShowClosed() {
@@ -151,10 +143,6 @@ public class AlarmTableProvider extends
 
     public void setAfter(Date after) {
         getAlarmQueryBean().setAfter(after);
-    }
-
-    public void setAlarm(Boolean alarm) {
-        getAlarmQueryBean().setAlarm(alarm);
     }
 
     public void setBefore(Date before) {
