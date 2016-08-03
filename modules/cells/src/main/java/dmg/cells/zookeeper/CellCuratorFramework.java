@@ -34,6 +34,8 @@ import org.apache.curator.framework.api.CreateBuilder;
 import org.apache.curator.framework.api.CuratorListener;
 import org.apache.curator.framework.api.CuratorWatcher;
 import org.apache.curator.framework.api.DeleteBuilder;
+import org.apache.curator.framework.api.ErrorListenerPathAndBytesable;
+import org.apache.curator.framework.api.ErrorListenerPathable;
 import org.apache.curator.framework.api.ExistsBuilder;
 import org.apache.curator.framework.api.ExistsBuilderMain;
 import org.apache.curator.framework.api.GetACLBuilder;
@@ -356,39 +358,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public PathAndBytesable<String> inBackground()
+        public ErrorListenerPathAndBytesable<String> inBackground()
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(Object context)
+        public ErrorListenerPathAndBytesable<String> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -438,39 +440,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<Void> inBackground()
+        public ErrorListenerPathable<Void> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<Void> inBackground(Object context)
+        public ErrorListenerPathable<Void> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -496,39 +498,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<Stat> inBackground()
+        public ErrorListenerPathable<Stat> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<Stat> inBackground(Object context)
+        public ErrorListenerPathable<Stat> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<Stat> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<Stat> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Stat> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<Stat> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<Stat> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<Stat> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Stat> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<Stat> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -580,39 +582,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<byte[]> inBackground()
+        public ErrorListenerPathable<byte[]> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<byte[]> inBackground(Object context)
+        public ErrorListenerPathable<byte[]> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<byte[]> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<byte[]> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<byte[]> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<byte[]> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -662,39 +664,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground()
+        public ErrorListenerPathAndBytesable<Stat> inBackground()
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(Object context)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -732,39 +734,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<List<String>> inBackground()
+        public ErrorListenerPathable<List<String>> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<List<String>> inBackground(Object context)
+        public ErrorListenerPathable<List<String>> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<List<String>> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<List<String>> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<List<String>> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<List<String>> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<List<String>> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<List<String>> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<List<String>> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<List<String>> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -808,39 +810,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<List<ACL>> inBackground()
+        public ErrorListenerPathable<List<ACL>> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<List<ACL>> inBackground(Object context)
+        public ErrorListenerPathable<List<ACL>> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<List<ACL>> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<List<ACL>> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<List<ACL>> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<List<ACL>> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<List<ACL>> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<List<ACL>> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<List<ACL>> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<List<ACL>> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1096,39 +1098,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<Void> inBackground()
+        public ErrorListenerPathable<Void> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<Void> inBackground(Object context)
+        public ErrorListenerPathable<Void> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1160,40 +1162,40 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public PathAndBytesable<T> inBackground()
+        public ErrorListenerPathAndBytesable<T> inBackground()
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(Object context)
+        public ErrorListenerPathAndBytesable<T> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context,
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context,
                                                 Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1259,39 +1261,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public PathAndBytesable<T> inBackground()
+        public ErrorListenerPathAndBytesable<T> inBackground()
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(Object context)
+        public ErrorListenerPathAndBytesable<T> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1323,39 +1325,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public PathAndBytesable<T> inBackground()
+        public ErrorListenerPathAndBytesable<T> inBackground()
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(Object context)
+        public ErrorListenerPathAndBytesable<T> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1378,6 +1380,34 @@ public class CellCuratorFramework implements CuratorFramework
         public PathAndBytesableDecorator(PathAndBytesable<T> inner)
         {
             this.inner = inner;
+        }
+
+        @Override
+        public T forPath(String path, byte[] data) throws Exception
+        {
+            return inner.forPath(path, data);
+        }
+
+        @Override
+        public T forPath(String path) throws Exception
+        {
+            return inner.forPath(path);
+        }
+    }
+
+    private static class ErrorListenerPathAndBytesableDecorator<T> implements ErrorListenerPathAndBytesable<T>
+    {
+        private final ErrorListenerPathAndBytesable<T> inner;
+
+        public ErrorListenerPathAndBytesableDecorator(ErrorListenerPathAndBytesable<T> inner)
+        {
+            this.inner = inner;
+        }
+
+        @Override
+        public PathAndBytesable<T> withUnhandledErrorListener(UnhandledErrorListener unhandledErrorListener)
+        {
+            return new PathAndBytesableDecorator<>(inner.withUnhandledErrorListener(unhandledErrorListener));
         }
 
         @Override
@@ -1450,39 +1480,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public PathAndBytesable<String> inBackground()
+        public ErrorListenerPathAndBytesable<String> inBackground()
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(Object context)
+        public ErrorListenerPathAndBytesable<String> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<String> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathAndBytesable<String> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1520,39 +1550,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public PathAndBytesable<T> inBackground()
+        public ErrorListenerPathAndBytesable<T> inBackground()
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(Object context)
+        public ErrorListenerPathAndBytesable<T> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathAndBytesable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1612,39 +1642,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<Void> inBackground()
+        public ErrorListenerPathable<Void> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<Void> inBackground(Object context)
+        public ErrorListenerPathable<Void> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1676,39 +1706,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<Void> inBackground()
+        public ErrorListenerPathable<Void> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<Void> inBackground(Object context)
+        public ErrorListenerPathable<Void> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<Void> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<Void> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1731,6 +1761,28 @@ public class CellCuratorFramework implements CuratorFramework
         public PathableDecorator(Pathable<T> inner)
         {
             this.inner = inner;
+        }
+
+        @Override
+        public T forPath(String path) throws Exception
+        {
+            return inner.forPath(path);
+        }
+    }
+
+    private static class ErrorListenerPathableDecorator<T> implements ErrorListenerPathable<T>
+    {
+        private final ErrorListenerPathable<T> inner;
+
+        public ErrorListenerPathableDecorator(ErrorListenerPathable<T> inner)
+        {
+            this.inner = inner;
+        }
+
+        @Override
+        public Pathable<T> withUnhandledErrorListener(UnhandledErrorListener unhandledErrorListener)
+        {
+            return new PathableDecorator<>(inner.withUnhandledErrorListener(unhandledErrorListener));
         }
 
         @Override
@@ -1767,39 +1819,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<T> inBackground()
+        public ErrorListenerPathable<T> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<T> inBackground(Object context)
+        public ErrorListenerPathable<T> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<T> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<T> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<T> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<T> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<T> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<T> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<T> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1819,39 +1871,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public Pathable<byte[]> inBackground()
+        public ErrorListenerPathable<byte[]> inBackground()
         {
-            return new PathableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public Pathable<byte[]> inBackground(Object context)
+        public ErrorListenerPathable<byte[]> inBackground(Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public Pathable<byte[]> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback callback)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<byte[]> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public Pathable<byte[]> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public Pathable<byte[]> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathable<byte[]> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
@@ -1929,39 +1981,39 @@ public class CellCuratorFramework implements CuratorFramework
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground()
+        public ErrorListenerPathAndBytesable<Stat> inBackground()
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground());
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground());
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(Object context)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(context));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(context));
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(BackgroundCallback callback)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback callback)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(BackgroundCallback callback, Object context)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback callback, Object context)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(BackgroundCallback callback, Executor executor)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback callback, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), executor));
         }
 
         @Override
-        public PathAndBytesable<Stat> inBackground(BackgroundCallback callback, Object context, Executor executor)
+        public ErrorListenerPathAndBytesable<Stat> inBackground(BackgroundCallback callback, Object context, Executor executor)
         {
-            return new PathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
+            return new ErrorListenerPathAndBytesableDecorator<>(inner.inBackground(wrap(callback), context, executor));
         }
 
         @Override
