@@ -232,11 +232,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
      */
 
     @Override
-    public String getMethod() {
-        return "Put";
-    }
-
-    @Override
     public TReturnStatus abort(String reason)
     {
         wlock();
@@ -264,8 +259,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             boolean hasSuccess = false;
             boolean hasFailure = false;
             boolean hasCompleted = false;
-            // FIXME: we do this to make the srm update the status of the request if it changed
-            getRequestStatus();
+            updateStatus();
             State state = getState();
             if (!state.isFinal()) {
                 for (PutFileRequest file : getFileRequests()) {
@@ -360,10 +354,12 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
          */
         Date deadline = getDateRelativeToNow(timeout);
         int counter = _stateChangeCounter.get();
+        tryToReady();
         SrmPrepareToPutResponse response = getSrmPrepareToPutResponse();
         while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date())
                && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
             counter = _stateChangeCounter.get();
+            tryToReady();
             response = getSrmPrepareToPutResponse();
         }
 
@@ -374,10 +370,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             throws SRMInvalidRequestException
     {
         SrmPrepareToPutResponse response = new SrmPrepareToPutResponse();
-       // getTReturnStatus should be called before we get the
-       // statuses of the each file, as the call to the
-       // getTReturnStatus() can now trigger the update of the statuses
-       // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
         response.setArrayOfFileStatuses(new ArrayOfTPutRequestFileStatus(getArrayOfTPutRequestFileStatus()));
@@ -394,11 +386,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             throws SRMFileRequestNotFoundException, SRMInvalidRequestException
     {
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
-
-        // getTReturnStatus should be called before we get the
-        // statuses of the each file, as the call to the
-        // getTReturnStatus() can now trigger the update of the statuses
-        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
 
         TPutRequestFileStatus[] statusArray = getArrayOfTPutRequestFileStatus(surls);

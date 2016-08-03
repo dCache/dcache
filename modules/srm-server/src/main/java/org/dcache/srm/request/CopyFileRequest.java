@@ -220,29 +220,6 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         return extraInfo;
     }
 
-    @Override
-    public RequestFileStatus getRequestFileStatus()
-    {
-        RequestFileStatus rfs = new RequestFileStatus();
-        rfs.fileId = (int) getId();
-        rfs.SURL = getSourceSurl().toString();
-        rfs.size = 0;
-        rfs.TURL = getDestinationSurl().toString();
-        State state = getState();
-        if (state == State.DONE) {
-            rfs.state = "Done";
-        } else if (state == State.READY) {
-            rfs.state = "Ready";
-        } else if (state == State.TRANSFERRING) {
-            rfs.state = "Running";
-        } else if (state == State.FAILED || state == State.CANCELED) {
-            rfs.state = "Failed";
-        } else {
-            rfs.state = "Pending";
-        }
-        return rfs;
-    }
-
     /**
      * The source location if remote, null otherwise.
      */

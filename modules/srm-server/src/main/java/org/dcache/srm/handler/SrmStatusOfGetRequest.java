@@ -50,6 +50,7 @@ public class SrmStatusOfGetRequest
         String requestToken = request.getRequestToken();
         GetRequest getRequest = Request.getRequest(requestToken, GetRequest.class);
         try (JDC ignored = getRequest.applyJdc()) {
+            getRequest.tryToReady();
             if (request.getArrayOfSourceSURLs() == null) {
                 return getRequest.getSrmStatusOfGetRequestResponse();
             }

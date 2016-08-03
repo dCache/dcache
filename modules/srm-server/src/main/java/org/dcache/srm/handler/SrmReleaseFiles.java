@@ -110,6 +110,7 @@ public class SrmReleaseFiles
                 } else {
                     surlReturnStatuses = getRequest.releaseFiles(surls);
                 }
+                getRequest.updateStatus();
             } else if (requestToRelease instanceof BringOnlineRequest) {
                 BringOnlineRequest bringOnlineRequest = (BringOnlineRequest) requestToRelease;
                 if (surls == null) {
@@ -117,6 +118,7 @@ public class SrmReleaseFiles
                 } else {
                     surlReturnStatuses = bringOnlineRequest.releaseFiles(surls);
                 }
+                bringOnlineRequest.updateStatus();
             } else {
                 throw new SRMInvalidRequestException("No such get or bring online request: " + requestToken);
             }

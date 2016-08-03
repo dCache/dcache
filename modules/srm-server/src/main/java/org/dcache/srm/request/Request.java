@@ -187,8 +187,6 @@ public abstract class Request extends Job {
      */
     private transient AbstractStorageElement storage;
 
-    public abstract String getMethod();
-
     @Nullable
     private String description;
 

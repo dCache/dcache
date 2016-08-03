@@ -118,31 +118,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         }
 
         @Override
-        public RequestFileStatus getRequestFileStatus(){
-                RequestFileStatus rfs;
-                rfs = new RequestFileStatus();
-                State state = getState();
-                 if(state == State.DONE) {
-                         rfs.state = "Done";
-                 }
-                 else if(state == State.READY) {
-                         rfs.state = "Ready";
-                 }
-                 else if(state == State.TRANSFERRING) {
-                         rfs.state = "Running";
-                 }
-                 else if(state == State.FAILED
-                         || state == State.CANCELED ) {
-                         rfs.state = "Failed";
-                 }
-                 else {
-                         rfs.state = "Pending";
-                 }
-                return rfs;
-        }
-
-
-        @Override
         public synchronized void run() throws IllegalStateTransition
         {
             logger.trace("run");

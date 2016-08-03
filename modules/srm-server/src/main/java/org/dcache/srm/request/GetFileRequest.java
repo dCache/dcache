@@ -241,49 +241,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    @Override
-    public RequestFileStatus getRequestFileStatus(){
-        RequestFileStatus rfs;
-        if(getFileMetaData() != null) {
-            rfs = new RequestFileStatus(getFileMetaData());
-        }
-        else {
-            rfs = new RequestFileStatus();
-        }
-
-        rfs.fileId = (int) getId();
-        rfs.SURL = getSurlString();
-
-
-
-        if(this.isPinned()) {
-            rfs.isPinned = true;
-            rfs.isCached = true;
-        }
-
-        State state = getState();
-        rfs.TURL = getTurlString();
-        if(state == State.DONE) {
-            rfs.state = "Done";
-        }
-        else if(state == State.READY) {
-            rfs.state = "Ready";
-        }
-        else if(state == State.TRANSFERRING) {
-            rfs.state = "Running";
-        }
-        else if(state == State.FAILED
-        || state == State.CANCELED ) {
-            rfs.state = "Failed";
-        }
-        else {
-            rfs.state = "Pending";
-        }
-
-        //logger.debug(" returning requestFileStatus for "+rfs.toString());
-        return rfs;
-    }
-
     public TGetRequestFileStatus getTGetRequestFileStatus()
             throws SRMInvalidRequestException {
         TGetRequestFileStatus fileStatus = new TGetRequestFileStatus();

@@ -72,8 +72,7 @@ public class SrmAbortFiles
                 surlReturnStatusArray[i] = new TSURLReturnStatus(surls[i], returnStatus);
             }
 
-            // we do this to make the srm update the status of the request if it changed
-            requestToAbort.getTReturnStatus();
+            requestToAbort.updateStatus();
 
             return new SrmAbortFilesResponse(
                     getSummaryReturnStatus(surlReturnStatusArray),

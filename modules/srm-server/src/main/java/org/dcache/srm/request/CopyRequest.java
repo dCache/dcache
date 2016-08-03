@@ -660,12 +660,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
 
     @Override
-    public String getMethod()
-    {
-        return "Copy";
-    }
-
-    @Override
     public void run() throws SRMException, IllegalStateTransition
     {
         if (!getState().isFinal() && !isProcessingDone()) {

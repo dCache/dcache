@@ -245,11 +245,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
      */
 
     @Override
-    public String getMethod() {
-        return "BringOnline";
-    }
-
-    @Override
     public void run() {
     }
 
@@ -306,10 +301,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             throws SRMInvalidRequestException
     {
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
-      // getTReturnStatus should be called before we get the
-       // statuses of the each file, as the call to the
-       // getTReturnStatus() can now trigger the update of the statuses
-       // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
 
@@ -334,10 +325,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     {
         SrmStatusOfBringOnlineRequestResponse response =
                 new SrmStatusOfBringOnlineRequestResponse();
-      // getTReturnStatus should be called before we get the
-       // statuses of the each file, as the call to the
-       // getTReturnStatus() can now trigger the update of the statuses
-       // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
         TBringOnlineRequestFileStatus[] statusArray = getArrayOfTBringOnlineRequestFileStatus(surls);
         response.setArrayOfFileStatuses(new ArrayOfTBringOnlineRequestFileStatus(statusArray));
@@ -410,17 +397,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             surlReturnStatuses[i] = new TSURLReturnStatus(surl, request.release(user));
         }
 
-        try {
-            // we do this to make the srm update the status of the request if it changed
-            // getTReturnStatus should be called before we get the
-            // statuses of the each file, as the call to the
-            // getTReturnStatus() can now trigger the update of the statuses
-            // in particular move to the READY state, and TURL availability
-            getTReturnStatus();
-        } catch (Exception e) {
-            logger.error(e.toString());
-        }
-
         return surlReturnStatuses;
     }
 
@@ -443,17 +419,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                         getStorage(), user, requestToken, uri);
                 surlReturnStatuses[i] = new TSURLReturnStatus(surl, status);
             }
-        }
-
-        try {
-            // we do this to make the srm update the status of the request if it changed
-            // getTReturnStatus should be called before we get the
-            // statuses of the each file, as the call to the
-            // getTReturnStatus() can now trigger the update of the statuses
-            // in particular move to the READY state, and TURL availability
-            getTReturnStatus();
-        } catch (Exception e) {
-            logger.error(e.toString());
         }
 
         return surlReturnStatuses;

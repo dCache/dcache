@@ -58,6 +58,7 @@ public class SrmStatusOfPutRequest
         String requestToken = statusOfPutRequestRequest.getRequestToken();
         PutRequest putRequest = Request.getRequest(requestToken, PutRequest.class);
         try (JDC ignored = putRequest.applyJdc()) {
+            putRequest.tryToReady();
             if (statusOfPutRequestRequest.getArrayOfTargetSURLs() == null) {
                 return putRequest.getSrmStatusOfPutRequestResponse();
             }

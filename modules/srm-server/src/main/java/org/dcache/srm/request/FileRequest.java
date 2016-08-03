@@ -178,8 +178,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         return configuration;
     }
 
-    public abstract RequestFileStatus getRequestFileStatus() ;
-
     public abstract TReturnStatus getReturnStatus();
 
     @Override

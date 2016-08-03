@@ -246,9 +246,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     }
 
     @Override
-    public abstract String getMethod();
-
-    @Override
     public TReturnStatus abort(String reason)
     {
         boolean hasSuccess = false;
@@ -265,9 +262,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
              *    may be returned to all duplicate abort requests and no operations on
              *    duplicate abort requests are performed.
              */
-
-            // FIXME: we do this to make the srm update the status of the request if it changed
-            getRequestStatus();
+            updateStatus();
             if (!getState().isFinal()) {
                 for (R file : getFileRequests()) {
                     try {
@@ -277,8 +272,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                         hasFailure = true;
                     }
                 }
-                // FIXME: Trigger state update now that we aborted the file requests
-                getRequestStatus();
+                updateStatus();
             }
         } finally {
             wunlock();
@@ -286,7 +280,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         return getSummaryReturnStatus(hasFailure, hasSuccess);
     }
 
-    public final RequestStatus getRequestStatus() {
+    public final void updateStatus() {
         wlock();
         try {
             // we used to synchronize on this container request here, but
@@ -298,73 +292,28 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             // once file request reach their final state, this state does not change
             // so the combined logic
             updateRetryDeltaTime();
-            RequestStatus rs = new RequestStatus();
-            rs.requestId = getRequestNum();
-            rs.errorMessage = getLastJobChange().getDescription();
-            int len = getNumOfFileRequest();
-            rs.fileStatuses = new RequestFileStatus[len];
+            boolean haveNonFinalRequests = false;
             boolean haveFailedRequests = false;
-            boolean havePendingRequests = false;
-            boolean haveRunningRequests = false;
-            boolean haveReadyRequests = false;
             boolean haveDoneRequests = false;
-            String fr_error = "";
-            for (int i = 0; i < len; ++i) {
-                R fr = fileRequests.get(i);
-                fr.tryToReady();
-                RequestFileStatus rfs = fr.getRequestFileStatus();
-                if (rfs == null) {
-                    haveFailedRequests = true;
-                    fr_error += "RequestFileStatus is null : fr.errorMessage= [ " + fr.getErrorMessage() + "]\n";
-                    continue;
-                }
-                rs.fileStatuses[i] = rfs;
-                String state = rfs.state;
-                switch (state) {
-                case "Pending":
-                    havePendingRequests = true;
-                    break;
-                case "Running":
-                    haveRunningRequests = true;
-                    break;
-                case "Ready":
-                    haveReadyRequests = true;
-                    break;
-                case "Done":
+            for (R fr : fileRequests) {
+                switch (fr.getState()) {
+                case DONE:
                     haveDoneRequests = true;
                     break;
-                case "Failed":
+                case FAILED:
+                case CANCELED:
                     haveFailedRequests = true;
-                    fr_error += "RequestFileStatus#" + rfs.fileId + " failed with error:[ " + fr
-                            .getErrorMessage() + "]\n";
                     break;
                 default:
-                    logger.error("File Request state is unknown!!! state  == " + state);
-                    logger.error("fr is " + fr);
+                    haveNonFinalRequests = true;
                     break;
                 }
             }
 
-            if (haveFailedRequests) {
-                rs.errorMessage += "\n" + fr_error;
-            }
+            if (!getState().isFinal() && !haveNonFinalRequests) {
+                stopUpdating();
 
-            switch (getState()) {
-            case DONE:
-                rs.state = "Done";
-                break;
-
-            case CANCELED:
-            case FAILED:
-                rs.state = "Failed";
-                break;
-
-            default:
-                if (havePendingRequests) {
-                    rs.state = "Pending";
-                } else if (haveRunningRequests || haveReadyRequests) {
-                    rs.state = "Active";
-                } else if (haveFailedRequests) {
+                if (haveFailedRequests) {
                     // no running, no ready and  no pending  requests
                     // there are only failed requests
                     // we can fail this request
@@ -374,59 +323,26 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                     //          Done and others in state Failed.  The behaviour may
                     //          be correct, but should be checked.
 
-                    rs.state = "Failed";
-                    try {
-                        setState(State.FAILED, "File requests have failed.");
-                        stopUpdating();
-                    } catch (IllegalStateTransition ist) {
-                        logger.error("Illegal State Transition : " + ist.getMessage());
-                    }
+                    setState(State.FAILED, "File requests have failed.");
                 } else if (haveDoneRequests) {
                     // all requests are done
-                    try {
-                        setState(State.DONE, "All file requests succeeded.");
-                        stopUpdating();
-                    } catch (IllegalStateTransition ist) {
-                        logger.error("Illegal State Transition : " + ist.getMessage());
-                    }
-                    rs.state = "Done";
+                    setState(State.DONE, "All file requests succeeded.");
                 } else {
                     // we should never be here, but we have this block
                     // in case request is restored with no files in it
-
                     logger.error("request state is unknown or no files in request!!!");
-                    stopUpdating();
-                    try {
-                        setState(State.FAILED, "Request state is unknown or no files in request!!!");
-                    } catch (IllegalStateTransition ist) {
-                        logger.error("Illegal State Transition : " + ist.getMessage());
-                    }
-                    rs.state = "Failed";
+                    setState(State.FAILED, "Request state is unknown or no files in request!!!");
                 }
             }
-
-            // the following it the hack to make FTS happy
-            //FTS expects the errorMessage to be "" if the state is not Failed
-            if (!rs.state.equals("Failed")) {
-                rs.errorMessage = "";
-            }
-
-            rs.type = getMethod();
-            rs.retryDeltaTime = retryDeltaTime;
-            rs.submitTime = new Date(getCreationTime());
-            rs.finishTime = new Date(getCreationTime() + getLifetime());
-            rs.startTime = new Date(System.currentTimeMillis() + retryDeltaTime * 1000);
-            return rs;
+        } catch (IllegalStateTransition e) {
+            logger.error("Illegal State Transition : " + e.getMessage());
         } finally {
             wunlock();
         }
     }
 
     public TReturnStatus getTReturnStatus()  {
-        //
-        // We want everthing that getRequestStatus does to happen
-        //
-        getRequestStatus();
+        updateStatus();
 
         String description;
 
@@ -661,6 +577,11 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
 
     public List<R> getFileRequests()  {
         return fileRequests;
+    }
+
+    @Override
+    public void tryToReady() {
+        fileRequests.forEach(FileRequest::tryToReady);
     }
 
     /**

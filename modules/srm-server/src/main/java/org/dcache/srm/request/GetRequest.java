@@ -221,11 +221,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
      */
 
     @Override
-    public String getMethod() {
-        return "Get";
-    }
-
-    @Override
     public void run() {
     }
 
@@ -285,10 +280,12 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
          */
         Date deadline = getDateRelativeToNow(timeout);
         int counter = _stateChangeCounter.get();
+        tryToReady();
         SrmPrepareToGetResponse response = getSrmPrepareToGetResponse();
         while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date())
                && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
             counter = _stateChangeCounter.get();
+            tryToReady();
             response = getSrmPrepareToGetResponse();
         }
 
@@ -299,10 +296,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
             throws SRMInvalidRequestException
     {
         SrmPrepareToGetResponse response = new SrmPrepareToGetResponse();
-        // getTReturnStatus should be called before we get the
-        // statuses of the each file, as the call to the
-        // getTReturnStatus() can now trigger the update of the statuses
-        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
         response.setArrayOfFileStatuses(new ArrayOfTGetRequestFileStatus(getArrayOfTGetRequestFileStatus()));
@@ -319,10 +312,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
             throws SRMInvalidRequestException
     {
         SrmStatusOfGetRequestResponse response = new SrmStatusOfGetRequestResponse();
-        // getTReturnStatus should be called before we get the
-        // statuses of the each file, as the call to the
-        // getTReturnStatus() can now trigger the update of the statuses
-        // in particular move to the READY state, and TURL availability
         response.setReturnStatus(getTReturnStatus());
 
         TGetRequestFileStatus[] statusArray = getArrayOfTGetRequestFileStatus(surls);
@@ -402,13 +391,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
             surlReturnStatuses[i] = new TSURLReturnStatus(surl, fr.release());
         }
 
-        // we do this to make the srm update the status of the request if it changed
-        // getTReturnStatus should be called before we get the
-        // statuses of the each file, as the call to the
-        // getTReturnStatus() can now trigger the update of the statuses
-        // in particular move to the READY state, and TURL availability
-        getTReturnStatus();
-
         return surlReturnStatuses;
     }
 
@@ -432,13 +414,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                 surlReturnStatuses[i] = new TSURLReturnStatus(surl, status);
             }
         }
-
-        // we do this to make the srm update the status of the request if it changed
-        // getTReturnStatus should be called before we get the
-        // statuses of the each file, as the call to the
-        // getTReturnStatus() can now trigger the update of the statuses
-        // in particular move to the READY state, and TURL availability
-        getTReturnStatus();
 
         return surlReturnStatuses;
     }

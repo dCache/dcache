@@ -100,8 +100,7 @@ public class SrmPutDone
                     returnStatuses[i] = new TSURLReturnStatus(surls[i], returnStatus);
                 }
 
-                // FIXME: we do this to make the srm update the status of the request if it changed
-                putRequest.getRequestStatus();
+                putRequest.updateStatus();
 
                 return new SrmPutDoneResponse(
                         ReturnStatuses.getSummaryReturnStatus(returnStatuses),

@@ -157,11 +157,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
             // Nothing to do.
         }
 
-        @Override
-        public String getMethod() {
-                return "Ls";
-        }
-
         public String kill() {
                 return "request was ready, set all ready file statuses to done";
         }
@@ -332,7 +327,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         public  final TReturnStatus getTReturnStatus()  {
             wlock();
             try {
-                getRequestStatus();
+                updateStatus();
                 if(getStatusCode() != null) {
                         return new TReturnStatus(getStatusCode(),getExplanation());
                 }

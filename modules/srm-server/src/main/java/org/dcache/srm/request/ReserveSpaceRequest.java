@@ -504,9 +504,4 @@ public final class ReserveSpaceRequest extends Request {
             wunlock();
         }
     }
-
-    @Override
-    public String getMethod(){
-        return "srmReserveSpace";
-    }
 }

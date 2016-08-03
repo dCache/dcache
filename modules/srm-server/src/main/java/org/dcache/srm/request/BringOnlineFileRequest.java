@@ -224,47 +224,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     }
 
 
-    @Override
-    public RequestFileStatus getRequestFileStatus(){
-        RequestFileStatus rfs;
-        if(fileMetaData != null) {
-            rfs = new RequestFileStatus(fileMetaData);
-        }
-        else {
-            rfs = new RequestFileStatus();
-        }
-
-        rfs.fileId = (int) getId();
-        rfs.SURL = getSurlString();
-
-
-        if(this.isPinned()) {
-            rfs.isPinned = true;
-            rfs.isCached = true;
-        }
-
-        State state = getState();
-        if(state == State.DONE) {
-            rfs.state = "Done";
-        }
-        else if(state == State.READY) {
-            rfs.state = "Ready";
-        }
-        else if(state == State.TRANSFERRING) {
-            rfs.state = "Running";
-        }
-        else if(state == State.FAILED
-        || state == State.CANCELED ) {
-            rfs.state = "Failed";
-        }
-        else {
-            rfs.state = "Pending";
-        }
-
-        //logger.debug(" returning requestFileStatus for "+rfs.toString());
-        return rfs;
-    }
-
     public TBringOnlineRequestFileStatus getTGetRequestFileStatus()
             throws SRMInvalidRequestException
     {

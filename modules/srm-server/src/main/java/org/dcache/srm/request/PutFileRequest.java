@@ -220,32 +220,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         return null;
     }
 
-    @Override
-    public RequestFileStatus getRequestFileStatus() {
-        RequestFileStatus rfs = new RequestFileStatus();
-        rfs.fileId = (int) getId();
-
-        rfs.SURL = getSurlString();
-        rfs.size = (getSize() == null) ? 0 : getSize();
-        State state = getState();
-        rfs.TURL = getTurlString();
-        if(state == State.DONE) {
-            rfs.state = "Done";
-        } else if(state == State.READY) {
-            rfs.state = "Ready";
-        } else if(state == State.TRANSFERRING) {
-            rfs.state = "Running";
-        } else if(state == State.FAILED
-                || state == State.CANCELED ) {
-            rfs.state = "Failed";
-        } else {
-            rfs.state = "Pending";
-        }
-
-        logger.debug(" returning requestFileStatus for " + this.toString());
-        return rfs;
-    }
-
     public TPutRequestFileStatus getTPutRequestFileStatus()
             throws SRMInvalidRequestException {
         TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
