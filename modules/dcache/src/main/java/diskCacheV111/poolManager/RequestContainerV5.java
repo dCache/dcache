@@ -306,7 +306,7 @@ public class RequestContainerV5
                                           " fortransfer="+( def._p2pForTransfer ? "on" : "off" ) );
        pw.println( "      Allow staging : "+(def._hasHsmBackend ? "on":"off") ) ;
        pw.println( "Allow stage on cost : "+(def._stageOnCost ? "on":"off") ) ;
-       pw.println( "      Restore Limit : "+(_maxRestore<0?"unlimited":(""+_maxRestore)));
+       pw.println( "      Restore Limit : "+(_maxRestore<0?"unlimited":(String.valueOf(_maxRestore))));
        pw.println( "   Restore Exceeded : "+_restoreExceeded ) ;
        if( _suspendIncoming ) {
            pw.println("   Suspend Incoming : on (not persistent)");
@@ -324,7 +324,7 @@ public class RequestContainerV5
         pw.append("rc set retry ").println(_retryTimer/1000);
         pw.append("rc set poolpingtimer ").println(_checkFilePingTimer/1000);
         pw.append("rc set max restore ")
-            .println(_maxRestore<0?"unlimited":(""+_maxRestore));
+            .println(_maxRestore<0?"unlimited":(String.valueOf(_maxRestore)));
     }
 
     public static final String hh_rc_set_sameHostCopy =
@@ -1114,7 +1114,7 @@ public class RequestContainerV5
               if( ! _forceContinue ){
 
                  synchronized( _fifo ){
-                    if( _fifo.size() == 0 ){
+                    if(_fifo.isEmpty()){
                        _stateEngineActive = false ;
                        return ;
                     }

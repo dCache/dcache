@@ -628,9 +628,9 @@ public void messageArrived( CellMessage message ){
            }
 
        }
-       return new PoolRepository( map , counter , total )  ;
+       return new PoolRepository(map, counter, total);
    }
-   private class PoolRepository {
+   private static class PoolRepository {
        private final long _totalSize;
        private final int  _fileCount;
        private final Map<String, PoolFileEntry>  _map;

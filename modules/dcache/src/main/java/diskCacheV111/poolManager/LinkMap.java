@@ -8,7 +8,7 @@ import java.util.Map;
 
 class LinkMap {
 
-    private class LinkMapEntry {
+    private static class LinkMapEntry {
 
         private final Link _link;
         private int _counter;

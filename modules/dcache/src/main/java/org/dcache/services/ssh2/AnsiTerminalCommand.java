@@ -22,17 +22,13 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
 import diskCacheV111.admin.UserAdminShell;
-import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
-import dmg.util.CommandAclException;
-import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
-import dmg.util.CommandThrowableException;
 
 import org.dcache.util.Strings;
 

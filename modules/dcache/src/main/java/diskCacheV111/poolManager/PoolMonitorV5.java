@@ -331,7 +331,7 @@ public class PoolMonitorV5
                 _costModule.getPoolInfoAsMap(locations);
             _log.debug("[p2p] Online source pools: {}", sources.values());
 
-            if (sources.size() == 0) {
+            if (sources.isEmpty()) {
                 throw new CacheException("P2P denied: No source pools available");
             }
 

@@ -341,8 +341,9 @@ public class ChecksumChannel implements RepositoryChannel
      */
     @VisibleForTesting
     synchronized void updateChecksum(ByteBuffer buffer, long position, long bytes) throws IOException {
-        if (bytes == 0)
+        if (bytes == 0) {
             return;
+        }
 
         if (bytes < buffer.remaining()) {
             buffer.limit(buffer.position() + (int)bytes);

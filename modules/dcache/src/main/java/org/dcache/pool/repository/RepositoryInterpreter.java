@@ -265,7 +265,7 @@ public class RepositoryInterpreter
                             continue;
                         }
                     }
-                    if (format.length() == 0 ||
+                    if (format.isEmpty() ||
                         (notcached && state != ReplicaState.CACHED) ||
                         (precious && state == ReplicaState.PRECIOUS) ||
                         (sticky && entry.isSticky()) ||
@@ -296,21 +296,21 @@ public class RepositoryInterpreter
             stats.forEach((sc, counter) -> {
                 sb.append(Formats.field(sc, 24, Formats.LEFT)).
                         append("  ").
-                        append(Formats.field("" + unit.convert(counter[0], BYTES), 10, Formats.RIGHT)).
+                        append(Formats.field(String.valueOf(unit.convert(counter[0], BYTES)), 10, Formats.RIGHT)).
                         append("  ").
-                        append(Formats.field("" + counter[1], 8, Formats.RIGHT)).
+                        append(Formats.field(String.valueOf(counter[1]), 8, Formats.RIGHT)).
                         append("  ").
-                        append(Formats.field("" + unit.convert(counter[2], BYTES), 10, Formats.RIGHT)).
+                        append(Formats.field(String.valueOf(unit.convert(counter[2], BYTES)), 10, Formats.RIGHT)).
                         append("  ").
-                        append(Formats.field("" + counter[3], 8, Formats.RIGHT)).
+                        append(Formats.field(String.valueOf(counter[3]), 8, Formats.RIGHT)).
                         append("  ").
-                        append(Formats.field("" + unit.convert(counter[4], BYTES), 10, Formats.RIGHT)).
+                        append(Formats.field(String.valueOf(unit.convert(counter[4], BYTES)), 10, Formats.RIGHT)).
                         append("  ").
-                        append(Formats.field("" + counter[5], 8, Formats.RIGHT)).
+                        append(Formats.field(String.valueOf(counter[5]), 8, Formats.RIGHT)).
                         append("  ").
-                        append(Formats.field("" + unit.convert(counter[6], BYTES), 10, Formats.RIGHT)).
+                        append(Formats.field(String.valueOf(unit.convert(counter[6], BYTES)), 10, Formats.RIGHT)).
                         append("  ").
-                        append(Formats.field("" + counter[7], 8, Formats.RIGHT)).
+                        append(Formats.field(String.valueOf(counter[7]), 8, Formats.RIGHT)).
                         append("\n");
             });
             return sb.toString();

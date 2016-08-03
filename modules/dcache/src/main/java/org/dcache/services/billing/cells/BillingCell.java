@@ -332,7 +332,7 @@ public final class BillingCell
             return;
         }
         String cellName = info.getCellName();
-        int pos = cellName.indexOf("@");
+        int pos = cellName.indexOf('@');
         cellName = (pos < 1) ? cellName : cellName.substring(0, pos);
         String transactionType = info.getMessageType();
         long[] counters = _poolStatistics.get(cellName);

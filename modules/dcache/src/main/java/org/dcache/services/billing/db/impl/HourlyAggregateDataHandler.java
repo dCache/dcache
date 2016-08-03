@@ -410,7 +410,7 @@ public final class HourlyAggregateDataHandler {
      * @return collection of 24 hourly histograms of the given type.
      */
     public <T extends BaseEntry> Collection<IHistogramData> get(Class<T> type) {
-        Collection<IHistogramData> data = Collections.EMPTY_LIST;
+        Collection<IHistogramData> data = Collections.emptyList();
         if (type.equals(DcacheReadsHourly.class)) {
             data = deque.stream().map(HourlyAggregateData::getHourlyReads)
                                  .collect(Collectors.toList());

@@ -262,10 +262,10 @@ public class SpaceSweeper2
                 try {
                     CacheEntry entry = _repository.getEntry(id);
                     if (showVerbose) {
-                        sb.append(Formats.field(""+i,3,Formats.RIGHT)).append(" ");
+                        sb.append(Formats.field(String.valueOf(i), 3, Formats.RIGHT)).append(" ");
                         sb.append(id.toString()).append("  ");
                         sb.append(entry.getState()).append("  ");
-                        sb.append(Formats.field(""+entry.getReplicaSize(), 11, Formats.RIGHT));
+                        sb.append(Formats.field(String.valueOf(entry.getReplicaSize()), 11, Formats.RIGHT));
                         sb.append(" ");
                         sb.append(ISO8601_FORMAT.format(Instant.ofEpochMilli(entry.getCreationTime()))).append(" ");
                         sb.append(ISO8601_FORMAT.format(Instant.ofEpochMilli(entry.getLastAccessTime()))).append(" ");
@@ -322,7 +322,7 @@ public class SpaceSweeper2
         public String call()
         {
             long lru = (System.currentTimeMillis() - getLru()) / 1000L;
-            return f ? getTimeString(lru) : ("" + lru);
+            return f ? getTimeString(lru) : (String.valueOf(lru));
         }
     }
 

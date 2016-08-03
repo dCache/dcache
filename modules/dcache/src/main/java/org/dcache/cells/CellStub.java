@@ -2,7 +2,6 @@ package org.dcache.cells;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ObjectArrays;
-import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -10,7 +9,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -23,7 +21,6 @@ import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;

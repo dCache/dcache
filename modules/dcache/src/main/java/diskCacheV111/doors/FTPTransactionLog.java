@@ -56,7 +56,7 @@ public class	FTPTransactionLog
 	{
 		long time = System.currentTimeMillis();
 		this.root = root;
-		this.tid = "" + time;
+		this.tid = String.valueOf(time);
 		LWriter = null;
 		GotMiddle = false;
 	}
@@ -137,7 +137,7 @@ public class	FTPTransactionLog
 
 	public synchronized void middle(long size)
 	{
-		addLine(""+size);
+		addLine(String.valueOf(size));
 		GotMiddle = true;
 	}
 

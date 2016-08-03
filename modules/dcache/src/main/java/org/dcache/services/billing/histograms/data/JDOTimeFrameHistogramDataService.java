@@ -104,7 +104,7 @@ public final class JDOTimeFrameHistogramDataService implements
     public TimeFrameHistogramData[] getDcBytesHistogram(TimeFrame timeFrame,
                     Boolean write) {
         TimeFrameHistogramData[] histogram
-            = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
+            = { new TimeFrameHistogramData() };
         histogram[0].setType(write ? HistogramDataType.BYTES_UPLOADED
                         : HistogramDataType.BYTES_DOWNLOADED);
         Collection<IHistogramData> plotData;
@@ -140,16 +140,16 @@ public final class JDOTimeFrameHistogramDataService implements
             plotData = getCoarseGrainedData(DcacheTimeDaily.class, timeFrame);
         }
 
-        HistogramDataType[] type = new HistogramDataType[] {
+        HistogramDataType[] type = {
                         HistogramDataType.TIME_MAX,
                         HistogramDataType.TIME_AVG,
                         HistogramDataType.TIME_MIN };
 
-        String[] field = new String[] { DcacheTimeDaily.MAX_TIME,
+        String[] field = { DcacheTimeDaily.MAX_TIME,
                         DcacheTimeDaily.AVG_TIME, DcacheTimeDaily.MIN_TIME };
 
         TimeFrameHistogramData[] histogram
-            = new TimeFrameHistogramData[] { new TimeFrameHistogramData(),
+            = { new TimeFrameHistogramData(),
                                              new TimeFrameHistogramData(),
                                              new TimeFrameHistogramData() };
         for (int h = 0; h < histogram.length; h++) {
@@ -165,7 +165,7 @@ public final class JDOTimeFrameHistogramDataService implements
     public TimeFrameHistogramData[] getDcTransfersHistogram(
                     TimeFrame timeFrame, Boolean write) {
         TimeFrameHistogramData[] histogram
-            = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
+            = { new TimeFrameHistogramData() };
         histogram[0].setType(write ? HistogramDataType.TRANSFERS_UPLOADED
                         : HistogramDataType.TRANSFERS_DOWNLOADED);
         Collection<IHistogramData> plotData;
@@ -198,7 +198,7 @@ public final class JDOTimeFrameHistogramDataService implements
             plotData = getCoarseGrainedData(HitsDaily.class, timeFrame);
         }
         TimeFrameHistogramData[] histogram
-            = new TimeFrameHistogramData[] { new TimeFrameHistogramData(),
+            = { new TimeFrameHistogramData(),
                                              new TimeFrameHistogramData() };
         histogram[0].setData(plotData);
         histogram[0].setField(HitsDaily.CACHED);
@@ -213,7 +213,7 @@ public final class JDOTimeFrameHistogramDataService implements
     public TimeFrameHistogramData[] getHsmBytesHistogram(TimeFrame timeFrame,
                     Boolean write) {
         TimeFrameHistogramData[] histogram
-            = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
+            = { new TimeFrameHistogramData() };
         histogram[0].setType(write ? HistogramDataType.BYTES_STORED
                         : HistogramDataType.BYTES_RESTORED);
         Collection<IHistogramData> plotData;
@@ -240,7 +240,7 @@ public final class JDOTimeFrameHistogramDataService implements
     public TimeFrameHistogramData[] getHsmTransfersHistogram(
                     TimeFrame timeFrame, Boolean write) {
         TimeFrameHistogramData[] histogram
-            = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
+            = { new TimeFrameHistogramData() };
         histogram[0].setType(write ? HistogramDataType.TRANSFERS_STORED
                         : HistogramDataType.TRANSFERS_RESTORED);
         Collection<IHistogramData> plotData;
@@ -265,7 +265,7 @@ public final class JDOTimeFrameHistogramDataService implements
     @Override
     public TimeFrameHistogramData[] getP2pBytesHistogram(TimeFrame timeFrame) {
         TimeFrameHistogramData[] histogram
-            = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
+            = { new TimeFrameHistogramData() };
         histogram[0].setType(HistogramDataType.BYTES_P2P);
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {
@@ -283,7 +283,7 @@ public final class JDOTimeFrameHistogramDataService implements
     @Override
     public TimeFrameHistogramData[] getP2pTransfersHistogram(TimeFrame timeFrame) {
         TimeFrameHistogramData[] histogram
-            = new TimeFrameHistogramData[] { new TimeFrameHistogramData() };
+            = { new TimeFrameHistogramData() };
         histogram[0].setType(HistogramDataType.TRANSFERS_P2P);
         Collection<IHistogramData> plotData;
         if (BinType.HOUR == timeFrame.getTimebin()) {

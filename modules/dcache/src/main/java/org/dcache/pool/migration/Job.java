@@ -950,7 +950,7 @@ public class Job
     {
         List<PoolManagerPoolInformation> sourceInformation =
             _definition.sourceList.getPools();
-        if (sourceInformation.size() == 0) {
+        if (sourceInformation.isEmpty()) {
             throw new RuntimeException("Bug detected: Source pool information was unavailable");
         }
 
@@ -966,7 +966,7 @@ public class Job
         return expression.evaluateBoolean(symbols);
     }
 
-    protected class Error
+    protected static class Error
     {
         private final long _id;
         private final long _time;

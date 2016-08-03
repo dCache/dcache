@@ -250,7 +250,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                         .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
                         .map(this::toPublicKey)
                         .filter(k -> k != null)
-                        .filter(k -> key.equals(k))
+                        .filter(key::equals)
                         .findFirst()
                         .isPresent();
                 }

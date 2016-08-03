@@ -35,7 +35,7 @@ import org.dcache.util.Args;
             _local  = local ;
             _command = local.getOpt("command");
 
-            if( ( _command == null ) || ( _command.equals("") )) {
+            if( ( _command == null ) || (_command.isEmpty())) {
                 throw new
                         IllegalArgumentException("command  option not found");
             }
@@ -67,8 +67,8 @@ import org.dcache.util.Args;
              String tape  = osm.getKey("hsm.osm.volumeName") ;
              String store = osm.getStore() ;
 
-             if( ( tape == null )  || ( tape.equals("")  ) ||
-                 ( store == null ) || ( store.equals("") )    ) {
+             if(( tape == null ) || (tape.isEmpty()) ||
+                ( store == null ) || (store.isEmpty())    ) {
                  throw new
                          IllegalArgumentException("Not enough info in storageInfo (volumeName)");
              }
@@ -80,7 +80,7 @@ import org.dcache.util.Args;
              String error  = system.getErrorString() ;
              String output = system.getOutputString() ;
 
-             if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) ) {
+             if(( rc != 0 ) || (!error.isEmpty()) || (output.isEmpty()) ) {
                  throw new
                          IllegalArgumentException(error == null ?
                          "Unknow error in responds to >" + _command + "-S" + store + "lsvol" + "-l" + "tape" + "<" :
@@ -127,8 +127,8 @@ import org.dcache.util.Args;
              OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
              String store = osm.getStore() ;
              String bfid  = osm.getBitfileId() ;
-             if( ( store == null ) || ( store.equals("") ) ||
-                 ( bfid  == null ) || ( bfid.equals("")  )    ) {
+             if(( store == null ) || (store.isEmpty()) ||
+                ( bfid  == null ) || (bfid.isEmpty())    ) {
                  throw new
                          IllegalArgumentException("Not enough info in storageInfo");
              }
@@ -140,7 +140,7 @@ import org.dcache.util.Args;
              String error  = system.getErrorString() ;
              String output = system.getOutputString() ;
 
-             if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) ) {
+             if(( rc != 0 ) || (!error.isEmpty()) || (output.isEmpty()) ) {
                  throw new
                          IllegalArgumentException(error == null ?
                          "Unknow error in responds to >" + _command + "-S" + store + "lsbf" + "-a" + bfid + "<" :

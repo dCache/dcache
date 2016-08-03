@@ -150,7 +150,7 @@ public class HttpPoolMgrEngineV3 implements
     {
         cssDetails = cssDetails.trim();
 
-        if ((cssDetails.length() > 0) && !cssDetails.equals("default")) {
+        if ((!cssDetails.isEmpty()) && !cssDetails.equals("default")) {
             _cssFile = cssDetails;
         }
 
@@ -266,10 +266,10 @@ public class HttpPoolMgrEngineV3 implements
                             }
                             if (_siDetails != null) { // allows to select items
                                 if (fileAttributes.isDefined(FileAttribute.SIZE)) {
-                                    storageInfo.setKey("size", "" + fileAttributes.getSize());
+                                    storageInfo.setKey("size", String.valueOf(fileAttributes.getSize()));
                                 }
-                                storageInfo.setKey("new", "" + storageInfo.isCreatedOnly());
-                                storageInfo.setKey("stored",""+storageInfo.isStored());
+                                storageInfo.setKey("new", String.valueOf(storageInfo.isCreatedOnly()));
+                                storageInfo.setKey("stored", String.valueOf(storageInfo.isStored()));
                                 storageInfo.setKey("sClass",fileAttributes.getStorageClass());
                                 storageInfo.setKey("cClass",fileAttributes.getCacheClass());
                                 storageInfo.setKey("hsm",fileAttributes.getHsm());
@@ -841,7 +841,7 @@ public class HttpPoolMgrEngineV3 implements
         return info;
     }
 
-    private class OurComparator implements Comparator<Object>
+    private static class OurComparator implements Comparator<Object>
     {
         private final String _type;
 
@@ -869,8 +869,8 @@ public class HttpPoolMgrEngineV3 implements
             } else if (_type.equals("i.name")) {
                 return i1.getName().compareTo(i2.getName());
             } else if (_type.equals("i.error")) {
-                return (""+i1.getErrorCode()+i1.getName()).
-                    compareTo(""+i2.getErrorCode()+i2.getName());
+                return (i1.getErrorCode() + i1.getName()).
+                    compareTo(i2.getErrorCode() + i2.getName());
             } else if (_type.equals("i.status")) {
                 return i1.getStatus().compareTo(i2.getStatus());
             } else if (_type.equals("i.pool")) {
@@ -937,12 +937,12 @@ public class HttpPoolMgrEngineV3 implements
         String  msg    = info.getErrorMessage();
         String  started= _formatter.get().format(new Date(info.getStartTime()));
 
-        boolean   error      = (rc != 0) || ((msg != null) && (!msg.equals("")));
+        boolean   error      = (rc != 0) || ((msg != null) && (!msg.isEmpty()));
 
         String  pool = info.getPool();
-        pool = (pool == null) || (pool.equals("") || pool.equals("<unknown>")) ? "N.N." : pool;
+        pool = (pool == null) || (pool.isEmpty() || pool.equals("<unknown>")) ? "N.N." : pool;
         String status = info.getStatus();
-        status = (status == null) || (status.equals("")) ? "&nbsp;" : status;
+        status = (status == null) || (status.isEmpty()) ? "&nbsp;" : status;
         if (error) {
             html.beginRow("error", "error odd");
         } else {
@@ -1065,11 +1065,11 @@ public class HttpPoolMgrEngineV3 implements
         String prot   = request.getParameter(PARAMETER_PROTOCOL);
         String linkGroup = request.getParameter(PARAMETER_LINKGROUP);
 
-        linkGroup  = (linkGroup  == null) || (linkGroup.length() == 0) ? "none" : linkGroup;
-        store  = (store  == null) || (store.length() == 0) ? "*" : store;
-        dcache = (dcache == null) || (dcache.length() == 0) ? "*" : dcache;
-        net    = (net    == null) || (net.length() == 0) ? "*" : net;
-        prot   = (prot   == null) || (prot.length() == 0) ? "*" : prot;
+        linkGroup  = (linkGroup  == null) || (linkGroup.isEmpty()) ? "none" : linkGroup;
+        store  = (store  == null) || (store.isEmpty()) ? "*" : store;
+        dcache = (dcache == null) || (dcache.isEmpty()) ? "*" : dcache;
+        net    = (net    == null) || (net.isEmpty()) ? "*" : net;
+        prot   = (prot   == null) || (prot.isEmpty()) ? "*" : prot;
         pw.println("<center>");
         if (type == null) {
             showQueryForm(pw, "none", "read", "*", "*", "*", "DCap/3");
@@ -1244,7 +1244,7 @@ public class HttpPoolMgrEngineV3 implements
     private void queryPool(PrintWriter pw, String poolName)
         throws NoRouteToCellException, InterruptedException
     {
-        if ((poolName.equals("")) || (poolName.equals("*"))) {
+        if ((poolName.isEmpty()) || (poolName.equals("*"))) {
             queryAllPools(pw);
             return;
         }
@@ -1282,7 +1282,7 @@ public class HttpPoolMgrEngineV3 implements
     private void queryUnit(PrintWriter pw, String unitName)
         throws NoRouteToCellException, InterruptedException
     {
-        if ((unitName.equals("")) || (unitName.equals("*"))) {
+        if ((unitName.isEmpty()) || (unitName.equals("*"))) {
             queryAllUnits(pw);
             return;
         }
@@ -1312,7 +1312,7 @@ public class HttpPoolMgrEngineV3 implements
         pw.println("</center>");
     }
 
-    private class LinkProperties implements Comparable<LinkProperties>
+    private static class LinkProperties implements Comparable<LinkProperties>
     {
         private String name;
         private int    readPref;
@@ -1457,7 +1457,7 @@ public class HttpPoolMgrEngineV3 implements
     private void queryLink(PrintWriter pw, String linkName)
         throws NoRouteToCellException, InterruptedException
     {
-        if ((linkName.equals("")) || (linkName.equals("*"))) {
+        if ((linkName.isEmpty()) || (linkName.equals("*"))) {
             queryAllLinks(pw);
             return;
         }
@@ -1519,7 +1519,7 @@ public class HttpPoolMgrEngineV3 implements
     private void queryUnitGroup(PrintWriter pw, String groupName)
         throws NoRouteToCellException, InterruptedException
     {
-        if ((groupName.equals("")) || (groupName.equals("*"))) {
+        if ((groupName.isEmpty()) || (groupName.equals("*"))) {
             queryAllUGroups(pw);
             return;
         }
@@ -1552,7 +1552,7 @@ public class HttpPoolMgrEngineV3 implements
     private void queryPoolGroup(PrintWriter pw, String groupName)
         throws NoRouteToCellException, InterruptedException
     {
-        if ((groupName.equals("")) || (groupName.equals("*"))) {
+        if ((groupName.isEmpty()) || (groupName.equals("*"))) {
             queryAllPGroups(pw);
             return;
         }

@@ -316,7 +316,7 @@ public class StorageClassContainer
         @Override
         public String call() throws IllegalArgumentException, NoSuchElementException
         {
-            int pos = className.indexOf("@");
+            int pos = className.indexOf('@');
             if (pos <= 0 || pos + 1 == className.length()) {
                 throw new IllegalArgumentException("Illegal storage class syntax : class@hsm");
             }

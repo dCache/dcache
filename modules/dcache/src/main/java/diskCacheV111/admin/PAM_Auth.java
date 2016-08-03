@@ -36,7 +36,7 @@ public class PAM_Auth {
 
 
 
-   public static void main(String args[]) {
+   public static void main(String[] args) {
       if( args.length < 2 ){
          System.err.println(" Usage : ... <user> <password> [<service>]" ) ;
          System.exit(4);

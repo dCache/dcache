@@ -216,7 +216,7 @@ public class PythonOracleLayoutPrinter implements LayoutPrinter
      * Simple class to assist with printing Python code with the correct
      * indentation.
      */
-    private class IndentPrinter
+    private static class IndentPrinter
     {
         private final PrintStream _inner;
         private final String _indent;
@@ -239,7 +239,7 @@ public class PythonOracleLayoutPrinter implements LayoutPrinter
 
         public void println(String line)
         {
-            if(line.length() == 0) {
+            if(line.isEmpty()) {
                 _inner.println();
             } else {
                 _inner.println(_indent + line);

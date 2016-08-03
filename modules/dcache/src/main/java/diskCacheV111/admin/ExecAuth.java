@@ -20,7 +20,7 @@ public class ExecAuth implements Runnable {
       _execPath = execpath ;
       new Thread(this).start() ;
    }
-   private class Destroy implements Runnable {
+   private static class Destroy implements Runnable {
       private final InputStream _error;
       private Destroy( InputStream in ){
          _error = in ;

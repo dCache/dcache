@@ -40,7 +40,8 @@ import org.dcache.util.ConfigurationProperties;
 public class XmlEntityLayoutPrinter implements LayoutPrinter {
 
     private final Layout _layout;
-    private final String _prefixes[];
+
+    private final String[] _prefixes;
 
     /**
      * Create a new XmlEntityLayoutPrinter taking properties from

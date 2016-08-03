@@ -278,7 +278,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     @Override
     public Set<Checksum> getActualChecksums() {
         return (_checksumChannel == null)
-                ? Collections.<Checksum>emptySet()
+                ? Collections.emptySet()
                 : Optional.fromNullable(_checksumChannel.getChecksum()).asSet();
     }
 

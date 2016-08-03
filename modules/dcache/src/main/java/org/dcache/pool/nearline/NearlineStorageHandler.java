@@ -261,7 +261,7 @@ public class NearlineStorageHandler
         pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
         pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
         synchronized(suppressedStoreErrors) {
-            suppressedStoreErrors.forEach( rc -> {pw.append("st suppress rc ").println(rc);} );
+            suppressedStoreErrors.forEach( rc -> pw.append("st suppress rc ").println(rc));
         }
     }
 
@@ -636,7 +636,7 @@ public class NearlineStorageHandler
             return Joiner.on('\n').join(requests.values());
         }
 
-        public String printJobQueue(Ordering ordering)
+        public String printJobQueue(Ordering<R> ordering)
         {
             return Joiner.on('\n').join(ordering.sortedCopy(requests.values()));
         }
@@ -645,7 +645,7 @@ public class NearlineStorageHandler
         {
             R actualRequest = requests.remove(key);
             if (actualRequest == null) {
-                return Collections.<CompletionHandler<Void, K>>emptyList();
+                return Collections.emptyList();
             }
             state.decrement();
             return actualRequest.callbacks();
@@ -1000,7 +1000,7 @@ public class NearlineStorageHandler
                             fileAttributes,
                             ReplicaState.FROM_STORE,
                             ReplicaState.CACHED,
-                            Collections.<StickyRecord>emptyList(),
+                            Collections.emptyList(),
                             EnumSet.noneOf(Repository.OpenFlags.class));
             LOGGER.debug("Stage request created for {}.", pnfsId);
         }
@@ -1333,7 +1333,7 @@ public class NearlineStorageHandler
                     FileAttributes attributes = pnfs.getFileAttributes(pnfsId,
                                                                        EnumSet.of(PNFSID, SIZE, STORAGEINFO));
                     String hsm = hsmSet.getInstanceName(attributes);
-                    stage(hsm, attributes, block ? RestoreCommand.this : new NopCompletionHandler<Void, PnfsId>());
+                    stage(hsm, attributes, block ? RestoreCommand.this : new NopCompletionHandler<>());
                 } catch (CacheException e) {
                     failed(e, pnfsId);
                 }

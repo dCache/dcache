@@ -70,7 +70,7 @@ public class BootLoader
     }
 
 
-    public static void main(String arguments[])
+    public static void main(String[] arguments)
     {
         String command = null;
         Args args = null;

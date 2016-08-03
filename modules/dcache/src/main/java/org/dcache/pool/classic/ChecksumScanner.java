@@ -490,7 +490,7 @@ public class ChecksumScanner
         }
     }
 
-    private abstract class Singleton
+    private abstract static class Singleton
     {
         private final String  _name;
 

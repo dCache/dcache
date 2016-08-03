@@ -223,7 +223,7 @@ public class TarNearlineStorage implements NearlineStorage
                                 try {
                                     request.allocate().get();
                                     Files.copy(tarStream, request.getFile().toPath());
-                                    request.completed(Collections.<Checksum>emptySet());
+                                    request.completed(Collections.emptySet());
                                 } catch (Exception e) {
                                     request.failed(e);
                                 }

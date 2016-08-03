@@ -75,6 +75,9 @@ import org.dcache.auth.Subjects;
  */
 public final class UserInfo implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserInfo.class);
+
+    private static final long serialVersionUID = -5488751243616078036L;
+
     private String username;
     private Long   uid;
     private Long   gid;

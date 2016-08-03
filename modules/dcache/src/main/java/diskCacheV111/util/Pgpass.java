@@ -144,7 +144,7 @@ public class Pgpass {
     public static String getPassword(String file,
                                      String url, String user, String password)
     {
-        if (file != null && file.trim().length() > 0) {
+        if (file != null && !file.trim().isEmpty()) {
             Pgpass pgpass = new Pgpass(file);
             return pgpass.getPgpass(url, user);
         }

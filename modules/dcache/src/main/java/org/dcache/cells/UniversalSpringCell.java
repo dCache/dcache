@@ -127,11 +127,11 @@ public class UniversalSpringCell
     private static final long WAIT_FOR_FILE_SLEEP = 30000;
 
     private static final Set<Class<?>> PRIMITIVE_TYPES =
-            Sets.<Class<?>>newHashSet(Byte.class, Byte.TYPE, Short.class, Short.TYPE,
-                                      Integer.class, Integer.TYPE, Long.class, Long.TYPE,
-                                      Float.class, Float.TYPE, Double.class, Double.TYPE,
-                                      Character.class, Character.TYPE, Boolean.class,
-                                      Boolean.TYPE, String.class);
+            Sets.newHashSet(Byte.class, Byte.TYPE, Short.class, Short.TYPE,
+                            Integer.class, Integer.TYPE, Long.class, Long.TYPE,
+                            Float.class, Float.TYPE, Double.class, Double.TYPE,
+                            Character.class, Character.TYPE, Boolean.class,
+                            Boolean.TYPE, String.class);
     private static final Class<?>[] TERMINAL_TYPES = new Class<?>[] { Class.class, ApplicationContext.class };
     private static final Class<?>[] HIDDEN_TYPES = new Class<?>[] { ApplicationContext.class, AutoCloseable.class };
 
@@ -726,7 +726,7 @@ public class UniversalSpringCell
                 }
 
                 Multimap<Class<? extends Serializable>,String> classToNameMap = Multimaps.invertFrom(
-                        nameToClassMap, ArrayListMultimap.<Class<? extends Serializable>,String>create());
+                        nameToClassMap, ArrayListMultimap.create());
 
                 final String format = "%-40s %s\n";
                 Formatter f = new Formatter(new StringBuilder());
@@ -1052,7 +1052,7 @@ public class UniversalSpringCell
             environment.getPropertySources().addFirst(
                     new MapPropertySource("environment", _environment));
             environment.getPropertySources().addFirst(
-                    new MapPropertySource("options", Maps.<String,Object>newHashMap(args.optionsAsMap())));
+                    new MapPropertySource("options", Maps.newHashMap(args.optionsAsMap())));
             environment.getPropertySources().addFirst(
                     new PropertySource<Object>("arguments")
                     {

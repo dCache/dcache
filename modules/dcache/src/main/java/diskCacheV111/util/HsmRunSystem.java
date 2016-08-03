@@ -79,7 +79,7 @@ public class HsmRunSystem extends RunSystem
         int start = error.indexOf(PNFSID_TAG);
         if (start >= 0) {
             start += PNFSID_TAG.length();
-            int end = error.indexOf("&", start);
+            int end = error.indexOf('&', start);
             if (end >= 0) {
                 ids.append(PNFSID_TAG)
                    .append(error.substring(start, end));
@@ -89,7 +89,7 @@ public class HsmRunSystem extends RunSystem
         start = error.indexOf(BFID_TAG);
         if (start >= 0) {
             start += BFID_TAG.length();
-            int end = error.indexOf("&", start);
+            int end = error.indexOf('&', start);
             if (end > 0) {
                 ids.append(BFID_TAG)
                    .append(error.substring(start, end));

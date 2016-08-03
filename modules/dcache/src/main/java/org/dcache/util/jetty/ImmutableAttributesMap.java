@@ -68,6 +68,6 @@ public class ImmutableAttributesMap implements Attributes
 
     private Set<String> keySet()
     {
-        return map == null ? Collections.<String>emptySet() : map.keySet();
+        return map == null ? Collections.emptySet() : map.keySet();
     }
 }

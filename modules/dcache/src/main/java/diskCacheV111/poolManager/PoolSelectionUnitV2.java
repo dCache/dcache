@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -28,7 +27,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
@@ -99,7 +97,7 @@ public class PoolSelectionUnitV2
     public Map<String, SelectionLink> getLinks() {
         rlock();
         try {
-            return Maps.<String, SelectionLink>newHashMap(_links);
+            return Maps.newHashMap(_links);
         } finally {
             runlock();
         }
@@ -109,7 +107,7 @@ public class PoolSelectionUnitV2
     public Map<String, SelectionUnit> getSelectionUnits() {
         rlock();
         try {
-            return Maps.<String, SelectionUnit>newHashMap(_units);
+            return Maps.newHashMap(_units);
         } finally {
             runlock();
         }
@@ -119,7 +117,7 @@ public class PoolSelectionUnitV2
     public Map<String, SelectionUnitGroup> getUnitGroups() {
         rlock();
         try {
-            return Maps.<String, SelectionUnitGroup>newHashMap(_uGroups);
+            return Maps.newHashMap(_uGroups);
         } finally {
             runlock();
         }
@@ -629,7 +627,7 @@ public class PoolSelectionUnitV2
             } else {
                 Unit unit = _units.get(storeUnitName);
                 if (unit == null) {
-                    int ind = storeUnitName.lastIndexOf("@");
+                    int ind = storeUnitName.lastIndexOf('@');
                     if ((ind > 0) && (ind < (storeUnitName.length() - 1))) {
                         String template = "*@"
                                         + storeUnitName.substring(ind + 1);
@@ -874,7 +872,7 @@ public class PoolSelectionUnitV2
 
     public Unit findProtocolUnit(String protocolUnitName) {
         //
-        if ((protocolUnitName == null) || (protocolUnitName.length() == 0)) {
+        if ((protocolUnitName == null) || (protocolUnitName.isEmpty())) {
             return null;
         }
         //
@@ -1408,7 +1406,7 @@ public class PoolSelectionUnitV2
     public Map<String, SelectionPoolGroup> getPoolGroups() {
         rlock();
         try {
-            return Maps.<String, SelectionPoolGroup>newHashMap(_pGroups);
+            return Maps.newHashMap(_pGroups);
         } finally {
             runlock();
         }
@@ -1880,12 +1878,12 @@ public class PoolSelectionUnitV2
                                 + name);
             }
 
-            if (group._unitList.size() > 0) {
+            if (!group._unitList.isEmpty()) {
                 throw new IllegalArgumentException("UGroup not empty : "
                                 + name);
             }
 
-            if (group._linkList.size() > 0) {
+            if (!group._linkList.isEmpty()) {
                 throw new IllegalArgumentException(
                                 "Still link(s) pointing to us : " + name);
             }
@@ -1908,7 +1906,7 @@ public class PoolSelectionUnitV2
             //
             // check if empty
             //
-            if (group._poolList.size() != 0) {
+            if (!group._poolList.isEmpty()) {
                 throw new IllegalArgumentException("PGroup not empty : " + name);
             }
             //

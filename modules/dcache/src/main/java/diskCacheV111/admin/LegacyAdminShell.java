@@ -92,7 +92,7 @@ public class LegacyAdminShell
     private final boolean     _debug    = false ;
     private Completer _completer;
 
-    private class Position
+    private static class Position
     {
         private CellPath remote;
         private String remoteName;
@@ -692,7 +692,7 @@ public class LegacyAdminShell
             throws Exception
     {
 
-        if ((target == null) || (target.equals(""))) {
+        if ((target == null) || (target.isEmpty())) {
             target = "*";
         }
 
@@ -807,7 +807,7 @@ public class LegacyAdminShell
         return sb == null ? "" : sb.toString();
     }
 
-    private class PnfsFlagReply
+    private static class PnfsFlagReply
     {
         private final PnfsId _pnfsId;
         private final PnfsFlagMessage _message;
@@ -1362,7 +1362,7 @@ public class LegacyAdminShell
     }
 
     @Override
-    public int complete(String buffer, int cursor, List candidates)
+    public int complete(String buffer, int cursor, List<CharSequence> candidates)
     {
         try {
             if (_completer == null) {
@@ -1383,7 +1383,7 @@ public class LegacyAdminShell
     {
         _log.info("String command (super) " + str);
 
-        if (str.trim().equals("")) {
+        if (str.trim().isEmpty()) {
             return "";
         }
 
@@ -1406,7 +1406,7 @@ public class LegacyAdminShell
                     return localCommand(args);
                 }
                 String prefix = _currentPosition.getPrefix();
-                if (prefix.length() > 0) {
+                if (!prefix.isEmpty()) {
                     if ((args.argc() >= 1) && (args.argv(0).equals("help"))) {
                         if (args.argc() == 1) {
                             str = "help " + prefix;

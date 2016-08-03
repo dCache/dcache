@@ -87,8 +87,8 @@ public class WebAppHandler extends WebAppContext
         new EnvEntry(this, POOL_MONITOR, remotePoolMonitor, true);
 
         Properties properties = new Properties();
-        for (String key : environment.keySet()) {
-            properties.setProperty(key, String.valueOf(environment.get(key)));
+        for (Map.Entry<String, Object> entry : environment.entrySet()) {
+            properties.setProperty(entry.getKey(), String.valueOf(entry.getValue()));
         }
 
         new EnvEntry(this, JNDI_ARGS, properties, true);

@@ -189,7 +189,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     }
     private void getBfDetails( StorageInfo storageInfo ) throws Exception {
         String hsm = storageInfo.getHsm() ;
-        if( ( hsm == null ) || ( hsm.equals("") ) ) {
+        if( ( hsm == null ) || (hsm.isEmpty()) ) {
             throw new
                     IllegalArgumentException("Hsm not specified");
         }

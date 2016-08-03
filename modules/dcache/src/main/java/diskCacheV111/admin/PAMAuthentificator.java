@@ -185,7 +185,7 @@ public class PAMAuthentificator  extends CellAdapter {
       pw.println("        Request Count : "+_requestCount ) ;
       pw.println("    Bad Request Count : "+_badRequestCount ) ;
       pw.println(" Failed Request Count : "+_failedRequestCount ) ;
-      pw.println("           PAM loaded : "+(_pam==null?"Not requested":(""+_pam.pamOk())) ) ;
+      pw.println("           PAM loaded : "+(_pam==null?"Not requested":(String.valueOf(_pam.pamOk()))) ) ;
       pw.println(" System Password File : "+
                  (_sysPassword==null?"<null>":_sysPassword.toString()) ) ;
       pw.println(" dCache Password File : "+
@@ -488,7 +488,7 @@ public class PAMAuthentificator  extends CellAdapter {
   }
   private static final long HASH_REFRESH = 4*3600*1000 ;
   private final AgingHash _map = new AgingHash(400) ;
-  private class UserRecord {
+  private static class UserRecord {
      private final Attributes _userRecord;
      private long       _timestamp;
      private UserRecord( Attributes userRecord ){
@@ -528,7 +528,7 @@ public class PAMAuthentificator  extends CellAdapter {
                        IllegalArgumentException("No such user : " + userName);
            }
 
-          _map.put( userName , new UserRecord(answer) ) ;
+          _map.put(userName , new UserRecord(answer)) ;
 
       }else{
           answer = record._userRecord ;
@@ -713,7 +713,7 @@ public class PAMAuthentificator  extends CellAdapter {
       attr.put( "loginShell" , shell ) ;
       attr.put( "gecos" , user ) ;
 
-      UserRecord ur = new UserRecord(attr) ;
+      UserRecord ur = new UserRecord(attr);
       ur._timestamp  = 0L ;
 
       _map.put( user , ur ) ;

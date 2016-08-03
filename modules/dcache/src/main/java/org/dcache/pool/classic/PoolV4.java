@@ -944,7 +944,7 @@ public class PoolV4
         }
     }
 
-    private class CompanionFileAvailableCallback
+    private static class CompanionFileAvailableCallback
         extends DelayedReply
         implements CacheFileAvailable
     {
@@ -1028,7 +1028,7 @@ public class PoolV4
         String poolName = msg.getPoolName();
         FileAttributes fileAttributes = msg.getFileAttributes();
         CompanionFileAvailableCallback callback =
-            new CompanionFileAvailableCallback(msg);
+                new CompanionFileAvailableCallback(msg);
 
         ReplicaState targetState = ReplicaState.CACHED;
         int fileMode = msg.getDestinationFileStatus();
@@ -1069,7 +1069,7 @@ public class PoolV4
         return reply;
     }
 
-    private class RemoveFileReply extends DelayedReply implements CompletionHandler<Void,URI>
+    private static class RemoveFileReply extends DelayedReply implements CompletionHandler<Void,URI>
     {
         private final PoolRemoveFilesFromHSMMessage msg;
         private final Collection<URI> succeeded;

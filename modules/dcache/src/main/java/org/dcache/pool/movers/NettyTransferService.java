@@ -453,19 +453,14 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         {
             super(file);
             this.completionHandler = completionHandler;
-            timeout = timeoutScheduler.schedule(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    try (CDC ignored = cdc.restore()) {
-                        if (sync.onTimeout()) {
-                            NettyMoverChannel.this.completionHandler.failed(
-                                    new TimeoutCacheException("No connection from client after " +
-                                                              TimeUnit.MILLISECONDS.toSeconds(
-                                                                      connectTimeout) + " seconds. Giving up."),
-                                    null);
-                        }
+            timeout = timeoutScheduler.schedule(() -> {
+                try (CDC ignored = cdc.restore()) {
+                    if (sync.onTimeout()) {
+                        NettyMoverChannel.this.completionHandler.failed(
+                                new TimeoutCacheException("No connection from client after " +
+                                                          TimeUnit.MILLISECONDS.toSeconds(
+                                                                  connectTimeout) + " seconds. Giving up."),
+                                null);
                     }
                 }
             }, connectTimeout, TimeUnit.MILLISECONDS);

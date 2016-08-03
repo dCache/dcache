@@ -77,8 +77,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class TimeFrameHistogramDataProxy implements InvocationHandler {
 
-    private static final Class[] ONE_PARAM = new Class[] { TimeFrame.class };
-    private static final Class[] TWO_PARAM = new Class[] { TimeFrame.class,
+    private static final Class[] ONE_PARAM = { TimeFrame.class };
+    private static final Class[] TWO_PARAM = { TimeFrame.class,
                     Boolean.class };
 
     private final CellStub cell;

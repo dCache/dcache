@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -337,7 +338,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         Exception exception = null;
 
         try {
-            checkContentHeader(request.headers().names(), asList(CONTENT_LENGTH));
+            checkContentHeader(request.headers().names(), Collections.singletonList(CONTENT_LENGTH));
 
             file = open(request, true);
 
@@ -386,7 +387,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 }
                 if (content instanceof LastHttpContent) {
                     checkContentHeader(((LastHttpContent) content).trailingHeaders().names(),
-                                       asList(CONTENT_LENGTH));
+                                       Collections.singletonList(CONTENT_LENGTH));
 
                     context.channel().config().setAutoRead(false);
 

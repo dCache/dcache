@@ -96,7 +96,7 @@ public class PartitionManager
         _hasImplicitDefaultPartition = true;
         _inheritedProperties = ImmutableMap.of();
         _partitions =
-            ImmutableMap.of(DEFAULT, (Partition) new WassPartition());
+            ImmutableMap.of(DEFAULT, new WassPartition());
     }
 
     private PartitionFactory getFactory(String type)
@@ -183,10 +183,10 @@ public class PartitionManager
             hint = "get partition map",
             description = "Internal command to query the internal representation of " +
                     "all partitions.")
-    public class PmxGetMapCommand implements Callable<ImmutableMap>
+    public class PmxGetMapCommand implements Callable<ImmutableMap<String,Partition>>
     {
         @Override
-        public ImmutableMap call()
+        public ImmutableMap<String,Partition> call()
         {
             return _partitions;
         }

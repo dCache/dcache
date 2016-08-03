@@ -98,14 +98,14 @@ public class HsmFlushControlManager  extends CellAdapter {
             args.shift();
         }
         String tmp = args.getOpt("scheduler");
-        if ((tmp != null) && (!tmp.equals(""))) {
+        if ((tmp != null) && (!tmp.isEmpty())) {
             _eventDispatcher.loadHandler(tmp, false, args);
         }
 
         _queueWatch = new QueueWatch();
 
         tmp = args.getOpt("poolCollectionUpdate");
-        if ((tmp != null) && (!tmp.equals(""))) {
+        if ((tmp != null) && (!tmp.isEmpty())) {
             try {
                 _getPoolCollectionTicker = Long.parseLong(tmp) * 60L * 1000L;
             } catch (Exception ee) {
@@ -113,7 +113,7 @@ public class HsmFlushControlManager  extends CellAdapter {
             }
         }
         tmp = args.getOpt("gainControlUpdate");
-        if ((tmp != null) && (!tmp.equals(""))) {
+        if ((tmp != null) && (!tmp.isEmpty())) {
             long gainControlTicker = 0L;
             try {
                 _queueWatch.setGainControlTicker(gainControlTicker = Long.parseLong(tmp) * 60L * 1000L);
@@ -123,7 +123,7 @@ public class HsmFlushControlManager  extends CellAdapter {
             }
         }
         tmp = args.getOpt("timer");
-        if ((tmp != null) && (!tmp.equals(""))) {
+        if ((tmp != null) && (!tmp.isEmpty())) {
             try {
                 _timerInterval = Long.parseLong(tmp) * 1000L;
             } catch (Exception ee) {
@@ -378,7 +378,7 @@ public class HsmFlushControlManager  extends CellAdapter {
             return _poolName + ";IOMode=" + getPoolModeString() +
                    ";A=" + isActive +
                    ";LU=" +
-                   (lastUpdated == 0 ? "Never" : ("" + ((System.currentTimeMillis() - lastUpdated) / 1000L)));
+                   (lastUpdated == 0 ? "Never" : (String.valueOf((System.currentTimeMillis() - lastUpdated) / 1000L)));
         }
     }
     private void flushStorageClass( String poolName , String storageClass , int count ) {
@@ -660,7 +660,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         String storageClass = args.argv(1) ;
         String countString  = args.getOpt("count");
 
-        int count = ( countString == null ) || countString.equals("") ? 0 : Integer.parseInt(countString) ;
+        int count = ( countString == null ) || countString.isEmpty() ? 0 : Integer.parseInt(countString) ;
 
         HFCPool pool = _poolCollector.getPoolByName( poolName ) ;
         if( pool == null ) {
@@ -836,7 +836,7 @@ public class HsmFlushControlManager  extends CellAdapter {
           synchronized( _propertyLock ){
               properties = _properties ;
           }
-          if( ( properties != null ) && ( properties.size() > 0 ) ){
+          if( ( properties != null ) && (!properties.isEmpty()) ){
              pw.println("Properties : (age "+( ( System.currentTimeMillis() - propertiesUpdated ) / 1000L )+" seconds)" );
               for (Map.Entry<String,Object> entry : properties.entrySet()) {
                   pw.println("  " + entry.getKey() + "=" + entry.getValue());

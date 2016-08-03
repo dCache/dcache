@@ -186,7 +186,7 @@ public class CacheRepositoryEntryState
             }
 
             String state = _sticky.stringValue();
-            if (state != null && state.length() > 0) {
+            if (state != null && !state.isEmpty()) {
                 out.write(state);
                 out.newLine();
             }
@@ -207,7 +207,7 @@ public class CacheRepositoryEntryState
 
                 // ignore empty lines
                 line = line.trim();
-                if (line.length() == 0) {
+                if (line.isEmpty()) {
                     continue;
                 }
 

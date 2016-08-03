@@ -391,8 +391,8 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     public synchronized boolean hasExpired()
     {
-        return (_requests.size() > 0) &&
-            ((_time + _expiration) < System.currentTimeMillis());
+        return (!_requests.isEmpty()) &&
+               ((_time + _expiration) < System.currentTimeMillis());
     }
 
     public synchronized long expiresIn()
@@ -402,8 +402,8 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     public synchronized boolean isFull()
     {
-        return (_requests.size() > 0) &&
-            ((_requests.size() >= _pending) ||
+        return (!_requests.isEmpty()) &&
+               ((_requests.size() >= _pending) ||
              (_totalSize >= _maxTotalSize));
     }
 

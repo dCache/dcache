@@ -95,7 +95,7 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
               .append("</td><td>")
               .append(o.getClass().getName())
               .append("</td><td>")
-              .append(str.length() == 0 ? "&nbsp;" : str)
+              .append(str.isEmpty() ? "&nbsp;" : str)
               .append("</td></tr>\n");
         }
         sb.append("</table></center>\n");

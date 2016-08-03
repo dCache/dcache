@@ -655,7 +655,7 @@ import static org.dcache.util.ByteUnit.MiB;
                      ";candidates=" + candidates.size());
          }
 
-         if( candidates.size() == 0 ){
+         if(candidates.isEmpty()){
             if(_parameter._p_rules) {
                 _log.info("RULES : no candidates found");
             }
@@ -789,7 +789,7 @@ import static org.dcache.util.ByteUnit.MiB;
        }else if( configuredView ){
            for (Object o : _core.getConfiguredPools()) {
                HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
-               _log.info("" + pool);
+               _log.info(String.valueOf(pool));
 
            }
 
@@ -1006,15 +1006,15 @@ import static org.dcache.util.ByteUnit.MiB;
            //
            // do as it would have been a query
            //
-           properties.put( PARAMETER_MAX_FILE         , ""+_maxFilesStored ) ;
-           properties.put( PARAMETER_MAX_MEGABYTES    , ""+_maxPreciousStored ) ;
-           properties.put( PARAMETER_MAX_MINUTES      , ""+_maxTimeStored ) ;
-           properties.put( PARAMETER_TIMER            , ""+_timer ) ;
-           properties.put( PARAMETER_FLUSH_PERCENTAGE , ""+_percentageToFlush ) ;
-           properties.put( PARAMETER_FLUSH_ATONCE     , ""+_flushAtOnce ) ;
-           properties.put( PARAMETER_PRINT_EVENTS     , ""+ _p_events) ;
-           properties.put( PARAMETER_PRINT_RULES      , ""+ _p_rules) ;
-           properties.put( PARAMETER_PRINT_POOLSET_PROGRESS , ""+ _p_poolset) ;
+           properties.put(PARAMETER_MAX_FILE         , String.valueOf(_maxFilesStored)) ;
+           properties.put(PARAMETER_MAX_MEGABYTES    , String.valueOf(_maxPreciousStored)) ;
+           properties.put(PARAMETER_MAX_MINUTES      , String.valueOf(_maxTimeStored)) ;
+           properties.put(PARAMETER_TIMER            , String.valueOf(_timer)) ;
+           properties.put(PARAMETER_FLUSH_PERCENTAGE , String.valueOf(_percentageToFlush)) ;
+           properties.put(PARAMETER_FLUSH_ATONCE     , String.valueOf(_flushAtOnce)) ;
+           properties.put(PARAMETER_PRINT_EVENTS     , String.valueOf(_p_events)) ;
+           properties.put(PARAMETER_PRINT_RULES      , String.valueOf(_p_rules)) ;
+           properties.put(PARAMETER_PRINT_POOLSET_PROGRESS , String.valueOf(_p_poolset)) ;
 //           properties.put( PARAMETER_MODE             , _mode ) ;
 //           properties.put( PARAMETER_RULE_TYPE        , _ruleType ) ;
 //           properties.put( PARAMETER_PRINT_POOL_PROGRESS    , ""+ _p_pool) ;
@@ -1063,7 +1063,7 @@ import static org.dcache.util.ByteUnit.MiB;
                 String line;
                 while( ( line = br.readLine() ) != null ){
                    line = line.trim() ;
-                   if( line.equals("") || line.startsWith("#") ) {
+                   if(line.isEmpty() || line.startsWith("#") ) {
                        continue;
                    }
                    int pos = line.indexOf('=') ;
@@ -1071,11 +1071,11 @@ import static org.dcache.util.ByteUnit.MiB;
                        continue;
                    }
                    String key = line.substring(0,pos).trim() ;
-                   if( key.length()  == 0 ) {
+                   if(key.isEmpty()) {
                        continue;
                    }
                    String value = line.substring(pos+1).trim() ;
-                   if( value.length() == 0 ) {
+                   if(value.isEmpty()) {
                        continue;
                    }
                    map.put( key , value ) ;

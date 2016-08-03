@@ -239,12 +239,7 @@ class Companion
     {
         // Unsynchronized access to the fsm state means we may show an old value, but it
         // avoids blocking in toString().
-        return ""
-               + _id
-               + " "
-               + _pnfsId
-               + " "
-               + _fsm.getState();
+        return _id + " " + _pnfsId + " " + _fsm.getState();
     }
 
     /**

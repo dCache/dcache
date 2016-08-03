@@ -55,7 +55,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private long       _counter;
     private int        _repeatHeader    = 30;
 
-    private class SleepHandler
+    private static class SleepHandler
     {
         private boolean _enabled         = true;
         private boolean _mode            = true;
@@ -472,7 +472,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private static final int HEADER_MIDDLE = 1;
     private static final int HEADER_BOTTOM = 2;
 
-    private class ActionHeaderExtension
+    private static class ActionHeaderExtension
     {
         private final TreeMap<String,int[]> _map;  // TreeMap because we need it sorted
         private ActionHeaderExtension(TreeMap<String,int[]> map)
@@ -769,7 +769,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             } else if (info.isPresent()) {
                 printOfflineCellInfoRow(info.getName(),
                         (cellInfo == null ||
-                        cellInfo.getDomainName().length() == 0)
+                         cellInfo.getDomainName().isEmpty())
                         ? "&lt;unknown&gt"
                         : cellInfo.getDomainName(),
                         page);
@@ -801,7 +801,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         page.endTable();
     }
 
-    private class PoolCostEntry
+    private static class PoolCostEntry
     {
         final String  _cellName;
         final String  _domainName;
@@ -830,9 +830,9 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
                 if (status != null) {
                     list.add(new PoolCostEntry(pci.getCellName(),
-                            pci.getDomainName(),
-                            status,
-                            pci.getPoolCostInfo().getExtendedMoverHash()));
+                                               pci.getDomainName(),
+                                               status,
+                                               pci.getPoolCostInfo().getExtendedMoverHash()));
                 }
             }
         }

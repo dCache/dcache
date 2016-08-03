@@ -197,7 +197,7 @@ public class PoolManagerV5
     public void init()
     {
         String watchdogParam = _args.getOpt("watchdog");
-        if (watchdogParam != null && watchdogParam.length() > 0) {
+        if (watchdogParam != null && !watchdogParam.isEmpty()) {
             _watchdog = new WatchdogThread(watchdogParam);
         } else {
             _watchdog = new WatchdogThread();
@@ -267,13 +267,13 @@ public class PoolManagerV5
                 String tmp;
                 if (st.hasMoreTokens()) {
                     tmp = st.nextToken();
-                    if (tmp.length() > 0) {
+                    if (!tmp.isEmpty()) {
                         deathDetected = Long.parseLong(tmp);
                     }
                 }
                 if (st.hasMoreTokens()) {
                     tmp = st.nextToken();
-                    if (tmp.length() > 0) {
+                    if (!tmp.isEmpty()) {
                         sleeping = Long.parseLong(tmp);
                     }
                 }

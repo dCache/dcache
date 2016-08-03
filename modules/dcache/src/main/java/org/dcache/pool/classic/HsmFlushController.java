@@ -341,13 +341,13 @@ public class HsmFlushController
                 for (StorageClassInfo info : _storageQueue.getStorageClassInfos()) {
                     sb.append(Formats.field(info.getStorageClass() + "@" + info.getHsm(),
                             20, Formats.LEFT));
-                    sb.append(Formats.field("" + info.getActiveCount(), 8, Formats.RIGHT));
-                    sb.append(Formats.field("" + info.getErrorCount(), 8, Formats.RIGHT));
+                    sb.append(Formats.field(String.valueOf(info.getActiveCount()), 8, Formats.RIGHT));
+                    sb.append(Formats.field(String.valueOf(info.getErrorCount()), 8, Formats.RIGHT));
                     long lastSubmit = info.getLastSubmitted();
                     lastSubmit = (lastSubmit == 0L) ? 0L : (now - info.getLastSubmitted()) / 60000L;
-                    sb.append(Formats.field("" + lastSubmit, 10, Formats.RIGHT));
-                    sb.append(Formats.field("" + info.getRequestCount(), 10, Formats.RIGHT));
-                    sb.append(Formats.field("" + info.getFailedRequestCount(), 10, Formats.RIGHT));
+                    sb.append(Formats.field(String.valueOf(lastSubmit), 10, Formats.RIGHT));
+                    sb.append(Formats.field(String.valueOf(info.getRequestCount()), 10, Formats.RIGHT));
+                    sb.append(Formats.field(String.valueOf(info.getFailedRequestCount()), 10, Formats.RIGHT));
                     sb.append("\n");
                 }
                 return sb.toString();

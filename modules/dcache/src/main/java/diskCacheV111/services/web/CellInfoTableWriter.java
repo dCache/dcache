@@ -39,7 +39,7 @@ public class CellInfoTableWriter
                     printCellInfoRow(cellInfo, pingTime);
                 } else {
                     printOfflineCellInfoRow(cellInfo.getCellName(),
-                                            cellInfo.getDomainName().length() == 0
+                                            cellInfo.getDomainName().isEmpty()
                                             ? "&lt;unknown&gt"
                                             : cellInfo.getDomainName());
                 }

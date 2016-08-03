@@ -349,7 +349,7 @@ public final class JDomAlarmDefinition implements AlarmDefinition {
                             + "set to the value " + UNINTIALIZED +".");
         }
 
-        if (value.length() == 0 || RM.equals(value)) {
+        if (value.isEmpty() || RM.equals(value)) {
             value = null;
         }
 

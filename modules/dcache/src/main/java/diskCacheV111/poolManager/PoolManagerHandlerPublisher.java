@@ -101,13 +101,13 @@ public class PoolManagerHandlerPublisher
      * Tracks blocked update requests. If the list of backends changes, these requests
      * are processed.
      */
-    private Set<UpdateRequest> requests = Sets.newConcurrentHashSet();
+    private final Set<UpdateRequest> requests = Sets.newConcurrentHashSet();
 
     /**
      * Tracks expiration of update requests. Requests are dropped lazily as new
      * requests are added.
      */
-    private DelayQueue<UpdateRequest> delays = new DelayQueue<>();
+    private final DelayQueue<UpdateRequest> delays = new DelayQueue<>();
 
     @Override
     public void setCellAddress(CellAddressCore address)
@@ -228,7 +228,7 @@ public class PoolManagerHandlerPublisher
     {
         private final PoolMgrGetUpdatedHandler message;
 
-        private CellMessage envelope;
+        private final CellMessage envelope;
 
         public UpdateRequest(CellMessage envelope, PoolMgrGetUpdatedHandler message)
         {

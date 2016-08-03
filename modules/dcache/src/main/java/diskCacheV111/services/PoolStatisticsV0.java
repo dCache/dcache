@@ -274,7 +274,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         _htmlBase = _dbBase = new File(args.argv(0));
 
         String tmp = args.getOpt("htmlBase");
-        if ((tmp != null) && (tmp.length() > 0)) {
+        if ((tmp != null) && (!tmp.isEmpty())) {
             if (tmp.equals("none")) {
                 _createHtmlTree = false;
             } else {
@@ -879,9 +879,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         public Map<String, long[]> getLinearMap() {
             final Map<String, long[]> map = new HashMap<>();
 
-            dumpStatistics(_data, (pool, className, counters) -> {
-                        map.put(pool+" "+className, counters);
-                    });
+            dumpStatistics(_data, (pool, className, counters) -> map.put(pool + " " + className, counters));
 
             return map;
         }
@@ -915,7 +913,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 return;
             }
             line = line.substring(2).trim();
-            if (line.length() == 0) {
+            if (line.isEmpty()) {
                 return;
             }
             int indx = line.indexOf('=');
@@ -933,7 +931,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
             try (BufferedReader br = new BufferedReader(new FileReader(f))) {
                 for (String line = br.readLine(); line != null; line = br.readLine()) {
-                    if ((line.length() > 0)  && (line.charAt(0) == '#')) {
+                    if ((!line.isEmpty()) && (line.charAt(0) == '#')) {
                         scanAttributes(line);
                         continue;
                     }
@@ -1249,16 +1247,16 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 return;
             }
 
-            for (String className : stat.keySet()) {
+            for (Map.Entry<String, long[]> entry : stat.entrySet()) {
 
-                long[] values = stat.get(className);
+                long[] values = entry.getValue();
                 if (values == null) {
                     continue;
                 }
 
-                long[] resultArray = resultClasses.get(className);
+                long[] resultArray = resultClasses.get(entry.getKey());
                 if (resultArray == null) {
-                    resultClasses.put(className, resultArray = new long[10]);
+                    resultClasses.put(entry.getKey(), resultArray = new long[10]);
                     int preset = fromBilling.get(poolName) == null ? -1 : 0;
                     for (int i = 2; i < 10; i++) {
                         resultArray[i] = preset;
@@ -1280,15 +1278,15 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 return;
             }
 
-            for (String className : stat.keySet()) {
-                long[] values = stat.get(className);
+            for (Map.Entry<String, long[]> entry : stat.entrySet()) {
+                long[] values = entry.getValue();
                 if (values == null) {
                     continue;
                 }
 
-                long[] resultArray = resultClasses.get(className);
+                long[] resultArray = resultClasses.get(entry.getKey());
                 if (resultArray == null) {
-                    resultClasses.put(className, resultArray = new long[10]);
+                    resultClasses.put(entry.getKey(), resultArray = new long[10]);
                     int preset = fromPools.get(poolName) == null ? -1 : 0;
                     for (int i = 0; i < 2; i++) {
                         resultArray[i] = preset;
@@ -1439,7 +1437,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         }
     }
 
-    private class MonthDirectoryHeader implements HtmlDrawable {
+    private static class MonthDirectoryHeader implements HtmlDrawable {
         private MonthDirectoryHeader() {}
 
         @Override
@@ -1615,7 +1613,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             if (counter <= 0) {
                 return "0";
             }
-            String unit = ""+BYTES.toMiB(counter);
+            String unit = String.valueOf(BYTES.toMiB(counter));
             StringBuilder sb = new StringBuilder();
             for(int j = unit.length() - 1, c = 0; j >= 0; j--, c++) {
                 if ((c > 0) && (c%3 == 0)) {
@@ -1652,7 +1650,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             printTDEnd(content);
 
             printTD(bgColor, true);
-            print(""   +printUnit(counter[YESTERDAY]));
+            print(printUnit(counter[YESTERDAY]));
             print(" + "+printUnit(counter[RESTORE]), "red");
             print(" + "+printUnit(counter[TRANSFER_IN]), "red");
             printTDEnd(1);
@@ -1683,7 +1681,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             printTDEnd(content);
 
             printTD(bgColor, true);
-            print(""+printUnit(counter[TODAY]));
+            print(printUnit(counter[TODAY]));
             printTDEnd(1);
 
             printTD(bgColor, false);
@@ -1708,7 +1706,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             printTDEnd(content);
 
             printTD(bgColor, true);
-            print(""+printUnit(counter[TRANSFER_OUT]));
+            print(printUnit(counter[TRANSFER_OUT]));
             print(" + "+printUnit(counter[STORE]));
             printTDEnd(1);
 

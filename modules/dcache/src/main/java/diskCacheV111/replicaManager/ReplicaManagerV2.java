@@ -99,7 +99,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     public ResilientPools( Args args )
     {
       String group = args.getOpt("resilientGroupName");
-      if( group != null && (! group.equals("")) ) {
+      if( group != null && (!group.isEmpty()) ) {
           _resilientPoolGroupName = group;
           _log.info("resilientGroupName={}", group);
       }else{
@@ -128,7 +128,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
         _log.info("Got " + _resPoolsList.size() + " pools listed in the group "
                 + _resilientPoolGroupName);
 
-        if (_resPoolsList.size() == 0) {
+        if (_resPoolsList.isEmpty()) {
             _log.warn("ERROR: ##### Group " + _resilientPoolGroupName + " is empty ####");
             throw new Exception("Group " + _resilientPoolGroupName + " is empty");
         }
@@ -177,16 +177,16 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
   private boolean _hotRestart = true;
   private InitDbRunnable _initDbRunnable;
 
-  private final long SECOND = 1000L;
-  private final long MINUTE =   60 * SECOND;
-  private final long HOUR   =   60 * MINUTE;
+  private static final long SECOND = 1000L;
+  private static final long MINUTE =   60 * SECOND;
+  private static final long HOUR   =   60 * MINUTE;
 
   private long _delayDBStartTO  = 20*MINUTE; //  - wait for remote pools to get conncted
   private long _delayAdjStartTO = 21*MINUTE; //  - wait for new pools to start
   private long _delayPoolScan   =  2*MINUTE; //  - wait for remote pools get connected
                                              //           before polling pool status
   //
-  private class DBUpdateMonitor  {
+  private static class DBUpdateMonitor  {
     private boolean _bool;
 //    private final ReadWriteLock _lock = new ReentrantReadWriteLock();
 //    _lock.writeLock().lock();
@@ -201,7 +201,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
 
     public synchronized boolean reset() {
       // there were any changes in pool status or pnfsId added / removed
-      boolean ret = _bool || (_updatedPnfsId.size() > 0 );
+      boolean ret = _bool || (!_updatedPnfsId.isEmpty());
 
       _bool = false;
       _updatedPnfsId.clear();
@@ -285,7 +285,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
             throw new IllegalArgumentException("Not enough arguments to Init SQL database");
         }
 
-        if (_pwdfile != null && _pwdfile.length() > 0) {
+        if (_pwdfile != null && !_pwdfile.isEmpty()) {
             Pgpass pgpass = new Pgpass(_pwdfile);
             String p = pgpass.getPgpass(cfURL, cfUser);
             if (p != null) {
@@ -2301,10 +2301,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
 
 
   private String printCacheLocation(PnfsId pnfsId) {
-
     StringBuilder sb = new StringBuilder();
 
-    sb.append(pnfsId.toString()).append(" ");
+    sb.append(pnfsId).append(" ");
     Iterator<String> it = _dbrmv2.getPools(pnfsId);
     while (it.hasNext()) {
       sb.append(it.next()).append(" ");
@@ -2418,7 +2417,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
         if (_delayStart != 0L) {
           synchronized (_poolsToWait) {
 
-            if (_poolsToWait.size() > 0) {
+            if (!_poolsToWait.isEmpty()) {
               _log.info("=== Adjuster wakeup is delayed for " + _delayStart/1000L +
                   " sec. for pools to connect - sleep ... ===\n");
 
@@ -2564,8 +2563,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       List<String> arrived    = new ArrayList<>( newPoolSet ) ;
       List<String> departed = new ArrayList<>( oldPoolSet ) ;
 
-      if (   arrived.size()    == 0
-          && departed.size() == 0 ) {
+      if (arrived.isEmpty()
+          && departed.isEmpty()) {
         hbMsg = "no changes";
         if ( ++cntNoChangeMsgLastTime < 5 ) {
             _log.info("WatchPool - no pools arrived or departed");
@@ -2577,7 +2576,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
         hbMsg = "conf changed";
         cntNoChangeMsgLastTime = 0;
 
-        if (arrived.size() == 0) {
+        if (arrived.isEmpty()) {
           _log.info("WatchPool - no new pools arrived");
         } else {
             for (Object inext : arrived) {
@@ -2604,7 +2603,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
             }
         }
 
-        if (departed.size() == 0) {
+        if (departed.isEmpty()) {
             _log.info("WatchPool - no pools departed");
         } else {
           // For pools which left UPDATE pool status in DB
@@ -2708,14 +2707,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
         return;
       }
 
-      // DEBUG - check
       if (_log.isDebugEnabled()) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(printCacheLocation(pnfsId)).append("\n");
-        _log.debug( "Pool list in DB before "
-              +((wasAdded)?"Insertion":"Removal") +"\n"+
-              "for pnfsId=" + pnfsId + " \n"
-              +sb.toString() );
+          _log.debug("Pool list in DB before {} for pnfsId={}: {}",
+                     wasAdded ? "Insertion" : "Removal", pnfsId, printCacheLocation(pnfsId));
       }
 
       if (wasAdded) {
@@ -2739,7 +2733,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
   //
   // Callback: List of replicas added to pools
   // -----------------------------------------
-  private class Replica {
+  private static class Replica {
     private PnfsId _id;
     private String _pool;
 
@@ -2948,7 +2942,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
         synchronized (_poolsToWait) {
           if (_initDbRunnable != null
               && _initDbRunnable.isWaiting()
-              && _poolsToWait.size() == 0) {
+              && _poolsToWait.isEmpty()) {
             _poolsToWait.notifyAll();
             _log.debug("Got all online pools back online, wakeup InitDB");
           }

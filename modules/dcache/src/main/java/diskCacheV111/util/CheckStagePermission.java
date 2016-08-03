@@ -33,7 +33,7 @@ public class CheckStagePermission {
     private final Lock _fileWriteLock = _fileReadWriteLock.writeLock();
 
     public CheckStagePermission(String stageConfigurationFilePath) {
-        if ( stageConfigurationFilePath == null || stageConfigurationFilePath.length() == 0 ) {
+        if ( stageConfigurationFilePath == null || stageConfigurationFilePath.isEmpty()) {
             _isEnabled = false;
             return;
         }
@@ -123,8 +123,8 @@ public class CheckStagePermission {
       * @throws PatternSyntaxException
       */
       void rereadConfig() throws PatternSyntaxException, IOException {
+          _fileWriteLock.lock();
           try {
-              _fileWriteLock.lock();
               if ( fileNeedsRereading() ) {
                   try (BufferedReader reader = new BufferedReader(new FileReader(_stageConfigFile))) {
                       _regexList = readStageConfigFile(reader);
@@ -161,8 +161,8 @@ public class CheckStagePermission {
        * @return true if the user and object match predicates
        */
        boolean userMatchesPredicates(String dn, String fqanStr, String storeUnit) {
+           _fileReadLock.lock();
            try {
-               _fileReadLock.lock();
                for (Pattern[] regexLine : _regexList) {
                    if ( regexLine[0].matcher(dn).matches() ) {
 

@@ -98,7 +98,7 @@ public class FileHoppingManager extends CellAdapter {
 
          String line;
          while( ( line = reader.readLine() ) != null ){
-            if( line.length() == 0 ) {
+            if(line.isEmpty()) {
                 continue;
             }
             if( line.charAt(0) == '#' ) {
@@ -107,7 +107,7 @@ public class FileHoppingManager extends CellAdapter {
             try{
                _log.info( "Executing : "+line ) ;
                String answer = command( line ) ;
-               if( answer.length() > 0 ) {
+               if(!answer.isEmpty()) {
                    _log.info("Answer    : " + answer);
                }
             }catch( Exception ee ){
@@ -168,7 +168,7 @@ public class FileHoppingManager extends CellAdapter {
        pw.println("  Total Requsts : "+_totalRequests ) ;
        pw.println("Number of Rules : "+_map.size());
    }
-   private class Entry {
+   private static class Entry {
 
       private String  _name;
       private boolean _retry;
@@ -336,7 +336,7 @@ public class FileHoppingManager extends CellAdapter {
                   IllegalArgumentException("Entry already exists : " + name);
       }
 
-      entry = new Entry( name , patternStr , modeStr ) ;
+      entry = new Entry(name, patternStr, modeStr);
 
       entry.setProtocolInfo( hostName , protocol , protMajor , protMinor ) ;
 
@@ -486,7 +486,7 @@ public class FileHoppingManager extends CellAdapter {
                             append(Formats
                                     .field(e._patternStr, 30, Formats.CENTER)).
                             append("   ").
-                            append(Formats.field("" + e._hit, 7, Formats.RIGHT))
+                            append(Formats.field(String.valueOf(e._hit), 7, Formats.RIGHT))
                             .
                                     append("\n");
                 }

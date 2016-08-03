@@ -69,7 +69,7 @@ public class HttpByteRange
             }
         }
 
-        if(ret.size() == 0) {
+        if(ret.isEmpty()) {
             throw new HttpException(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE,
                     "Invalid (empty) list of valid ranges");
         }

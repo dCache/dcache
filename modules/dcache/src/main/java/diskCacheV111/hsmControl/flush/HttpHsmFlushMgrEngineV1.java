@@ -62,7 +62,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
       _flushCompare = new HttpFlushManagerHelper.FlushEntryComparator() ;
       _flushCompare.setColumn(1);
 
-      if( _managerList.size() == 0 ) {
+      if(_managerList.isEmpty()) {
           _managerList.add("FlushManager");
       }
 
@@ -90,7 +90,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
 
       cssDetails = cssDetails.trim() ;
 
-      if(  ( cssDetails.length() > 0 ) && ! cssDetails.equals("default") ) {
+      if((!cssDetails.isEmpty()) && ! cssDetails.equals("default") ) {
           _cssFile = cssDetails;
       }
 
@@ -144,7 +144,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
                 doActionsIfNecessary(flushManager, optionsMap, result);
 
                 String errorString = result.toString() ;
-                if( errorString.length() > 0 ){
+                if(!errorString.isEmpty()){
                    pw.println("<hr>");
                    pw.println("<h2>The following errors were reported</h2>");
                    pw.println("<pre>");
@@ -394,7 +394,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
            pools.add(pentry);
 
            List<HsmFlushControlCore.FlushInfoDetails> flushes = pool.getFlushInfos();
-           if ((flushes == null) || (flushes.size() == 0)) {
+           if ((flushes == null) || (flushes.isEmpty())) {
                continue;
            }
 
@@ -544,7 +544,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
           pw.println("</tr>");
       }
       pw.println("</table><br>");
-      if( pools.size() > 0 ) {
+      if(!pools.isEmpty()) {
           pw.println("<input type=\"submit\" value=\"Flush\" name=\"command\">");
       }
       pw.println("</center>");

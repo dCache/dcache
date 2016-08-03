@@ -313,7 +313,7 @@ public class AlarmJDOUtils {
 
     private static String trimToNull(StringBuilder buffer) {
         String trimmed = buffer.toString().trim();
-        if (trimmed.length() == 0) {
+        if (trimmed.isEmpty()) {
             return null;
         }
         return trimmed;

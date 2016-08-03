@@ -892,8 +892,8 @@ public class UserAdminShell
         try {
             int i = buffer.indexOf('@');
             if (i > -1) {
-                expandCellPatterns(asList(buffer + "*")).stream()
-                        .map(s -> s.substring(s.indexOf("@") + 1))
+                expandCellPatterns(singletonList(buffer + "*")).stream()
+                        .map(s -> s.substring(s.indexOf('@') + 1))
                         .forEach(candidates::add);
                 return i + 1;
             }
@@ -1017,7 +1017,7 @@ public class UserAdminShell
     private DirectoryStream list(String dir, String pattern) throws InterruptedException, CacheException
     {
         return _list.list(Subjects.ROOT, Restrictions.none(), FsPath.create(dir),
-                new Glob(pattern), Range.<Integer>all(), EnumSet.of(FileAttribute.TYPE));
+                          new Glob(pattern), Range.all(), EnumSet.of(FileAttribute.TYPE));
     }
 
     /**
@@ -1102,7 +1102,7 @@ public class UserAdminShell
     {
         _log.info("String command (super) " + str);
 
-        if (str.trim().equals("")) {
+        if (str.trim().isEmpty()) {
             return "";
         }
 

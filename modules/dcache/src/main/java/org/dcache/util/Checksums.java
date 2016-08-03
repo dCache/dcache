@@ -5,19 +5,18 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Maps.EntryTransformer;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static com.google.common.base.Predicates.notNull;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
-import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Maps.transformEntries;
 import static org.dcache.util.ChecksumType.*;
 
@@ -112,7 +111,7 @@ public class Checksums
         Map<String,Checksum> checksums = transformEntries(parts,
                 RFC3230_TO_CHECKSUM);
 
-        return Sets.newHashSet(filter(checksums.values(), notNull()));
+        return checksums.values().stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     public static Ordering<Checksum> preferrredOrder()

@@ -28,7 +28,6 @@ import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
-import dmg.util.CommandThrowableException;
 import dmg.util.command.HelpFormat;
 
 import org.dcache.util.Strings;

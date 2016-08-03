@@ -86,7 +86,7 @@ import org.dcache.util.Args;
         }
         public String toString(){ return name ; }
      }
-     private class StackEntry {
+     private static class StackEntry {
          private long waitingSince = System.currentTimeMillis();
          private StackEntry( int state ){ this.state = state ; }
          private int state;
@@ -245,9 +245,9 @@ import org.dcache.util.Args;
         // do as it would have been a query
         //
         properties.put( "mode"       , _mode ) ;
-        properties.put( "flush.count"      , ""+_countToFlush ) ;
-        properties.put( "flush.percentage" , ""+_percentageToFlush ) ;
-        properties.put( "flush.atonce"     , ""+_flushAtOnce ) ;
+        properties.put("flush.count"      , String.valueOf(_countToFlush)) ;
+        properties.put("flush.percentage" , String.valueOf(_percentageToFlush)) ;
+        properties.put("flush.atonce"     , String.valueOf(_flushAtOnce)) ;
         //
      }
      @Override

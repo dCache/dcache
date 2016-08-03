@@ -192,11 +192,11 @@ public class MigrationModule
             return Range.singleton(Long.parseLong(bounds[0]));
 
         case 2:
-            if (bounds[0].length() == 0 && bounds[1].length() == 0) {
+            if (bounds[0].isEmpty() && bounds[1].isEmpty()) {
                 return Range.all();
-            } else if (bounds[0].length() == 0) {
+            } else if (bounds[0].isEmpty()) {
                 return Range.atMost(Long.parseLong(bounds[1]));
-            } else if (bounds[1].length() == 0) {
+            } else if (bounds[1].isEmpty()) {
                 return Range.atLeast(Long.parseLong(bounds[0]));
             } else {
                 return Range.closed(Long.parseLong(bounds[0]),

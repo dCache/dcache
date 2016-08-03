@@ -4,7 +4,6 @@ package org.dcache.pinmanager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.Subject;

@@ -53,7 +53,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.StartEvent;
 import dmg.cells.nucleus.UOID;
 import dmg.util.CommandSyntaxException;
 
@@ -116,9 +115,9 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
        LoggerFactory.getLogger(DCacheCoreControllerV2.class);
     private final Thread messageProcessingThread;
 
-   private String      _cellName;
-   private Args        _args;
-   private CellNucleus _nucleus;
+   private final String      _cellName;
+   private final Args        _args;
+   private final CellNucleus _nucleus;
    private static final long _timeout                 = 2 * 60 * 1000L ;
    private static final long _TO_GetPoolRepository    = 2 * 60 * 1000L;
    private static final long _TO_GetPoolTags          = 2 * 60 * 1000L;
@@ -129,7 +128,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
    private boolean     _dcccDebug;
 
    private final BlockingQueue<CellMessage> _msgFifo ;
-   private LinkedList<PnfsAddCacheLocationMessage> _cachedPnfsAddCacheLocationMessage = new LinkedList<>();
+   private final LinkedList<PnfsAddCacheLocationMessage> _cachedPnfsAddCacheLocationMessage = new LinkedList<>();
    private final CellStub _poolManager;
    private final CellStub _pnfsManager;
    private final CellStub _poolStub;
@@ -339,13 +338,13 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
    private final HashMap<Long, TaskObserver> _taskHash         = new LinkedHashMap<>() ;
    private final HashMap<UOID, MoverTask> _messageHash      = new HashMap<>() ;
    private final HashMap<String, ReductionObserver> _modificationHash = new HashMap<>() ;
-   private P2pObserver _p2p          = new P2pObserver();
+   private final P2pObserver _p2p          = new P2pObserver();
 
    /** Keep track of p2p transfers scheduled by replicaManager
     *  This class in NOT synchronized
     */
 
-   private class P2pObserver {
+   private static class P2pObserver {
      // Hashtables to keep p2p transfer counters for each pool
      //   addressed by pool name
      private Hashtable<String,AtomicInteger> _p2pClientCount;
@@ -420,13 +419,13 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
    //
    public class TaskObserver {
 
-      private long   _id        = __nextTaskId() ;
+      private final long   _id        = __nextTaskId() ;
       protected String _type;
       protected int    _errorCode;
       protected String _errorMsg;
       protected boolean _done;
       protected String  _status   = "Active" ;
-      private long   _creationTime;
+      private final long   _creationTime;
 
       public TaskObserver( String type ){
          _type = type ;
@@ -488,7 +487,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
           }
 
           synchronized( _taskHash ){
-              _taskHash.remove( new Long(_id) ) ;
+              _taskHash.remove(_id) ;
           }
 
           // Asynchronious notification
@@ -552,7 +551,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
        protected PnfsId _pnfsId;
        protected String _poolName;
        protected TaskObserver _oldTask;
-       private String _key;
+       private final String _key;
        private boolean _pnfsIdDeleted;
 
        public ReductionObserver( PnfsId pnfsId , String poolName ) throws Exception {
@@ -624,9 +623,9 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
    // creates replica
    //
    public class MoverTask extends TaskObserver {
-      private PnfsId _pnfsId;
-      private String _srcPool;
-      private String _dstPool;
+      private final PnfsId _pnfsId;
+      private final String _srcPool;
+      private final String _dstPool;
       private boolean _pnfsIdDeleted;
 
       public MoverTask( PnfsId pnfsId , String source , String destination ){
@@ -740,7 +739,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
       return task ;
 
    }
-   private Random _random = new Random(System.currentTimeMillis());
+   private final Random _random = new Random(System.currentTimeMillis());
    /**
      * removes a copy from the cache of the specified pnfsId. An exception is thrown if
      * there is only one copy left.
@@ -786,7 +785,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
 
      sourcePoolList.retainAll( writablePools );
 
-     if ( sourcePoolList.size() == 0 ) {
+     if (sourcePoolList.isEmpty()) {
          throw new
                  IllegalStateException("no deletable replica found for pnfsId=" + pnfsId);
      }
@@ -848,8 +847,8 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
                     if (!_enableSameHostReplica && srcHosts != null) {
                         synchronized (_hostMap) {
                             host = _hostMap.get(poolName);
-                            if (host != null && !host.equals("")
-                                    && (srcHosts.contains(host))) {
+                            if (host != null && !host.isEmpty()
+                                && (srcHosts.contains(host))) {
                                 _log.debug("best pool: skip destination pool " + poolName + ", destination host " + host + " is on the source host list " + srcHosts);
                                 continue;
                             }
@@ -941,14 +940,14 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
       protected MoverTask replicatePnfsId( PnfsId pnfsId, Set<String> readablePools, Set<String> writablePools )
           throws Exception {
 
-        if (readablePools.size() == 0) {
+        if (readablePools.isEmpty()) {
             throw new                    // do not change - initial substring is used as signature
                     IllegalArgumentException("replicatePnfsId, argument"
                     + " readablePools.size() == 0 "
                     + " for pnfsId=" + pnfsId);
         }
 
-        if (writablePools.size() == 0) {
+        if (writablePools.isEmpty()) {
             throw new                    // do not change - initial substring is used as signature
                     IllegalArgumentException("replicatePnfsId, argument"
                     + " writablePools.size() == 0 "
@@ -969,7 +968,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
         // ---------------
         List<String> sourcePoolList = new Vector<>( pnfsidPoolList );
 
-        if (sourcePoolList.size() == 0) {
+        if (sourcePoolList.isEmpty()) {
             throw new                    // do not change - initial substring is used as signature
                     IllegalArgumentException(selectSourcePoolError
                     + "PnfsManager reported no pools (cacheinfoof) for pnfsId=" + pnfsId);
@@ -977,7 +976,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
 
         sourcePoolList.retainAll( allPools );       // pnfs manager knows about them
 
-        if (sourcePoolList.size() == 0) {
+        if (sourcePoolList.isEmpty()) {
             throw new                    // do not change - initial substring is used as signature
                     IllegalArgumentException(selectSourcePoolError
                     + "there are no resilient pools in the pool list provided by PnfsManager for pnfsId=" + pnfsId);
@@ -989,7 +988,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
 
         sourcePoolList.retainAll( readablePools );  // they are readable
 
-        if (sourcePoolList.size() == 0) {
+        if (sourcePoolList.isEmpty()) {
             throw new                    // do not change - initial substring is used as signature
                     IllegalArgumentException(selectSourcePoolError
                     + " replica found in resilient pool(s) but the pool is not in online,drainoff or offline-prepare state. pnfsId=" + pnfsId);
@@ -998,7 +997,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
         List<String> confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
 
         //
-        if (confirmedSourcePoolList.size() == 0) {
+        if (confirmedSourcePoolList.isEmpty()) {
             throw new                    // do not change - initial substring is used as signature
                     IllegalArgumentException(selectSourcePoolError
                     + "pools selectable for read did not confirm they have pnfsId=" + pnfsId);
@@ -1017,7 +1016,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
           destPools.retainAll( writablePools );  // check if it writable
         }
 
-        if (destPools.size() == 0) {
+        if (destPools.isEmpty()) {
             throw new // do not change - initial substring is used as signature
                     IllegalArgumentException(selectDestinationPoolError
                     + " no pools found in online state and not having listed pnfsId=" + pnfsId);
@@ -1287,7 +1286,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
      if ( ! isPnfsAddCacheLocationMessage
       ||  ! nextPnfsAddCacheLocationMessage
       || ( l.size() >= maxAddListSize ) ) {
-       if( l.size() != 0 ) {
+       if(!l.isEmpty()) {
          _log.debug("DCacheCoreController: process queued CellMessage. Flush queue qsize="+l.size() );
          processPnfsAddCacheLocationMessage( l );
          l.clear();

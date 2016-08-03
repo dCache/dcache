@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
 public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoCloseable
 {
     private final ExecutorService service = Executors.newCachedThreadPool();
-    private final List<Future> readers = new ArrayList<>();
+    private final List<Future<T>> readers = new ArrayList<>();
     private final BlockingQueue<String> queue;
     private final int threads;
     private final LineProcessor<T> callback;
@@ -42,7 +42,7 @@ public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoClos
                 queue.put("");
             }
             service.shutdown();
-            for (Future reader : readers) {
+            for (Future<T> reader : readers) {
                 reader.get();
             }
         } catch (InterruptedException e) {

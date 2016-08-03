@@ -87,7 +87,7 @@ public class CostModuleV1
            _info = info;
            _tagMap =
                (tagMap == null)
-               ? ImmutableMap.<String,String>of()
+               ? ImmutableMap.of()
                : ImmutableMap.copyOf(tagMap);
        }
 
@@ -433,7 +433,7 @@ public class CostModuleV1
 
        LOGGER.debug("{} pools available", _hash.size());
 
-       double poolCosts[] = new double[_hash.size()];
+       double[] poolCosts = new double[_hash.size()];
 
        int idx=0;
        for( Entry poolInfo : _hash.values()) {

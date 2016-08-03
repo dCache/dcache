@@ -175,9 +175,8 @@ public final class FileBackedAlarmPriorityMap
         }
 
         Properties properties = new Properties();
-        for (String key: internalMap.keySet()) {
-             String value = internalMap.get(key).toString();
-             properties.setProperty(key, value);
+        for (Map.Entry<String, AlarmPriority> entry : internalMap.entrySet()) {
+            properties.setProperty(entry.getKey(), entry.getValue().toString());
         }
 
         try (BufferedWriter br = new BufferedWriter(new FileWriter(saved))) {

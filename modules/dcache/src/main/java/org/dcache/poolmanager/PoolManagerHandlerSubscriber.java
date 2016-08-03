@@ -126,6 +126,7 @@ public class PoolManagerHandlerSubscriber
     public void afterStart()
     {
         startGate.set(null);
+        startGate = null;
     }
 
     @PreDestroy
