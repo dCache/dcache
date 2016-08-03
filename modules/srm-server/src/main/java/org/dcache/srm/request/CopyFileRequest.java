@@ -331,9 +331,6 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             sb.append("Copy ");
         }
         sb.append("file id:").append(getId());
-        if (getPriority() != 0) {
-            sb.append(" priority:").append(getPriority());
-        }
         sb.append(" state:").append(getState());
         if (longformat) {
             sb.append(" source=");

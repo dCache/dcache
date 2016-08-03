@@ -124,14 +124,6 @@ public class SrmCopy implements CredentialAwareHandler
                 overwriteMode,
                 extraInfo);
         try (JDC ignored = r.applyJdc()) {
-            String priority = extraInfo.get("priority");
-            if (priority != null) {
-                try {
-                    r.setPriority(Integer.parseInt(priority));
-                } catch (NumberFormatException e) {
-                    LOGGER.warn("Ignoring non-integer priority value: {}", priority);
-                }
-            }
             srm.schedule(r);
             return r.getSrmCopyResponse();
         } catch (InterruptedException e) {

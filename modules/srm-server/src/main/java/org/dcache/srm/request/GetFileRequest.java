@@ -336,9 +336,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             sb.append("Get ");
         }
         sb.append("file id:").append(getId());
-        if (getPriority() != 0) {
-            sb.append(" priority:").append(getPriority());
-        }
         State state = getState();
         sb.append(" state:").append(state);
         if(longformat) {

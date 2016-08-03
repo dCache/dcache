@@ -105,14 +105,6 @@ public class SrmBringOnline
                         request.getUserRequestDescription(),
                         clientHost);
         try (JDC ignored = r.applyJdc()) {
-            String priority = getExtraInfo(request, "priority");
-            if (priority != null) {
-                try {
-                    r.setPriority(Integer.parseInt(priority));
-                } catch (NumberFormatException e) {
-                    LOGGER.warn("Ignoring non-integer priority: {}", priority);
-                }
-            }
             srm.schedule(r);
             return r.getSrmBringOnlineResponse(configuration.getBringOnlineSwitchToAsynchronousModeDelay());
         } catch (InterruptedException e) {
@@ -129,24 +121,6 @@ public class SrmBringOnline
             return TimeUnit.MILLISECONDS.toSeconds(requestTime);
         }
         return (long) request.getDesiredLifeTime();
-    }
-
-    private static String getExtraInfo(SrmBringOnlineRequest request, String key)
-    {
-        ArrayOfTExtraInfo storageSystemInfo = request.getStorageSystemInfo();
-        if (storageSystemInfo == null) {
-            return null;
-        }
-        TExtraInfo[] extraInfoArray = storageSystemInfo.getExtraInfoArray();
-        if (extraInfoArray == null || extraInfoArray.length <= 0) {
-            return null;
-        }
-        for (TExtraInfo extraInfo : extraInfoArray) {
-            if (extraInfo.getKey().equals(key)) {
-                return extraInfo.getValue();
-            }
-        }
-        return null;
     }
 
     private static URI[] getSurls(TGetFileRequest[] fileRequests) throws SRMInvalidRequestException

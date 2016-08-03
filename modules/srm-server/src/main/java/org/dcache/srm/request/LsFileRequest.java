@@ -575,9 +575,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                     sb.append("Ls ");
                 }
                 sb.append("file id:").append(getId());
-                if (getPriority() != 0) {
-                    sb.append(" priority:").append(getPriority());
-                }
                 State state = getState();
                 sb.append(" state:").append(state);
                 if(longformat) {

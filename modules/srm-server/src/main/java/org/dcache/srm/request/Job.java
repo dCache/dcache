@@ -125,7 +125,6 @@ public abstract class Job  {
 
     private volatile State state = State.UNSCHEDULED;
 
-    protected int priority;
     protected String schedulerId;
     protected long schedulerTimeStamp;
 
@@ -504,36 +503,6 @@ public abstract class Job  {
         try {
             setState(state, description);
             setStatusCode(statusCode);
-        } finally {
-            wunlock();
-        }
-    }
-
-    /** Getter for property priority.
-     * @return Value of property priority.
-     *
-     */
-    public int getPriority() {
-        rlock();
-        try {
-            return priority;
-        } finally {
-            runlock();
-        }
-    }
-
-    /** Setter for property priority.
-     * @param priority New value of property priority.
-     *
-     */
-    public void setPriority(int priority) {
-        wlock();
-        try {
-            if(priority <0) {
-                throw new IllegalArgumentException(
-                "priority should be greater than or equal to zero");
-            }
-            this.priority = priority;
         } finally {
             wunlock();
         }

@@ -307,9 +307,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             sb.append("Bring online ");
         }
         sb.append("file id:").append(getId());
-        if (getPriority() != 0) {
-            sb.append(" priority:").append(getPriority());
-        }
         sb.append(" state:").append(getState());
         if(longformat) {
             sb.append('\n');

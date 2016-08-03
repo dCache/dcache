@@ -547,42 +547,6 @@ public class SrmCommandLineInterface
         return sb.toString();
     }
 
-    public static final String fh_set_job_priority = " Syntax: set priority <requestId> <priority>" +
-            "will set priority for the requestid.  Note that <requestId> may require escaping.";
-    public static final String hh_set_job_priority = " <requestId> <priority>";
-
-    public String ac_set_job_priority_$_2(Args args)
-    {
-        String s1 = args.argv(0);
-        String s2 = args.argv(1);
-        long requestId;
-        int priority;
-        try {
-            requestId = Integer.parseInt(s1);
-        } catch (NumberFormatException e) {
-            return "Failed to parse request id: " + s1;
-        }
-        try {
-            priority = Integer.parseInt(s2);
-        } catch (Exception e) {
-            return "Failed to parse priority: " + s2;
-        }
-        try {
-            Job job = Job.getJob(requestId, Job.class);
-            job.setPriority(priority);
-            job.setPriority(priority);
-            StringBuilder sb = new StringBuilder();
-            srm.listRequest(sb, requestId, true);
-            return sb.toString();
-        } catch (SRMInvalidRequestException e) {
-            return e.getMessage() + "\n";
-        } catch (DataAccessException e) {
-            logger.warn("Failure in set job priority: " + e.getMessage());
-            return e.toString();
-        }
-    }
-
-
     public static final String fh_set_max_ready_put = " Syntax: set max ready put <count>" +
             " #will set a maximum number of put requests in the ready state";
     public static final String hh_set_max_ready_put = " <count>";

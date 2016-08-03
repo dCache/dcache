@@ -111,14 +111,6 @@ public class SrmPrepareToGet
                         request.getUserRequestDescription(),
                         clientHost);
         try (JDC ignored = r.applyJdc()) {
-            String priority = getExtraInfo(request, "priority");
-            if (priority != null) {
-                try {
-                    r.setPriority(Integer.parseInt(priority));
-                } catch (NumberFormatException e) {
-                    LOGGER.warn("Ignoring non-integer user priority: {}" , priority);
-                }
-            }
             srm.schedule(r);
             return r.getSrmPrepareToGetResponse(configuration.getGetSwitchToAsynchronousModeDelay());
         }
@@ -140,24 +132,6 @@ public class SrmPrepareToGet
             surls[i] = URI.create(nextRequest.getSourceSURL().toString());
         }
         return surls;
-    }
-
-    private static String getExtraInfo(SrmPrepareToGetRequest request, String key)
-    {
-        ArrayOfTExtraInfo storageSystemInfo = request.getStorageSystemInfo();
-        if (storageSystemInfo == null) {
-            return null;
-        }
-        TExtraInfo[] extraInfoArray = storageSystemInfo.getExtraInfoArray();
-        if (extraInfoArray == null || extraInfoArray.length <= 0) {
-            return null;
-        }
-        for (TExtraInfo extraInfo : extraInfoArray) {
-            if (extraInfo.getKey().equals(key)) {
-                return extraInfo.getValue();
-            }
-        }
-        return null;
     }
 
     private static TGetFileRequest[] getFileRequests(SrmPrepareToGetRequest request)
