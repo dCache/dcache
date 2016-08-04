@@ -202,6 +202,8 @@ public class CellAdapter
      * starts the delivery of messages to this cell and
      * executes the auto and defined Setup context.
      * (&lt;cellName&gt;Setup and "!&lt;setupContextName&gt;)
+     * Failures to start the cell due to external influences are indicated by
+     * a CommandException; all other exceptions are treated as bugs.
      */
     public ListenableFuture<Void> start()
     {

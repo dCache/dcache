@@ -308,15 +308,15 @@ public class UniversalSpringCell
         }
     }
 
-    private byte[] loadSetup(File file) throws IOException, CommandException
+    private byte[] loadSetup(File file) throws CommandException
     {
         try {
             byte[] data = readAllBytes(file.toPath());
             testSetup(file.toString(), data);
             return data;
         } catch (IOException e) {
-            throw new IOException("Failed to read " + file + ": " +
-                    e.getMessage(), e);
+            throw new CommandException("Failed to load " + file.toPath() + ": "
+                    + e.getMessage(), e);
         }
     }
 
@@ -1174,7 +1174,7 @@ public class UniversalSpringCell
     private interface SetupManager
     {
         /** Called on startup. Should load the initial setup. */
-        void start() throws Exception;
+        void start() throws CommandException;
 
         /** Called on shutdown. Should release any resources held. */
         void close();
@@ -1189,7 +1189,7 @@ public class UniversalSpringCell
          * Called when the admin issues the reload command. Implementations should parse
          * the given file and update the configuration accordingly.
          */
-        void load(File file) throws IOException, CommandException;
+        void load(File file) throws CommandException;
     }
 
     /**
@@ -1200,7 +1200,7 @@ public class UniversalSpringCell
         private int version;
 
         @Override
-        public void start() throws IOException, CommandException
+        public void start() throws CommandException
         {
         }
 
@@ -1218,7 +1218,7 @@ public class UniversalSpringCell
         }
 
         @Override
-        public void load(File file) throws IOException, CommandException
+        public void load(File file) throws CommandException
         {
         }
 
@@ -1243,7 +1243,7 @@ public class UniversalSpringCell
         }
 
         @Override
-        public void start() throws IOException, CommandException
+        public void start() throws CommandException
         {
             if (_file != null && _file.isFile()) {
                 load(_file);
@@ -1251,7 +1251,7 @@ public class UniversalSpringCell
         }
 
         @Override
-        public synchronized void load(File file) throws IOException, CommandException
+        public synchronized void load(File file) throws CommandException
         {
             executeSetup(file.toString(), loadSetup(file));
             notifyListeners();
@@ -1296,7 +1296,7 @@ public class UniversalSpringCell
         }
 
         @Override
-        public synchronized void start() throws Exception
+        public synchronized void start() throws CommandException
         {
             byte[] data;
             if (_file != null && _file.isFile()) {
@@ -1310,10 +1310,22 @@ public class UniversalSpringCell
                 _curator.create().creatingParentContainersIfNeeded().forPath(_node, data);
             } catch (KeeperException.NodeExistsException e) {
                 LOGGER.info("Not seeding setup in ZooKeeper as such a setup already exists.");
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new CommandThrowableException("Failed to create " +
+                        "zookeeper node " + _node + ": " + e.getMessage(), e);
             }
 
             // Blocking start of the setup node cache - the service fails to start if zookeeper is unavailable
-            _cache.start(true);
+            try {
+                _cache.start(true);
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new CommandThrowableException("Failed while waiting for " +
+                        "zookeeper: " + e.getMessage(), e);
+            }
 
             // Load initial setup from zookeeper
             ChildData currentData = _cache.getCurrentData();
@@ -1370,7 +1382,7 @@ public class UniversalSpringCell
         }
 
         @Override
-        public void load(File file) throws IOException, CommandException
+        public void load(File file) throws CommandException
         {
             try {
                 _curator.setData().forPath(_node, loadSetup(file));
