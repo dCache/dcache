@@ -1034,7 +1034,6 @@ public class RequestContainerV5
                 }
                 m.revertDirection();
                 sendMessage(m);
-                _poolMonitor.messageToCostModule(m);
                 if (!rpm.getSkipCostUpdate()) {
                     _poolMonitor.messageToCostModule(m);
                 }
