@@ -75,7 +75,6 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.services.SetupInfoMessage;
-import dmg.cells.zookeeper.CellCuratorFramework;
 import dmg.util.CommandException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
@@ -286,7 +285,7 @@ public class UniversalSpringCell
     }
 
     private synchronized void executeSetup()
-        throws IOException, CommandException
+        throws CommandException
     {
         executeSetupContext();
 
@@ -298,6 +297,9 @@ public class UniversalSpringCell
                     providers.add(provider);
                 }
                 execFile(_setupFile);
+            } catch (IOException e) {
+                throw new CommandException("Failed to load " + _setupFile.toPath() +
+                        ": " + e.getMessage(), e);
             } finally {
                 for (CellSetupProvider provider : Lists.reverse(providers)) {
                     provider.afterSetup();
