@@ -489,6 +489,9 @@ public class UniversalSpringCell
                             lineCount + ": " + e.getMessage());
                 }
             }
+        } catch (IOException e) {
+            throw new IOException("Failed to read " + setup + ": " +
+                    e.getMessage(), e);
         } finally {
             try {
                 br.close();
