@@ -1,14 +1,5 @@
 #!/bin/sh
 
-if [ -z "$SRM_PATH" ]; then
-    SRM_PATH="$(cd $(dirname $(readlink -f $0))/../share/srm;pwd)"
-fi
+@INIT_SCRIPT@
 
-if [ ! -d "$SRM_PATH" ]; then
-    echo "${SRM_PATH} is not a directory"
-    exit 2
-fi
-
-export SRM_PATH
-
-"${SRM_PATH}/lib/srm" -checkPermissions $*
+"${SRM_PATH}/lib/srm" -checkPermissions "$@"
