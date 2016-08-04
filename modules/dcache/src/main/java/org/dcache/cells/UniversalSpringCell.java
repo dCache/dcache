@@ -310,9 +310,14 @@ public class UniversalSpringCell
 
     private byte[] loadSetup(File file) throws IOException, CommandException
     {
-        byte[] data = readAllBytes(file.toPath());
-        testSetup(file.toString(), data);
-        return data;
+        try {
+            byte[] data = readAllBytes(file.toPath());
+            testSetup(file.toString(), data);
+            return data;
+        } catch (IOException e) {
+            throw new IOException("Failed to read " + file + ": " +
+                    e.getMessage(), e);
+        }
     }
 
     private void testSetup(String source, byte[] data)
