@@ -13,6 +13,11 @@
 
     <name>SRM Client</name>
 
+    <properties>
+        <raw-files>${project.basedir}/src/main</raw-files>
+        <filtered-files>${project.build.directory}/filtered-files</filtered-files>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -59,6 +64,46 @@
                     <source>1.7</source>
                     <target>1.7</target>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                          <!-- The scripts need some variable substitution.
+
+                             The assembly plugin however only supports
+                             ${} substitution and that conflicts with
+                             shell variables and dCache configuration
+                             properties.
+
+                             Therefore we use the resource plugin to
+                             make a filtered copy of the skel and use
+                             those files in the assembly whenever we
+                             need a filtered file. -->
+                        <id>copy-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${filtered-files}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${raw-files}</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                            <delimiters>
+                                <delimiter>@</delimiter>
+                            </delimiters>
+                            <useDefaultDelimiters>false</useDefaultDelimiters>
+                            <filters>
+                                <filter>${project.basedir}/src/main/assembly/filter.properties</filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
@@ -139,7 +184,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
 
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
