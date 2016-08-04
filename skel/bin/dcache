@@ -69,8 +69,8 @@ usage()
 } 1>&2
 
 # Print the canonical path of $1. Only returns a truly canonical path
-# if readlink is available. Otherwise an absolute path which does not
-# end in a symlink is returned.
+# if readlink is available. Otherwise an absolute path that contains
+# no symlinks is returned.
 printCanonicalPath() # in $1 = path
 {
     local link
@@ -79,14 +79,14 @@ printCanonicalPath() # in $1 = path
     if readlink -f / > /dev/null 2>&1; then
         readlink -f $link
     else
-        ret="$(cd $(dirname $link); pwd)/$(basename $link)"
+        ret="$(cd $(dirname $link); pwd -P)/$(basename $link)"
         while [ -h "$ret" ]; do
-            link="$(ls -ld $ret | sed 's/.*-> //')"
+            link="$(readlink "$ret")"
             if [ -z "${link##/*}" ]; then
                 ret="${link}"
             else
                 link=$(dirname $ret)/${link}
-                ret="$(cd $(dirname $link); pwd)/$(basename $link)"
+                ret="$(cd $(dirname $link); pwd -P)/$(basename $link)"
             fi
         done
         echo "$ret"
