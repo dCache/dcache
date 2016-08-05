@@ -65,19 +65,19 @@ public class CellMessage implements Cloneable , Serializable {
 
     public CellMessage(CellPath path)
     {
-        this();
-        _destination = path;
-    }
-
-    public CellMessage()
-    {
         _source = new CellPath();
+        _destination = path;
         _creationTime = System.currentTimeMillis();
         _receivedAt = _creationTime;
         _mode = ORIGINAL_MODE;
         _umid = new UOID();
         _lastUmid = _umid;
         _session = CDC.getSession();
+    }
+
+    public CellMessage()
+    {
+        this(new CellPath());
     }
 
   @Override

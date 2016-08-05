@@ -115,11 +115,17 @@ public final class CellPath implements Cloneable, Serializable
      */
     public synchronized void insert(CellPath path)
     {
+        if (_position < 0) {
+            _position = 0;
+        }
         _list.addAll(_position, path._list);
     }
 
     public synchronized void insert(CellAddressCore address)
     {
+        if (_position < 0) {
+            _position = 0;
+        }
         _list.add(_position, address);
     }
 
