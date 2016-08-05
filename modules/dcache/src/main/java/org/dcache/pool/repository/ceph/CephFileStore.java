@@ -33,6 +33,7 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.rados4j.IoCtx;
 import org.dcache.rados4j.Rados;
+import org.dcache.rados4j.RadosClusterInfo;
 import org.dcache.rados4j.RadosException;
 import org.dcache.rados4j.Rbd;
 import org.dcache.rados4j.RbdImage;
@@ -172,14 +173,14 @@ public class CephFileStore implements FileStore {
 
     @Override
     public long getFreeSpace() throws IOException {
-        // Unlimited storage strikes back - no info provided
-        return Long.MAX_VALUE;
+        RadosClusterInfo clusterInfo = rados.statCluster();
+        return clusterInfo.kb_avail.get() * 1024;
     }
 
     @Override
     public long getTotalSpace() throws IOException {
-         // Unlimited storage strikes back - no info provided
-         return Long.MAX_VALUE;
+        RadosClusterInfo clusterInfo = rados.statCluster();
+        return clusterInfo.kb.get()*1024;
     }
 
     @Override
