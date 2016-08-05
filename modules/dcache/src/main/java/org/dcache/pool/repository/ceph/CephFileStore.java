@@ -43,15 +43,17 @@ import org.dcache.rados4j.RbdImageInfo;
  */
 public class CephFileStore implements FileStore {
 
+    private final Rados rados;
+    private final IoCtx ctx;
     private final Rbd rbd;
     private final String poolName;
 
     public CephFileStore(String poolName, String cluster, String config) throws RadosException {
 
-        Rados rados = new Rados(cluster, config);
+        rados = new Rados(cluster, config);
         rados.connect();
 
-        IoCtx ctx = rados.createIoContext(poolName);
+        ctx = rados.createIoContext(poolName);
         rbd = ctx.createRbd();
         this.poolName = poolName;
     }
@@ -182,6 +184,11 @@ public class CephFileStore implements FileStore {
 
     @Override
     public boolean isOk() {
+        try {
+            rados.statPool(ctx);
+        } catch (RadosException e) {
+            return false;
+        }
         return true;
     }
 
