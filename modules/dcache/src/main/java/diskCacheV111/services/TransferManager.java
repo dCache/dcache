@@ -259,7 +259,13 @@ public abstract class TransferManager extends AbstractCellComponent
         return message;
     }
 
-    public Object messageArrived(TransferStatusQueryMessage message)
+    // TransferStatusQueryMessage is a subclass of
+    // TransferManagerMessage, so the code relies on the
+    // messageArrived dispatch invoking the method with the most
+    // specific signature.  The unused "CellMessage envelope" argument
+    // of this method is required because two-argument methods are
+    // called preferentially.
+    public Object messageArrived(CellMessage envelope, TransferStatusQueryMessage message)
     {
         TransferManagerHandler handler = getHandler(message.getId());
 
