@@ -368,7 +368,7 @@ public class HsmSet
     }
 
     @AffectsSetup
-    @Command(name = "hms unset", hint = "unset nearline storage options",
+    @Command(name = "hsm unset", hint = "unset nearline storage options",
             description = "Unsets options of a nearline storage.")
     public class UnsetCommand implements Callable<String>
     {
