@@ -17,6 +17,7 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmRmRequest;
 import org.dcache.srm.v2_2.SrmRmResponse;
@@ -116,7 +117,7 @@ public class SrmRm
             URI surl = URI.create(surls[i].toString());
             for (PutFileRequest request : srm.getActiveFileRequests(PutFileRequest.class, surl)) {
                 try {
-                    request.abort("Upload aborted because the file was deleted by another request.");
+                    request.abort("Upload aborted because the file was deleted by request " + JDC.getSession() + ".");
                     returnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "Upload was aborted."));
                 } catch (IllegalStateTransition e) {
                     // The request likely aborted or finished before we could abort it
