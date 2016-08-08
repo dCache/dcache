@@ -484,7 +484,8 @@
   </beans>
 
   <beans profile="backend-ceph">
-      <bean id="file-store" class="org.dcache.pool.repository.ceph.CephFileStore">
+      <bean id="file-store" class="org.dcache.pool.repository.ceph.CephFileStore"
+        destroy-method="shutdown">
           <description>Ceph-based back-end store for pool</description>
           <constructor-arg index="0" value="${pool.name}"/>
           <constructor-arg index="1" value="${pool.backend.ceph.cluster}"/>

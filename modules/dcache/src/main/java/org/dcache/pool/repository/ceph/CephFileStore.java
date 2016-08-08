@@ -217,4 +217,12 @@ public class CephFileStore implements FileStore {
             throw new RuntimeException("Faled to build URI", e);
         }
     }
+
+    public void shutdown() throws RadosException {
+        try {
+            ctx.destroy();
+        } finally {
+            rados.shutdown();
+        }
+    }
 }
