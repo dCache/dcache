@@ -57,137 +57,51 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.view.beans;
+package org.dcache.alarms.spi;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import org.springframework.beans.factory.annotation.Required;
 
-import org.dcache.alarms.AlarmPriority;
-import org.dcache.alarms.LogEntry;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
+import java.util.Map;
+
+import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
 
 /**
- * Session data bean.
+ * <p>Factory for creating and configuring listeners which require
+ * only properties from the environment/configuration map.</p>
  *
- * @author arossi
+ * <p>Included in the injection are the alarm type priorities.</p>
  */
-public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
-
-    private static final long serialVersionUID = -2905791637912613314L;
-    private final Set<LogEntry> updated = new HashSet<>();
-    private final Set<LogEntry> deleted = new HashSet<>();
-
-    private Date after;
-    private Date before;
-
-    /*
-     * give this a default value so that the drop-down box displays this instead
-     * of the "SELECT ONE" message
+public class StandardLogEntryListenerFactory
+                extends BaseLogEntryListenerFactory<StandardLogEntryListener> {
+    /**
+     * <p>Map is injected after being built using
+     * a {@link org.dcache.util.ConfigurationMapFactoryBean}.</p>
      */
-    private AlarmPriority priority = AlarmPriority.HIGH;
-    private String type;
-    private boolean showClosed;
-    private Integer from;
-    private Integer to;
+    private Map<String, String> configuration;
 
-    public void addToDeleted(LogEntry toDelete) {
-        deleted.add(toDelete);
+    /**
+     * <p>Make available to the listeners the mapping of
+     * alarm type to priority.</p>
+     */
+    private FileBackedAlarmPriorityMap priorityMap;
+
+    public StandardLogEntryListenerFactory() {
+        super(StandardLogEntryListener.class);
     }
 
-    public void addToUpdated(LogEntry toUpdate) {
-        updated.add(toUpdate);
+    @Required
+    public void setConfiguration(Map<String, String> configuration) {
+        this.configuration = configuration;
     }
 
-    public void delete(LogEntryDAO access) {
-        if (!deleted.isEmpty()) {
-            access.remove(deleted);
-            deleted.clear();
-        }
+    @Required
+    public void setPriorityMap(FileBackedAlarmPriorityMap priorityMap) {
+        this.priorityMap = priorityMap;
     }
 
-    public Date getAfter() {
-        if (after == null) {
-            return null;
-        }
-        return new Date(after.getTime());
-    }
-
-    public Date getBefore() {
-        if (before == null) {
-            return null;
-        }
-        return new Date(before.getTime());
-    }
-
-    public Integer getFrom() {
-        return from;
-    }
-
-    public AlarmPriority getPriority() {
-        return priority;
-    }
-
-    public Integer getTo() {
-        return to;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public boolean isShowClosed() {
-        return showClosed;
-    }
-
-    public void removeFromDeleted(LogEntry toDelete) {
-        deleted.remove(toDelete);
-    }
-
-    public void setAfter(Date after) {
-        if (after == null) {
-            this.after = null;
-        } else {
-            this.after = new Date(after.getTime());
-        }
-    }
-
-    public void setBefore(Date before) {
-        if (before == null) {
-            this.before = null;
-        } else {
-            this.before = new Date(before.getTime());
-        }
-    }
-
-    public void setFrom(Integer from) {
-        this.from = from;
-    }
-
-    public void setPriority(AlarmPriority priority) {
-        this.priority = priority;
-    }
-
-    public void setShowClosed(boolean showClosed) {
-        this.showClosed = showClosed;
-    }
-
-    public void setTo(Integer to) {
-        this.to = to;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public boolean shouldDelete(LogEntry entry) {
-        return deleted.contains(entry);
-    }
-
-    public void update(LogEntryDAO access) {
-        if (!updated.isEmpty()) {
-            access.update(updated);
-            updated.clear();
-        }
+    @Override
+    protected void configureListener(StandardLogEntryListener listener) {
+        listener.setPriorityMap(priorityMap);
+        listener.configure(configuration);
     }
 }

@@ -62,23 +62,21 @@ package org.dcache.alarms.dao.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import javax.jdo.FetchPlan;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
-
 import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.LogEntryDAO;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * DataNucleus wrapper to underlying alarm store.<br>
@@ -143,6 +141,7 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
                     LogEntry original = dup.iterator().next();
                     original.setLastUpdate(entry.getLastUpdate());
                     original.setReceived(original.getReceived() + 1);
+                    entry.setReceived(original.getReceived());
                     /*
                      * this needs to be done or else newly arriving instances will
                      * not be tracked if this type has been closed previously

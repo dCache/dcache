@@ -57,137 +57,49 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.view.beans;
+package org.dcache.alarms.spi;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.dcache.alarms.AlarmPriority;
-import org.dcache.alarms.LogEntry;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.ServiceLoader;
 
 /**
- * Session data bean.
- *
- * @author arossi
+ * <p>Does the basic work of loading and invocation of listeners
+ *    bound to the given factory type.</p>
  */
-public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
+public abstract class BaseLogEntryListenerFactory<L extends LogEntryListener>
+                implements LogEntryListenerFactory<L> {
+    private final Collection<L> listeners = Collections.synchronizedList(new ArrayList<>());
 
-    private static final long serialVersionUID = -2905791637912613314L;
-    private final Set<LogEntry> updated = new HashSet<>();
-    private final Set<LogEntry> deleted = new HashSet<>();
-
-    private Date after;
-    private Date before;
-
-    /*
-     * give this a default value so that the drop-down box displays this instead
-     * of the "SELECT ONE" message
+    /**
+     * Set from the default constructor of the factory class.
      */
-    private AlarmPriority priority = AlarmPriority.HIGH;
-    private String type;
-    private boolean showClosed;
-    private Integer from;
-    private Integer to;
+    protected final Class<L> clzz;
 
-    public void addToDeleted(LogEntry toDelete) {
-        deleted.add(toDelete);
+    protected BaseLogEntryListenerFactory(Class<L> clzz) {
+        this.clzz = clzz;
     }
 
-    public void addToUpdated(LogEntry toUpdate) {
-        updated.add(toUpdate);
+    @Override
+    public Collection<L> getConfiguredListeners() {
+        return listeners;
     }
 
-    public void delete(LogEntryDAO access) {
-        if (!deleted.isEmpty()) {
-            access.remove(deleted);
-            deleted.clear();
+    @Override
+    public void load() {
+        ServiceLoader<L> serviceLoader = ServiceLoader.load(clzz);
+        for (L listener : serviceLoader) {
+            configureListener(listener);
+            listeners.add(listener);
         }
     }
 
-    public Date getAfter() {
-        if (after == null) {
-            return null;
-        }
-        return new Date(after.getTime());
-    }
-
-    public Date getBefore() {
-        if (before == null) {
-            return null;
-        }
-        return new Date(before.getTime());
-    }
-
-    public Integer getFrom() {
-        return from;
-    }
-
-    public AlarmPriority getPriority() {
-        return priority;
-    }
-
-    public Integer getTo() {
-        return to;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public boolean isShowClosed() {
-        return showClosed;
-    }
-
-    public void removeFromDeleted(LogEntry toDelete) {
-        deleted.remove(toDelete);
-    }
-
-    public void setAfter(Date after) {
-        if (after == null) {
-            this.after = null;
-        } else {
-            this.after = new Date(after.getTime());
-        }
-    }
-
-    public void setBefore(Date before) {
-        if (before == null) {
-            this.before = null;
-        } else {
-            this.before = new Date(before.getTime());
-        }
-    }
-
-    public void setFrom(Integer from) {
-        this.from = from;
-    }
-
-    public void setPriority(AlarmPriority priority) {
-        this.priority = priority;
-    }
-
-    public void setShowClosed(boolean showClosed) {
-        this.showClosed = showClosed;
-    }
-
-    public void setTo(Integer to) {
-        this.to = to;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public boolean shouldDelete(LogEntry entry) {
-        return deleted.contains(entry);
-    }
-
-    public void update(LogEntryDAO access) {
-        if (!updated.isEmpty()) {
-            access.update(updated);
-            updated.clear();
-        }
-    }
+    /**
+     * <p>Procedure specific to the given listener type.  This may or may
+     *    not involve access to an application context.</p>
+     *
+     * @param listener of the type handled by this factory (may not be unique).
+     */
+    protected abstract void configureListener(L listener);
 }

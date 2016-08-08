@@ -44,7 +44,6 @@
         <property name="rootLevel" value="${alarms.log.root-level}"/>
         <property name="priorityMap" ref="priorityMap"/>
         <property name="converter" ref="logEventConverter"/>
-        <property name="store" ref="alarmStore"/>
         <property name="emailEnabled" value="${alarms.enable.email}"/>
         <property name="emailThreshold" value="${alarms.email.threshold}"/>
         <property name="emailEncoding" value="${alarms.email.encoding-pattern}"/>
@@ -65,6 +64,7 @@
         <property name="historyMaxFileSize" value="${alarms.history.max-file-size}"/>
         <property name="historyMaxIndex" value="${alarms.history.max-index}"/>
         <property name="historyMinIndex" value="${alarms.history.min-index}"/>
+        <property name="store" ref="alarmStore"/>
     </bean>
 
     <bean id="server" class="org.dcache.alarms.logback.LogEntryServer"
@@ -78,6 +78,16 @@
         <property name="alarmPriorityMap" ref="priorityMap"/>
         <property name="serverHost" value="${alarms.net.host}"/>
         <property name="serverPort" value="${alarms.net.port}"/>
+    </bean>
+
+    <bean id="standardListenerFactory" class="org.dcache.alarms.spi.StandardLogEntryListenerFactory"
+          init-method="load">
+        <property name="configuration">
+            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+                <property name="prefix" value="alarms.plugin"/>
+            </bean>
+        </property>
+        <property name="priorityMap" ref="priorityMap"/>
     </bean>
 
     <beans profile="off">

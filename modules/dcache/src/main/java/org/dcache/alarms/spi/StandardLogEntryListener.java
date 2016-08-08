@@ -57,36 +57,26 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.dataaccess.impl;
+package org.dcache.alarms.spi;
 
-import java.util.Collection;
+import java.util.Map;
 
-import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
-import org.dcache.alarms.LogEntry;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
+import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
 
 /**
- * For use with the 'off' Spring profile.
- * Should never be called, but just in case,
- * this avoids NPEs.
- *
- * @author arossi
+ * <p>Parent of listeners which require no other configuration than
+ * to have a number of configuration properties injected.</p>
  */
-public class NOPAlarmStore implements LogEntryDAO {
+public interface StandardLogEntryListener extends LogEntryListener {
+    /**
+     * @param configuration provides the environment from which
+     *                      the listener should autowire its property
+     *                      fields.
+     */
+    void configure(Map<String, String> configuration);
 
-    public Collection<LogEntry> get(AlarmDAOFilter filter) {
-        return null;
-    }
-
-    public long remove(Collection<LogEntry> selected) {
-        return 0;
-    }
-
-    public long update(Collection<LogEntry> selected) {
-        return 0;
-    }
-
-    public boolean isConnected() {
-        return false;
-    }
+    /**
+     * @param priorityMap current alarm prioritization by type.
+     */
+    void setPriorityMap(FileBackedAlarmPriorityMap priorityMap);
 }

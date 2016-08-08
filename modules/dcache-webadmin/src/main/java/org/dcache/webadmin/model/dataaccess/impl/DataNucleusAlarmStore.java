@@ -74,7 +74,7 @@ import java.util.Map;
 
 import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 
 /**

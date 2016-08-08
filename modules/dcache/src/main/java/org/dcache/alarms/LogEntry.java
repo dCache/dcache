@@ -57,7 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms.dao;
+package org.dcache.alarms;
 
 import com.google.common.base.Preconditions;
 

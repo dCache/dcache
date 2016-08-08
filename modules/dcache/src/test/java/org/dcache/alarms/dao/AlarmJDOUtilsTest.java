@@ -66,8 +66,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.dcache.alarms.dao.AlarmJDOUtils;
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 
 import static org.hamcrest.Matchers.is;

@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
-import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -68,14 +67,21 @@ import ch.qos.logback.core.AppenderBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+
+import java.util.Collection;
+import java.util.Collections;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
 import org.dcache.alarms.jdom.JDomAlarmDefinition;
 import org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap;
+import org.dcache.alarms.spi.LogEntryListenerFactory;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNull;
@@ -100,6 +106,11 @@ public class LogEntryAppenderTest {
             this.handler = handler;
         }
 
+        public void start() {
+            handler.start();
+            super.start();
+        }
+
         @Override
         protected void append(ILoggingEvent eventObject) {
             handler.handle(eventObject);
@@ -118,16 +129,29 @@ public class LogEntryAppenderTest {
         return definition;
     }
 
-    private final LogEntryDAO store = new LogEntryDAO() {
+    private final LogEntryDAO testStore = new LogEntryDAO() {
         @Override
-        public void put(LogEntry entry) {
-            lastEntry = entry;
+        public void put(LogEntry alarm) {
+            lastEntry = alarm;
         }
 
+        @Override
         public void initialize() {
         }
 
+        @Override
         public void shutdown() {
+        }
+    };
+
+    private final LogEntryListenerFactory factory = new LogEntryListenerFactory() {
+        @Override
+        public Collection getConfiguredListeners() {
+            return Collections.EMPTY_LIST;
+        }
+
+        @Override
+        public void load() {
         }
     };
 
@@ -146,10 +170,25 @@ public class LogEntryAppenderTest {
                 }
                 new LogEntryTask(eventObject).run();
             }
+
+            @Override
+            protected void loadListeners() {
+                listenerFactories.add(factory);
+            }
+
+            public void start() {
+                loadListeners();
+            }
+
+            @Override
+            public void setApplicationContext(ApplicationContext applicationContext)
+                            throws BeansException {
+            }
         };
         handler.setEmailEnabled(false);
         handler.setHistoryEnabled(false);
         handler.setRootLevel("ERROR");
+        handler.setStore(testStore);
         XmlBackedAlarmDefinitionsMap dmap = new XmlBackedAlarmDefinitionsMap();
         addDefinitions(dmap);
         LoggingEventConverter converter = new LoggingEventConverter();
@@ -160,7 +199,6 @@ public class LogEntryAppenderTest {
         pmap.initialize();
         handler.setPriorityMap(pmap);
         handler.setConverter(converter);
-        handler.setStore(store);
         Receiver appender = new Receiver(handler);
         LoggerContext context
             = (LoggerContext) LoggerFactory.getILoggerFactory();

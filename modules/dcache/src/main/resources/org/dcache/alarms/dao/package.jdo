@@ -3,7 +3,7 @@
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://java.sun.com/xml/ns/jdo/jdo
         http://java.sun.com/xml/ns/jdo/jdo_2_0.xsd">
-    <package name="org.dcache.alarms.dao">
+    <package name="org.dcache.alarms">
         <class name="LogEntry" detachable="true" >
             <field name="key" primary-key="true"/>
             <field name="info">

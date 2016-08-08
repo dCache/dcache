@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
+import org.dcache.alarms.LogEntry;
+
 /**
  * Interface for the logger to store entries.
  *

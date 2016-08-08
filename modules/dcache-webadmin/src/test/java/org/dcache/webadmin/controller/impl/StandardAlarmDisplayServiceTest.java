@@ -72,7 +72,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.alarms.AlarmPriority;
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;

@@ -57,36 +57,32 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.dataaccess.impl;
+package org.dcache.alarms.spi;
 
 import java.util.Collection;
 
-import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
-import org.dcache.alarms.LogEntry;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
-
 /**
- * For use with the 'off' Spring profile.
- * Should never be called, but just in case,
- * this avoids NPEs.
+ * <p>For each {@link LogEntryListener} there is a factory which
+ *    is responsible for its configuration.</p>
  *
- * @author arossi
+ * <p>The implementations of this factory map the "extension points" inasmuch
+ *    as their generic listener types must all be "exported" by the core
+ *    alarms configuration.  In implementation-specific terms, this
+ *    means that all such factories must appear in the alarms Spring
+ *    application context. The listeners themselves can be defined in the
+ *    META-INF directory of other modules, but their properties are injected
+ *    from this context (via the protected configuration method).</p>
  */
-public class NOPAlarmStore implements LogEntryDAO {
+public interface LogEntryListenerFactory<L extends LogEntryListener> {
+    /**
+     * @return the configured listeners loaded by the {@link #load()}
+     *    method.
+     */
+    Collection<L> getConfiguredListeners();
 
-    public Collection<LogEntry> get(AlarmDAOFilter filter) {
-        return null;
-    }
-
-    public long remove(Collection<LogEntry> selected) {
-        return 0;
-    }
-
-    public long update(Collection<LogEntry> selected) {
-        return 0;
-    }
-
-    public boolean isConnected() {
-        return false;
-    }
+    /**
+     *  <p>Responsible for the configuration of the {@LogEntryListener}
+     *     type(s) bound to this factory.</p>
+     */
+    void load();
 }

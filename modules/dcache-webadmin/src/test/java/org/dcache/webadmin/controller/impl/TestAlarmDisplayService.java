@@ -3,7 +3,7 @@ package org.dcache.webadmin.controller.impl;
 import java.util.Map;
 
 import org.dcache.alarms.AlarmPriority;
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
 import org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;

@@ -74,6 +74,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.dcache.alarms.LogEntry;
+
 /**
  * Convenience methods for generating JDO queries from {@link LogEntry}
  * fields.

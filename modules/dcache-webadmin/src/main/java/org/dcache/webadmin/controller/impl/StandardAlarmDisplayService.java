@@ -70,7 +70,7 @@ import diskCacheV111.util.CacheException;
 
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.dao.AlarmJDOUtils;
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.cells.CellStub;
 import org.dcache.util.CacheExceptionFactory;

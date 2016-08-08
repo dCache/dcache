@@ -59,7 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao.impl;
 
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.LogEntryDAO;
 
 /**

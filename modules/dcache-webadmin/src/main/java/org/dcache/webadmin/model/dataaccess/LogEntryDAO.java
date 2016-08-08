@@ -61,7 +61,7 @@ package org.dcache.webadmin.model.dataaccess;
 
 import java.util.Collection;
 
-import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 
 /**
