@@ -53,6 +53,7 @@ public interface StageRequest extends NearlineRequest<Set<Checksum>>
      * a file store other than the OS file system is used.
      *
      * @return A URI to the replica.
+     * @since 2.17
      */
     URI getReplicaUri();
 

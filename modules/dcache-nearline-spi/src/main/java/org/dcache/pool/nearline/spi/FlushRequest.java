@@ -51,6 +51,7 @@ public interface FlushRequest extends NearlineRequest<Set<URI>>
      * a file store other than the OS file system is used.
      *
      * @return A URI
+     * @since 2.17
      */
     URI getReplicaUri();
 
