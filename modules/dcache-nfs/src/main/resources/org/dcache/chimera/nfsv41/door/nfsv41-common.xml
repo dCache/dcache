@@ -6,7 +6,7 @@
             http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:property-placeholder/>
-    <context:property-placeholder/>
+    <context:annotation-config/>
 
     <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
         <description>Undeliverable message logger</description>
