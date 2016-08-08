@@ -42,5 +42,6 @@ onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${billing.cell.name} \
         "classpath:org/dcache/services/billing/cells/billing.xml \
         -profiles=db-${billing.enable.db} \
+        -subscribe=${billing.cell.subscribe} \
         -consume=${billing.cell.consume} \
         -billingCellName=${billing.cell.name}.alias"
