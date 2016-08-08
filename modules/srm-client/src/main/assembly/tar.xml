@@ -11,7 +11,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.basedir}/src/main/bin</directory>
+            <directory>${filtered-files}/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <fileMode>755</fileMode>
             <directoryMode>755</directoryMode>
@@ -24,13 +24,13 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/src/main/lib</directory>
+            <directory>${filtered-files}/lib</directory>
             <outputDirectory>share/srm/lib</outputDirectory>
             <fileMode>755</fileMode>
             <directoryMode>755</directoryMode>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/src/main/conf</directory>
+            <directory>${filtered-files}/conf</directory>
             <outputDirectory>share/srm/conf</outputDirectory>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>

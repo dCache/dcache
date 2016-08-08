@@ -1,8 +1,8 @@
 #!/bin/sh
 
-jar_dir=$(cd $(dirname $(readlink -f $0))/../share/srm/lib; pwd)
+@INIT_SCRIPT@
 
-conf_dir=$(cd $jar_dir/../conf;pwd)
+conf_dir=$SRM_PATH/conf
 
 if [ "$1" = "-debug" ]; then
     logbackDefn=-Dlogback.configurationFile=$conf_dir/logback-all.xml
@@ -25,7 +25,7 @@ else
    x509_user_trusted_certs=/etc/grid-security/certificates
 fi
 
-CLASSPATH="$jar_dir/*" java -Dlog=${DELEGATION_LOG:-warn} \
+CLASSPATH="$SRM_PATH/lib/*" java -Dlog=${DELEGATION_LOG:-warn} \
     -client \
     -Djava.awt.headless=true \
     -DwantLog4jSetup=n \
