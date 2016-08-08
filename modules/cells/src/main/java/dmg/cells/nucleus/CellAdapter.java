@@ -183,6 +183,8 @@ public class CellAdapter
      * This method has to be called if the
      * constructor has been used with the startNow
      * argument set to 'false'.
+     * Failures to start the cell due to external influences are indicated by
+     * a CommandException; all other exceptions are treated as bugs.
      */
     public synchronized void start()
     {

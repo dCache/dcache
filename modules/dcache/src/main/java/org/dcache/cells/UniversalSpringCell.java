@@ -321,8 +321,7 @@ public class UniversalSpringCell
         }
     }
 
-    private void executeSetup()
-        throws IOException, CommandException
+    private void executeSetup() throws CommandException
     {
         executeDefinedSetup();
 
@@ -331,7 +330,12 @@ public class UniversalSpringCell
                 provider.beforeSetup();
             }
 
-            execFile(_setupFile);
+            try {
+                execFile(_setupFile);
+            } catch (IOException e) {
+                throw new CommandException("Failed to load " + _setupFile.toPath() +
+                        ": " + e.getMessage(), e);
+            }
 
             for (CellSetupProvider provider: _setupProviders.values()) {
                 provider.afterSetup();
@@ -571,7 +575,7 @@ public class UniversalSpringCell
             boolean confirmed;
 
             @Override
-            public String call() throws IOException, CommandException, IllegalArgumentException
+            public String call() throws CommandException, IllegalArgumentException
             {
                 checkArgument(confirmed, "Required option is missing.");
                 if (_setupFile != null && !_setupFile.exists()) {
