@@ -1,6 +1,7 @@
-/* dCache - http://www.dcache.org/
+/*
+ * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,6 +30,8 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import diskCacheV111.util.CacheException;
+
 import org.dcache.commons.util.NDC;
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.NearlineRequest;
@@ -38,17 +41,17 @@ import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Base class for NearlineStorage implementations that follow the one-thread-per-task
- * paradigm.
+ * Abstract base class for NearlineStorage implementations that follow the
+ * one-thread-per-task paradigm.
  *
- * Implements request activation, request termination callbacks, request cancellation,
+ * <p>Implements request activation, request termination callbacks, request cancellation,
  * and nearline storage shutdown logic. Request cancellation is implemented by interrupting
  * the thread executing the cancelled task.
  *
- * Subclasses must implement the abstract methods for flush, stage and remove, as well as
+ * <p>Subclasses must implement the abstract methods for flush, stage and remove, as well as
  * the three methods for providing an executor for each of the there operations.
  */
 public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
@@ -167,23 +170,91 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
                 .filter(uri -> uri.getAuthority().equals(name));
     }
 
+    /**
+     * Returns the executor to use for flush requests.
+     *
+     * <p>Must be implemented by subclasses. Provides control over scheduling policy
+     * for flush requests.
+     *
+     * @see AbstractBlockingNearlineStorage#flush
+     */
     protected abstract Executor getFlushExecutor();
+
+    /**
+     * Returns the executor to use for stage requests.
+     *
+     * <p>Must be implemented by subclasses. Provides control over scheduling policy
+     * for stage requests.
+     *
+     * @see AbstractBlockingNearlineStorage#stage
+     */
     protected abstract Executor getStageExecutor();
+
+    /**
+     * Returns the executor to use for remove requests.
+     *
+     * <p>Must be implemented by subclasses. Provides control over scheduling policy
+     * for remove requests.
+     *
+     * @see AbstractBlockingNearlineStorage#remove
+     */
     protected abstract Executor getRemoveExecutor();
 
+    /**
+     * Process a flush request.
+     *
+     * <p>Implemented by subclasses to provide flush functionality. Called from the
+     * flush executor. The calling thread is interrupted if the request is aborted.
+     *
+     * <p>Implementations should prefer to use {@link CacheException} for signalling
+     * errors as it provides control over the error code (similar to the exit code of
+     * HSM scripts).
+     *
+     * @throws InterruptedException when the calling thread is interrupted
+     * @throws Exception any other error
+     */
     protected abstract Set<URI> flush(FlushRequest request)
             throws Exception;
+
+    /**
+     * Process a stage request.
+     *
+     * <p>Implemented by subclasses to provide stage functionality. Called from the
+     * stage executor. The calling thread is interrupted if the request is aborted.
+     *
+     * <p>Implementations should prefer to use {@link CacheException} for signalling
+     * errors as it provides control over the error code (similar to the exit code of
+     * HSM scripts).
+     *
+     * @throws InterruptedException when the calling thread is interrupted
+     * @throws Exception any other error
+     */
     protected abstract Set<Checksum> stage(StageRequest request)
             throws Exception;
+
+    /**
+     * Process a remove request.
+     *
+     * <p>Implemented by subclasses to provide remove functionality. Called from the
+     * remove executor. The calling thread is interrupted if the request is aborted.
+     *
+     * <p>Implementations should prefer to use * {@link CacheException} for signalling
+     * errors as it provides control over the error code (similar to the exit code of
+     * HSM scripts).
+     *
+     * @throws InterruptedException when the calling thread is interrupted
+     * @throws Exception any other error
+     */
     protected abstract void remove(RemoveRequest request)
             throws Exception;
 
     /**
      * Base class for tasks processing nearline requests.
+     *
      * @param <R> Request type
      * @param <T> Result type provided to the callback upon completion
      */
-    protected abstract class Task<R extends NearlineRequest<T>, T> implements Runnable
+    private abstract class Task<R extends NearlineRequest<T>, T> implements Runnable
     {
         protected final R request;
         private Thread thread;
