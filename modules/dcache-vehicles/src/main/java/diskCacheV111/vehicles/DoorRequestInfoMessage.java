@@ -1,5 +1,7 @@
 package diskCacheV111.vehicles;
 
+import com.google.common.base.MoreObjects;
+
 import javax.security.auth.Subject;
 
 import dmg.cells.nucleus.CellAddressCore;
@@ -35,10 +37,15 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
         return _transactionTime;
     }
 
+    @Override
     public String toString()
     {
-        return getInfoHeader() + " [" + this.getUserInfo() + "] " + getFileInfo() + ' ' + _transactionTime
-               + ' ' + getTimeQueued() + ' ' + getResult();
+        return "DoorRequestInfoMessage{" +
+               "transactionTime=" + _transactionTime +
+               ", client='" + _client + '\'' +
+               ", clientChain='" + _clientChain + '\'' +
+               ", transferPath='" + _transferPath + '\'' +
+               "} " + super.toString();
     }
 
     public String getClient()
@@ -81,11 +88,6 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     {
         long[] uids = Subjects.getUids(getSubject());
         return (uids.length > 0) ? (int) uids[0] : -1;
-    }
-
-    public String getUserInfo()
-    {
-        return '"' + getOwner() + "\":" + getUid() + ':' + getGid() + ':' + _client;
     }
 
     @Override

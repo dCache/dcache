@@ -47,13 +47,14 @@ public class PoolHitInfoMessage extends PnfsFileInfoMessage {
         _transferPath = path;
     }
 
+    @Override
     public String toString()
     {
-		return getInfoHeader() + ' ' +
-               getFileInfo() + ' ' +
-               _fileCached + " {" +
-               _protocolInfo + "} " +
-               getResult() ;
+        return "PoolHitInfoMessage{" +
+               "protocolInfo=" + _protocolInfo +
+               ", fileCached=" + _fileCached +
+               ", transferPath='" + _transferPath + '\'' +
+               "} " + super.toString();
     }
 
     @Override

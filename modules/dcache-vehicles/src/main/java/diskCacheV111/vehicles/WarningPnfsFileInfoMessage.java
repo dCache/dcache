@@ -20,6 +20,14 @@ public class WarningPnfsFileInfoMessage extends PnfsFileInfoMessage
     }
 
     @Override
+    public String toString()
+    {
+        return "WarningPnfsFileInfoMessage{" +
+               "transferPath='" + _transferPath + '\'' +
+               "} " + super.toString();
+    }
+
+    @Override
     public void accept(InfoMessageVisitor visitor)
     {
         visitor.visit(this);

@@ -5,7 +5,6 @@ import javax.security.auth.Subject;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 
 import dmg.cells.nucleus.CellAddressCore;
@@ -45,24 +44,21 @@ public abstract class InfoMessage implements Serializable
 
     public abstract void accept(InfoMessageVisitor visitor);
 
-    protected static synchronized String formatTimestamp(Date timestamp)
-    {
-        return __dateFormat.format(timestamp);
-    }
-
-    public String getInfoHeader()
-    {
-        return formatTimestamp(new Date(_timestamp)) + " [" + _cellType + ':' + _cellAddress + ':' + _messageType + ']';
-    }
-
-    public String getResult()
-    {
-        return "{" + _resultCode + ":\"" + _message + "\"}";
-    }
-
+    @Override
     public String toString()
     {
-        return getInfoHeader() + ' ' + getResult();
+        return "InfoMessage{" +
+               "cellType='" + _cellType + '\'' +
+               ", messageType='" + _messageType + '\'' +
+               ", cellAddress=" + _cellAddress +
+               ", timeQueued=" + _timeQueued +
+               ", resultCode=" + _resultCode +
+               ", message='" + _message + '\'' +
+               ", timestamp=" + _timestamp +
+               ", transaction='" + _transaction + '\'' +
+               ", transactionID=" + _transactionID +
+               ", subject=" + _subject +
+               '}';
     }
 
     public void setResult(int resultCode, String resultMessage)

@@ -87,21 +87,18 @@ public class MoverInfoMessage extends PnfsFileInfoMessage
         _transferPath = path;
     }
 
-    public String getAdditionalInfo()
-    {
-        return _dataTransferred + " "
-               + _connectionTime + ' '
-               + _fileCreated + " {"
-               + _protocolInfo + "} ["
-               + _initiator + "] ";
-    }
-
+    @Override
     public String toString()
     {
-        return getInfoHeader() + ' ' +
-               getFileInfo() + ' ' +
-               getAdditionalInfo() +
-               getResult();
+        return "MoverInfoMessage{" +
+               "dataTransferred=" + _dataTransferred +
+               ", connectionTime=" + _connectionTime +
+               ", protocolInfo=" + _protocolInfo +
+               ", fileCreated=" + _fileCreated +
+               ", initiator='" + _initiator + '\'' +
+               ", isP2p=" + _isP2p +
+               ", transferPath='" + _transferPath + '\'' +
+               "} " + super.toString();
     }
 
     @Override

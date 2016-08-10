@@ -1,6 +1,7 @@
 package org.dcache.services.billing.cells;
 
 import com.google.common.base.CaseFormat;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
@@ -145,16 +146,13 @@ public final class BillingCell
         }
 
         if (_enableText) {
-
             String output = getFormattedMessage(info);
-            if (output.isEmpty()) {
-                return;
-            }
-
-            String ext = getFilenameExtension(new Date(info.getTimestamp()));
-            logInfo(output, ext);
-            if (info.getResultCode() != 0) {
-                logError(output, ext);
+            if (!output.isEmpty()) {
+                String ext = getFilenameExtension(new Date(info.getTimestamp()));
+                logInfo(output, ext);
+                if (info.getResultCode() != 0) {
+                    logError(output, ext);
+                }
             }
         }
     }
@@ -173,18 +171,16 @@ public final class BillingCell
 
     private String getFormattedMessage(InfoMessage msg) {
         String format = _formats.get(msg.getClass().getSimpleName());
-        if (format == null) {
-            return msg.toString();
-        } else {
+        if (!Strings.isNullOrEmpty(format)) {
             try {
                 ST template = new ST(_templateGroup, format);
                 msg.accept(new StringTemplateInfoMessageVisitor(template));
                 return template.render();
             } catch (STException e) {
-                _log.error("Unable to render format '{}'. Falling back to internal default.", format);
-                return msg.toString();
+                _log.error("Unable to render format '{}'.", format);
             }
         }
+        return "";
     }
 
     public Object[][] ac_get_billing_info(Args args) {

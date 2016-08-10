@@ -25,13 +25,12 @@ public class StorageInfoMessage extends PnfsFileInfoMessage
         return _transferTime;
     }
 
+    @Override
     public String toString()
     {
-        return getInfoHeader() + ' ' +
-               getFileInfo() + ' ' +
-               _transferTime + ' ' +
-               getTimeQueued() + ' ' +
-               getResult();
+        return "StorageInfoMessage{" +
+               "transferTime=" + _transferTime +
+               "} " + super.toString();
     }
 
     @Override

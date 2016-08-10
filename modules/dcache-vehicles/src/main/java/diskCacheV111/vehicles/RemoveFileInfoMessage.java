@@ -13,11 +13,10 @@ public class RemoveFileInfoMessage extends PnfsFileInfoMessage
         super("remove", "pool", address, pnfsId);
     }
 
+    @Override
     public String toString()
     {
-        return getInfoHeader() + ' ' +
-               getFileInfo() + ' ' +
-               getResult();
+        return "RemoveFileInfoMessage{} " + super.toString();
     }
 
     @Override

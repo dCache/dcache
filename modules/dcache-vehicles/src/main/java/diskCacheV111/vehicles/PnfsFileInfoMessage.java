@@ -24,14 +24,6 @@ public abstract class PnfsFileInfoMessage extends InfoMessage
         _pnfsId = pnfsId;
     }
 
-    public String getFileInfo()
-    {
-        return "[" + _pnfsId + ',' + _fileSize + ']' + ' ' + '[' + _path + "] " +
-               (_storageInfo == null ?
-                "<unknown>" :
-                (_storageInfo.getStorageClass() + '@' + _storageInfo.getHsm()));
-    }
-
     public void setFileSize(long fileSize)
     {
         _fileSize = fileSize;
