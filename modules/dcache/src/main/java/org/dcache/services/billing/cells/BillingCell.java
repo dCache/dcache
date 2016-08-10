@@ -26,7 +26,7 @@ import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PnfsFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.vehicles.StringTemplateInfoMessageVisitor;
+import org.dcache.services.billing.text.StringTemplateInfoMessageVisitor;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import dmg.cells.nucleus.CellCommandListener;
