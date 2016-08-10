@@ -326,6 +326,7 @@
                     <list>
                         <bean class="org.dcache.webdav.MiltonHandler">
                             <property name="httpManager" ref="http-manager"/>
+                            <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
                         </bean>
                         <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
                     </list>
