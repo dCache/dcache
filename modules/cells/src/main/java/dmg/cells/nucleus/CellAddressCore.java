@@ -124,4 +124,13 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
     {
         return _domain.equals("local");
     }
+
+    /* REVISIT: The class is in a transition phase to allow _domain to be null for
+     * unqualified cell addresses. After the next golden release, this class can be
+     * adjusted to use null rather than 'local' and reversing the role of readResolve.
+     */
+    public Object readResolve()
+    {
+        return (_domain == null) ? new CellAddressCore(_cell, null) : this;
+    }
 }
