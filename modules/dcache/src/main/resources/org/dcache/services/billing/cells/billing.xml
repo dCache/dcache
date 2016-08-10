@@ -22,6 +22,7 @@
                         http://www.springframework.org/schema/util/spring-util.xsd">
 
   <context:property-placeholder/>
+  <context:annotation-config/>
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
     <description>Undeliverable message logger</description>

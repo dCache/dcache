@@ -371,10 +371,12 @@ public class Indexer
             @Override
             public boolean processLine(String line) throws IOException
             {
-                for (String term : searchTerms) {
-                    if (line.contains(term)) {
-                        out.println(line);
-                        break;
+                if (!line.isEmpty() && line.charAt(0) != '#') {
+                    for (String term : searchTerms) {
+                        if (line.contains(term)) {
+                            out.println(line);
+                            break;
+                        }
                     }
                 }
                 return true;
@@ -635,15 +637,17 @@ public class Indexer
         @Override
         public boolean processLine(String line) throws IOException
         {
-            String[] value = parser.apply(line);
-            if (value[0] != null) {
-                addAllPathPrefixes(value[0], result);
-            }
-            if (value[1] != null) {
-                result.add(value[1]);
-            }
-            if (value[2] != null) {
-                addAllPathPrefixes(value[2], result);
+            if (!line.isEmpty() && line.charAt(0) != '#') {
+                String[] value = parser.apply(line);
+                if (value[0] != null) {
+                    addAllPathPrefixes(value[0], result);
+                }
+                if (value[1] != null) {
+                    result.add(value[1]);
+                }
+                if (value[2] != null) {
+                    addAllPathPrefixes(value[2], result);
+                }
             }
             return true;
         }

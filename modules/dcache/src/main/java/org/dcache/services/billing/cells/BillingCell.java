@@ -3,7 +3,6 @@ package org.dcache.services.billing.cells;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -11,23 +10,30 @@ import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.compiler.STException;
 
+import javax.annotation.PostConstruct;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.cells.DateRenderer;
 import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PnfsFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import org.dcache.services.billing.text.StringTemplateInfoMessageVisitor;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
@@ -36,12 +42,16 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.EnvironmentAware;
+import dmg.util.CommandThrowableException;
 import dmg.util.Formats;
 import dmg.util.Replaceable;
 
 import org.dcache.cells.CellStub;
+import org.dcache.services.billing.text.StringTemplateInfoMessageVisitor;
 import org.dcache.util.Args;
 import org.dcache.util.Slf4jSTErrorListener;
+
+import static java.nio.file.StandardOpenOption.*;
 
 /**
  * This class is responsible for the processing of messages from other
@@ -74,13 +84,13 @@ public final class BillingCell
 
     private int _requests;
     private int _failed;
-    private File _currentDbFile;
+    private Path _currentDbFile;
 
     /*
      * Injected
      */
     private CellStub _poolManagerStub;
-    private File _logsDir;
+    private Path _logsDir;
     private boolean _enableText;
     private boolean _flatTextDir;
 
@@ -126,6 +136,27 @@ public final class BillingCell
         }
     }
 
+    @PostConstruct
+    public void start() throws CommandThrowableException
+    {
+        if (_enableText) {
+            String ext = getFilenameExtension(new Date());
+            appendHeaders(getBillingPath(ext));
+            appendHeaders(getErrorPath(ext));
+        }
+    }
+
+    protected void appendHeaders(Path path) throws CommandThrowableException
+    {
+        try {
+            String headers = getFormatHeaders();
+            Files.write(path, headers.getBytes(UTF8), StandardOpenOption.APPEND, StandardOpenOption.WRITE);
+        } catch (NoSuchFileException ignored) {
+        } catch (IOException e) {
+            throw new CommandThrowableException("Failed to write to billing file " + path + ": " + e, e);
+        }
+    }
+
     /**
      * The main cell routine. Depending on the type of cell message and the
      * option sets, it either processes the message for persistent storage or
@@ -149,9 +180,9 @@ public final class BillingCell
             String output = getFormattedMessage(info);
             if (!output.isEmpty()) {
                 String ext = getFilenameExtension(new Date(info.getTimestamp()));
-                logInfo(output, ext);
+                log(getBillingPath(ext), output);
                 if (info.getResultCode() != 0) {
-                    logError(output, ext);
+                    log(getErrorPath(ext), output);
                 }
             }
         }
@@ -224,9 +255,8 @@ public final class BillingCell
         } else {
             name = args.argv(0);
         }
-        File file = new File(_logsDir, name);
-        PoolStatusCollector collector =
-            new PoolStatusCollector(_poolManagerStub, file);
+        Path file = _logsDir.resolve(name);
+        PoolStatusCollector collector = new PoolStatusCollector(_poolManagerStub, file);
         collector.setName(name);
         collector.start();
         return file.toString();
@@ -238,10 +268,9 @@ public final class BillingCell
         if (name == null) {
             name = "poolFlow-" + _fileNameFormat.format(new Date());
         }
-        File report = new File(_logsDir, name);
-        try (PrintWriter pw = new PrintWriter(Files.newWriter(report, UTF8))) {
-            Set<Map.Entry<String, Map<String, long[]>>> pools =
-                    _poolStorageMap.entrySet();
+        Path report = _logsDir.resolve(name);
+        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(report, UTF8))) {
+            Set<Map.Entry<String, Map<String, long[]>>> pools = _poolStorageMap.entrySet();
 
             for (Map.Entry<String, Map<String, long[]>> poolEntry : pools) {
                 String poolName = poolEntry.getKey();
@@ -261,8 +290,10 @@ public final class BillingCell
             }
         } catch (RuntimeException e) {
             _log.warn("Exception in dumpPoolStatistics : {}", e);
-            if (!report.delete()) {
-                _log.warn("Could not delete report: {}", report);
+            try {
+                Files.delete(report);
+            } catch (IOException f) {
+                e.addSuppressed(f);
             }
             throw e;
         }
@@ -294,34 +325,51 @@ public final class BillingCell
             return _fileNameFormat.format(dateOfEvent);
         } else {
             Date now = new Date();
-            _currentDbFile =
-                new File(_logsDir, _directoryNameFormat.format(now));
-            if (!_currentDbFile.exists() && !_currentDbFile.mkdirs()) {
-                _log.error("Failed to create directory {}", _currentDbFile);
+            _currentDbFile = _logsDir.resolve(_directoryNameFormat.format(now));
+            try {
+                Files.createDirectories(_currentDbFile);
+            } catch (IOException e) {
+                _log.error("Failed to create directory {}: {}", _currentDbFile, e.toString());
             }
             return _fileNameFormat.format(now);
         }
     }
 
-    private void logInfo(String output, String ext)
+    private void log(Path path, String output)
     {
-        File outputFile = new File(_currentDbFile, "billing-" + ext);
+        byte[] outputBytes = (output + "\n").getBytes(UTF8);
         try {
-            Files.append(output + "\n", outputFile, UTF8);
+            try {
+                Files.write(path, outputBytes, WRITE, APPEND);
+            } catch (NoSuchFileException f) {
+                String outputWithHeader = getFormatHeaders() + output + '\n';
+                try {
+                    Files.write(path, outputWithHeader.getBytes(UTF8), WRITE, CREATE_NEW);
+                } catch (FileAlreadyExistsException e) {
+                    // Lost the race, so try appending again
+                    Files.write(path, outputBytes, WRITE, APPEND);
+                }
+            }
         } catch (IOException e) {
-            _log.warn("Can't write billing [{}] : {}", outputFile,
-                      e.toString());
+            _log.warn("Can't write billing [{}] : {}", path, e.toString());
         }
     }
 
-    private void logError(String output, String ext)
+    private String getFormatHeaders()
     {
-        File errorFile = new File(_currentDbFile, "billing-error-" + ext);
-        try {
-            Files.append(output + "\n", errorFile, UTF8);
-        } catch (IOException e) {
-            _log.warn("Can't write billing-error : {}", e.toString());
-        }
+        return _formats.entrySet().stream()
+                .map(e -> "## " + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN, e.getKey()) + ' ' + e.getValue() + '\n')
+                .collect(Collectors.joining());
+    }
+
+    protected Path getBillingPath(String ext)
+    {
+        return _currentDbFile.resolve("billing-" + ext);
+    }
+
+    private Path getErrorPath(String ext)
+    {
+        return _currentDbFile.resolve("billing-error-" + ext);
     }
 
     private void doStatistics(InfoMessage info) {
@@ -396,7 +444,7 @@ public final class BillingCell
         if (!dir.canWrite()) {
             throw new IllegalArgumentException("Directory not writable: " + dir);
         }
-        _logsDir = dir;
+        _logsDir = dir.toPath();
     }
 
     public void setFlatTextDir(boolean flatTextDir) {
