@@ -16,15 +16,42 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.dcache.services.billing.text;
 
-package diskCacheV111.vehicles;
+import dmg.cells.nucleus.CellAddressCore;
 
-public interface InfoMessageVisitor
+public class CellAddressWrapper
 {
-    void visit(DoorRequestInfoMessage message);
-    void visit(MoverInfoMessage message);
-    void visit(PoolHitInfoMessage message);
-    void visit(RemoveFileInfoMessage message);
-    void visit(StorageInfoMessage message);
-    void visit(WarningPnfsFileInfoMessage message);
+    private final CellAddressCore address;
+
+    public CellAddressWrapper(String address)
+    {
+        this.address = new CellAddressCore(address);
+    }
+
+    public String getCell()
+    {
+        return address.getCellName();
+    }
+
+    public String getDomain()
+    {
+        return address.getCellDomainName();
+    }
+
+    public boolean isDomainAddress()
+    {
+        return address.isDomainAddress();
+    }
+
+    public boolean isQualified()
+    {
+        return !address.isLocalAddress();
+    }
+
+    @Override
+    public String toString()
+    {
+        return address.isLocalAddress() ? address.getCellName() : address.toString();
+    }
 }
