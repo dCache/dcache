@@ -24,9 +24,9 @@ public class CellAddressWrapper
 {
     private final CellAddressCore address;
 
-    public CellAddressWrapper(String address)
+    public CellAddressWrapper(CellAddressCore address)
     {
-        this.address = new CellAddressCore(address);
+        this.address = address;
     }
 
     public String getCell()

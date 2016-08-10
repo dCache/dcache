@@ -1,11 +1,14 @@
 package diskCacheV111.vehicles;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
+
+import dmg.cells.nucleus.CellAddressCore;
 
 import org.dcache.auth.Subjects;
 
@@ -17,7 +20,12 @@ public abstract class InfoMessage implements Serializable
 
     private final String _cellType;
     private final String _messageType;
-    private final String _cellName;
+
+    @Deprecated // Since 2.17, remove after next golden release
+    private final String _cellName = null;
+
+    private CellAddressCore _cellAddress;
+
     private long _timeQueued;
     private int _resultCode;
     private String _message = "";
@@ -28,11 +36,9 @@ public abstract class InfoMessage implements Serializable
 
     private static final long serialVersionUID = -8035876156296337291L;
 
-    public InfoMessage(String messageType,
-                       String cellType,
-                       String cellName)
+    public InfoMessage(String messageType, String cellType, CellAddressCore address)
     {
-        _cellName = cellName;
+        _cellAddress = address;
         _cellType = cellType;
         _messageType = messageType;
     }
@@ -46,7 +52,7 @@ public abstract class InfoMessage implements Serializable
 
     public String getInfoHeader()
     {
-        return formatTimestamp(new Date(_timestamp)) + " [" + _cellType + ':' + _cellName + ':' + _messageType + ']';
+        return formatTimestamp(new Date(_timestamp)) + " [" + _cellType + ':' + _cellAddress + ':' + _messageType + ']';
     }
 
     public String getResult()
@@ -85,9 +91,10 @@ public abstract class InfoMessage implements Serializable
         return _messageType;
     }
 
-    public String getCellName()
+    @Nullable
+    public CellAddressCore getCellAddress()
     {
-        return _cellName;
+        return _cellAddress;
     }
 
     public String getMessage()
@@ -114,7 +121,7 @@ public abstract class InfoMessage implements Serializable
     {
 
         if (_transaction == null) {
-            String sb = this.getCellType() + ':' + this.getCellName() + ':' +
+            String sb = this.getCellType() + ':' + this.getCellAddress() + ':' +
                         this.getTimestamp() + '-' + _transactionID;
             _transaction = sb;
         }
@@ -133,5 +140,15 @@ public abstract class InfoMessage implements Serializable
          * field.
          */
         return (_subject == null) ? Subjects.ROOT : _subject;
+    }
+
+    private void readObject(java.io.ObjectInputStream stream)
+            throws java.io.IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+
+        if (_cellName != null) {
+            _cellAddress = new CellAddressCore(_cellName);
+        }
     }
 }

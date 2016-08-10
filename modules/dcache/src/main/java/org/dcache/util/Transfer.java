@@ -103,8 +103,7 @@ public class Transfer implements Comparable<Transfer>
     protected CellStub _billing;
     protected CheckStagePermission _checkStagePermission;
 
-    private String _cellName;
-    private String _domainName;
+    private CellAddressCore _cellAddress;
 
     private String _poolName;
     private CellAddressCore _poolAddress;
@@ -477,8 +476,8 @@ public class Transfer implements Comparable<Transfer>
     {
         if (_session != null) {
             return _session.toString() + ":" + _id;
-        } else if (_cellName != null && _domainName != null) {
-            return "door:" + _cellName + "@" + _domainName + ":" + _id;
+        } else if (_cellAddress != null) {
+            return "door:" + _cellAddress + ":" + _id;
         } else {
             return String.valueOf(_id);
         }
@@ -520,12 +519,9 @@ public class Transfer implements Comparable<Transfer>
         }
     }
 
-    /**
-     * Sets the cell name of the door handling the transfer.
-     */
-    public synchronized void setCellName(String cellName)
+    public synchronized void setCellAddress(CellAddressCore address)
     {
-        _cellName = cellName;
+        _cellAddress = address;
     }
 
     /**
@@ -533,15 +529,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized String getCellName()
     {
-        return _cellName;
-    }
-
-    /**
-     * Sets the domain name of the door handling the transfer.
-     */
-    public synchronized void setDomainName(String domainName)
-    {
-        _domainName = domainName;
+        return _cellAddress.getCellName();
     }
 
     /**
@@ -549,7 +537,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized String getDomainName()
     {
-        return _domainName;
+        return _cellAddress.getCellDomainName();
     }
 
     /**
@@ -1094,8 +1082,7 @@ public class Transfer implements Comparable<Transfer>
             return;
         }
 
-        DoorRequestInfoMessage msg =
-                new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
+        DoorRequestInfoMessage msg = new DoorRequestInfoMessage(_cellAddress);
         msg.setSubject(_subject);
         msg.setBillingPath(getBillingPath());
         msg.setTransferPath(getTransferPath());

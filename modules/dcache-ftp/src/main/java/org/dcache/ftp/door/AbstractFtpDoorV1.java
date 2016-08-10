@@ -660,8 +660,7 @@ public abstract class AbstractFtpDoorV1
                   AbstractFtpDoorV1.this._subject,
                   AbstractFtpDoorV1.this._authz, path);
 
-            setDomainName(_cellAddress.getCellDomainName());
-            setCellName(_cellAddress.getCellName());
+            setCellAddress(_cellAddress);
             setClientAddress(_remoteSocketAddress);
             setCheckStagePermission(_checkStagePermission);
             setOverwriteAllowed(_settings.isOverwrite());

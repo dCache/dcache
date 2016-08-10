@@ -332,16 +332,14 @@ public class CopyManager extends AbstractCellComponent
 
             _source.setPoolManagerStub(_poolManager);
             _source.setPoolStub(_poolStub);
-            _source.setDomainName(getCellDomainName());
-            _source.setCellName(getCellName());
+            _source.setCellAddress(getCellAddress());
             // _source.setClientAddress();
             // _source.setBillingStub();
             // _source.setCheckStagePermission();
 
             _target.setPoolManagerStub(_poolManager);
             _target.setPoolStub(_poolStub);
-            _target.setDomainName(getCellDomainName());
-            _target.setCellName(getCellName());
+            _target.setCellAddress(getCellAddress());
             // _target.setClientAddress();
             // _target.setBillingStub();
 

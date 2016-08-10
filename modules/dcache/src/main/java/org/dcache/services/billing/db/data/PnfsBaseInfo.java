@@ -65,6 +65,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.dcache.services.billing.histograms.data.IHistogramData;
 
@@ -94,7 +95,7 @@ public abstract class PnfsBaseInfo implements IHistogramData {
 
     protected PnfsBaseInfo(PnfsFileInfoMessage info) {
         dateStamp = new Date(info.getTimestamp());
-        cellName = info.getCellName();
+        cellName = Objects.toString(info.getCellAddress(), "<UNKNOWN>");
         action = info.getMessageType();
         transaction = info.getTransaction();
         if (info.getPnfsId() != null) {

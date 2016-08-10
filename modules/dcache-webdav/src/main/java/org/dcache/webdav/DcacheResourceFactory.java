@@ -965,7 +965,7 @@ public class DcacheResourceFactory
     private void sendRemoveInfoToBilling(FileAttributes attributes, FsPath path)
     {
         DoorRequestInfoMessage infoRemove =
-            new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
+            new DoorRequestInfoMessage(getCellAddress(), "remove");
         Subject subject = getSubject();
         infoRemove.setSubject(subject);
         infoRemove.setBillingPath(path.toString());
@@ -1192,8 +1192,7 @@ public class DcacheResourceFactory
             throws URISyntaxException
     {
         transfer.setLocation(getLocation());
-        transfer.setCellName(getCellName());
-        transfer.setDomainName(getCellDomainName());
+        transfer.setCellAddress(getCellAddress());
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);

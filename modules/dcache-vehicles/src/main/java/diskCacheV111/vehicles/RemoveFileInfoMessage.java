@@ -2,13 +2,15 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 public class RemoveFileInfoMessage extends PnfsFileInfoMessage
 {
     private static final long serialVersionUID = 705215552239829093L;
 
-    public RemoveFileInfoMessage(String cellName, PnfsId pnfsId)
+    public RemoveFileInfoMessage(CellAddressCore address, PnfsId pnfsId)
     {
-        super("remove", "pool", cellName, pnfsId);
+        super("remove", "pool", address, pnfsId);
     }
 
     public String toString()

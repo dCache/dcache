@@ -2,18 +2,20 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 public class WarningPnfsFileInfoMessage extends PnfsFileInfoMessage
 {
     private static final long serialVersionUID = -5457677492665743755L;
     private String _transferPath;
 
     public WarningPnfsFileInfoMessage(String cellType,
-                                      String cellName,
+                                      CellAddressCore address,
                                       PnfsId pnfsId,
                                       int rc,
                                       String returnMessage)
     {
-        super("warning", cellType, cellName, pnfsId);
+        super("warning", cellType, address, pnfsId);
         setResult(rc, returnMessage);
     }
 

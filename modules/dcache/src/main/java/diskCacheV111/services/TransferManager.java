@@ -31,6 +31,7 @@ import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
@@ -491,12 +492,10 @@ public abstract class TransferManager extends AbstractCellComponent
         }
     }
 
-    public String getCellName() {
-       return super.getCellName();
-    }
-
-    public String getCellDomainName() {
-        return super.getCellDomainName();
+    @Override
+    public CellAddressCore getCellAddress()
+    {
+        return super.getCellAddress();
     }
 
     public void sendMessage(CellMessage envelope) throws SerializationException

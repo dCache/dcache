@@ -735,7 +735,7 @@ public class NearlineStorageHandler
         public FlushRequestImpl(NearlineStorage nearlineStorage, PnfsId pnfsId) throws CacheException, InterruptedException
         {
             super(nearlineStorage);
-            infoMsg = new StorageInfoMessage(cellAddress.toString(), pnfsId, false);
+            infoMsg = new StorageInfoMessage(cellAddress, pnfsId, false);
             descriptor = repository.openEntry(pnfsId, NO_FLAGS);
             String path = descriptor.getFileAttributes().getStorageInfo().getKey("path");
             if (path != null) {
@@ -992,7 +992,7 @@ public class NearlineStorageHandler
         {
             super(storage);
             PnfsId pnfsId = fileAttributes.getPnfsId();
-            infoMsg = new StorageInfoMessage(cellAddress.toString(), pnfsId, true);
+            infoMsg = new StorageInfoMessage(cellAddress, pnfsId, true);
             infoMsg.setStorageInfo(fileAttributes.getStorageInfo());
             infoMsg.setFileSize(fileAttributes.getSize());
             descriptor =

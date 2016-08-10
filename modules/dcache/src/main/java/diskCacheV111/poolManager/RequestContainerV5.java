@@ -1364,9 +1364,8 @@ public class RequestContainerV5
                        setError(0,"");
                        nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        _log.info("AskIfAvailable found the object");
-                       if (_sendHitInfo ) {
-                           sendHitMsg((_bestPool != null) ? _bestPool.getName() : "<UNKNOWN>",
-                                      true);   //VP
+                       if (_sendHitInfo) {
+                           sendHitMsg(_bestPool, true);
                        }
 
                     }else if( rc == RT_NOT_FOUND ){
@@ -1383,8 +1382,7 @@ public class RequestContainerV5
                           suspendIfEnabled("Suspended (pool unavailable)");
                        }
                        if (_sendHitInfo && _poolCandidate == null) {
-                           sendHitMsg((_bestPool!=null)?_bestPool.getName():"<UNKNOWN>",
-                                      false );   //VP
+                           sendHitMsg(_bestPool, false);   //VP
                        }
                        //
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -1442,10 +1440,8 @@ public class RequestContainerV5
                        _status = "Pool2Pool "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
                        setError(0, "");
 
-                       if (_sendHitInfo ) {
-                           sendHitMsg(
-                                   (_p2pSourcePool != null) ? _p2pSourcePool.getName() : "<UNKNOWN>",
-                                   true);   //VP
+                       if (_sendHitInfo) {
+                           sendHitMsg(_p2pSourcePool, true);   //VP
                        }
 
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -2034,7 +2030,7 @@ public class RequestContainerV5
         private void sendInfoMessage(int rc, String infoMessage)
         {
             WarningPnfsFileInfoMessage info =
-                    new WarningPnfsFileInfoMessage("PoolManager","PoolManager", _pnfsId, rc, infoMessage);
+                    new WarningPnfsFileInfoMessage("PoolManager", getCellAddress(), _pnfsId, rc, infoMessage);
             info.setStorageInfo(_fileAttributes.getStorageInfo());
             info.setFileSize(_fileAttributes.getSize());
             info.setBillingPath(_billingPath);
@@ -2042,9 +2038,9 @@ public class RequestContainerV5
             _billing.notify(info);
         }
 
-        private void sendHitMsg(String poolName, boolean cached)
+        private void sendHitMsg(PoolInfo pool, boolean cached)
         {
-            PoolHitInfoMessage msg = new PoolHitInfoMessage(poolName, _pnfsId);
+            PoolHitInfoMessage msg = new PoolHitInfoMessage(pool == null ? null : pool.getAddress(), _pnfsId);
             msg.setBillingPath(_billingPath);
             msg.setTransferPath(_transferPath);
             msg.setFileCached(cached);

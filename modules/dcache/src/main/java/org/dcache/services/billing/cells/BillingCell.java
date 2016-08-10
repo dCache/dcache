@@ -29,6 +29,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.services.billing.text.StringTemplateInfoMessageVisitor;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -331,9 +332,8 @@ public final class BillingCell
         if (info instanceof WarningPnfsFileInfoMessage) {
             return;
         }
-        String cellName = info.getCellName();
-        int pos = cellName.indexOf('@');
-        cellName = (pos < 1) ? cellName : cellName.substring(0, pos);
+        CellAddressCore address = info.getCellAddress();
+        String cellName = address == null ? "<UNKNOWN>" : address.getCellName();
         String transactionType = info.getMessageType();
         long[] counters = _poolStatistics.get(cellName);
         if (counters == null) {

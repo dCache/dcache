@@ -130,8 +130,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         credentialId = transferRequest.getCredentialId();
         Subject subject = transferRequest.getSubject();
 
-        info = new DoorRequestInfoMessage(manager.getCellName() + "@"
-                + manager.getCellDomainName());
+        info = new DoorRequestInfoMessage(manager.getCellAddress());
         info.setTransactionDuration(-creationTime);
         info.setSubject(subject);
         info.setBillingPath(pnfsPath);

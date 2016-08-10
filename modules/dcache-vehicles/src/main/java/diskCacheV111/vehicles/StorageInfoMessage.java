@@ -2,15 +2,17 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 public class StorageInfoMessage extends PnfsFileInfoMessage
 {
     private long _transferTime;
 
     private static final long serialVersionUID = -4601114937008749384L;
 
-    public StorageInfoMessage(String cellName, PnfsId pnfsId, boolean restore)
+    public StorageInfoMessage(CellAddressCore address, PnfsId pnfsId, boolean restore)
     {
-        super(restore ? "restore" : "store", "pool", cellName, pnfsId);
+        super(restore ? "restore" : "store", "pool", address, pnfsId);
     }
 
     public void setTransferTime(long transferTime)

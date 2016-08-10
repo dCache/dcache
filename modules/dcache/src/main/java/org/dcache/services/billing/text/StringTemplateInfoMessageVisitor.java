@@ -49,7 +49,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         template.add("queuingTime", message.getTimeQueued());
         template.add("message", message.getMessage());
         template.add("type", message.getMessageType());
-        template.add("cellName", new CellAddressWrapper(message.getCellName()));
+        template.add("cellName", new CellAddressWrapper(message.getCellAddress()));
         template.add("cellType", message.getCellType());
         template.add("rc", message.getResultCode());
         template.add("subject", new SubjectWrapper(message.getSubject()));

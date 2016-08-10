@@ -337,8 +337,7 @@ public class XrootdDoor
                     }
                 }
             };
-        transfer.setCellName(getCellName());
-        transfer.setDomainName(getCellDomainName());
+        transfer.setCellAddress(getCellAddress());
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);
@@ -478,7 +477,7 @@ public class XrootdDoor
     private void sendRemoveInfoToBilling(PnfsId pnfsId, FsPath path, Subject subject)
     {
         DoorRequestInfoMessage infoRemove =
-                new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
+                new DoorRequestInfoMessage(getCellAddress(), "remove");
         infoRemove.setSubject(subject);
         infoRemove.setBillingPath(path.toString());
         infoRemove.setPnfsId(pnfsId);

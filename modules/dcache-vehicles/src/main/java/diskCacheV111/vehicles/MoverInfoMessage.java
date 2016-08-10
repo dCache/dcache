@@ -2,6 +2,8 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 public class MoverInfoMessage extends PnfsFileInfoMessage
 {
     private long _dataTransferred;
@@ -15,11 +17,9 @@ public class MoverInfoMessage extends PnfsFileInfoMessage
     private static final long serialVersionUID = -7013160118909496211L;
     private String _transferPath;
 
-    public MoverInfoMessage(String cellName,
-                            PnfsId pnfsId)
+    public MoverInfoMessage(CellAddressCore address, PnfsId pnfsId)
     {
-
-        super("transfer", "pool", cellName, pnfsId);
+        super("transfer", "pool", address, pnfsId);
     }
 
     public void setFileCreated(boolean created)

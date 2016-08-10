@@ -608,7 +608,7 @@ public class PoolV4
             if (_reportOnRemovals && event.getNewState() == ReplicaState.REMOVED) {
                 CacheEntry entry = event.getNewEntry();
                 RemoveFileInfoMessage msg =
-                    new RemoveFileInfoMessage(getCellAddress().toString(), entry.getPnfsId());
+                    new RemoveFileInfoMessage(getCellAddress(), entry.getPnfsId());
                 msg.setFileSize(entry.getReplicaSize());
                 msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
                 _billingStub.notify(msg);

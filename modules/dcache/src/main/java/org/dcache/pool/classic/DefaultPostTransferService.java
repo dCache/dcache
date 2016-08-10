@@ -142,7 +142,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     public void sendBillingMessage(Mover<?> mover, long fileSize) {
         FileAttributes fileAttributes = mover.getFileAttributes();
 
-        MoverInfoMessage info = new MoverInfoMessage(getCellName(), fileAttributes.getPnfsId());
+        MoverInfoMessage info = new MoverInfoMessage(getCellAddress(), fileAttributes.getPnfsId());
         info.setSubject(mover.getSubject());
         info.setInitiator(mover.getInitiator());
         info.setFileCreated(mover.getIoMode() == IoMode.WRITE);

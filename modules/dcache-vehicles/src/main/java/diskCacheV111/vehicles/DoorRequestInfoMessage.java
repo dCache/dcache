@@ -17,22 +17,12 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
 
     public DoorRequestInfoMessage(CellAddressCore address)
     {
-        this(address.getCellName() + '@' + address.getCellDomainName());
-    }
-
-    public DoorRequestInfoMessage(String cellName)
-    {
-        super("request", "door", cellName, null);
+        this(address, "request");
     }
 
     public DoorRequestInfoMessage(CellAddressCore address, String action)
     {
-        this(address.getCellName() + '@' + address.getCellDomainName(), action);
-    }
-
-    public DoorRequestInfoMessage(String cellName, String action)
-    {
-        super(action, "door", cellName, null);
+        super(action, "door", address, null);
     }
 
     public void setTransactionDuration(long duration)

@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import diskCacheV111.util.PnfsId;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 public abstract class PnfsFileInfoMessage extends InfoMessage
 {
     private PnfsId _pnfsId;
@@ -15,10 +17,10 @@ public abstract class PnfsFileInfoMessage extends InfoMessage
 
     public PnfsFileInfoMessage(String messageType,
                                String cellType,
-                               String cellName,
+                               CellAddressCore address,
                                PnfsId pnfsId)
     {
-        super(messageType, cellType, cellName);
+        super(messageType, cellType, address);
         _pnfsId = pnfsId;
     }
 

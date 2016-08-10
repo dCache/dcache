@@ -469,8 +469,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                                 context.getRpcCall().getCredential().getSubject());
 
                         transfer.setProtocolInfo(protocolInfo);
-                        transfer.setCellName(this.getCellName());
-                        transfer.setDomainName(this.getCellDomainName());
+                        transfer.setCellAddress(getCellAddress());
                         transfer.setBillingStub(_billingStub);
                         transfer.setPoolStub(_poolStub);
                         transfer.setPoolManagerStub(_poolManagerStub);

@@ -2,6 +2,8 @@ package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
 
+import dmg.cells.nucleus.CellAddressCore;
+
 public class PoolHitInfoMessage extends PnfsFileInfoMessage {
 
     private ProtocolInfo _protocolInfo;
@@ -10,9 +12,9 @@ public class PoolHitInfoMessage extends PnfsFileInfoMessage {
     private static final long serialVersionUID = -1487408937648228544L;
     private String _transferPath;
 
-    public PoolHitInfoMessage(String cellName, PnfsId pnfsId)
+    public PoolHitInfoMessage(CellAddressCore address, PnfsId pnfsId)
     {
-		super("hit", "pool", cellName, pnfsId);
+		super("hit", "pool", address, pnfsId);
     }
 
     public void setFileCached(boolean cached)
