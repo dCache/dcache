@@ -396,7 +396,7 @@ public class XrootdDoor
 
     public XrootdTransfer
         write(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
-              boolean createDir, boolean overwrite,
+              boolean createDir, boolean overwrite, Long size,
               InetSocketAddress local, Subject subject, Restriction restriction)
         throws CacheException, InterruptedException
     {
@@ -415,6 +415,9 @@ public class XrootdDoor
                 transfer.createNameSpaceEntryWithParents();
             } else {
                 transfer.createNameSpaceEntry();
+            }
+            if (size != null) {
+                transfer.setLength(size);
             }
             try {
                 transfer.selectPoolAndStartMover(ioQueue == null ? _ioQueue : ioQueue, RETRY_POLICY);

@@ -17,6 +17,7 @@
  */
 package org.dcache.xrootd.door;
 
+import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -154,6 +155,23 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         }
 
         String ioQueue = appSpecificQueue(req);
+
+        Long size = null;
+        try {
+            Map<String,String> opaque = OpaqueStringParser.getOpaqueMap(req.getOpaque());
+            try {
+                String value = opaque.get("oss.asize");
+                if (value != null) {
+                    size = Long.valueOf(value);
+                }
+            } catch (NumberFormatException exception) {
+                _log.warn("Ignoring malformed oss.asize: {}", exception.getMessage());
+            }
+        } catch (ParseException e) {
+            _log.warn("Ignoring malformed open opaque {}: {}", req.getOpaque(),
+                    e.getMessage());
+        }
+
         UUID uuid = UUID.randomUUID();
         String opaque = OpaqueStringParser.buildOpaqueString(UUID_PREFIX, uuid.toString());
 
@@ -167,7 +185,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 
                 transfer =
                     _door.write(remoteAddress, createFullPath(req.getPath()), ioQueue,
-                                uuid, createDir, overwrite, localAddress,
+                                uuid, createDir, overwrite, size, localAddress,
                                 req.getSubject(), _authz);
             } else {
                 transfer =
