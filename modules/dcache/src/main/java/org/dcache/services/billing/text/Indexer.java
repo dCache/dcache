@@ -5,6 +5,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
@@ -79,6 +80,7 @@ public class Indexer
             Pattern.compile("^billing-(\\d\\d\\d\\d.\\d\\d.\\d\\d)(\\.bz2)?$");
     private static final String BILLING_TEXT_FLAT_DIR = "billing.text.flat-dir";
     private static final String BILLING_TEXT_DIR = "billing.text.dir";
+    private static final String BILLING_TEXT_FORMAT_PREFIX = "billing.parser.format!";
     private static final String BZ2 = "bz2";
     private static final int PIPE_SIZE = 2048;
 
@@ -114,17 +116,18 @@ public class Indexer
         }
     };
 
-    private final ConfigurationProperties configuration;
     private final boolean isFlat;
     private final File dir;
+    private final ImmutableMap<String, String> formats;
 
     private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException
     {
         double fpp = args.getDoubleOption("fpp", 0.01);
 
-        configuration = new LayoutBuilder().build().properties();
+        ConfigurationProperties configuration = new LayoutBuilder().build().properties();
         isFlat = Boolean.valueOf(args.getOption("flat", configuration.getValue(BILLING_TEXT_FLAT_DIR)));
         dir = new File(args.getOption("dir", configuration.getValue(BILLING_TEXT_DIR)));
+        formats = getBillingFormats(configuration);
 
         if (args.hasOption("find")) {
             Collection<String> searchTerms;
@@ -225,14 +228,16 @@ public class Indexer
             @Override
             public void write(LocalDate date, String line) throws IOException
             {
-                // Prepend year if the default timestamp format is used
-                try {
-                    int year = date.getYear();
-                    parseDefaultTimestamp(year, line);
-                    out.append(String.valueOf(year)).append('.');
-                } catch (DateTimeParseException ignore) {
+                if (!line.isEmpty() && line.charAt(0) != '#') {
+                    // Prepend year if the default timestamp format is used
+                    try {
+                        int year = date.getYear();
+                        parseDefaultTimestamp(year, line);
+                        out.append(String.valueOf(year)).append('.');
+                    } catch (DateTimeParseException ignore) {
+                    }
+                    out.println(line);
                 }
-                out.println(line);
             }
 
             @Override
@@ -246,11 +251,12 @@ public class Indexer
     {
         return new OutputWriter()
         {
-            final Function<String, Map<String, String>> parser =
-                    new BillingParserBuilder(configuration)
-                            .addAllAttributes()
-                            .buildToMap();
             final JsonWriter writer = new JsonWriter(new OutputStreamWriter(out));
+
+            final BillingParserBuilder builder =
+                    new BillingParserBuilder(formats).addAllAttributes();
+
+            Function<String, Map<String, String>> parser = builder.buildToMap();
 
             {
                 writer.setIndent("  ");
@@ -260,14 +266,18 @@ public class Indexer
             @Override
             public void write(LocalDate date, String line) throws IOException
             {
-                Map<String, String> attributes = parser.apply(line);
-                if (!attributes.isEmpty()) {
-                    fixDate(date.getYear(), attributes);
-                    writer.beginObject();
-                    for (Map.Entry<String, String> entry : attributes.entrySet()) {
-                        writer.name(entry.getKey()).value(entry.getValue());
+                if (line.startsWith("##")) {
+                    parser = builder.withFormat(line).addAllAttributes().buildToMap();
+                } else {
+                    Map<String, String> attributes = parser.apply(line);
+                    if (!attributes.isEmpty()) {
+                        fixDate(date.getYear(), attributes);
+                        writer.beginObject();
+                        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                            writer.name(entry.getKey()).value(entry.getValue());
+                        }
+                        writer.endObject();
                     }
-                    writer.endObject();
                 }
             }
 
@@ -285,24 +295,28 @@ public class Indexer
     {
         return new OutputWriter()
         {
-            final Function<String, Map<String, String>> parser =
-                    new BillingParserBuilder(configuration)
-                            .addAllAttributes()
-                            .buildToMap();
+            final BillingParserBuilder builder =
+                    new BillingParserBuilder(formats).addAllAttributes();
+
+            Function<String, Map<String, String>> parser = builder.buildToMap();
 
             @Override
             public void write(LocalDate date, String line) throws IOException
             {
-                Map<String, String> attributes = parser.apply(line);
-                if (attributes.isEmpty()) {
-                    out.append("# Unknown: ").println(line);
+                if (line.startsWith("##")) {
+                    parser = builder.withFormat(line).addAllAttributes().buildToMap();
                 } else {
-                    fixDate(date.getYear(), attributes);
-                    out.append("# ").println(line);
-                    String format = "- %-21s %s\n";
-                    for (Map.Entry<String, String> entry : attributes.entrySet()) {
-                        out.printf(format, entry.getKey() + ':', entry.getValue());
-                        format = "  %-21s %s\n";
+                    Map<String, String> attributes = parser.apply(line);
+                    if (attributes.isEmpty()) {
+                        out.append("# Unknown: ").println(line);
+                    } else {
+                        fixDate(date.getYear(), attributes);
+                        out.append("# ").println(line);
+                        String format = "- %-21s %s\n";
+                        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                            out.printf(format, entry.getKey() + ':', entry.getValue());
+                            format = "  %-21s %s\n";
+                        }
                     }
                 }
             }
@@ -378,6 +392,8 @@ public class Indexer
                             break;
                         }
                     }
+                } else if (line.startsWith("##")) {
+                    out.println(line);
                 }
                 return true;
             }
@@ -502,7 +518,7 @@ public class Indexer
             throws IOException
     {
         try {
-            IndexProcessor processor = new IndexProcessor(configuration);
+            IndexProcessor processor = new IndexProcessor(formats);
             Set<String> index;
             try (ParallelizingLineProcessor<Set<String>> parallelizer = new ParallelizingLineProcessor<>(threads, processor)) {
                 index = asCharSource(file, Charsets.UTF_8).readLines(parallelizer);
@@ -565,6 +581,20 @@ public class Indexer
         return matcher.matches();
     }
 
+    /**
+     * Returns all billing format strings from configuration.
+     */
+    private static ImmutableMap<String,String> getBillingFormats(ConfigurationProperties configuration)
+    {
+        ImmutableMap.Builder<String,String> formats = ImmutableMap.builder();
+        for (String name : configuration.stringPropertyNames()) {
+            if (name.startsWith(BILLING_TEXT_FORMAT_PREFIX)) {
+                formats.put(name.substring(BILLING_TEXT_FORMAT_PREFIX.length()), configuration.getValue(name));
+            }
+        }
+        return formats.build();
+    }
+
     private static Predicate<File> isBillingFileAndMightContain(Collection<String> terms)
     {
         final List<String> searchTerms = terms.stream()
@@ -622,16 +652,18 @@ public class Indexer
     private static class IndexProcessor implements LineProcessor<Set<String>>
     {
         private final Set<String> result = Sets.newConcurrentHashSet();
-        private final Function<String, String[]> parser;
+        private final BillingParserBuilder builder;
 
-        private IndexProcessor(ConfigurationProperties configuration)
+        private Function<String, String[]> parser;
+
+        private IndexProcessor(ImmutableMap<String, String> formats)
                 throws IOException, URISyntaxException
         {
-            parser = new BillingParserBuilder(configuration)
+            builder = new BillingParserBuilder(formats)
                     .addAttribute("path")
                     .addAttribute("pnfsid")
-                    .addAttribute("owner")
-                    .buildToArray();
+                    .addAttribute("owner");
+            parser = builder.buildToArray();
         }
 
         @Override
@@ -648,6 +680,8 @@ public class Indexer
                 if (value[2] != null) {
                     addAllPathPrefixes(value[2], result);
                 }
+            } else if (line.startsWith("##")) {
+                parser = builder.withFormat(line).buildToArray();
             }
             return true;
         }

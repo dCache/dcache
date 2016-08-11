@@ -6,9 +6,8 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,9 +18,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.dcache.util.ConfigurationProperties;
-
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Multimaps.filterValues;
@@ -32,29 +28,23 @@ import static com.google.common.collect.Multimaps.filterValues;
 public class BillingParserBuilder
 {
     private static final Pattern ATTRIBUTE_PATTERN = Pattern.compile("\\$(.+?)\\$");
-    public static final String BILLING_TEXT_FORMAT_PREFIX = "billing.text.format.";
 
-    private final ImmutableSetMultimap<String, Pattern> patternsByAttribute;
-    private final ImmutableSetMultimap<Pattern, String> attributesByPattern;
+    private ImmutableSetMultimap<String, Pattern> patternsByAttribute;
+    private ImmutableSetMultimap<Pattern, String> attributesByPattern;
+    private Map<String, String> formats;
+
     private final Set<String> attributes = new LinkedHashSet<>();
     private boolean canOutputArray = true;
 
-    public BillingParserBuilder(ConfigurationProperties configuration)
-            throws IOException, URISyntaxException
-    {
-        this(getBillingFormats(configuration));
-    }
-
     public BillingParserBuilder(Map<String,String> formats)
-            throws IOException, URISyntaxException
     {
+        this.formats = Maps.newHashMap(formats);
         attributesByPattern = toPatterns(formats);
         patternsByAttribute = attributesByPattern.inverse();
     }
 
     public BillingParserBuilder addAttribute(String attribute)
     {
-        checkArgument(patternsByAttribute.containsKey(attribute));
         attributes.add(attribute);
         return this;
     }
@@ -65,6 +55,20 @@ public class BillingParserBuilder
         attributes.addAll(patternsByAttribute.keySet());
         canOutputArray = false;
         return this;
+    }
+
+    public BillingParserBuilder withFormat(String message, String format)
+    {
+        formats.put(message, format);
+        attributesByPattern = toPatterns(formats);
+        patternsByAttribute = attributesByPattern.inverse();
+        return this;
+    }
+
+    public BillingParserBuilder withFormat(String header)
+    {
+        String[] s = header.substring(2).trim().split(" ", 2);
+        return (s.length == 2) ? withFormat(s[0], s[1]) : this;
     }
 
     public Function<String,String> buildToString()
@@ -144,25 +148,10 @@ public class BillingParserBuilder
     }
 
     /**
-     * Returns all billing format strings from configuration.
-     */
-    private static Map<String,String> getBillingFormats(ConfigurationProperties configuration)
-    {
-        Map<String,String> formats = new HashMap<>();
-        for (String name : configuration.stringPropertyNames()) {
-            if (name.startsWith(BILLING_TEXT_FORMAT_PREFIX)) {
-                formats.put(name.substring(BILLING_TEXT_FORMAT_PREFIX.length()), configuration.getValue(name));
-            }
-        }
-        return formats;
-    }
-
-    /**
      * Returns Patterns for the provided billing formats, as a Multimap mapping the
      * Pattern to the attributes contained in the pattern.
      */
     private static ImmutableSetMultimap<Pattern, String> toPatterns(Map<String,String> formats)
-            throws IOException, URISyntaxException
     {
         ImmutableSetMultimap.Builder<Pattern, String> builder = ImmutableSetMultimap.builder();
         for (Map.Entry<String, String> format: formats.entrySet()) {
