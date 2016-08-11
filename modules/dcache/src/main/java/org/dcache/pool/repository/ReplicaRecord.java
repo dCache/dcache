@@ -79,7 +79,8 @@ public interface ReplicaRecord
      *
      * The change will be applied atomically (in the sense that other threads will not
      * see the change until the method returns). If the callback throws an exception,
-     * the changes applied prior to the exception are not rolled back.
+     * it is implementation specific whether the changes applied through the
+     * UpdatableRecord are rolled back or not.
      *
      * The callback may be called with a lock held or within a transaction. The
      * callback should be fast and with minimal access to other resources to
