@@ -53,6 +53,7 @@ check nfs.mover.queue
 create org.dcache.cells.UniversalSpringCell ${nfs.cell.name} \
         "classpath:org/dcache/chimera/nfsv41/door/nfsv41-common.xml \
             -consume=${nfs.cell.consume} \
+            -subscribe=${nfs.cell.subscribe} \
             -cell.max-message-threads=${nfs.cell.max-message-threads} -cell.max-messages-queued=${nfs.cell.max-messages-queued} \
             -profiles=portmap-${nfs.enable.portmap}"
 
