@@ -3,6 +3,7 @@ package org.dcache.services.billing.text;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -671,13 +672,13 @@ public class Indexer
         {
             if (!line.isEmpty() && line.charAt(0) != '#') {
                 String[] value = parser.apply(line);
-                if (value[0] != null) {
+                if (!Strings.isNullOrEmpty(value[0])) {
                     addAllPathPrefixes(value[0], result);
                 }
-                if (value[1] != null) {
+                if (!Strings.isNullOrEmpty(value[1])) {
                     result.add(value[1]);
                 }
-                if (value[2] != null) {
+                if (!Strings.isNullOrEmpty(value[2])) {
                     addAllPathPrefixes(value[2], result);
                 }
             } else if (line.startsWith("##")) {
@@ -694,13 +695,10 @@ public class Indexer
 
         private static void addAllPathPrefixes(String path, Set<String> paths)
         {
-            int index = 1;
             int next;
-            while ((next = path.indexOf('/', index)) != -1) {
-                paths.add(path.substring(0, next));
-                index = next + 1;
+            while (paths.add(path) && (next = path.lastIndexOf('/')) > 0) {
+                path = path.substring(0, next);
             }
-            paths.add(path);
         }
     }
 
