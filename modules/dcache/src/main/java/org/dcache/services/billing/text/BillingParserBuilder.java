@@ -176,7 +176,7 @@ public class BillingParserBuilder
             }
             String expression = matcher.group(1);
             if (isIf(expression)) {
-                regex.append("(");
+                regex.append("(?:");
             } else if (isElse(expression)) {
                 regex.append("|");
             } else if (isEndIf(expression)) {
@@ -186,10 +186,10 @@ public class BillingParserBuilder
                 // This incomplete list of attribute patterns reduces the risk of false matches
                 switch (expression) {
                 case "date":
-                    regex.append(".+");
+                    regex.append(".+?");
                     break;
                 case "pnfsid":
-                    regex.append("(|[0-9A-F]{24}|[0-9A-F]{36})");
+                    regex.append("[0-9A-F]{24}(?:[0-9A-F]{12})?");
                     break;
                 case "filesize":
                 case "transferred":
@@ -204,7 +204,7 @@ public class BillingParserBuilder
                     break;
                 case "cached":
                 case "created":
-                    regex.append("(true|false)");
+                    regex.append("(?:true|false)");
                     break;
                 case "cellType":
                     switch (name) {
@@ -223,7 +223,7 @@ public class BillingParserBuilder
                     }
                     break;
                 case "cellName":
-                    regex.append(".+");
+                    regex.append(".+?");
                     break;
                 case "type":
                     switch (name) {
@@ -234,7 +234,7 @@ public class BillingParserBuilder
                         regex.append("remove");
                         break;
                     case "storage-info-message":
-                        regex.append("(restore|store)");
+                        regex.append("(?:re)?store");
                         break;
                     case "pool-hit-info-message":
                         regex.append("hit");
@@ -248,7 +248,7 @@ public class BillingParserBuilder
                     }
                     break;
                 default:
-                    regex.append(".*");
+                    regex.append(".*?");
                 }
                 regex.append(")");
             }
