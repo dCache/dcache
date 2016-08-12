@@ -39,18 +39,18 @@ public final class CellPath implements Cloneable, Serializable
     private static final long serialVersionUID = -4922955783102747577L;
 
     private final List<CellAddressCore> _list;
-    private int _position = -1;
+    private int _position;
 
     private CellPath(int position, List<CellAddressCore> list)
     {
-        checkArgument(position >= -1 && position < list.size());
+        checkArgument(position >= 0 && position <= list.size());
         _position = position;
         _list = list;
     }
 
     protected CellPath()
     {
-        this(-1, new ArrayList<>());
+        this(0, new ArrayList<>());
     }
 
     public CellPath(String path)
@@ -81,17 +81,11 @@ public final class CellPath implements Cloneable, Serializable
     public synchronized void add(CellAddressCore core)
     {
         _list.add(core);
-        if (_position < 0) {
-            _position = 0;
-        }
     }
 
     public synchronized void add(CellPath addr)
     {
         _list.addAll(addr._list);
-        if (_position < 0) {
-            _position = 0;
-        }
     }
 
     /**
@@ -115,17 +109,11 @@ public final class CellPath implements Cloneable, Serializable
      */
     public synchronized void insert(CellPath path)
     {
-        if (_position < 0) {
-            _position = 0;
-        }
         _list.addAll(_position, path._list);
     }
 
     public synchronized void insert(CellAddressCore address)
     {
-        if (_position < 0) {
-            _position = 0;
-        }
         _list.add(_position, address);
     }
 
@@ -180,12 +168,7 @@ public final class CellPath implements Cloneable, Serializable
 
     public synchronized CellAddressCore getCurrent()
     {
-        if ((_list.isEmpty()) ||
-            (_position < 0) ||
-            (_position >= _list.size())) {
-            return null;
-        }
-        return _list.get(_position);
+        return (_position >= _list.size()) ? null : _list.get(_position);
     }
 
     public synchronized CellAddressCore getSourceAddress()
@@ -200,12 +183,9 @@ public final class CellPath implements Cloneable, Serializable
 
     synchronized void replaceCurrent(CellAddressCore core)
     {
-        if ((_list.isEmpty()) ||
-            (_position < 0) ||
-            (_position >= _list.size())) {
-            return;
+        if (_position < _list.size()) {
+            _list.set(_position, core);
         }
-        _list.set(_position, core);
     }
 
     public String getCellName()
