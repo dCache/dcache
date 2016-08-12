@@ -93,6 +93,11 @@
             <property name="prefix" value="xrootd.query-config"/>
         </bean>
     </property>
+    <property name="appIoQueues">
+        <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+            <property name="prefix" value="xrootd.app-ioqueue"/>
+        </bean>
+    </property>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">

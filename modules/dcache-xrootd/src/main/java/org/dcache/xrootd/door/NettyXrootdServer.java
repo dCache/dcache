@@ -69,6 +69,7 @@ public class NettyXrootdServer implements CellIdentityAware
     private EventLoopGroup _acceptGroup;
     private EventLoopGroup _socketGroup;
     private Map<String, String> _queryConfig;
+    private Map<String, String> _appIoQueues;
     private CellAddressCore _myAddress;
 
     public int getPort()
@@ -159,6 +160,12 @@ public class NettyXrootdServer implements CellIdentityAware
         _queryConfig = queryConfig;
     }
 
+    @Required
+    public void setAppIoQueues(Map<String,String> appIoQueues)
+    {
+        _appIoQueues = appIoQueues;
+    }
+
     public void start()
     {
         sessionPrefix = "door:" + _myAddress.getCellName() + "@" + _myAddress.getCellDomainName() + ":";
@@ -190,7 +197,7 @@ public class NettyXrootdServer implements CellIdentityAware
                         for (ChannelHandlerFactory factory: _channelHandlerFactories) {
                             pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
                         }
-                        pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _requestExecutor, _queryConfig));
+                        pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _requestExecutor, _queryConfig, _appIoQueues));
                     }
                 });
 

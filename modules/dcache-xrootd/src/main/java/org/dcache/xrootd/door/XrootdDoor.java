@@ -350,7 +350,7 @@ public class XrootdDoor
     }
 
     public XrootdTransfer
-        read(InetSocketAddress client, FsPath path, UUID uuid,
+        read(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
              InetSocketAddress local, Subject subject, Restriction restriction)
         throws CacheException, InterruptedException
     {
@@ -366,7 +366,7 @@ public class XrootdDoor
         _transfers.put(handle, transfer);
         try {
             transfer.readNameSpaceEntry(false);
-            transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
+            transfer.selectPoolAndStartMover(ioQueue == null ? _ioQueue : ioQueue, RETRY_POLICY);
             address = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
             if (address == null) {
                 throw new CacheException(transfer.getPool() + " failed to open TCP socket");
@@ -395,7 +395,7 @@ public class XrootdDoor
     }
 
     public XrootdTransfer
-        write(InetSocketAddress client, FsPath path, UUID uuid,
+        write(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
               boolean createDir, boolean overwrite,
               InetSocketAddress local, Subject subject, Restriction restriction)
         throws CacheException, InterruptedException
@@ -417,7 +417,7 @@ public class XrootdDoor
                 transfer.createNameSpaceEntry();
             }
             try {
-                transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
+                transfer.selectPoolAndStartMover(ioQueue == null ? _ioQueue : ioQueue, RETRY_POLICY);
 
                 address = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (address == null) {

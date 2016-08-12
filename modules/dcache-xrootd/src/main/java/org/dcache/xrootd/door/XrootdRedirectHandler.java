@@ -71,6 +71,7 @@ import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.OpaqueStringParser;
+import org.dcache.xrootd.util.ParseException;
 
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
@@ -86,6 +87,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     private final FsPath _rootPath;
 
     private Restriction _authz = Restrictions.denyAll();
+    private final Map<String,String> _appIoQueues;
 
     /**
      * Custom entries for kXR_Qconfig requests.
@@ -93,12 +95,14 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     private final Map<String,String> _queryConfig;
 
     public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, ExecutorService executor,
-                                 Map<String, String> queryConfig)
+                                 Map<String, String> queryConfig,
+                                 Map<String,String> appIoQueues)
     {
         super(executor);
         _door = door;
         _rootPath = rootPath;
         _queryConfig = queryConfig;
+        _appIoQueues = appIoQueues;
     }
 
     @Override
@@ -149,6 +153,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             logDebugOnOpen(req);
         }
 
+        String ioQueue = appSpecificQueue(req);
         UUID uuid = UUID.randomUUID();
         String opaque = OpaqueStringParser.buildOpaqueString(UUID_PREFIX, uuid.toString());
 
@@ -161,13 +166,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 boolean overwrite = req.isDelete();
 
                 transfer =
-                    _door.write(remoteAddress, createFullPath(req.getPath()), uuid,
-                                createDir, overwrite, localAddress,
+                    _door.write(remoteAddress, createFullPath(req.getPath()), ioQueue,
+                                uuid, createDir, overwrite, localAddress,
                                 req.getSubject(), _authz);
             } else {
                 transfer =
-                    _door.read(remoteAddress, createFullPath(req.getPath()), uuid,
-                               localAddress, req.getSubject(), _authz);
+                    _door.read(remoteAddress, createFullPath(req.getPath()), ioQueue,
+                               uuid, localAddress, req.getSubject(), _authz);
             }
 
             // ok, open was successful
@@ -202,6 +207,21 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
              */
             return withError(req, kXR_ServerError, "Server shutdown");
         }
+    }
+
+    private String appSpecificQueue(OpenRequest req)
+    {
+        String ioqueue = null;
+        String token = req.getSession().getToken();
+
+        try {
+            Map<String,String> attr = OpaqueStringParser.getOpaqueMap(token);
+            ioqueue = _appIoQueues.get(attr.get("xrd.appname"));
+        } catch (ParseException e) {
+            _log.debug("Ignoring malformed login token {}: {}", token, e.getMessage());
+        }
+
+        return ioqueue;
     }
 
     @Override
