@@ -18,6 +18,7 @@
  */
 package diskCacheV111.poolManager;
 
+import ch.qos.logback.core.util.CloseUtil;
 import com.google.common.collect.Sets;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -148,18 +149,13 @@ public class PoolManagerHandlerPublisher
     @Override
     public void beforeStop()
     {
+        if (cache != null) {
+            CloseUtil.closeQuietly(cache);
+        }
         if (node != null) {
             CloseableUtils.closeQuietly(node);
         }
         requests.stream().filter(requests::remove).forEach(UpdateRequest::shutdown);
-    }
-
-    @PreDestroy
-    public void stop() throws IOException
-    {
-        if (cache != null) {
-            cache.close();
-        }
     }
 
     @Override
