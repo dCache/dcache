@@ -65,6 +65,7 @@ check -strong srm.loginbroker.root
 
 check -strong srm.enable.client-dns-lookup
 check -strong srm.enable.legacy-close
+check -strong srm.enable.proxy-protocol
 
 check srm.authn.ciphers
 

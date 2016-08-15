@@ -20,7 +20,9 @@ package org.dcache.util.jetty;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
+import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.ProxyConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -61,6 +63,8 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
     private OCSPCheckingMode ocspCheckingMode = OCSPCheckingMode.IF_AVAILABLE;
     private NamespaceCheckingMode namespaceMode = NamespaceCheckingMode.EUGRIDPMA_GLOBUS;
     private KeyPairCache keyPairCache;
+
+    private boolean isProxyConnectionEnabled;
 
     public int getAcceptors()
     {
@@ -310,6 +314,16 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         this.keyPairCache = keyPairCache;
     }
 
+    public boolean isProxyConnectionEnabled()
+    {
+        return isProxyConnectionEnabled;
+    }
+
+    public void setProxyConnectionEnabled(boolean proxyConnectionEnabled)
+    {
+        isProxyConnectionEnabled = proxyConnectionEnabled;
+    }
+
     private SslContextFactory createContextFactory() throws Exception
     {
         CanlContextFactory factory = new CanlContextFactory();
@@ -344,9 +358,14 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
                 new SslConnectionFactory(createContextFactory(),
                                          httpConnectionFactory.getProtocol());
 
+
+        ConnectionFactory[] factories =
+                isProxyConnectionEnabled
+                ? new ConnectionFactory[]{new ProxyConnectionFactory(), sslConnectionFactory, httpConnectionFactory}
+                : new ConnectionFactory[]{sslConnectionFactory, httpConnectionFactory};
+
         ServerConnector serverConnector =
-                new ServerConnector(server, null, null, null, acceptors, -1,
-                                    sslConnectionFactory, httpConnectionFactory);
+                new ServerConnector(server, null, null, null, acceptors, -1, factories);
         serverConnector.setPort(port);
         serverConnector.setHost(host);
         serverConnector.setAcceptQueueSize(backlog);

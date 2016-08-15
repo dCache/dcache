@@ -131,6 +131,8 @@
         <property name="crlCheckingMode" value="${srm.authn.crl-mode}"/>
         <property name="ocspCheckingMode" value="${srm.authn.ocsp-mode}"/>
 
+        <property name="proxyConnectionEnabled" value="${srm.enable.proxy-protocol}"/>
+
         <property name="keyPairCache" ref="keypair-cache"/>
     </bean>
 
