@@ -54,15 +54,20 @@
         <property name="handler" ref="handler-collection"/>
     </bean>
 
-    <bean id="plain-connector" class="org.eclipse.jetty.server.ServerConnector" depends-on="jetty">
-        <description>HTTP connector</description>
-        <constructor-arg ref="jetty"/>
+    <bean id="connector" abstract="true" class="org.dcache.util.jetty.ConnectorFactoryBean">
+        <property name="server" ref="jetty"/>
 
         <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${httpd.net.listen}') }"/>
+
+        <property name="idleTimeout" value="${httpd.limits.idle-time}"/>
+        <property name="idleTimeoutUnit" value="${httpd.limits.idle-time.unit}"/>
+    </bean>
+
+    <bean id="plain-connector" parent="connector" depends-on="jetty">
+        <description>HTTP connector</description>
+
         <property name="port" value="${httpd.net.port}"/>
-        <property name="idleTimeout"
-                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                              ${httpd.limits.idle-time}, '${httpd.limits.idle-time.unit}')}" />
+        <property name="protocol" value="PLAIN"/>
     </bean>
 
     <bean id="handler-collection" class="org.eclipse.jetty.server.handler.HandlerCollection">
@@ -91,15 +96,10 @@
             <ref bean="ssl-connector"/>
         </util:list>
 
-        <bean id="ssl-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
-            <property name="server" ref="jetty"/>
-
-            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${httpd.net.listen}') }"/>
+        <bean id="ssl-connector" parent="connector">
             <property name="port" value="${httpd.net.https-port}"/>
 
-            <property name="idleTimeout" value="${httpd.limits.idle-time}"/>
-            <property name="idleTimeoutUnit" value="${httpd.limits.idle-time.unit}"/>
-
+            <property name="protocol" value="TLS"/>
             <property name="needClientAuth" value="false"/>
             <property name="wantClientAuth" value="true"/>
 

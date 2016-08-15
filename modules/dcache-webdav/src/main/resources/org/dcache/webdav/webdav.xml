@@ -430,54 +430,37 @@
         </property>
     </bean>
 
-    <beans profile="connector-http">
-        <bean id="server-connector" class="org.eclipse.jetty.server.ServerConnector">
-            <description>HTTP connector</description>
-            <constructor-arg ref="jetty"/>
-            <constructor-arg value="${webdav.limits.acceptors}"/>
-            <constructor-arg value="-1"/>
+    <bean id="server-connector" class="org.dcache.util.jetty.ConnectorFactoryBean">
+        <description>HTTPS connector supporting grid certificates</description>
 
-            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${webdav.net.listen}') }"/>
-            <property name="port" value="${webdav.net.port}"/>
-            <property name="acceptQueueSize" value="${webdav.limits.backlog}"/>
-            <property name="idleTimeout"
-                      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                                  ${webdav.limits.idle-time},
-                                  '${webdav.limits.idle-time.unit}')}" />
-        </bean>
-    </beans>
+        <property name="server" ref="jetty"/>
 
-    <beans profile="connector-https">
-        <bean id="server-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
-            <description>HTTPS connector supporting grid certificates</description>
+        <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${webdav.net.listen}') }"/>
+        <property name="port" value="${webdav.net.port}"/>
+        <property name="backlog" value="${webdav.limits.backlog}"/>
+        <property name="idleTimeout" value="${webdav.limits.idle-time}"/>
+        <property name="idleTimeoutUnit" value="${webdav.limits.idle-time.unit}"/>
+        <property name="acceptors" value="${webdav.limits.acceptors}"/>
 
-            <property name="server" ref="jetty"/>
+        <property name="protocol" value="${webdav.authn.connector}"/>
 
-            <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${webdav.net.listen}') }"/>
-            <property name="port" value="${webdav.net.port}"/>
-            <property name="backlog" value="${webdav.limits.backlog}"/>
-            <property name="idleTimeout" value="${webdav.limits.idle-time}"/>
-            <property name="idleTimeoutUnit" value="${webdav.limits.idle-time.unit}"/>
-            <property name="acceptors" value="${webdav.limits.acceptors}"/>
+        <property name="wantClientAuth" value="${webdav.authn.accept-client-cert}"/>
+        <property name="needClientAuth" value="${webdav.authn.require-client-cert}"/>
+        <property name="excludedCipherSuites" ref="banned-ciphers"/>
 
-            <property name="wantClientAuth" value="${webdav.authn.accept-client-cert}"/>
-            <property name="needClientAuth" value="${webdav.authn.require-client-cert}"/>
-            <property name="excludedCipherSuites" ref="banned-ciphers"/>
+        <property name="caPath" value="${webdav.authn.capath}"/>
+        <property name="caPathTimeout" value="${webdav.authn.capath.refresh}"/>
+        <property name="caPathTimeoutUnit" value="${webdav.authn.capath.refresh.unit}"/>
 
-            <property name="caPath" value="${webdav.authn.capath}"/>
-            <property name="caPathTimeout" value="${webdav.authn.capath.refresh}"/>
-            <property name="caPathTimeoutUnit" value="${webdav.authn.capath.refresh.unit}"/>
+        <property name="serverCertificatePath" value="${webdav.authn.hostcert.cert}"/>
+        <property name="serverKeyPath" value="${webdav.authn.hostcert.key}"/>
+        <property name="serverCertificateTimeout" value="${webdav.authn.hostcert.refresh}"/>
+        <property name="serverCertificateTimeoutUnit" value="${webdav.authn.hostcert.refresh.unit}"/>
 
-            <property name="serverCertificatePath" value="${webdav.authn.hostcert.cert}"/>
-            <property name="serverKeyPath" value="${webdav.authn.hostcert.key}"/>
-            <property name="serverCertificateTimeout" value="${webdav.authn.hostcert.refresh}"/>
-            <property name="serverCertificateTimeoutUnit" value="${webdav.authn.hostcert.refresh.unit}"/>
-
-            <property name="namespaceMode" value="${webdav.authn.namespace-mode}"/>
-            <property name="crlCheckingMode" value="${webdav.authn.crl-mode}"/>
-            <property name="ocspCheckingMode" value="${webdav.authn.ocsp-mode}"/>
-        </bean>
-    </beans>
+        <property name="namespaceMode" value="${webdav.authn.namespace-mode}"/>
+        <property name="crlCheckingMode" value="${webdav.authn.crl-mode}"/>
+        <property name="ocspCheckingMode" value="${webdav.authn.ocsp-mode}"/>
+    </bean>
 
     <beans profile="missing-files-false">
         <bean id="missing-file-strategy"

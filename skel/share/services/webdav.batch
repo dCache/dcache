@@ -43,7 +43,7 @@ check -strong webdav.mover.transfer-confirmation-timeout.unit
 check -strong webdav.authn.accept-client-cert
 check -strong webdav.authn.require-client-cert
 check -strong webdav.authn.basic
-check -strong webdav.authn.profile
+check -strong webdav.authn.connector
 check -strong webdav.authn.namespace-mode
 check -strong webdav.authn.crl-mode
 check -strong webdav.authn.ocsp-mode
@@ -89,9 +89,6 @@ User-agent: *
 Disallow: /
 endDefine
 
-define env verify-http.exe enddefine
-enddefine
-
 onerror continue
 test -f ${webdav.authn.keystore}
 set env have_keystore ${rc}
@@ -99,7 +96,10 @@ test -f ${webdav.authn.truststore}
 set env have_truststore ${rc}
 onerror shutdown
 
-define env verify-https.exe enddefine
+define env verify-PLAIN.exe enddefine
+enddefine
+
+define env verify-TLS.exe enddefine
   check -strong webdav.authn.hostcert.refresh
   check -strong webdav.authn.hostcert.refresh.unit
   check -strong webdav.authn.capath.refresh
@@ -109,12 +109,12 @@ define env verify-https.exe enddefine
   check -strong webdav.authn.capath
 enddefine
 
-exec env verify-${webdav.authn.profile}.exe
+exec env verify-${webdav.authn.connector}.exe
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${webdav.cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
-    -profiles=connector-${webdav.authn.profile},missing-files-${webdav.enable.missing-files},owncloud-${webdav.enable.owncloud} \
+    -profiles=missing-files-${webdav.enable.missing-files},owncloud-${webdav.enable.owncloud} \
     -consume=${webdav.cell.consume} \
     -subscribe=${webdav.cell.subscribe} \
     -cellClass=WebDAVDoor"

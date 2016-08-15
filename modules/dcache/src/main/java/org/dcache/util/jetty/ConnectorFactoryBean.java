@@ -32,13 +32,17 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.gsi.KeyPairCache;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.util.Crypto.getBannedCipherSuitesFromConfigurationValue;
+import static org.dcache.util.jetty.ConnectorFactoryBean.Protocol.PLAIN;
 
-public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
+public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
 {
     private int acceptors = -1;
     private int port;
@@ -57,7 +61,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
     private boolean needClientAuth;
     private boolean wantClientAuth;
     private String[] excludedCipherSuites = {};
-    private boolean enableGsi;
     private boolean isUsingLegacyClose;
     private CrlCheckingMode crlCheckingMode = CrlCheckingMode.IF_VALID;
     private OCSPCheckingMode ocspCheckingMode = OCSPCheckingMode.IF_AVAILABLE;
@@ -65,6 +68,8 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
     private KeyPairCache keyPairCache;
 
     private boolean isProxyConnectionEnabled;
+
+    private Protocol protocol;
 
     public int getAcceptors()
     {
@@ -144,7 +149,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return hostCertificateTimeout;
     }
 
-    @Required
     public void setServerCertificateTimeout(long serverCertificateTimeout)
     {
         this.hostCertificateTimeout = serverCertificateTimeout;
@@ -155,7 +159,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return hostCertificateTimeoutUnit;
     }
 
-    @Required
     public void setServerCertificateTimeoutUnit(TimeUnit serverCertificateTimeoutUnit)
     {
         this.hostCertificateTimeoutUnit = serverCertificateTimeoutUnit;
@@ -166,7 +169,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return caCertificateTimeout;
     }
 
-    @Required
     public void setCaPathTimeout(long caPathTimeout)
     {
         this.caCertificateTimeout = caPathTimeout;
@@ -177,7 +179,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return caCertificateTimeoutUnit;
     }
 
-    @Required
     public void setCaPathTimeoutUnit(TimeUnit caPathTimeoutUnit)
     {
         this.caCertificateTimeoutUnit = caPathTimeoutUnit;
@@ -188,7 +189,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return serverCertificatePath;
     }
 
-    @Required
     public void setServerCertificatePath(File serverCertificatePath)
     {
         this.serverCertificatePath = serverCertificatePath;
@@ -199,7 +199,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return serverKeyPath;
     }
 
-    @Required
     public void setServerKeyPath(File serverKeyPath)
     {
         this.serverKeyPath = serverKeyPath;
@@ -210,7 +209,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return certificateAuthorityPath;
     }
 
-    @Required
     public void setCaPath(File caPath)
     {
         this.certificateAuthorityPath = caPath;
@@ -251,14 +249,10 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         this.excludedCipherSuites = getBannedCipherSuitesFromConfigurationValue(cipherFlags);
     }
 
-    public boolean isEnableGsi()
+    @Required
+    public void setProtocol(Protocol protocol)
     {
-        return enableGsi;
-    }
-
-    public void setEnableGsi(boolean enableGsi)
-    {
-        this.enableGsi = enableGsi;
+        this.protocol = protocol;
     }
 
     public boolean isUsingLegacyClose()
@@ -276,7 +270,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return crlCheckingMode;
     }
 
-    @Required
     public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
     {
         this.crlCheckingMode = crlCheckingMode;
@@ -287,7 +280,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return ocspCheckingMode;
     }
 
-    @Required
     public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
     {
         this.ocspCheckingMode = ocspCheckingMode;
@@ -298,7 +290,6 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return namespaceMode;
     }
 
-    @Required
     public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
     {
         this.namespaceMode = namespaceMode;
@@ -333,7 +324,7 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         factory.setNeedClientAuth(needClientAuth);
         factory.setWantClientAuth(wantClientAuth);
         factory.setExcludeCipherSuites(excludedCipherSuites);
-        factory.setGsiEnabled(enableGsi);
+        factory.setGsiEnabled(protocol == Protocol.GSI);
         factory.setUsingLegacyClose(isUsingLegacyClose);
         factory.setKeyPairCache(keyPairCache);
         factory.setCertificateAuthorityUpdateInterval(caCertificateTimeoutUnit.toMillis(caCertificateTimeout));
@@ -348,24 +339,39 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
     @Override
     public ServerConnector getObject() throws Exception
     {
+        checkState(protocol == PLAIN || hostCertificateTimeout > 0);
+        checkState(protocol == PLAIN || hostCertificateTimeoutUnit != null);
+        checkState(protocol == PLAIN || caCertificateTimeout > 0);
+        checkState(protocol == PLAIN || caCertificateTimeoutUnit != null);
+        checkState(protocol == PLAIN || serverCertificatePath != null);
+        checkState(protocol == PLAIN || serverKeyPath != null);
+        checkState(protocol == PLAIN || certificateAuthorityPath != null);
+
         HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory();
-        httpConnectionFactory.getHttpConfiguration().addCustomizer(new SecureRequestCustomizer());
-        if (enableGsi) {
+
+        switch (protocol) {
+        case PLAIN:
+            break;
+        case TLS:
+            httpConnectionFactory.getHttpConfiguration().addCustomizer(new SecureRequestCustomizer());
+            break;
+        case GSI:
+            httpConnectionFactory.getHttpConfiguration().addCustomizer(new SecureRequestCustomizer());
             httpConnectionFactory.getHttpConfiguration().addCustomizer(new GsiRequestCustomizer());
+            break;
         }
 
-        SslConnectionFactory sslConnectionFactory =
-                new SslConnectionFactory(createContextFactory(),
-                                         httpConnectionFactory.getProtocol());
-
-
-        ConnectionFactory[] factories =
-                isProxyConnectionEnabled
-                ? new ConnectionFactory[]{new ProxyConnectionFactory(), sslConnectionFactory, httpConnectionFactory}
-                : new ConnectionFactory[]{sslConnectionFactory, httpConnectionFactory};
+        List<ConnectionFactory> factories = new ArrayList<>();
+        if (isProxyConnectionEnabled) {
+            factories.add(new ProxyConnectionFactory());
+        }
+        if (protocol != PLAIN) {
+            factories.add(new SslConnectionFactory(createContextFactory(), httpConnectionFactory.getProtocol()));
+        }
+        factories.add(httpConnectionFactory);
 
         ServerConnector serverConnector =
-                new ServerConnector(server, null, null, null, acceptors, -1, factories);
+                new ServerConnector(server, null, null, null, acceptors, -1, factories.stream().toArray(ConnectionFactory[]::new));
         serverConnector.setPort(port);
         serverConnector.setHost(host);
         serverConnector.setAcceptQueueSize(backlog);
@@ -383,5 +389,10 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
     public boolean isSingleton()
     {
         return true;
+    }
+
+    public enum Protocol
+    {
+        PLAIN, TLS, GSI
     }
 }

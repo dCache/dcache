@@ -105,7 +105,7 @@
         <constructor-arg value="${srm.authn.gsi.delegation.cache.lifetime.unit}"/>
     </bean>
 
-    <bean abstract="true" id="globus-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
+    <bean abstract="true" id="globus-connector" class="org.dcache.util.jetty.ConnectorFactoryBean">
         <property name="server" ref="server"/>
 
         <property name="host" value="#{ T(com.google.common.base.Strings).emptyToNull('${srm.net.listen}') }"/>
@@ -170,13 +170,14 @@
                 <bean parent="globus-connector">
                     <description>GSI interface</description>
                     <property name="port" value="${srm.net.port}"/>
-                    <property name="enableGsi" value="true"/>
+                    <property name="protocol" value="GSI"/>
                     <property name="usingLegacyClose" value="${srm.enable.legacy-close}"/>
                 </bean>
 
                 <bean parent="globus-connector">
                     <description>SSL interface</description>
                     <property name="port" value="${srm.net.ssl-port}"/>
+                    <property name="protocol" value="TLS"/>
                 </bean>
             </list>
         </property>
