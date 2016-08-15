@@ -17,8 +17,7 @@
  */
 package org.dcache.gridsite;
 
-import java.security.cert.X509Certificate;
-import java.util.Collection;
+import java.security.cert.CertPath;
 
 import org.dcache.delegation.gridsite2.DelegationException;
 
@@ -32,6 +31,5 @@ public interface CredentialDelegationFactory
     /**
      * Return a fluent interface for building a CredentialDelegation object.
      */
-    CredentialDelegation newDelegation(DelegationIdentity id,
-            Collection<X509Certificate> certificates) throws DelegationException;
+    CredentialDelegation newDelegation(DelegationIdentity id, CertPath certPath) throws DelegationException;
 }

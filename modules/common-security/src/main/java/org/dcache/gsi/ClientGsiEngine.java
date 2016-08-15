@@ -21,9 +21,7 @@ import com.google.common.io.ByteSource;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.proxy.ProxyGenerator;
 import eu.emi.security.authn.x509.proxy.ProxyRequestOptions;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
@@ -74,18 +72,16 @@ public class ClientGsiEngine extends InterceptingSSLEngine
 
     private class GotCsr implements Callback
     {
-        private int len = 0;
         private ByteSource data;
 
         @Override
         public void call(ByteBuffer buffer) throws SSLException
         {
             // read csr
-            len += buffer.position();
             ByteSource chunk = ByteSource.wrap(buffer.array()).slice(buffer.arrayOffset(), buffer.position());
             ByteSource source = (data == null) ? chunk : ByteSource.concat(data, chunk);
-            try (ASN1InputStream in = new ASN1InputStream(source.openStream(), len, true)) {
-                PKCS10CertificationRequest csr = new PKCS10CertificationRequest((ASN1Sequence) in.readObject());
+            try {
+                PKCS10CertificationRequest csr = new PKCS10CertificationRequest(source.read());
 
                 // generate proxy
                 ProxyRequestOptions options = new ProxyRequestOptions(credential.getCertificateChain(), csr);

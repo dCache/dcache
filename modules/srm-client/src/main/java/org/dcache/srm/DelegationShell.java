@@ -27,9 +27,9 @@ import org.apache.axis.SimpleTargetedChain;
 import org.apache.axis.client.Call;
 import org.apache.axis.client.Stub;
 import org.apache.axis.configuration.SimpleProvider;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.xml.rpc.ServiceException;
@@ -638,7 +638,7 @@ public class DelegationShell extends ShellApplication
 
         private PKCS10CertificationRequest fromPEM(String data) throws IOException
         {
-            PEMReader reader = new PEMReader(new StringReader(data));
+            PEMParser reader = new PEMParser(new StringReader(data));
             return (PKCS10CertificationRequest)reader.readObject();
         }
     }
