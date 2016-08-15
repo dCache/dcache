@@ -19,6 +19,7 @@ check -strong pnfsmanager.limits.log-slow-threshold
 check -strong pnfsmanager.limits.queue-length
 check -strong pnfsmanager.cell.name
 check pnfsmanager.cell.consume
+check pnfsmanager.cell.subscribe
 check -strong pnfsmanager.db.user
 check -strong pnfsmanager.db.url
 check -strong pnfsmanager.db.connections.idle
@@ -28,6 +29,6 @@ check pnfsmanager.db.password.file
 
 create org.dcache.cells.UniversalSpringCell ${pnfsmanager.cell.name} \
    "classpath:diskCacheV111/namespace/pnfsmanager-chimera.xml \
-        -consume=${pnfsmanager.cell.consume} \
+        -consume=${pnfsmanager.cell.consume} -subscribe=${pnfsmanager.cell.subscribe} \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
        "
