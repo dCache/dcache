@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -317,6 +318,16 @@ public class MoverRequestScheduler
     }
 
     /**
+     * Get a {@link Stream} of all jobs in this queue.
+     *
+     * @return list of all jobs
+     */
+    Stream<PrioritizedRequest> getJobs() {
+
+        return _jobs.values().stream();
+    }
+
+    /**
      * Get the maximal number allowed of concurrently running jobs by this scheduler.
      *
      * @return maximal number of jobs.
@@ -429,19 +440,6 @@ public class MoverRequestScheduler
 
                     });
         }
-    }
-
-    /**
-     * Print job list and status into provided {@link StringBuffer}
-     *
-     * @param sb int
-     * @return provided string buffer
-     */
-    public StringBuffer printJobQueue(StringBuffer sb)
-    {
-        _jobs.values()
-                .forEach(j -> sb.append(j.getId()).append(" : ").append(j).append('\n'));
-        return sb;
     }
 
     /**
@@ -584,7 +582,7 @@ public class MoverRequestScheduler
         _total = total;
     }
 
-    private static class PrioritizedRequest implements IoPrioritizable
+    static class PrioritizedRequest implements IoPrioritizable
     {
         private final Mover<?> _mover;
         private final IoPriority _priority;

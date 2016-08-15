@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -204,22 +205,8 @@ public class IoQueueManager
         return "Max Active Io Movers set to " + active;
     }
 
-    private Serializable list(MoverRequestScheduler js, boolean binary)
-    {
-        return list(Collections.singleton(js), binary);
-    }
-
-    private Serializable list(Collection<MoverRequestScheduler> jobSchedulers, boolean isBinary)
-    {
-        if (isBinary) {
-            return jobSchedulers.stream().flatMap(s -> s.getJobInfos().stream()).toArray(IoJobInfo[]::new);
-        } else {
-            StringBuffer sb = new StringBuffer();
-            for (MoverRequestScheduler js : jobSchedulers) {
-                js.printJobQueue(sb);
-            }
-            return sb.toString();
-        }
+    private static void toMoverString(MoverRequestScheduler.PrioritizedRequest j, StringBuilder sb) {
+        sb.append(j.getId()).append(" : ").append(j).append('\n');
     }
 
     @AffectsSetup
@@ -410,6 +397,15 @@ public class IoQueueManager
         @Option(name = "binary", usage = "Use binary output format.")
         boolean isBinary;
 
+        @Option(name = "t", usage = "Sort output by last access time.")
+        boolean sortByTime;
+
+        @Option(name = "S", usage = "Sort output by transfer size.")
+        boolean sortBySize;
+
+        @Option(name = "r", usage = "Sort output in reverse order.")
+        boolean reverseSort;
+
         @Override
         public Serializable call() throws NoSuchElementException
         {
@@ -417,25 +413,59 @@ public class IoQueueManager
                 return getQueueByJobId(id).getJobInfo(id);
             }
 
-            if (queueName == null) {
-                return list(queuesById.values(), isBinary);
+            boolean groupByQueue;
+            Collection<MoverRequestScheduler> queues;
+            if (queueName != null && !queueName.isEmpty()) {
+                MoverRequestScheduler js = queuesByName.get(queueName);
+                if (js == null) {
+                    throw new NoSuchElementException("Not found : " + queueName);
+                }
+                queues = Collections.singleton(js);
+                groupByQueue = false;
+            } else {
+                groupByQueue = queueName != null && queueName.isEmpty();
+                queues = queuesById.values();
             }
 
-            if (queueName.isEmpty()) {
+            if (isBinary) {
+                // ignore sortin and grouping by queue name if binnary
+                return queues.stream().flatMap(s -> s.getJobInfos().stream()).toArray(IoJobInfo[]::new);
+            } else {
+
+                Comparator<MoverRequestScheduler.PrioritizedRequest> comparator;
+                if (sortBySize) {
+                    comparator = (b, a) -> Long.compare(
+                            a.getMover().getBytesTransferred(), b.getMover().getBytesTransferred()
+                    );
+                } else if (sortByTime) {
+                    comparator = (b, a) -> Long.compare(
+                            a.getMover().getLastTransferred(), b.getMover().getLastTransferred()
+                    );
+                } else {
+                    comparator = (b, a) -> Integer.compare(
+                            a.getId(), b.getId()
+                    );
+                }
+
+                if (reverseSort) {
+                    comparator = comparator.reversed();
+                }
+
                 StringBuilder sb = new StringBuilder();
-                for (MoverRequestScheduler js : queues()) {
-                    sb.append("[").append(js.getName()).append("]\n");
-                    sb.append(list(js, isBinary).toString());
+                if (groupByQueue) {
+                    queues.stream().forEach(q -> {
+                        sb.append("[").append(q.getName()).append("]\n");
+                        q.getJobs()
+                                .sorted()
+                                .forEach(j -> IoQueueManager.toMoverString(j, sb));
+                    });
+                } else {
+                    queues.stream().flatMap(s -> s.getJobs())
+                            .sorted(comparator)
+                            .forEach(j -> IoQueueManager.toMoverString(j, sb));
                 }
                 return sb.toString();
             }
-
-            MoverRequestScheduler js = queuesByName.get(queueName);
-            if (js == null) {
-                throw new NoSuchElementException("Not found : " + queueName);
-            }
-
-            return list(js, isBinary);
         }
     }
 
@@ -455,7 +485,14 @@ public class IoQueueManager
             if (id != null) {
                 return p2pQueue.getJobInfo(id);
             }
-            return list(p2pQueue, isBinary);
+            if (isBinary) {
+                return p2pQueue.getJobs().toArray(IoJobInfo[]::new);
+            } else {
+                StringBuilder sb = new StringBuilder();
+                p2pQueue.getJobs()
+                        .forEach(j -> IoQueueManager.toMoverString(j, sb));
+                return sb.toString();
+            }
         }
     }
 
