@@ -1,6 +1,7 @@
 package org.dcache.restful.qos;
 
 
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,6 +29,9 @@ import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.Set;
 
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
+import org.dcache.pinmanager.PinManagerCountPinsMessage;
 
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
@@ -43,8 +47,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.cells.CellStub;
-import org.dcache.namespace.FileType;
-import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
@@ -61,6 +63,10 @@ public class QosManagementNamespace {
     @Context
     HttpServletRequest request;
 
+    /** ID provided by the requestor eg. the SRM door or QoS.**/
+
+    private final String requestId= "qos";
+
     /**
      * Gets the current status of the object, (including transition status), for the object specified by path.
      *
@@ -71,7 +77,7 @@ public class QosManagementNamespace {
     @GET
     @Path("{requestPath : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public BackendCapabilityResponse getQosStatus(@PathParam("requestPath") String requestPath) throws CacheException {
+    public BackendCapabilityResponse getQosStatus(@PathParam("requestPath") String requestPath) throws CacheException, URISyntaxException {
 
         BackendCapabilityResponse response = new BackendCapabilityResponse();
         try {
@@ -79,19 +85,35 @@ public class QosManagementNamespace {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
 
-            //get the locality of the specified file
-            RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-            FileLocality fileLocality = remotePoolMonitor.getFileLocality(getFileAttributes(requestPath), request.getRemoteHost());
+            FileAttributes fileAttributes = getFileAttributes(requestPath);
+            FileLocality fileLocality =  getLocality(fileAttributes);
+
+            CellStub cellStub = ServletContextHandlerAttributes.getPinManager(ctx);
+            boolean isPinned = isPinned(fileAttributes, cellStub);
+
 
             switch (fileLocality) {
                 case NEARLINE:
-                    response.setQoS(QosManagement.TAPE);
+                    if (isPinned) {
+                        response.setQoS(QosManagement.TAPE);
+                        response.setTargetQoS(QosManagement.DISK_TAPE);
+                    } else {
+                        response.setQoS(QosManagement.TAPE);
+                    }
                     break;
                 case ONLINE:
                     response.setQoS(QosManagement.DISK);
                     break;
                 case ONLINE_AND_NEARLINE:
-                    response.setQoS(QosManagement.DISK_TAPE);
+                    /* When the locality of the file is  NEARLINE_ONLINE and
+                     * the object is not pinned the result for the user will be displayed as NEARLINE (Tape).
+                     * else nearline_online (disk+tape)
+                    */
+                    if (isPinned) {
+                        response.setQoS(QosManagement.DISK_TAPE);
+                    } else {
+                        response.setQoS(QosManagement.TAPE);
+                    }
                     break;
                 default:
                     // error cases
@@ -105,7 +127,7 @@ public class QosManagementNamespace {
             }
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
-        } catch (CacheException e) {
+        } catch (CacheException | InterruptedException e) {
             throw new InternalServerErrorException(e);
         }
         return response;
@@ -125,7 +147,7 @@ public class QosManagementNamespace {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public String changeQosStatus(@PathParam("requestPath") String requestPath, String requestQuery) throws CacheException,
-            URISyntaxException{
+            URISyntaxException, InterruptedException {
 
         JSONObject jsonResponse = new JSONObject();
 
@@ -139,12 +161,22 @@ public class QosManagementNamespace {
 
 
             FileAttributes fileAttributes = getFileAttributes(requestPath);
+            CellStub cellStub = ServletContextHandlerAttributes.getPinManager(ctx);
+            FileLocality fileLocality =  getLocality(fileAttributes);
 
-            if (fileAttributes.getFileType() != FileType.REGULAR ||
-                    ! ("NEARLINE".equals(getLocality(fileAttributes)) && update.equalsIgnoreCase(QosManagement.DISK_TAPE))) {
-                throw new BadRequestException();
+            switch (update) {
+                // change QoS to "disk+tape"
+                case QosManagement.DISK_TAPE:
+                    makeDiskAndTape( fileLocality, fileAttributes, cellStub);
+                    break;
+                // change QoS to "tape"
+                case QosManagement.TAPE:
+                    makeTape( fileLocality, fileAttributes, cellStub);
+                    break;
+                default:
+                    // error cases
+                    throw new BadRequestException();
             }
-            pin(fileAttributes);
 
         } catch (PermissionDeniedCacheException e) {
             if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
@@ -156,7 +188,7 @@ public class QosManagementNamespace {
             throw new NotFoundException(e);
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
-        } catch ( JSONException e) {
+        } catch (JSONException e) {
             throw new BadRequestException(e);
         }
 
@@ -181,11 +213,12 @@ public class QosManagementNamespace {
         return namespaceAttrributes;
     }
 
+    /*
+    * While pinning files this requestId value "qos" will be stored for the pin.
+    * Storing requestId insures the possibility to filter files being pinned by Qos or SRM.
+    */
+    public void pin(FileAttributes fileAttributes,  CellStub cellStub) throws URISyntaxException {
 
-
-    public void pin(FileAttributes fileAttributes) throws URISyntaxException {
-
-        CellStub pinManagerStub = ServletContextHandlerAttributes.getPinManager(ctx);
         HttpProtocolInfo protocolInfo =
                 new HttpProtocolInfo("Http", 1, 1,
                         new InetSocketAddress(request.getRemoteHost(), 0),
@@ -193,15 +226,78 @@ public class QosManagementNamespace {
                         new URI("http", request.getRemoteHost(), null, null));
 
         PinManagerPinMessage message =
-                new PinManagerPinMessage(fileAttributes, protocolInfo, null, -1);
-        pinManagerStub.notify(message);
+                new PinManagerPinMessage(fileAttributes, protocolInfo, requestId, -1);
+
+        cellStub.notify(message);
+
     }
 
 
-    public String getLocality (FileAttributes fileAttributes){
+    public FileLocality getLocality(FileAttributes fileAttributes) {
 
-        //get the locality of the specified file
         RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-        return remotePoolMonitor.getFileLocality(fileAttributes, request.getRemoteHost()).toString();
+        return remotePoolMonitor.getFileLocality(fileAttributes, request.getRemoteHost());
+    }
+
+
+    public boolean isPinned(FileAttributes fileAttributes, CellStub cellStub) throws CacheException, InterruptedException,
+            URISyntaxException {
+        boolean isPinned = false;
+
+        PinManagerCountPinsMessage message =
+                new PinManagerCountPinsMessage(fileAttributes.getPnfsId());
+
+        message = cellStub.sendAndWait(message);
+        if (message.getCount() != 0 ){
+            isPinned = true;
+        }
+        return isPinned;
+    }
+
+
+    public void unpin(FileAttributes fileAttributes, CellStub cellStub ) {
+
+        PinManagerUnpinMessage message = new PinManagerUnpinMessage(fileAttributes.getPnfsId());
+        message.setRequestId(requestId);
+        cellStub.notify(message);
+    }
+
+
+    public void makeDiskAndTape(FileLocality fileLocality,
+                                FileAttributes fileAttributes,
+                                CellStub cellStub) throws URISyntaxException, CacheException, InterruptedException {
+        switch (fileLocality) {
+
+            case NEARLINE:
+                pin(fileAttributes, cellStub);
+                break;
+
+            case ONLINE_AND_NEARLINE:
+                pin(fileAttributes, cellStub);
+                break;
+            default:
+                // error cases
+                throw new BadRequestException();
+        }
+
+    }
+
+    public void makeTape(FileLocality fileLocality,
+                         FileAttributes fileAttributes,
+                         CellStub cellStub) {
+        switch (fileLocality) {
+
+            case NEARLINE:
+                unpin(fileAttributes, cellStub);
+                break;
+
+            case ONLINE_AND_NEARLINE:
+                unpin(fileAttributes, cellStub);
+                break;
+            default:
+                // error cases
+                throw new BadRequestException();
+        }
+
     }
 }
