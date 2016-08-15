@@ -77,6 +77,7 @@ import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CDC;
 
+import org.dcache.util.BoundedExecutor;
 import org.dcache.util.SequentialExecutor;
 
 /**
@@ -86,7 +87,7 @@ import org.dcache.util.SequentialExecutor;
 public class CellCuratorFramework implements CuratorFramework
 {
     private final CuratorFramework inner;
-    private final Executor executor;
+    private final BoundedExecutor executor;
 
     public CellCuratorFramework(CuratorFramework inner, Executor executor)
     {
@@ -123,13 +124,12 @@ public class CellCuratorFramework implements CuratorFramework
     @Override
     public void start()
     {
-        inner.start();
     }
 
     @Override
     public void close()
     {
-        inner.close();
+        executor.shutdown();
     }
 
     @Override

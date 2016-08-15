@@ -151,9 +151,12 @@ public class CellNucleus implements ThreadFactory
         _messageExecutor = (executor == null) ? new BoundedCachedExecutor(this, 1) : new BoundedExecutor(executor, 1);
 
         CuratorFramework curatorFramework = __cellGlue.getCuratorFramework();
-        _curatorFramework = (curatorFramework != null)
-                            ? new CellCuratorFramework(curatorFramework, _messageExecutor)
-                            : null;
+        if (curatorFramework != null) {
+            _curatorFramework = new CellCuratorFramework(curatorFramework, _messageExecutor);
+            _curatorFramework.start();
+        } else {
+            _curatorFramework = null;
+        }
 
         LOGGER.info("Created {}", name);
     }
@@ -180,6 +183,14 @@ public class CellNucleus implements ThreadFactory
     {
         checkState(__cellGlue == null);
         __cellGlue = new CellGlue(cellDomainName, curatorFramework);
+    }
+
+    public static void startCurator()
+    {
+        CuratorFramework curatorFramework = __cellGlue.getCuratorFramework();
+        if (curatorFramework != null) {
+            curatorFramework.start();
+        }
     }
 
     public static void shutdownCellGlue()
@@ -919,6 +930,13 @@ public class CellNucleus implements ThreadFactory
             LOGGER.trace("Received {}", event);
 
             checkState(_state.compareAndSet(INITIAL, REMOVING) || _state.compareAndSet(ACTIVE, REMOVING));
+
+            /* Shut down the curator decorator; this just kills the internal executor of the decorator
+             * while still allowing it to be used for operations without callbacks.
+             */
+            if (_curatorFramework != null) {
+                _curatorFramework.close();
+            }
 
             /* Shut down message executor.
              */
