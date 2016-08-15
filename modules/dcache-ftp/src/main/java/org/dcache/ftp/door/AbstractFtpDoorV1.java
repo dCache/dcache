@@ -2183,6 +2183,12 @@ public abstract class AbstractFtpDoorV1
         reply(sr.toString());
     }
 
+    /**
+     * Apache Commons FTPClient uses the output of SYST to determine how
+     * to parse the output from the LIST command.  Any response with the
+     * keyword "UNIX" ensures the client parses LIST output as if it is the
+     * output from "ls -l", as will including the phrase "Type: L8".
+     */
     @Help("SYST - Return system type.")
     public void ftp_syst(String arg)
     {
@@ -3470,6 +3476,21 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    /**
+     * Provide a directory listing in some unspecified format.  Historically
+     * Unix-like systems returned the output from "ls -l" and some clients
+     * attempt to parse the output on this basis.  Below we document the
+     * format expectations of various clients.
+     * <p>
+     * <b>Apache Commons FTPClient</b> Although FTPClient supports MLSD & MLST,
+     * it doesn't provide this transparently; therefore clients using FTPClient
+     * may well issue a LIST command and attempt to parse the response.
+     * FTPClient has an option to request the server shows all files; enabling
+     * this option results in the client issuing the non-standard option "-a";
+     * e.g., "LIST -a". FTPClient uses the output from the SYST command to
+     * determine how to parse the LIST response.
+     * @see ftp_syst
+     */
     @Help("LIST [<SP> <path>] - Returns information on <path> or the current working directory.")
     public void ftp_list(String arg)
         throws FTPCommandException
@@ -3477,6 +3498,10 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn();
 
         Args args = new Args(arg);
+
+        args.removeOptions("a"); // Remove any '-a', dCache always shows all files.
+
+        // REVISIT: do any clients require shortList output?
         boolean listLong =
             args.options().isEmpty() || args.hasOption("l");
         if (args.argc() == 0) {
