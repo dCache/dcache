@@ -288,11 +288,6 @@ public class TransferObserverV1
         _loginBrokerSource.setCellEndpoint(this);
         _loginBrokerSource.setTopic(_args.getOpt("loginBroker"));
 
-        /* Ugly hack: We don't have a good way to get unsolicited messages into webadmin,
-         * so we piggyback on the transfer observer's LoginBrokerSubscriber.
-         */
-        getDomainContext().put("doors", _loginBrokerSource.doors());
-
         _collector = new TransferCollector(_cellStub, _loginBrokerSource.doors());
 
         String updateString = _args.getOpt("update");

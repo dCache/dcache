@@ -17,53 +17,53 @@
     <context:property-placeholder/>
     <context:annotation-config/>
 
-    <jee:jndi-lookup id="ServiceCellEndpoint" jndi-name="java:comp/env/serviceCellEndpoint"/>
     <jee:jndi-lookup id="PoolMonitor" jndi-name="java:comp/env/poolMonitor"/>
 
     <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
         <property name="timeout" value="${httpd.service.pool.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.pool.timeout.unit}"/>
     </bean>
 
     <bean id="AlarmCellStub" class="org.dcache.cells.CellStub">
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
         <property name="destination" value="${httpd.service.alarms}"/>
         <property name="timeout" value="${httpd.service.alarms.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.alarms.timeout.unit}"/>
     </bean>
 
     <bean id="BillingCellStub" class="org.dcache.cells.CellStub">
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
         <property name="destination" value="${httpd.service.billing}"/>
         <property name="timeout" value="${httpd.service.billing.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.billing.timeout.unit}"/>
     </bean>
 
     <bean id="ActiveTransfersCollectorCellStub" class="org.dcache.cells.CellStub">
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
         <property name="timeout" value="${httpd.service.activetransfers-collector.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.activetransfers-collector.timeout.unit}"/>
     </bean>
 
     <bean id="CellStatusCollectorCellStub" class="org.dcache.cells.CellStub">
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
         <property name="timeout" value="${httpd.service.cellstatus-collector.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.cellstatus-collector.timeout.unit}"/>
     </bean>
 
+    <bean id="WatchedServicesStub" class="org.dcache.cells.CellStub">
+        <property name="destination" value="${httpd.watch}"/>
+    </bean>
+
     <bean id="SpaceTokenCollectorCellStub" class="org.dcache.cells.CellStub">
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
         <property name="destination" value="${httpd.service.spacemanager}"/>
         <property name="timeout" value="${httpd.service.spacetoken-collector.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.spacetoken-collector.timeout.unit}"/>
     </bean>
 
     <bean id="RestoreHandlerCollectorCellStub" class="org.dcache.cells.CellStub">
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
         <property name="destination" value="${httpd.service.poolmanager}"/>
         <property name="timeout" value="${httpd.service.restorehandler-collector.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.restorehandler-collector.timeout.unit}"/>
+    </bean>
+
+    <bean id="LoginBrokerSource" class="dmg.cells.services.login.LoginBrokerSubscriber">
+        <property name="topic" value="${httpd.loginbroker.request-topic}"/>
     </bean>
 
     <bean id="FastConstantBackoff" class="org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory">
@@ -155,7 +155,7 @@
         <property name="generator" ref="PlotGenerator"/>
     </bean>
 
-    <bean id="PageInfoCache" class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache" init-method="init" destroy-method="stop">
+    <bean id="PageInfoCache" class="org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache">
         <constructor-arg>
             <list>
                 <bean id="ActiveTransfersCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.ActiveTransfersCollector"
@@ -165,7 +165,7 @@
                     <property name="sleepInterval" value="${httpd.service.activetransfers-collector.period}"/>
                     <property name="sleepIntervalUnit" value="${httpd.service.activetransfers-collector.period.unit}"/>
                     <property name="algorithmFactory" ref="TransfersConstantBackoff"/>
-                    <property name="doors" value="#{ @ServiceCellEndpoint.getDomainContext().get('doors') }"/>
+                    <property name="doors" value="#{ @LoginBrokerSource.doors() }"/>
                 </bean>
                 <bean id="CellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector"
                     init-method="initialize">
@@ -174,10 +174,9 @@
                     <property name="sleepInterval" value="${httpd.service.cellstatus-collector.period}"/>
                     <property name="sleepIntervalUnit" value="${httpd.service.cellstatus-collector.period.unit}"/>
                     <property name="algorithmFactory" ref="FastConstantBackoff"/>
-                    <property name="doors" value="#{ @ServiceCellEndpoint.getDomainContext().get('doors') }"/>
-                    <property name="pnfsManagerName" value="${httpd.service.pnfsmanager}"/>
+                    <property name="doors" value="#{ @LoginBrokerSource.doors() }"/>
                     <property name="poolManagerName" value="${httpd.service.poolmanager}"/>
-                    <property name="gPlazmaName" value="${httpd.service.gplazma}"/>
+                    <property name="watchedServicesStub" ref="WatchedServicesStub"/>
                 </bean>
                 <bean id="PoolMonitorCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.PoolMonitorCollector"
                     init-method="initialize">
@@ -318,7 +317,6 @@
         <property name="alarmDisplayService" ref="AlarmDisplayService"/>
         <property name="billingService" ref="BillingService"/>
         <property name="thumbnailPanelProvider" ref="ThumbnailPanelProvider"/>
-        <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
         <property name="authenticatedMode" value="${httpd.enable.authn}"/>
         <property name="adminGid" value="${httpd.authz.admin-gid}"/>
         <property name="dcacheName" value="${httpd.html.dcache-instance-name}"/>

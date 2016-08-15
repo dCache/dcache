@@ -81,6 +81,7 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.ServiceUnavailableException;
 import diskCacheV111.util.TimeoutCacheException;
 
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
 import org.dcache.services.billing.histograms.ITimeFrameHistogramFactory;
@@ -109,7 +110,8 @@ import org.dcache.webadmin.controller.IBillingService;
  *
  * @author arossi
  */
-public final class StandardBillingService implements IBillingService, Runnable {
+public final class StandardBillingService implements IBillingService, Runnable, CellLifeCycleAware
+{
     private static final Logger logger = LoggerFactory.getLogger(StandardBillingService.class);
     private static final double ERRORS_PER_SECOND = 1.0 / 120.0;
 
@@ -323,9 +325,15 @@ public final class StandardBillingService implements IBillingService, Runnable {
                         Thread.currentThread().getContextClassLoader(),
                         new Class[] { ITimeFrameHistogramDataService.class },
                         new TimeFrameHistogramDataProxy(cell));
-
         refresher = new Thread(this, "StandardBillingServiceRefresher");
-        refresher.start();
+    }
+
+    @Override
+    public void afterStart()
+    {
+        if (refresher != null) {
+            refresher.start();
+        }
     }
 
     @Override

@@ -25,7 +25,7 @@
     </context-param>
     <context-param>
         <param-name>contextInitializerClasses</param-name>
-        <param-value>org.dcache.services.httpd.util.HttpdApplicationContextInitializer,org.dcache.webadmin.WebadminApplicationContextInitializer</param-value>
+        <param-value>org.dcache.services.httpd.util.HttpdApplicationContextInitializer,org.dcache.services.httpd.util.HttpdBeanPostProcessorApplicationContextInitializer,org.dcache.webadmin.WebadminApplicationContextInitializer</param-value>
     </context-param>
     <listener>
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>

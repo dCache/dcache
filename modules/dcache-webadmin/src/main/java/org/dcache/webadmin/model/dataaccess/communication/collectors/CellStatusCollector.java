@@ -13,17 +13,22 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.util.CacheException;
 
+import dmg.cells.network.PingMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
+import org.dcache.cells.CellStub;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 
@@ -31,16 +36,18 @@ import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
  *
  * @author jans
  */
-public class CellStatusCollector extends Collector {
-
+public class CellStatusCollector extends Collector implements CellMessageReceiver
+{
 //    After 2 days a cell is considered removed and will no longer be queried
     private static final long CONSIDERED_REMOVED_TIME_MS = 172800000;
     private Collection<LoginBrokerInfo> _doors;
-    private String _pnfsManagerName;
     private String _poolManagerName;
-    private String _gPlazmaName;
     private Map<CellAddressCore, CellStatus> _statusTargets = new HashMap<>();
     private static final Logger _log = LoggerFactory.getLogger(CellStatusCollector.class);
+
+    private CellStub _watchedServicesStub;
+
+    private Set<CellAddressCore> _watchedServices = ConcurrentHashMap.newKeySet();
 
     private Set<CellAddressCore> getPoolCells() throws InterruptedException {
         _log.debug("Requesting Pools from {}", _poolManagerName);
@@ -58,12 +65,6 @@ public class CellStatusCollector extends Collector {
         return pools;
     }
 
-    private void addStandardNames(Set<CellAddressCore> cellNames) {
-        cellNames.add(new CellAddressCore(_pnfsManagerName));
-        cellNames.add(new CellAddressCore(_poolManagerName));
-        cellNames.add(new CellAddressCore(_gPlazmaName));
-    }
-
     private void addLoginBrokerTargets(Set<CellAddressCore> targetCells)
             throws InterruptedException
     {
@@ -76,8 +77,13 @@ public class CellStatusCollector extends Collector {
         Set<CellAddressCore> targetCells = new HashSet<>();
         addLoginBrokerTargets(targetCells);
         targetCells.addAll(getPoolCells());
-        addStandardNames(targetCells);
+        targetCells.addAll(getWatchedServices());
         return targetCells;
+    }
+
+    private Collection<CellAddressCore> getWatchedServices()
+    {
+        return _watchedServices;
     }
 
     private void retrieveCellInfos() throws InterruptedException {
@@ -93,11 +99,23 @@ public class CellStatusCollector extends Collector {
     }
 
     private void collectCellStates() throws InterruptedException {
+        pingWatchedServices();
+
         Set<CellAddressCore> targetCells = getTargetCells();
         addNewTargets(checkForNewTargets(targetCells));
         subtractGoneTargets();
         retrieveCellInfos();
         _pageCache.put(ContextPaths.CELLINFO_LIST, ImmutableSet.copyOf(_statusTargets.values()));
+    }
+
+    private void pingWatchedServices()
+    {
+        _watchedServicesStub.send(new PingMessage(), PingMessage.class);
+    }
+
+    public void messageArrived(CellMessage envelope, PingMessage message)
+    {
+        _watchedServices.add(envelope.getSourceAddress());
     }
 
     private Set<CellAddressCore> checkForNewTargets(Set<CellAddressCore> targetCells) {
@@ -142,16 +160,12 @@ public class CellStatusCollector extends Collector {
         _doors = doors;
     }
 
-    public void setPnfsManagerName(String pnfsManagerName) {
-        _pnfsManagerName = pnfsManagerName;
-    }
-
     public void setPoolManagerName(String poolManagerName) {
         _poolManagerName = poolManagerName;
     }
 
-    public void setgPlazmaName(String gPlazmaName) {
-        _gPlazmaName = gPlazmaName;
+    public void setWatchedServicesStub(CellStub cellstub) {
+        _watchedServicesStub = cellstub;
     }
 
     private class CellInfoCallback implements FutureCallback<CellInfo>

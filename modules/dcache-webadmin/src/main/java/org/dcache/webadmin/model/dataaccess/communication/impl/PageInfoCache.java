@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import dmg.cells.nucleus.CellLifeCycleAware;
+
 import org.dcache.webadmin.model.dataaccess.communication.collectors.Collector;
 import org.dcache.webadmin.model.exceptions.NoSuchContextException;
 
@@ -17,8 +19,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author jans
  */
-public class PageInfoCache {
-
+public class PageInfoCache implements CellLifeCycleAware
+{
     private List<Collector> _collectors;
     private final List<Thread> _threads = new ArrayList<>();
     private final ConcurrentMap<String, Object> _cache =
@@ -39,7 +41,9 @@ public class PageInfoCache {
         }
     }
 
-    public void init() {
+    @Override
+    public void afterStart()
+    {
         for (Collector collector : _collectors) {
             collector.setPageCache(_cache);
             _log.info("Collector {} started", collector.getName());
@@ -49,7 +53,8 @@ public class PageInfoCache {
         }
     }
 
-    public void stop()
+    @Override
+    public void beforeStop()
     {
         for (Thread thread: _threads) {
             thread.interrupt();

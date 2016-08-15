@@ -21,6 +21,8 @@ import org.eclipse.jetty.util.thread.ThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+
 import dmg.cells.nucleus.CellLifeCycleAware;
 
 public class Server extends org.eclipse.jetty.server.Server
@@ -33,14 +35,14 @@ public class Server extends org.eclipse.jetty.server.Server
         super(pool);
     }
 
-    @Override
-    public void afterStart()
+    @PostConstruct
+    public void startServer() throws Exception
     {
-        try {
-            start();
-        } catch (Exception e) {
-            LOG.error("Web server startup failed: " + e);
-        }
+        /* Since the handlers used by httpd call back to the bean factory for initialization,
+         * we have to call this during the post construct phase rather than the afterStart
+         * phase.
+         */
+        start();
     }
 
     @Override

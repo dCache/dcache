@@ -19,6 +19,8 @@ package org.dcache.services.httpd.handlers;
 
 import org.eclipse.jetty.plus.jndi.EnvEntry;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
 import java.util.Map;
 import java.util.Properties;
@@ -35,6 +37,7 @@ public class WebAppHandler extends WebAppContext
     public static final String CELL_ENDPOINT = "serviceCellEndpoint";
     public static final String JNDI_ARGS = "jndiArgs";
     public static final String POOL_MONITOR = "poolMonitor";
+    public static final String BEAN_FACTORY = "beanFactory";
 
     private static final String[] CONFIGURATION_CLASSES = {
             "org.eclipse.jetty.webapp.WebInfConfiguration",
@@ -45,6 +48,9 @@ public class WebAppHandler extends WebAppContext
             "org.eclipse.jetty.plus.webapp.PlusConfiguration",
             "org.eclipse.jetty.webapp.JettyWebXmlConfiguration"
     };
+
+    @Autowired
+    private AutowireCapableBeanFactory beanFactory;
 
     private Map<String, Object> environment;
     private CellEndpoint endpoint;
@@ -85,6 +91,7 @@ public class WebAppHandler extends WebAppContext
          */
         new EnvEntry(this, CELL_ENDPOINT, endpoint, true);
         new EnvEntry(this, POOL_MONITOR, remotePoolMonitor, true);
+        new EnvEntry(this, BEAN_FACTORY, beanFactory, true);
 
         Properties properties = new Properties();
         for (Map.Entry<String, Object> entry : environment.entrySet()) {

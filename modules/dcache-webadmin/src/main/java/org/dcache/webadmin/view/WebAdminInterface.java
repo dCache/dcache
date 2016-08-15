@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.LoginStrategy;
@@ -72,8 +74,8 @@ import org.dcache.webadmin.view.util.Role;
  *
  * @author jans
  */
-public class WebAdminInterface extends WebApplication {
-
+public class WebAdminInterface extends WebApplication implements CellMessageSender
+{
     public static final String MISSING_RESOURCE_KEY = "missing.resource";
     private static final long LOGIN_CELLSTUB_TIMEOUT = 5000;
     private static final List<Class<? extends Component>> ADMIN_PAGES
@@ -241,7 +243,7 @@ public class WebAdminInterface extends WebApplication {
         _httpsPort = port;
     }
 
-    @Required
+    @Override
     public void setCellEndpoint(CellEndpoint endpoint) {
         _cellEndpoint = endpoint;
     }
