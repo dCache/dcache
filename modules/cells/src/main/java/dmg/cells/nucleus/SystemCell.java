@@ -79,13 +79,10 @@ public class      SystemCell
     @Override
     protected void startUp()
     {
-        /**
-         * We start the curator here to get the right context for the curator threads.
+        /* We start the curator here to get the right context for the curator threads.
          */
-        CuratorFramework curatorFramework = _nucleus.getCuratorFramework();
-        if (curatorFramework != null) {
-            curatorFramework.start();
-        }
+        CellNucleus.startCurator();
+
         _cellShell.addCommandListener(this);
         _cellShell.addCommandListener(new LogbackShell());
         _cellShell.addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
