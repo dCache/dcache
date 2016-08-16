@@ -66,7 +66,6 @@ import dmg.util.Releases;
 
 import org.dcache.util.Args;
 
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -106,16 +105,6 @@ public class CoreRoutingManager
     private final ConcurrentMap<String, CoreRouteUpdate> updates = new ConcurrentHashMap<>();
 
     /**
-     * Map to collapse update messages from connected domains.
-     */
-    private final ConcurrentMap<String, List<String>> legacyWellknownUpdates = new ConcurrentHashMap<>();
-
-    /**
-     * Map to collapse update messages from connected domains.
-     */
-    private final ConcurrentMap<String, Collection<String>> legacyTopicUpdates = new ConcurrentHashMap<>();
-
-    /**
      * Topic routes installed by routing manager.
      */
     private final Multimap<String, String> topicRoutes = HashMultimap.create();
@@ -134,11 +123,6 @@ public class CoreRoutingManager
      * Tunnels to satellite domains.
      */
     private final Map<CellAddressCore,CellTunnelInfo> satelliteTunnels = new HashMap<>();
-
-    /**
-     * Tunnels to legacy domains.
-     */
-    private final Map<CellAddressCore,CellTunnelInfo> legacyTunnels = new HashMap<>();
 
     /**
      * Default routes that still have to be added.
@@ -330,7 +314,7 @@ public class CoreRoutingManager
                 Map<String, Collection<String>> domains = new HashMap<>();
                 synchronized (this) {
                     domains.put(getCellDomainName(), new ArrayList<>(localConsumers.values()));
-                    Stream.of(coreTunnels, satelliteTunnels, legacyTunnels)
+                    Stream.of(coreTunnels, satelliteTunnels)
                             .flatMap(map -> map.values().stream())
                             .map(CellTunnelInfo::getRemoteCellDomainInfo)
                             .map(CellDomainInfo::getCellDomainName)
@@ -344,24 +328,6 @@ public class CoreRoutingManager
             }
         } else if (obj instanceof NoRouteToCellException) {
             LOG.info(((NoRouteToCellException) obj).getMessage());
-        } else if (obj instanceof String[]) {
-            // Legacy support for pre-2.16 pools
-            String[] info = (String[]) obj;
-            if (info.length < 1) {
-                LOG.warn("Protocol error 1 in routing info");
-                return;
-            }
-            final String domain = info[0];
-            LOG.info("Routing info arrived for domain {}", domain);
-
-            if (legacyWellknownUpdates.put(domain, asList(info).subList(1, info.length)) == null) {
-                executor.execute(() -> updateQueueRoutes(domain, legacyWellknownUpdates.remove(domain)));
-            }
-        } else if (obj instanceof TopicRouteUpdate) {
-            String domain = msg.getSourceAddress().getCellDomainName();
-            if (legacyTopicUpdates.put(domain, ((TopicRouteUpdate) obj).getTopics()) == null) {
-                executor.execute(() -> updateTopicRoutes(domain, legacyTopicUpdates.remove(domain)));
-            }
         } else if (obj instanceof PeerShutdownNotification) {
             PeerShutdownNotification notification = (PeerShutdownNotification) obj;
             String remoteDomain = notification.getDomainName();
@@ -415,13 +381,8 @@ public class CoreRoutingManager
                     .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE)
                     .ifPresent(i -> { coreTunnels.put(i.getTunnel(), i); sendToCoreDomains(); });
             tunnelInfo
-                    .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
-                                 i.getRemoteCellDomainInfo().getRelease() >= Releases.RELEASE_2_16)
+                    .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.SATELLITE)
                     .ifPresent(i -> { satelliteTunnels.put(i.getTunnel(), i); sendToSatelliteDomains(); });
-            tunnelInfo
-                    .filter(i -> i.getRemoteCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
-                                 i.getRemoteCellDomainInfo().getRelease() < Releases.RELEASE_2_16)
-                    .ifPresent(i -> legacyTunnels.put(i.getTunnel(), i));
             tunnelInfo
                     .filter(i -> i.getLocalCellDomainInfo().getRole() == CellDomainRole.SATELLITE &&
                                  i.getRemoteCellDomainInfo().getRole() == CellDomainRole.CORE)
@@ -469,7 +430,6 @@ public class CoreRoutingManager
                     .ifPresent(name -> {
                         coreTunnels.remove(name);
                         satelliteTunnels.remove(name);
-                        legacyTunnels.remove(name);
                     });
             break;
         case CellRoute.TOPIC:

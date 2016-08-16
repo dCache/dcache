@@ -46,6 +46,7 @@ import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
+import dmg.util.Releases;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -164,7 +165,10 @@ public class LocationMgrTunnel
             _remoteDomainInfo = (CellDomainInfo) in.readObject();
 
             if (_remoteDomainInfo == null) {
-                throw new IOException("EOS encountered while reading DomainInfo");
+                throw new IOException("EOS encountered while reading DomainInfo.");
+            }
+            if (_remoteDomainInfo.getRelease() < Releases.RELEASE_2_16) {
+                throw new IOException("Connection from incompatible domain " + _remoteDomainInfo + " rejected.");
             }
 
             _allowForwardingOfRemoteMessages = (_remoteDomainInfo.getRole() != CellDomainRole.CORE);
