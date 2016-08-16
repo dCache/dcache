@@ -113,7 +113,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
     public EnumSet<Flags> getFlags()
     {
-        // Check null for backwards compatibility with 2.11
-        return (_flags == null) ? EnumSet.noneOf(Flags.class) : _flags;
+        return _flags;
     }
 }
