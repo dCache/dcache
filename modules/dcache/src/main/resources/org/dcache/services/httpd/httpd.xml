@@ -61,6 +61,7 @@
 
         <property name="idleTimeout" value="${httpd.limits.idle-time}"/>
         <property name="idleTimeoutUnit" value="${httpd.limits.idle-time.unit}"/>
+        <property name="proxyConnectionEnabled" value="${httpd.enable.proxy-protocol}"/>
     </bean>
 
     <bean id="plain-connector" parent="connector" depends-on="jetty">

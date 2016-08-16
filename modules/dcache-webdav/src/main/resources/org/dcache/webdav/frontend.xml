@@ -295,5 +295,7 @@
         <property name="namespaceMode" value="${frontend.authn.namespace-mode}"/>
         <property name="crlCheckingMode" value="${frontend.authn.crl-mode}"/>
         <property name="ocspCheckingMode" value="${frontend.authn.ocsp-mode}"/>
+
+        <property name="proxyConnectionEnabled" value="${frontend.enable.proxy-protocol}"/>
     </bean>
 </beans>

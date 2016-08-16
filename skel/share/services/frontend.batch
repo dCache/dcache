@@ -26,6 +26,7 @@ check -strong frontend.authn.crl-mode
 check -strong frontend.authn.ocsp-mode
 check -strong frontend.authz.anonymous-operations
 check -strong frontend.authz.readonly
+check -strong frontend.enable.proxy-protocol
 
 check -strong frontend.limits.acceptors
 check -strong frontend.limits.idle-time

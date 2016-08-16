@@ -460,6 +460,8 @@
         <property name="namespaceMode" value="${webdav.authn.namespace-mode}"/>
         <property name="crlCheckingMode" value="${webdav.authn.crl-mode}"/>
         <property name="ocspCheckingMode" value="${webdav.authn.ocsp-mode}"/>
+
+        <property name="proxyConnectionEnabled" value="${webdav.enable.proxy-protocol}"/>
     </bean>
 
     <beans profile="missing-files-false">

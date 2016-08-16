@@ -58,6 +58,7 @@ check -strong webdav.service.missing-files
 check -strong webdav.service.missing-files.timeout
 check -strong webdav.service.missing-files.timeout.unit
 check -strong webdav.enable.missing-files
+check -strong webdav.enable.proxy-protocol
 
 check -strong webdav.limits.acceptors
 check -strong webdav.limits.idle-time
