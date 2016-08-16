@@ -1,10 +1,26 @@
 onerror shutdown
 check -strong statistics.cell.name
 check -strong statistics.location
+check -strong statistics.service.billing
+check -strong statistics.service.billing.timeout
+check -strong statistics.service.billing.timeout.unit
+check -strong statistics.service.poolmanager
+check -strong statistics.service.poolmanager.timeout
+check -strong statistics.service.poolmanager.timeout.unit
+check -strong statistics.service.pool.timeout
+check -strong statistics.service.pool.timeout.unit
 
 create diskCacheV111.services.PoolStatisticsV0 ${statistics.cell.name}  \
      "${statistics.location}  \
 #      -create  \
 #      -htmlBase=${statistics.location}  \
+      -poolManager=${statistics.service.poolmanager} \
+      -poolManagerTimeout=${statistics.service.poolmanager.timeout} \
+      -poolManagerTimeoutUnit=${statistics.service.poolmanager.timeout.unit} \
+      -billing=${statistics.service.billing} \
+      -billingTimeout=${statistics.service.billing.timeout} \
+      -billingTimeoutUnit=${statistics.service.billing.timeout.unit} \
+      -poolTimeout=${statistics.service.pool.timeout} \
+      -poolTimeoutUnit=${statistics.service.pool.timeout.unit} \
       -domain=${thisFqHostname}"
 

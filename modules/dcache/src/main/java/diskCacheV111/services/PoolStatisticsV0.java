@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
@@ -267,9 +268,14 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                     "[-htmlBase=<htmlBase>|none] [-create] [-images=<images>]");
         }
 
-        _poolManager = new CellStub(this, new CellPath("PoolManager"), 20000);
-        _billing = new CellStub(this, new CellPath("billing"), 20000);
-        _poolStub = new CellStub(this, null, 20000);
+        _poolManager = new CellStub(this, new CellPath(args.getOption("poolManager")),
+                                    TimeUnit.MILLISECONDS.convert(args.getLongOption("poolManagerTimeout"),
+                                                                  TimeUnit.valueOf(args.getOption("poolManagerTimeoutUnit"))));
+        _billing = new CellStub(this, new CellPath(args.getOption("billing")),
+                                TimeUnit.MILLISECONDS.convert(args.getLongOption("billingTimeout"),
+                                                              TimeUnit.valueOf(args.getOption("billingTimeoutUnit"))));
+        _poolStub = new CellStub(this, null, TimeUnit.MILLISECONDS.convert(args.getLongOption("poolTimeout"),
+                                                                           TimeUnit.valueOf(args.getOption("poolTimeoutUnit"))));
 
         _htmlBase = _dbBase = new File(args.argv(0));
 
