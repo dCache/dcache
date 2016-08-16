@@ -61,15 +61,4 @@ public class CellDomainInfo implements Serializable
     {
         return _domainName + ',' + _version + ',' + _role;
     }
-
-    private void readObject(java.io.ObjectInputStream stream)
-            throws java.io.IOException, ClassNotFoundException
-    {
-        stream.defaultReadObject();
-
-        // REVISIT: For backwards compatibility with pre-2.16; remove in 2.17
-        if (_role == null) {
-            _role = CellDomainRole.SATELLITE;
-        }
-    }
 }
