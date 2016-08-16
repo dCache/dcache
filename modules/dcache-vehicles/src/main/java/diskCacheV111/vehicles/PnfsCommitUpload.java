@@ -83,8 +83,7 @@ public class PnfsCommitUpload extends PnfsMessage
 
     public Set<FileAttribute> getRequestedAttributes()
     {
-        // REVISIT: Addition of PNFSID is for backwards compatibility with pre 2.15 - remove in 2.17
-        return Sets.newHashSet(concat(requestedAttributes, singleton(PNFSID)));
+        return requestedAttributes;
     }
 
     public FileAttributes getFileAttributes()
