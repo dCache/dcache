@@ -2105,12 +2105,7 @@ public class PnfsManagerV3
     public void setFileAttributes(PnfsSetFileAttributes message)
     {
         try {
-
             FileAttributes attr = message.getFileAttributes();
-            if (attr.getDefinedAttributes().size() == 1 && attr.isDefined(ACCESS_TIME) && message.getAcquire().isEmpty()) {
-                // access time only update (legacy pools). We assume that the doors already have update atime.
-                return;
-           }
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
             checkRestriction(message, UPDATE_METADATA);
