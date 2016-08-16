@@ -2,7 +2,6 @@ package org.dcache.vehicles;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
-import com.google.common.base.Strings;
 
 import javax.annotation.Nonnull;
 
@@ -453,13 +452,13 @@ public class FileAttributes implements Serializable {
     public void setCacheClass(String cacheClass)
     {
         define(CACHECLASS);
-        _cacheClass = Strings.nullToEmpty(cacheClass); // For compatibility with pre-2.12 - remove after next golden
+        _cacheClass = cacheClass;
     }
 
     public String getCacheClass()
     {
         guard(CACHECLASS);
-        return Strings.emptyToNull(_cacheClass);   // For compatibility with pre-2.12 - remove after next golden
+        return _cacheClass;
     }
 
     public void setHsm(String hsm)
@@ -521,7 +520,11 @@ public class FileAttributes implements Serializable {
             _storageClass = _storageClass.intern();
         }
         if (_cacheClass != null) {
-            _cacheClass = _cacheClass.intern();
+            if (_cacheClass.isEmpty()) {
+                _cacheClass = null;  // For compatibility with pre-2.17- remove after next golden
+            } else {
+                _cacheClass = _cacheClass.intern();
+            }
         }
         if (_hsm != null) {
             _hsm = _hsm.intern();
