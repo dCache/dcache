@@ -1,6 +1,7 @@
-/* dCache - http://www.dcache.org/
+/*
+ * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,11 +16,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package diskCacheV111.vehicles;
+package org.dcache.services.billing.text;
 
 import org.stringtemplate.v4.ST;
 
 import java.util.Date;
+
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.InfoMessage;
+import diskCacheV111.vehicles.InfoMessageVisitor;
+import diskCacheV111.vehicles.MoverInfoMessage;
+import diskCacheV111.vehicles.PnfsFileInfoMessage;
+import diskCacheV111.vehicles.PoolHitInfoMessage;
+import diskCacheV111.vehicles.RemoveFileInfoMessage;
+import diskCacheV111.vehicles.StorageInfoMessage;
+import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import org.dcache.auth.SubjectWrapper;
 
@@ -38,7 +49,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         template.add("queuingTime", message.getTimeQueued());
         template.add("message", message.getMessage());
         template.add("type", message.getMessageType());
-        template.add("cellName", message.getCellName());
+        template.add("cellName", new CellAddressWrapper(message.getCellName()));
         template.add("cellType", message.getCellType());
         template.add("rc", message.getResultCode());
         template.add("subject", new SubjectWrapper(message.getSubject()));
