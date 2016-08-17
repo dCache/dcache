@@ -18,6 +18,8 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
 
+import static java.util.Arrays.asList;
+
 public class MockCellEndpoint implements CellEndpoint
 {
     private final Map<CellPath, Map<String, List<MessageEnvelope>>> messageQueue = new HashMap<>();
@@ -86,7 +88,9 @@ public class MockCellEndpoint implements CellEndpoint
     public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout, SendFlag... flags)
             throws SerializationException
     {
-        envelope.addSourceAddress(address);
+        if (!asList(flags).contains(SendFlag.PASS_THROUGH)) {
+            envelope.addSourceAddress(address);
+        }
         Map<String, List<MessageEnvelope>> messages = messageQueue.get(envelope.getDestinationPath());
         List<MessageEnvelope> envelopes = messages.get(envelope.getMessageObject().getClass().getName());
         MessageEnvelope m = envelopes.get(0);
@@ -97,9 +101,11 @@ public class MockCellEndpoint implements CellEndpoint
     }
 
     @Override
-    public void sendMessage(CellMessage envelope)
+    public void sendMessage(CellMessage envelope, SendFlag... flags)
     {
-        envelope.addSourceAddress(address);
+        if (!asList(flags).contains(SendFlag.PASS_THROUGH)) {
+            envelope.addSourceAddress(address);
+        }
         String destinations = envelope.getDestinationPath().getCellName();
 
         Map<Class<?>, MessageAction> actions = messageActions.get(destinations);

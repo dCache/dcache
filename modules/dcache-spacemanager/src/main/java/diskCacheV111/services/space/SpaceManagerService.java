@@ -536,7 +536,7 @@ public final class SpaceManagerService
             };
         } else {
             if (isEnRouteToDoor) {
-                return CellEndpoint::sendMessage;
+                return (Reply) (cellEndpoint, envelope) -> cellEndpoint.sendMessage(envelope);
             } else if (message instanceof PoolMgrSelectWritePoolMsg) {
                 return (endpoint, envelope) -> poolManagerHandler.send(endpoint, envelope, (PoolManagerMessage) message);
             } else if (message instanceof PoolIoFileMessage) {

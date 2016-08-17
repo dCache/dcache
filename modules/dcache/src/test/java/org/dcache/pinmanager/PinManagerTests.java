@@ -63,6 +63,7 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
 
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.pinmanager.model.Pin.State.PINNED;
 import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
@@ -757,10 +758,12 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
     }
 
     @Override
-    public void sendMessage(CellMessage envelope)
+    public void sendMessage(CellMessage envelope, SendFlag... flags)
         throws SerializationException
     {
-        envelope.addSourceAddress(_address);
+        if (!asList(flags).contains(SendFlag.PASS_THROUGH)) {
+            envelope.addSourceAddress(_address);
+        }
         process(envelope);
     }
 
@@ -772,7 +775,9 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
                             SendFlag... flags)
         throws SerializationException
     {
-        envelope.addSourceAddress(_address);
+        if (!asList(flags).contains(SendFlag.PASS_THROUGH)) {
+            envelope.addSourceAddress(_address);
+        }
         CellMessage answer = process(envelope);
         if (answer != null) {
             callback.answerArrived(envelope, answer);

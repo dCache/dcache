@@ -63,7 +63,7 @@ public class MessageHandlerChainAsMessageSenderTests {
         }
 
         @Override
-        public void sendMessage( CellMessage envelope)
+        public void sendMessage(CellMessage envelope, SendFlag... flags)
                 throws SerializationException {
             _sendMessages.add( envelope);
         }

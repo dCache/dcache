@@ -36,7 +36,6 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
-import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellEndpoint;

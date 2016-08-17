@@ -28,6 +28,7 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.SerializationException;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Arrays.asList;
 
 /**
  * Helper class to mock a CellEndpoint. To be used with CellStubHelper.
@@ -59,10 +60,12 @@ public class CellEndpointHelper implements CellEndpoint
     }
 
     @Override
-    public void sendMessage(CellMessage envelope)
+    public void sendMessage(CellMessage envelope, SendFlag... flags)
             throws SerializationException
     {
-        envelope.addSourceAddress(_address);
+        if (!asList(flags).contains(SendFlag.PASS_THROUGH)) {
+            envelope.addSourceAddress(_address);
+        }
         currentTest().messageArrived(envelope);
     }
 
@@ -71,7 +74,9 @@ public class CellEndpointHelper implements CellEndpoint
                             long timeout, SendFlag... flags)
             throws SerializationException
     {
-        envelope.addSourceAddress(_address);
+        if (!asList(flags).contains(SendFlag.PASS_THROUGH)) {
+            envelope.addSourceAddress(_address);
+        }
         CellMessage answer = currentTest().messageArrived(envelope);
         Object obj = answer.getMessageObject();
         if (obj instanceof Exception) {

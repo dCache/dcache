@@ -44,7 +44,6 @@ import org.dcache.util.Args;
 import org.dcache.util.Version;
 import org.dcache.util.cli.CommandExecutor;
 
-import static java.util.Arrays.asList;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
@@ -439,21 +438,22 @@ public class CellAdapter
         _nucleus.invokeLater(() -> invokeOnMessageThread(task));
     }
 
-    /**
-     *  sends a <code>CellMessage</code> along the specified path.
-     *
-     * @param msg the message to be sent.
-     * @exception SerializationException if the payload object of this
-     *            message is not Serializable.
-     * @exception NoRouteToCellException if the destination <code>CellPath</code>
-     *            couldn't be reached.
-     *
-     */
     @Override
-    public void sendMessage(CellMessage msg)
+    public void sendMessage(CellMessage msg, SendFlag... flags)
         throws SerializationException
     {
-        getNucleus().sendMessage(msg, true, true, true);
+        boolean shouldAddSource = true;
+        for (SendFlag flag : flags) {
+            switch (flag) {
+            case RETRY_ON_NO_ROUTE_TO_CELL:
+                throw new IllegalArgumentException("RETRY_ON_NO_ROUTE_TO_CELL can only be used with a callback.");
+            case PASS_THROUGH:
+                shouldAddSource = false;
+                break;
+            }
+        }
+
+        getNucleus().sendMessage(msg, true, true, shouldAddSource);
     }
 
     @Override
@@ -464,10 +464,19 @@ public class CellAdapter
                             SendFlag... flags)
         throws SerializationException
     {
-        if (asList(flags).contains(SendFlag.RETRY_ON_NO_ROUTE_TO_CELL)) {
-            callback = new RetryingCellMessageAnswerable(msg, callback, executor, timeout, _routeAddedCounter.longValue());
+        boolean shouldAddSource = true;
+        for (SendFlag flag : flags) {
+            switch (flag) {
+            case RETRY_ON_NO_ROUTE_TO_CELL:
+                callback = new RetryingCellMessageAnswerable(msg, callback, executor, timeout, _routeAddedCounter.longValue());
+                break;
+            case PASS_THROUGH:
+                shouldAddSource = false;
+                break;
+            }
         }
-        getNucleus().sendMessage(msg, true, true, true, callback, executor, timeout);
+
+        getNucleus().sendMessage(msg, true, true, shouldAddSource, callback, executor, timeout);
     }
 
     //

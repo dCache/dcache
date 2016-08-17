@@ -25,17 +25,23 @@ public interface CellEndpoint
          * In case of failure to deliver the message, delivery is transparently
          * retried as long as the timeout has not expired.
          */
-        RETRY_ON_NO_ROUTE_TO_CELL
+        RETRY_ON_NO_ROUTE_TO_CELL,
+
+        /**
+         * Do not add the local cell to the source path.
+         */
+        PASS_THROUGH
     }
 
     /**
      * Sends <code>envelope</code>.
      *
      * @param envelope the cell message to be sent.
+     * @param flags    flags affecting how the message is sent
      * @throws SerializationException if the payload object of this
      *         message is not serializable.
      */
-    void sendMessage(CellMessage envelope)
+    void sendMessage(CellMessage envelope, SendFlag... flags)
         throws SerializationException;
 
     /**

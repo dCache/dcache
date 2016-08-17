@@ -122,12 +122,12 @@ public class MessageProcessingMonitor
         }
 
         @Override
-        public void sendMessage(CellMessage envelope)
+        public void sendMessage(CellMessage envelope, SendFlag... flags)
             throws SerializationException
         {
             boolean success = false;
             try {
-                _endpoint.sendMessage(envelope);
+                _endpoint.sendMessage(envelope, flags);
                 success = true;
             } finally {
                 _gauges.update(_type, System.currentTimeMillis() - _startTime);

@@ -88,7 +88,7 @@ final class TestStub extends CellStub {
         super();
         setCellEndpoint(new CellEndpoint() {
             @Override
-            public void sendMessage(CellMessage envelope)
+            public void sendMessage(CellMessage envelope, SendFlag... flags)
                             throws SerializationException {
 
             }
