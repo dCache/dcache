@@ -125,7 +125,7 @@ public boolean equals( Object obj ){
   }
   public Serializable getSession() { return (Serializable) _session; }
   public void        setSession(Serializable session) { _session = session; }
-  public void        setTtl(long ttl) { _ttl = ttl; }
+  public void        setTtl(long ttl) { _ttl = ttl; _receivedAt = System.currentTimeMillis(); }
   public long        getTtl() { return _ttl; }
   public CellAddressCore getSourceAddress() { return _source.getSourceAddress(); }
   public CellPath    getDestinationPath(){ return _destination ; }
@@ -152,12 +152,6 @@ public boolean equals( Object obj ){
   // package methods
   //
   boolean isStreamMode(){ return _mode == STREAM_MODE  ; }
-  void touch(){
-      if( _destination.isFirstDestination() ){
-          _umid = new UOID() ;
-          _receivedAt = System.currentTimeMillis();
-      }
-  }
 
     /**
      * The method does not copy the message object - only the encoded message

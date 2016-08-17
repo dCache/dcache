@@ -42,7 +42,6 @@ import java.util.SortedSet;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -569,14 +568,7 @@ public class CellShell extends CommandInterpreter
       CellPath destination = new CellPath( cellName ) ;
       long finish = System.currentTimeMillis() + ( waitTime * 1000 ) ;
       CellMessage answer;
-      //
-      // creating the message now and send it forever does not
-      // allow time messurements.
-      //
-      CellMessage request  =
-          new CellMessage( destination ,
-                           (command == null ?
-                                   new PingMessage() : command) ) ;
+      Serializable message = (command == null) ? new PingMessage() : command;
 
       Object o;
       boolean noRoute;
@@ -585,7 +577,7 @@ public class CellShell extends CommandInterpreter
           answer = null ;
           try{
             _log.warn( "waitForCell : Sending request" ) ;
-            answer = _nucleus.sendAndWait( request , ((long) check) * 1000);
+              answer = _nucleus.sendAndWait(new CellMessage(destination , message), ((long) check) * 1000);
             _log.warn( "waitForCell : got "+answer ) ;
          } catch (NoRouteToCellException e) {
             noRoute = true ;
@@ -828,10 +820,10 @@ public class CellShell extends CommandInterpreter
        {
            CellMessage msg = new CellMessage(address, message);
            if (wait) {
-               _nucleus.sendMessage(msg, !nolocal, !noremote, this, MoreExecutors.directExecutor(), 10000);
+               _nucleus.sendMessage(msg, !nolocal, !noremote, true, this, MoreExecutors.directExecutor(), 10000);
                return this;
            } else {
-               _nucleus.sendMessage(msg, !nolocal, !noremote);
+               _nucleus.sendMessage(msg, !nolocal, !noremote, true);
                return "UOID = " + msg.getUOID();
            }
        }
@@ -873,7 +865,7 @@ public class CellShell extends CommandInterpreter
         public Serializable call()
         {
             CellMessage msg = new CellMessage(address, new PingMessage());
-            _nucleus.sendMessage(msg, !nolocal, !noremote, this, MoreExecutors.directExecutor(), 10000);
+            _nucleus.sendMessage(msg, !nolocal, !noremote, true, this, MoreExecutors.directExecutor(), 10000);
             return this;
         }
 
@@ -967,7 +959,7 @@ public class CellShell extends CommandInterpreter
             if (count < packets) {
                 count++;
                 _nucleus.sendMessage(new CellMessage(destinationCell, new PingMessage(messageSize)), true, true,
-                        new CellMessageAnswerable()
+                                     true, new CellMessageAnswerable()
                         {
                             @Override
                             public void answerArrived(CellMessage request, CellMessage answer)

@@ -453,7 +453,7 @@ public class CellAdapter
     public void sendMessage(CellMessage msg)
         throws SerializationException
     {
-        getNucleus().sendMessage(msg, true, true);
+        getNucleus().sendMessage(msg, true, true, true);
     }
 
     @Override
@@ -467,7 +467,7 @@ public class CellAdapter
         if (asList(flags).contains(SendFlag.RETRY_ON_NO_ROUTE_TO_CELL)) {
             callback = new RetryingCellMessageAnswerable(msg, callback, executor, timeout, _routeAddedCounter.longValue());
         }
-        getNucleus().sendMessage(msg, true, true, callback, executor, timeout);
+        getNucleus().sendMessage(msg, true, true, true, callback, executor, timeout);
     }
 
     //
@@ -535,7 +535,7 @@ public class CellAdapter
      */
     public void messageToForward(CellMessage msg) {
         try {
-            _nucleus.sendMessage(msg, true, true);
+            _nucleus.sendMessage(msg, true, true, true);
         } catch (RuntimeException e) {
             _log.warn("CellAdapter : Exception in messageToForward : {}", e.toString());
         }
@@ -870,7 +870,7 @@ public class CellAdapter
                 } else {
                     msg.revertDirection();
                     msg.setMessageObject(o);
-                    _nucleus.sendMessage(msg, true, true);
+                    _nucleus.sendMessage(msg, true, true, true);
                 }
             } else if ((obj instanceof PingMessage) && _answerPing) {
                 PingMessage ping = (PingMessage)obj;
@@ -881,7 +881,7 @@ public class CellAdapter
                 ping.setWayBack();
                 ping.setOutboundPath(msg.getSourcePath());
                 msg.revertDirection();
-                _nucleus.sendMessage(msg, true, true);
+                _nucleus.sendMessage(msg, true, true, true);
             } else {
                 UOID uoid = msg.getUOID();
                 EventLogger.deliverBegin(msg);
@@ -892,7 +892,7 @@ public class CellAdapter
                 }
             }
         } else if (obj instanceof PingMessage) {
-            _nucleus.sendMessage(msg, true, true);
+            _nucleus.sendMessage(msg, true, true, true);
          } else {
             UOID uoid = msg.getUOID();
             EventLogger.deliverBegin(msg);
@@ -1056,7 +1056,7 @@ public class CellAdapter
             } else if (cnt == _routeAddedCounter.longValue()){
                 _nucleus.invokeLater(this);
             } else {
-                sendMessage(msg, this, executor, subWithInfinity(deadline, System.currentTimeMillis()));
+                _nucleus.sendMessage(msg, true, true, false, this, executor, subWithInfinity(deadline, System.currentTimeMillis()));
             }
         }
 

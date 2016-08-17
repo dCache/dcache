@@ -62,7 +62,6 @@ import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.FutureCellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Releases;
 
 import org.dcache.util.Args;
 
@@ -238,7 +237,7 @@ public class CoreRoutingManager
         CellAddressCore peer = new CellAddressCore(nucleus.getCellName());
         for (CellTunnelInfo tunnel : tunnels) {
             CellAddressCore domain = new CellAddressCore("*", tunnel.getRemoteCellDomainInfo().getCellDomainName());
-            nucleus.sendMessage(new CellMessage(new CellPath(domain, peer), msg), false, true);
+            nucleus.sendMessage(new CellMessage(new CellPath(domain, peer), msg), false, true, true);
         }
     }
 
@@ -251,7 +250,7 @@ public class CoreRoutingManager
             FutureCellMessageAnswerable future = new FutureCellMessageAnswerable();
             futures.add(future);
             nucleus.sendMessage(new CellMessage(new CellPath(domain, peer), msg), false, true,
-                                future, MoreExecutors.directExecutor(), timeout);
+                                true, future, MoreExecutors.directExecutor(), timeout);
         }
         return Futures.allAsList(futures);
     }
@@ -309,7 +308,7 @@ public class CoreRoutingManager
             if (role == CellDomainRole.SATELLITE && tunnel != null) {
                 msg.getDestinationPath().insert(new CellPath(nucleus.getCellName(),
                                                              tunnel.getRemoteCellDomainInfo().getCellDomainName()));
-                nucleus.sendMessage(msg, false, true);
+                nucleus.sendMessage(msg, false, true, true);
             } else {
                 Map<String, Collection<String>> domains = new HashMap<>();
                 synchronized (this) {

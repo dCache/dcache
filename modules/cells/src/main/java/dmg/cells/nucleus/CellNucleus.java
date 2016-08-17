@@ -329,20 +329,16 @@ public class CellNucleus implements ThreadFactory
         return _messageExecutor.getMaximumQueueSize();
     }
 
-    public void  sendMessage(CellMessage msg,
-                             boolean locally,
-                             boolean remotely)
+    public void  sendMessage(CellMessage msg, boolean locally, boolean remotely, boolean shouldAddSource)
         throws SerializationException
     {
         checkArgument(!msg.isFinalDestination(), "Message has no next destination: %s", msg.getDestinationPath());
 
-        if (!msg.isStreamMode()) {
-            // Have to do this first to log the right UOID
-            msg.touch();
+        if (shouldAddSource) {
             msg.addSourceAddress(getThisAddress());
         }
 
-        EventLogger.sendBegin(this, msg, "async");
+        EventLogger.sendBegin(msg, "async");
         try {
             __cellGlue.sendMessage(msg, locally, remotely);
         } finally {
@@ -378,7 +374,7 @@ public class CellNucleus implements ThreadFactory
     {
         final SettableFuture<CellMessage> future = SettableFuture.create();
         sendMessage(envelope, true, true,
-                    new CellMessageAnswerable()
+                    true, new CellMessageAnswerable()
                     {
                         @Override
                         public void answerArrived(CellMessage request, CellMessage answer)
@@ -495,7 +491,8 @@ public class CellNucleus implements ThreadFactory
      * @param msg the cell message to be sent.
      * @param local whether to attempt delivery to cells in the same domain
      * @param remote whether to attempt delivery to cells in other domains
-     * @param callback specifies an object class which will be informed
+     * @param shouldAddSource
+      *@param callback specifies an object class which will be informed
      *                 as soon as the message arrives.
      * @param executor the executor to run the callback in
      * @param timeout  is the timeout in msec.
@@ -505,16 +502,15 @@ public class CellNucleus implements ThreadFactory
     public void sendMessage(CellMessage msg,
                             boolean local,
                             boolean remote,
-                            final CellMessageAnswerable callback,
+                            boolean shouldAddSource,
+                            CellMessageAnswerable callback,
                             Executor executor,
                             long timeout)
         throws SerializationException
     {
         checkArgument(!msg.isFinalDestination(), "Message has no next destination: %s", msg.getDestinationPath());
 
-        // Have to do this first to log the right UOID
-        if (!msg.isStreamMode()) {
-            msg.touch();
+        if (shouldAddSource) {
             msg.addSourceAddress(getThisAddress());
         }
 
@@ -523,7 +519,7 @@ public class CellNucleus implements ThreadFactory
         final UOID uoid = msg.getUOID();
         final CellLock lock = new CellLock(msg, callback, executor, timeout);
 
-        EventLogger.sendBegin(this, msg, "callback");
+        EventLogger.sendBegin(msg, "callback");
         synchronized (_waitHash) {
             _waitHash.put(uoid, lock);
         }
@@ -874,7 +870,7 @@ public class CellNucleus implements ThreadFactory
                                                             queueTime + " ms is longer than the message TTL of " +
                                                             msg.getTtl() + " ms)."));
                     envelope.setLastUOID(msg.getUOID());
-                    sendMessage(envelope, true, true);
+                    sendMessage(envelope, true, true, true);
                 }
             }
 
@@ -1103,7 +1099,7 @@ public class CellNucleus implements ThreadFactory
                             if (!msg.isReply()) {
                                 msg.revertDirection();
                                 msg.setMessageObject(e);
-                                sendMessage(msg, true, true);
+                                sendMessage(msg, true, true, true);
                             }
                             throw e;
                         }

@@ -188,7 +188,7 @@ public class LocationMgrTunnel
         try {
             CellMessage msg;
             while ((msg = _input.readObject()) != null) {
-                getNucleus().sendMessage(msg, true, _allowForwardingOfRemoteMessages);
+                getNucleus().sendMessage(msg, true, _allowForwardingOfRemoteMessages, false);
                 _messagesToSystem.increment();
             }
         } catch (AsynchronousCloseException | EOFException ignored) {
@@ -214,7 +214,7 @@ public class LocationMgrTunnel
                 CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),
                         new NoRouteToCellException(msg, "Communication failure. Message could not be delivered."));
                 envelope.setLastUOID(msg.getUOID());
-                _nucleus.sendMessage(envelope, true, true);
+                _nucleus.sendMessage(envelope, true, true, true);
                 kill();
             }
         } else {

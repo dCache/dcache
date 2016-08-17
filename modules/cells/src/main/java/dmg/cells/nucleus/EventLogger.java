@@ -72,16 +72,10 @@ public class EventLogger
         }
     }
 
-    public static void sendBegin(CellNucleus nucleus, CellMessage envelope, String mode)
+    public static void sendBegin(CellMessage envelope, String mode)
     {
         if (send.isInfoEnabled() && !envelope.isStreamMode()) {
-            /* The envelope does not have a source yet, so we need to
-             * generate it from the information stored in the nucleus.
-             */
             CellPath source = envelope.getSourcePath();
-            if (source.hops() == 0) {
-                source = new CellPath(nucleus.getThisAddress());
-            }
             NetLoggerBuilder log = new NetLoggerBuilder(SEND_BEGIN);
             log.add("uoid", envelope.getUOID());
             log.add("lastuoid", envelope.getLastUOID());
