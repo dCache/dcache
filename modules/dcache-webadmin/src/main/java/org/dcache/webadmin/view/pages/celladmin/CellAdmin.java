@@ -68,7 +68,7 @@ public class CellAdmin extends BasePage implements AuthenticatedWebPage {
         cells.setRequired(true);
         cells.setOutputMarkupId(true);
         cellAdminForm.add(cells);
-        domains.add(new AjaxFormComponentUpdatingBehavior("onchange") {
+        domains.add(new AjaxFormComponentUpdatingBehavior("change") {
 
             private static final long serialVersionUID = 7202016450667815788L;
 
