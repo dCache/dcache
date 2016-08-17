@@ -232,7 +232,6 @@ public class Indexer
                     parseDefaultTimestamp(year, line);
                     out.append(String.valueOf(year)).append('.');
                 } catch (DateTimeParseException ignore) {
-                    ignore.printStackTrace();
                 }
                 out.println(line);
             }
