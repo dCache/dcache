@@ -21,7 +21,9 @@ import com.google.common.base.Strings;
 import org.apache.zookeeper.server.DatadirCleanupManager;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ServerCnxnFactory;
+import org.apache.zookeeper.server.SessionTrackerImpl;
 import org.apache.zookeeper.server.ZooKeeperServer;
+import org.apache.zookeeper.server.ZooTrace;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,7 +107,25 @@ public class ZooKeeperCell extends AbstractCell
                 Strings.isNullOrEmpty(address) ? new InetSocketAddress(port) : new InetSocketAddress(address, port);
 
         checkArgument(autoPurgeInterval > 0, "zookeeper.auto-purge.purge-interval must be non-negative.");
-        zkServer = new ZooKeeperServer();
+        zkServer = new ZooKeeperServer() {
+            // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2515
+            @Override
+            protected void createSessionTracker() {
+                sessionTracker = new SessionTrackerImpl(this,
+                        getZKDatabase().getSessionWithTimeOuts(), tickTime, 1)
+                {
+                    @Override
+                    public void shutdown() {
+                        synchronized (this) {
+                            running = false;
+                            notifyAll();
+                        }
+                        super.shutdown();
+                    }
+                };
+            }
+        };
+
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);
         zkServer.setTxnLogFactory(txnLog);
         zkServer.setTickTime((int) tickTimeUnit.toMillis(tickTime));
