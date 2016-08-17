@@ -161,11 +161,14 @@ public class ZooKeeperCell extends AbstractCell
     @Override
     public void cleanUp()
     {
-        if (cnxnFactory != null) {
-            cnxnFactory.shutdown();
-        }
         if (zkServer != null) {
             zkServer.shutdown();
+        }
+        // Must shutdown zkServer before shutting down cnxnFactory since
+        // zkServer.shutdown flushes any pending messages while
+        // cnxnFactory.shutdown closes the network sockets.
+        if (cnxnFactory != null) {
+            cnxnFactory.shutdown();
         }
         if (txnLog != null) {
             try {
