@@ -266,7 +266,9 @@ public class UniversalSpringCell
     public void cleanUp()
     {
         super.cleanUp();
-        _setupManager.close();
+        if (_setupManager != null) {
+            _setupManager.close();
+        }
         for (CellLifeCycleAware bean: _lifeCycleAware.values()) {
             bean.beforeStop();
         }
