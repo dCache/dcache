@@ -904,7 +904,7 @@ public class CellNucleus implements ThreadFactory
         return Futures.catchingAsync(
                 _messageExecutor.submit(wrapLoggingContext(this::doStart)), Exception.class,
                 e -> {
-                    shutdown(new KillEvent(new CellPath(_cellName), 0));
+                    __cellGlue.kill(this);
                     throw e;
                 });
     }
