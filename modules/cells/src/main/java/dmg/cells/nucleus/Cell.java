@@ -1,17 +1,19 @@
 
 package  dmg.cells.nucleus ;
 /**
-  * Classes, implementing the Cell interface, are the basic
-  * building blocks of the Cell Environment. The interface is
-  * used to deliver Messages and Exceptions to the Cell, to
-  * inform the Cell about a prepared removal of the Cell and
-  * to get informations out of the Cell.
-  * See <a href=guide/Guide-dmg.cells.nucleus>Guide to dmg.cells.nucleus</a>.
-  *
-  * @author Patrick Fuhrmann
-  * @version 0.1, 15 Feb 1998
-
-  */
+ * Classes implementing the Cell interface, are the basic
+ * building blocks of the Cell Environment. The interface is
+ * used to deliver messages and exceptions to the cell, to
+ * inform the cell about a lifecycle events and to get
+ * information out of the cell.
+ *
+ * Lifecycle callbacks and message and exception delivery callbacks
+ * are called from a common event executor, with the exception of prepareRemoval
+ * which is called after the message executor is shut down.
+ *
+ * Lifecycle callbacks of this interface are always called sequentially,
+ * even when using a multi-threaded event executor.
+ */
 public interface Cell {
 
    /**

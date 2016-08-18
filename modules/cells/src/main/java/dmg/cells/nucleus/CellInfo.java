@@ -25,8 +25,14 @@ public class CellInfo implements Serializable {
   private long   _expectedQueueTime;
   private CellVersion _version = new CellVersion() ;
 
+  static final  int    INITIAL  =  0;
+  static final  int    ACTIVE   =  1;
+  static final  int    REMOVING =  2;
+  static final  int    DEAD     =  3;
+
   private static final String [] _stateNames =
-     { "Initial" , "Active" , "Removing" , "Dead" , "Unknown" } ;
+          { "Initial" , "Active" , "Removing" , "Dead" , "Unknown" } ;
+
   public CellInfo(){}
 
   public CellInfo( CellInfo info ){

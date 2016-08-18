@@ -33,7 +33,6 @@ import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
-import dmg.util.Gate;
 import dmg.util.Pinboard;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -86,7 +85,6 @@ public class CellAdapter
     private final LongAdder _routeAddedCounter = new LongAdder();
 
     private final CellNucleus _nucleus;
-    private final Gate _startGate = new Gate(false);
     private final Args _args;
     private boolean _useInterpreter = true;
     private boolean _returnCommandException = true;
@@ -741,12 +739,8 @@ public class CellAdapter
     @Override
     public void prepareStartup(StartEvent event) throws Exception
     {
-        try {
-            startUp();
-            executeSetupContext();
-        } finally {
-            _startGate.open();
-        }
+        startUp();
+        executeSetupContext();
     }
 
     @Override
@@ -771,7 +765,6 @@ public class CellAdapter
     public void prepareRemoval(KillEvent ce)
     {
         _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
-        _startGate.check();
         cleanUp();
         dumpPinboard();
         _log.info("CellAdapter : prepareRemoval : done");

@@ -1,8 +1,10 @@
 package dmg.cells.nucleus;
 
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.Monitor;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -63,11 +65,25 @@ public class CellNucleus implements ThreadFactory
     private static final Logger LOGGER =
             LoggerFactory.getLogger(CellNucleus.class);
 
+    private enum State
+    {
+        NEW(CellInfo.INITIAL),
+        STARTING(CellInfo.ACTIVE),
+        RUNNING(CellInfo.ACTIVE),
+        FAILED(CellInfo.REMOVING),
+        STOPPING(CellInfo.REMOVING),
+        TERMINATED(CellInfo.DEAD);
+
+        int externalState;
+
+        State(int externalState)
+        {
+            this.externalState = externalState;
+        }
+    }
+
     private static final int PINBOARD_DEFAULT_SIZE = 200;
-    private static final  int    INITIAL  =  0;
-    private static final  int    ACTIVE   =  1;
-    private static final  int    REMOVING =  2;
-    private static final  int    DEAD     =  3;
+
     private static CellGlue __cellGlue;
     private final  String    _cellName;
     private final  String    _cellType;
@@ -76,7 +92,7 @@ public class CellNucleus implements ThreadFactory
     private final  Cell      _cell;
     private final  Date      _creationTime   = new Date();
 
-    private final AtomicInteger _state = new AtomicInteger(INITIAL);
+    private volatile State _state = State.NEW;
 
     //  have to be synchronized map
     private final  Map<UOID, CellLock> _waitHash = new HashMap<>();
@@ -104,6 +120,17 @@ public class CellNucleus implements ThreadFactory
     private final BlockingQueue<Runnable> _deferredTasks = new LinkedBlockingQueue<>();
     private volatile long _lastQueueTime;
     private final CellCuratorFramework _curatorFramework;
+
+    private final Monitor _lifeCycleMonitor = new Monitor();
+
+    private final Monitor.Guard isNotStarting = new Monitor.Guard(_lifeCycleMonitor) {
+        @Override
+        public boolean isSatisfied()
+        {
+            return _state != State.STARTING;
+        }
+    };
+
 
     public CellNucleus(Cell cell, String name, String type, Executor executor)
     {
@@ -279,7 +306,7 @@ public class CellNucleus implements ThreadFactory
             int eventQueueSize = getEventQueueSize();
             info.setEventQueueSize(eventQueueSize);
             info.setExpectedQueueTime((eventQueueSize == 0) ? 0 : _lastQueueTime);
-            info.setState(_state.get());
+            info.setState(_state.externalState);
             info.setThreadCount(_threads.activeCount());
         } catch(Exception e) {
             info.setEventQueueSize(0);
@@ -888,6 +915,17 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
+    private void setState(State expectedState, State newState)
+    {
+        _lifeCycleMonitor.enter();
+        try {
+            checkState(_state == expectedState);
+            _state = newState;
+        } finally {
+            _lifeCycleMonitor.leave();
+        }
+    }
+
     /**
      * Starts the cell asynchronously.
      *
@@ -898,13 +936,24 @@ public class CellNucleus implements ThreadFactory
      */
     public ListenableFuture<Void> start()
     {
-        checkState(_state.compareAndSet(INITIAL, ACTIVE));
-        return Futures.catchingAsync(
-                _messageExecutor.submit(wrapLoggingContext(this::doStart)), Exception.class,
-                e -> {
-                    __cellGlue.kill(this);
-                    throw e;
-                });
+        setState(State.NEW, State.STARTING);
+        ListenableFuture<Void> startup = _messageExecutor.submit(wrapLoggingContext(this::doStart));
+        Futures.addCallback(startup, new FutureCallback<Void>()
+        {
+            @Override
+            public void onSuccess(Void result)
+            {
+                setState(State.STARTING, State.RUNNING);
+            }
+
+            @Override
+            public void onFailure(Throwable t)
+            {
+                __cellGlue.kill(CellNucleus.this);
+                setState(State.STARTING, State.FAILED);
+            }
+        });
+        return startup;
     }
 
     private Void doStart() throws Exception
@@ -927,7 +976,14 @@ public class CellNucleus implements ThreadFactory
         try (CDC ignored = CDC.reset(CellNucleus.this)) {
             LOGGER.trace("Received {}", event);
 
-            checkState(_state.compareAndSet(INITIAL, REMOVING) || _state.compareAndSet(ACTIVE, REMOVING));
+            _lifeCycleMonitor.enter();
+            try {
+                checkState(_state == State.STARTING || _state == State.RUNNING || _state == State.FAILED);
+                _lifeCycleMonitor.waitForUninterruptibly(isNotStarting);
+                _state = State.STOPPING;
+            } finally {
+                _lifeCycleMonitor.leave();
+            }
 
             /* Shut down the curator decorator; this just kills the internal executor of the decorator
              * while still allowing it to be used for operations without callbacks.
@@ -979,7 +1035,7 @@ public class CellNucleus implements ThreadFactory
             /* Declare the cell as dead.
              */
             __cellGlue.destroy(CellNucleus.this);
-            _state.set(DEAD);
+            setState(State.STOPPING, State.TERMINATED);
         }
     }
 
