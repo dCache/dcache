@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CheckStagePermission;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 
@@ -265,10 +266,11 @@ public class DcapDoorSettings
         return new CachingLoginStrategy(union, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
-    public PoolManagerStub createPoolManagerStub(CellEndpoint cellEndpoint, PoolManagerHandler handler)
+    public PoolManagerStub createPoolManagerStub(CellEndpoint cellEndpoint, CellAddressCore address, PoolManagerHandler handler)
     {
         PoolManagerStub stub = new PoolManagerStub();
         stub.setCellEndpoint(cellEndpoint);
+        stub.setCellAddress(address);
         stub.setHandler(handler);
         stub.setMaximumPoolManagerTimeout(20000);
         stub.setMaximumPoolManagerTimeoutUnit(TimeUnit.MILLISECONDS);

@@ -501,6 +501,7 @@ public final class SpaceManagerService
                             if (message instanceof PoolManagerMessage) {
                                 poolManagerHandler.send(endpoint, envelope, (PoolManagerMessage) message);
                             } else if (message instanceof PoolIoFileMessage) {
+                                envelope.addSourceAddress(serviceAddress);
                                 poolManagerHandler.start(endpoint, envelope, (PoolIoFileMessage) message);
                             } else {
                                 forwardMessage(poolManager);

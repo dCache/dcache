@@ -208,7 +208,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _clientAddress = clientAddress;
 
         _settings = settings;
-        _poolMgrStub = settings.createPoolManagerStub(cell, poolManagerHandler);
+        _poolMgrStub = settings.createPoolManagerStub(cell, address, poolManagerHandler);
         _pinManagerStub = settings.createPinManagerStub(cell);
         _loginStrategy = settings.createLoginStrategy(cell);
 

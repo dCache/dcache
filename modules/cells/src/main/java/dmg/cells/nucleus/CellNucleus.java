@@ -512,6 +512,8 @@ public class CellNucleus implements ThreadFactory
 
         if (shouldAddSource) {
             msg.addSourceAddress(getThisAddress());
+        } else {
+            checkArgument(msg.getSourcePath().hops() > 0, "Message has no source address.");
         }
 
         msg.setTtl(timeout);

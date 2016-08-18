@@ -27,6 +27,7 @@ import diskCacheV111.vehicles.PoolManagerMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageSender;
 
@@ -38,7 +39,7 @@ import org.dcache.util.TimeUtils;
  * <p>Defines default parameters and timeout limits and provides a simpler interface than
  * what PoolManagerHandler exposes.
  */
-public class PoolManagerStub implements CellMessageSender
+public class PoolManagerStub implements CellMessageSender, CellIdentityAware
 {
     private CellEndpoint endpoint;
 
@@ -52,10 +53,18 @@ public class PoolManagerStub implements CellMessageSender
 
     private TimeUnit maxPoolManagerTimeoutUnit = TimeUnit.MILLISECONDS;
 
+    private CellAddressCore address;
+
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         this.endpoint = endpoint;
+    }
+
+    @Override
+    public void setCellAddress(CellAddressCore address)
+    {
+        this.address = address;
     }
 
     public void setHandler(PoolManagerHandler handler)
@@ -158,7 +167,9 @@ public class PoolManagerStub implements CellMessageSender
      */
     public void start(CellAddressCore pool, PoolIoFileMessage msg)
     {
-        handler.start(endpoint, new CellMessage(pool), msg);
+        CellMessage envelope = new CellMessage(pool);
+        envelope.addSourceAddress(address);
+        handler.start(endpoint, envelope, msg);
     }
 
     /**
@@ -169,7 +180,9 @@ public class PoolManagerStub implements CellMessageSender
      */
     public void send(PoolManagerMessage msg)
     {
-        handler.send(endpoint, new CellMessage(), msg);
+        CellMessage envelope = new CellMessage();
+        envelope.addSourceAddress(address);
+        handler.send(endpoint, envelope, msg);
     }
 
     @Override

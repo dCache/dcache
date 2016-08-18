@@ -32,6 +32,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.FutureCellMessageAnswerable;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -57,9 +58,10 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler
     @Override
     public void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg)
     {
+        checkArgument(envelope.getSourcePath().hops() > 0, "Envelope is missing source address.");
         envelope.getDestinationPath().insert(destination);
         envelope.setMessageObject(msg);
-        endpoint.sendMessage(envelope);
+        endpoint.sendMessage(envelope, CellEndpoint.SendFlag.PASS_THROUGH);
     }
 
     @Override
@@ -72,9 +74,10 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler
     @Override
     public void start(CellEndpoint endpoint, CellMessage envelope, PoolIoFileMessage msg)
     {
+        checkArgument(envelope.getSourcePath().hops() > 0, "Envelope is missing source address.");
         envelope.getDestinationPath().insert(destination);
         envelope.setMessageObject(msg);
-        endpoint.sendMessage(envelope);
+        endpoint.sendMessage(envelope, CellEndpoint.SendFlag.PASS_THROUGH);
     }
 
     @Override

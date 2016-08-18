@@ -31,10 +31,10 @@ import dmg.cells.nucleus.CellMessage;
 /**
  * Client stub for communicating with the pool manager.
  *
- * <p>Implementations allow requests to be send to the pool manager and to start
+ * <p>Implementations allow requests to be sent to the pool manager and to start
  * movers on pools.
  *
- * <p>The simplest implementation would simply forward these requests to the pool
+ * <p>The simplest implementation would forward these requests to the pool
  * manager, however more advanced implementations may process some of the requests
  * locally or load balance requests over multiple pool managers.
  *
@@ -65,7 +65,9 @@ public interface PoolManagerHandler
      *
      * In contrast to {@link PoolManagerHandler#startAsync(CellEndpoint, CellAddressCore, PoolIoFileMessage, long)},
      * this method sends the reply by returning the given envelope (i.e. the reply is sent
-     * to the source path of the envelope). This avoids the need for registering a callback.
+     * to the source path of the envelope). This avoids the need for registering a callback.  Note
+     * that if the hosting cell is to receive the reply, its address has to be added to the source
+     * path of the envelope before calling this method.
      *
      * @param endpoint endpoint through which to send messages
      * @param envelope The envelope to return with the reply
@@ -95,7 +97,9 @@ public interface PoolManagerHandler
      *
      * In contrast to {@link PoolManagerHandler#sendAsync(CellEndpoint, PoolManagerMessage, long)},
      * this method sends the reply by returning the given envelope (i.e. the reply is sent
-     * to the source path of the envelope). This avoids the need for registering a callback.
+     * to the source path of the envelope). This avoids the need for registering a callback. Note
+     * that if the hosting cell is to receive the reply, its address has to be added to the source
+     * path of the envelope before calling this method.
      *
      * @param endpoint endpoint through which to send messages
      * @param envelope The envelope to return with the reply

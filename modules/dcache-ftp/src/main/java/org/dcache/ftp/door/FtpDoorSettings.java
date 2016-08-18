@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.PnfsHandler;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 
@@ -323,10 +324,11 @@ public class FtpDoorSettings
         return new CellStub(cellEndpoint, null, poolTimeout, poolTimeoutUnit);
     }
 
-    public PoolManagerStub createPoolManagerStub(CellEndpoint cellEndpoint, PoolManagerHandler handler)
+    public PoolManagerStub createPoolManagerStub(CellEndpoint cellEndpoint, CellAddressCore cellAddress, PoolManagerHandler handler)
     {
         PoolManagerStub stub = new PoolManagerStub();
         stub.setCellEndpoint(cellEndpoint);
+        stub.setCellAddress(cellAddress);
         stub.setHandler(handler);
         stub.setMaximumPoolManagerTimeout(poolManagerTimeout);
         stub.setMaximumPoolManagerTimeoutUnit(poolManagerTimeoutUnit);

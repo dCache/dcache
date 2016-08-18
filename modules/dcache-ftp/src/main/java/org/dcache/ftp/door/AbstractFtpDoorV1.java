@@ -1145,7 +1145,7 @@ public abstract class AbstractFtpDoorV1
         _preferredProtocol = Protocol.fromAddress(_clientDataAddress.getAddress());
 
         _billingStub = _settings.createBillingStub(_cellEndpoint);
-        _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint, _poolManagerHandler);
+        _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint, _cellAddress, _poolManagerHandler);
         _poolStub = _settings.createPoolStub(_cellEndpoint);
         _gPlazmaStub = _settings.createGplazmaStub(_cellEndpoint);
 
