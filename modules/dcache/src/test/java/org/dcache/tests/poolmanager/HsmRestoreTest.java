@@ -106,6 +106,7 @@ public class HsmRestoreTest {
         _rc.ac_rc_set_retry_$_1(new Args("0"));
         _rc.setStageConfigurationFile(null);
         _rc.setPnfsHandler(_pnfsHandler);
+        _rc.start();
         __messages = new ArrayList<>();
     }
 

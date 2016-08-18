@@ -125,9 +125,9 @@ public class RequestContainerV5
     /** value in milliseconds */
     private final long _ticketInterval;
 
-    private final Thread _tickerThread;
+    private Thread _tickerThread;
 
-    private final PoolPingThread _poolPingThread = new PoolPingThread();
+    private PoolPingThread _poolPingThread;
 
     /**
      * Tape Protection.
@@ -142,9 +142,6 @@ public class RequestContainerV5
 
     public RequestContainerV5(long tickerInterval) {
         _ticketInterval = tickerInterval;
-        _tickerThread = new Thread(this, "Container-ticker");
-        _tickerThread.start();
-        _poolPingThread.start();
     }
 
     public RequestContainerV5()
@@ -152,10 +149,22 @@ public class RequestContainerV5
         this(DEFAULT_TICKER_INTERVAL);
     }
 
+    public void start()
+    {
+        _tickerThread = new Thread(this, "Container-ticker");
+        _tickerThread.start();
+        _poolPingThread = new PoolPingThread();
+        _poolPingThread.start();
+    }
+
     public void shutdown()
     {
-        _tickerThread.interrupt();
-        _poolPingThread.interrupt();
+        if (_tickerThread != null) {
+            _tickerThread.interrupt();
+        }
+        if (_poolPingThread != null) {
+            _poolPingThread.interrupt();
+        }
     }
 
     @Required
@@ -408,8 +417,12 @@ public class RequestContainerV5
     @AffectsSetup
     public String ac_rc_set_poolpingtimer_$_1(Args args ){
        _checkFilePingTimer = 1000L * Long.parseLong(args.argv(0));
-        synchronized (_poolPingThread) {
-            _poolPingThread.notify();
+
+        PoolPingThread poolPingThread = _poolPingThread;
+        if (poolPingThread != null) {
+            synchronized (poolPingThread) {
+                poolPingThread.notify();
+            }
         }
        return "" ;
     }

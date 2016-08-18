@@ -90,7 +90,7 @@
   </bean>
 
   <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5"
-        destroy-method="shutdown">
+        init-method="start" destroy-method="shutdown">
     <description>Request container</description>
     <property name="poolSelectionUnit" ref="psu"/>
     <property name="poolMonitor" ref="poolMonitor"/>
