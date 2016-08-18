@@ -769,7 +769,7 @@ public class CellNucleus implements ThreadFactory
     {
         for (Thread thread: threads) {
             if (thread.isAlive()) {
-                LOGGER.debug("killerThread : interrupting {}", thread.getName());
+                LOGGER.warn("Forcefully interrupting thread {} during shutdown.", thread.getName());
                 thread.interrupt();
             }
         }
@@ -1080,6 +1080,7 @@ public class CellNucleus implements ThreadFactory
                  * one second before we start to kill them.
                  */
                 while (!joinThreads(threads, 1000)) {
+                    threadGroupList();
                     killThreads(threads);
                 }
                 _threads.destroy();
