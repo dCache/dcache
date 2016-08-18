@@ -99,9 +99,9 @@ public class ZooKeeperCell extends AbstractCell
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
-        super.startUp();
+        super.starting();
 
         InetSocketAddress socketAddress =
                 Strings.isNullOrEmpty(address) ? new InetSocketAddress(port) : new InetSocketAddress(address, port);
@@ -159,7 +159,7 @@ public class ZooKeeperCell extends AbstractCell
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         if (zkServer != null) {
             zkServer.shutdown();
@@ -177,7 +177,7 @@ public class ZooKeeperCell extends AbstractCell
                 LOG.error("Failed to close ZooKeeper transaction log: {}", e.toString());
             }
         }
-        super.cleanUp();
+        super.stopped();
     }
 
     @Override

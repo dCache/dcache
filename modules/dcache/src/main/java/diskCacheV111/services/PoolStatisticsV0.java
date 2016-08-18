@@ -258,7 +258,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         Args args = getArgs();
         if (args.argc() < 1) {
@@ -320,7 +320,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     }
 
     @Override
-    protected void cleanUp()
+    protected void stopped()
     {
         if (_cronTimer != null) {
             _cronTimer.interrupt();

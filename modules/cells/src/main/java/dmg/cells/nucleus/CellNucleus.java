@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.Monitor;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.common.util.concurrent.Uninterruptibles;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,6 +115,11 @@ public class CellNucleus implements ThreadFactory
      * Task for calling the Cell nucleus message timeout mechanism.
      */
     private Future<?> _timeoutTask;
+
+    /**
+     * Task starting the cell.
+     */
+    private ListenableFuture<Void> _startup;
 
     private Pinboard _pinboard;
     private FilterThresholdSet _loggingThresholds;
@@ -915,11 +921,10 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
-    private void setState(State expectedState, State newState)
+    private void setState(State newState)
     {
         _lifeCycleMonitor.enter();
         try {
-            checkState(_state == expectedState);
             _state = newState;
         } finally {
             _lifeCycleMonitor.leave();
@@ -936,24 +941,30 @@ public class CellNucleus implements ThreadFactory
      */
     public ListenableFuture<Void> start()
     {
-        setState(State.NEW, State.STARTING);
-        ListenableFuture<Void> startup = _messageExecutor.submit(wrapLoggingContext(this::doStart));
-        Futures.addCallback(startup, new FutureCallback<Void>()
+        _lifeCycleMonitor.enter();
+        try {
+            checkState(_state == State.NEW);
+            _startup = _messageExecutor.submit(wrapLoggingContext(this::doStart));
+            _state = State.STARTING;
+        } finally {
+            _lifeCycleMonitor.leave();
+        }
+        Futures.addCallback(_startup, new FutureCallback<Void>()
         {
             @Override
             public void onSuccess(Void result)
             {
-                setState(State.STARTING, State.RUNNING);
+                setState(State.RUNNING);
             }
 
             @Override
             public void onFailure(Throwable t)
             {
                 __cellGlue.kill(CellNucleus.this);
-                setState(State.STARTING, State.FAILED);
+                setState(State.FAILED);
             }
         });
-        return startup;
+        return _startup;
     }
 
     private Void doStart() throws Exception
@@ -965,8 +976,9 @@ public class CellNucleus implements ThreadFactory
         __cellGlue.addCell(_cellName, this);
         try {
             _cell.postStartup(event);
-        } catch (RuntimeException e) {
-            LOGGER.error("Cell post startup callback failed: " + e);
+        } catch (Throwable e) {
+            Thread t = Thread.currentThread();
+            t.getUncaughtExceptionHandler().uncaughtException(t, e);
         }
         return null;
     }
@@ -976,13 +988,64 @@ public class CellNucleus implements ThreadFactory
         try (CDC ignored = CDC.reset(CellNucleus.this)) {
             LOGGER.trace("Received {}", event);
 
+            /* Wait for cell initialization to complete to ensure sequential execution of callbacks.
+             */
+            boolean wasRunning = false;
             _lifeCycleMonitor.enter();
             try {
-                checkState(_state == State.STARTING || _state == State.RUNNING || _state == State.FAILED);
-                _lifeCycleMonitor.waitForUninterruptibly(isNotStarting);
+                if (!_lifeCycleMonitor.waitForUninterruptibly(isNotStarting, 2, TimeUnit.SECONDS)) {
+                    _startup.cancel(true);
+                    _lifeCycleMonitor.waitForUninterruptibly(isNotStarting);
+                }
+                checkState(_state == State.RUNNING || _state == State.FAILED);
+                wasRunning = (_state == State.RUNNING);
                 _state = State.STOPPING;
             } finally {
                 _lifeCycleMonitor.leave();
+            }
+
+            /* Stop executing deferred tasks.
+             */
+            if (_timeoutTask != null) {
+                _timeoutTask.cancel(false);
+            }
+
+            /* Only call prepareRemoval if prepareStartup completed successfully.
+             */
+            if (wasRunning) {
+                try {
+                    Uninterruptibles.getUninterruptibly(_messageExecutor.submit(() -> _cell.prepareRemoval(event)));
+                } catch (Throwable e) {
+                    Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                }
+            }
+
+            /* Cancel callbacks.
+             */
+            ArrayList<CellLock> callbacks;
+            synchronized (_waitHash) {
+                callbacks = new ArrayList<>(_waitHash.values());
+                _waitHash.clear();
+            }
+            for (final CellLock lock: callbacks) {
+                try (CDC ignored2 = lock.getCdc().restore()) {
+                    try {
+                        lock.getExecutor().execute(() -> {
+                            CellMessage envelope = lock.getMessage();
+                            lock.getCallback().answerTimedOut(envelope);
+                            EventLogger.sendEnd(envelope);
+                        });
+                    } catch (RejectedExecutionException e) {
+                        LOGGER.warn("Failed to invoke callback: {}", e.toString());
+                    } catch (RuntimeException e) {
+                        /* Don't let a problem in the callback prevent us from
+                         * expiring all messages.
+                         */
+                        Thread t = Thread.currentThread();
+                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                    }
+                }
             }
 
             /* Shut down the curator decorator; this just kills the internal executor of the decorator
@@ -998,16 +1061,10 @@ public class CellNucleus implements ThreadFactory
                 LOGGER.warn("Failed to flush message queue during shutdown.");
             }
 
-            /* Stop executing deferred tasks.
-             */
-            if (_timeoutTask != null) {
-                _timeoutTask.cancel(false);
-            }
-
             /* Shut down cell.
              */
             try {
-                _cell.prepareRemoval(event);
+                _cell.postRemoval(event);
             } catch (Throwable e) {
                 Thread t = Thread.currentThread();
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
@@ -1035,7 +1092,7 @@ public class CellNucleus implements ThreadFactory
             /* Declare the cell as dead.
              */
             __cellGlue.destroy(CellNucleus.this);
-            setState(State.STOPPING, State.TERMINATED);
+            setState(State.TERMINATED);
         }
     }
 

@@ -389,7 +389,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         _log.info("Starting cell");
         parseDBArgs();
@@ -426,7 +426,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
 
     // methods from the cellEventListener Interface
   @Override
-  public void cleanUp()
+  public void stopped()
   {
       _log.debug("=== cleanUp called ===");
       _stopThreads     = true;
@@ -454,7 +454,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
           _log.warn("Replica manager failed to shut down", e);
       }
       _dbrmv2.close();
-      super.cleanUp();
+      super.stopped();
   }
 
   @Override

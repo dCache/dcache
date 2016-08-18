@@ -50,7 +50,7 @@ public class       UserSecurityCell
     }
 
     @Override
-    protected void startUp()
+    protected void starting()
     {
         if (_args.argc() < 1) {
             throw new IllegalArgumentException("Usage : ... <dbPath>");

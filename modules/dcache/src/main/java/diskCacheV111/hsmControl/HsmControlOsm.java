@@ -50,7 +50,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         if (!_database.isDirectory()) {
             throw new IllegalArgumentException("Not a directory : " + _database);

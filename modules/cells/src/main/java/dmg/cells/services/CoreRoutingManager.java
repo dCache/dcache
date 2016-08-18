@@ -151,12 +151,12 @@ public class CoreRoutingManager
     }
 
     @Override
-    protected void startUp() throws ExecutionException, InterruptedException
+    protected void starting() throws ExecutionException, InterruptedException
     {
         if (role == CellDomainRole.CORE) {
             canary = new CellAdapter(getCellName() + "-canary", "Generic", "") {
                 @Override
-                protected void cleanUp()
+                protected void stopped()
                 {
                     notifyDownstreamOfDomainDeath();
                 }
@@ -184,7 +184,7 @@ public class CoreRoutingManager
     }
 
     @Override
-    public synchronized void cleanUp()
+    public synchronized void stopped()
     {
         CellAdapter canary = this.canary;
         if (canary != null) {

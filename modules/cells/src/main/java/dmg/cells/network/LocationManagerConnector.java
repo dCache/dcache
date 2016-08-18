@@ -144,7 +144,7 @@ public class LocationManagerConnector
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         if (_thread != null) {
             _thread.interrupt();

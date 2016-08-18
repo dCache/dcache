@@ -100,7 +100,7 @@ public class LocationMgrTunnel
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         _socket.setTcpNoDelay(true);
         handshake();
@@ -116,7 +116,7 @@ public class LocationMgrTunnel
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         _log.info("Closing tunnel to {}", getRemoteDomainName());
         _tunnels.remove(this);

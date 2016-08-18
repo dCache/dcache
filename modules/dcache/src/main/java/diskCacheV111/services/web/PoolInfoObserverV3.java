@@ -51,9 +51,9 @@ public class PoolInfoObserverV3 extends AbstractCell
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
-        super.startUp();
+        super.starting();
         _poolManager = new CellStub(this, new CellPath(POOL_MANAGER), 30000);
         _pool = new CellStub(this, null, 60000);
 
@@ -182,7 +182,7 @@ public class PoolInfoObserverV3 extends AbstractCell
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         if (_refreshThread != null) {
             _refreshThread.interrupt();

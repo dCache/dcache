@@ -85,7 +85,7 @@ public class PAMAuthentificator  extends CellAdapter {
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         // Usage: ... [-service=<login_service>]
         //            [-syspassword=</etc/password>]

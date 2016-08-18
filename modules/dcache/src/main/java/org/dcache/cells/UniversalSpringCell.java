@@ -200,9 +200,9 @@ public class UniversalSpringCell
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
-        super.startUp();
+        super.starting();
 
         /* Process command line arguments.
          */
@@ -263,9 +263,9 @@ public class UniversalSpringCell
      * Closes the application context, which will shutdown all beans.
      */
     @Override
-    public void cleanUp()
+    public void stopped()
     {
-        super.cleanUp();
+        super.stopped();
         if (_setupManager != null) {
             _setupManager.close();
         }

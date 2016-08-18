@@ -577,27 +577,35 @@ public class CellAdapter
     }
 
     /**
-     * has to be overwritten to perform any actions before this
-     * cell is started. 'startUp' is called before the first
-     * message arrives. The default behaviour is to do nothing.
+     * Has to be overridden to perform any actions before this
+     * cell is started. {@code starting} is called before the first
+     * message arrives.
+     *
+     * If an exception is thrown, the cell will not be started and
+     * stopped will be invoked.
      */
-    protected void startUp() throws Exception {}
+    protected void starting() throws Exception {}
 
     /**
-     * has to be overwritten to perform any actions after this
+     * Has to be overridden to perform any actions after this
      * cell is started. At this point message delivery has begun
      * and the cell can receive requests and replies from other cells.
-     * The default behaviour is to do nothing.
      */
     protected void started() {}
 
     /**
-     * has to be overwritten to perform any actions before this
-     * cell is destroyed. 'cleanUp' is called after the last
-     * message has arrived. The default behaviour is to do nothing.
-     *
+     * Has to be overridden to perform any action before this cell is
+     * destroyed. {@code stopping} is called before the cell is
+     * unpublished.
      */
-    protected void cleanUp() {  }
+    protected void stopping() {}
+
+    /**
+     * Has to be overridden to perform any actions before this
+     * cell is destroyed. {@code stopped} is called after the last
+     * message has arrived.
+     */
+    protected void stopped() { }
     //
     // methods from the cellEventListener Interface
     //
@@ -739,7 +747,7 @@ public class CellAdapter
     @Override
     public void prepareStartup(StartEvent event) throws Exception
     {
-        startUp();
+        starting();
         executeSetupContext();
     }
 
@@ -756,17 +764,21 @@ public class CellAdapter
         started();
     }
 
-    /**
-     *   belongs to the Cell Interface.
-     *   If this method is overwritten, the 'cleanUp'
-     *   method won't be called.
-     */
     @Override
-    public void prepareRemoval(KillEvent ce)
+    public void prepareRemoval(KillEvent killEvent)
+    {
+        stopping();
+    }
+
+    @Override
+    public void postRemoval(KillEvent ce)
     {
         _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
-        cleanUp();
-        dumpPinboard();
+        try {
+            stopped();
+        } finally {
+            dumpPinboard();
+        }
         _log.info("CellAdapter : prepareRemoval : done");
     }
 

@@ -63,7 +63,7 @@ public class      TelnetLoginManager
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         if (_args.argc() < 1) {
             throw new IllegalArgumentException("USAGE : ... " + __usage);
@@ -104,7 +104,7 @@ public class      TelnetLoginManager
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         if (_serverSocket != null) {
             try {

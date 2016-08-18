@@ -75,7 +75,7 @@ public class      SystemCell
     }
 
     @Override
-    protected void startUp()
+    protected void starting()
     {
         /* We start the curator here to get the right context for the curator threads.
          */
@@ -97,7 +97,7 @@ public class      SystemCell
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         shutdownSystem();
         CellNucleus.shutdownCellGlue();

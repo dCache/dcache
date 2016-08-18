@@ -277,7 +277,7 @@ public class TransferObserverV1
     }
 
     @Override
-    protected void startUp() throws Exception {
+    protected void starting() throws Exception {
         if (_args.argc() < 0) {
             throw new IllegalArgumentException("Usage : ... ");
         }
@@ -310,7 +310,7 @@ public class TransferObserverV1
     }
 
     @Override
-    public void cleanUp() {
+    public void stopped() {
         if (_workerThread != null) {
             _workerThread.interrupt();
         }

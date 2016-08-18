@@ -195,7 +195,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     @Override
-    protected void startUp()
+    protected void starting()
     {
         if (_args.hasOption(OPTION_REPEATHEADER)) {
             String optionString = null;
@@ -950,7 +950,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         _log.info("Clean Up sequence started");
         //

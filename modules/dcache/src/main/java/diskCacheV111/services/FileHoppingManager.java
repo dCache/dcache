@@ -61,7 +61,7 @@ public class FileHoppingManager extends CellAdapter {
      }
 
      @Override
-     protected void startUp() throws Exception
+     protected void starting() throws Exception
      {
          if (!_configFile.exists()) {
              File configDir = _configFile.getParentFile();

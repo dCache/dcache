@@ -186,7 +186,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         String configName = _args.getOpt("config");
         if ((configName != null) && (!configName.equals(""))) {

@@ -92,11 +92,11 @@ public class LineBasedDoor
     }
 
     @Override
-    protected void startUp()
+    protected void starting()
         throws Exception
     {
         Transfer.initSession(false, true);
-        super.startUp();
+        super.starting();
 
         LOGGER.debug("Client host: {}", engine.getInetAddress().getHostAddress());
 
@@ -208,7 +208,7 @@ public class LineBasedDoor
      * The method blocks until the worker thread has terminated.
      */
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         /* Closing the input stream will cause the FTP command
          * processing thread to shut down. In case the shutdown was
@@ -244,7 +244,7 @@ public class LineBasedDoor
                     e.getMessage());
         }
 
-        super.cleanUp();
+        super.stopped();
     }
 
     @Override

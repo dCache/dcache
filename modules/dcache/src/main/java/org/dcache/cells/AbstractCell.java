@@ -173,7 +173,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         _optionParser.inject(AbstractCell.this);
 

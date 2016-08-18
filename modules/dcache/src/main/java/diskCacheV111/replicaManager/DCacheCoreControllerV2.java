@@ -165,12 +165,12 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
    }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         if (messageProcessingThread != null) {
             messageProcessingThread.interrupt();
         }
-        super.cleanUp();
+        super.stopped();
     }
 
     protected abstract

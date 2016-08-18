@@ -126,7 +126,7 @@ public class LoginManager
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         if (_args.argc() < 2) {
             throw new
@@ -501,7 +501,7 @@ public class LoginManager
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         LOGGER.info("cleanUp requested by nucleus, closing listen socket");
         if (_listenThread != null) {

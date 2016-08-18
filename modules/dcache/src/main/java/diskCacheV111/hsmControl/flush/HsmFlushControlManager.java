@@ -87,7 +87,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         _poolManager = new CellStub(this, new CellPath("PoolManager"), 30, SECONDS);
         Args args = getArgs();

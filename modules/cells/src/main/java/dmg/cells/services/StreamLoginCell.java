@@ -62,7 +62,7 @@ public class      StreamLoginCell
     }
 
     @Override
-    protected void startUp()
+    protected void starting()
     {
         _reader = _engine.getReader();
         _in = new ControlBufferedReader(_reader);
@@ -84,7 +84,7 @@ public class      StreamLoginCell
     }
 
     @Override
-    public void cleanUp()
+    public void stopped()
     {
         _log.info("Clean up called");
         println("");

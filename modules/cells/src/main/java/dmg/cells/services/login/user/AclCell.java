@@ -48,7 +48,7 @@ public class       AclCell
     }
 
     @Override
-    protected void startUp()
+    protected void starting()
     {
         Args args = getArgs();
         checkArgument(args.argc() >= 1, "Usage : ... <dbPath>");

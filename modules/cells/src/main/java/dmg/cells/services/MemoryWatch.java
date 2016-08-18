@@ -42,7 +42,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         String var;
         //
@@ -94,7 +94,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
     }
 
     @Override
-    protected void cleanUp()
+    protected void stopped()
     {
         if (_queryThread != null) {
             _queryThread.interrupt();

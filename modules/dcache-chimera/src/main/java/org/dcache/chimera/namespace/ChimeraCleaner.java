@@ -180,10 +180,10 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     @Override
-    protected void startUp()
+    protected void starting()
         throws Exception
     {
-        super.startUp();
+        super.starting();
         useInterpreter(true);
 
         _notificationStub = new CellStub(this);
@@ -252,7 +252,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     @Override
-    protected void cleanUp()
+    protected void stopped()
     {
         if (_requests != null) {
             _requests.shutdown();

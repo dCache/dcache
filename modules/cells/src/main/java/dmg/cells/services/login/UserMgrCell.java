@@ -60,7 +60,7 @@ public class       UserMgrCell
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         if (_args.argc() < 1) {
             throw new IllegalArgumentException("Usage : ... <dbPath>");

@@ -59,7 +59,7 @@ public class      LoginCell
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected void starting() throws Exception
     {
         _reader = _engine.getReader();
         _in = new BufferedReader(_reader);
@@ -172,7 +172,7 @@ public class      LoginCell
     }
   }
    @Override
-   public void   cleanUp(){
+   public void stopped(){
 
      _log.info( "Clean up called" ) ;
      println("");
