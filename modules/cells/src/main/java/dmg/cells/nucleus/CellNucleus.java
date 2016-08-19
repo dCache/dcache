@@ -659,9 +659,9 @@ public class CellNucleus implements ThreadFactory
 
     /**
      * List the threads of some cell to stdout.  This is
-     * indended for diagnostic information.
+     * intended for diagnostic information.
      */
-    public void listThreadGroupOf(String cellName) {
+    public static void listThreadGroupOf(String cellName) {
         __cellGlue.threadGroupList(cellName);
     }
 
@@ -670,24 +670,8 @@ public class CellNucleus implements ThreadFactory
      * threads at warn level.
      */
     public void  threadGroupList() {
-        Thread[] threads = new Thread[_threads.activeCount()];
-        int n = _threads.enumerate(threads);
-        for (int i = 0; i < n; i++) {
-            Thread thread = threads[i];
-            LOGGER.warn("Thread: {} [{}{}{}] ({}) {}",
-                    thread.getName(),
-                    (thread.isAlive() ? "A" : "-"),
-                    (thread.isDaemon() ? "D" : "-"),
-                    (thread.isInterrupted() ? "I" : "-"),
-                    thread.getPriority(),
-                    thread.getState());
-            for(StackTraceElement s : thread.getStackTrace()) {
-                LOGGER.warn("    {}", s);
-            }
-        }
+        CellGlue.threadGroupList(_threads);
     }
-
-
 
     /**
      * Blocks until the given cell is dead.

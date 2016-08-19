@@ -159,10 +159,10 @@ public class      SystemCell
         }
 
         _log.info("Will try to shutdown non-system cells {}", nonSystem);
-        shutdownCells(nonSystem, 3000);
+        shutdownCells(nonSystem, System.currentTimeMillis() + 5000);
 
         _log.info("Will try to shutdown remaining cells {}", system);
-        shutdownCells(system, 5000);
+        shutdownCells(system, System.currentTimeMillis() + 4000);
     }
 
     /**
@@ -170,9 +170,9 @@ public class      SystemCell
      * are dead or until a timeout has occurred.
      *
      * @param cells List of names of cells to kill.
-     * @param timeout Time in milliseconds to wait for a cell to die.
+     * @param deadline Time in milliseconds since the epoch to wait for a cell to die.
      */
-    private void shutdownCells(List<String> cells, long timeout)
+    private void shutdownCells(List<String> cells, long deadline)
     {
        for (String cellName: cells) {
            try {
@@ -184,11 +184,11 @@ public class      SystemCell
 
        for (String cellName: cells) {
            try {
-               if (_nucleus.join(cellName, timeout)) {
+               if (_nucleus.join(cellName, Math.max(0, System.currentTimeMillis() - deadline))) {
                    _log.info("Killed {}", cellName);
                } else {
                    _log.warn("Timeout waiting for {}", cellName);
-                   _nucleus.listThreadGroupOf(cellName);
+                   CellNucleus.listThreadGroupOf(cellName);
                    break;
                }
            } catch (InterruptedException e) {

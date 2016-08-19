@@ -3,6 +3,7 @@ package dmg.cells.nucleus;
 import com.google.common.collect.Maps;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +75,8 @@ class CellGlue
         _domainAddress = new CellAddressCore("*", _cellDomainName);
         _masterThreadGroup = new ThreadGroup("Master-Thread-Group");
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
-        ThreadFactory killerThreadFactory = r -> new Thread(_killerThreadGroup, r);
+        ThreadFactory killerThreadFactory =
+                new ThreadFactoryBuilder().setNameFormat("killer-%d").setThreadFactory(r -> new Thread(_killerThreadGroup, r)).build();
         _killerExecutor = Executors.newCachedThreadPool(killerThreadFactory);
         _emergencyKillerExecutor = new ThreadPoolExecutor(1, 1,
                                                           0L, TimeUnit.MILLISECONDS,
@@ -247,16 +249,40 @@ class CellGlue
     }
 
     /**
-     * Print diagnostic information about a cell's ThreadGroup to
-     * stdout.
+     * Log diagnostic information about a cell's ThreadGroup.
      */
     void threadGroupList(String cellName)
     {
         CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus != null) {
             nucleus.threadGroupList();
+            if (_killedCells.contains(nucleus)) {
+                threadGroupList(_killerThreadGroup);
+            }
         } else {
             LOGGER.warn("cell {} is not running", cellName);
+        }
+    }
+
+    /**
+     * Log diagnostic information about a ThreadGroup.
+     */
+    public static void threadGroupList(ThreadGroup threadGroup)
+    {
+        Thread[] threads = new Thread[threadGroup.activeCount()];
+        int n = threadGroup.enumerate(threads);
+        for (int i = 0; i < n; i++) {
+            Thread thread = threads[i];
+            LOGGER.warn("Thread: {} [{}{}{}] ({}) {}",
+                        thread.getName(),
+                        (thread.isAlive() ? "A" : "-"),
+                        (thread.isDaemon() ? "D" : "-"),
+                        (thread.isInterrupted() ? "I" : "-"),
+                        thread.getPriority(),
+                        thread.getState());
+            for (StackTraceElement s : thread.getStackTrace()) {
+                LOGGER.warn("    {}", s);
+            }
         }
     }
 
