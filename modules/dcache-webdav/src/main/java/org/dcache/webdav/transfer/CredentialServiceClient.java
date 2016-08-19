@@ -69,12 +69,6 @@ public class CredentialServiceClient
         topic.notify(new CredentialServiceRequest());
     }
 
-    @Override
-    public void beforeStop()
-    {
-
-    }
-
     public void messageArrived(CredentialServiceAnnouncement message)
     {
         cache.put(message.getCellAddress(), message.getDelegationEndpoint());

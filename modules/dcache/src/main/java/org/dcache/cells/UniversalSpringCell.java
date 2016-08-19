@@ -259,6 +259,18 @@ public class UniversalSpringCell
         }
     }
 
+    @Override
+    protected void stopping()
+    {
+        super.stopping();
+        if (_setupManager != null) {
+            _setupManager.close();
+        }
+        for (CellLifeCycleAware bean: _lifeCycleAware.values()) {
+            bean.beforeStop();
+        }
+    }
+
     /**
      * Closes the application context, which will shutdown all beans.
      */
@@ -266,12 +278,6 @@ public class UniversalSpringCell
     public void stopped()
     {
         super.stopped();
-        if (_setupManager != null) {
-            _setupManager.close();
-        }
-        for (CellLifeCycleAware bean: _lifeCycleAware.values()) {
-            bean.beforeStop();
-        }
         if (_context != null) {
             _context.close();
             _context = null;

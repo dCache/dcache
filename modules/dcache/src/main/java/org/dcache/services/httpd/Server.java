@@ -22,11 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
-
-import dmg.cells.nucleus.CellLifeCycleAware;
+import javax.annotation.PreDestroy;
 
 public class Server extends org.eclipse.jetty.server.Server
-    implements CellLifeCycleAware
 {
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
 
@@ -45,8 +43,8 @@ public class Server extends org.eclipse.jetty.server.Server
         start();
     }
 
-    @Override
-    public void beforeStop()
+    @PreDestroy
+    public void stopServer()
     {
         try {
             stop();

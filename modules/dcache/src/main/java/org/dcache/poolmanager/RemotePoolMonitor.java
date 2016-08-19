@@ -94,11 +94,6 @@ public class RemotePoolMonitor
     }
 
     @Override
-    public void beforeStop()
-    {
-    }
-
-    @Override
     public PoolSelectionUnit getPoolSelectionUnit()
     {
         return getPoolMonitor().getPoolSelectionUnit();

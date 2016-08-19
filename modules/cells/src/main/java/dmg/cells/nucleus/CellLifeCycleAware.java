@@ -12,7 +12,9 @@ public interface CellLifeCycleAware
     default void afterStart() {}
 
     /**
-     * Called just before the cell is killed.
+     * Called just before the cell is killed. At this point new messages can no longer be
+     * received, but the message delivery threads are still active and queued messages will
+     * be delivered. Curator callbacks can also still be delivered.
      */
     default void beforeStop() {}
 

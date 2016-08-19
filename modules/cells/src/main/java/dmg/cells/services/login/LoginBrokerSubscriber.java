@@ -179,12 +179,6 @@ public class LoginBrokerSubscriber
         }
     }
 
-    @Override
-    public void beforeStop()
-    {
-
-    }
-
     public void messageArrived(LoginBrokerInfo info)
     {
         expire();
