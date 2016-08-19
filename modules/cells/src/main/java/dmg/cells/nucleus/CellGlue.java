@@ -538,7 +538,7 @@ class CellGlue
         if (msg.getSourceAddress().getCellName().equals("*")) {
             Serializable messageObject = msg.decode().getMessageObject();
             if (messageObject instanceof NoRouteToCellException) {
-                LOGGER.warn(
+                LOGGER.info(
                         "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
                         msg.getDestinationPath(), ((NoRouteToCellException) messageObject).getDestinationPath(),
                         routeTarget, _cellDomainName);
