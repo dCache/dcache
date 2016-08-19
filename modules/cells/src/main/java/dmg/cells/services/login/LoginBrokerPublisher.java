@@ -519,6 +519,11 @@ public class LoginBrokerPublisher
             _task.cancel(false);
             _task = null;
         }
+        _addresses = Collections::emptyList;
+        _writeEnabled = false;
+        _readEnabled = false;
+        _load = () -> 1.0;
+        sendUpdate();
     }
 
     private void rescheduleTask()
