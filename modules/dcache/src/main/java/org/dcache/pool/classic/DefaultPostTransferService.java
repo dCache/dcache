@@ -29,7 +29,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 
@@ -37,9 +36,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellInfoProvider;
 
 import org.dcache.cells.CellStub;
-import org.dcache.pool.FaultAction;
-import org.dcache.pool.FaultEvent;
-import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -57,7 +53,6 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                             new ThreadFactoryBuilder().setNameFormat("post-transfer-%d").build()));
     private CellStub _billing;
     private String _poolName;
-    private FaultListener _faultListener;
     private ChecksumModule _checksumModule;
     private CellStub _door;
 
@@ -69,11 +64,6 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     @Required
     public void setPoolName(String poolName) {
         _poolName = poolName;
-    }
-
-    @Required
-    public void setFaultListener(FaultListener faultListener) {
-        _faultListener = faultListener;
     }
 
     @Required
@@ -105,12 +95,6 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                 LOGGER.warn("Transfer was forcefully killed during post-processing");
                 mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
                         "Transfer was forcefully killed");
-                completionHandler.failed(e, null);
-            } catch (DiskErrorCacheException e) {
-                LOGGER.warn("Transfer failed in post-processing due to disk error: {}", e.toString());
-                _faultListener.faultOccurred(
-                        new FaultEvent("repository", FaultAction.DISABLED, e.getMessage(), e));
-                mover.setTransferStatus(e.getRc(), "Disk error: " + e.getMessage());
                 completionHandler.failed(e, null);
             } catch (CacheException e) {
                 LOGGER.warn("Transfer failed in post-processing: {}", e.getMessage());

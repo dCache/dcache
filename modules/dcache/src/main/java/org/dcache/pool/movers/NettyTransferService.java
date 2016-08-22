@@ -51,7 +51,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -61,9 +60,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
-import org.dcache.pool.FaultAction;
-import org.dcache.pool.FaultEvent;
-import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.PostTransferService;
@@ -123,10 +119,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     /** Service to post process movers. */
     private PostTransferService postTransferService;
 
-    /** Listener for critical pool faults. */
-    protected FaultListener faultListener;
-
-    /** Service to calculsate and verify checksums. */
+    /** Service to calculate and verify checksums. */
     protected ChecksumModule checksumModule;
 
     /** Timeout for when to disconnect an idle client. */
@@ -162,12 +155,6 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             PostTransferService postTransferService)
     {
         this.postTransferService = postTransferService;
-    }
-
-    @Required
-    public void setFaultListener(FaultListener faultListener)
-    {
-        this.faultListener = faultListener;
     }
 
     public long getClientIdleTimeout()
@@ -380,10 +367,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             public void onFailure(Throwable t, Void attachment)
                     throws CacheException
             {
-                if (t instanceof DiskErrorCacheException) {
-                    faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED,
-                                                               t.getMessage(), t));
-                } else if (t instanceof NoRouteToCellException) {
+                if (t instanceof NoRouteToCellException) {
                     throw new CacheException("Failed to send redirect message to door: " + t.getMessage(), t);
                 }
             }

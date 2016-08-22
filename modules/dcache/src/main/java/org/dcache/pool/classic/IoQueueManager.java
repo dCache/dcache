@@ -9,10 +9,12 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -26,6 +28,8 @@ import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
+import org.dcache.pool.FaultEvent;
+import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.MoverRequestScheduler.Order;
 import org.dcache.util.IoPriority;
 
@@ -33,7 +37,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.joining;
 
 public class IoQueueManager
-        implements CellCommandListener, CellSetupProvider
+        implements FaultListener, CellCommandListener, CellSetupProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(IoQueueManager.class);
 
@@ -46,6 +50,12 @@ public class IoQueueManager
      * The name of a queue used by pool-to-pool transfers.
      */
     public static final String P2P_QUEUE_NAME = "p2p";
+
+    /**
+     * Listeners notified when any queue generates a fatal fault.
+     */
+    private final List<FaultListener> faultListeners =
+            new CopyOnWriteArrayList<>();
 
     /**
      * Queues by queue id.
@@ -76,6 +86,22 @@ public class IoQueueManager
     {
         defaultQueue = createQueue(DEFAULT_QUEUE, Order.LIFO);
         p2pQueue = createQueue(P2P_QUEUE_NAME, Order.LIFO);
+    }
+
+    public void addFaultListener(FaultListener listener)
+    {
+        faultListeners.add(listener);
+    }
+
+    public void removeFaultListener(FaultListener listener)
+    {
+        faultListeners.remove(listener);
+    }
+
+    @Override
+    public void faultOccurred(FaultEvent event)
+    {
+        faultListeners.forEach(l -> l.faultOccurred(event));
     }
 
     public void setQueues(String[] queues)
@@ -149,6 +175,7 @@ public class IoQueueManager
 
             int id = counter.getAndIncrement();
             queue = new MoverRequestScheduler(name, id, order);
+            queue.addFaultListener(this);
             queuesById.put(id, queue);
             queuesByName.put(name, queue);
         }

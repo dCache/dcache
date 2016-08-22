@@ -316,15 +316,7 @@ public class PoolV4
     public void setRepository(ReplicaRepository repository)
     {
         assertNotRunning("Cannot set repository after initialization");
-        if (_repository != null) {
-            _repository.removeFaultListener(this);
-        }
         _repository = repository;
-        _repository.addFaultListener(this);
-        _repository.addListener(new RepositoryLoader());
-        _repository.addListener(new NotifyBillingOnRemoveListener());
-        _repository.addListener(new HFlagMaintainer());
-        _repository.addListener(_replicationHandler);
     }
 
     @Required
@@ -436,6 +428,14 @@ public class PoolV4
         checkState(!_isVolatile || !_hasTapeBackend, "Volatile pool cannot have a tape backend");
 
         _log.info("Pool {} starting", _poolName);
+
+        _repository.addFaultListener(this);
+        _repository.addListener(new RepositoryLoader());
+        _repository.addListener(new NotifyBillingOnRemoveListener());
+        _repository.addListener(new HFlagMaintainer());
+        _repository.addListener(_replicationHandler);
+
+        _ioQueue.addFaultListener(this);
 
         _running = true;
     }

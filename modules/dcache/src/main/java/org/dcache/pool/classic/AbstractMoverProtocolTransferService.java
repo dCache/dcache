@@ -29,7 +29,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
@@ -37,9 +36,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.pool.FaultAction;
-import org.dcache.pool.FaultEvent;
-import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.movers.MoverProtocol;
@@ -58,15 +54,8 @@ public abstract class AbstractMoverProtocolTransferService
             new CDCExecutorServiceDecorator<>(
                     Executors.newCachedThreadPool(
                             new ThreadFactoryBuilder().setNameFormat(getClass().getSimpleName() + "-transfer-service-%d").build()));
-    private FaultListener _faultListener;
     private ChecksumModule _checksumModule;
     private PostTransferService _postTransferService;
-
-    @Required
-    public void setFaultListener(FaultListener faultListener)
-    {
-        _faultListener = faultListener;
-    }
 
     @Required
     public void setChecksumModule(ChecksumModule checksumModule)
@@ -154,10 +143,6 @@ public abstract class AbstractMoverProtocolTransferService
                         runMover(fileIoChannel);
                         break;
                     }
-                } catch (DiskErrorCacheException e) {
-                    _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, e.getMessage(), e));
-                    _completionHandler.failed(e, null);
-                    return;
                 } catch (Throwable t) {
                     _completionHandler.failed(t, null);
                     return;

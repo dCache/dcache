@@ -15,26 +15,31 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
 
+import org.dcache.pool.FaultAction;
+import org.dcache.pool.FaultEvent;
+import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
 import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.pool.classic.IoRequestState.*;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
+import static org.dcache.pool.classic.IoRequestState.*;
 
 public class MoverRequestScheduler
 {
@@ -63,6 +68,9 @@ public class MoverRequestScheduler
      * IoQueueManager}.
      */
     private final int _queueId;
+
+    private final List<FaultListener> _faultListeners =
+            new CopyOnWriteArrayList<>();
 
     /**
      * Number of free job slots.
@@ -111,6 +119,16 @@ public class MoverRequestScheduler
         _order = order;
         _queue = createQueue(order);
         _semaphore.setMaxPermits(2);
+    }
+
+    public void addFaultListener(FaultListener listener)
+    {
+        _faultListeners.add(listener);
+    }
+
+    public void removeFaultListener(FaultListener listener)
+    {
+        _faultListeners.remove(listener);
     }
 
     private PriorityBlockingQueue<PrioritizedRequest> createQueue(Order order)
@@ -478,6 +496,9 @@ public class MoverRequestScheduler
                             if (exc instanceof InterruptedException || exc instanceof InterruptedIOException) {
                                 request.getMover().setTransferStatus(CacheException.DEFAULT_ERROR_CODE,
                                                                      "Transfer was killed");
+                            } else if (exc instanceof DiskErrorCacheException) {
+                                FaultEvent faultEvent = new FaultEvent("transfer", FaultAction.DISABLED, exc.getMessage(), exc);
+                                _faultListeners.forEach(l -> l.faultOccurred(faultEvent));
                             }
                             postprocess();
                         }
@@ -497,6 +518,12 @@ public class MoverRequestScheduler
                                             @Override
                                             public void failed(Throwable exc, Void attachment)
                                             {
+                                                if (exc instanceof DiskErrorCacheException) {
+                                                    FaultEvent faultEvent = new FaultEvent("post-processing",
+                                                                                           FaultAction.DISABLED,
+                                                                                           exc.getMessage(), exc);
+                                                    _faultListeners.forEach(l -> l.faultOccurred(faultEvent));
+                                                }
                                                 release();
                                             }
 

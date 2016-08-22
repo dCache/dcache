@@ -317,7 +317,6 @@
   <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverMapTransferService"
           destroy-method="shutdown" depends-on="rep">
       <description>Generic transfer service</description>
-      <property name="faultListener" ref="pool"/>
       <property name="checksumModule" ref="csm"/>
       <property name="postTransferService" ref="post-transfer-service"/>
   </bean>
@@ -328,7 +327,6 @@
       <property name="enableGss" value="${pool.mover.nfs.rpcsec_gss}" />
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="pnfsHandler" ref="pnfs"/>
-      <property name="faultListener" ref="pool"/>
       <property name="doorStub" ref="doorStub"/>
       <property name="checksumModule" ref="csm"/>
       <property name="minTcpPort" value="${pool.mover.nfs.port.min}"/>
@@ -341,7 +339,6 @@
       <description>Xrootd transfer service</description>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="checksumModule" ref="csm"/>
-      <property name="faultListener" ref="pool"/>
       <property name="threads" value="${pool.mover.xrootd.threads}"/>
       <property name="clientIdleTimeout" value="${pool.mover.xrootd.timeout.idle}"/>
       <property name="clientIdleTimeoutUnit" value="${pool.mover.xrootd.timeout.idle.unit}"/>
@@ -372,7 +369,6 @@
       <description>HTTP transfer service</description>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="checksumModule" ref="csm"/>
-      <property name="faultListener" ref="pool"/>
       <property name="threads" value="${pool.mover.http.threads}"/>
       <property name="chunkSize" value="${pool.mover.http.chunk-size}"/>
       <property name="clientIdleTimeout" value="${pool.mover.http.timeout.idle}"/>
@@ -391,7 +387,6 @@
 
   <bean id="remote-http-transfer-service" class="org.dcache.pool.classic.RemoteHttpTransferService"
           depends-on="rep" destroy-method="shutdown">
-      <property name="faultListener" ref="pool"/>
       <property name="checksumModule" ref="csm"/>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="certificateAuthorityPath" value="${pool.authn.capath}"/>
@@ -409,7 +404,6 @@
 
   <bean id="remote-gsiftp-transfer-service" class="org.dcache.pool.classic.RemoteGsiftpTransferService"
           depends-on="rep" destroy-method="shutdown">
-      <property name="faultListener" ref="pool"/>
       <property name="checksumModule" ref="csm"/>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="certificateAuthorityPath" value="${pool.authn.capath}"/>
@@ -432,7 +426,6 @@
       <description>Post processing execution service</description>
       <property name="billingStub" ref="billing-stub"/>
       <property name="poolName" value="${pool.name}"/>
-      <property name="faultListener" ref="pool"/>
       <property name="checksumModule" ref="csm"/>
   </bean>
 
