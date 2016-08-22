@@ -139,7 +139,7 @@ public class ExtendedInode extends FsInode
             FsInode actualParent = super.getParent();
             parent = Optional.fromNullable(actualParent != null ? new ExtendedInode(getFs(), actualParent) : null);
         }
-        return parent.get();
+        return parent.orNull();
     }
 
     public PnfsId getPnfsId() throws ChimeraFsException
