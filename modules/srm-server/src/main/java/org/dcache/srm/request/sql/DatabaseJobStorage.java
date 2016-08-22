@@ -913,7 +913,13 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         long lifetime =
                 TimeUnit.DAYS.toMillis(configuration.getKeepRequestHistoryPeriod());
         long timestamp = System.currentTimeMillis() - lifetime;
-        jdbcTemplate.update("DELETE FROM " + getTableName() + " WHERE CREATIONTIME + LIFETIME < ?", timestamp);
+        try {
+            jdbcTemplate.update("DELETE FROM " + getTableName() + " WHERE CREATIONTIME + LIFETIME < ?", timestamp);
+        } catch (DataAccessException e) {
+            logger.warn("Failed to remove out-of-date historic data from {}: {}", getTableName(), e.toString());
+        } catch (RuntimeException e) {
+            logger.error("Bug detected", e);
+        }
     }
 
     protected PreparedStatement getPreparedStatement(
