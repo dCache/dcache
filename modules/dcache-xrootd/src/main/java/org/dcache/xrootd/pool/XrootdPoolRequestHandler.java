@@ -42,8 +42,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;

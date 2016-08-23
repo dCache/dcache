@@ -10,6 +10,7 @@ check xrootd.cell.subscribe
 check -strong xrootd.net.port
 check -strong xrootd.net.listen
 check -strong xrootd.net.backlog
+check -strong xrootd.enable.proxy-protocol
 check -strong xrootd.limits.threads
 check -strong xrootd.root
 check -strong xrootd.service.pool.timeout

@@ -1,6 +1,7 @@
-/* dCache - http://www.dcache.org/
+/*
+ * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,21 +18,15 @@
  */
 package org.dcache.xrootd.plugins;
 
-import java.util.Properties;
+import io.netty.channel.ChannelHandler;
 
-public class AccessLogHandlerProvider implements ChannelHandlerProvider
+public class ProxyAccessLogHandlerFactory extends AccessLogHandlerFactory
 {
-    public static final String NAME = "access-log";
+    private final ProxyAccessLogHandler proxyAccessLogHandler = new ProxyAccessLogHandler(accessLogger, handler);
 
     @Override
-    public ChannelHandlerFactory createFactory(String plugin, Properties properties) throws Exception
+    public ChannelHandler createHandler()
     {
-        if (!plugin.equals(NAME)) {
-            return null;
-        } else if (Boolean.parseBoolean(properties.getProperty("xrootd.enable.proxy-protocol"))) {
-            return new ProxyAccessLogHandlerFactory();
-        } else {
-            return new AccessLogHandlerFactory();
-        }
+        return proxyAccessLogHandler;
     }
 }

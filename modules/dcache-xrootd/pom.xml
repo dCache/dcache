@@ -37,5 +37,9 @@
       <groupId>org.dcache</groupId>
       <artifactId>xrootd4j</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-haproxy</artifactId>
+    </dependency>
   </dependencies>
 </project>

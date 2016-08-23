@@ -17,13 +17,13 @@
  */
 package org.dcache.xrootd.door;
 
-import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.EnumSet;
@@ -44,10 +44,8 @@ import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.LoginReply;
-import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
-import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
@@ -122,7 +120,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
-        } else {
+        } else if (!isHealthCheck() || !(t instanceof IOException)){
             _log.warn(t.toString());
         }
     }
@@ -143,9 +141,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
          * introduces an artificial 1 second delay when processing such a response.
          */
 
-        Channel channel = ctx.channel();
-        InetSocketAddress localAddress = (InetSocketAddress) channel.localAddress();
-        InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
+        InetSocketAddress localAddress = getLocalAddress();
+        InetSocketAddress remoteAddress = getRemoteAddress();
 
         FilePerm neededPerm = req.getRequiredPermission();
 
@@ -248,8 +245,9 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     {
         String path = req.getPath();
         try {
-            String client = ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress();
-            return new StatResponse(req, _door.getFileStatus(createFullPath(path), req.getSubject(), _authz, client));
+            InetSocketAddress client = getRemoteAddress();
+            return new StatResponse(req, _door.getFileStatus(createFullPath(path), req.getSubject(), _authz,
+                                                             client.getAddress().getHostAddress()));
         } catch (FileNotFoundCacheException e) {
             throw new XrootdException(kXR_NotFound, "No such file");
         } catch (TimeoutCacheException e) {
@@ -706,7 +704,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         public StatListCallback(DirListRequest request, FsPath dirPath, ChannelHandlerContext context)
         {
             super(request, context);
-            _client = ((InetSocketAddress) context.channel().remoteAddress()).getAddress().getHostAddress();
+            _client = getRemoteAddress().getAddress().getHostAddress();
             _dirPath = dirPath;
         }
 

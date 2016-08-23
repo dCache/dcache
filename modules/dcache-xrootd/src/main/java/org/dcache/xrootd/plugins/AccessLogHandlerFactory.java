@@ -23,7 +23,9 @@ import org.slf4j.LoggerFactory;
 
 public class AccessLogHandlerFactory implements ChannelHandlerFactory
 {
-    private final Logger accessLogger = LoggerFactory.getLogger("org.dcache.access.xrootd");
+    protected final Logger accessLogger = LoggerFactory.getLogger("org.dcache.access.xrootd");
+
+    protected final AccessLogHandler handler = new AccessLogHandler(accessLogger);
 
     @Override
     public String getName()
@@ -40,6 +42,6 @@ public class AccessLogHandlerFactory implements ChannelHandlerFactory
     @Override
     public ChannelHandler createHandler()
     {
-        return new AccessLogHandler(accessLogger);
+        return handler;
     }
 }

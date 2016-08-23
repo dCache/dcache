@@ -98,6 +98,7 @@
             <property name="prefix" value="xrootd.app-ioqueue"/>
         </bean>
     </property>
+    <property name="expectedProxyProtocol" value="${xrootd.enable.proxy-protocol}"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">

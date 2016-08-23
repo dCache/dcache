@@ -17,11 +17,15 @@
  */
 package org.dcache.xrootd;
 
+import com.google.common.net.InetAddresses;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.haproxy.HAProxyMessage;
+import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdRequestHandler;
@@ -38,9 +42,54 @@ public class AbstractXrootdRequestHandler extends XrootdRequestHandler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractXrootdRequestHandler.class);
 
+    private boolean _isHealthCheck;
+
+    private InetSocketAddress _localAddress;
+
+    private InetSocketAddress _remoteAddress;
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception
+    {
+        _localAddress = (InetSocketAddress) ctx.channel().localAddress();
+        _remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
+    {
+        if (msg instanceof HAProxyMessage) {
+            HAProxyMessage proxyMessage = (HAProxyMessage) msg;
+            switch (proxyMessage.command()) {
+            case LOCAL:
+                _isHealthCheck = true;
+                break;
+            case PROXY:
+                String sourceAddress = proxyMessage.sourceAddress();
+                String destinationAddress = proxyMessage.destinationAddress();
+                InetSocketAddress localAddress = (InetSocketAddress) ctx.channel().localAddress();
+                if (proxyMessage.proxiedProtocol() == HAProxyProxiedProtocol.TCP4 ||
+                    proxyMessage.proxiedProtocol() == HAProxyProxiedProtocol.TCP6) {
+                    if (Objects.equals(destinationAddress, localAddress.getAddress().getHostAddress())) {
+                        /* Workaround for what looks like a bug in HAProxy - health checks should
+                         * generate a LOCAL command, but it appears they do actually use PROXY.
+                         */
+                        _isHealthCheck = true;
+                    } else {
+                        _localAddress = new InetSocketAddress(InetAddresses.forString(destinationAddress), proxyMessage.destinationPort());
+                        _remoteAddress = new InetSocketAddress(InetAddresses.forString(sourceAddress), proxyMessage.sourcePort());
+                    }
+                }
+                break;
+            }
+        } else {
+            super.channelRead(ctx, msg);
+        }
+    }
+
     @Override
     protected XrootdResponse<ProtocolRequest> doOnProtocolRequest(ChannelHandlerContext ctx, ProtocolRequest msg)
-        throws XrootdException
+            throws XrootdException
     {
         return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER);
     }
@@ -51,11 +100,8 @@ public class AbstractXrootdRequestHandler extends XrootdRequestHandler
         /* To avoid duplicate name space lookups, we always just return ourselves no matter
          * whether the file exists or not.
          */
-        return new LocateResponse(msg,
-                                  new LocateResponse.InfoElement(
-                                          (InetSocketAddress) ctx.channel().localAddress(),
-                                          LocateResponse.Node.SERVER,
-                                          LocateResponse.Access.READ));
+        return new LocateResponse(msg, new LocateResponse.InfoElement(
+                getLocalAddress(), LocateResponse.Node.SERVER, LocateResponse.Access.READ));
     }
 
     @Override
@@ -72,5 +118,20 @@ public class AbstractXrootdRequestHandler extends XrootdRequestHandler
                                        Math.min(APPID_PREFIX_LENGTH + APPID_MSG_LENGTH, data.length())));
         }
         return new SetResponse(request, "");
+    }
+
+    protected InetSocketAddress getLocalAddress()
+    {
+        return _localAddress;
+    }
+
+    protected InetSocketAddress getRemoteAddress()
+    {
+        return _remoteAddress;
+    }
+
+    protected boolean isHealthCheck()
+    {
+        return _isHealthCheck;
     }
 }

@@ -14,12 +14,12 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -71,6 +71,8 @@ public class NettyXrootdServer implements CellIdentityAware
     private Map<String, String> _queryConfig;
     private Map<String, String> _appIoQueues;
     private CellAddressCore _myAddress;
+
+    private boolean _expectProxyProtocol;
 
     public int getPort()
     {
@@ -166,6 +168,16 @@ public class NettyXrootdServer implements CellIdentityAware
         _appIoQueues = appIoQueues;
     }
 
+    public void setExpectedProxyProtocol(boolean allowProxyProtocol)
+    {
+        this._expectProxyProtocol = allowProxyProtocol;
+    }
+
+    public boolean getExpectProxyProtocol()
+    {
+        return _expectProxyProtocol;
+    }
+
     public void start()
     {
         sessionPrefix = "door:" + _myAddress.getCellName() + "@" + _myAddress.getCellDomainName() + ":";
@@ -187,6 +199,9 @@ public class NettyXrootdServer implements CellIdentityAware
 
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast("session", new SessionHandler(session));
+                        if (_expectProxyProtocol) {
+                            pipeline.addLast("haproxy", new HAProxyMessageDecoder());
+                        }
                         pipeline.addLast("tracker", _connectionTracker);
                         pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                         pipeline.addLast("encoder", new XrootdEncoder());

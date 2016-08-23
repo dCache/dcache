@@ -17,9 +17,13 @@
  */
 package org.dcache.xrootd.plugins;
 
+import com.google.common.net.HostAndPort;
 import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.haproxy.HAProxyCommand;
+import io.netty.handler.codec.haproxy.HAProxyMessage;
 import org.slf4j.Logger;
 
 import javax.security.auth.Subject;
@@ -60,9 +64,10 @@ import static com.google.common.base.Strings.emptyToNull;
 import static org.dcache.util.NetLoggerBuilder.Level.*;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
+@ChannelHandler.Sharable
 public class AccessLogHandler extends ChannelDuplexHandler
 {
-    private final Logger logger;
+    protected final Logger logger;
 
     public AccessLogHandler(Logger logger)
     {
