@@ -5,6 +5,8 @@ package org.dcache.net;
 
 import java.io.IOException;
 
+import org.dcache.net.ProtocolConnectionPool.Listen;
+
 public class ProtocolConnectionPoolFactory {
 
 
@@ -19,21 +21,13 @@ public class ProtocolConnectionPoolFactory {
 		_challengeReader = challengeReader;
 	}
 
-	public ProtocolConnectionPool getConnectionPool(int receiveBufferSize)
-            throws IOException
+	public Listen acquireListen(int receiveBufferSize) throws IOException
         {
-		synchronized(_initLock){
-			if( _protocolConnectionPool == null ) {
-                                _protocolConnectionPool = new ProtocolConnectionPool(_port, receiveBufferSize, _challengeReader);
-				_protocolConnectionPool.start();
-			}
-		}
-
-		return _protocolConnectionPool;
+            synchronized (_initLock) {
+                if( _protocolConnectionPool == null ) {
+                    _protocolConnectionPool = new ProtocolConnectionPool(_port, receiveBufferSize, _challengeReader);
+                }
+            }
+            return _protocolConnectionPool.acquire();
 	}
-
-
 }
-/*
- * $Log: not supported by cvs2svn $
- */

@@ -32,6 +32,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.net.ProtocolConnectionPool;
+import org.dcache.net.ProtocolConnectionPool.Listen;
 import org.dcache.net.ProtocolConnectionPoolFactory;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -83,7 +84,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
 
     // bind passive dcap to port defined as org.dcache.dcap.port
-    private static ProtocolConnectionPoolFactory protocolConnectionPoolFactory;
+    private static ProtocolConnectionPoolFactory factory;
 
     static {
         int port = 0;
@@ -92,7 +93,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             port = Integer.parseInt(System.getProperty("org.dcache.dcap.port"));
         }catch(NumberFormatException e){ /* bad values are ignored */}
 
-        protocolConnectionPoolFactory =
+        factory =
             new ProtocolConnectionPoolFactory(port, new DCapChallengeReader());
 
     }
@@ -398,26 +399,24 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             _bigBuffer.flip();
             socketChannel.write(_bigBuffer);
         }else{ // passive connection
-            ProtocolConnectionPool pcp =
-                protocolConnectionPoolFactory.getConnectionPool(bufferSize.getRecvBufferSize());
+            try (Listen listen = factory.acquireListen(bufferSize.getRecvBufferSize())) {
+                InetAddress localAddress = NetworkUtils.
+                        getLocalAddress(dcapProtocolInfo.getSocketAddress().getAddress());
+                InetSocketAddress socketAddress = new InetSocketAddress(localAddress,
+                        listen.getPort());
 
-            InetAddress localAddress = NetworkUtils.
-                    getLocalAddress(dcapProtocolInfo.getSocketAddress().getAddress());
-            InetSocketAddress socketAddress =
-                new  InetSocketAddress(localAddress,
-                                       pcp.getLocalPort());
+                byte[] challenge = UUID.randomUUID().toString().getBytes();
+                PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<>("pool",
+                        socketAddress, challenge);
+                msg.setId(dcapProtocolInfo.getSessionId());
+                _log.info("waiting for client to connect ({}:{})", localAddress,
+                        listen.getPort());
 
-            byte[] challenge = UUID.randomUUID().toString().getBytes();
-            PoolPassiveIoFileMessage<byte[]> msg = new PoolPassiveIoFileMessage<>("pool",
-                    socketAddress, challenge);
-            msg.setId(dcapProtocolInfo.getSessionId());
-            _log.info("waiting for client to connect ({}:{})",
-                      localAddress, pcp.getLocalPort());
-
-            CellPath cellpath = dcapProtocolInfo.door();
-            _cell.sendMessage (new CellMessage(cellpath, msg));
-            DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId, challenge);
-            socketChannel = pcp.getSocket(dcapChallenge);
+                CellPath cellpath = dcapProtocolInfo.door();
+                _cell.sendMessage (new CellMessage(cellpath, msg));
+                DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId, challenge);
+                socketChannel = listen.getSocket(dcapChallenge);
+            }
 
             Socket socket = socketChannel.socket();
             socket.setKeepAlive(true);
