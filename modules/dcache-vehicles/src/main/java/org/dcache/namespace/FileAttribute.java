@@ -28,5 +28,10 @@ public enum FileAttribute {
     STORAGEINFO,
     TYPE,
     SIMPLE_TYPE,
-    PNFSID
+    PNFSID,
+
+    /**
+     * @since 2.17
+     */
+    NLINK   // Be careful not to send this to pools before next golden release
 }

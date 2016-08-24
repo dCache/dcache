@@ -112,6 +112,11 @@ public class FileAttributes implements Serializable {
     private int _mode;
 
     /**
+     * @since 2.17
+     */
+    private int _nlink;
+
+    /**
      * file's access latency ( e.g. ONLINE/NEARLINE )
      */
     private AccessLatency _accessLatency;
@@ -471,6 +476,18 @@ public class FileAttributes implements Serializable {
     {
         guard(HSM);
         return _hsm;
+    }
+
+    public void setNlink(int nlink)
+    {
+        define(NLINK);
+        _nlink = nlink;
+    }
+
+    public int getNlink()
+    {
+        guard(NLINK);
+        return _nlink;
     }
 
     @Override

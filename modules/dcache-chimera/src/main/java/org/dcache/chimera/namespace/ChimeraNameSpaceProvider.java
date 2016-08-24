@@ -873,6 +873,10 @@ public class ChimeraNameSpaceProvider
                     attributes.setHsm(storageInfo.getHsm());
                 }
                 break;
+            case NLINK:
+                stat = inode.statCache();
+                attributes.setNlink(stat.getNlink());
+                break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
             }
