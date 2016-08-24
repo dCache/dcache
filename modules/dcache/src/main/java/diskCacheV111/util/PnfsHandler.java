@@ -9,6 +9,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import javax.security.auth.Subject;
 
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
@@ -24,9 +25,11 @@ import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
+
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
@@ -41,6 +44,7 @@ import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.namespace.FileAttribute.PNFSID;
 
 public class PnfsHandler
     implements CellMessageSender
@@ -338,25 +342,28 @@ public class PnfsHandler
     public PnfsId deletePnfsEntry(String path, Set<FileType> allowed)
         throws CacheException
     {
-        return request(new PnfsDeleteEntryMessage(null, path, allowed)).getPnfsId();
+        FileAttributes attributes = deletePnfsEntry(null, path, allowed,
+                EnumSet.of(PNFSID));
+        return attributes.getPnfsId();
     }
 
     public void deletePnfsEntry(PnfsId pnfsid)  throws CacheException
     {
-        deletePnfsEntry(pnfsid, null);
+        deletePnfsEntry(pnfsid, null, EnumSet.allOf(FileType.class),
+                EnumSet.noneOf(FileAttribute.class));
     }
 
     public void deletePnfsEntry(PnfsId pnfsid, String path)
         throws CacheException
     {
-        deletePnfsEntry(pnfsid, path, EnumSet.allOf(FileType.class));
+        deletePnfsEntry(pnfsid, path, EnumSet.allOf(FileType.class),
+                EnumSet.noneOf(FileAttribute.class));
     }
 
-    public void deletePnfsEntry(PnfsId pnfsid, String path,
-                                Set<FileType> allowed)
+    public FileAttributes deletePnfsEntry(PnfsId pnfsid, String path, Set<FileType> allowed, Set<FileAttribute> attr)
         throws CacheException
     {
-        request(new PnfsDeleteEntryMessage(pnfsid, path, allowed));
+        return request(new PnfsDeleteEntryMessage(pnfsid, path, allowed, attr)).getFileAttributes();
     }
 
    /**

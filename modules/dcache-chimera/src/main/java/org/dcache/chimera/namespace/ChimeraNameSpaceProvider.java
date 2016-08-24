@@ -397,8 +397,8 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId)
-        throws CacheException
+    public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId,
+            Set<FileAttribute> attr) throws CacheException
     {
         try {
             ExtendedInode inode = new ExtendedInode(_fs, pnfsId, STAT);
@@ -410,6 +410,8 @@ public class ChimeraNameSpaceProvider
             }
 
             _fs.remove(inode);
+
+            return getFileAttributes(inode, attr);
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         }catch(DirNotEmptyHimeraFsException e) {
@@ -421,8 +423,8 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public PnfsId deleteEntry(Subject subject, Set<FileType> allowed, String path)
-        throws CacheException
+    public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
+            String path, Set<FileAttribute> attr) throws CacheException
     {
         try {
             File filePath = new File(path);
@@ -444,7 +446,7 @@ public class ChimeraNameSpaceProvider
 
             _fs.remove(parent, name, inode);
 
-            return inode.getPnfsId();
+            return getFileAttributes(inode, attr);
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         }catch(DirNotEmptyHimeraFsException e) {
@@ -456,8 +458,8 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId, String path)
-            throws CacheException
+    public FileAttributes deleteEntry(Subject subject, Set<FileType> allowed,
+            PnfsId pnfsId, String path, Set<FileAttribute> attr) throws CacheException
     {
         try {
             File filePath = new File(path);
@@ -482,6 +484,8 @@ public class ChimeraNameSpaceProvider
             }
 
             _fs.remove(parent, name, inode);
+
+            return getFileAttributes(inode, attr);
         } catch (FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (DirNotEmptyHimeraFsException e) {

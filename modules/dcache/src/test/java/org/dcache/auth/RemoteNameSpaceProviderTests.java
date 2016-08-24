@@ -248,7 +248,8 @@ public class RemoteNameSpaceProviderTests
     {
         givenSuccessfulResponse();
 
-        _namespace.deleteEntry(ROOT, EnumSet.allOf(FileType.class), A_PNFSID);
+        _namespace.deleteEntry(ROOT, EnumSet.allOf(FileType.class), A_PNFSID,
+                EnumSet.noneOf(FileAttribute.class));
 
         PnfsDeleteEntryMessage sent =
                 getSingleSendAndWaitMessage(PnfsDeleteEntryMessage.class);
@@ -264,7 +265,8 @@ public class RemoteNameSpaceProviderTests
     {
         givenSuccessfulResponse();
 
-        _namespace.deleteEntry(ROOT, EnumSet.allOf(FileType.class), "/path/to/entry");
+        _namespace.deleteEntry(ROOT, EnumSet.allOf(FileType.class), "/path/to/entry",
+                EnumSet.noneOf(FileAttribute.class));
 
         PnfsDeleteEntryMessage sent =
                 getSingleSendAndWaitMessage(PnfsDeleteEntryMessage.class);
@@ -281,7 +283,8 @@ public class RemoteNameSpaceProviderTests
     {
         givenFailureResponse(FILE_NOT_FOUND);
 
-        _namespace.deleteEntry(ROOT, EnumSet.allOf(FileType.class), A_PNFSID);
+        _namespace.deleteEntry(ROOT, EnumSet.allOf(FileType.class), A_PNFSID,
+                EnumSet.noneOf(FileAttribute.class));
     }
 
 
@@ -290,7 +293,8 @@ public class RemoteNameSpaceProviderTests
     {
         givenFailureResponse(FILE_NOT_FOUND);
 
-        _namespace.deleteEntry(ROOT, EnumSet.allOf(FileType.class), "/path/to/file");
+        _namespace.deleteEntry(ROOT, EnumSet.allOf(FileType.class), "/path/to/file",
+                EnumSet.noneOf(FileAttribute.class));
     }
 
 

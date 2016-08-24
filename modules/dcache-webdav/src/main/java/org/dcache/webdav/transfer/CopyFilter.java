@@ -54,6 +54,7 @@ import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.PathMapper;
@@ -453,7 +454,8 @@ public class CopyFilter implements Filter
                     // deleting existing entry.
                     try {
                         pnfs.deletePnfsEntry(attributes.getPnfsId(), path.toString(),
-                                EnumSet.of(FileType.REGULAR));
+                                EnumSet.of(FileType.REGULAR),
+                                EnumSet.noneOf(FileAttribute.class));
                     } catch (FileNotFoundCacheException ignored) {
                         // Ignore this: someone else deleted the file, which
                         // suggests we might be unlucky pulling the data.

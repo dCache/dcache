@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
 import javax.security.auth.Subject;
 
 import diskCacheV111.util.CacheException;
@@ -63,6 +64,7 @@ import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
+
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
@@ -76,6 +78,7 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
+
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
@@ -1357,26 +1360,37 @@ public class PnfsManagerV3
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         Subject subject = pnfsMessage.getSubject();
         Set<FileType> allowed = pnfsMessage.getAllowedFileTypes();
+        Set<FileAttribute> requested = pnfsMessage.getRequestedAttributes();
 
         try {
             if (path == null && pnfsId == null) {
                 throw new InvalidMessageCacheException("pnfsid or path have to be defined for PnfsDeleteEntryMessage");
             }
 
+
             checkMask(pnfsMessage);
             checkRestriction(pnfsMessage, DELETE);
+
+            FileAttributes attributes;
+
             if (path != null) {
                 _log.info("delete PNFS entry for {}", path);
                 if (pnfsId != null) {
-                    _nameSpaceProvider.deleteEntry(subject, allowed, pnfsId, path);
+                    attributes = _nameSpaceProvider.deleteEntry(subject, allowed,
+                            pnfsId, path, requested);
                 } else {
-                    pnfsMessage.setPnfsId(_nameSpaceProvider.deleteEntry(subject, allowed, path));
+                    requested.add(PNFSID);
+                    attributes = _nameSpaceProvider.deleteEntry(subject, allowed,
+                            path, requested);
+                    pnfsMessage.setPnfsId(attributes.getPnfsId());
                 }
             } else {
                 _log.info("delete PNFS entry for {}", pnfsId);
-                _nameSpaceProvider.deleteEntry(subject, allowed, pnfsId);
+                attributes = _nameSpaceProvider.deleteEntry(subject, allowed,
+                        pnfsId, requested);
             }
 
+            pnfsMessage.setFileAttributes(attributes);
             pnfsMessage.setSucceeded();
         } catch (FileNotFoundCacheException e) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage());
