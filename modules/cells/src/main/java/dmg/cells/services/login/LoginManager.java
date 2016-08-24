@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -32,8 +33,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellMessage;
@@ -83,6 +86,14 @@ public class LoginManager
 
     private volatile boolean _sending = true;
     private volatile int _maxLogin = -1;
+
+    /**
+     * Tagging interface that a CellMessage payload implements to indicate
+     * the notification should be forwarded to all children.
+     */
+    public interface OfInterestToChildren
+    {
+    }
 
     /**
      * <pre>
@@ -212,12 +223,21 @@ public class LoginManager
     @Override
     public void messageArrived(CellMessage envelope)
     {
+        Serializable message = envelope.getMessageObject();
         if (_loginBrokerPublisher != null) {
-            Serializable message = envelope.getMessageObject();
             if (message instanceof NoRouteToCellException) {
                 _loginBrokerPublisher.messageArrived((NoRouteToCellException) message);
             } else if (message instanceof LoginBrokerInfoRequest) {
                 _loginBrokerPublisher.messageArrived((LoginBrokerInfoRequest) message);
+            }
+        }
+
+        // Try delivering message to all children.
+        if (message instanceof OfInterestToChildren) {
+            for (String child : _children.keySet()) {
+                CellMessage msg = envelope.clone();
+                msg.getDestinationPath().add(child);
+                sendMessage(msg);
             }
         }
     }

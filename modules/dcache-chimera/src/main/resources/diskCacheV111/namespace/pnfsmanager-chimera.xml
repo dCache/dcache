@@ -38,6 +38,7 @@
       <property name="queueMaxSize" value="${pnfsmanager.limits.queue-length}"/>
       <property name="atimeGap" value="${pnfsmanager.atime-gap}" />
       <property name="flushNotificationTarget" value="${pnfsmanager.destination.flush-notification}"/>
+      <property name="cancelUploadNotificationTarget" value="${pnfsmanager.destination.cancel-upload-notification}"/>
   </bean>
 
     <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">

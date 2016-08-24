@@ -617,8 +617,8 @@ public class PnfsManagerTest
         _pnfsManager.createUploadPath(create);
         assertThat(create.getReturnCode(), is(0));
 
-        PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT,
-                Restrictions.none(), create.getUploadPath(), path,
+        PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT, Restrictions.none(),
+                create.getUploadPath(), path, EnumSet.noneOf(FileAttribute.class),
                 "request aborted");
         _pnfsManager.cancelUpload(cancel);
         assertThat(cancel.getReturnCode(), is(0));
@@ -646,7 +646,7 @@ public class PnfsManagerTest
 
         PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT,
                 Restrictions.none(), create.getUploadPath(), path,
-                "request aborted");
+                EnumSet.noneOf(FileAttribute.class), "request aborted");
         _pnfsManager.cancelUpload(cancel);
         assertThat(cancel.getReturnCode(), is(0));
 

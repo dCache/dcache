@@ -99,6 +99,15 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
 
     protected abstract void onFailure(Throwable t);
 
+    protected String explain(Throwable t)
+    {
+        if (t instanceof RuntimeException) {
+            return "bug: " + t.toString();
+        } else {
+            return String.valueOf(t);
+        }
+    }
+
     /**
      * To avoid locking the monitor of the Transfer object during callbacks,
      * we have an explicit monitor guarding our state machine and ensuring
@@ -180,11 +189,6 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
                 onFailure(t);
                 isDone = true;
             }
-        }
-
-        protected String explain(Throwable t)
-        {
-            return String.valueOf(t);
         }
 
         private synchronized void doKill(String explanation)

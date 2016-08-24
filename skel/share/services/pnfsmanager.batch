@@ -11,6 +11,7 @@ check -strong pnfsmanager.default-retention-policy
 check -strong pnfsmanager.default-access-latency
 check pnfsmanager.destination.flush-notification
 check pnfsmanager.destination.cache-notification
+check pnfsmanager.destination.cancel-upload-notification
 check -strong pnfsmanager.limits.threads-per-group
 check -strong pnfsmanager.limits.thread-groups
 check -strong pnfsmanager.limits.list-threads

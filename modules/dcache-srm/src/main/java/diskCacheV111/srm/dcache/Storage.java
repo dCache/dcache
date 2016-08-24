@@ -609,6 +609,7 @@ public final class Storage
         if (msg.isReply() && msg.getReturnCode() == 0) {
             PnfsCancelUpload message = new PnfsCancelUpload(msg.getSubject(),
                     msg.getRestriction(), msg.getUploadPath(), msg.getPath(),
+                    EnumSet.noneOf(FileAttribute.class),
                     "SRM upload aborted: timeout creating upload path");
             _pnfsStub.notify(message);
         }
@@ -1238,6 +1239,7 @@ public final class Storage
                 FsPath actualPnfsPath = config.getPath(surl);
                 PnfsCancelUpload msg = new PnfsCancelUpload(subject, restriction,
                         FsPath.create(localTransferPath), actualPnfsPath,
+                        EnumSet.noneOf(FileAttribute.class),
                         "SRM upload aborted: " + reason);
                 _pnfsStub.sendAndWait(msg);
 

@@ -5,6 +5,7 @@ import com.google.common.collect.Range;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -283,9 +284,11 @@ public interface NameSpaceProvider
      * @param subject the subject of user who invoked this method
      * @param uploadPath the temporary path as returned by createUploadPath
      * @param path the path of file that is uploaded
+     * @param attr the desired attributes of the deleted files
      * @param explanation a short description explaining why the upload was
      * cancelled.
+     * @return the files deleted by the operation
      */
-    void cancelUpload(Subject subject, FsPath uploadPath, FsPath path,
-            String explanation) throws CacheException;
+    Collection<FileAttributes> cancelUpload(Subject subject, FsPath uploadPath, FsPath path,
+            Set<FileAttribute> attr, String explanation) throws CacheException;
 }

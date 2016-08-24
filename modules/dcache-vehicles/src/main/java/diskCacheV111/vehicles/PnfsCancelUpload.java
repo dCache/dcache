@@ -19,9 +19,14 @@ package diskCacheV111.vehicles;
 
 import javax.security.auth.Subject;
 
+import java.util.Collection;
+import java.util.Set;
+
 import diskCacheV111.util.FsPath;
 
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Objects.requireNonNull;
 
@@ -38,9 +43,11 @@ public class PnfsCancelUpload extends PnfsMessage
 
     private final String uploadPath;
     private final String explanation;
+    private final Set<FileAttribute> requested;
+    private Collection<FileAttributes> deletedFiles;
 
     public PnfsCancelUpload(Subject subject, Restriction restriction,
-            FsPath uploadPath, FsPath path, String explanation)
+            FsPath uploadPath, FsPath path, Set<FileAttribute> requested, String explanation)
     {
         setSubject(subject);
         setRestriction(restriction);
@@ -48,6 +55,7 @@ public class PnfsCancelUpload extends PnfsMessage
         setReplyRequired(true);
         this.uploadPath = uploadPath.toString();
         this.explanation = requireNonNull(explanation);
+        this.requested = requireNonNull(requested);
     }
 
     public FsPath getPath()
@@ -63,5 +71,20 @@ public class PnfsCancelUpload extends PnfsMessage
     public String getExplanation()
     {
         return explanation;
+    }
+
+    public Set<FileAttribute> getRequestedAttributes()
+    {
+        return requested;
+    }
+
+    public void setDeletedFiles(Collection<FileAttributes> files)
+    {
+        deletedFiles = requireNonNull(files);
+    }
+
+    public Collection<FileAttributes> getDeletedFiles()
+    {
+        return deletedFiles;
     }
 }

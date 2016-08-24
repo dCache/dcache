@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -1481,7 +1483,8 @@ public class ChimeraNameSpaceProvider
 
             /* Delete temporary upload directory and any files in it.
              */
-            removeRecursively(uploadDirInode, temporaryDir.name(), temporaryDirInode);
+            removeRecursively(uploadDirInode, temporaryDir.name(),
+                    temporaryDirInode, i -> {});
 
             return attributes;
         } catch (ChimeraFsException e) {
@@ -1493,9 +1496,11 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void cancelUpload(Subject subject, FsPath temporaryPath,
-            FsPath finalPath, String explanation) throws CacheException
+    public Collection<FileAttributes> cancelUpload(Subject subject, FsPath temporaryPath,
+            FsPath finalPath, Set<FileAttribute> requested, String explanation)
+            throws CacheException
     {
+        List<FileAttributes> deleted = new ArrayList();
         try {
             FsPath temporaryDir = getParentOfFile(temporaryPath);
 
@@ -1513,13 +1518,23 @@ public class ChimeraNameSpaceProvider
             /* Delete temporary upload directory and any files in it.
              */
             String name = temporaryPath.parent().name();
-            removeRecursively(uploadDirInode, name, uploadDirInode.inodeOf(name, STAT));
+            removeRecursively(uploadDirInode, name, uploadDirInode.inodeOf(name, STAT),
+                    i -> {
+                        try {
+                            if (i.getFileType() == FileType.REGULAR) {
+                                deleted.add(getFileAttributes(i, requested));
+                            }
+                        } catch (CacheException|ChimeraFsException e) {
+                            _log.info("Unable to identify deleted file for upload cancellation: {}", e.toString());
+                        }});
         } catch (ChimeraFsException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
+        return deleted;
     }
 
-    private void removeRecursively(ExtendedInode parent, String name, ExtendedInode inode) throws ChimeraFsException
+    private void removeRecursively(ExtendedInode parent, String name, ExtendedInode inode,
+            Consumer<ExtendedInode> deleted) throws ChimeraFsException, CacheException
     {
         try {
             if (inode.isDirectory() && inode.stat().getNlink() > 2) {
@@ -1527,11 +1542,13 @@ public class ChimeraNameSpaceProvider
                     for (HimeraDirectoryEntry entry : list) {
                         String child = entry.getName();
                         if (!child.equals(".") && !child.equals("..")) {
-                            removeRecursively(inode, child, new ExtendedInode(_fs, entry.getInode()));
+                            ExtendedInode childInode = new ExtendedInode(_fs, entry.getInode());
+                            removeRecursively(inode, child, childInode, deleted);
                         }
                     }
                 }
             }
+            deleted.accept(inode);
             _fs.remove(parent, name, inode);
         } catch (ChimeraFsException e) {
             throw e;

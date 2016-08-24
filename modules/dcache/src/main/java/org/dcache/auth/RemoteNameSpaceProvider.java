@@ -4,6 +4,7 @@ import com.google.common.collect.Range;
 
 import javax.security.auth.Subject;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -243,10 +244,10 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public void cancelUpload(Subject subject, FsPath uploadPath, FsPath path,
-            String explanation) throws CacheException
+    public Collection<FileAttributes> cancelUpload(Subject subject, FsPath uploadPath, FsPath path,
+            Set<FileAttribute> requested, String explanation) throws CacheException
     {
-        _pnfs.request(new PnfsCancelUpload(subject, Restrictions.none(),
-                uploadPath, path, explanation));
+        return _pnfs.request(new PnfsCancelUpload(subject, Restrictions.none(),
+                uploadPath, path, requested, explanation)).getDeletedFiles();
     }
 }
