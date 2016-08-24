@@ -38,7 +38,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                              long CREATIONTIME,
                                              long LIFETIME,
                                              int STATE,
-                                             String ERRORMESSAGE,
                                              String SCHEDULERID,
                                              long SCHEDULER_TIMESTAMP,
                                              int NUMOFRETR,
@@ -56,7 +55,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                          CREATIONTIME,
                                          LIFETIME,
                                          STATE,
-                                         ERRORMESSAGE,
                                          SCHEDULERID,
                                          SCHEDULER_TIMESTAMP,
                                          NUMOFRETR,
@@ -83,7 +81,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                     gfr.getCreationTime(),
                                     gfr.getLifetime(),
                                     gfr.getState().getStateId(),
-                                    gfr.getErrorMessage(),
+                                    gfr.latestHistoryEvent(),
                                     gfr.getSchedulerId(),
                                     gfr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -141,7 +139,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                     gfr.getCreationTime(),
                                     gfr.getLifetime(),
                                     gfr.getState().getStateId(),
-                                    gfr.getErrorMessage(),
+                                    gfr.latestHistoryEvent(),
                                     gfr.getSchedulerId(),
                                     gfr.getSchedulerTimeStamp(),
                                     0, // num of retries

@@ -241,8 +241,10 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public void cancelUpload(Subject subject, FsPath uploadPath, FsPath path) throws CacheException
+    public void cancelUpload(Subject subject, FsPath uploadPath, FsPath path,
+            String explanation) throws CacheException
     {
-        _pnfs.request(new PnfsCancelUpload(subject, Restrictions.none(), uploadPath, path));
+        _pnfs.request(new PnfsCancelUpload(subject, Restrictions.none(),
+                uploadPath, path, explanation));
     }
 }

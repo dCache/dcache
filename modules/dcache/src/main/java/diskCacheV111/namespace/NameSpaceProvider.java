@@ -291,6 +291,9 @@ public interface NameSpaceProvider
      * @param subject the subject of user who invoked this method
      * @param uploadPath the temporary path as returned by createUploadPath
      * @param path the path of file that is uploaded
+     * @param explanation a short description explaining why the upload was
+     * cancelled.
      */
-    void cancelUpload(Subject subject, FsPath uploadPath, FsPath path) throws CacheException;
+    void cancelUpload(Subject subject, FsPath uploadPath, FsPath path,
+            String explanation) throws CacheException;
 }

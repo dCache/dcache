@@ -1334,7 +1334,9 @@ public class PnfsManagerV3
     {
         try {
             checkRestriction(message, UPLOAD);
-            _nameSpaceProvider.cancelUpload(message.getSubject(), message.getUploadPath(), message.getPath());
+            _nameSpaceProvider.cancelUpload(message.getSubject(),
+                    message.getUploadPath(), message.getPath(),
+                    message.getExplanation());
             message.setSucceeded();
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());

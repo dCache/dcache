@@ -151,7 +151,7 @@ public abstract class Job  {
     // we can not call it from the constructor, since this may lead to recursive job restoration
     // leading to the exhaust of the pool of database connections
     protected Job(long id, Long nextJobId, long creationTime,
-                  long lifetime, int stateId, String errorMessage,
+                  long lifetime, int stateId,
                   String schedulerId,
                   long schedulerTimestamp,
                   int numberOfRetries,
@@ -361,28 +361,26 @@ public abstract class Job  {
         }
     }
 
-    /** Getter for property errorMessage.
-     * @return Value of property errorMessage.
-     *
+    /**
+     * Provide the latest JobHistory description.  If the job is in a
+     * terminal error state the string should hint as to what triggered the
+     * failure.
+     * @return the String argument last supplied to addHistoryEvent.
+     * <p/>
+     * See {@link #addHistoryEvent(java.lang.String) }
      */
-
-    public String getErrorMessage() {
-        StringBuilder errorsb = new StringBuilder();
+    public String latestHistoryEvent() {
         rlock();
         try {
-            if(!jobHistory.isEmpty()) {
-                JobHistory nextHistoryElement = jobHistory.get(jobHistory.size() -1);
-                State nexthistoryElState = nextHistoryElement.getState();
-                errorsb.append(" at ");
-                errorsb.append(new Date(nextHistoryElement.getTransitionTime()));
-                errorsb.append(" state ").append(nexthistoryElState);
-                errorsb.append(" : ");
-                errorsb.append(nextHistoryElement.getDescription());
+            if (jobHistory.isEmpty()) {
+                return "initial state";
+            } else {
+                JobHistory latest = jobHistory.get(jobHistory.size() -1);
+                return latest.getDescription();
             }
        } finally {
            runlock();
        }
-       return errorsb.toString();
     }
 
     public void addHistoryEvent(String description){

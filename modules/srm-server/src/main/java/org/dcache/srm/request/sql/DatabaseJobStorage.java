@@ -139,7 +139,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
             long CREATIONTIME,
             long LIFETIME,
             int STATE,
-            String ERRORMESSAGE,
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
             int NUMOFRETR,
@@ -181,11 +180,11 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         long CREATIONTIME = set.getLong(3);
         long LIFETIME = set.getLong(4);
         int STATE = set.getInt(5);
-        String ERRORMESSAGE = set.getString(6);
+        // index 5: ERRORMESSAGE is an historic artifact, not used.
         String SCHEDULERID=set.getString(7);
         long SCHEDULER_TIMESTAMP=set.getLong(8);
         int NUMOFRETR = set.getInt(9);
-        int MAXNUMOFRETR = set.getInt(10);
+        // index 10: MAXNUMOFRETR is an history artifact, not used.
         long LASTSTATETRANSITIONTIME = set.getLong(11);
         return getJob(_con,
                       ID,
@@ -193,7 +192,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                       CREATIONTIME,
                       LIFETIME,
                       STATE,
-                      ERRORMESSAGE,
                       SCHEDULERID,
                       SCHEDULER_TIMESTAMP,
                       NUMOFRETR,

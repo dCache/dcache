@@ -88,7 +88,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                                     cr.getCreationTime(),
                                     cr.getLifetime(),
                                     cr.getState().getStateId(),//5
-                                    cr.getErrorMessage(),
+                                    cr.latestHistoryEvent(),
                                     cr.getSchedulerId(),
                                     cr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -142,7 +142,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                                     cr.getCreationTime(),
                                     cr.getLifetime(),
                                     cr.getState().getStateId(),
-                                    cr.getErrorMessage(),//5
+                                    cr.latestHistoryEvent(),//5
                                     cr.getSchedulerId(),
                                     cr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -176,7 +176,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
             long CREATIONTIME,
             long LIFETIME,
             int STATE,
-            String ERRORMESSAGE,
             SRMUser user,
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
@@ -214,7 +213,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                         CREATIONTIME,
                         LIFETIME,
                         STATE,
-                        ERRORMESSAGE,
                         user,
                         SCHEDULERID,
                         SCHEDULER_TIMESTAMP,

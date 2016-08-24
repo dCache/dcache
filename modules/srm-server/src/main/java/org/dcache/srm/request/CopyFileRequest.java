@@ -147,7 +147,6 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             long creationTime,
             long lifetime,
             int stateId,
-            String errorMessage,
             String scheduelerId,
             long schedulerTimeStamp,
             int numberOfRetries,
@@ -171,7 +170,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             String transferId,
             ImmutableMap<String,String> extraInfo)
     {
-        super(id, nextJobId, creationTime, lifetime, stateId, errorMessage,
+        super(id, nextJobId, creationTime, lifetime, stateId,
               scheduelerId, schedulerTimeStamp, numberOfRetries,
               lastStateTransitionTime, jobHistoryArray,
               requestId, statusCodeString);

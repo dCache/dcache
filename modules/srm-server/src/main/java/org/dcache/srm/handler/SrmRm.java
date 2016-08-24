@@ -117,7 +117,7 @@ public class SrmRm
             URI surl = URI.create(surls[i].toString());
             for (PutFileRequest request : srm.getActiveFileRequests(PutFileRequest.class, surl)) {
                 try {
-                    request.abort("Upload aborted because the file was deleted by request " + JDC.getSession() + ".");
+                    request.abort("file was deleted by request " + JDC.getSession() + ".");
                     returnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "Upload was aborted."));
                 } catch (IllegalStateTransition e) {
                     // The request likely aborted or finished before we could abort it
@@ -137,7 +137,7 @@ public class SrmRm
             // as SRM_ABORTED.
             for (GetFileRequest request : srm.getActiveFileRequests(GetFileRequest.class, surl)) {
                 try {
-                    request.abort("Download aborted because the file was deleted by another request.");
+                    request.abort("file was deleted by request " + JDC.getSession() + ".");
                 } catch (IllegalStateTransition e) {
                     // The request likely aborted or finished before we could abort it
                     LOGGER.debug("srmRm attempted to abort get request {}, but failed: {}",

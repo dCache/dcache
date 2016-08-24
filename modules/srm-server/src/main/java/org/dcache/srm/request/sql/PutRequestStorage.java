@@ -77,7 +77,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                     pr.getCreationTime(),
                                     pr.getLifetime(),
                                     pr.getState().getStateId(),//5
-                                    pr.getErrorMessage(),
+                                    pr.latestHistoryEvent(),
                                     pr.getSchedulerId(),
                                     pr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -110,7 +110,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                   pr.getCreationTime(),
                                   pr.getLifetime(),
                                   pr.getState().getStateId(),
-                                  pr.getErrorMessage(),//5
+                                  pr.latestHistoryEvent(),//5
                                   pr.getSchedulerId(),
                                   pr.getSchedulerTimeStamp(),
                                   0, // num of retries
@@ -146,7 +146,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
             long CREATIONTIME,
             long LIFETIME,
             int STATE,
-            String ERRORMESSAGE,
             SRMUser user,
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
@@ -179,7 +178,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                 CREATIONTIME,
                 LIFETIME,
                 STATE,
-                ERRORMESSAGE,
                 user,
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,

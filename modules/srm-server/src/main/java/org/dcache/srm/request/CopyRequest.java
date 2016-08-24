@@ -216,7 +216,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             long creationTime,
             long lifetime,
             int stateId,
-            String errorMessage,
             SRMUser user,
             String scheduelerId,
             long schedulerTimeStamp,
@@ -234,7 +233,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             TRetentionPolicy targetRetentionPolicy,
             TAccessLatency targetAccessLatency)
     {
-        super(id, nextJobId, creationTime, lifetime, stateId, errorMessage,
+        super(id, nextJobId, creationTime, lifetime, stateId,
                 user, scheduelerId, schedulerTimeStamp, numberOfRetries,
                 lastStateTransitionTime, jobHistoryArray,
                 fileRequest, retryDeltaTime, should_updateretryDeltaTime,

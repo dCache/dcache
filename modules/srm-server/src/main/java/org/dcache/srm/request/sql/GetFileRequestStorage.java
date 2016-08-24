@@ -46,7 +46,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                     request.getCreationTime(),
                                     request.getLifetime(),
                                     request.getState().getStateId(),
-                                    request.getErrorMessage(),
+                                    request.latestHistoryEvent(),
                                     request.getSchedulerId(),
                                     request.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -115,7 +115,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                     request.getCreationTime(),
                                     request.getLifetime(),
                                     request.getState().getStateId(),
-                                    request.getErrorMessage(),
+                                    request.latestHistoryEvent(),
                                     request.getSchedulerId(),
                                     request.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -142,7 +142,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
         long CREATIONTIME,
         long LIFETIME,
         int STATE,
-        String ERRORMESSAGE,
         String SCHEDULERID,
         long SCHEDULER_TIMESTAMP,
         int NUMOFRETR,
@@ -164,7 +163,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
             CREATIONTIME,
             LIFETIME,
             STATE,
-            ERRORMESSAGE,
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,
             NUMOFRETR,

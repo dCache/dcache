@@ -1435,7 +1435,8 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void cancelUpload(Subject subject, FsPath temporaryPath, FsPath finalPath) throws CacheException
+    public void cancelUpload(Subject subject, FsPath temporaryPath,
+            FsPath finalPath, String explanation) throws CacheException
     {
         try {
             FsPath temporaryDir = getParentOfFile(temporaryPath);

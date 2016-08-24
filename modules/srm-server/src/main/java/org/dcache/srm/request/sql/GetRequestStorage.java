@@ -76,7 +76,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                                     gr.getCreationTime(),
                                     gr.getLifetime(),
                                     gr.getState().getStateId(),//5
-                                    gr.getErrorMessage(),
+                                    gr.latestHistoryEvent(),
                                     gr.getSchedulerId(),
                                     gr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -108,7 +108,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                                     gr.getCreationTime(),
                                     gr.getLifetime(),
                                     gr.getState().getStateId(),
-                                    gr.getErrorMessage(),//5
+                                    gr.latestHistoryEvent(),//5
                                     gr.getSchedulerId(),
                                     gr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -144,7 +144,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
             long CREATIONTIME,
             long LIFETIME,
             int STATE,
-            String ERRORMESSAGE,
             SRMUser user,
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
@@ -178,7 +177,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                 CREATIONTIME,
                 LIFETIME,
                 STATE,
-                ERRORMESSAGE,
                 user,
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,

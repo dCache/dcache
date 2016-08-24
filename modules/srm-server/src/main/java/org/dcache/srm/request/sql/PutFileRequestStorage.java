@@ -51,7 +51,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
                                     request.getCreationTime(),
                                     request.getLifetime(),
                                     request.getState().getStateId(),
-                                    request.getErrorMessage(),
+                                    request.latestHistoryEvent(),
                                     request.getSchedulerId(),
                                     request.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -132,7 +132,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
                                     request.getCreationTime(),
                                     request.getLifetime(),
                                     request.getState().getStateId(),
-                                    request.getErrorMessage(),
+                                    request.latestHistoryEvent(),
                                     request.getSchedulerId(),
                                     request.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -164,7 +164,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
     long CREATIONTIME,
     long LIFETIME,
     int STATE,
-    String ERRORMESSAGE,
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
@@ -200,7 +199,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
         CREATIONTIME,
         LIFETIME,
         STATE,
-        ERRORMESSAGE,
         SCHEDULERID,
         SCHEDULER_TIMESTAMP,
         NUMOFRETR,

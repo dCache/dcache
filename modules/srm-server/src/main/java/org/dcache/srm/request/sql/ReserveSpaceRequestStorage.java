@@ -85,7 +85,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                     rsr.getCreationTime(),
                                     rsr.getLifetime(),
                                     rsr.getState().getStateId(),//5
-                                    rsr.getErrorMessage(),
+                                    rsr.latestHistoryEvent(),
                                     rsr.getSchedulerId(),
                                     rsr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -136,7 +136,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                     rsr.getCreationTime(),
                                     rsr.getLifetime(),
                                     rsr.getState().getStateId(),
-                                    rsr.getErrorMessage(),//5
+                                    rsr.latestHistoryEvent(),//5
                                     rsr.getSchedulerId(),
                                     rsr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -173,7 +173,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     long CREATIONTIME,
     long LIFETIME,
     int STATE,
-    String ERRORMESSAGE,
     SRMUser user,
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
@@ -202,7 +201,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
             CREATIONTIME,
             LIFETIME,
             STATE,
-            ERRORMESSAGE,
             user,
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,

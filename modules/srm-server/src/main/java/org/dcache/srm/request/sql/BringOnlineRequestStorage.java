@@ -85,7 +85,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                                     bor.getCreationTime(),
                                     bor.getLifetime(),
                                     bor.getState().getStateId(),//5
-                                    bor.getErrorMessage(),
+                                    bor.latestHistoryEvent(),
                                     bor.getSchedulerId(),
                                     bor.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -117,7 +117,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                                     bor.getCreationTime(),
                                     bor.getLifetime(),
                                     bor.getState().getStateId(),
-                                    bor.getErrorMessage(),//5
+                                    bor.latestHistoryEvent(),//5
                                     bor.getSchedulerId(),
                                     bor.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -154,7 +154,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     long CREATIONTIME,
     long LIFETIME,
     int STATE,
-    String ERRORMESSAGE,
     SRMUser user,
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
@@ -189,7 +188,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                         CREATIONTIME,
                         LIFETIME,
                         STATE,
-                        ERRORMESSAGE,
                         user,
                         SCHEDULERID,
                         SCHEDULER_TIMESTAMP,

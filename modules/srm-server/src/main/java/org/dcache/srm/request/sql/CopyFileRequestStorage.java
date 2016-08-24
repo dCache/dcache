@@ -111,7 +111,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                     request.getCreationTime(),
                                     request.getLifetime(),
                                     request.getState().getStateId(),
-                                    request.getErrorMessage(),
+                                    request.latestHistoryEvent(),
                                     request.getSchedulerId(),
                                     request.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -195,7 +195,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                     request.getCreationTime(),
                                     request.getLifetime(),
                                     request.getState().getStateId(),
-                                    request.getErrorMessage(),
+                                    request.latestHistoryEvent(),
                                     request.getSchedulerId(),
                                     request.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -235,7 +235,6 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
     long CREATIONTIME,
     long LIFETIME,
     int STATE,
-    String ERRORMESSAGE,
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
@@ -270,7 +269,6 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
             CREATIONTIME,
             LIFETIME,
             STATE,
-            ERRORMESSAGE,
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,
             NUMOFRETR,

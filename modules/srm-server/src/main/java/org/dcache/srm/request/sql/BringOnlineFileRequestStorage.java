@@ -60,7 +60,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
         long CREATIONTIME,
         long LIFETIME,
         int STATE,
-        String ERRORMESSAGE,
         String SCHEDULERID,
         long SCHEDULER_TIMESTAMP,
         int NUMOFRETR,
@@ -81,7 +80,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
             CREATIONTIME,
             LIFETIME,
             STATE,
-            ERRORMESSAGE,
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,
             NUMOFRETR,
@@ -109,7 +107,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                     gfr.getCreationTime(),
                                     gfr.getLifetime(),
                                     gfr.getState().getStateId(),
-                                    gfr.getErrorMessage(),//5
+                                    gfr.latestHistoryEvent(),//5
                                     gfr.getSchedulerId(),
                                     gfr.getSchedulerTimeStamp(),
                                     0, // num of retries
@@ -168,7 +166,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                     gfr.getCreationTime(),
                                     gfr.getLifetime(),
                                     gfr.getState().getStateId(),//5
-                                    gfr.getErrorMessage(),
+                                    gfr.latestHistoryEvent(),
                                     gfr.getSchedulerId(),
                                     gfr.getSchedulerTimeStamp(),
                                     0, // num of retries

@@ -147,7 +147,6 @@ public final class ReserveSpaceRequest extends Request {
             long creationTime,
             long lifetime,
             int stateId,
-            String errorMessage,
             SRMUser user,
             String scheduelerId,
             long schedulerTimeStamp,
@@ -168,7 +167,6 @@ public final class ReserveSpaceRequest extends Request {
                       creationTime,
                       lifetime,
                       stateId,
-                      errorMessage,
                       user,
                       scheduelerId,
                       schedulerTimeStamp,
@@ -297,7 +295,7 @@ public final class ReserveSpaceRequest extends Request {
         String errorMessage;
         rlock();
         try {
-            errorMessage = getErrorMessage();
+            errorMessage = latestHistoryEvent();
             state = getState();
             statusCode = getStatusCode() ;
         } finally {

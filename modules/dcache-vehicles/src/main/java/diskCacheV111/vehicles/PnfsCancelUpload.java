@@ -23,6 +23,8 @@ import diskCacheV111.util.FsPath;
 
 import org.dcache.auth.attributes.Restriction;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Revoke a temporary upload path.
  *
@@ -35,14 +37,17 @@ public class PnfsCancelUpload extends PnfsMessage
     private static final long serialVersionUID = 1198546600602532976L;
 
     private final String uploadPath;
+    private final String explanation;
 
-    public PnfsCancelUpload(Subject subject, Restriction restriction, FsPath uploadPath, FsPath path)
+    public PnfsCancelUpload(Subject subject, Restriction restriction,
+            FsPath uploadPath, FsPath path, String explanation)
     {
         setSubject(subject);
         setRestriction(restriction);
         setPnfsPath(path.toString());
         setReplyRequired(true);
         this.uploadPath = uploadPath.toString();
+        this.explanation = requireNonNull(explanation);
     }
 
     public FsPath getPath()
@@ -53,5 +58,10 @@ public class PnfsCancelUpload extends PnfsMessage
     public FsPath getUploadPath()
     {
         return FsPath.create(uploadPath);
+    }
+
+    public String getExplanation()
+    {
+        return explanation;
     }
 }
