@@ -82,10 +82,10 @@ public abstract class TryCatchTemplate<V, A> implements Cancellable, CompletionH
     }
 
     @Override
-    public void cancel()
+    public void cancel(String explanation)
     {
         if (_cancellable != null) {
-            _cancellable.cancel();
+            _cancellable.cancel(explanation);
         }
     }
 

@@ -99,7 +99,7 @@ public final class PoolScanTask implements Cancellable, Callable<Void> {
     }
 
     @Override
-    public synchronized void cancel() {
+    public synchronized void cancel(String explanation) {
         scan.setCancelled(true);
         if (future != null) {
             future.cancel(true);

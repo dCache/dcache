@@ -115,6 +115,7 @@ public abstract class AbstractMoverProtocolTransferService
 
         private Thread _thread;
         private boolean _needInterruption;
+        private String _explanation;
 
         public MoverTask(MoverProtocolMover mover, CompletionHandler<Void,Void> completionHandler) {
             _mover = mover;
@@ -149,7 +150,9 @@ public abstract class AbstractMoverProtocolTransferService
                 }
                 _completionHandler.completed(null, null);
             } catch (InterruptedException e) {
-                _completionHandler.failed(e, null);
+                InterruptedException why = _explanation == null ? e :
+                        new InterruptedException(_explanation);
+                _completionHandler.failed(why, null);
             } finally {
                 cleanThread();
             }
@@ -173,7 +176,8 @@ public abstract class AbstractMoverProtocolTransferService
         }
 
         @Override
-        public synchronized void cancel() {
+        public synchronized void cancel(String explanation) {
+            _explanation = explanation;
             if (_thread != null) {
                 _thread.interrupt();
             } else {

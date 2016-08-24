@@ -4,6 +4,8 @@ import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -386,15 +388,16 @@ public class MoverRequestScheduler
      * Cancel the request. Any IO in progress will be interrupted.
      *
      * @param id
+     * @param explanation A reason to log
      * @throws NoSuchElementException
      */
-    public synchronized void cancel(int id) throws NoSuchElementException
+    public synchronized void cancel(int id, @Nullable String explanation) throws NoSuchElementException
     {
         PrioritizedRequest request = _jobs.get(id);
         if (request == null) {
             throw new NoSuchElementException("Job " + id + " not found");
         }
-        request.kill();
+        request.kill(explanation);
         if (_queue.remove(request)) {
             postprocessWithoutJobSlot(request);
         }
@@ -457,7 +460,7 @@ public class MoverRequestScheduler
         _queue.drainTo(toBeCancelled);
 
         /* Kill both the jobs that were queued and which are running. */
-        _jobs.values().forEach(PrioritizedRequest::kill);
+        _jobs.values().forEach(j -> j.kill("shutdown"));
 
         /* Jobs that were queued were never submitted for execution and thus we
          * manually trigger postprocessing.
@@ -707,16 +710,17 @@ public class MoverRequestScheduler
             }
         }
 
-        public synchronized void kill()
+        public synchronized void kill(@Nullable String explanation)
         {
             if (_state == CANCELED || _state == DONE) {
                 return;
             }
 
             if (_cancellable != null) {
-                _cancellable.cancel();
+                _cancellable.cancel(explanation);
             } else {
-                _mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer cancelled");
+                String why = explanation == null ? "Transfer cancelled" : ("Transfer cancelled: " + explanation);
+                _mover.setTransferStatus(CacheException.DEFAULT_ERROR_CODE, why);
             }
             _state = CANCELED;
         }

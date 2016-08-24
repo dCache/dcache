@@ -475,7 +475,7 @@ public class IoQueueManager
         {
             MoverRequestScheduler js = getQueueByJobId(id);
             LOGGER.info("Killing mover {}", id);
-            js.cancel(id);
+            js.cancel(id, "killed through admin interface");
             return "Kill initialized.";
         }
     }

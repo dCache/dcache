@@ -534,11 +534,12 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         }
 
         @Override
-        public void cancel()
+        public void cancel(String explanation)
         {
             try (CDC ignored = cdc.restore()) {
                 if (sync.onCancel()) {
-                    completionHandler.failed(new InterruptedException("Transfer was interrupted"), null);
+                    String msg = explanation == null ? "Transfer was interrupted" : explanation;
+                    completionHandler.failed(new InterruptedException(msg), null);
                 }
             }
         }

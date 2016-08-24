@@ -207,7 +207,7 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
     }
 
     @Override
-    public void cancel() {
+    public void cancel(String explanation) {
         cancelled = true;
 
         if (migrationTask != null) {

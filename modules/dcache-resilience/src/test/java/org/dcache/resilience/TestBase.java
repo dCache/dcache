@@ -153,7 +153,7 @@ public abstract class TestBase implements Cancellable {
     private TestStub testPoolStub;
 
     @Override
-    public void cancel() {
+    public void cancel(String explanation) {
         isCancelled = true;
     }
 

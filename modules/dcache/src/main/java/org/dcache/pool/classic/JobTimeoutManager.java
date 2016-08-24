@@ -91,7 +91,7 @@ public class JobTimeoutManager
                         int jobId = (int) info.getJobId();
                         if (jobs.isExpired(info, now)) {
                             LOGGER.error("Trying to kill <{}> id={}", jobs.getName(), jobId);
-                            jobs.cancel(jobId);
+                            jobs.cancel(jobId, "killed by JTM");
                         }
                     }
                 }

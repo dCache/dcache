@@ -384,7 +384,7 @@ public class PoolOperationMap extends RunnableModule {
                  *  NB:  we cannot do anything about child pnfsid tasks here.
                  *  This must be handled by the caller.
                  */
-                running.remove(pool).task.cancel();
+                running.remove(pool).task.cancel(null);
             } else if (waiting.remove(pool) == null) {
                 idle.remove(pool);
             }
@@ -600,7 +600,7 @@ public class PoolOperationMap extends RunnableModule {
                  *  which need to be zeroed out in order to guarantee
                  *  the second operation will complete successfully.
                  */
-                operation.task.cancel();
+                operation.task.cancel(null);
                 FileFilter fileFilter = new FileFilter();
                 fileFilter.setForceRemoval(true);
                 fileFilter.setParent(update.pool);
@@ -729,7 +729,7 @@ public class PoolOperationMap extends RunnableModule {
     private void cancel(String pool, PoolOperation operation,
                     Map<String, PoolOperation> queue) {
         if (operation.task != null) {
-            operation.task.cancel();
+            operation.task.cancel(null);
             operation.task = null;
         }
 
@@ -1010,7 +1010,7 @@ public class PoolOperationMap extends RunnableModule {
                 if (filter.matches(k, operation)) {
                     if (!include) {
                         if (operation.task != null) {
-                            operation.task.cancel();
+                            operation.task.cancel(null);
                         }
                         operation.state = State.EXCLUDED;
                         queue.remove(k);

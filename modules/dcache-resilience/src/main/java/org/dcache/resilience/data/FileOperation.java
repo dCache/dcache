@@ -462,7 +462,7 @@ public final class FileOperation {
 
         lastUpdate = System.currentTimeMillis();
         if (task != null) {
-            task.cancel();
+            task.cancel(null);
         }
         retried = 0;
 
