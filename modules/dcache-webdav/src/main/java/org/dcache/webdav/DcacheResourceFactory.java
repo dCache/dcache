@@ -675,7 +675,8 @@ public class DcacheResourceFactory
                     }
                     transfer.relayData(inputStream);
                 } finally {
-                    transfer.killMover(_killTimeout, _killTimeoutUnit);
+                    transfer.killMover(_killTimeout, _killTimeoutUnit,
+                            "killed by door: proxy transfer complete");
                 }
                 success = true;
             } finally {
@@ -725,7 +726,8 @@ public class DcacheResourceFactory
                         transfer.getMoverId() + ": Waiting for completion");
             } finally {
                 if (uri == null) {
-                    transfer.killMover(_killTimeout, _killTimeoutUnit);
+                    transfer.killMover(_killTimeout, _killTimeoutUnit,
+                            "killed by door: problem creating file");
                     transfer.deleteNameSpaceEntry();
                 }
             }
@@ -759,21 +761,26 @@ public class DcacheResourceFactory
                    URISyntaxException
     {
         ReadTransfer transfer = beginRead(path, pnfsid, true, null);
+        String explanation = "transfer completed";
         try {
             transfer.relayData(outputStream, range);
         } catch (CacheException e) {
             transfer.notifyBilling(e.getRc(), e.getMessage());
+            explanation = e.getMessage();
             throw e;
         } catch (InterruptedException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    "Transfer interrupted");
+            explanation = "transfer interrupted";
             throw e;
         } catch (IOException | RuntimeException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.toString());
+            explanation = "bug detected: " + e.toString();
             throw e;
         } finally {
-            transfer.killMover(_killTimeout, _killTimeoutUnit);
+            transfer.killMover(_killTimeout, _killTimeoutUnit,
+                    "killed by door: " + explanation);
             _transfers.remove((int) transfer.getId());
         }
     }
@@ -1038,6 +1045,7 @@ public class DcacheResourceFactory
     {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
+        String explanation = "transfer complete";
 
         String uri = null;
         ReadTransfer transfer = new ReadTransfer(_pnfs, subject, restriction,
@@ -1060,18 +1068,22 @@ public class DcacheResourceFactory
                                transfer.getMoverId() + ": Waiting for completion");
         } catch (CacheException e) {
             transfer.notifyBilling(e.getRc(), e.getMessage());
+            explanation = e.getMessage();
             throw e;
         } catch (InterruptedException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    "Transfer interrupted");
+            explanation = "transfer interrupted";
             throw e;
         } catch (RuntimeException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.toString());
+            explanation = "bug detected: " + e.toString();
             throw e;
         } finally {
             if (uri == null) {
-                transfer.killMover(_killTimeout, _killTimeoutUnit);
+                transfer.killMover(_killTimeout, _killTimeoutUnit,
+                        "killed by door: " + explanation);
                 _transfers.remove((int) transfer.getId());
             }
         }
@@ -1110,7 +1122,8 @@ public class DcacheResourceFactory
     {
         if (message.getReturnCode() == 0) {
             String pool = message.getPoolName();
-            _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool, message.getMoverId()));
+            _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool,
+                    message.getMoverId(), "door timed out before pool"));
         }
     }
 

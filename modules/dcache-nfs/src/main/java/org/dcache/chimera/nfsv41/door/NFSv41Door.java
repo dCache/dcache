@@ -483,7 +483,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                         nfsState.addDisposeListener((NFS4State state) -> {
                             Transfer t = _ioMessages.remove(stateid);
                             if (t != null) {
-                                t.killMover(0);
+                                t.killMover(0, "killed by door: disposed of LAYOUTGET state");
                             }
                         });
 
@@ -588,7 +588,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
         _log.debug("Sending KILL to {}@{}", transfer.getMoverId(), transfer.getPool());
-        transfer.killMover(0);
+        transfer.killMover(0, "killed by door: returning layout");
 
         try {
             if(transfer.hasMover() && !transfer.waitForMover(500)) {
@@ -646,7 +646,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() throws Exception {
-            PoolMoverKillMessage message = new PoolMoverKillMessage(pool, mover);
+            PoolMoverKillMessage message = new PoolMoverKillMessage(pool, mover,
+                    "killed by door 'kill mover' command");
             message.setReplyRequired(false);
             _poolStub.notify(new CellPath(pool), message);
             return "Done.";

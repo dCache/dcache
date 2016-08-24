@@ -68,7 +68,8 @@ public class StandardMoverDAO implements MoverDAO {
                     futures.put(transfer.getKey(),
                                 _cellStub.send(new CellPath(transfer.getPool()),
                                               new PoolMoverKillMessage(transfer.getPool(),
-                                                                       Ints.checkedCast(transfer.getMoverId()))));
+                                                                       Ints.checkedCast(transfer.getMoverId()),
+                                                                       "killed through webadmin")));
                 }
 
                 Collection<Long> failed = new ArrayList<>();

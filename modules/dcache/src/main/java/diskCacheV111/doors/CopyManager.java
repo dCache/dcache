@@ -344,6 +344,7 @@ public class CopyManager extends AbstractCellComponent
             // _target.setBillingStub();
 
             boolean success = false;
+            String explanation = "copy failed";
             _activeTransfers.put(_target.getId(), this);
             _activeTransfers.put(_source.getId(), this);
 
@@ -372,15 +373,17 @@ public class CopyManager extends AbstractCellComponent
             } catch (CacheException e) {
                 _source.setStatus("Failed: " + e.toString());
                 _log.warn(e.toString());
+                explanation = "copy failed: " + e.getMessage();
                 throw e;
             } catch (InterruptedException e) {
                 _source.setStatus("Failed: " + e.toString());
+                explanation = "interrupted";
                 throw e;
             } finally {
                 if (!success) {
                     String status = _source.getStatus();
-                    _source.killMover(0);
-                    _target.killMover(1000);
+                    _source.killMover(0, "killed by CopyManager: " + explanation);
+                    _target.killMover(1000, "killed by CopyManager: " + explanation);
                     _target.deleteNameSpaceEntry();
                     _source.setStatus(status);
                 } else {

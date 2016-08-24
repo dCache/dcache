@@ -363,6 +363,7 @@ public class XrootdDoor
 
         InetSocketAddress address = null;
         _transfers.put(handle, transfer);
+        String explanation = "unspecified problem";
         try {
             transfer.readNameSpaceEntry(false);
             transfer.selectPoolAndStartMover(ioQueue == null ? _ioQueue : ioQueue, RETRY_POLICY);
@@ -374,19 +375,22 @@ public class XrootdDoor
             transfer.setStatus("Mover " + transfer.getPool() + "/" +
                                transfer.getMoverId() + ": Sending");
         } catch (CacheException e) {
+            explanation = e.getMessage();
             transfer.notifyBilling(e.getRc(), e.getMessage());
             throw e;
         } catch (InterruptedException e) {
+            explanation = "transfer interrupted";
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    "Transfer interrupted");
             throw e;
         } catch (RuntimeException e) {
+            explanation = "bug found: " + e.toString();
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.toString());
             throw e;
         } finally {
             if (address == null) {
-                transfer.killMover(0);
+                transfer.killMover(0, "killed by door: " + explanation);
                 _transfers.remove(handle);
             }
         }
@@ -409,6 +413,7 @@ public class XrootdDoor
         int handle = transfer.getFileHandle();
         InetSocketAddress address = null;
         _transfers.put(handle, transfer);
+        String explanation = "problem within door";
         try {
             if (createDir) {
                 transfer.createNameSpaceEntryWithParents();
@@ -434,19 +439,22 @@ public class XrootdDoor
                 }
             }
         } catch (CacheException e) {
+            explanation = e.getMessage();
             transfer.notifyBilling(e.getRc(), e.getMessage());
             throw e;
         } catch (InterruptedException e) {
+            explanation = "transfer interrupted";
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    "Transfer interrupted");
             throw e;
         } catch (RuntimeException e) {
+            explanation = "bug found: " + e.toString();
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                    e.toString());
             throw e;
         } finally {
             if (address == null) {
-                transfer.killMover(0);
+                transfer.killMover(0, "killed by door: " + explanation);
                 _transfers.remove(handle);
             }
         }
@@ -745,7 +753,8 @@ public class XrootdDoor
     {
         if (message.getReturnCode() == 0) {
             String pool = message.getPoolName();
-            _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool, message.getMoverId()));
+            _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool,
+                    message.getMoverId(), "door timed out before pool"));
         }
     }
 
@@ -971,7 +980,7 @@ public class XrootdDoor
         for (Transfer transfer : _transfers.values()) {
             if (transfer.getMoverId() == mover && transfer.getPool() != null && transfer.getPool().equals(pool)) {
 
-                transfer.killMover(0);
+                transfer.killMover(0, "killed by door 'kill mover' command");
                 return "Kill request to the mover " + mover + " has been submitted";
             }
         }

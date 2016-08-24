@@ -656,6 +656,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected Subject _subject;
         protected Origin _origin;
         protected Restriction _authz = Restrictions.denyAll();
+        protected String _explanation = "unspecified problem";
 
         protected SessionHandler(int sessionId, int commandId, VspArgs args)
         {
@@ -928,6 +929,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 if( ( _timeout > 0L ) && ( _timeout < System.currentTimeMillis() ) ){
                     _log.warn("User timeout triggered") ;
                     sendReply("keepAlive" , 112 , "User timeout canceled session" ) ;
+                    _explanation = "session cancelled: user timed out";
                     removeUs();
                     return ;
                 }
@@ -938,6 +940,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                         again(true);
                     } catch (RuntimeException e) {
                         sendReply("keepAlive", 111, e.getMessage());
+                        _explanation = "bug detected resending messages: " + e.toString();
                         removeUs() ;
                     }
                 }
@@ -2123,7 +2126,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void removeUs() {
             Integer moverId = _moverId;
             if (moverId != null) {
-                PoolMoverKillMessage message = new PoolMoverKillMessage(_pool, moverId);
+                PoolMoverKillMessage message = new PoolMoverKillMessage(_pool,
+                        moverId, "killed by door: " + _explanation);
                 message.setReplyRequired(false);
 
                 _cell.sendMessage(new CellMessage(new CellPath(_pool), message));

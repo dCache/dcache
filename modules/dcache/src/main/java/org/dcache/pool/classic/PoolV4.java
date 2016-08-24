@@ -983,8 +983,9 @@ public class PoolV4
         try {
             int id = kill.getMoverId();
             MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
-            _log.info("Killing mover " + id);
-            js.cancel(id, "killed by door");
+            String explanation = kill.getExplanation();
+            _log.info("Killing mover {}: {}", id, explanation);
+            js.cancel(id, explanation);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
             _log.info(e.toString());
