@@ -1,13 +1,12 @@
 package dmg.cells.services.login;
 
-import com.google.common.util.concurrent.AbstractService;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -17,14 +16,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Reflection based LoginCellFactory for LoginCells with ternary constructors.
  */
-public class LegacyWithArgsLoginCellFactory extends AbstractService implements LoginCellFactory
+public class LegacyWithArgsLoginCellFactory extends StreamEngineLoginCellFactory
 {
     private final Constructor<? extends CellAdapter> _loginConstructor;
     private final Args _args;
     private final String _cellName;
 
-    public LegacyWithArgsLoginCellFactory(Constructor<? extends CellAdapter> loginConstructor, Args args, String cellName)
+    public LegacyWithArgsLoginCellFactory(Constructor<? extends CellAdapter> loginConstructor, Args args,
+                                          CellEndpoint parentEndpoint, String cellName)
     {
+        super(args, parentEndpoint);
         this._cellName = checkNotNull(cellName);
         this._args = checkNotNull(args);
         this._loginConstructor = checkNotNull(loginConstructor);

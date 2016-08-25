@@ -1,13 +1,18 @@
 package  dmg.cells.services.login ;
 
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.net.InetAddress;
+import java.util.concurrent.ExecutionException;
 
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.FutureCellMessageAnswerable;
 import dmg.protocols.telnet.TelnetServerAuthentication;
 
 import org.dcache.util.Args;
@@ -26,7 +31,7 @@ public class      TelnetSAuth_A
   private static final Logger _log =
       LoggerFactory.getLogger(TelnetSAuth_A.class);
 
-  private CellNucleus  _nucleus ;
+  private CellEndpoint _endpoint;
   private Args         _args ;
   private String       _password ;
   private boolean      _localOk ;
@@ -34,8 +39,8 @@ public class      TelnetSAuth_A
   private static UnixPassword __passwordFile;
   /**
   */
-  public TelnetSAuth_A( CellNucleus nucleus , Args args ) throws Exception {
-      _nucleus   = nucleus ;
+  public TelnetSAuth_A(CellEndpoint endpoint, Args args) throws Exception {
+      _endpoint  = endpoint;
       _args      = args ;
       _password  = args.getOpt("passwd") ;
       _password  = _password == null ? "elch" : _password ;
@@ -60,28 +65,32 @@ public class      TelnetSAuth_A
    public boolean isUserOk( InetAddress host , String user ){
       return false ;
    }
+
+    private Object askAcm(Object... request) throws Exception
+    {
+        FutureCellMessageAnswerable reply = new FutureCellMessageAnswerable();
+        _endpoint.sendMessage(new CellMessage(new CellPath(_acmCell), request),
+                              reply, MoreExecutors.directExecutor(), 4000);
+
+        CellMessage answerMsg;
+        try {
+            answerMsg = reply.get();
+        } catch (ExecutionException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
+            throw Throwables.propagate(e.getCause());
+        }
+
+        Serializable answer = answerMsg.getMessageObject();
+        if (answer instanceof Exception) {
+            throw (Exception) answer;
+        }
+        return answer;
+    }
+
    private boolean checkPasswd( String user , String passwd )
            throws Exception {
 
-       Object [] request = new Object[5] ;
-       request[0] = "request" ;
-       request[1] = "*" ;
-       request[2] = "check-password" ;
-       request[3] = user ;
-       request[4] = passwd ;
-       CellMessage answerMsg;
-       answerMsg = _nucleus.sendAndWait(
-                       new CellMessage( new CellPath(_acmCell) ,
-                                        request ) ,
-                       4000  ) ;
-
-
-       if( answerMsg == null ) {
-           throw new Exception("Timeout from acm");
-       }
-
-       Object answer = answerMsg.getMessageObject() ;
-
+       Object answer = askAcm("request", "*", "check-password", user, passwd);
        if( ( ! ( answer instanceof Object [] )  ) ||
            (   ((Object[])answer).length < 6    ) ||
            ( ! (((Object[])answer)[5] instanceof Boolean ) ) ) {
@@ -90,36 +99,14 @@ public class      TelnetSAuth_A
 
        return (Boolean) ((Object[]) answer)[5];
    }
-   private boolean checkAcl( String user ,
+
+    private boolean checkAcl( String user ,
                              String action ,
                              String className ,
                              String instanceName )
            throws Exception {
 
-       Object [] request = new Object[7] ;
-       request[0] = "request" ;
-       request[1] = "*" ;
-       request[2] = "check-acl" ;
-       request[3] = user ;
-       request[4] = action ;
-       request[5] = className  ;
-       request[6] = instanceName ;
-       CellMessage answerMsg;
-       answerMsg = _nucleus.sendAndWait(
-                       new CellMessage( new CellPath(_acmCell) ,
-                                        request ) ,
-                       4000  ) ;
-
-
-       if( answerMsg == null ) {
-           throw new Exception("Timeout from acm");
-       }
-
-       Object answer = answerMsg.getMessageObject() ;
-
-       if( answer instanceof Exception ) {
-           throw (Exception) answer;
-       }
+       Object answer = askAcm("request", "*", "check-acl", user, action, className, instanceName);
 
        if( ( ! ( answer instanceof Object [] )  ) ||
            (   ((Object[])answer).length < 8    ) ||

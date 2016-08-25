@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.Socket;
 
-import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.protocols.telnet.TelnetServerAuthentication;
 import dmg.protocols.telnet.TelnetStreamEngine;
 import dmg.util.DummyStreamEngine;
@@ -23,7 +23,7 @@ public abstract class StreamEngineFactory {
     private static Logger _log = LoggerFactory.getLogger(StreamEngineFactory.class);
 
     public static StreamEngine newStreamEngine(Socket socket, String protocol,
-            CellNucleus nucleusForAuth, Args argsForAuth) throws Exception {
+                                               CellEndpoint endpoint, Args argsForAuth) throws Exception {
 
         StreamEngine engine = null;
 
@@ -33,9 +33,7 @@ public abstract class StreamEngineFactory {
             engine = new DummyStreamEngine(socket);
             break;
         case "telnet": {
-            TelnetServerAuthentication auth =
-                    new TelnetSAuth_A(
-                            nucleusForAuth, argsForAuth);
+            TelnetServerAuthentication auth = new TelnetSAuth_A(endpoint, argsForAuth);
             _log.info("Using authentication Module : " + TelnetSAuth_A.class);
             engine = new TelnetStreamEngine(socket, auth);
             break;

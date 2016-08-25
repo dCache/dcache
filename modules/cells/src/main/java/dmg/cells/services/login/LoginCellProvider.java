@@ -30,7 +30,7 @@ public interface LoginCellProvider
      * @param parentEndpoint Endpoint of parent login manager
      * @param parentCellName Name of the parent login manager
      * @return A new LoginCellFactory
-     * @see LoginCellFactory#stop
+     * @see LoginCellFactory#stopAsync()
      */
     LoginCellFactory createFactory(String name, Args args, CellEndpoint parentEndpoint, String parentCellName)
         throws IllegalArgumentException;

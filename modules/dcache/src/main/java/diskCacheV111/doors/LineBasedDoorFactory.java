@@ -1,6 +1,5 @@
 package diskCacheV111.doors;
 
-import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.lang.reflect.InvocationTargetException;
@@ -12,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.services.login.LoginCellFactory;
+import dmg.cells.services.login.StreamEngineLoginCellFactory;
 import dmg.util.StreamEngine;
 
 import org.dcache.cells.CellStub;
@@ -21,7 +20,7 @@ import org.dcache.util.Args;
 import org.dcache.util.Option;
 import org.dcache.util.OptionParser;
 
-public class LineBasedDoorFactory extends AbstractService implements LoginCellFactory
+public class LineBasedDoorFactory extends StreamEngineLoginCellFactory
 {
     private final CellEndpoint parentEndpoint;
     private final String parentCellName;
@@ -53,6 +52,7 @@ public class LineBasedDoorFactory extends AbstractService implements LoginCellFa
 
     public LineBasedDoorFactory(LineBasedInterpreterFactory factory, Args args, CellEndpoint parentEndpoint, String parentCellName)
     {
+        super(args, parentEndpoint);
         this.factory = factory;
         this.parentEndpoint = parentEndpoint;
         this.parentCellName = parentCellName;

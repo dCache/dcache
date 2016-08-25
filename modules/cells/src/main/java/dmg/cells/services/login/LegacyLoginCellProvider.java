@@ -49,11 +49,11 @@ public class LegacyLoginCellProvider implements LoginCellProvider
             try {
                 Constructor<? extends CellAdapter> constructor = loginClass.getConstructor(LOGIN_CON_WITH_ARGS_SIGNATURE);
                 checkConstructor(constructor);
-                return new LegacyWithArgsLoginCellFactory(constructor, args, parentCellName);
+                return new LegacyWithArgsLoginCellFactory(constructor, args, parentEndpoint, parentCellName);
             } catch (NoSuchMethodException e) {
                 Constructor<? extends CellAdapter> constructor = loginClass.getConstructor(LOGIN_CON_SIGNATURE);
                 checkConstructor(constructor);
-                return new LegacyLoginCellFactory(constructor, parentCellName);
+                return new LegacyLoginCellFactory(constructor, args, parentEndpoint, parentCellName);
             }
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException("No such login cell: " + args.argv(0));

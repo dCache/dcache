@@ -43,11 +43,9 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.KeepAliveListener;
-import dmg.util.StreamEngine;
 
-import org.dcache.auth.Subjects;
-import org.dcache.util.NDC;
 import org.dcache.util.Args;
+import org.dcache.util.NDC;
 import org.dcache.util.Version;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -69,9 +67,6 @@ public class LoginManager
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoginManager.class);
 
-    private static final Class<?>[] AUTH_CON_SIGNATURE =
-            { CellNucleus.class, Args.class };
-
     private final CellNucleus _nucleus;
     private final Args _args;
     private ListenThread _listenThread;
@@ -80,14 +75,11 @@ public class LoginManager
     private final AtomicInteger _loginCounter = new AtomicInteger();
     private final AtomicInteger _loginFailures = new AtomicInteger();
     private CellVersion _version;
-    private Constructor<?> _authConstructor;
     private ScheduledExecutorService _scheduledExecutor;
     private ConcurrentMap<String, Object> _children = new ConcurrentHashMap<>();
     private CellPath _authenticator;
     private KeepAliveTask _keepAlive;
     private LoginBrokerPublisher _loginBrokerPublisher;
-    private String _protocol;
-    private Class<?> _authClass;
     private LoginCellFactory _loginCellFactory;
 
     private volatile boolean _sending = true;
@@ -96,11 +88,6 @@ public class LoginManager
     /**
      * <pre>
      *   usage   &lt;listenPort&gt; &lt;loginCellFactoryClass&gt;
-     *           [-prot=telnet|raw]
-     *                    default : telnet
-     *           [-auth=&lt;authenticationClass&gt;]
-     *                    default : telnet : dmg.cells.services.login.TelnetSAuth_A
-     *                              raw    : none
      *
      *         all residual arguments and all options are sent to
      *         the &lt;loginCellClass&gt; :
@@ -132,7 +119,6 @@ public class LoginManager
             throw new
                     IllegalArgumentException(
                     "USAGE : ... <listenPort> <loginCell>" +
-                    " [-prot=telnet|raw] [-auth=<authCell>]" +
                     " [-maxLogin=<n>|-1]" +
                     " [-keepAlive=<seconds>]" +
                     " [-acceptErrorWait=<msecs>]" +
@@ -148,21 +134,8 @@ public class LoginManager
         childArgs.shift();
         childArgs.shift();
 
-        _protocol = checkProtocol(_args.getOpt("prot"));
-        LOGGER.info("Using protocol : {}", _protocol);
-
         // get the authentication
         _authenticator = new CellPath(_args.getOption("authenticator", "pam"));
-        _authClass = toAuthClass(_args.getOpt("auth"), _protocol);
-        Constructor<?> authConstructor;
-        if (_authClass != null) {
-            authConstructor = _authClass.getConstructor(AUTH_CON_SIGNATURE);
-            LOGGER.trace("Using authentication constructor: {}", authConstructor);
-        } else {
-            authConstructor = null;
-            LOGGER.trace("No authentication used");
-        }
-        _authConstructor = authConstructor;
 
         String maxLogin = _args.getOpt("maxLogin");
         if (maxLogin != null) {
@@ -208,7 +181,7 @@ public class LoginManager
             _loginBrokerPublisher.setCellAddress(_nucleus.getThisAddress());
             _loginBrokerPublisher.setTags(byComma.splitToList(_args.getOption("brokerTags")));
             _loginBrokerPublisher.setProtocolEngine(_loginCellFactory.getName());
-            _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", _protocol));
+            _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", ""));
             _loginBrokerPublisher.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
             _loginBrokerPublisher.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
             _loginBrokerPublisher.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
@@ -254,40 +227,6 @@ public class LoginManager
                 _loginBrokerPublisher.messageArrived((LoginBrokerInfoRequest) message);
             }
         }
-    }
-
-    private static Class<?> toAuthClass(String authClassName, String protocol) throws ClassNotFoundException
-    {
-        Class<?> authClass = null;
-        if (authClassName == null) {
-            switch (protocol) {
-            case "raw":
-                authClass = null;
-                break;
-            case "telnet":
-                authClass = TelnetSAuth_A.class;
-                break;
-            }
-        } else if (authClassName.equals("none")) {
-//            _authClass = dmg.cells.services.login.NoneSAuth.class ;
-        } else {
-            authClass = Class.forName(authClassName);
-        }
-        if (authClass != null) {
-            LOGGER.info("Using authentication Module: {}", authClass);
-        }
-        return authClass;
-    }
-
-    private static String checkProtocol(String protocol) throws IllegalArgumentException
-    {
-        if (protocol == null) {
-            protocol = "telnet";
-        }
-        if (!(protocol.equals("telnet") || protocol.equals("raw"))) {
-            throw new IllegalArgumentException("Protocol must be telnet or raw");
-        }
-        return protocol;
     }
 
     @Override
@@ -463,12 +402,10 @@ public class LoginManager
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("  -- Login Manager");
+        pw.println("--- Login Manager ---");
         pw.println("  Listen Port    : " + _listenThread.getListenPort());
         pw.println("  Protocol engine: " + _loginCellFactory.getName());
-        pw.println("  Protocol       : " + _protocol);
         pw.println("  NioChannel     : " + (_listenThread._serverSocket.getChannel() != null));
-        pw.println("  Auth Class     : " + _authClass);
         pw.println("  Logins created : " + _loginCounter);
         pw.println("  Logins failed  : " + _loginFailures);
         pw.println("  Logins denied  : " + _connectionDeniedCounter);
@@ -483,10 +420,16 @@ public class LoginManager
                        " (" + (_sending ? "Sending" : "Informed") + ')');
         }
 
+        pw.println();
+        pw.println("--- Login cell factory ---");
+        _loginCellFactory.getInfo(pw);
+
         if (_loginBrokerPublisher != null) {
-            pw.println("  LoginBroker Info :");
+            pw.println();
+            pw.println("--- Login broker info ---");
             _loginBrokerPublisher.getInfo(pw);
         }
+
     }
 
     public static final String hh_set_max_logins = "<maxNumberOfLogins>|-1";
@@ -809,24 +752,7 @@ public class LoginManager
             try {
                 LOGGER.info("acceptThread ({}): creating protocol engine", t);
 
-                StreamEngine engine;
-                if (_authConstructor != null) {
-                    engine = StreamEngineFactory.newStreamEngine(_socket, _protocol,
-                            _nucleus, getArgs());
-                } else {
-                    engine = StreamEngineFactory.newStreamEngineWithoutAuth(_socket,
-                            _protocol);
-                }
-
-                String userName = Subjects.getDisplayName(engine.getSubject());
-                LOGGER.info("acceptThread ({}): connection created for user {}", t, userName);
-
-                int p = userName.indexOf('@');
-                if (p > -1) {
-                    userName = p == 0 ? "unknown" : userName.substring(0, p);
-                }
-
-                Object cell = _loginCellFactory.newCell(engine, userName);
+                Object cell = _loginCellFactory.newCell(_socket);
                 try {
                     Method m = cell.getClass().getMethod("getCellName");
                     String cellName = (String) m.invoke(cell);
