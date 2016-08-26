@@ -21,18 +21,18 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.LineBasedInterpreter;
-import diskCacheV111.doors.LineBasedInterpreterFactory;
+import diskCacheV111.doors.NettyLineBasedInterpreterFactory;
 import diskCacheV111.util.ConfigurationException;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.util.StreamEngine;
+import dmg.util.LineWriter;
 
 import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.util.Args;
 import org.dcache.util.OptionParser;
 
-public abstract class FtpInterpreterFactory implements LineBasedInterpreterFactory
+public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreterFactory
 {
     protected final FtpDoorSettings settings = new FtpDoorSettings();
 
@@ -48,14 +48,15 @@ public abstract class FtpInterpreterFactory implements LineBasedInterpreterFacto
 
     @Override
     public LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-                                       StreamEngine engine, Executor executor,
-                                       PoolManagerHandler poolManagerHandler) throws Exception
+                                       InetSocketAddress remoteAddress, InetSocketAddress localAddress,
+                                       LineWriter writer, Executor executor, PoolManagerHandler poolManagerHandler)
+            throws Exception
     {
         AbstractFtpDoorV1 interpreter = createInterpreter();
         interpreter.setSettings(settings);
-        interpreter.setWriter(engine.getWriter());
-        interpreter.setRemoteSocketAddress((InetSocketAddress) engine.getSocket().getRemoteSocketAddress());
-        interpreter.setLocalSocketAddress((InetSocketAddress) engine.getSocket().getLocalSocketAddress());
+        interpreter.setWriter(writer);
+        interpreter.setRemoteSocketAddress(remoteAddress);
+        interpreter.setLocalSocketAddress(localAddress);
         interpreter.setExecutor(executor);
         interpreter.setCellEndpoint(endpoint);
         interpreter.setCellAddress(myAddress);

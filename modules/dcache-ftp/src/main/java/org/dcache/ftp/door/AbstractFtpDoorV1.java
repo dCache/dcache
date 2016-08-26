@@ -162,6 +162,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandExitException;
+import dmg.util.LineWriter;
 
 import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.GidPrincipal;
@@ -195,6 +196,7 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Args;
 import org.dcache.util.AsynchronousRedirectedTransfer;
+import org.dcache.util.CDCExecutorDecorator;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
@@ -492,7 +494,7 @@ public abstract class AbstractFtpDoorV1
     /**
      * Writer for control channel.
      */
-    protected PrintWriter _out;
+    protected LineWriter _out;
 
     /**
      * Stub object for talking to the PNFS manager.
@@ -1107,9 +1109,9 @@ public abstract class AbstractFtpDoorV1
         _cellAddress = address;
     }
 
-    public void setWriter(Writer writer)
+    public void setWriter(LineWriter writer)
     {
-        _out = new PrintWriter(writer);
+        _out = writer;
     }
 
     public void setRemoteSocketAddress(InetSocketAddress remoteAddress)
@@ -1124,7 +1126,7 @@ public abstract class AbstractFtpDoorV1
 
     public void setExecutor(Executor executor)
     {
-        _executor = executor;
+        _executor = new CDCExecutorDecorator<>(executor);
     }
 
     public void setPoolManagerHandler(PoolManagerHandler poolManagerHandler)
@@ -1348,11 +1350,7 @@ public abstract class AbstractFtpDoorV1
 
     protected void println(String str)
     {
-        PrintWriter out = _out;
-        synchronized (out) {
-            out.println(str + "\r");
-            out.flush();
-        }
+        _out.writeLine(str);
     }
 
     @Override
