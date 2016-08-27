@@ -1174,6 +1174,7 @@ public class Transfer implements Comparable<Transfer>
                             return retryWhen(immediateFuture(null));
                         case CacheException.FILE_IN_CACHE:
                         case CacheException.INVALID_ARGS:
+                        case CacheException.FILE_NOT_FOUND:
                             return immediateFailedFuture(t);
                         case CacheException.NO_POOL_CONFIGURED:
                             _log.error(t.getMessage());
