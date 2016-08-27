@@ -143,6 +143,7 @@ public boolean equals( Object obj ){
      _destination = _source.revert();
      _source      = new CellPath() ;
      _lastUmid    = _umid ;
+     _umid = new UOID();
      _isPersistent = true;
   }
   public boolean isFinalDestination(){ return _destination.isFinalDestination() ; }

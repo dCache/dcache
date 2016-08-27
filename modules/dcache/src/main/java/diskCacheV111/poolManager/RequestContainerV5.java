@@ -950,48 +950,48 @@ public class RequestContainerV5
            _currentRm = errorMessage ;
         }
 
-	private boolean sendFetchRequest(PoolInfo pool)
+        private boolean sendFetchRequest(PoolInfo pool)
         {
-	    CellMessage cellMessage = new CellMessage(
-                                new CellPath(pool.getAddress()),
-	                        new PoolFetchFileMessage(
-                                        pool.getName(),
-                                        _fileAttributes)
-                                );
-            synchronized( _messageHash ){
-                if( ( _maxRestore >=0 ) &&
-                    ( _messageHash.size() >= _maxRestore ) ) {
+            CellMessage cellMessage = new CellMessage(
+                    new CellPath(pool.getAddress()),
+                    new PoolFetchFileMessage(pool.getName(), _fileAttributes)
+            );
+            synchronized (_messageHash) {
+                if (_maxRestore >= 0 && _messageHash.size() >= _maxRestore) {
                     return false;
                 }
-                sendMessage( cellMessage );
-                if( _waitingFor != null ) {
+                if (_waitingFor != null) {
                     _messageHash.remove(_waitingFor);
                 }
-                _poolMonitor.messageToCostModule( cellMessage ) ;
-                _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
-                _status = "Staging "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
+                _waitingFor = cellMessage.getUOID();
+                _messageHash.put(_waitingFor, this);
+                _poolMonitor.messageToCostModule(cellMessage);
+                sendMessage(cellMessage);
+                _status = "Staging " + LocalDateTime.now().format(DATE_TIME_FORMAT);
             }
-            return true ;
-	}
-	private void sendPool2PoolRequest(PoolInfo sourcePool, PoolInfo destPool)
+            return true;
+        }
+
+        private void sendPool2PoolRequest(PoolInfo sourcePool, PoolInfo destPool)
         {
             Pool2PoolTransferMsg pool2pool =
-                  new Pool2PoolTransferMsg(sourcePool.getName(), destPool.getName(), _fileAttributes);
-            pool2pool.setDestinationFileStatus( _destinationFileStatus ) ;
-            _log.info("[p2p] Sending transfer request: "+pool2pool);
-	    CellMessage cellMessage =
-                new CellMessage(new CellPath(destPool.getAddress()), pool2pool);
+                    new Pool2PoolTransferMsg(sourcePool.getName(), destPool.getName(), _fileAttributes);
+            pool2pool.setDestinationFileStatus(_destinationFileStatus);
+            _log.info("[p2p] Sending transfer request: " + pool2pool);
+            CellMessage cellMessage =
+                    new CellMessage(new CellPath(destPool.getAddress()), pool2pool);
 
-            synchronized( _messageHash ){
-                sendMessage( cellMessage );
-                _poolMonitor.messageToCostModule( cellMessage ) ;
-                if( _waitingFor != null ) {
+            synchronized (_messageHash) {
+                if (_waitingFor != null) {
                     _messageHash.remove(_waitingFor);
                 }
-                _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
-                _status = "[P2P "+ LocalDateTime.now().format(DATE_TIME_FORMAT) +"]" ;
+                _waitingFor = cellMessage.getUOID();
+                _messageHash.put(_waitingFor, this);
+                _poolMonitor.messageToCostModule(cellMessage);
+                sendMessage(cellMessage);
+                _status = "[P2P " + LocalDateTime.now().format(DATE_TIME_FORMAT) + "]";
             }
-	}
+        }
 
         /**
          * Removes request messages who's time to live has been
