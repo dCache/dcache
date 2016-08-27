@@ -43,6 +43,7 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
@@ -1048,6 +1049,8 @@ public class CellShell extends CommandInterpreter
                                        });
                }
                return "created : " + cell;
+           } catch (CancellationException e) {
+               throw new CommandThrowableException("Startup of " + cellName + " was cancelled.", e);
            } catch (InvocationTargetException e) {
                throw Throwables.propagate(e.getTargetException());
            } catch (ExecutionException e) {

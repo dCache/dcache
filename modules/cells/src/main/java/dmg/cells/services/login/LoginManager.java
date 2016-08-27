@@ -739,6 +739,8 @@ public class LoginManager
 
             notifyAll();
 
+            _loginCellFactory.awaitTerminated();
+
             LOGGER.info("Shutdown sequence done");
         }
     }

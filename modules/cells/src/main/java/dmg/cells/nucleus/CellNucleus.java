@@ -140,16 +140,6 @@ public class CellNucleus implements ThreadFactory
 
     public CellNucleus(Cell cell, String name, String type, Executor executor)
     {
-        setPinboard(new Pinboard(PINBOARD_DEFAULT_SIZE));
-
-        //
-        // the cell gluon hasn't yet been created
-        // (we insist in creating a SystemCell first.)
-        //
-        if (cell instanceof SystemCell) {
-            __cellGlue.setSystemNucleus(this);
-        }
-
         String cellName = name.replace('@', '+');
 
         if (cellName.isEmpty()) {
@@ -168,6 +158,10 @@ public class CellNucleus implements ThreadFactory
 
         _cell = cell;
         _cellClass = _cell.getClass().getName();
+
+        setPinboard(new Pinboard(PINBOARD_DEFAULT_SIZE));
+
+        __cellGlue.registerCell(this);
 
         /* Instantiate management component for log filtering.
          */
@@ -928,43 +922,30 @@ public class CellNucleus implements ThreadFactory
         _lifeCycleMonitor.enter();
         try {
             checkState(_state == State.NEW);
-            _startup = _messageExecutor.submit(wrapLoggingContext(this::doStart));
+            _startup = _messageExecutor.submit(wrapLoggingContext(this::doStart), null);
             _state = State.STARTING;
         } finally {
             _lifeCycleMonitor.leave();
         }
-        Futures.addCallback(_startup, new FutureCallback<Void>()
-        {
-            @Override
-            public void onSuccess(Void result)
-            {
-                setState(State.RUNNING);
-            }
-
-            @Override
-            public void onFailure(Throwable t)
-            {
-                __cellGlue.kill(CellNucleus.this);
-                setState(State.FAILED);
-            }
-        });
-        return _startup;
+        return Futures.nonCancellationPropagating(_startup);
     }
 
-    private Void doStart() throws Exception
+    private void doStart()
     {
-        _timeoutTask = _timer.scheduleWithFixedDelay(wrapLoggingContext((Runnable) this::executeMaintenanceTasks),
-                                                     20, 20, TimeUnit.SECONDS);
-        StartEvent event = new StartEvent(new CellPath(_cellName), 0);
-        _cell.prepareStartup(event);
-        __cellGlue.addCell(_cellName, this);
         try {
+            _timeoutTask = _timer.scheduleWithFixedDelay(wrapLoggingContext((Runnable) this::executeMaintenanceTasks),
+                                                         20, 20, TimeUnit.SECONDS);
+            StartEvent event = new StartEvent(new CellPath(_cellName), 0);
+            _cell.prepareStartup(event);
+            __cellGlue.publishCell(this);
             _cell.postStartup(event);
+            setState(State.RUNNING);
         } catch (Throwable e) {
             Thread t = Thread.currentThread();
             t.getUncaughtExceptionHandler().uncaughtException(t, e);
+            setState(State.FAILED);
+            __cellGlue.kill(CellNucleus.this);
         }
-        return null;
     }
 
     void shutdown(KillEvent event)
@@ -981,7 +962,7 @@ public class CellNucleus implements ThreadFactory
                     _startup.cancel(true);
                     _lifeCycleMonitor.waitForUninterruptibly(isNotStarting);
                 }
-                checkState(_state == State.RUNNING || _state == State.FAILED);
+                checkState(_state == State.NEW || _state == State.RUNNING || _state == State.FAILED);
                 wasRunning = (_state == State.RUNNING);
                 _state = State.STOPPING;
             } finally {
