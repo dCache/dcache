@@ -33,6 +33,7 @@ check -strong ftp.service.pool.timeout.unit
 check -strong ftp.service.pnfsmanager.timeout
 check -strong ftp.service.pnfsmanager.timeout.unit
 check -strong ftp.enable.delete-on-failure
+check -strong ftp.enable.proxy-protocol
 check -strong ftp.enable.overwrite
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
@@ -65,6 +66,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -prot=raw \
    -consume=${ftp.cell.consume} \
    -subscribe=${ftp.cell.subscribe} \
+   -expectProxyProtocol=${ftp.enable.proxy-protocol} \
    -root=\"${ftp.root}\" \
    -clientDataPortRange=${ftp.net.port-range} \
    -protocolFamily=${ftp.loginbroker.family} \

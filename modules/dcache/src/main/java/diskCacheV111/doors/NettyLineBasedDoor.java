@@ -19,6 +19,7 @@
 
 package diskCacheV111.doors;
 
+import com.google.common.net.InetAddresses;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
@@ -26,6 +27,9 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.haproxy.HAProxyMessage;
+import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
+import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
 import io.netty.handler.codec.string.LineEncoder;
 import io.netty.handler.codec.string.LineSeparator;
 import io.netty.handler.codec.string.StringDecoder;
@@ -33,9 +37,12 @@ import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -85,9 +92,20 @@ public class NettyLineBasedDoor
      */
     private final PoolManagerHandler poolManager;
 
+    /**
+     * Character encoding of the protocol.
+     */
     private final Charset charset;
 
+    /**
+     * Line separator encoding of the protocol.
+     */
     private final LineSeparator lineSeparator;
+
+    /**
+     * Whether to expect an HAProxy proxy protocol header.
+     */
+    private final boolean expectProxyProtocol;
 
     /**
      * Line oriented protocol interpreter.
@@ -105,6 +123,24 @@ public class NettyLineBasedDoor
     private Channel channel;
 
     private String clientAddress;
+
+    /**
+     * The socket address of this host. The socket may be connected to the
+     * client directly or to a proxy.
+     */
+    private InetSocketAddress localAddress;
+
+    /**
+     * The socket address the client connected to - may be the same as {@link #localAddress}
+     * or may be the address of some proxy service.
+     */
+    private InetSocketAddress proxyAddress;
+
+    /**
+     * The address of the client's socket. May be connected directly to us
+     * or to a proxy.
+     */
+    private InetSocketAddress remoteAddress;
 
     public NettyLineBasedDoor(String cellName, Args args, NettyLineBasedInterpreterFactory factory,
                               ExecutorService executor, PoolManagerHandler poolManagerHandler)
@@ -128,11 +164,32 @@ public class NettyLineBasedDoor
         default:
             throw new IllegalArgumentException("Invalid line separator value: " + lineSeparator);
         }
+
+        this.expectProxyProtocol = args.getBooleanOption("expectProxyProtocol");
     }
 
     public void messageArrived(NoRouteToCellException e)
     {
         LOGGER.warn(e.getMessage());
+    }
+
+    protected void start(ChannelHandlerContext ctx) throws Exception
+    {
+        LineWriter writer = ctx::writeAndFlush;
+
+        clientAddress = remoteAddress.getAddress().getHostAddress();
+        LOGGER.debug("Client host: {}", clientAddress);
+
+        interpreter = factory.create(this, getNucleus().getThisAddress(),
+                                     remoteAddress, proxyAddress, localAddress,
+                                     writer, executor, poolManager);
+        if (interpreter instanceof CellCommandListener) {
+            addCommandListener(interpreter);
+        }
+        if (interpreter instanceof CellMessageReceiver) {
+            addMessageListener((CellMessageReceiver) interpreter);
+        }
+        start().get(); // Blocking to prevent that we process any commands before the cell is alive
     }
 
     /**
@@ -163,6 +220,18 @@ public class NettyLineBasedDoor
         }
     }
 
+    protected void shutdown()
+    {
+        if (!commandExecutor.isShutdown()) {
+            commandExecutor.shutdownNow();
+            commandExecutor.awaitTerminationUninterruptibly();
+            if (interpreter != null) {
+                interpreter.shutdown();
+            }
+        }
+        kill();
+    }
+
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception
     {
@@ -187,22 +256,11 @@ public class NettyLineBasedDoor
     public void channelActive(ChannelHandlerContext ctx) throws Exception
     {
         try (CDC ignored = cdc.restore()) {
-            InetSocketAddress localAddress = (InetSocketAddress) ctx.channel().localAddress();
-            InetSocketAddress remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-            LineWriter writer = ctx::writeAndFlush;
-
-            clientAddress = remoteAddress.getAddress().getHostAddress();
-            LOGGER.debug("Client host: {}", clientAddress);
-
-            interpreter = factory.create(this, getNucleus().getThisAddress(),
-                                         remoteAddress, localAddress, writer, executor, poolManager);
-            if (interpreter instanceof CellCommandListener) {
-                addCommandListener(interpreter);
+            proxyAddress = localAddress = (InetSocketAddress) ctx.channel().localAddress();
+            remoteAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            if (!expectProxyProtocol) {
+                start(ctx);
             }
-            if (interpreter instanceof CellMessageReceiver) {
-                addMessageListener((CellMessageReceiver) interpreter);
-            }
-            start().get(); // Blocking to prevent that we process any commands before the cell is alive
         }
     }
 
@@ -210,24 +268,45 @@ public class NettyLineBasedDoor
     public void channelInactive(ChannelHandlerContext ctx) throws Exception
     {
         try (CDC ignored = cdc.restore()) {
-            try {
-                if (!commandExecutor.isShutdown()) {
-                    interpreter.shutdown();
-                    commandExecutor.shutdownNow();
-                }
-                commandExecutor.awaitTermination();
-            } catch (InterruptedException e) {
-                LOGGER.error("Failed to shut down command processing: {}", e.getMessage());
-            }
-
-            kill();
+            shutdown();
         }
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
     {
-        if (msg instanceof String) {
+        if (msg instanceof HAProxyMessage) {
+            HAProxyMessage proxyMessage = (HAProxyMessage) msg;
+            switch (proxyMessage.command()) {
+            case LOCAL:
+                ctx.close();
+                return;
+            case PROXY:
+                String sourceAddress = proxyMessage.sourceAddress();
+                String destinationAddress = proxyMessage.destinationAddress();
+                InetSocketAddress localAddress = (InetSocketAddress) ctx.channel().localAddress();
+                if (proxyMessage.proxiedProtocol() == HAProxyProxiedProtocol.TCP4 ||
+                    proxyMessage.proxiedProtocol() == HAProxyProxiedProtocol.TCP6) {
+                    if (Objects.equals(destinationAddress, localAddress.getAddress().getHostAddress())) {
+                        /* Workaround for what looks like a bug in HAProxy - health checks should
+                         * generate a LOCAL command, but it appears they do actually use PROXY.
+                         */
+                        ctx.close();
+                        return;
+                    } else {
+                        this.proxyAddress = new InetSocketAddress(InetAddresses.forString(destinationAddress),
+                                                                  proxyMessage.destinationPort());
+                        this.remoteAddress = new InetSocketAddress(InetAddresses.forString(sourceAddress),
+                                                                   proxyMessage.sourcePort());
+                    }
+                }
+                break;
+            }
+            start(ctx);
+        } else if (msg instanceof String) {
+            if (interpreter == null) {
+                throw new IOException("Unexpected input: " + msg);
+            }
             commandExecutor.execute(new Command((String) msg));
         }
     }
@@ -243,13 +322,7 @@ public class NettyLineBasedDoor
     {
         try (CDC ignored = cdc.restore()) {
             if (evt instanceof ChannelInputShutdownEvent) {
-                if (!commandExecutor.isShutdown()) {
-                    interpreter.shutdown();
-                    commandExecutor.shutdownNow();
-                    commandExecutor.awaitTermination();
-                }
-
-                kill();
+                shutdown();
             }
         }
     }
@@ -263,7 +336,16 @@ public class NettyLineBasedDoor
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
-        LOGGER.warn(cause.toString());
+        if (cause instanceof ClosedChannelException) {
+            LOGGER.info("Connection closed");
+        } else if (cause instanceof RuntimeException || cause instanceof Error) {
+            Thread me = Thread.currentThread();
+            me.getUncaughtExceptionHandler().uncaughtException(me, cause);
+            ctx.close();
+        } else {
+            LOGGER.error(cause.toString());
+            ctx.close();
+        }
     }
 
     @Override
@@ -271,6 +353,10 @@ public class NettyLineBasedDoor
     {
         ChannelPipeline pipeline = ctx.pipeline();
         String self = ctx.name();
+
+        if (expectProxyProtocol) {
+            pipeline.addBefore("door", "haproxy", new HAProxyMessageDecoder());
+        }
 
         // Decoders
         pipeline.addBefore(self, "frameDecoder", new LineBasedFrameDecoder(65536));

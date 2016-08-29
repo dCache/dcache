@@ -57,15 +57,16 @@ public interface NettyLineBasedInterpreterFactory
      * @param endpoint Cell endpoint of the line based door
      * @param myAddress Cell address of the line based door
      * @param writer Output writer
-     * @param remoteAddress Address of the client
-     * @param localAddress Address the client connected to
+     * @param remoteAddress Address of the FTP client
+     * @param proxyAddress Address the FTP client connected to
+     * @param localAddress Address of the local socket
      * @param executor Executor for background operations
      * @param poolManager Handler for pool manager communication
      * @return Fully initialized interpreter
      * @throws Exception If the interpreter could not be initialized
      */
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-                                InetSocketAddress remoteAddress, InetSocketAddress localAddress,
+                                InetSocketAddress remoteAddress, InetSocketAddress proxyAddress, InetSocketAddress localAddress,
                                 LineWriter writer, Executor executor, PoolManagerHandler poolManager)
             throws Exception;
 }

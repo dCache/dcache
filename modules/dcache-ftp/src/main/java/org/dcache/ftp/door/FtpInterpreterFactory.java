@@ -48,7 +48,7 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
 
     @Override
     public LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-                                       InetSocketAddress remoteAddress, InetSocketAddress localAddress,
+                                       InetSocketAddress remoteAddress, InetSocketAddress proxyAddress, InetSocketAddress localAddress,
                                        LineWriter writer, Executor executor, PoolManagerHandler poolManagerHandler)
             throws Exception
     {
@@ -57,6 +57,7 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
         interpreter.setWriter(writer);
         interpreter.setRemoteSocketAddress(remoteAddress);
         interpreter.setLocalSocketAddress(localAddress);
+        interpreter.setProxySocketAddress(proxyAddress);
         interpreter.setExecutor(executor);
         interpreter.setCellEndpoint(endpoint);
         interpreter.setCellAddress(myAddress);

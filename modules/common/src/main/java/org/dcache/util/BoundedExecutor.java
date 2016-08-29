@@ -131,6 +131,16 @@ public class BoundedExecutor extends AbstractListeningExecutorService
         }
     }
 
+    public void awaitTerminationUninterruptibly()
+    {
+        monitor.enter();
+        try {
+            monitor.waitForUninterruptibly(isTerminated);
+        } finally {
+            monitor.leave();
+        }
+    }
+
     @Override
     public void execute(Runnable task)
     {

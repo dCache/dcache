@@ -74,6 +74,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
+import com.google.common.net.HostAndPort;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
@@ -299,6 +300,7 @@ public abstract class AbstractFtpDoorV1
     protected FtpDoorSettings _settings;
 
     protected InetSocketAddress _localSocketAddress;
+    protected InetSocketAddress _proxySocketAddress;
     protected InetSocketAddress _remoteSocketAddress;
     protected CellAddressCore _cellAddress;
     protected CellEndpoint _cellEndpoint;
@@ -1124,6 +1126,11 @@ public abstract class AbstractFtpDoorV1
         _localSocketAddress = localAddress;
     }
 
+    public void setProxySocketAddress(InetSocketAddress localAddress)
+    {
+        _proxySocketAddress = localAddress;
+    }
+
     public void setExecutor(Executor executor)
     {
         _executor = new CDCExecutorDecorator<>(executor);
@@ -1501,6 +1508,11 @@ public abstract class AbstractFtpDoorV1
             log.add("session", CDC.getSession());
             if (_isHello) {
                 log.add("socket.remote", _remoteSocketAddress);
+                if (_proxySocketAddress != null && !_proxySocketAddress.equals(_localSocketAddress)) {
+                    log.add("socket.proxy", _proxySocketAddress);
+                }
+                log.add("socket.local", _localSocketAddress);
+
             }
             if (subject != null) {
                 logSubject(log, subject);
@@ -2237,7 +2249,7 @@ public abstract class AbstractFtpDoorV1
 
     private void checkIpV6() throws FTPCommandException
     {
-        if (!_localSocketAddress.getAddress().getClass().equals(Inet6Address.class)) {
+        if (!_remoteSocketAddress.getAddress().getClass().equals(Inet6Address.class)) {
             throw new FTPCommandException(502, "Command only supported for IPv6");
         }
     }
