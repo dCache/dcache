@@ -12,6 +12,7 @@
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
       <description>Undeliverable message logger</description>
+      <property name="excludedMessages" value="org.dcache.poolmanager.PoolMgrGetUpdatedHandler"/>
   </bean>
 
   <bean id="executor"
