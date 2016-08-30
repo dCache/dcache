@@ -1,8 +1,12 @@
 package diskCacheV111.pools;
 
+import javax.annotation.Nonnull;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PoolCostInfo implements Serializable {
 
@@ -10,7 +14,6 @@ public class PoolCostInfo implements Serializable {
 
     private PoolQueueInfo _store;
     private PoolQueueInfo _restore;
-    private PoolQueueInfo _mover;
     private PoolQueueInfo _p2p;
     private PoolQueueInfo _p2pClient;
     private final Map<String, NamedPoolQueueInfo> _extendedMoverHash = new HashMap<>();
@@ -22,7 +25,7 @@ public class PoolCostInfo implements Serializable {
     public PoolCostInfo(String poolName, String defaultQueue)
     {
         _poolName = poolName;
-        _defaultQueueName = defaultQueue;
+        _defaultQueueName = checkNotNull(defaultQueue);
         _space = new PoolSpaceInfo(0, 0, 0, 0);
     }
 
@@ -38,10 +41,6 @@ public class PoolCostInfo implements Serializable {
         {
             super(active, maxActive, queued, readers, writers);
             _name = name;
-        }
-
-        private NamedPoolQueueInfo(String name, PoolQueueInfo queue) {
-            this(name, queue.getActive(), queue.getMaxActive(), queue.getQueued(), queue.getReaders(), queue.getWriters());
         }
 
         public String getName(){ return _name ; }
@@ -96,9 +95,22 @@ public class PoolCostInfo implements Serializable {
     }
     public PoolQueueInfo getStoreQueue(){ return _store ; }
     public PoolQueueInfo getRestoreQueue(){ return _restore ; }
-    public PoolQueueInfo getMoverQueue(){ return _mover ; }
     public PoolQueueInfo getP2pQueue(){ return _p2p ; }
     public PoolQueueInfo getP2pClientQueue(){ return _p2pClient ; }
+
+    public PoolQueueInfo getMoverQueue()
+    {
+        int moverActive = 0, moverMaxActive = 0, queued = 0, readers = 0, writers = 0;
+        for (NamedPoolQueueInfo queue: _extendedMoverHash.values()) {
+            moverActive += queue.getActive();
+            moverMaxActive += queue.getMaxActive();
+            queued += queue.getQueued();
+            readers += queue.getReaders();
+            writers += queue.getWriters();
+        }
+        return new PoolQueueInfo(moverActive, moverMaxActive, queued, readers, writers);
+    }
+
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
 
     public class PoolSpaceInfo implements Serializable {
@@ -198,23 +210,15 @@ public class PoolCostInfo implements Serializable {
             new NamedPoolQueueInfo(name, moverActive, moverMaxActive,
                                    moverQueued, moverReaders, moverWriters);
         _extendedMoverHash.put(name, info);
-        if (_mover == null) {
-            _mover = new PoolQueueInfo(moverActive, moverMaxActive, moverQueued, moverReaders, moverWriters);
-        } else {
-            _mover = new PoolQueueInfo(
-                    _mover.getActive() + moverActive,
-                    _mover.getMaxActive() + moverMaxActive,
-                    _mover.getQueued() + moverQueued,
-                    _mover.getReaders() + moverReaders,
-                    _mover.getWriters() + moverWriters);
-        }
     }
 
+    @Nonnull
     public Map<String, NamedPoolQueueInfo> getExtendedMoverHash()
     {
         return _extendedMoverHash;
     }
 
+    @Nonnull
     public String getDefaultQueueName()
     {
         return _defaultQueueName;
@@ -252,9 +256,6 @@ public class PoolCostInfo implements Serializable {
         }
         if (_store != null) {
             sb.append("S={").append(_store).append("};");
-        }
-        if (_mover != null) {
-            sb.append("M={").append(_mover).append("};");
         }
         if (_p2p != null) {
            sb.append("PS={").append(_p2p).append("};");

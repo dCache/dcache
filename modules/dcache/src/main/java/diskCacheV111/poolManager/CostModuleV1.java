@@ -202,22 +202,14 @@ public class CostModuleV1
 
         PoolCostInfo costInfo = e.getPoolCostInfo();
         double currentPerformanceCost = getPerformanceCost(costInfo);
-        Map<String, NamedPoolQueueInfo> map =
-            costInfo.getExtendedMoverHash();
+        Map<String, NamedPoolQueueInfo> map = costInfo.getExtendedMoverHash();
 
-        PoolCostInfo.PoolQueueInfo queue;
         PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
 
-        if (map == null) {
-            queue = costInfo.getMoverQueue();
-        } else {
-            requestedQueueName =
-                (requestedQueueName == null ||
-                 map.get(requestedQueueName) == null)
-                ? costInfo.getDefaultQueueName()
-                : requestedQueueName;
-            queue = map.get(requestedQueueName);
+        if (requestedQueueName == null || !map.containsKey(requestedQueueName)) {
+            requestedQueueName = costInfo.getDefaultQueueName();
         }
+        PoolCostInfo.PoolQueueInfo queue = map.get(requestedQueueName);
 
         int diff = 0;
         long pinned = 0;
@@ -234,9 +226,8 @@ public class CostModuleV1
 
         considerInvalidatingCache(currentPerformanceCost, costInfo);
 
-        LOGGER.trace("CostModuleV1 : Mover{} queue of {} modified by {}/{} due to {}",
-                     (requestedQueueName == null ? "" : ("(" + requestedQueueName + ")")),
-                     poolName, diff, pinned, ((Object) msg).getClass().getName());
+        LOGGER.trace("CostModuleV1 : Mover({}) queue of {} modified by {}/{} due to {}",
+                     requestedQueueName, poolName, diff, pinned, ((Object) msg).getClass().getName());
     }
 
     public synchronized void messageToForward(DoorTransferFinishedMessage msg)
@@ -249,32 +240,22 @@ public class CostModuleV1
 
         PoolCostInfo costInfo = e.getPoolCostInfo();
         double currentPerformanceCost = getPerformanceCost(costInfo);
+
+        Map<String, NamedPoolQueueInfo> map = costInfo.getExtendedMoverHash();
         String requestedQueueName = msg.getIoQueueName();
-
-        Map<String, NamedPoolQueueInfo> map =
-            costInfo.getExtendedMoverHash();
-        PoolCostInfo.PoolQueueInfo queue;
-
-        if (map == null) {
-            queue = costInfo.getMoverQueue();
-        } else {
-            requestedQueueName =
-                (requestedQueueName == null) ||
-                (map.get(requestedQueueName) == null)
-                ? costInfo.getDefaultQueueName()
-                : requestedQueueName;
-
-            queue = map.get(requestedQueueName);
+        if (requestedQueueName == null || !map.containsKey(requestedQueueName)) {
+            requestedQueueName = costInfo.getDefaultQueueName();
         }
+
+        PoolCostInfo.PoolQueueInfo queue = map.get(requestedQueueName);
 
         int diff = -1;
         long pinned = 0;
 
         queue.modifyQueue(diff);
         considerInvalidatingCache(currentPerformanceCost, costInfo);
-        LOGGER.trace("CostModuleV1 : Mover{} queue of {} modified by {}/{} due to {}",
-                     (requestedQueueName == null ? "" : ("(" + requestedQueueName + ")")),
-                     poolName, diff, pinned, ((Object) msg).getClass().getName());
+        LOGGER.trace("CostModuleV1 : Mover({}) queue of {} modified by {}/{} due to {}",
+                     requestedQueueName, poolName, diff, pinned, ((Object) msg).getClass().getName());
     }
 
     public synchronized void messageToForward(PoolFetchFileMessage msg)
@@ -328,19 +309,12 @@ public class CostModuleV1
          double currentPerformanceCost = getPerformanceCost(costInfo);
          Map<String, NamedPoolQueueInfo> map =
              costInfo.getExtendedMoverHash();
-         PoolCostInfo.PoolQueueInfo queue;
          PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
 
-         if (map == null) {
-            queue = costInfo.getMoverQueue();
-         } else {
-            requestedQueueName =
-                (requestedQueueName == null) ||
-                (map.get(requestedQueueName) == null)
-                ? costInfo.getDefaultQueueName()
-                : requestedQueueName;
-            queue = map.get(requestedQueueName);
-         }
+        if (requestedQueueName == null || !map.containsKey(requestedQueueName)) {
+            requestedQueueName = costInfo.getDefaultQueueName();
+        }
+        PoolCostInfo.PoolQueueInfo queue = map.get(requestedQueueName);
 
          int diff = 1;
          long pinned =
@@ -348,9 +322,8 @@ public class CostModuleV1
          queue.modifyQueue(diff);
          spaceInfo.modifyPinnedSpace(pinned);
          considerInvalidatingCache(currentPerformanceCost, costInfo);
-        LOGGER.trace("CostModuleV1 : Mover{} queue of {} modified by {}/{} due to {}",
-                     (requestedQueueName == null ? "" : ("(" + requestedQueueName + ")")),
-                     poolName, diff, pinned, ((Object) msg).getClass().getName());
+        LOGGER.trace("CostModuleV1 : Mover({}) queue of {} modified by {}/{} due to {}",
+                     requestedQueueName, poolName, diff, pinned, ((Object) msg).getClass().getName());
     }
 
     public synchronized void messageToForward(Pool2PoolTransferMsg msg)

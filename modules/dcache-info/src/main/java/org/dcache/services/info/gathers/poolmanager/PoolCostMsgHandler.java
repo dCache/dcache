@@ -86,7 +86,6 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
              */
             addTapeQueueInfo(update, pathToQueues, "store", thisPoolInfo.getStoreQueue(), metricLifetime);
             addTapeQueueInfo(update, pathToQueues, "restore", thisPoolInfo.getRestoreQueue(), metricLifetime);
-            addQueueInfo(update, pathToQueues, "mover", thisPoolInfo.getMoverQueue(), metricLifetime);
             addQueueInfo(update, pathToQueues, "p2p-queue", thisPoolInfo.getP2pQueue(), metricLifetime);
             addQueueInfo(update, pathToQueues, "p2p-clientqueue", thisPoolInfo.getP2pClientQueue(), metricLifetime);
 
@@ -101,10 +100,8 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
              *  Add information about our default queue's name, if we have one.
              */
             String defaultQueue = thisPoolInfo.getDefaultQueueName();
-            if (defaultQueue != null) {
-                update.appendUpdate(pathToQueues.newChild("default-queue"),
-                        new StringStateValue(defaultQueue, metricLifetime));
-            }
+            update.appendUpdate(pathToQueues.newChild("default-queue"),
+                                new StringStateValue(defaultQueue, metricLifetime));
 
 
             /**
