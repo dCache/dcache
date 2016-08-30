@@ -1496,9 +1496,7 @@ public class PoolV4
                                             js.getCountByPriority(IoPriority.HIGH));
         }
 
-        info.setP2pClientQueueSizes(_p2pClient.getActiveJobs(),
-                                    _p2pClient.getMaxActiveJobs(),
-                                    _p2pClient.getQueueSize());
+        info.setP2pClientQueueSizes(_p2pClient.getActiveJobs(), 0, 0);
 
         MoverRequestScheduler p2pQueue = _ioQueue.getPoolToPoolQueue();
         info.setP2pServerQueueSizes(p2pQueue.getActiveJobs(),

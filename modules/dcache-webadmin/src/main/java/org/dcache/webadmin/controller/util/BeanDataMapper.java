@@ -77,7 +77,7 @@ public class BeanDataMapper {
         returnPoolQueueBean.addRequestQueue(queuesModelToView("Restores", costInfo.getRestoreQueue(), -1));
         returnPoolQueueBean.addRequestQueue(queuesModelToView("Movers", costInfo.getMoverQueue()));
         returnPoolQueueBean.addRequestQueue(queuesModelToView("P2P-Server", costInfo.getP2pQueue()));
-        returnPoolQueueBean.addRequestQueue(queuesModelToView("P2P-Client", costInfo.getP2pClientQueue()));
+        returnPoolQueueBean.addRequestQueue(queuesModelToView("P2P-Client", costInfo.getP2pClientQueue(), -1));
         for (NamedPoolQueueInfo info : costInfo.getExtendedMoverHash().values() ) {
             if (info != null) {
                 returnPoolQueueBean.addRequestQueue(queuesModelToView(info));

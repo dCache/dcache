@@ -83,7 +83,6 @@ define context PoolDefaults endDefine
 
    mover set max active 100
    p2p set max active 10
-   pp set max active 10
    jtm set timeout -queue=p2p -lastAccess=0 -total=0
    csm set checksumtype adler32
    csm set policy -ontransfer=on -onwrite=off -onflush=off -onrestore=on -enforcecrc=on -getcrcfromhsm=off

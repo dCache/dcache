@@ -644,8 +644,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         rows[4] = new int[]{
                     p2pClient.getActive(),
-                    p2pClient.getMaxActive(),
-                    p2pClient.getQueued()
+                    -1,
+                    -1
                 };
 
         return rows;
@@ -720,8 +720,10 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 }
                 if (row[2] > 0) {
                     page.td("queued", row[2]);
-                } else {
+                } else if (row[2] == 0) {
                     page.td("idle", 0);
+                } else {
+                    page.td("idle");
                 }
             }
         }
@@ -732,8 +734,10 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 page.td("max", row[1]);
                 if (row[2] > 0) {
                     page.td("queued", row[2]);
-                } else {
+                } else if (row[2] == 0) {
                     page.td("idle", 0);
+                } else {
+                    page.td("idle");
                 }
             }
         }
@@ -908,7 +912,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             } else {
                 page.td("max");
             }
-            page.td("queued", row[2]);
+            if (row[2] >= 0) {
+                page.td("queued", row[2]);
+            } else {
+                page.td("queued");
+            }
         }
 
         Map<String,int[]> map =

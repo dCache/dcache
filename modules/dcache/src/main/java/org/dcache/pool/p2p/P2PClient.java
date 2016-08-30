@@ -48,8 +48,6 @@ public class P2PClient
     private Repository _repository;
     private ChecksumModule _checksumModule;
 
-    private int _maxActive;
-
     private CellStub _pnfs;
     private CellStub _pool;
     private InetAddress _interface;
@@ -81,20 +79,7 @@ public class P2PClient
 
     public synchronized int getActiveJobs()
     {
-        return (_companions.size() <= _maxActive) ? _companions.size() : _maxActive;
-    }
-
-    public synchronized int getMaxActiveJobs()
-    {
-        return _maxActive;
-    }
-
-    public synchronized int getQueueSize()
-    {
-        return
-            (_companions.size() > _maxActive)
-            ? (_companions.size() - _maxActive)
-            : 0;
+        return _companions.size();
     }
 
     public synchronized void messageArrived(DoorTransferFinishedMessage message)
@@ -296,14 +281,12 @@ public class P2PClient
         if (_interface != null) {
             pw.println("  Interface  : " + _interface);
         }
-        pw.println("  Max Active : " + _maxActive);
     }
 
     @Override
     public synchronized void printSetup(PrintWriter pw)
     {
         pw.println("#\n#  Pool to Pool (P2P)\n#");
-        pw.println("pp set max active " + _maxActive);
         if (_interface != null) {
             pw.println("pp interface " + _interface.getHostAddress());
         }
@@ -324,27 +307,17 @@ public class P2PClient
         }
     }
 
-    @AffectsSetup
-    @Command(name="pp set max active",
-            hint = "set the maximum number of active pool-to-pool client transfers",
-            description = "Set the maximum number of active pool-to-pool " +
-                    "(client) concurrent transfers allowed. Any further " +
-                    "requests will be queued. This value will also be used by " +
-                    "the cost module for calculating the performance cost.")
+    @Command(name="pp set max active")
+    @Deprecated
     public class PpSetMaxActiveCommand implements Callable<String>
     {
-        @Argument(usage = "Specify the maximum number of active pool-to-pool " +
-                "client transfers.")
+        @Argument
         int maxActiveAllowed;
 
         @Override
         public String call() throws IllegalArgumentException
         {
-            synchronized (P2PClient.this) {
-                checkArgument(maxActiveAllowed > 0, "This value must be a positive integer.");
-                _maxActive = maxActiveAllowed;
-                return "";
-            }
+            return "";
         }
     }
 
