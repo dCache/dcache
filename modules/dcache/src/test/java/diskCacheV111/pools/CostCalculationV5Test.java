@@ -28,7 +28,7 @@ public class CostCalculationV5Test
                 50, 100, 0,
                 0, 0, 0,
                 0, 0, 0);
-        assertThat(cost.getPerformanceCost(), is(0.5 / 3));
+        assertThat(cost.getPerformanceCost(), is(0.5 / 2));
     }
 
     @Test
@@ -38,7 +38,7 @@ public class CostCalculationV5Test
                 0, 100, 0,
                 0, 0, 1,
                 0, 0, 1);
-        assertThat(cost.getPerformanceCost(), is(2.0 / 3));
+        assertThat(cost.getPerformanceCost(), is(1.0 / 2));
     }
 
     @Test
@@ -46,9 +46,9 @@ public class CostCalculationV5Test
     {
         CostCalculationV5 cost = buildPoolCost(
                 0, 100, 0,
-                10, 0, 0,
-                0, 0, 0);
-        assertThat(cost.getPerformanceCost(), is((1 - Math.pow(0.75, 10)) / 3));
+                0, 0, 0,
+                10, 0, 0);
+        assertThat(cost.getPerformanceCost(), is((1 - Math.pow(0.75, 10)) / 2));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class CostCalculationV5Test
                 50, 100, 0,
                 10, 0, 0,
                 5, 0, 0);
-        assertThat(cost.getPerformanceCost(), is((0.5 + (1 - Math.pow(0.75, 5)) + (1 - Math.pow(0.75, 10))) / 3));
+        assertThat(cost.getPerformanceCost(), is((0.5 + (1 - Math.pow(0.75, 5))) / 2));
     }
 
     private static CostCalculationV5 buildPoolCost(int moverActive, int moverMaxActive, int moverQueued,

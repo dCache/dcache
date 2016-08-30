@@ -25,36 +25,14 @@ public class      CostCalculationV5
        double cost = 0.0 ;
        double div  = 0.0 ;
 
-       PoolCostInfo.PoolQueueInfo [] q1 = {
-          _info.getP2pQueue() ,
-          _info.getP2pClientQueue()
-       };
-        for (PoolCostInfo.PoolQueueInfo queue : q1) {
-            if (queue != null) {
-                if (queue.getMaxActive() > 0) {
-                    cost += ((double) queue.getQueued() +
-                            (double) queue.getActive()) /
-                            (double) queue.getMaxActive();
-                } else if (queue.getQueued() > 0) {
-                    cost += 1.0;
-                }
-                div += 1.0;
+        PoolCostInfo.PoolQueueInfo storeQueue = _info.getStoreQueue();
+        if (storeQueue != null) {
+            if (storeQueue.getQueued() > 0) {
+                cost += 1.0;
+            } else {
+                cost += (1.0 - Math.pow(0.75, storeQueue.getActive()));
             }
-        }
-       PoolCostInfo.PoolQueueInfo [] q2 = {
-          _info.getStoreQueue() ,
-          _info.getRestoreQueue()
-
-       };
-        for (PoolCostInfo.PoolQueueInfo queue : q2) {
-            if (queue != null) {
-                if (queue.getQueued() > 0) {
-                    cost += 1.0;
-                } else {
-                    cost += (1.0 - Math.pow(0.75, queue.getActive()));
-                }
-                div += 1.0;
-            }
+            div += 1.0;
         }
         for (PoolCostInfo.NamedPoolQueueInfo queue : _info.getExtendedMoverHash().values()) {
             if (queue.getMaxActive() > 0) {
@@ -67,29 +45,6 @@ public class      CostCalculationV5
             div += 1.0;
         }
        _performanceCost = div > 0.0 ? cost / div : 1000000.0;
-//       System.out.println("Calculation : "+_info+" -> cpu="+_performanceCost);
-
-       /*
-       if( ( queue = _info.getMoverQueue() ).getMaxActive() > 0 ){
-         cost += ( (double)queue.getQueued() +
-                   (double)queue.getActive()  ) /
-                   (double)queue.getMaxActive() ;
-         div += 1.0 ;
-       }
-       if( ( queue = _info.getStoreQueue() ).getMaxActive() > 0 ){
-         cost += ( (double)queue.getQueued() +
-                   (double)queue.getActive()  ) /
-                   (double)queue.getMaxActive() ;
-         div += 1.0 ;
-       }
-       if( ( queue = _info.getRestoreQueue() ).getMaxActive() > 0 ){
-         cost += ( (double)queue.getQueued() +
-                   (double)queue.getActive()  ) /
-                   (double)queue.getMaxActive() ;
-         div += 1.0 ;
-       }
-       */
-
     }
 
 }
