@@ -67,7 +67,6 @@ import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
-
 import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -133,6 +132,7 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
                 Collection<LogEntry> dup
                         = (Collection<LogEntry>) query.executeWithArray(entry.getKey());
                 logger.trace("duplicate? {}", dup);
+
                 if (dup != null && !dup.isEmpty()) {
                     if (dup.size() > 1) {
                         throw new RuntimeException
@@ -140,14 +140,33 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
                                  + " more than one alarm with the same id: "
                                  + entry.getKey());
                     }
+
                     LogEntry original = dup.iterator().next();
-                    original.setLastUpdate(entry.getLastUpdate());
-                    original.setReceived(original.getReceived() + 1);
-                    /*
-                     * this needs to be done or else newly arriving instances will
-                     * not be tracked if this type has been closed previously
-                     */
-                    original.setClosed(false);
+                    entry.setLastUpdate(original.getLastUpdate());
+
+                    int received = original.getReceived();
+
+                    if (original.isClosed()) {
+                        /*
+                         * this needs to be done or else newly arriving instances will
+                         * not be tracked if this type has been closed previously
+                         */
+                        original.setClosed(false);
+
+                        /*
+                         * Treat the alarm as a new instance by restarting
+                         * its history.  This guarantees a new alert will
+                         * be sent and plugins called as if it were a
+                         * first occurrence.
+                         */
+                        received = 1;
+                    } else {
+                        ++received;
+                    }
+
+                    original.setReceived(received);
+                    entry.setReceived(received);
+
                     /*
                      * original is not detached so it will be updated on commit
                      */

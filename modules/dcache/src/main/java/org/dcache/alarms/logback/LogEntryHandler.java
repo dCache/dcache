@@ -119,6 +119,14 @@ public class LogEntryHandler {
                 event.getMDCPropertyMap().put(MDC_TYPE, entry.getType());
 
                 /*
+                 * Store the alarm.
+                 *
+                 * If this is a duplicate, the store will increment
+                 * the received field.
+                 */
+                store.put(entry);
+
+                /*
                  * The history log parses out all alerts above a certain
                  * priority. This is just a convenience for sifting messages
                  * from the normal domain log and recording them them using the
@@ -130,14 +138,13 @@ public class LogEntryHandler {
                 }
 
                 /*
-                 * Remote messages which are indeed alarms/alerts can be sent as
-                 * email.
+                 * Post-process if this is a new alarm.
                  */
-                if (emailEnabled && priority >= emailThreshold.ordinal()) {
-                    emailAppender.doAppend(event);
+                if (entry.getReceived() == 1) {
+                    if (emailEnabled && priority >= emailThreshold.ordinal()) {
+                        emailAppender.doAppend(event);
+                    }
                 }
-
-                store.put(entry);
             } else if (!storeOnlyAlarms) {
                 store.put(entry);
             }
