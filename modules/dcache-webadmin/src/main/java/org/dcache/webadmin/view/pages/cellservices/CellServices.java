@@ -25,7 +25,7 @@ public class CellServices extends SortableBasePage {
     private static final Logger _log = LoggerFactory.getLogger(CellServices.class);
 
     public CellServices() {
-        Form<?> form = getAutoRefreshingForm("cellServicesForm");
+        Form<?> form = new Form<Void>("cellServicesForm");
         form.add(new FeedbackPanel("feedback"));
         CellServicesPanel cellServicesPanel = new CellServicesPanel("cellServicesPanel",
                 new PropertyModel(this, "cellBeans"));
