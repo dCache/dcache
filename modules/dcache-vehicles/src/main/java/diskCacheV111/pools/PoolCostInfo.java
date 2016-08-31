@@ -30,7 +30,7 @@ public class PoolCostInfo implements Serializable {
     }
 
     public String getPoolName(){ return _poolName ; }
-    public class NamedPoolQueueInfo extends PoolQueueInfo {
+    public static class NamedPoolQueueInfo extends PoolQueueInfo {
 
         private static final long serialVersionUID = -7097362707394583875L;
 
@@ -49,7 +49,7 @@ public class PoolCostInfo implements Serializable {
            return _name + "={" + super.toString() + '}';
         }
     }
-    public class PoolQueueInfo implements Serializable {
+    public static class PoolQueueInfo implements Serializable {
 
         private static final long serialVersionUID = 1304697767284208011L;
 
@@ -113,7 +113,7 @@ public class PoolCostInfo implements Serializable {
 
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
 
-    public class PoolSpaceInfo implements Serializable {
+    public static class PoolSpaceInfo implements Serializable {
 
     	private static final long serialVersionUID = -8966065301943351970L;
 
