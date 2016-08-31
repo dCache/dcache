@@ -26,7 +26,6 @@ import java.util.List;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
-
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
 import org.dcache.services.login.RemoteLoginStrategy;

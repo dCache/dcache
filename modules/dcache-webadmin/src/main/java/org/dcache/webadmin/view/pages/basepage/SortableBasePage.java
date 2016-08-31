@@ -19,13 +19,15 @@ public abstract class SortableBasePage extends BasePage {
     }
 
     protected void addFilterSelectScript(String id, IHeaderResponse response) {
-        response.render(OnLoadHeaderItem
-                        .forScript("                $('.sortable-" + id + "').tablesorter();\n"
-                                 + "                // Initialise Plugin\n"
-                                 + "                var options1 = {\n"
-                                 + "                    additionalFilterTriggers: [$('.quickfind-" + id + "')],\n"
-                                 + "                    clearFiltersControls: [$('.cleanfilters-" + id + "')],\n"
-                                 + "                };\n"
-                                 + "                $('.sortable-" + id + "').tableFilter(options1);\n"));
+        StringBuilder script = new StringBuilder();
+        script.append("picnet.ui.filter.GenericListFilterOptions.prototype['enableCookies']")
+              .append( " = false;\n")
+              .append("$('.sortable-" + id + "').tablesorter();\n")
+              .append("var options1 = {\n")
+              .append("    additionalFilterTriggers: [$('.quickfind-" + id + "')],\n")
+              .append("    clearFiltersControls: [$('.cleanfilters-" + id + "')],\n")
+              .append("}\n")
+              .append("$('.sortable-" + id + "').tableFilter(options1);\n");
+        response.render(OnLoadHeaderItem.forScript(script.toString()));
     }
 }
