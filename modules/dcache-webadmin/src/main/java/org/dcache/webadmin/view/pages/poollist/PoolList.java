@@ -37,6 +37,28 @@ public class PoolList extends SortableBasePage {
     private SelectOption _selectedOption;
     private static final Logger _log = LoggerFactory.getLogger(PoolList.class);
 
+    private class PoolSpaceTableSelectAll extends SelectAllPanel {
+        private static final long serialVersionUID = -1886067539481596863L;
+
+        public PoolSpaceTableSelectAll(String id, Button submit) {
+            super(id, "space", submit);
+        }
+
+        @Override
+        protected void setSubmitCalled() {
+            submitFormCalled = true;
+        }
+
+        @Override
+        protected void setSelectionForAll(Boolean selected) {
+            for (PoolSpaceBean bean : _poolBeans) {
+                if (!isHidden(bean)) {
+                    bean.setSelected(selected);
+                }
+            }
+        }
+    }
+
     /*
      * necessary so that submit uses the current list instance
      */
@@ -119,22 +141,7 @@ public class PoolList extends SortableBasePage {
         public PoolUsageForm(String id) {
             super(id);
             Button submit = new Button("submit");
-            SelectAllPanel selectAllPanel = new SelectAllPanel("selectAllPanel", submit) {
-                private static final long serialVersionUID = -1886067539481596863L;
-
-                @Override
-                protected void setSubmitCalled() {
-                    submitFormCalled = true;
-                }
-
-                @Override
-                protected void setSelectionForAll(Boolean selected) {
-                    for (PoolSpaceBean bean : _poolBeans) {
-                        bean.setSelected(selected);
-                    }
-                }
-            };
-            this.add(selectAllPanel);
+            this.add(new PoolSpaceTableSelectAll("selectAllPanel", submit));
         }
 
         @Override
