@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.classic;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -162,6 +164,6 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
 
     public void shutdown()
     {
-        _executor.shutdown();
+        MoreExecutors.shutdownAndAwaitTermination(_executor, 10, TimeUnit.SECONDS);
     }
 }
