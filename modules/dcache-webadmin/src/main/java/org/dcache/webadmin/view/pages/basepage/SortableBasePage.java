@@ -9,6 +9,8 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class SortableBasePage extends BasePage {
 
+    public static final String FILTER_EVENT = "row-filter-change";
+
     private static final long serialVersionUID = 4235195090469174433L;
 
     /**
@@ -29,6 +31,9 @@ public abstract class SortableBasePage extends BasePage {
               .append("var options1 = {\n")
               .append("    additionalFilterTriggers: [$('.quickfind-" + id + "')],\n")
               .append("    clearFiltersControls: [$('.cleanfilters-" + id + "')],\n")
+              .append("    filteredRows: function() {\n")
+              .append("        $(document).trigger('row-filter-change');\n")
+              .append("    }\n")
               .append("}\n")
               .append("$('.sortable-" + id + "').tableFilter(options1);\n");
         response.render(OnLoadHeaderItem.forScript(script.toString()));
