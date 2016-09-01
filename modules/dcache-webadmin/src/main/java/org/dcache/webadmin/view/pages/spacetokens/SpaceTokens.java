@@ -44,7 +44,7 @@ public class SpaceTokens extends SortableBasePage {
     }
 
     private void createMarkup() {
-        Form<?> form = getAutoRefreshingForm("spaceTokensForm");
+        Form<?> form = new Form<Void>("spaceTokensForm");
         form.add(new FeedbackPanel("feedback"));
         form.add(new LinkGroupListView("linkGroupView", new PropertyModel(this,
                 "tokenInfo")));
