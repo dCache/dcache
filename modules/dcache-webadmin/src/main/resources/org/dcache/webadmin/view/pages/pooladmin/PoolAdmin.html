@@ -18,12 +18,10 @@
             </h1>
             <div>
                 <span wicket:id="feedback"></span>
+                <span wicket:id="selectAllPanel"></span>
                 <input
-                    wicket:id="commandText"
-                    type="text" /> <input
-                    type="submit"
-                    wicket:message="value:submitButton"
-                    wicket:id="submit" />
+                        wicket:id="commandText"
+                        type="text" />
                 <div class="clear">&nbsp;</div>
                 <span wicket:id="lastCommand"></span>
             </div>
@@ -40,14 +38,6 @@
                 </ul>
             </span>
             <div class="clear">&nbsp;</div>
-            <input
-                type="submit"
-                wicket:id="selectAllButton"
-                wicket:message="value:selectAllButton" /> <input
-                type="submit"
-                wicket:id="deselectAllButton"
-                wicket:message="value:deselectAllButton" />
-            <br><br>
             <wicket:message key="poolAdmin.quickfind"></wicket:message>
             &nbsp;
             <input
@@ -74,9 +64,9 @@
                         <td id="poolAdminLine"><input
                             type="checkbox"
                             wicket:id="poolAdmin.poolselected"></input></td>
-                        <td id="poolAdminLine"><span
+                        <td class="key1" id="poolAdminLine"><span
                                 wicket:id="poolAdmin.poolnamevalue"></span></td>
-                        <td id="poolAdminLine"><span
+                        <td class="key2" id="poolAdminLine"><span
                                 wicket:id="poolAdmin.pooldomainvalue"></span></td>
                         <td id="poolAdminLine"><span
                                 wicket:id="poolAdmin.poolresponsevalue"></span></td>

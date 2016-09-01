@@ -26,6 +26,7 @@ import org.dcache.webadmin.view.beans.PoolAdminBean;
 import org.dcache.webadmin.view.beans.PoolCommandBean;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
+import org.dcache.webadmin.view.panels.selectall.SelectAllPanel;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
 import org.dcache.webadmin.view.util.EvenOddListView;
 import org.dcache.webadmin.view.util.SelectableWrapper;
@@ -41,7 +42,64 @@ public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage 
     public static final int RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS = 120;
     private static final Logger _log = LoggerFactory.getLogger(PoolAdmin.class);
     private static final long serialVersionUID = -3790266074783564167L;
+
+    private class PoolAdminTableSelectAll extends SelectAllPanel {
+        private static final long serialVersionUID = -1886067539481596863L;
+
+        public PoolAdminTableSelectAll(String id, Button submit) {
+            super(id, "admin", submit);
+        }
+
+        @Override
+        protected void setSubmitCalled() {
+            // NOP
+        }
+
+        @Override
+        protected void setSelectionForAll(Boolean selected) {
+            if (_currentPoolGroup != null) {
+                for (SelectableWrapper<PoolCommandBean> wrapper : _currentPoolGroup.getPools()) {
+                    if (!isHidden(wrapper.getWrapped())) {
+                        wrapper.setSelected(selected);
+                    }
+                }
+            }
+        }
+    }
+
+    private class SubmitButton extends Button {
+        private static final long serialVersionUID = -944235821155061987L;
+
+        public SubmitButton(String id) {
+            super(id);
+        }
+
+        @Override
+        public void onSubmit() {
+            if (_currentPoolGroup != null) {
+                try {
+                    _log.debug("button pressed with group {} and command {}",
+                               _currentPoolGroup.getGroupName(), _command);
+                    _lastCommand = getStringResource("poolAdmin.lastCommand") +" "+ _command;
+                    if (isAtLeastOneSelected()) {
+                        getPoolAdminService().sendCommand(_currentPoolGroup.getPools(),
+                                                          _command);
+                        cutResponseForMultipleSelection();
+                        selectAll.setSelectionForAll(Boolean.FALSE);
+                    } else {
+                        error(getStringResource("error.noSelection"));
+                    }
+                } catch (PoolAdminServiceException e) {
+                    _log.error("couldn't send all PoolCommands successful, {}",
+                               e.getMessage());
+                    error("couldn't send all PoolCommands successful " + e.getMessage());
+                }
+            }
+        }
+    }
+
     private PoolAdminBean _currentPoolGroup;
+    private PoolAdminTableSelectAll selectAll;
     private String _command = "";
     private String _lastCommand = "";
 
@@ -60,7 +118,6 @@ public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage 
         TextField<Object> commandInput = new TextField<>("commandText",
                 new PropertyModel<>(this, "_command"));
         commandInput.setRequired(true);
-        poolAdminForm.add(new SubmitButton("submit"));
         commandInput.add(new DefaultFocusBehaviour());
         poolAdminForm.add(commandInput);
         poolAdminForm.add(new Label("lastCommand",
@@ -75,8 +132,9 @@ public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage 
         });
         ListView<PoolAdminBean> poolGroups =
                 buildPoolGroupView("poolGroupList");
-        poolAdminForm.add(new SelectAllButton("selectAllButton"));
-        poolAdminForm.add(new DeselectAllButton("deselectAllButton"));
+        selectAll = new PoolAdminTableSelectAll("selectAllPanel",
+                                                new SubmitButton("submit"));
+        poolAdminForm.add(selectAll);
         poolAdminForm.add(poolGroups);
         ListView<SelectableWrapper<PoolCommandBean>> poolItems =
                 buildPoolItemView("poolItems");
@@ -88,22 +146,6 @@ public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage 
         if (_currentPoolGroup != null) {
             for (SelectableWrapper<PoolCommandBean> pool : _currentPoolGroup.getPools()) {
                 pool.getWrapped().setResponse(EMPTY_STRING);
-            }
-        }
-    }
-
-    private void deselectAll() {
-        setSelectionForAll(Boolean.FALSE);
-    }
-
-    private void selectAll() {
-        setSelectionForAll(Boolean.TRUE);
-    }
-
-    private void setSelectionForAll(Boolean selected) {
-        if (_currentPoolGroup != null) {
-            for (SelectableWrapper<PoolCommandBean> wrapper : _currentPoolGroup.getPools()) {
-                wrapper.setSelected(selected);
             }
         }
     }
@@ -158,7 +200,7 @@ public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage 
                     public void onClick() {
                         if (!poolGroup.equals(_currentPoolGroup)) {
                             clearResponses();
-                            deselectAll();
+                            selectAll.setSelectionForAll(Boolean.FALSE);
                             _lastCommand = EMPTY_STRING;
                             _currentPoolGroup = poolGroup;
                         }
@@ -241,67 +283,5 @@ public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage 
 
     private boolean isLongerThanCutoff(String response) {
         return (response.length() > RESPONSE_CUTOFF_INDEX_MULTIPLE_POOLS);
-    }
-
-    private class SubmitButton extends Button {
-
-        private static final long serialVersionUID = -944235821155061987L;
-
-        public SubmitButton(String id) {
-            super(id);
-        }
-
-        @Override
-        public void onSubmit() {
-            if (_currentPoolGroup != null) {
-                try {
-                    _log.debug("button pressed with group {} and command {}",
-                            _currentPoolGroup.getGroupName(), _command);
-                    _lastCommand = getStringResource("poolAdmin.lastCommand") +" "+ _command;
-                    if (isAtLeastOneSelected()) {
-                        getPoolAdminService().sendCommand(_currentPoolGroup.getPools(),
-                                _command);
-                        cutResponseForMultipleSelection();
-                        deselectAll();
-                    } else {
-                        error(getStringResource("error.noSelection"));
-                    }
-                } catch (PoolAdminServiceException e) {
-                    _log.error("couldn't send all PoolCommands successful, {}",
-                            e.getMessage());
-                    error("couldn't send all PoolCommands successful " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    private class SelectAllButton extends Button {
-
-        private static final long serialVersionUID = 446290920975470686L;
-
-        public SelectAllButton(String id) {
-            super(id);
-            this.setDefaultFormProcessing(false);
-        }
-
-        @Override
-        public void onSubmit() {
-            selectAll();
-        }
-    }
-
-    private class DeselectAllButton extends Button {
-
-        private static final long serialVersionUID = 2125671319207256366L;
-
-        public DeselectAllButton(String id) {
-            super(id);
-            this.setDefaultFormProcessing(false);
-        }
-
-        @Override
-        public void onSubmit() {
-            deselectAll();
-        }
     }
 }
