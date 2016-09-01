@@ -5,9 +5,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.Session;
 import org.apache.wicket.authorization.strategies.CompoundAuthorizationStrategy;
 import org.apache.wicket.authorization.strategies.page.SimplePageAuthorizationStrategy;
-import org.apache.wicket.authroles.authorization.strategies.role.IRoleCheckingStrategy;
 import org.apache.wicket.authroles.authorization.strategies.role.RoleAuthorizationStrategy;
-import org.apache.wicket.authroles.authorization.strategies.role.Roles;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.core.request.mapper.CryptoMapper;
 import org.apache.wicket.protocol.http.WebApplication;
@@ -26,7 +24,6 @@ import java.util.List;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
-
 import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
 import org.dcache.services.login.RemoteLoginStrategy;
