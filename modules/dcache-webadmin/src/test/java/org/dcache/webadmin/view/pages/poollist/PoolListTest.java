@@ -42,7 +42,6 @@ public class PoolListTest {
         _poolSpaceService = new StandardPoolSpaceService(daoFactory);
         authenticatedWebApp.setPoolSpaceService(_poolSpaceService);
         _tester = new WicketTester(authenticatedWebApp);
-        PoolList.autorefresh = false;
         _tester.startPage(PoolList.class);
     }
 
