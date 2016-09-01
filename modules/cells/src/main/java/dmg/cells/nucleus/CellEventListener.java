@@ -1,14 +1,24 @@
-package dmg.cells.nucleus ;
+package dmg.cells.nucleus;
 
 /**
-  *  
-  *
-  * @author Patrick Fuhrmann
-  * @version 0.1, 15 Feb 1998
-  */
-public interface CellEventListener {
-  void cellCreated( CellEvent ce ) ;
-  void cellDied( CellEvent ce ) ;
-  void routeAdded( CellEvent ce ) ;
-  void routeDeleted( CellEvent ce ) ;
+ * Classes implementing this method receive notifications about cell and route
+ * creation and removal events.
+ */
+public interface CellEventListener
+{
+    default void cellCreated(CellEvent ce)
+    {
+    }
+
+    default void cellDied(CellEvent ce)
+    {
+    }
+
+    default void routeAdded(CellEvent ce)
+    {
+    }
+
+    default void routeDeleted(CellEvent ce)
+    {
+    }
 }

@@ -204,24 +204,9 @@ public class LocationManager extends CellAdapter
         }
 
         @Override
-        public void cellCreated(CellEvent ce)
-        {
-        }
-
-        @Override
         public void cellDied(CellEvent ce)
         {
             connectors.values().remove((String) ce.getSource());
-        }
-
-        @Override
-        public void routeAdded(CellEvent ce)
-        {
-        }
-
-        @Override
-        public void routeDeleted(CellEvent ce)
-        {
         }
     }
 

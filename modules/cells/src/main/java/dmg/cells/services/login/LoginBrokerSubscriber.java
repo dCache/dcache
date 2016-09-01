@@ -144,16 +144,6 @@ public class LoginBrokerSubscriber
     }
 
     @Override
-    public void cellCreated(CellEvent ce)
-    {
-    }
-
-    @Override
-    public void cellDied(CellEvent ce)
-    {
-    }
-
-    @Override
     public void routeAdded(CellEvent ce)
     {
         CellRoute route = (CellRoute) ce.getSource();
@@ -164,11 +154,6 @@ public class LoginBrokerSubscriber
                 }
             }
         }
-    }
-
-    @Override
-    public void routeDeleted(CellEvent ce)
-    {
     }
 
     @Override

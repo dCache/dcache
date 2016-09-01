@@ -424,7 +424,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
         _adjThread.start();
     }
 
-    // methods from the cellEventListener Interface
   @Override
   public void stopped()
   {
@@ -456,28 +455,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       _dbrmv2.close();
       super.stopped();
   }
-
-  @Override
-  public void cellCreated( CellEvent ce ) {
-    super.cellCreated(ce);
-    _log.debug("=== cellCreated called ===, ce=" +ce);
-  }
-  @Override
-  public void cellDied( CellEvent ce ) {
-    super.cellDied(ce);
-    _log.debug("=== cellDied called ===, ce=" +ce);
-  }
-  @Override
-  public void routeAdded( CellEvent ce ) {
-    super.routeAdded(ce);
-    _log.debug("=== routeAdded called ===, ce=" +ce);
-  }
-  @Override
-  public void routeDeleted( CellEvent ce ) {
-    super.routeDeleted(ce);
-    _log.debug("=== routeDeleted called ===, ce=" +ce);
-  }
-  // end cellEventListener Interface
 
   @Override
   public void getInfo(PrintWriter pw) {

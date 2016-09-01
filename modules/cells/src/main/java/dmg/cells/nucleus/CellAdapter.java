@@ -606,34 +606,13 @@ public class CellAdapter
      * message has arrived.
      */
     protected void stopped() { }
-    //
-    // methods from the cellEventListener Interface
-    //
-    /**
-     *   belongs to the CellEventListener Interface
-     */
-    @Override
-    public void cellCreated(CellEvent ce) {}
-    /**
-     *   belongs to the CellEventListener Interface
-     */
-    @Override
-    public void cellDied(CellEvent ce) {}
-    /**
-     *   belongs to the CellEventListener Interface
-     */
+
     @Override
     public void routeAdded(CellEvent ce)
     {
         _routeAddedCounter.increment();
         _nucleus.runDeferredTasksNow();
     }
-
-    /**
-     *   belongs to the CellEventListener Interface
-     */
-    @Override
-    public void routeDeleted(CellEvent ce) {}
 
     @Command(name = "xgetcellinfo", hint = "get this cell information",
             description = "Returns CellInfo object of this cell. This contains " +

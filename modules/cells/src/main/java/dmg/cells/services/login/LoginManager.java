@@ -257,11 +257,6 @@ public class LoginManager
     private class LoginEventListener implements CellEventListener
     {
         @Override
-        public void cellCreated(CellEvent ce)
-        {
-        }
-
-        @Override
         public void cellDied(CellEvent ce)
         {
             String removedCell = ce.getSource().toString();
@@ -280,16 +275,6 @@ public class LoginManager
             }
             LOGGER.info("LoginEventListener : removing : {}", removedCell);
             loadChanged();
-        }
-
-        @Override
-        public void routeAdded(CellEvent ce)
-        {
-        }
-
-        @Override
-        public void routeDeleted(CellEvent ce)
-        {
         }
     }
 

@@ -1106,50 +1106,6 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
      }
    }
 
-
-   // methods from the cellEventListener Interface
-   //   public void cleanUp() {}
-   /*
-      public void cellCreated(CellEvent ce) {}
-
-      public void cellDied(CellEvent ce) {}
-
-      public void cellExported(CellEvent ce) {}
-
-      public void routeAdded(CellEvent ce) {}
-
-      public void routeDeleted(CellEvent ce) {}
-    */
-   @Override
-   public void cellCreated(CellEvent ce) {
-       super.cellCreated(ce);
-       _log.debug("DCCC cellCreated called, ce=" + ce);
-   }
-
-   @Override
-   public void cellDied(CellEvent ce) {
-       super.cellDied(ce);
-       _log.debug("DCCC cellDied called, ce=" + ce);
-   }
-
-   @Override
-   public void routeAdded(CellEvent ce) {
-       super.routeAdded(ce);
-       _log.debug("DCCC routeAdded called, ce=" + ce);
-   }
-
-   @Override
-   public void routeDeleted(CellEvent ce) {
-       super.routeDeleted(ce);
-       _log.debug("DCCC routeDeleted called, ce=" + ce);
-   }
-   /** do not overload - it will disable messageArrived( CellMessage m);
-   public void messageArrived( MessageEvent msg ){
-     _log.debug( "DCacheCoreController: Got Message (ignored): " +msg );
-   }
-   */
-   // end cellEventListener Interface
-
    @Override
    public void messageArrived(CellMessage msg) {
 
