@@ -22,11 +22,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +40,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import dmg.cells.zookeeper.CellCuratorFramework;
 import dmg.util.Pinboard;
@@ -439,45 +440,10 @@ public class CellNucleus implements ThreadFactory
 
     private void executeMaintenanceTasks()
     {
-        Collection<CellLock> expired = new ArrayList<>();
         long now = System.currentTimeMillis();
-
-        /* Cannot use Iterator#remove for this as it cannot prevent
-         * concurrent removal by another method.
-         */
-        for (Map.Entry<UOID, CellLock> e : _waitHash.entrySet()) {
-            if (e.getValue().getTimeout() < now && _waitHash.remove(e.getKey(), e.getValue())) {
-                expired.add(e.getValue());
-            }
-        }
-
-        for (CellLock lock: expired) {
-            try (CDC ignored = lock.getCdc().restore()) {
-                try {
-                    lock.getExecutor().execute(() -> {
-                        CellMessage envelope = lock.getMessage();
-                        try {
-                            lock.getCallback().answerTimedOut(envelope);
-                            EventLogger.sendEnd(envelope);
-                        } catch (RejectedExecutionException e) {
-                            _waitHash.put(envelope.getUOID(), lock);
-                            LOGGER.warn("Failed to invoke callback: {}", e.toString());
-                        }
-                    });
-                } catch (RejectedExecutionException e) {
-                    /* Put it back and deal with it later.
-                     */
-                    _waitHash.put(lock.getMessage().getUOID(), lock);
-                    LOGGER.warn("Failed to invoke callback: {}", e.toString());
-                } catch (RuntimeException e) {
-                    /* Don't let a problem in the callback prevent us from
-                     * expiring all messages.
-                     */
-                    Thread t = Thread.currentThread();
-                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                }
-            }
-        }
+        _waitHash.entrySet().stream()
+                .filter(e -> e.getValue().getTimeout() < now)
+                .forEach(e -> timeOutMessage(e.getKey(), e.getValue(), this::reregisterCallback));
 
         // Execute delayed operations
         consumingIterable(_deferredTasks).forEach(Runnable::run);
@@ -499,8 +465,8 @@ public class CellNucleus implements ThreadFactory
      * @param msg the cell message to be sent.
      * @param local whether to attempt delivery to cells in the same domain
      * @param remote whether to attempt delivery to cells in other domains
-     * @param shouldAddSource
-      *@param callback specifies an object class which will be informed
+     * @param shouldAddSource whether to add this cell to the source path
+     * @param callback specifies an object class which will be informed
      *                 as soon as the message arrives.
      * @param executor the executor to run the callback in
      * @param timeout  is the timeout in msec.
@@ -516,6 +482,7 @@ public class CellNucleus implements ThreadFactory
                             long timeout)
         throws SerializationException
     {
+        checkState(_state == State.RUNNING || _state == State.FAILED || _state == State.STOPPING);
         checkArgument(!msg.isFinalDestination(), "Message has no next destination: %s", msg.getDestinationPath());
 
         if (shouldAddSource) {
@@ -526,11 +493,23 @@ public class CellNucleus implements ThreadFactory
 
         msg.setTtl(timeout);
 
-        final UOID uoid = msg.getUOID();
-        final CellLock lock = new CellLock(msg, callback, executor, timeout);
+        UOID uoid = msg.getUOID();
+        CellLock lock = new CellLock(msg, callback, executor, timeout);
 
         EventLogger.sendBegin(msg, "callback");
+
+        /* Ordering here is important - need to insert into waitHash before checking the state
+         * to avoid a race with shutdown.
+         */
         _waitHash.put(uoid, lock);
+        if (_state != State.RUNNING) {
+            /*
+             * The cell isn't running, so we time out the message right away.
+             */
+            timeOutMessage(uoid, lock, (u, l) -> {});
+            return;
+        }
+
         try {
             __cellGlue.sendMessage(msg, local, remote);
         } catch (SerializationException e) {
@@ -549,15 +528,15 @@ public class CellNucleus implements ThreadFactory
                             /* May happen when the callback itself tries to schedule the call
                              * on an executor. Put the request back and let it time out.
                              */
-                            _waitHash.put(uoid, lock);
                             LOGGER.error("Failed to invoke callback: {}", e1.toString());
+                            reregisterCallback(uoid, lock);
                         }
                     });
                 } catch (RejectedExecutionException e1) {
                     /* Put it back and let it time out.
                      */
-                    _waitHash.put(uoid, lock);
                     LOGGER.error("Failed to invoke callback: {}", e1.toString());
+                    reregisterCallback(uoid, lock);
                 }
             } else {
                 LOGGER.error("Failed to send message: {}", e.toString());
@@ -834,8 +813,8 @@ public class CellNucleus implements ThreadFactory
                 _eventQueueSize.decrementAndGet();
                 /* Put it back; the timeout handler will eventually take care of it.
                  */
-                _waitHash.put(msg.getLastUOID(), lock);
                 LOGGER.error("Dropping reply: {}", e.getMessage());
+                reregisterCallback(msg.getLastUOID(), lock);
             }
         } else {
             /* Fail fast for requests if the cell is busy. We consider the cell busy
@@ -906,9 +885,9 @@ public class CellNucleus implements ThreadFactory
                                                          20, 20, TimeUnit.SECONDS);
             StartEvent event = new StartEvent(new CellPath(_cellName), 0);
             _cell.prepareStartup(event);
+            setState(State.RUNNING);
             __cellGlue.publishCell(this);
             _cell.postStartup(event);
-            setState(State.RUNNING);
         } catch (Throwable e) {
             Thread t = Thread.currentThread();
             t.getUncaughtExceptionHandler().uncaughtException(t, e);
@@ -942,6 +921,10 @@ public class CellNucleus implements ThreadFactory
              */
             if (_timeoutTask != null) {
                 _timeoutTask.cancel(false);
+                try {
+                    Uninterruptibles.getUninterruptibly(_timeoutTask);
+                } catch (CancellationException | ExecutionException ignore) {
+                }
             }
 
             /* Only call prepareRemoval if prepareStartup completed successfully.
@@ -957,31 +940,7 @@ public class CellNucleus implements ThreadFactory
 
             /* Cancel callbacks.
              */
-            for (Map.Entry<UOID, CellLock> entry : _waitHash.entrySet()) {
-                /* Cannot use Iterator#remove for this as it cannot prevent
-                 * concurrent removal by another method.
-                 */
-                if (_waitHash.remove(entry.getKey(), entry.getValue())) {
-                    CellLock lock = entry.getValue();
-                    try (CDC ignored2 = lock.getCdc().restore()) {
-                        try {
-                            lock.getExecutor().execute(() -> {
-                                CellMessage envelope = lock.getMessage();
-                                lock.getCallback().answerTimedOut(envelope);
-                                EventLogger.sendEnd(envelope);
-                            });
-                        } catch (RejectedExecutionException e) {
-                            LOGGER.warn("Failed to invoke callback: {}", e.toString());
-                        } catch (RuntimeException e) {
-                            /* Don't let a problem in the callback prevent us from
-                             * expiring all messages.
-                             */
-                            Thread t = Thread.currentThread();
-                            t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                        }
-                    }
-                }
-            }
+            _waitHash.forEach((uoid, lock) -> timeOutMessage(uoid, lock, (u, l) -> {}));
 
             /* Shut down the curator decorator; this just kills the internal executor of the decorator
              * while still allowing it to be used for operations without callbacks.
@@ -1029,6 +988,57 @@ public class CellNucleus implements ThreadFactory
              */
             __cellGlue.destroy(CellNucleus.this);
             setState(State.TERMINATED);
+        }
+    }
+
+    /**
+     * Registers a callback, considering that the cell may have already shut down.
+     */
+    private void reregisterCallback(UOID uoid, CellLock lock)
+    {
+        /* Ordering here is important - need to insert into waitHash before checking the state
+         * to avoid a race with shutdown.
+         */
+        _waitHash.put(uoid, lock);
+        if (_state != State.RUNNING) {
+            /*
+             * The cell isn't running, so we time out the message right away.
+             */
+            timeOutMessage(uoid, lock, (u, l) -> {});
+        }
+    }
+
+    /**
+     * Unregisters the callback and calls its timeout method. If scheduling
+     * the callback fails that task is reregistered for later processing.
+     */
+    private void timeOutMessage(UOID uoid, CellLock lock, BiConsumer<UOID, CellLock> reregister)
+    {
+        if (_waitHash.remove(uoid, lock)) {
+            try (CDC ignored = lock.getCdc().restore()) {
+                try {
+                    lock.getExecutor().execute(() -> {
+                        try (CDC ignored2 = lock.getCdc().restore()) {
+                            CellMessage envelope = lock.getMessage();
+                            try {
+                                lock.getCallback().answerTimedOut(envelope);
+                                EventLogger.sendEnd(envelope);
+                            } catch (RejectedExecutionException e) {
+                                LOGGER.warn("Failed to invoke callback: {}", e.toString());
+                                reregister.accept(uoid, lock);
+                            } catch (RuntimeException e) {
+                                Thread t = Thread.currentThread();
+                                t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                            }
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    /* Put it back and deal with it later.
+                     */
+                    reregister.accept(uoid, lock);
+                    LOGGER.warn("Failed to invoke callback: {}", e.toString());
+                }
+            }
         }
     }
 
@@ -1100,8 +1110,8 @@ public class CellNucleus implements ThreadFactory
                         /* May happen when the callback itself tries to schedule the call
                          * on an executor. Put the request back and let it time out.
                          */
-                        _waitHash.put(request.getUOID(), _lock);
                         LOGGER.error("Failed to invoke callback: {}", e.toString());
+                        reregisterCallback(request.getUOID(), _lock);
                     }
                     LOGGER.trace("addToEventQueue : callback done for : {}", _message);
                 } catch (Throwable e) {
