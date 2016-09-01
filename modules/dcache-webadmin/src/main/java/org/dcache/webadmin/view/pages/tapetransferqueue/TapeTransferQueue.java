@@ -30,7 +30,7 @@ public class TapeTransferQueue extends SortableBasePage {
     final List<RestoreBean> _restoreBeans;
 
     public TapeTransferQueue() {
-        Form<?> form = getAutoRefreshingForm("tapeTransferQueueForm");
+        Form<?> form = new Form<Void>("tapeTransferQueueForm");
         form.add(new FeedbackPanel("feedback"));
         _restoreBeans = getRestoreBeans();
         ListView<RestoreBean> listview =

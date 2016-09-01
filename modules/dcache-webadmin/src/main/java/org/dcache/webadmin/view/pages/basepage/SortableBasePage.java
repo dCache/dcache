@@ -3,6 +3,9 @@ package org.dcache.webadmin.view.pages.basepage;
 import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.head.JavaScriptHeaderItem;
 import org.apache.wicket.markup.head.OnLoadHeaderItem;
+import org.apache.wicket.markup.html.form.Form;
+
+import java.util.concurrent.TimeUnit;
 
 public abstract class SortableBasePage extends BasePage {
 
@@ -27,5 +30,13 @@ public abstract class SortableBasePage extends BasePage {
                                  + "                    clearFiltersControls: [$('.cleanfilters-" + id + "')],\n"
                                  + "                };\n"
                                  + "                $('.sortable-" + id + "').tableFilter(options1);\n"));
+    }
+
+    @Override
+    protected void addAutoRefreshToForm(Form<?> form,
+                                        long refresh,
+                                        TimeUnit unit) {
+        _log.info("addAutoRefreshToForm not supported for SortableBasePage {}.",
+                   this);
     }
 }
