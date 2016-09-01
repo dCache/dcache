@@ -18,21 +18,68 @@
 package org.dcache.webdav.owncloud;
 
 import org.eclipse.jetty.http.HttpHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Class checking whether a request's User-agent is the OwnCloud Sync client.
  */
 public class OwncloudClients
 {
-
+    private static final Logger LOG = LoggerFactory.getLogger(OwncloudClients.class);
     private static final String OWNCLOUD_USERAGENT = "mirall";
 
+
+    /**
+     * Method checking whether a request is made by the OwnCloud Sync client.
+     */
     public static boolean isSyncClient(HttpServletRequest request)
     {
         String userAgent = request.getHeader(HttpHeader.USER_AGENT.toString());
 
         return userAgent != null && userAgent.contains(OWNCLOUD_USERAGENT);
+    }
+
+    /**
+     * Provide a file's mtime, as supplied by the OwnCloud Sync client.
+     * @return Optionally the client stated mtime instance.
+     */
+    public static Optional<Instant> parseMTime(HttpServletRequest request)
+    {
+        /*
+         * See https://github.com/owncloud/client/blob/v2.2.3/src/libsync/propagateupload.cpp#L498
+         *
+         * NB. lower-case 't' in "X-OC-Mtime"
+         */
+        String value = request.getHeader("X-OC-Mtime");
+
+        try {
+            if (value != null) {
+                return Optional.of(Instant.ofEpochSecond(Long.parseLong(value)));
+            }
+        } catch (NumberFormatException e) {
+            LOG.info("Invalid mtime header: {}", e.getMessage());
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Update reply to indicate that the supplied mtime was accepted.
+     */
+    public static void addMTimeAccepted(HttpServletResponse response)
+    {
+        /*
+         * See https://github.com/owncloud/client/blob/v2.2.3/src/libsync/propagateupload.cpp#L768
+         *
+         * NB. upper-case 'T' in "X-OC-MTime"
+         */
+        response.setHeader("X-OC-MTime", "accepted");
     }
 }

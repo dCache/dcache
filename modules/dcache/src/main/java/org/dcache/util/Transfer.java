@@ -693,10 +693,11 @@ public class Transfer implements Comparable<Transfer>
     {
         setStatus("PnfsManager: Creating name space entry");
         try {
+            FileAttributes desiredAttributes = fileAttributesForNameSpace();
             PnfsCreateEntryMessage msg;
             try {
                 msg = _pnfs.createPnfsEntry(_path.toString(),
-                        FileAttributes.ofFileType(REGULAR));
+                        desiredAttributes);
             } catch (FileExistsCacheException e) {
                 /* REVISIT: This should be moved to PnfsManager with a
                  * flag in the PnfsCreateEntryMessage.
@@ -706,7 +707,7 @@ public class Transfer implements Comparable<Transfer>
                 }
                 _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(REGULAR));
                 msg = _pnfs.createPnfsEntry(_path.toString(),
-                        FileAttributes.ofFileType(REGULAR));
+                        desiredAttributes);
             }
 
             FileAttributes attrs = msg.getFileAttributes();
@@ -716,6 +717,11 @@ public class Transfer implements Comparable<Transfer>
         } finally {
             setStatus(null);
         }
+    }
+
+    protected FileAttributes fileAttributesForNameSpace()
+    {
+        return FileAttributes.ofFileType(REGULAR);
     }
 
     /**
