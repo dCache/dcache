@@ -28,7 +28,7 @@ public class PoolQueues extends SortableBasePage {
     private static final long serialVersionUID = -6482302256752371950L;
 
     public PoolQueues() {
-        Form<?> form = getAutoRefreshingForm("poolQueuesForm");
+        Form<?> form = new Form<Void>("poolQueuesForm");
         form.add(new PoolQueuesPanel("poolQueuesPanel",
                         new PropertyModel<PoolGroupBean>(this, "allPoolsGroup")));
         add(form);
