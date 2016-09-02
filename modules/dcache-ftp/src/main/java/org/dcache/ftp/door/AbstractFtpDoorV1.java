@@ -2285,9 +2285,8 @@ public abstract class AbstractFtpDoorV1
         String timeval = arg.substring(0, spaceIndex);
         long when = parseTimeval(timeval, "");
 
-        FileAttributes updates = new FileAttributes();
-        updates.setModificationTime(when);
-        FileAttributes updated = updateAttributesFromPath(pathname, updates);
+        FileAttributes updated = updateAttributesFromPath(pathname,
+                FileAttributes.ofModificationTime(when));
 
         String updatedTimeval =
                 TIMESTAMP_FORMAT.format(new Date(updated.getModificationTime()));
@@ -2311,9 +2310,8 @@ public abstract class AbstractFtpDoorV1
         String timeval = arg.substring(0, spaceIndex);
         long when = parseTimeval(timeval, "");
 
-        FileAttributes updates = new FileAttributes();
-        updates.setCreationTime(when);
-        FileAttributes updated = updateAttributesFromPath(pathname, updates);
+        FileAttributes updated = updateAttributesFromPath(pathname,
+                FileAttributes.ofCreationTime(when));
 
         String updatedTimeval =
                 TIMESTAMP_FORMAT.format(new Date(updated.getCreationTime()));
@@ -2650,9 +2648,8 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
 
-            FileAttributes newAttributes = new FileAttributes();
-            newAttributes.setMode(newperms);
-            _pnfs.setFileAttributes(attributes.getPnfsId(), newAttributes);
+            _pnfs.setFileAttributes(attributes.getPnfsId(),
+                    FileAttributes.ofMode(newperms));
 
             reply("250 OK");
         } catch (NumberFormatException ex) {
@@ -2709,9 +2706,7 @@ public abstract class AbstractFtpDoorV1
                 throw new FTPCommandException(504, "chgrp of symbolic links is not yet supported.");
             }
 
-            FileAttributes newAttributes = new FileAttributes();
-            newAttributes.setGroup(gid);
-            _pnfs.setFileAttributes(attributes.getPnfsId(), newAttributes);
+            _pnfs.setFileAttributes(attributes.getPnfsId(), FileAttributes.ofGid(gid));
 
             reply("250 OK");
         } catch (PermissionDeniedCacheException e) {

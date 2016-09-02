@@ -152,9 +152,8 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     }
 
     public void commitFileSize(long size) throws CacheException {
-        FileAttributes attributes = new FileAttributes();
-        attributes.setSize(size);
-        _namespace.setFileAttributes(getFileAttributes().getPnfsId(), attributes);
+        _namespace.setFileAttributes(getFileAttributes().getPnfsId(),
+                FileAttributes.ofSize(size));
     }
 
     public verifier4 getBootVerifier() {

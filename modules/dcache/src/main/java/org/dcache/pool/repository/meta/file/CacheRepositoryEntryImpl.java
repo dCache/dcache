@@ -231,8 +231,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
 
     @Override
     public synchronized FileAttributes getFileAttributes() {
-        FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(_pnfsId);
+        FileAttributes attributes = FileAttributes.ofPnfsId(_pnfsId);
         StorageInfo storageInfo = getStorageInfo();
         if (storageInfo != null) {
             StorageInfos.injectInto(storageInfo, attributes);

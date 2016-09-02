@@ -1222,9 +1222,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
-                FileAttributes attributes = new FileAttributes();
-                attributes.setMode(_permission);
-                _pnfs.setFileAttributes(_fileAttributes.getPnfsId(), attributes);
+                _pnfs.setFileAttributes(_fileAttributes.getPnfsId(),
+                        FileAttributes.ofMode(_permission));
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
                 sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");
@@ -1298,9 +1297,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             try {
                 if (_group >= 0) {
-                    FileAttributes attributes = new FileAttributes();
-                    attributes.setGroup(_group);
-                    _pnfs.setFileAttributes(_fileAttributes.getPnfsId(), attributes);
+                    _pnfs.setFileAttributes(_fileAttributes.getPnfsId(),
+                            FileAttributes.ofGid(_group));
                 }
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
@@ -1395,9 +1393,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if (_vargs.hasOption("acl")) {
                 String aclString = _vargs.getOption("acl");
                 ACL acl = ACLParser.parseLinuxAcl(RsType.FILE, aclString);
-                FileAttributes aclAttributes = new FileAttributes();
-                aclAttributes.setAcl(acl);
-                _pnfs.setFileAttributes(pnfsEntry.getPnfsId(), aclAttributes);
+                _pnfs.setFileAttributes(pnfsEntry.getPnfsId(), FileAttributes.ofAcl(acl));
             }
             sendReply("fileAttributesNotAvailable", 0, "");
             return false;
@@ -1710,9 +1706,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if (_vargs.hasOption("acl")) {
                 String aclString = _vargs.getOption("acl");
                 ACL acl = ACLParser.parseLinuxAcl(RsType.FILE, aclString);
-                FileAttributes aclAttributes = new FileAttributes();
-                aclAttributes.setAcl(acl);
-                _pnfs.setFileAttributes(pnfsEntry.getPnfsId(), aclAttributes);
+                _pnfs.setFileAttributes(pnfsEntry.getPnfsId(), FileAttributes.ofAcl(acl));
             }
             _log.debug("storageInfoNotAvailable : created pnfsid: {} path: {}",
                        pnfsEntry.getPnfsId(), pnfsEntry.getPnfsPath());

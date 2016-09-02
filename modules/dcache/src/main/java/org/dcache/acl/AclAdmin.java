@@ -234,9 +234,8 @@ public class AclAdmin
             aces.add(ace);
         }
 
-        FileAttributes attributes = new FileAttributes();
-        attributes.setAcl(new ACL(rsType, aces));
-        _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId, attributes,
+        ACL acl = new ACL(rsType, aces);
+        _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId, FileAttributes.ofAcl(acl),
                 EnumSet.noneOf(FileAttribute.class));
         return "Done";
     }

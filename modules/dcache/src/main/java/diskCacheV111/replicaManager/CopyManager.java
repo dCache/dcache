@@ -472,10 +472,8 @@ public class CopyManager extends CellAdapter {
 
            entry.timestamp = System.currentTimeMillis() ;
 
-           FileAttributes fileAttributes = new FileAttributes();
-           fileAttributes.setPnfsId(entry.getPnfsId());
-           Pool2PoolTransferMsg pool2pool =
-             new Pool2PoolTransferMsg(_source, entry._destination, fileAttributes);
+           Pool2PoolTransferMsg pool2pool = new Pool2PoolTransferMsg(_source,
+                   entry._destination, FileAttributes.ofPnfsId(entry.getPnfsId()));
 
            CellMessage msg = new CellMessage( new CellPath(entry._destination) , pool2pool ) ;
 

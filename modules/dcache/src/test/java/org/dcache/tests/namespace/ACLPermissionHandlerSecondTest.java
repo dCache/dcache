@@ -47,20 +47,12 @@ public class ACLPermissionHandlerSecondTest {
         subject.getPrincipals().add(origin);
     }
 
-    private FileAttributes getAttributes(int uid, int gid, ACL acl) {
-        FileAttributes attr = new FileAttributes();
-        attr.setOwner(uid);
-        attr.setGroup(gid);
-        attr.setAcl(acl);
-        return attr;
-    }
-
     /***********************************************************************************************************************************************************
      * Tests
      */
     @Test
     public void testReadFile() {
-        FileAttributes attr = getAttributes(UID, GID, null);
+        FileAttributes attr = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
 
         assertTrue("Read file should be undefined!",
                 pdp.canReadFile(subject, attr) == AccessType.ACCESS_UNDEFINED);
@@ -76,7 +68,7 @@ public class ACLPermissionHandlerSecondTest {
 
     @Test
     public void testWriteFile() {
-        FileAttributes attr = getAttributes(UID, GID, null);
+        FileAttributes attr = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
 
         assertTrue("Write file should be undefined!",
                 pdp.canWriteFile(subject, attr) == AccessType.ACCESS_UNDEFINED);
@@ -92,7 +84,7 @@ public class ACLPermissionHandlerSecondTest {
 
     @Test
     public void testCreateFile() {
-        FileAttributes attr = getAttributes(UID, GID, null);
+        FileAttributes attr = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
 
         assertTrue("Create file should be undefined!", //
                 pdp.canCreateFile(subject, attr) == AccessType.ACCESS_UNDEFINED);
@@ -108,7 +100,7 @@ public class ACLPermissionHandlerSecondTest {
 
     @Test
     public void testCreateDir() {
-        FileAttributes attr = getAttributes(UID, GID, null);
+        FileAttributes attr = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
 
         assertTrue("Create directory should be undefined!", //
                 pdp.canCreateSubDir(subject, attr) == AccessType.ACCESS_UNDEFINED);
@@ -124,7 +116,7 @@ public class ACLPermissionHandlerSecondTest {
 
     @Test
     public void testListDir() {
-        FileAttributes attr = getAttributes(UID, GID, null);
+        FileAttributes attr = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
 
         assertTrue("List directory should be undefined!", //
                 pdp.canListDir(subject, attr) == AccessType.ACCESS_UNDEFINED);
@@ -140,7 +132,7 @@ public class ACLPermissionHandlerSecondTest {
 
     @Test
     public void testSetAttributes() {
-        FileAttributes attr = getAttributes(UID, GID, null);
+        FileAttributes attr = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
 
         assertTrue("Set attributes should be undefined!", //
                 pdp.canSetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);
@@ -156,7 +148,7 @@ public class ACLPermissionHandlerSecondTest {
 
     @Test
     public void testGetAttributes() {
-        FileAttributes attr = getAttributes(UID, GID, null);
+        FileAttributes attr = FileAttributes.of().uid(UID).gid(GID).acl(null).build();
 
         assertTrue("Get attributes (read ACL) should be undefined!", //
                 pdp.canGetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);

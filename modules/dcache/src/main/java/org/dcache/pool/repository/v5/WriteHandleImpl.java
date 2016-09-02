@@ -268,7 +268,7 @@ class WriteHandleImpl implements ReplicaDescriptor
     private void registerFileAttributesInNameSpace()
             throws CacheException
     {
-        FileAttributes attributesToUpdate = new FileAttributes();
+        FileAttributes attributesToUpdate = FileAttributes.ofLocation(_repository.getPoolName());
         if (_fileAttributes.isDefined(CHECKSUM)) {
                 /* PnfsManager detects conflicting checksums and will fail the update. */
             attributesToUpdate.setChecksums(_fileAttributes.getChecksums());
@@ -280,7 +280,6 @@ class WriteHandleImpl implements ReplicaDescriptor
                 attributesToUpdate.setSize(_fileAttributes.getSize());
             }
         }
-        attributesToUpdate.setLocations(singleton(_repository.getPoolName()));
 
         _pnfs.setFileAttributes(_entry.getPnfsId(), attributesToUpdate);
     }

@@ -488,10 +488,11 @@ public class PnfsManagerV3
                 pnfsId = pathToPnfsid(ROOT, pnfsidOrPath, true);
             }
 
-            FileAttributes attributes = new FileAttributes();
-            attributes.setOwner(uid);
-            attributes.setGroup(gid);
-            attributes.setMode(Integer.parseInt(perm, 8));
+            FileAttributes attributes = FileAttributes.of()
+                    .uid(uid)
+                    .gid(gid)
+                    .mode(Integer.parseInt(perm, 8))
+                    .build();
 
             _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
                     EnumSet.noneOf(FileAttribute.class));
@@ -677,10 +678,8 @@ public class PnfsManagerV3
         @Override
         public String call() throws CacheException
         {
-            FileAttributes attributes = new FileAttributes();
-            attributes.setFlags(args.optionsAsMap());
-            _nameSpaceProvider.setFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider), attributes,
-                                                 EnumSet.noneOf(FileAttribute.class));
+            _nameSpaceProvider.setFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider),
+                    FileAttributes.ofFlags(args.optionsAsMap()), EnumSet.noneOf(FileAttribute.class));
             return "";
         }
     }
@@ -766,10 +765,8 @@ public class PnfsManagerV3
         @Override
         public String call() throws CacheException
         {
-            FileAttributes attributes = new FileAttributes();
-            attributes.setSize(Long.parseLong(newsize));
-
-            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
+            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId,
+                    FileAttributes.ofSize(Long.parseLong(newsize)),
                     EnumSet.noneOf(FileAttribute.class));
 
             return "";
@@ -843,12 +840,9 @@ public class PnfsManagerV3
         @Override
         public String call() throws CacheException
         {
-
             Checksum checksum = new Checksum(type, checksumValue);
-            FileAttributes attributes = new FileAttributes();
-            attributes.setChecksums(Collections.singleton(checksum));
-            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
-                    EnumSet.noneOf(FileAttribute.class));
+            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId,
+                    FileAttributes.ofChecksum(checksum), EnumSet.noneOf(FileAttribute.class));
             return "";
         }
     }
@@ -1010,10 +1004,8 @@ public class PnfsManagerV3
         try{
             ChecksumType type = ChecksumType.getChecksumType(msg.getType());
             Checksum checksum = new Checksum(type, value);
-            FileAttributes attributes = new FileAttributes();
-            attributes.setChecksums(Collections.singleton(checksum));
             _nameSpaceProvider.setFileAttributes(msg.getSubject(), pnfsId,
-                    attributes, EnumSet.noneOf(FileAttribute.class));
+                    FileAttributes.ofChecksum(checksum), EnumSet.noneOf(FileAttribute.class));
         }catch(FileNotFoundCacheException e) {
             msg.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage() );
         }catch( CacheException e ){
@@ -1067,10 +1059,8 @@ public class PnfsManagerV3
         switch (operation) {
         case SET:
             _log.info("flags set " + pnfsId + " " + flagName + "=" + value);
-            attributes = new FileAttributes();
-            attributes.setFlags(Collections.singletonMap(flagName, value));
-            _nameSpaceProvider.setFileAttributes(subject, pnfsId, attributes,
-                    EnumSet.noneOf(FileAttribute.class));
+            _nameSpaceProvider.setFileAttributes(subject, pnfsId,
+                    FileAttributes.ofFlag(flagName, value), EnumSet.noneOf(FileAttribute.class));
             break;
         case SETNOOVERWRITE:
             _log.info("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
@@ -1854,12 +1844,12 @@ public class PnfsManagerV3
     public void processFlushMessage(PoolFileFlushedMessage pnfsMessage)
     {
         try {
+            StorageInfo info = pnfsMessage.getFileAttributes().getStorageInfo();
+            FileAttributes attributesToUpdate = FileAttributes.ofStorageInfo(info);
             // Note: no Restriction check as message sent autonomously by pool.
-            FileAttributes attributesToUpdate = new FileAttributes();
-            attributesToUpdate.setStorageInfo(pnfsMessage.getFileAttributes().getStorageInfo());
             _nameSpaceProvider.setFileAttributes(pnfsMessage.getSubject(),
                                                  pnfsMessage.getPnfsId(), attributesToUpdate,
-                                                 EnumSet.noneOf(FileAttribute.class));
+                    EnumSet.noneOf(FileAttribute.class));
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
@@ -2100,9 +2090,8 @@ public class PnfsManagerV3
             if (message.getUpdateAtime() && _atimeGap >= 0) {
                 long now = System.currentTimeMillis();
                 if (attrs.getFileType() == FileType.REGULAR && Math.abs(now - attrs.getAccessTime()) > _atimeGap) {
-                    FileAttributes atimeUpdateAttr = new FileAttributes();
-                    atimeUpdateAttr.setAccessTime(now);
-                    _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId, atimeUpdateAttr, EnumSet.noneOf(FileAttribute.class));
+                    _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId,
+                            FileAttributes.ofAccessTime(now), EnumSet.noneOf(FileAttribute.class));
                 }
             }
         } catch (FileNotFoundCacheException e){

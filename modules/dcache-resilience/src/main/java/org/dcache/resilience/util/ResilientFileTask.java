@@ -69,6 +69,7 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.Task;
@@ -77,6 +78,8 @@ import org.dcache.resilience.handlers.FileOperationHandler.Type;
 import org.dcache.resilience.util.CacheExceptionUtils.FailureType;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
+
+import static diskCacheV111.util.AccessLatency.ONLINE;
 
 /**
  * <p>Main wrapper task for calling {@link FileOperationHandler}.</p>
@@ -153,9 +156,7 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
         }
 
         startTime = System.currentTimeMillis();
-        FileAttributes attributes = new FileAttributes();
-        attributes.setAccessLatency(AccessLatency.ONLINE);
-        attributes.setPnfsId(pnfsId);
+        FileAttributes attributes = FileAttributes.of().accessLatency(ONLINE).pnfsId(pnfsId).build();
 
         if (cancelled) {
             return null;

@@ -62,11 +62,11 @@ public class ScriptNearlineStorageTest {
     }
 
     private FileAttributes createFileAttributes() {
-        FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setPnfsId(new PnfsId("000019E436CD246146C1A47305309A50DC6E"));
-        StorageInfo storageInfo = new GenericStorageInfo("testHsm", "testStorageClass");
-        storageInfo.addLocation(URI.create("dcache://dcache/?store=ttf&group=ard_sinbad&bfid=000084C5FEC6E440422EBB1E0558EB7CF0CC:000019E436CD246146C1A47305309A50DC6E"));
-        fileAttributes.setStorageInfo(storageInfo);
-        return fileAttributes;
+        StorageInfo info = new GenericStorageInfo("testHsm", "testStorageClass");
+        info.addLocation(URI.create("dcache://dcache/?store=ttf&group=ard_sinbad&bfid=000084C5FEC6E440422EBB1E0558EB7CF0CC:000019E436CD246146C1A47305309A50DC6E"));
+        return FileAttributes.of()
+                .pnfsId("000019E436CD246146C1A47305309A50DC6E")
+                .storageInfo(info)
+                .build();
     }
 }

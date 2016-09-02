@@ -23,6 +23,7 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionUnitGroup;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.Partition;
@@ -225,10 +226,9 @@ public class StandardPoolsDAO implements PoolsDAO {
             String protocolUnitName, String hsm, String storageClass,
             String linkGroupName) throws DAOException {
         try {
-            FileAttributes fileAttributes = new FileAttributes();
-            fileAttributes.setStorageInfo(new GenericStorageInfo(hsm, storageClass));
-            return getPoolSelectionUnit().match(type, netUnitName,
-                    protocolUnitName, fileAttributes, linkGroupName);
+            StorageInfo info = new GenericStorageInfo(hsm, storageClass);
+            return getPoolSelectionUnit().match(type, netUnitName, protocolUnitName,
+                    FileAttributes.ofStorageInfo(info), linkGroupName);
         } catch (NoSuchContextException ex) {
             throw new DAOException("Data not available yet - PoolManger up already?", ex);
         } catch (IllegalArgumentException ex) {

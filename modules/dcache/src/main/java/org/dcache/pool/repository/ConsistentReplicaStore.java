@@ -240,8 +240,7 @@ public class ConsistentReplicaStore
 
             /* We always register the file location.
              */
-            FileAttributes attributesToUpdate = new FileAttributes();
-            attributesToUpdate.setLocations(Collections.singleton(_poolName));
+            FileAttributes attributesToUpdate = FileAttributes.ofLocation(_poolName);
 
 
             /* If file size was not registered in the name space, we now replay the registration just as it would happen

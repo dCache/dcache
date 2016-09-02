@@ -2,14 +2,18 @@ package org.dcache.vehicles;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 
 import javax.annotation.Nonnull;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -430,6 +434,11 @@ public class FileAttributes implements Serializable {
         _flags = flags;
     }
 
+    public void setPnfsId(String pnfsId)
+    {
+        setPnfsId(new PnfsId(pnfsId));
+    }
+
     public void setPnfsId(PnfsId pnfsId)
     {
         define(PNFSID);
@@ -545,6 +554,220 @@ public class FileAttributes implements Serializable {
         }
         if (_hsm != null) {
             _hsm = _hsm.intern();
+        }
+    }
+
+    public static FileAttributes ofAccessTime(long when)
+    {
+        return of().accessTime(when).build();
+    }
+
+    public static FileAttributes ofAcl(ACL acl)
+    {
+        return of().acl(acl).build();
+    }
+
+    public static FileAttributes ofChecksum(Checksum value)
+    {
+        return of().checksum(value).build();
+    }
+
+    public static FileAttributes ofCreationTime(long when)
+    {
+        return of().creationTime(when).build();
+    }
+
+    public static FileAttributes ofFlag(String name, String value)
+    {
+        return of().flag(name, value).build();
+    }
+
+    public static FileAttributes ofFlags(Map<String,String> flags)
+    {
+        return of().flags(flags).build();
+    }
+
+    public static FileAttributes ofGid(int gid)
+    {
+        return of().gid(gid).build();
+    }
+
+    public static FileAttributes ofMode(int mode)
+    {
+        return of().mode(mode).build();
+    }
+
+    public static FileAttributes ofModificationTime(long when)
+    {
+        return of().modificationTime(when).build();
+    }
+
+    public static FileAttributes ofPnfsId(String id)
+    {
+        return of().pnfsId(id).build();
+    }
+
+    public static FileAttributes ofPnfsId(PnfsId id)
+    {
+        return of().pnfsId(id).build();
+    }
+
+    public static FileAttributes ofSize(long size)
+    {
+        return of().size(size).build();
+    }
+
+    public static FileAttributes ofStorageInfo(StorageInfo info)
+    {
+        return of().storageInfo(info).build();
+    }
+
+    public static FileAttributes ofLocation(String pool)
+    {
+        return of().location(pool).build();
+    }
+
+    public static FileAttributes ofLocations(Collection<String> pools)
+    {
+        return of().locations(pools).build();
+    }
+
+    public static Builder of()
+    {
+        return new FileAttributes().new Builder();
+    }
+
+    public class Builder
+    {
+        public Builder accessLatency(AccessLatency al)
+        {
+            setAccessLatency(al);
+            return this;
+        }
+
+        public Builder accessTime(long when)
+        {
+            setAccessTime(when);
+            return this;
+        }
+
+        public Builder acl(ACL acl)
+        {
+            setAcl(acl);
+            return this;
+        }
+
+        public FileAttributes build()
+        {
+            return FileAttributes.this;
+        }
+
+        public Builder checksum(Checksum checksum)
+        {
+            setChecksums(Collections.singleton(checksum));
+            return this;
+        }
+
+        public Builder checksums(Set<Checksum> checksums)
+        {
+            setChecksums(checksums);
+            return this;
+        }
+
+        public Builder creationTime(long when)
+        {
+            setCreationTime(when);
+            return this;
+        }
+
+        public Builder flag(String name, String value)
+        {
+            if (!isDefined(FLAGS)) {
+                setFlags(new HashMap());
+            }
+            getFlags().put(name, value);
+            return this;
+        }
+
+        public Builder flags(Map<String, String> flags)
+        {
+            if (!isDefined(FLAGS)) {
+                setFlags(new HashMap());
+            }
+            getFlags().putAll(flags);
+            return this;
+        }
+
+        public Builder gid(int gid)
+        {
+            setGroup(gid);
+            return this;
+        }
+
+        public Builder location(String pool)
+        {
+            if (!isDefined(LOCATIONS)) {
+                setLocations(new ArrayList());
+            }
+            getLocations().add(pool);
+            return this;
+        }
+
+        public Builder locations(Collection<String> pools)
+        {
+            if (!isDefined(LOCATIONS)) {
+                setLocations(new ArrayList());
+            }
+            getLocations().addAll(pools);
+            return this;
+        }
+
+        public Builder mode(int mode)
+        {
+            setMode(mode);
+            return this;
+        }
+
+        public Builder modificationTime(long when)
+        {
+            setModificationTime(when);
+            return this;
+        }
+
+        public Builder pnfsId(String id)
+        {
+            setPnfsId(id);
+            return this;
+        }
+
+        public Builder pnfsId(PnfsId id)
+        {
+            setPnfsId(id);
+            return this;
+        }
+
+        public Builder retentionPolicy(RetentionPolicy rp)
+        {
+            setRetentionPolicy(rp);
+            return this;
+        }
+
+        public Builder size(long size)
+        {
+            setSize(size);
+            return this;
+        }
+
+        public Builder storageInfo(StorageInfo info)
+        {
+            setStorageInfo(info);
+            return this;
+        }
+
+        public Builder uid(int uid)
+        {
+            setOwner(uid);
+            return this;
         }
     }
 }

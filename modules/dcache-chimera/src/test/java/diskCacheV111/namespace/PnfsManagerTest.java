@@ -58,6 +58,8 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
+import static diskCacheV111.util.AccessLatency.NEARLINE;
+import static diskCacheV111.util.RetentionPolicy.CUSTODIAL;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
@@ -464,12 +466,9 @@ public class PnfsManagerTest
         si.addLocation(new URI(OSM_URI_STEM + "?store=tape"));
         si.isSetAddLocation(true);
 
-        FileAttributes attributesToUpdate = new FileAttributes();
-        attributesToUpdate.setAccessLatency(AccessLatency.NEARLINE);
-        attributesToUpdate.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
-        attributesToUpdate.setStorageInfo(si);
         PnfsSetFileAttributes setFileAttributesMessage =
-                new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), attributesToUpdate);
+                new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(),
+                FileAttributes.of().accessLatency(NEARLINE).retentionPolicy(CUSTODIAL).storageInfo(si).build());
 
         _pnfsManager.setFileAttributes(setFileAttributesMessage);
         assertThat("Setting storage info failed", setFileAttributesMessage.getReturnCode(), is(0));
@@ -493,20 +492,18 @@ public class PnfsManagerTest
         si.addLocation(new URI(OSM_URI_STEM + "?store=tape1"));
         si.isSetAddLocation(true);
 
-        FileAttributes attributesToUpdate = new FileAttributes();
-        attributesToUpdate.setStorageInfo(si);
         PnfsSetFileAttributes setFileAttributesMessage =
-                new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), attributesToUpdate);
+                new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(),
+                        FileAttributes.ofStorageInfo(si));
 
         _pnfsManager.setFileAttributes(setFileAttributesMessage);
 
         si.addLocation(new URI(OSM_URI_STEM + "?store=tape2"));
         si.isSetAddLocation(true);
 
-        attributesToUpdate = new FileAttributes();
-        attributesToUpdate.setStorageInfo(si);
         setFileAttributesMessage =
-            new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(), attributesToUpdate);
+            new PnfsSetFileAttributes(pnfsCreateEntryMessage.getPnfsId(),
+                    FileAttributes.ofStorageInfo(si));
 
         _pnfsManager.setFileAttributes(setFileAttributesMessage);
         assertEquals("failed to add second tape location", 0, setFileAttributesMessage.getReturnCode() );
@@ -556,11 +553,10 @@ public class PnfsManagerTest
         Stat stat = _fs.stat(inode);
 
         int mode = 0222;
-        FileAttributes attr = new FileAttributes();
-        attr.setMode(mode);
 
         PnfsSetFileAttributes pnfsSetFileAttributes =
-                new PnfsSetFileAttributes(new PnfsId(inode.statCache().getId()), attr);
+                new PnfsSetFileAttributes(new PnfsId(inode.statCache().getId()),
+                        FileAttributes.ofMode(mode));
         _pnfsManager.setFileAttributes(pnfsSetFileAttributes);
 
         Stat new_stat = _fs.stat(inode);

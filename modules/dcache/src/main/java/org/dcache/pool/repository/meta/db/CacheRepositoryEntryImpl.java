@@ -165,8 +165,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     public synchronized FileAttributes getFileAttributes() throws CacheException
     {
         try {
-            FileAttributes attributes = new FileAttributes();
-            attributes.setPnfsId(_pnfsId);
+            FileAttributes attributes = FileAttributes.ofPnfsId(_pnfsId);
             StorageInfo storageInfo = getStorageInfo();
             if (storageInfo != null) {
                 StorageInfos.injectInto(storageInfo, attributes);

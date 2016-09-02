@@ -967,10 +967,8 @@ public class LegacyAdminShell
             String dest = args.argv(2);
             PnfsId pnfsId = new PnfsId(args.argv(0));
 
-            FileAttributes fileAttributes = new FileAttributes();
-            fileAttributes.setPnfsId(pnfsId);
-            Pool2PoolTransferMsg p2p =
-                    new Pool2PoolTransferMsg(source, dest, fileAttributes);
+            Pool2PoolTransferMsg p2p = new Pool2PoolTransferMsg(source, dest,
+                    FileAttributes.ofPnfsId(pnfsId));
 
 
             cellEndPoint.sendMessage(

@@ -373,10 +373,8 @@ public class RepositorySubsystemTest
     {
         repository.init();
         List<StickyRecord> stickyRecords = Collections.emptyList();
-        FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(id1);
-        attributes.setStorageInfo(info1);
-        repository.createEntry(attributes, FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class));
+        repository.createEntry(FileAttributes.of().pnfsId(id1).storageInfo(info1).build(),
+                FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class));
     }
 
     @Test(expected=IllegalStateException.class)

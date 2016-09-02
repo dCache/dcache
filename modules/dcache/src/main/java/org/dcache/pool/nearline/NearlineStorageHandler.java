@@ -842,12 +842,12 @@ public class NearlineStorageHandler
                     throw new CacheException(2, e.getMessage(), e);
                 }
             }
-            FileAttributes fileAttributesForNotification = new FileAttributes();
-            fileAttributesForNotification.setAccessLatency(fileAttributes.getAccessLatency());
-            fileAttributesForNotification.setRetentionPolicy(fileAttributes.getRetentionPolicy());
-            fileAttributesForNotification.setStorageInfo(storageInfo);
-            fileAttributesForNotification.setSize(fileAttributes.getSize());
-            return fileAttributesForNotification;
+            return FileAttributes.of()
+                    .accessLatency(fileAttributes.getAccessLatency())
+                    .retentionPolicy(fileAttributes.getRetentionPolicy())
+                    .storageInfo(storageInfo)
+                    .size(fileAttributes.getSize())
+                    .build();
         }
 
         private void notifyNamespace(PnfsId pnfsid, FileAttributes fileAttributes)

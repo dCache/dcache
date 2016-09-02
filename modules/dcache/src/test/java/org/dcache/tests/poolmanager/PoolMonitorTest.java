@@ -100,10 +100,8 @@ public class PoolMonitorTest
         /*
          * exercise
          */
-        FileAttributes attributes = new FileAttributes();
+        FileAttributes attributes = FileAttributes.of().pnfsId(pnfsId).locations(pools).build();
         StorageInfos.injectInto(_storageInfo, attributes);
-        attributes.setPnfsId(pnfsId);
-        attributes.setLocations(pools);
         PoolSelector availableLocations =
             _poolMonitor.getPoolSelector(attributes, _protocolInfo, null);
 

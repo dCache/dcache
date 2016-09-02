@@ -408,11 +408,9 @@ public class P2PClient
         public String call() throws
                 IOException, CacheException, InterruptedException
         {
-            FileAttributes fileAttributes = new FileAttributes();
-            fileAttributes.setPnfsId(pnfsId);
             List<StickyRecord> stickyRecords = Collections.emptyList();
-            newCompanion(pool, fileAttributes, ReplicaState.CACHED, stickyRecords, null,
-                         false, null);
+            newCompanion(pool, FileAttributes.ofPnfsId(pnfsId), ReplicaState.CACHED,
+                    stickyRecords, null, false, null);
             return "Transfer Initiated";
         }
     }

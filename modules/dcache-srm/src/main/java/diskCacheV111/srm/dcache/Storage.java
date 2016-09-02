@@ -1273,10 +1273,9 @@ public final class Storage
                 throw new SRMException("Storage.setFileMetaData: " +
                                        "metadata in not dCacheMetaData");
             }
-            DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
-            FileAttributes updatedAttributes = new FileAttributes();
-            updatedAttributes.setMode(dfmd.permMode);
-            handler.setFileAttributes(dfmd.getPnfsId(), updatedAttributes);
+            PnfsId pnfsid = ((DcacheFileMetaData) fmd).getPnfsId();
+            int mode = ((DcacheFileMetaData) fmd).permMode;
+            handler.setFileAttributes(pnfsid, FileAttributes.ofMode(mode));
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("PnfsManager is unavailable: "
                                                 + e.getMessage(), e);
@@ -2427,10 +2426,9 @@ public final class Storage
             }
 
             PnfsId pnfsId = new PnfsId(fileId);
-            FileAttributes attributes = new FileAttributes();
-            attributes.setPnfsId(pnfsId);
             PinManagerExtendPinMessage extendLifetime =
-                new PinManagerExtendPinMessage(attributes, Long.parseLong(pinId), newPinLifetime);
+                new PinManagerExtendPinMessage(FileAttributes.ofPnfsId(pnfsId),
+                        Long.parseLong(pinId), newPinLifetime);
             extendLifetime.setSubject(asDcacheUser(user).getSubject());
             extendLifetime = _pinManagerStub.sendAndWait(extendLifetime);
             return extendLifetime.getLifetime();

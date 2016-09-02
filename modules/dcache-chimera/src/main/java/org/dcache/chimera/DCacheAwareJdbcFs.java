@@ -160,8 +160,6 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
      */
     @Override
     public void pin(FsInode inode, long lifetime) throws ChimeraFsException {
-        FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(new PnfsId(inode.getId()));
         /*
          * TODO improve code to pass in the actual InetAddress of the
          * client so that link net masks do not interfere; note that SRM uses
@@ -170,7 +168,8 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
         ProtocolInfo protocolInfo
             =  new DCapProtocolInfo("DCap", 3, 0, new InetSocketAddress("localhost", 0));
         PinManagerPinMessage message
-            = new PinManagerPinMessage(attributes, protocolInfo, null, lifetime);
+            = new PinManagerPinMessage(FileAttributes.ofPnfsId(inode.getId()),
+                    protocolInfo, null, lifetime);
 
         pinManagerStub.notify(message);
     }

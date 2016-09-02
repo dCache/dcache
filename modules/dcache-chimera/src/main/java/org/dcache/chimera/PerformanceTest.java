@@ -61,6 +61,8 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
+import static diskCacheV111.util.AccessLatency.ONLINE;
+import static diskCacheV111.util.RetentionPolicy.REPLICA;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.namespace.FileAttribute.*;
@@ -285,21 +287,18 @@ public class PerformanceTest extends Thread
                 provider.getParentOf(Subjects.ROOT, getPnfsid(path));
                 break;
             case ADD_CHECKSUM:
-                fileAttributes = new FileAttributes();
-                fileAttributes.setChecksums(Collections.singleton(CHECKSUM));
                 provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
-                                           fileAttributes, EnumSet.noneOf(FileAttribute.class));
+                        FileAttributes.ofChecksum(CHECKSUM),
+                        EnumSet.noneOf(FileAttribute.class));
                 break;
             case GET_CHECKSUMS:
                 provider.getFileAttributes(Subjects.ROOT, getPnfsid(path),
                                            EnumSet.of(FileAttribute.CHECKSUM)).getChecksums();
                 break;
             case SET_FILE_ATTR:
-                fileAttributes = new FileAttributes();
-                fileAttributes.setAccessLatency(AccessLatency.ONLINE);
-                fileAttributes.setRetentionPolicy(RetentionPolicy.REPLICA);
                 provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
-                                           fileAttributes, EnumSet.noneOf(FileAttribute.class));
+                        FileAttributes.of().accessLatency(ONLINE).retentionPolicy(REPLICA).build(),
+                        EnumSet.noneOf(FileAttribute.class));
                 break;
             case GET_FILE_ATTR:
                 provider.getFileAttributes(Subjects.ROOT, getPnfsid(path), EnumSet.allOf(FileAttribute.class));
@@ -321,10 +320,8 @@ public class PerformanceTest extends Thread
                 info.setKey("store", "test");
                 info.setKey("group", "disk");
                 info.addLocation(new URI("osm://hsm/?store=test&group=disk&bdif=1234"));
-                FileAttributes attributesToUpdate = new FileAttributes();
-                attributesToUpdate.setStorageInfo(info);
                 provider.setFileAttributes(Subjects.ROOT, getPnfsid(path),
-                                           attributesToUpdate, EnumSet.noneOf(FileAttribute.class));
+                        FileAttributes.ofStorageInfo(info), EnumSet.noneOf(FileAttribute.class));
                 break;
             case MKDIR:
                 provider.createDirectory(Subjects.ROOT, path, UID, GID, 0755);

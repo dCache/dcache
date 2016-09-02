@@ -62,14 +62,6 @@ public class PosixPermissionHandlerTest {
         subject_anonymouos.getPrincipals().add(origin);
     }
 
-    private FileAttributes getAttributes(int uid, int gid, int mode) {
-        FileAttributes attr = new FileAttributes();
-        attr.setOwner(uid);
-        attr.setGroup(gid);
-        attr.setMode(mode);
-        return attr;
-    }
-
     /***********************************************************************************************************************************************************
      * Tests
      */
@@ -77,25 +69,25 @@ public class PosixPermissionHandlerTest {
     public void testCreateFile() {
         FileAttributes attr;
 
-        attr = getAttributes(ROOT_UID, ROOT_GID, 0755);
+        attr = FileAttributes.of().uid(ROOT_UID).gid(ROOT_GID).mode(0755).build();
         assertTrue("Regular user is not allowed to create a file without sufficient permissions",
                 pdp.canCreateFile(subject_owner, attr) == AccessType.ACCESS_DENIED);
 
-        attr = getAttributes(OWNER_UID, OWNER_GID, 0755);
+        attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0755).build();
         assertTrue("User should be allowed to create a file with sufficient permissions",
                 pdp.canCreateFile(subject_owner, attr) == AccessType.ACCESS_ALLOWED);
     }
 
     @Test
     public void testCreateDir() {
-        FileAttributes attr = getAttributes(ROOT_UID, ROOT_GID, 0755);
+        FileAttributes attr = FileAttributes.of().uid(ROOT_UID).gid(ROOT_GID).mode(0755).build();
         assertTrue("Regular user is not allowed to create a directory without sufficient permissions", //
                 pdp.canCreateSubDir(subject_owner, attr) == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void testWriteFile() {
-        FileAttributes attr = getAttributes(OWNER_UID, OWNER_GID, 0600);
+        FileAttributes attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0600).build();
 
         assertTrue("Owner is allowed to write into his file with mode 0600", //
                 pdp.canWriteFile(subject_owner, attr) == AccessType.ACCESS_ALLOWED);
@@ -109,7 +101,7 @@ public class PosixPermissionHandlerTest {
 
     @Test
     public void testGroupCreate() {
-        FileAttributes attr = getAttributes(OWNER_UID, OWNER_GID, 0770);
+        FileAttributes attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0770).build();
 
         assertTrue("Group member is allowed to create a new directory in a parent with mode 0770", //
                 pdp.canCreateSubDir(subject_groupMember, attr) == AccessType.ACCESS_ALLOWED);
@@ -117,14 +109,14 @@ public class PosixPermissionHandlerTest {
 
     @Test
     public void testNegativeGroup() {
-        FileAttributes attr = getAttributes(OWNER_UID, OWNER_GID, 0707);
+        FileAttributes attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0707).build();
         assertTrue("Negative group member not allowed to create a new directory in a parent with mode 0707", //
                 pdp.canCreateSubDir(subject_groupMember, attr) == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void testNegativeOwner() {
-        FileAttributes attr = getAttributes(OWNER_UID, OWNER_GID, 0077);
+        FileAttributes attr = FileAttributes.of().uid(OWNER_UID).gid(OWNER_GID).mode(0077).build();
         assertTrue("Negative owner not allowed to create a new directory in a parent with mode 0077", //
                 pdp.canCreateSubDir(subject_owner, attr) == AccessType.ACCESS_DENIED);
     }

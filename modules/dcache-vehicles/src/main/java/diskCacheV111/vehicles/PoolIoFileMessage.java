@@ -43,8 +43,7 @@ public class PoolIoFileMessage extends PoolMessage {
                               ProtocolInfo protocolInfo  ){
        super(pool) ;
        _protocolInfo = protocolInfo ;
-        _fileAttributes = new FileAttributes();
-        _fileAttributes.setPnfsId(pnfsId);
+        _fileAttributes = FileAttributes.ofPnfsId(pnfsId);
     }
     public PnfsId       getPnfsId(){ return _fileAttributes.getPnfsId(); }
     public ProtocolInfo getProtocolInfo(){ return _protocolInfo ; }

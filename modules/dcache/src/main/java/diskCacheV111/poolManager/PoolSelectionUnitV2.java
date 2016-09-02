@@ -1580,13 +1580,11 @@ public class PoolSelectionUnitV2
                     String dCacheUnit,
                     String netUnit,
                     String protocolUnit) {
-        FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(
-                GenericStorageInfo.valueOf(storeUnit, dCacheUnit));
+        StorageInfo info = GenericStorageInfo.valueOf(storeUnit, dCacheUnit);
         return match(DirectionType.valueOf(direction.toUpperCase()),
                      netUnit.equals("*") ? null : netUnit,
                      protocolUnit.equals("*") ? null : protocolUnit,
-                     fileAttributes, linkGroup);
+                     FileAttributes.ofStorageInfo(info), linkGroup);
     }
 
     // ..................................................................
