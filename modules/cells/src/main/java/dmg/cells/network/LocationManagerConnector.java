@@ -23,6 +23,7 @@ import dmg.util.StreamEngine;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
+import org.dcache.util.NDC;
 
 public class LocationManagerConnector
     extends CellAdapter
@@ -49,7 +50,7 @@ public class LocationManagerConnector
     @Override
     protected void started()
     {
-        _thread = getNucleus().newThread(this, "TunnelConnector");
+        _thread = getNucleus().newThread(this, "TunnelConnector-" + _domain);
         _thread.start();
     }
 
@@ -93,6 +94,7 @@ public class LocationManagerConnector
         Args args = getArgs();
         String name = getCellName() + '*';
         Random random = new Random();
+        NDC.push(_address.toString());
         try {
             while (true) {
                 try {
@@ -129,6 +131,7 @@ public class LocationManagerConnector
         } catch (InterruptedIOException | InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
+            NDC.pop();
             setStatus("Terminated");
         }
     }
