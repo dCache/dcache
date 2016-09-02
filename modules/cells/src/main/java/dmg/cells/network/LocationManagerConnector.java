@@ -1,6 +1,7 @@
 package dmg.cells.network;
 
 import com.google.common.net.HostAndPort;
+import com.google.common.util.concurrent.Uninterruptibles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,6 +128,8 @@ public class LocationManagerConnector
             }
         } catch (InterruptedIOException | InterruptedException e) {
             Thread.currentThread().interrupt();
+        } finally {
+            setStatus("Terminated");
         }
     }
 
@@ -148,6 +151,7 @@ public class LocationManagerConnector
     {
         if (_thread != null) {
             _thread.interrupt();
+            Uninterruptibles.joinUninterruptibly(_thread);
         }
     }
 }
