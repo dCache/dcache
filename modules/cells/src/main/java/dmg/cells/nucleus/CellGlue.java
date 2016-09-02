@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.retry.RetryOneTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +38,7 @@ class CellGlue
 
     private final String _cellDomainName;
     private final ConcurrentMap<String, CellNucleus> _cellList = Maps.newConcurrentMap();
+    private final ConcurrentMap<String, CellNucleus> _publicCellList = Maps.newConcurrentMap();
     private final Set<CellNucleus> _killedCells = Collections.newSetFromMap(
             Maps.<CellNucleus, Boolean>newConcurrentMap());
     private final Map<String, List<CellEventListener>> _cellEventListener =
@@ -89,19 +89,28 @@ class CellGlue
         return _masterThreadGroup;
     }
 
-    void addCell(String name, CellNucleus cell)
+    void registerCell(CellNucleus cell)
             throws IllegalArgumentException
     {
+        if (cell.getThisCell() instanceof SystemCell) {
+            checkState(_systemNucleus == null);
+            _systemNucleus = cell;
+        }
+
+        String name = cell.getCellName();
         if (_cellList.putIfAbsent(name, cell) != null) {
             throw new IllegalArgumentException("Name Mismatch ( cell " + name + " exist )");
         }
         sendToAll(new CellEvent(name, CellEvent.CELL_CREATED_EVENT));
     }
 
-    void setSystemNucleus(CellNucleus nucleus)
+    void publishCell(CellNucleus cell)
+            throws IllegalArgumentException
     {
-        checkState(_systemNucleus == null);
-        _systemNucleus = nucleus;
+        String name = cell.getCellName();
+        if (_publicCellList.putIfAbsent(name, cell) != null) {
+            throw new IllegalArgumentException("Name Mismatch ( cell " + name + " exist )");
+        }
     }
 
     CellNucleus getSystemNucleus()
@@ -132,7 +141,7 @@ class CellGlue
     public void routeAdd(CellRoute route)
     {
         CellAddressCore target = route.getTarget();
-        if (target.getCellDomainName().equals(getCellDomainName()) && !_cellList.containsKey(target.getCellName())) {
+        if (target.getCellDomainName().equals(getCellDomainName()) && !_publicCellList.containsKey(target.getCellName())) {
             throw new IllegalArgumentException("No such cell: " + target);
         }
         _routingTable.add(route);
@@ -158,7 +167,7 @@ class CellGlue
     List<CellTunnelInfo> getCellTunnelInfos()
     {
         List<CellTunnelInfo> v = new ArrayList<>();
-        for (CellNucleus cellNucleus : _cellList.values()) {
+        for (CellNucleus cellNucleus : _publicCellList.values()) {
             Cell c = cellNucleus.getThisCell();
             if (c instanceof CellTunnel) {
                 v.add(((CellTunnel) c).getCellTunnelInfo());
@@ -240,7 +249,7 @@ class CellGlue
             throws IllegalArgumentException
     {
         CellNucleus nucleus = _cellList.get(cellName);
-        if (nucleus == null || _killedCells.contains(nucleus)) {
+        if (nucleus == null) {
             throw new IllegalArgumentException("Cell Not Found : " + cellName);
         }
         _kill(sender, nucleus, 0);
@@ -307,28 +316,30 @@ class CellGlue
     synchronized void destroy(CellNucleus nucleus)
     {
         _cellEventListener.remove(nucleus.getCellName());
+        _publicCellList.remove(nucleus.getCellName());
         _cellList.remove(nucleus.getCellName());
         _killedCells.remove(nucleus);
         LOGGER.trace("destroy : sendToAll : killed {}", nucleus.getCellName());
         notifyAll();
     }
 
-    private void _kill(CellNucleus source, final CellNucleus destination, long to)
+    private synchronized void _kill(CellNucleus source, final CellNucleus destination, long to)
     {
+        /* Mark the cell as being killed to prevent it from being killed more
+         * than once and to block certain operations while it is being killed.
+         */
+        String cellToKill = destination.getCellName();
+        if (_cellList.get(cellToKill) != destination || !_killedCells.add(destination)) {
+            return;
+        }
+
         /* Remove routes to this cell first to allow it to be drained cleanly.
          */
         for (CellRoute route : _routingTable.delete(destination.getThisAddress())) {
             sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_DELETED_EVENT));
         }
 
-        /* Mark the cell as being killed to prevent it from being killed more
-         * than once and to block certain operations while it is being killed.
-         */
-        String cellToKill = destination.getCellName();
-        if (!_killedCells.add(destination)) {
-            LOGGER.trace("Cell is being killed: {}", cellToKill);
-            return;
-        }
+        _publicCellList.remove(cellToKill, destination);
 
         /* Post the obituary.
          */
@@ -482,8 +493,8 @@ class CellGlue
 
     private boolean deliverLocally(CellMessage msg, CellAddressCore address)
     {
-        CellNucleus destNucleus = _cellList.get(address.getCellName());
-        if (destNucleus != null && !_killedCells.contains(destNucleus)) {
+        CellNucleus destNucleus = _publicCellList.get(address.getCellName());
+        if (destNucleus != null) {
             /* Is the message addressed to the cell or is the cell merely a router.
              */
             CellPath destinationPath = msg.getDestinationPath();
