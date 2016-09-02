@@ -14,7 +14,6 @@ import javax.security.auth.Subject;
 
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
-import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
@@ -43,11 +42,13 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileType.DIR;
+import static org.dcache.namespace.FileType.LINK;
 
-public class PnfsHandler
-    implements CellMessageSender
+public class PnfsHandler implements CellMessageSender
 {
     private final String _poolName;
     private static final long DEFAULT_PNFS_TIMEOUT = TimeUnit.MINUTES.toMillis(
@@ -247,19 +248,20 @@ public class PnfsHandler
     public PnfsCreateEntryMessage createPnfsDirectory(String path)
         throws CacheException
     {
-        return request(new PnfsCreateDirectoryMessage(path));
+        return request(new PnfsCreateEntryMessage(path, FileAttributes.ofFileType(DIR)));
     }
 
     public PnfsCreateEntryMessage createPnfsDirectory(String path,
             Set<FileAttribute> attributes) throws CacheException
     {
-        return request(new PnfsCreateDirectoryMessage(path, -1, -1, -1, attributes));
+        return request(new PnfsCreateEntryMessage(path, FileAttributes.ofFileType(DIR),
+                attributes));
     }
 
-    public PnfsCreateEntryMessage createPnfsDirectory(String path, int uid, int gid, int mode)
-        throws CacheException
+    public PnfsCreateEntryMessage createPnfsDirectory(String path,
+            FileAttributes attributes) throws CacheException
     {
-        return request(new PnfsCreateDirectoryMessage(path, uid, gid, mode));
+        return request(new PnfsCreateEntryMessage(path, attributes));
     }
 
     /**
@@ -301,18 +303,11 @@ public class PnfsHandler
         return message.getFileAttributes();
     }
 
-   public PnfsCreateEntryMessage createPnfsEntry( String path )
-          throws CacheException                {
-
-       return request(new PnfsCreateEntryMessage(path)) ;
-
-   }
-
-    public PnfsCreateEntryMessage createSymLink(String path, String dest, int uid, int gid)
-            throws CacheException {
-
-        return request(new PnfsCreateSymLinkMessage(path, dest, uid, gid));
-
+    public PnfsCreateEntryMessage createSymLink(String path, String dest,
+            FileAttributes assignAttributes) throws CacheException
+    {
+        assignAttributes.setFileType(LINK);
+        return request(new PnfsCreateSymLinkMessage(path, dest, assignAttributes));
     }
 
     public void renameEntry(PnfsId pnfsId, String path, String newName, boolean overwrite)
@@ -327,12 +322,11 @@ public class PnfsHandler
         request(new PnfsRenameMessage(path, newName, overwrite));
     }
 
-   public PnfsCreateEntryMessage createPnfsEntry( String path , int uid , int gid , int mode )
-          throws CacheException                {
-
-       return request(new PnfsCreateEntryMessage(path, uid, gid, mode)) ;
-
-   }
+    public PnfsCreateEntryMessage createPnfsEntry(String path,
+            FileAttributes attributes) throws CacheException
+    {
+       return request(new PnfsCreateEntryMessage(path, attributes));
+    }
 
     public PnfsId getParentOf(PnfsId pnfsId)
         throws CacheException

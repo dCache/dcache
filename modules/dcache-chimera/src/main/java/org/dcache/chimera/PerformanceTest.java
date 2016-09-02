@@ -266,7 +266,9 @@ public class PerformanceTest extends Thread
             FileAttributes fileAttributes;
             switch (aOp) {
             case CREATE_ENTRY:
-                provider.createFile(Subjects.ROOT, path, UID, GID, 0664, EnumSet.noneOf(FileAttribute.class));
+                provider.createFile(Subjects.ROOT, path,
+                        FileAttributes.of().uid(UID).gid(GID).mode(0664).build(),
+                        EnumSet.noneOf(FileAttribute.class));
                 break;
             case PATH_TO_PNFS_ID:
                 getPnfsid(path);
@@ -324,7 +326,8 @@ public class PerformanceTest extends Thread
                         FileAttributes.ofStorageInfo(info), EnumSet.noneOf(FileAttribute.class));
                 break;
             case MKDIR:
-                provider.createDirectory(Subjects.ROOT, path, UID, GID, 0755);
+                provider.createDirectory(Subjects.ROOT, path,
+                        FileAttributes.of().uid(UID).gid(GID).mode(0755).build());
                 break;
             case RMDIR:
                 provider.deleteEntry(Subjects.ROOT, EnumSet.of(FileType.DIR),

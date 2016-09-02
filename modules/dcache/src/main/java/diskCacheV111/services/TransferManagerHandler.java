@@ -27,6 +27,7 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
+import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -51,6 +52,7 @@ import org.dcache.cells.MessageReply;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.vehicles.FileAttributes;
@@ -174,9 +176,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             return;
         }
         parentDir = pnfsPath.substring(0, last_slash_pos);
-        PnfsGetFileAttributes message;
+        PnfsMessage message;
         if (store) {
-            message = new PnfsCreateEntryMessage(pnfsPath);
+            message = new PnfsCreateEntryMessage(pnfsPath, FileAttributes.ofFileType(FileType.REGULAR));
             message.setSubject(transferRequest.getSubject());
             message.setRestriction(transferRequest.getRestriction());
             setState(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE);

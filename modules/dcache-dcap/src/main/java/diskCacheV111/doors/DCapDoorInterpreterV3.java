@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.security.auth.Subject;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.AccessLatency;
@@ -56,6 +55,7 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.StorageInfo;
+
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
@@ -63,7 +63,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
-import org.dcache.acl.ACL;
+
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.parser.ACLParser;
@@ -90,6 +90,8 @@ import static org.dcache.namespace.FileType.REGULAR;
 
 public class DCapDoorInterpreterV3 implements KeepAliveListener,
         DcapProtocolInterpreter {
+
+    private static final int UNDEFINED = -1;
 
     public static final Logger _log =
         LoggerFactory.getLogger(DCapDoorInterpreterV3.class);
@@ -167,14 +169,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
      * the owner of new name space entries. Never used for
      * authorization.
      */
-    private int _uid = NameSpaceProvider.DEFAULT;
+    private int _uid = UNDEFINED;
 
     /**
      * The client GID set through the hello command. Used for setting
      * the group of new name space entries. Never used for
      * authorization.
      */
-    private int _gid = NameSpaceProvider.DEFAULT;
+    private int _gid = UNDEFINED;
 
     private int     _majorVersion;
     private int     _minorVersion;
@@ -975,9 +977,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             _message = reply;
 
-            _log.debug("pnfsGetFileAttributesArrived: {}", _message);
+            _log.debug("pnfsGetFileAttributesArrived: {}", reply);
 
-            if (_message.getReturnCode() != 0) {
+            if (reply.getReturnCode() != 0) {
                 try {
                     if (!fileAttributesNotAvailable()){
                         removeUs();
@@ -988,9 +990,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     removeUs();
                     return;
                 }
+            } else {
+                _fileAttributes = reply.getFileAttributes();
             }
 
-            _fileAttributes = _message.getFileAttributes();
 
             _info.setPnfsId(_fileAttributes.getPnfsId());
 
@@ -1388,13 +1391,22 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public boolean fileAttributesNotAvailable() throws CacheException
         {
             String path = _message.getPnfsPath();
-            PnfsCreateEntryMessage  pnfsEntry = _pnfs.createPnfsDirectory(path, getUid(), getGid(),
-                                      getMode(NameSpaceProvider.DEFAULT));
-            if (_vargs.hasOption("acl")) {
-                String aclString = _vargs.getOption("acl");
-                ACL acl = ACLParser.parseLinuxAcl(RsType.FILE, aclString);
-                _pnfs.setFileAttributes(pnfsEntry.getPnfsId(), FileAttributes.ofAcl(acl));
+            FileAttributes attributes = FileAttributes.ofFileType(DIR);
+            int uid = getUid();
+            if (uid != UNDEFINED) {
+                attributes.setOwner(uid);
             }
+            int gid = getGid();
+            if (gid != UNDEFINED) {
+                attributes.setGroup(gid);
+            }
+
+            if (_vargs.hasOption("acl")) {
+                String acl = _vargs.getOption("acl");
+                attributes.setAcl(ACLParser.parseLinuxAcl(RsType.FILE, acl));
+            }
+
+            _pnfs.createPnfsDirectory(path, attributes);
             sendReply("fileAttributesNotAvailable", 0, "");
             return false;
         }
@@ -1699,23 +1711,21 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _log.debug("Creating file. parent = new File(path).getParent()  -> parent = {}", parent);
             _log.info("Creating file {}", path);
 
-            PnfsCreateEntryMessage pnfsEntry =
-                _pnfs.createPnfsEntry(_message.getPnfsPath(),
-                                      getUid(), getGid(),
-                                      getMode(NameSpaceProvider.DEFAULT));
+            FileAttributes attributes = FileAttributes.of().uid(getUid()).gid(getGid()).fileType(REGULAR).build();
             if (_vargs.hasOption("acl")) {
-                String aclString = _vargs.getOption("acl");
-                ACL acl = ACLParser.parseLinuxAcl(RsType.FILE, aclString);
-                _pnfs.setFileAttributes(pnfsEntry.getPnfsId(), FileAttributes.ofAcl(acl));
+                String acl = _vargs.getOption("acl");
+                attributes.setAcl(ACLParser.parseLinuxAcl(RsType.FILE, acl));
             }
+
+            PnfsCreateEntryMessage pnfsEntry = _pnfs.createPnfsEntry(path, attributes);
             _log.debug("storageInfoNotAvailable : created pnfsid: {} path: {}",
-                       pnfsEntry.getPnfsId(), pnfsEntry.getPnfsPath());
-            _message = pnfsEntry;
+                       pnfsEntry.getPnfsId(), path);
 
             if (pnfsEntry.getFileAttributes().isDefined(STORAGEINFO) && pnfsEntry.getFileAttributes().getStorageInfo().getKey("path") != null) {
                 _info.setBillingPath(pnfsEntry.getFileAttributes().getStorageInfo().getKey("path"));
             }
 
+            _fileAttributes = pnfsEntry.getFileAttributes();
             _isNew = true;
 
             return true ;
@@ -1773,8 +1783,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                             String path = _message.getPnfsPath();
                             _log.debug("truncating path {}", path);
                             _pnfs.deletePnfsEntry( path );
-                            _message = _pnfs.createPnfsEntry(path , getUid(), getGid(), getMode(NameSpaceProvider.DEFAULT));
-                            _fileAttributes = _message.getFileAttributes();
+                            FileAttributes attributes = FileAttributes.of().uid(getUid()).gid(getGid()).fileType(REGULAR).build();
+                            PnfsCreateEntryMessage message = _pnfs.createPnfsEntry(path, attributes);
+                            _fileAttributes = message.getFileAttributes();
                         }
                     }catch(CacheException ce ) {
                         _log.error(ce.toString());

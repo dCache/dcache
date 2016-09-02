@@ -35,6 +35,8 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
 import static diskCacheV111.vehicles.PnfsFlagMessage.FlagOperation.REMOVE;
+import static org.dcache.namespace.FileType.DIR;
+import static org.dcache.namespace.FileType.REGULAR;
 
 /**
  * The RemoteNameSpaceProvider uses the PnfsManager client stub to provide
@@ -60,33 +62,33 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public FileAttributes createFile(Subject subject, String path, int uid, int gid, int mode,
-                                     Set<FileAttribute> requestedAttributes)
+    public FileAttributes createFile(Subject subject, String path,
+            FileAttributes assignAttributes, Set<FileAttribute> requestedAttributes)
             throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
-        PnfsCreateEntryMessage returnMsg =
-                pnfs.request(new PnfsCreateEntryMessage(path, uid, gid, mode, requestedAttributes));
-        return returnMsg.getFileAttributes();
+        assignAttributes.setFileType(REGULAR);
+        PnfsCreateEntryMessage message = new PnfsCreateEntryMessage(path,
+                assignAttributes, requestedAttributes);
+        return pnfs.request(message).getFileAttributes();
     }
 
     @Override
-    public PnfsId createDirectory(Subject subject, String path, int uid, int gid, int mode)
+    public PnfsId createDirectory(Subject subject, String path, FileAttributes attributes)
             throws CacheException {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
-
-        PnfsCreateEntryMessage returnMsg = pnfs.createPnfsDirectory(path, uid, gid, mode);
-
+        attributes.setFileType(DIR);
+        PnfsCreateEntryMessage returnMsg = pnfs.createPnfsDirectory(path, attributes);
         return returnMsg.getPnfsId();
     }
 
     @Override
     public PnfsId createSymLink(Subject subject, String path, String dest,
-            int uid, int gid) throws CacheException
+            FileAttributes attributes) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, Restrictions.none());
 
-        PnfsCreateEntryMessage returnMsg = pnfs.createSymLink(path, dest, uid, gid);
+        PnfsCreateEntryMessage returnMsg = pnfs.createSymLink(path, dest, attributes);
 
         return returnMsg.getPnfsId();
     }

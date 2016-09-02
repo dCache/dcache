@@ -5,6 +5,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 
 import javax.annotation.Nonnull;
+import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -23,10 +24,12 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.acl.ACL;
+import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -62,7 +65,7 @@ public class FileAttributes implements Serializable {
     /**
      * Set of attributes which have been set.
      */
-    private final Set<FileAttribute> _definedAttributes =
+    private final EnumSet<FileAttribute> _definedAttributes =
         EnumSet.noneOf(FileAttribute.class);
 
     /**
@@ -180,14 +183,14 @@ public class FileAttributes implements Serializable {
         }
     }
 
-    private void define(FileAttribute attribute)
+    private void define(FileAttribute... attributes)
     {
-        _definedAttributes.add(attribute);
+        _definedAttributes.addAll(asList(attributes));
     }
 
-    public void undefine(FileAttribute attribute)
+    public void undefine(FileAttribute... attributes)
     {
-        _definedAttributes.remove(attribute);
+        _definedAttributes.removeAll(asList(attributes));
     }
 
     public boolean isUndefined(FileAttribute attribute)
@@ -195,11 +198,22 @@ public class FileAttributes implements Serializable {
         return !_definedAttributes.contains(attribute);
     }
 
+    /**
+     * @return true iff all attributes are not define.
+     */
+    public boolean isUndefined(Set<FileAttribute> attributes)
+    {
+        return EnumSet.complementOf(_definedAttributes).containsAll(attributes);
+    }
+
     public boolean isDefined(FileAttribute attribute)
     {
         return _definedAttributes.contains(attribute);
     }
 
+    /**
+     * @return true iff all attributes are defined.
+     */
     public boolean isDefined(Set<FileAttribute> attributes)
     {
         return _definedAttributes.containsAll(attributes);
@@ -269,9 +283,17 @@ public class FileAttributes implements Serializable {
         return _group;
     }
 
+    public Optional<Integer> getGroupIfPresent() {
+        return toOptional(OWNER_GROUP, _group);
+    }
+
     public int getMode() {
         guard(MODE);
         return _mode;
+    }
+
+    public Optional<Integer> getModeIfPresent() {
+        return toOptional(MODE, _mode);
     }
 
     /**
@@ -309,6 +331,10 @@ public class FileAttributes implements Serializable {
     public int getOwner() {
         guard(OWNER);
         return _owner;
+    }
+
+    public Optional<Integer> getOwnerIfPresent() {
+        return toOptional(OWNER, _owner);
     }
 
     @Nonnull
@@ -499,6 +525,21 @@ public class FileAttributes implements Serializable {
         return _nlink;
     }
 
+    /**
+     * Remove the {@link FileType} corresponding to the file.  The FileType
+     * must be specified before this method is called.  Subsequent getFileType
+     * or removeFileType will fail unless setFileType is called subsequently.
+     *
+     * @return the removed file type
+     * @throws IllegalStateException if the FileType is not specified.
+     */
+    @Nonnull
+    public FileType removeFileType() {
+        guard(TYPE);
+        undefine(TYPE);
+        return _fileType;
+    }
+
     @Override
     public String toString()
     {
@@ -622,6 +663,11 @@ public class FileAttributes implements Serializable {
         return of().storageInfo(info).build();
     }
 
+    public static FileAttributes ofFileType(FileType type)
+    {
+        return of().fileType(type).build();
+    }
+
     public static FileAttributes ofLocation(String pool)
     {
         return of().location(pool).build();
@@ -680,6 +726,12 @@ public class FileAttributes implements Serializable {
             return this;
         }
 
+        public Builder fileType(FileType type)
+        {
+            setFileType(type);
+            return this;
+        }
+
         public Builder flag(String name, String value)
         {
             if (!isDefined(FLAGS)) {
@@ -696,6 +748,15 @@ public class FileAttributes implements Serializable {
             }
             getFlags().putAll(flags);
             return this;
+        }
+
+        /**
+         * Add the primary gid taken from the primary GidPrincipal within the
+         * Subject.
+         */
+        public Builder gid(Subject subject)
+        {
+            return gid((int)Subjects.getPrimaryGid(subject));
         }
 
         public Builder gid(int gid)
@@ -762,6 +823,14 @@ public class FileAttributes implements Serializable {
         {
             setStorageInfo(info);
             return this;
+        }
+
+        /**
+         *  Add the uid taken from the UidPrincipal within the Subject.
+         */
+        public Builder uid(Subject subject)
+        {
+            return uid((int)Subjects.getUid(subject));
         }
 
         public Builder uid(int uid)

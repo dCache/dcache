@@ -20,7 +20,6 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
@@ -50,7 +49,6 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCancelUpload;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCommitUpload;
-import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
@@ -104,11 +102,14 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.acl.enums.AccessType.*;
 import static org.dcache.auth.Subjects.ROOT;
 import static org.dcache.auth.attributes.Activity.*;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.DIR;
+import static org.dcache.namespace.FileType.REGULAR;
 
 public class PnfsManagerV3
     extends AbstractCellComponent
@@ -142,7 +143,6 @@ public class PnfsManagerV3
         PnfsMapPathMessage.class,
         PnfsGetParentMessage.class,
         PnfsCreateEntryMessage.class,
-        PnfsCreateDirectoryMessage.class,
         PnfsCreateUploadPath.class,
         PnfsGetFileAttributes.class,
         PnfsListDirectoryMessage.class
@@ -198,7 +198,6 @@ public class PnfsManagerV3
         _gauges.addGauge(PnfsAddCacheLocationMessage.class);
         _gauges.addGauge(PnfsClearCacheLocationMessage.class);
         _gauges.addGauge(PnfsGetCacheLocationsMessage.class);
-        _gauges.addGauge(PnfsCreateDirectoryMessage.class);
         _gauges.addGauge(PnfsCreateEntryMessage.class);
         _gauges.addGauge(PnfsDeleteEntryMessage.class);
         _gauges.addGauge(PnfsMapPathMessage.class);
@@ -1172,119 +1171,93 @@ public class PnfsManagerV3
 
     }
 
-    public void createLink(PnfsCreateSymLinkMessage pnfsMessage) {
-        PnfsId pnfsId;
-        _log.info("create symlink {} to {}", pnfsMessage.getPath(), pnfsMessage.getDestination() );
+    public void createEntry(PnfsCreateEntryMessage pnfsMessage)
+    {
+        checkArgument(pnfsMessage.getFileAttributes().isDefined(TYPE));
+        FileAttributes assign = pnfsMessage.getFileAttributes();
+        FileType type = assign.removeFileType();
+        Subject subject = pnfsMessage.getSubject();
+        String path = pnfsMessage.getPnfsPath();
+
         try {
-            File file = new File(pnfsMessage.getPath());
-            checkMask(pnfsMessage.getSubject(), file.getParent(),
-                      pnfsMessage.getAccessMask());
-            checkRestrictionOnParent(pnfsMessage, MANAGE);
-            pnfsId = _nameSpaceProvider.createSymLink(pnfsMessage.getSubject(),
-                                                      pnfsMessage.getPath(),
-                                                      pnfsMessage.getDestination(),
-                                                      pnfsMessage.getUid(),
-                                                      pnfsMessage.getGid());
+            File file = new File(path);
+            checkMask(subject, file.getParent(), pnfsMessage.getAccessMask());
 
-            pnfsMessage.setPnfsId(pnfsId);
-            pnfsMessage.setSucceeded();
+            Set<FileAttribute> requested = pnfsMessage.getAcquire();
+            FileAttributes attrs = null;
 
-        } catch (CacheException e) {
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
-        } catch (RuntimeException e) {
-            _log.error("Failed to create a symlink " +
-                    pnfsMessage.getPath() + " to " + pnfsMessage.getDestination(), e);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-        }
+            switch (type) {
+            case DIR:
+                _log.info("create directory {}", path);
+                checkRestrictionOnParent(pnfsMessage, MANAGE);
 
-    }
+                PnfsId pnfsId = _nameSpaceProvider.createDirectory(subject, path,
+                        assign);
 
-    public void createDirectory(PnfsCreateDirectoryMessage pnfsMessage){
-        PnfsId pnfsId;
-        _log.info("create directory "+pnfsMessage.getPath());
-        try {
-            File file = new File(pnfsMessage.getPath());
-            checkMask(pnfsMessage.getSubject(), file.getParent(),
-                      pnfsMessage.getAccessMask());
-            checkRestrictionOnParent(pnfsMessage, MANAGE);
-            pnfsId = _nameSpaceProvider.createDirectory(pnfsMessage.getSubject(),
-                                                        pnfsMessage.getPath(),
-                                                        pnfsMessage.getUid(), pnfsMessage.getGid(),
-                                                        pnfsMessage.getMode());
+                pnfsMessage.setPnfsId(pnfsId);
 
-            pnfsMessage.setPnfsId(pnfsId);
-            pnfsMessage.setSucceeded();
+                //
+                // FIXME : is it really true ?
+                //
+                // now we try to get the storageInfo out of the
+                // parent directory. If it fails, we don't care.
+                // We declare the request to be successful because
+                // the createEntry seem to be ok.
+                try{
+                    _log.info( "Trying to get storageInfo for {}", pnfsId);
 
-            //
-            // FIXME : is it really true ?
-            //
-            // now we try to get the storageInfo out of the
-            // parent directory. If it fails, we don't care.
-            // We declare the request to be successful because
-            // the createEntry seem to be ok.
-            try{
-                _log.info( "Trying to get storageInfo for "+pnfsId) ;
+                    /* If we were allowed to create the entry above, then
+                     * we also ought to be allowed to read it here. Hence
+                     * we use ROOT as the subject.
+                     */
+                    attrs = _nameSpaceProvider.getFileAttributes(ROOT, pnfsId, requested);
+                } catch (CacheException e) {
+                    _log.warn("Can't determine storageInfo: " + e);
+                }
+                break;
 
-                /* If we were allowed to create the entry above, then
-                 * we also ought to be allowed to read it here. Hence
-                 * we use ROOT as the subject.
-                 */
-                Set<FileAttribute> requested =
-                    pnfsMessage.getRequestedAttributes();
-                FileAttributes attrs =
-                    _nameSpaceProvider.getFileAttributes(ROOT,
-                                                         pnfsId,
-                                                         requested);
-                pnfsMessage.setFileAttributes(attrs);
-            } catch (CacheException e) {
-                _log.warn("Can't determine storageInfo: " + e);
+            case REGULAR:
+                _log.info("create file {}", path);
+                checkRestriction(pnfsMessage, UPLOAD);
+
+                requested.add(FileAttribute.STORAGEINFO);
+                requested.add(FileAttribute.PNFSID);
+
+                attrs = _nameSpaceProvider.createFile(subject, path, assign, requested);
+
+                StorageInfo info = attrs.getStorageInfo();
+                if (info.getKey("path") == null) {
+                    info.setKey("path", path);
+                }
+                info.setKey("uid", Integer.toString(assign.getOwnerIfPresent().or(-1)));
+                info.setKey("gid", Integer.toString(assign.getGroupIfPresent().or(-1)));
+
+                pnfsMessage.setPnfsId(attrs.getPnfsId());
+                break;
+
+            case LINK:
+                checkArgument(pnfsMessage instanceof PnfsCreateSymLinkMessage);
+                String destination = ((PnfsCreateSymLinkMessage)pnfsMessage).getDestination();
+                _log.info("create symlink {} to {}", path, destination);
+
+                checkRestrictionOnParent(pnfsMessage, MANAGE);
+
+                pnfsId = _nameSpaceProvider.createSymLink(subject, path,
+                        destination, assign);
+
+                pnfsMessage.setPnfsId(pnfsId);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Unsupported type: " + type);
             }
-        } catch (CacheException e) {
-            pnfsMessage.setFailed(e.getRc(), e.getMessage());
-        } catch (RuntimeException e) {
-            _log.error("Failed to create directory", e);
-            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-        }
-
-
-    }
-
-    public void createEntry(PnfsCreateEntryMessage pnfsMessage){
-
-        _log.info("create entry "+pnfsMessage.getPath());
-        try {
-            File file = new File(pnfsMessage.getPath());
-            checkMask(pnfsMessage.getSubject(), file.getParent(),
-                      pnfsMessage.getAccessMask());
-            checkRestriction(pnfsMessage, UPLOAD);
-
-            Set<FileAttribute> requested =
-                    pnfsMessage.getRequestedAttributes();
-            requested.add(FileAttribute.STORAGEINFO);
-            requested.add(FileAttribute.PNFSID);
-
-            FileAttributes attrs =
-                    _nameSpaceProvider.createFile(pnfsMessage.getSubject(),
-                                                  pnfsMessage.getPath(),
-                                                  pnfsMessage.getUid(),
-                                                  pnfsMessage.getGid(),
-                                                  pnfsMessage.getMode(),
-                                                  requested);
-
-            StorageInfo info = attrs.getStorageInfo();
-            if (info.getKey("path") == null) {
-                info.setKey("path", pnfsMessage.getPnfsPath());
-            }
-            info.setKey("uid", Integer.toString(pnfsMessage.getUid()));
-            info.setKey("gid", Integer.toString(pnfsMessage.getGid()));
 
             pnfsMessage.setFileAttributes(attrs);
-            pnfsMessage.setPnfsId(attrs.getPnfsId());
             pnfsMessage.setSucceeded();
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Create entry failed", e);
+            _log.error("Bug found when creating entry:", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
         }
     }
@@ -1748,10 +1721,6 @@ public class PnfsManagerV3
             clearCacheLocation((PnfsClearCacheLocationMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsGetCacheLocationsMessage) {
             getCacheLocations((PnfsGetCacheLocationsMessage) pnfsMessage);
-        } else if (pnfsMessage instanceof PnfsCreateSymLinkMessage) {
-            createLink((PnfsCreateSymLinkMessage) pnfsMessage);
-        } else if (pnfsMessage instanceof PnfsCreateDirectoryMessage) {
-            createDirectory((PnfsCreateDirectoryMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsCreateEntryMessage) {
             createEntry((PnfsCreateEntryMessage) pnfsMessage);
         } else if (pnfsMessage instanceof PnfsCreateUploadPath) {

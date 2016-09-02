@@ -72,6 +72,7 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.util.concurrent.Futures.*;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.REGULAR;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
@@ -682,7 +683,8 @@ public class Transfer implements Comparable<Transfer>
         try {
             PnfsCreateEntryMessage msg;
             try {
-                msg = _pnfs.createPnfsEntry(_path.toString());
+                msg = _pnfs.createPnfsEntry(_path.toString(),
+                        FileAttributes.ofFileType(REGULAR));
             } catch (FileExistsCacheException e) {
                 /* REVISIT: This should be moved to PnfsManager with a
                  * flag in the PnfsCreateEntryMessage.
@@ -690,8 +692,9 @@ public class Transfer implements Comparable<Transfer>
                 if (!_isOverwriteAllowed) {
                     throw e;
                 }
-                _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(FileType.REGULAR));
-                msg = _pnfs.createPnfsEntry(_path.toString());
+                _pnfs.deletePnfsEntry(_path.toString(), EnumSet.of(REGULAR));
+                msg = _pnfs.createPnfsEntry(_path.toString(),
+                        FileAttributes.ofFileType(REGULAR));
             }
 
             FileAttributes attrs = msg.getFileAttributes();

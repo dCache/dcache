@@ -11,13 +11,14 @@ public class PnfsCreateSymLinkMessage extends PnfsCreateEntryMessage
 
     private final String _destination;
 
-    public PnfsCreateSymLinkMessage(String path, String dest, int uid, int gid) {
-        // the value of mode is irrelevant
-        super(path, uid, gid, -1);
+    public PnfsCreateSymLinkMessage(String path, String dest, FileAttributes attributes)
+    {
+        super(path, attributes);
         _destination = dest;
     }
 
-    public String getDestination() {
+    public String getDestination()
+    {
         return _destination;
     }
 }

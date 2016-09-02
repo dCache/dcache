@@ -30,7 +30,6 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCancelUpload;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
-import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
@@ -46,7 +45,6 @@ import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
@@ -61,6 +59,8 @@ import org.dcache.vehicles.PnfsSetFileAttributes;
 import static diskCacheV111.util.AccessLatency.NEARLINE;
 import static diskCacheV111.util.RetentionPolicy.CUSTODIAL;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.DIR;
+import static org.dcache.namespace.FileType.REGULAR;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
@@ -152,7 +152,8 @@ public class PnfsManagerTest
     @Test
     public void testGetStorageInfo() {
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testGetStorageInfo");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testGetStorageInfo",
+                FileAttributes.ofFileType(REGULAR));
 
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
@@ -163,7 +164,8 @@ public class PnfsManagerTest
 
     @Test
     public void testGetAlAndRpWhenMissing() {
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testGetAlAndRpWhenMissing");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testGetAlAndRpWhenMissing",
+                FileAttributes.ofFileType(REGULAR));
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
         assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
 
@@ -179,9 +181,10 @@ public class PnfsManagerTest
     @Test
     public void testMoveEntry() throws Exception {
 
-        PnfsCreateDirectoryMessage pnfsCreateDirectoryMessage = new PnfsCreateDirectoryMessage("/pnfs/testRoot/testMoveEntry");
-        _pnfsManager.createDirectory(pnfsCreateDirectoryMessage);
-        assertTrue("failed to create a directory", pnfsCreateDirectoryMessage.getReturnCode() == 0 );
+        PnfsCreateEntryMessage message = new PnfsCreateEntryMessage("/pnfs/testRoot/testMoveEntry",
+                                FileAttributes.ofFileType(DIR));
+        _pnfsManager.createEntry(message);
+        assertTrue("failed to create a directory", message.getReturnCode() == 0 );
 
         FsInode srcInode   =  _fs.mkdir("/pnfs/testRoot/testMoveEntry/sourceDirectory");
         byte[] srcTagData  = "foo".getBytes();
@@ -191,9 +194,10 @@ public class PnfsManagerTest
         byte[] dstTagData  = "bar".getBytes();
         _fs.setTag(dstInode, "sGroup",dstTagData, 0, dstTagData.length);
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testMoveEntry/sourceDirectory/sourceFile");
-        _pnfsManager.createEntry(pnfsCreateEntryMessage);
-        assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
+        message = new PnfsCreateEntryMessage("/pnfs/testRoot/testMoveEntry/sourceDirectory/sourceFile",
+                FileAttributes.ofFileType(REGULAR));
+        _pnfsManager.createEntry(message);
+        assertTrue("failed to create an entry", message.getReturnCode() == 0 );
 
         PnfsRenameMessage pnfsRenameMessage = new PnfsRenameMessage("/pnfs/testRoot/testMoveEntry/sourceDirectory/sourceFile",
                                                                     "/pnfs/testRoot/testMoveEntry/destinationDirectory/destinationFile",false);
@@ -217,17 +221,18 @@ public class PnfsManagerTest
     @Test
     public void testMkdirPermTest() throws Exception {
 
-        PnfsCreateDirectoryMessage pnfsCreateDirectoryMessage = new PnfsCreateDirectoryMessage("/pnfs/testRoot/testMkdirPermTest", 3750, 1000, 0750);
+        PnfsCreateEntryMessage message = new PnfsCreateEntryMessage("/pnfs/testRoot/testMkdirPermTest",
+                FileAttributes.of().uid(3750).gid(1000).mode(0750).fileType(DIR).build());
 
-        _pnfsManager.createDirectory(pnfsCreateDirectoryMessage);
+        _pnfsManager.createEntry(message);
 
-        assertTrue("failed to create a directory", pnfsCreateDirectoryMessage.getReturnCode() == 0 );
+        assertTrue("failed to create a directory", message.getReturnCode() == 0 );
 
         /*
          * while we have a backdoor, let check what really happened
          */
 
-        Stat stat = _fs.id2inode(pnfsCreateDirectoryMessage.getPnfsId().toString(), FileSystemProvider.StatCacheOption.STAT).statCache();
+        Stat stat = _fs.id2inode(message.getPnfsId().toString(), FileSystemProvider.StatCacheOption.STAT).statCache();
         assertEquals("new mode do not equal to specified one", (stat.getMode() & 0777), 0750);
     }
 
@@ -239,7 +244,8 @@ public class PnfsManagerTest
     @Test
     public void testRemoveIfLast() {
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testRemoveIfLast");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testRemoveIfLast",
+                        FileAttributes.ofFileType(REGULAR));
 
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
@@ -278,28 +284,39 @@ public class PnfsManagerTest
 
     @Test
     public void testCreateDupFile() {
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testCreateDup");
-        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        PnfsCreateEntryMessage message = new PnfsCreateEntryMessage("/pnfs/testRoot/testCreateDup",
+                FileAttributes.ofFileType(REGULAR));
 
-        assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
+        _pnfsManager.createEntry(message);
 
-        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        assertTrue("failed to create an entry", message.getReturnCode() == 0 );
 
-        assertTrue("create duplicate should return an error", pnfsCreateEntryMessage.getReturnCode() == CacheException.FILE_EXISTS );
+        message = new PnfsCreateEntryMessage("/pnfs/testRoot/testCreateDup",
+                FileAttributes.ofFileType(REGULAR));
+
+        _pnfsManager.createEntry(message);
+
+        assertTrue("create duplicate should return an error", message.getReturnCode() == CacheException.FILE_EXISTS );
     }
 
     @Test
     public void testCreateDupDir() {
 
-        PnfsCreateDirectoryMessage pnfsCreateDirectoryMessage = new PnfsCreateDirectoryMessage("/pnfs/testRoot/testCreateDupDir", 3750, 1000, 0750);
+        String path = "/pnfs/testRoot/testCreateDupDir";
 
-        _pnfsManager.createDirectory(pnfsCreateDirectoryMessage);
+        PnfsCreateEntryMessage message = new PnfsCreateEntryMessage(path,
+                FileAttributes.of().uid(3750).gid(1000).mode(0750).fileType(DIR).build());
 
-        assertTrue("failed to create a directory", pnfsCreateDirectoryMessage.getReturnCode() == 0 );
+        _pnfsManager.createEntry(message);
 
-        _pnfsManager.createDirectory(pnfsCreateDirectoryMessage);
+        assertTrue("failed to create a directory", message.getReturnCode() == 0 );
 
-        assertTrue("create duplicate should return an error", pnfsCreateDirectoryMessage.getReturnCode() == CacheException.FILE_EXISTS );
+        message = new PnfsCreateEntryMessage(path,
+                FileAttributes.of().uid(3750).gid(1000).mode(0750).fileType(DIR).build());
+
+        _pnfsManager.createEntry(message);
+
+        assertTrue("create duplicate should return an error", message.getReturnCode() == CacheException.FILE_EXISTS );
     }
 
 
@@ -325,7 +342,8 @@ public class PnfsManagerTest
 
         _fs.setTag(dirInode, "WriteToken", writeToken.getBytes(), 0,writeToken.getBytes().length );
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/writeTokenTestFile");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/writeTokenTestFile",
+                FileAttributes.ofFileType(REGULAR));
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
         StorageInfo storageInfo = pnfsCreateEntryMessage.getFileAttributes().getStorageInfo();
@@ -356,7 +374,8 @@ public class PnfsManagerTest
         _fs.setTag(dirInode, "RetentionPolicy", rp.getBytes(), 0, rp.getBytes().length);
 
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testDefaultALandRP");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testDefaultALandRP",
+                FileAttributes.ofFileType(REGULAR));
 
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
@@ -376,7 +395,8 @@ public class PnfsManagerTest
     public void testRemoveByPath() throws ChimeraFsException {
 
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testRemoveByPath");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testRemoveByPath",
+                FileAttributes.ofFileType(REGULAR));
 
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
@@ -458,7 +478,8 @@ public class PnfsManagerTest
     @Test
     public void testGetStorageInfoForFlushedFiles() throws Exception {
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFile");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFile",
+                FileAttributes.ofFileType(REGULAR));
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
         assertThat("Creating entry failed", pnfsCreateEntryMessage.getReturnCode(), is(0));
 
@@ -484,7 +505,8 @@ public class PnfsManagerTest
     @Test
     public void testStorageInfoDup() throws Exception {
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFileDup");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/tapeFileDup",
+                FileAttributes.ofFileType(REGULAR));
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
         StorageInfo si = pnfsCreateEntryMessage.getFileAttributes().getStorageInfo();

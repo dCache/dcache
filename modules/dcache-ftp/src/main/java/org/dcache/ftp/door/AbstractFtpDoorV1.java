@@ -218,6 +218,7 @@ import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.ftp.door.AnonymousPermission.ALLOW_ANONYMOUS_USER;
 import static org.dcache.ftp.door.AnonymousPermission.FORBID_ANONYMOUS_USER;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileType.LINK;
 import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 
 @Inherited
@@ -2759,7 +2760,7 @@ public abstract class AbstractFtpDoorV1
 
         try {
             _pnfs.createSymLink(absolutePath(_symlinkPath).toString(), target,
-                    (int)Subjects.getUid(_subject), (int)Subjects.getPrimaryGid(_subject));
+                    FileAttributes.of().uid(_subject).gid(_subject).build());
             reply ("257 symlink '" + _symlinkPath + "' created.");
         } catch (PermissionDeniedCacheException e) {
             throw new FTPCommandException(550, "Permission denied.", e);

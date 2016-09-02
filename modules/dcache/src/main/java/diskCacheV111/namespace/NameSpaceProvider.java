@@ -45,12 +45,6 @@ public interface NameSpaceProvider
     int UMASK_FILE = 0666;
 
     /**
-     * Special value used to indicate that a default value should be
-     * used.
-     */
-    int DEFAULT = -1;
-
-    /**
      * set if there is no old value
      */
     int SI_EXCLUSIVE = 0;
@@ -68,28 +62,26 @@ public interface NameSpaceProvider
      *
      * @param subject Subject of user who invoked this method.
      * @param path full path of new object
-     * @param uid uid of new entry or -1 for default
-     * @param gid gid of new entry or -1 for default
-     * @param mode mode of new entry or -1 for default
-     * @param requestedAttributes Attributes of the new file to return
-     * @return FileAttributes of newly created file
+     * @param assignAttributes attributes of the newly create file
+     * @param requestAttributes attributes of the new file to return
+     * @return the FileAttributes of newly created file
      * @throws CacheException
      */
-    FileAttributes createFile(Subject subject, String path, int uid, int gid, int mode,
-                              Set<FileAttribute> requestedAttributes) throws CacheException;
+    FileAttributes createFile(Subject subject, String path,
+            FileAttributes assignAttributes, Set<FileAttribute> requestAttributes)
+            throws CacheException;
 
     /**
      * Create a directory for a given path and type.
      *
      * @param subject Subject of user who invoked this method.
      * @param path full path of new object
-     * @param uid uid of new entry or -1 for default
-     * @param gid gid of new entry or -1 for default
-     * @param mode mode of new entry or -1 for default
+     * @param attributes attributes of the newly create directory
      * @return PnfsId of newly created object
      * @throws CacheException
      */
-    PnfsId createDirectory(Subject subject, String path, int uid, int gid, int mode) throws CacheException;
+    PnfsId createDirectory(Subject subject, String path,
+            FileAttributes attributes) throws CacheException;
 
     /**
      * Create a symbolic link with a given path.
@@ -97,12 +89,12 @@ public interface NameSpaceProvider
      * @param subject Subject of user who invoked this method.
      * @param path full path of new object
      * @param dest target where symbolik link points to
-     * @param uid uid of new entry or -1 for default
-     * @param gid gid of new entry or -1 for default
+     * @param attributes attributes of the newly create symbolic link
      * @return PnfsId of newly created object
      * @throws CacheException
      */
-    PnfsId createSymLink(Subject subject, String path, String dest, int uid, int gid) throws CacheException;
+    PnfsId createSymLink(Subject subject, String path, String dest,
+            FileAttributes attributes) throws CacheException;
 
     /**
      * remove file or directory associated with given pnfsid
