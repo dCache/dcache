@@ -1003,11 +1003,9 @@ public class DcacheResourceFactory
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
         PnfsCreateEntryMessage reply =
-            pnfs.createPnfsDirectory(path.toString());
-        FileAttributes attributes =
-            pnfs.getFileAttributes(reply.getPnfsId(), REQUIRED_ATTRIBUTES);
+            pnfs.createPnfsDirectory(path.toString(), REQUIRED_ATTRIBUTES);
 
-        return new DcacheDirectoryResource(this, path, attributes);
+        return new DcacheDirectoryResource(this, path, reply.getFileAttributes());
     }
 
     public void move(FsPath sourcePath, PnfsId pnfsId, FsPath newPath)

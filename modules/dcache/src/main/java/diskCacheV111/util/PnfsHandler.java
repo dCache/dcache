@@ -250,6 +250,12 @@ public class PnfsHandler
         return request(new PnfsCreateDirectoryMessage(path));
     }
 
+    public PnfsCreateEntryMessage createPnfsDirectory(String path,
+            Set<FileAttribute> attributes) throws CacheException
+    {
+        return request(new PnfsCreateDirectoryMessage(path, -1, -1, -1, attributes));
+    }
+
     public PnfsCreateEntryMessage createPnfsDirectory(String path, int uid, int gid, int mode)
         throws CacheException
     {
