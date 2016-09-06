@@ -422,7 +422,16 @@ public class NFSv41Door extends AbstractCellComponent implements
         if( ds == null) {
             return null;
         }
-        return layoutDriver.getDeviceAddress(ds.getDeviceAddr());
+
+        // limit addresses returned to client to the same 'type' as clients own address
+        InetAddress clientAddress = context.getRemoteSocketAddress().getAddress();
+        InetSocketAddress[] usableAddresses = Stream.of(ds.getDeviceAddr())
+                .filter(a -> !a.getAddress().isLoopbackAddress() || clientAddress.isLoopbackAddress())
+                .filter(a -> !a.getAddress().isLinkLocalAddress() || clientAddress.isLinkLocalAddress())
+                .filter(a -> !a.getAddress().isSiteLocalAddress() || clientAddress.isSiteLocalAddress())
+                .toArray(size -> new InetSocketAddress[size]);
+
+        return layoutDriver.getDeviceAddress(usableAddresses);
     }
 
     /**
