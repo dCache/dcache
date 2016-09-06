@@ -2,7 +2,6 @@ package org.dcache.chimera.nfsv41.door;
 
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import org.dcache.nfs.v4.NfsV41FileLayoutDriver;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.junit.Assert;
 import org.junit.Before;
@@ -17,7 +16,7 @@ public class PoolDeviceMapTest {
 
     @Before
     public void setUp() {
-        _poolDeviceMap = new PoolDeviceMap(new NfsV41FileLayoutDriver());
+        _poolDeviceMap = new PoolDeviceMap();
     }
 
     @Test

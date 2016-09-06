@@ -9,8 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfsv41.door.NFSv41Door.PoolDS;
-import org.dcache.nfs.ChimeraNFSException;
-import org.dcache.nfs.v4.LayoutDriver;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.util.Bytes;
 
@@ -23,11 +21,6 @@ public class PoolDeviceMap {
      * next device id, 0 reserved for MDS
      */
     private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
-
-    /**
-     * layout specific driver.
-     */
-    private final LayoutDriver _layoutDriver;
 
     /**
      * dCache-friendly NFS device id to pool name mapping
@@ -45,10 +38,6 @@ public class PoolDeviceMap {
     private final ReentrantReadWriteLock _lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock _rlock = _lock.readLock();
     private final ReentrantReadWriteLock.WriteLock _wlock = _lock.writeLock();
-
-    public PoolDeviceMap(LayoutDriver layoutDriver) {
-        _layoutDriver = layoutDriver;
-    }
 
     static deviceid4 deviceidOf(int id) {
         byte[] deviceidBytes = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
@@ -89,13 +78,10 @@ public class PoolDeviceMap {
                 _deviceMap.remove(ds.getDeviceId());
             }
             deviceid4 deviceid = deviceidOf(_nextDeviceID.incrementAndGet());
-            ds = new PoolDS(deviceid, _layoutDriver.getDeviceAddress(poolAddress), poolAddress, verifier);
+            ds = new PoolDS(deviceid, poolAddress, verifier);
             _poolNameToIpMap.put(name, ds);
             _deviceMap.put(ds.getDeviceId(), ds);
             return ds;
-
-        } catch(ChimeraNFSException e) {
-            throw new RuntimeException(e.getMessage(), e);
         } finally {
             _wlock.unlock();
         }

@@ -1,6 +1,7 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -74,6 +75,7 @@ import org.dcache.nfs.FsExport;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
+import org.dcache.nfs.status.BadLayoutException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v3.MountServer;
@@ -81,6 +83,7 @@ import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
 import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.CompoundContext;
+import org.dcache.nfs.v4.FlexFileLayoutDriver;
 import org.dcache.nfs.v4.Layout;
 import org.dcache.nfs.v4.MDSOperationFactory;
 import org.dcache.nfs.v4.NFS4Client;
@@ -93,6 +96,7 @@ import org.dcache.nfs.v4.xdr.device_addr4;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.dcache.nfs.v4.xdr.layout4;
 import org.dcache.nfs.v4.xdr.layoutiomode4;
+import org.dcache.nfs.v4.xdr.layouttype4;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.stateid4;
@@ -100,6 +104,7 @@ import org.dcache.nfs.v4.LayoutDriver;
 import org.dcache.nfs.v4.NfsV41FileLayoutDriver;
 import org.dcache.nfs.v4.xdr.length4;
 import org.dcache.nfs.v4.xdr.offset4;
+import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
@@ -130,18 +135,25 @@ public class NFSv41Door extends AbstractCellComponent implements
     /**
      * Layout type specific driver.
      */
-    private final LayoutDriver _layoutDriver = new NfsV41FileLayoutDriver();
+
+    private final Map<Integer, LayoutDriver> _supportedDrivers = ImmutableMap.of(
+            layouttype4.LAYOUT4_FLEX_FILES,  new FlexFileLayoutDriver(3, 0, new utf8str_mixed("17"), new utf8str_mixed("17")),
+            layouttype4.LAYOUT4_NFSV4_1_FILES,  new NfsV41FileLayoutDriver()
+    );
 
     /**
-     * Array if layout types supported by the door. For now, dCache supports only
-     * NFS4.1 file layout type.
+     * Array if layout types supported by the door.
+     * Put 'default' one first
      */
-    private final int[] SUPPORTED_LAYOUT_TYPES = new int[]{_layoutDriver.getLayoutType()};
+    private final int[] SUPPORTED_LAYOUT_TYPES = new int[]{
+        layouttype4.LAYOUT4_NFSV4_1_FILES,
+        layouttype4.LAYOUT4_FLEX_FILES
+    };
 
     /**
      * A mapping between pool name, nfs device id and pool's ip addresses.
      */
-    private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap(_layoutDriver);
+    private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap();
 
     /*
      * reserved device for IO through MDS (for pnfs dot files)
@@ -398,16 +410,19 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     @Override
     public device_addr4 getDeviceInfo(CompoundContext context, deviceid4 deviceId, int layoutType) throws ChimeraNFSException {
+
+        LayoutDriver layoutDriver = getLayoutDriver(layoutType);
+
         /* in case of MDS access we return the same interface which client already connected to */
         if (deviceId.equals(MDS_ID)) {
-            return _layoutDriver.getDeviceAddress(context.getRpcCall().getTransport().getLocalSocketAddress());
+            return layoutDriver.getDeviceAddress(context.getRpcCall().getTransport().getLocalSocketAddress());
         }
 
         PoolDS ds = _poolDeviceMap.getByDeviceId(deviceId);
         if( ds == null) {
             return null;
         }
-        return ds.getDeviceAddr();
+        return layoutDriver.getDeviceAddress(ds.getDeviceAddr());
     }
 
     /**
@@ -423,17 +438,14 @@ public class NFSv41Door extends AbstractCellComponent implements
     public Layout layoutGet(CompoundContext context, Inode nfsInode, int layoutType, int ioMode, stateid4 stateid)
             throws IOException {
 
+        LayoutDriver layoutDriver = getLayoutDriver(layoutType);
+
         FsInode inode = _chimeraVfs.inodeFromBytes(nfsInode.getFileId());
         PnfsId pnfsId = new PnfsId(inode.getId());
         Transfer.initSession(false, false);
         NDC.push(pnfsId.toString());
         NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {
-
-            if (layoutType != _layoutDriver.getLayoutType()) {
-                _log.warn("unsupported layout type ({}) request", layoutType);
-                throw new LayoutUnavailableException("Unsuported layout type: " + layoutType);
-            }
 
             deviceid4 deviceid;
 
@@ -520,14 +532,19 @@ public class NFSv41Door extends AbstractCellComponent implements
                 }
             }
 
-            nfs_fh4 fh = new nfs_fh4(nfsInode.toNfsHandle());
+            /*
+             * as current linux client (4.6) support only nfs v3, and v3 does not have
+             * stateids, embedd stateid as file handle. Pool knows hato handle it.
+             */
+            nfs_fh4 fh = layoutType == layouttype4.LAYOUT4_FLEX_FILES ?
+                    new nfs_fh4(stateid.other) :  new nfs_fh4(nfsInode.toNfsHandle());
 
             //  -1 is special value, which means entire file
             layout4 layout = new layout4();
             layout.lo_iomode = ioMode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-            layout.lo_content = _layoutDriver.getLayoutContent(deviceid, stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh);
+            layout.lo_content = layoutDriver.getLayoutContent(deviceid, stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh);
 
             /*
              * on on error client will issue layout return.
@@ -811,13 +828,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         private final deviceid4 _deviceId;
         private final InetSocketAddress[] _socketAddress;
-        private final device_addr4 _deviceAddr;
         private final long _verifier;
 
-        public PoolDS(deviceid4 deviceId, device_addr4 deviceAddr, InetSocketAddress[] ip, long verifier) {
+        public PoolDS(deviceid4 deviceId, InetSocketAddress[] ip, long verifier) {
             _deviceId = deviceId;
             _socketAddress = ip;
-            _deviceAddr = deviceAddr;
             _verifier = verifier;
         }
 
@@ -825,8 +840,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             return _deviceId;
         }
 
-        public device_addr4 getDeviceAddr() {
-            return _deviceAddr;
+        public InetSocketAddress[] getDeviceAddr() {
+            return _socketAddress;
         }
 
         public long getVerifier() {
@@ -985,5 +1000,17 @@ public class NFSv41Door extends AbstractCellComponent implements
         List<String> exportPaths = _exportFile.getExports().map(FsExport::getPath).distinct().collect(toList());
         _loginBrokerPublisher.setReadPaths(exportPaths);
         _loginBrokerPublisher.setWritePaths(exportPaths);
+    }
+
+    private LayoutDriver getLayoutDriver(int layoutType) throws BadLayoutException, LayoutUnavailableException {
+        if (layoutType < 1 || layoutType > layouttype4.LAYOUT4_TYPE_MAX) {
+            throw new BadLayoutException("Invalid layout type requested(" + layoutType + ")");
+        }
+
+        LayoutDriver layoutDriver = _supportedDrivers.get(layoutType);
+        if (layoutDriver == null) {
+            throw new LayoutUnavailableException("Layout type (" + layoutType + ") not supported");
+        }
+        return layoutDriver;
     }
 }
