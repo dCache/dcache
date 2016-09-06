@@ -24,23 +24,10 @@ check -strong cleaner.db.user
 check -strong cleaner.db.url
 check cleaner.db.password
 
-create org.dcache.chimera.namespace.DiskCleaner ${cleaner.cell.name} \
-        "-consume=${cleaner.cell.consume} \
+
+create org.dcache.cells.UniversalSpringCell ${cleaner.cell.name} \
+        "classpath:org/chimera/chimera-cleaner.xml \
+         -consume=${cleaner.cell.consume} \
          -subscribe=${cleaner.cell.subscribe} \
-         -refresh=${cleaner.limits.period} \
-         -refreshUnit=${cleaner.limits.period.unit} \
-         -recover=${cleaner.service.pool.retry-period} \
-         -recoverUnit=${cleaner.service.pool.retry-period.unit} \
-         -reportRemove=${cleaner.destination.remove-notification} \
-         -poolTimeout=${cleaner.service.pool.timeout}   \
-         -poolTimeoutUnit=${cleaner.service.pool.timeout.unit}   \
-         -processFilesPerRun=${cleaner.limits.batch-size} \
-         -chimera.db.user=${cleaner.db.user} \
-         -chimera.db.password=${cleaner.db.password} \
-         -chimera.db.url=${cleaner.db.url} \
-         -hsmCleaner=${cleaner.enable.hsm} \
-         -hsmCleanerRequest=${cleaner.limits.hsm-batch-size} \
-         -hsmCleanerTimeout=${cleaner.service.pool.hsm-timeout} \
-         -hsmCleanerTimeoutUnit=${cleaner.service.pool.hsm-timeout.unit} \
-         -threads=${cleaner.limits.threads} \
-  "
+         -profiles=hsmcleaner-${cleaner.enable.hsm} \
+         "

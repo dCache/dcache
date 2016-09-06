@@ -1,9 +1,21 @@
 package org.dcache.chimera.namespace;
 
+
+
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellInfoProvider;
+
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,14 +26,16 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * This class encapsulates the interaction with pools.
@@ -34,10 +48,12 @@ import org.dcache.util.Args;
  * HSM, at most one request is send at a time. The class defines an
  * upper limit on the size of a request.
  */
-public class HsmCleaner implements CellMessageReceiver
+
+public class HsmCleaner extends AbstractCleaner implements CellMessageReceiver, CellCommandListener, CellInfoProvider
 {
     private static final Logger _log =
         LoggerFactory.getLogger(HsmCleaner.class);
+
 
     /**
      * Utility class to keep track of timeouts.
@@ -53,6 +69,8 @@ public class HsmCleaner implements CellMessageReceiver
             _pool = pool;
         }
 
+
+
         @Override
         public void run()
         {
@@ -64,11 +82,6 @@ public class HsmCleaner implements CellMessageReceiver
             return _pool;
         }
     }
-
-    /**
-     * CellStub used for sending messages to pools.
-     */
-    private CellStub _poolStub;
 
     /**
      * Timeout for delete request.
@@ -114,27 +127,9 @@ public class HsmCleaner implements CellMessageReceiver
      */
     private final Timer _timer = new Timer("Request tracker timeout");
 
-    /**
-     * Pools currently available.
-     */
-    private PoolInformationBase _pools;
-
-    /**
-     * Sets the CellStub for communicating with pools.
-     */
-    public synchronized void setPoolStub(CellStub stub)
-    {
-        _poolStub = stub;
-    }
-
-    /**
-     * Set PoolInformationBase from which the request tracker learns
-     * about available pools.
-     */
-    public synchronized void setPoolInformationBase(PoolInformationBase pools)
-    {
-        _pools = pools;
-    }
+    private int _hsmCleanerRequest;
+    private long _hsmTimeout;
+    private TimeUnit _hsmTimeoutUnit;
 
     /**
      * Set maximum number of files to include in a single request.
@@ -143,15 +138,6 @@ public class HsmCleaner implements CellMessageReceiver
     {
         _maxFilesPerRequest = value;
     }
-
-    /**
-     * Returns maximum number of files to include in a single request.
-     */
-    public synchronized int getMaxFilesPerRequest()
-    {
-        return _maxFilesPerRequest;
-    }
-
     /**
      * Set timeout in milliseconds for delete requests send to pools.
      */
@@ -169,12 +155,30 @@ public class HsmCleaner implements CellMessageReceiver
         return _timeout;
     }
 
+    @Required
+    public void setHsmCleanerRequest(int hsmCleanerRequest)
+    {
+        _hsmCleanerRequest = hsmCleanerRequest;
+    }
+
+    @Required
+    public void setHsmTimeoutUnit(TimeUnit hsmTimeoutUnit)
+    {
+        _hsmTimeoutUnit = hsmTimeoutUnit;
+    }
+
+    @Required
+    public void setHsmTimeout(long hsmTimeout)
+    {
+        _hsmTimeout = hsmTimeout;
+    }
+
     /**
      * Sets the sink to which success to delete a file is reported.
      */
     public synchronized void setSuccessSink(Consumer<URI> sink)
     {
-        _successSink = sink;
+        _successSink = sink ;
     }
 
     /**
@@ -183,6 +187,28 @@ public class HsmCleaner implements CellMessageReceiver
     public synchronized void setFailureSink(Consumer<URI> sink)
     {
         _failureSink = sink;
+    }
+
+
+    /**
+     * Called when a file was successfully deleted from the HSM.
+     */
+    protected void onSuccess(URI uri)
+    {
+        try {
+            _log.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}", uri);
+            _db.update("DELETE FROM t_locationinfo_trash WHERE ilocation=? AND itype=0", uri.toString());
+        } catch (DataAccessException e) {
+            _log.error("Error when deleting from the trash-table: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Called when a file could not be deleted from the HSM.
+     */
+    protected void onFailure(URI uri)
+    {
+        _log.info("Failed to delete a file {} from HSM. Will try again later.", uri);
     }
 
     /**
@@ -333,6 +359,33 @@ public class HsmCleaner implements CellMessageReceiver
         flush(hsm);
     }
 
+    public void init()
+    {
+        super.init();
+        setSuccessSink(uri -> _executor.execute(() -> onSuccess(uri)));
+        setFailureSink(uri -> _executor.execute(() -> onFailure(uri)));
+
+    }
+
+    /**
+     * Delete files stored on tape (HSM).
+     */
+    @Override
+    protected void runDelete() throws InterruptedException
+    {
+        _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE itype=0",
+                rs -> {
+                    try {
+                        URI uri = new URI(rs.getString("ilocation"));
+                        _log.debug("Submitting a request to delete a file: {}", uri);
+                        submit(uri);
+                    } catch (URISyntaxException e) {
+                        throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);
+                    }
+                });
+
+    }
+
     public static final String hh_requests_ls = "[hsm] # Lists delete requests";
     public synchronized String ac_requests_ls_$_0_1(Args args)
     {
@@ -365,6 +418,74 @@ public class HsmCleaner implements CellMessageReceiver
         }
 
         return sb.toString();
+    }
+
+    public static final String hh_hsm_set_MaxFilesPerRequest = "<number> # maximal number of concurrent requests to a single HSM";
+
+    public String ac_hsm_set_MaxFilesPerRequest_$_1(Args args) throws NumberFormatException
+    {
+        if (args.argc() > 0) {
+            int maxFilesPerRequest = Integer.parseInt(args.argv(0));
+            if (maxFilesPerRequest == 0) {
+                throw new
+                        IllegalArgumentException("The number must be greater than 0 ");
+            }
+            _hsmCleanerRequest = maxFilesPerRequest;
+        }
+
+        return "Maximal number of concurrent requests to a single HSM is set to " + _hsmCleanerRequest;
+    }
+
+    public static final String hh_hsm_set_TimeOut = "<seconds> # cleaning request timeout in seconds (for HSM-pools)";
+
+    public String ac_hsm_set_TimeOut_$_1(Args args) throws NumberFormatException
+    {
+        if (args.argc() > 0) {
+            _hsmTimeout = Long.parseLong(args.argv(0));
+            _hsmTimeoutUnit = SECONDS;
+        }
+        return "Timeout for cleaning requests to HSM-pools is set to " + _hsmTimeout + " " + _hsmTimeoutUnit;
+    }
+
+    /////  HSM admin commands /////
+
+    public static final String hh_rundelete_hsm = " # run HSM Cleaner";
+    public String ac_rundelete_hsm(Args args) throws InterruptedException {
+
+        runDelete();
+        return "";
+    }
+
+    //explicitly clean HSM-file
+    public static final String hh_clean_file_hsm =
+            "<pnfsID> # clean this file on HSM (file will be deleted from HSM)";
+    public String ac_clean_file_hsm_$_1(Args args)
+    {
+        _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=0 ORDER BY iatime",
+                rs -> {
+                    try {
+                        submit(new URI(rs.getString("ilocation")));
+                    } catch (URISyntaxException e) {
+                        throw new DataIntegrityViolationException("Invalid URI in database: " + e.getMessage(), e);
+                    }
+                },
+                args.argv(0));
+
+        return "";
+    }
+
+    /*
+     * Cell specific
+     */
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.printf("HSM Cleaner Info : \n");
+        pw.printf("Timeout for cleaning requests to HSM-pools: %s\n", _hsmTimeout);
+        pw.printf("Timeout Unit for cleaning requests to HSM-pools: %s\n", _hsmTimeoutUnit);
+        pw.printf("Maximal number of concurrent requests to a single HSM:   %d\n", _hsmCleanerRequest);
+        pw.printf("Maximum number of files to include in a single request:   %d\n", _maxFilesPerRequest);
+        pw.printf("Delete notification targets:  %s\n", Arrays.toString(_deleteNotificationTargets));
     }
 
     public void shutdown()
