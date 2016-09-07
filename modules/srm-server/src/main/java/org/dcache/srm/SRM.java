@@ -66,6 +66,8 @@ documents or software obtained from this server.
 
 package org.dcache.srm;
 
+import static com.google.common.base.Preconditions.*;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -124,10 +126,9 @@ import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.concat;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * SRM class creates an instance of SRM client class and publishes it on a
@@ -151,6 +152,7 @@ public class SRM implements CellLifeCycleAware
     private SRMUserPersistenceManager manager;
     private ScheduledExecutorService executor;
     private final List<Future<?>> tasks = new ArrayList<>();
+    private long expiryPeriod;
 
     private static SRM srm;
 
@@ -296,7 +298,7 @@ public class SRM implements CellLifeCycleAware
                 for (Job job : jobStorage.getActiveJobs()) {
                     job.checkExpiration();
                 }
-            }, 509, 509, TimeUnit.SECONDS));
+            }, expiryPeriod, expiryPeriod, TimeUnit.MILLISECONDS));
         }
     }
 
@@ -309,6 +311,20 @@ public class SRM implements CellLifeCycleAware
     public void stop() throws InterruptedException
     {
         databaseFactory.shutdown();
+    }
+
+    @Required
+    public void setExpiredJobCheckPeriod(long delay)
+    {
+        checkArgument(delay > 0, "period must be non-negative number: %s", delay);
+        checkState(tasks.isEmpty(), "cannot adjust period after SRM is started");
+
+        expiryPeriod = delay;
+    }
+
+    public long getExpiredJobCheckPeriod()
+    {
+        return expiryPeriod;
     }
 
     /**
