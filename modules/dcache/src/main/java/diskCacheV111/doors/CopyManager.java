@@ -335,6 +335,7 @@ public class CopyManager extends AbstractCellComponent
             _source.setPoolStub(_poolStub);
             _source.setDomainName(getCellDomainName());
             _source.setCellName(getCellName());
+            _source.setIoQueue("p2p");
             // _source.setClientAddress();
             // _source.setBillingStub();
             // _source.setCheckStagePermission();
@@ -343,6 +344,7 @@ public class CopyManager extends AbstractCellComponent
             _target.setPoolStub(_poolStub);
             _target.setDomainName(getCellDomainName());
             _target.setCellName(getCellName());
+            _target.setIoQueue("pp");
             // _target.setClientAddress();
             // _target.setBillingStub();
 
@@ -357,11 +359,11 @@ public class CopyManager extends AbstractCellComponent
 
                 _target.setProtocolInfo(createTargetProtocolInfo(_target));
                 _target.setLength(_source.getLength());
-                _target.selectPoolAndStartMover("pp", new TransferRetryPolicy(1, 0, _poolManager.getTimeoutInMillis()));
+                _target.selectPoolAndStartMover(new TransferRetryPolicy(1, 0, _poolManager.getTimeoutInMillis()));
                 _target.waitForRedirect(timeout);
 
                 _source.setProtocolInfo(createSourceProtocolInfo(_target.getRedirect(), _target.getId()));
-                _source.selectPoolAndStartMover("p2p", new TransferRetryPolicy(1, 0, _poolManager.getTimeoutInMillis()));
+                _source.selectPoolAndStartMover(new TransferRetryPolicy(1, 0, _poolManager.getTimeoutInMillis()));
 
                 if (!_source.waitForMover(timeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
