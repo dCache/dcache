@@ -496,6 +496,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                         transfer.setPoolManagerStub(_poolManagerStub);
                         transfer.setPnfsId(pnfsId);
                         transfer.setClientAddress(remote);
+                        transfer.setIoQueue(_ioQueue);
 
                         /*
                          * Bind transfer to open-state.
@@ -536,7 +537,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                         throw new NfsIoException("lost file " + inode.getId());
                     }
 
-                    PoolDS ds = transfer.getPoolDataServer(_ioQueue, NFS_REQUEST_BLOCKING);
+                    PoolDS ds = transfer.getPoolDataServer(NFS_REQUEST_BLOCKING);
                     deviceid = ds.getDeviceId();
                 }
             }
@@ -895,7 +896,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             return _nfsInode;
         }
 
-        PoolDS  getPoolDataServer(String queue, long timeout) throws
+        PoolDS  getPoolDataServer(long timeout) throws
                 InterruptedException, ExecutionException,
                 TimeoutException, CacheException {
 
@@ -910,10 +911,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                         _log.debug("looking for {} pool for {}", (isWrite() ? "write" : "read"), getPnfsId());
 
-                        _redirectFuture = selectPoolAndStartMoverAsync(queue, RETRY_POLICY);
+                        _redirectFuture = selectPoolAndStartMoverAsync(RETRY_POLICY);
                     } else {
                         // we may re-send the request, but pool will handle it
-                        _redirectFuture = startMoverAsync(queue, NFS_REQUEST_BLOCKING);
+                        _redirectFuture = startMoverAsync(NFS_REQUEST_BLOCKING);
                     }
                 }
             }

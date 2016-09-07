@@ -313,7 +313,7 @@ public class XrootdDoor
 
     private XrootdTransfer
         createTransfer(InetSocketAddress client, FsPath path,
-                       UUID uuid, InetSocketAddress local, Subject subject,
+                       String ioQueue, UUID uuid, InetSocketAddress local, Subject subject,
                        Restriction restriction)
     {
         XrootdTransfer transfer =
@@ -344,6 +344,7 @@ public class XrootdDoor
         transfer.setClientAddress(client);
         transfer.setUUID(uuid);
         transfer.setDoorAddress(local);
+        transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
         return transfer;
     }
@@ -358,7 +359,7 @@ public class XrootdDoor
         }
 
         XrootdTransfer transfer =
-            createTransfer(client, path, uuid, local, subject, restriction);
+            createTransfer(client, path, ioQueue, uuid, local, subject, restriction);
         int handle = transfer.getFileHandle();
 
         InetSocketAddress address = null;
@@ -366,7 +367,7 @@ public class XrootdDoor
         String explanation = "unspecified problem";
         try {
             transfer.readNameSpaceEntry(false);
-            transfer.selectPoolAndStartMover(ioQueue == null ? _ioQueue : ioQueue, RETRY_POLICY);
+            transfer.selectPoolAndStartMover(RETRY_POLICY);
             address = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
             if (address == null) {
                 throw new CacheException(transfer.getPool() + " failed to open TCP socket");
@@ -408,7 +409,7 @@ public class XrootdDoor
         }
 
         XrootdTransfer transfer =
-            createTransfer(client, path, uuid, local, subject, restriction);
+            createTransfer(client, path, ioQueue, uuid, local, subject, restriction);
         transfer.setOverwriteAllowed(overwrite);
         int handle = transfer.getFileHandle();
         InetSocketAddress address = null;
@@ -424,7 +425,7 @@ public class XrootdDoor
                 transfer.setLength(size);
             }
             try {
-                transfer.selectPoolAndStartMover(ioQueue == null ? _ioQueue : ioQueue, RETRY_POLICY);
+                transfer.selectPoolAndStartMover(RETRY_POLICY);
 
                 address = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (address == null) {

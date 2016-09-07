@@ -52,9 +52,9 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
     }
 
     @Override
-    public ListenableFuture<Void> selectPoolAndStartMoverAsync(String queue, TransferRetryPolicy policy)
+    public ListenableFuture<Void> selectPoolAndStartMoverAsync(TransferRetryPolicy policy)
     {
-        return monitor.setQueueFuture(super.selectPoolAndStartMoverAsync(queue, policy));
+        return monitor.setQueueFuture(super.selectPoolAndStartMoverAsync(policy));
     }
 
     /**

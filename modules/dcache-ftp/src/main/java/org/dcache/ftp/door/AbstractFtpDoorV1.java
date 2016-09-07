@@ -672,6 +672,7 @@ public abstract class AbstractFtpDoorV1
             setPoolStub(_poolStub);
             setBillingStub(_billingStub);
             setAllocation(_allo);
+            setIoQueue(_settings.getIoQueueName());
 
             _offset = offset;
             _size = size;
@@ -3084,7 +3085,7 @@ public abstract class AbstractFtpDoorV1
              * transfer a few times.
              */
             transfer.createAdapter();
-            transfer.selectPoolAndStartMoverAsync(_settings.getIoQueueName(), _readRetryPolicy);
+            transfer.selectPoolAndStartMoverAsync(_readRetryPolicy);
         } catch (PermissionDeniedCacheException e) {
             transfer.abort(550, "Permission denied");
         } catch (CacheException e) {
@@ -3208,7 +3209,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             transfer.createAdapter();
-            transfer.selectPoolAndStartMoverAsync(_settings.getIoQueueName(), _writeRetryPolicy);
+            transfer.selectPoolAndStartMoverAsync(_writeRetryPolicy);
         } catch (IOException e) {
             transfer.abort(451, "Operation failed: " + e.getMessage());
         } catch (PermissionDeniedCacheException e) {

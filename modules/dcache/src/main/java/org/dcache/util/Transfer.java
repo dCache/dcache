@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
@@ -116,6 +117,7 @@ public class Transfer implements Comparable<Transfer>
     private ProtocolInfo _protocolInfo;
     private boolean _isWrite;
     private List<InetSocketAddress> _clientAddresses;
+    private String _ioQueue;
 
     private long _allocated;
 
@@ -169,7 +171,7 @@ public class Transfer implements Comparable<Transfer>
      */
     protected ProtocolInfo getProtocolInfoForPoolManager()
     {
-        checkNotNull(_protocolInfo);
+        checkState(_protocolInfo != null);
         return _protocolInfo;
     }
 
@@ -179,7 +181,7 @@ public class Transfer implements Comparable<Transfer>
      */
     protected ProtocolInfo getProtocolInfoForPool()
     {
-        checkNotNull(_protocolInfo);
+        checkState(_protocolInfo != null);
         return _protocolInfo;
     }
 
@@ -194,6 +196,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Returns the ProtocolInfo used for the transfer. May be null.
      */
+    @Nullable
     public synchronized ProtocolInfo getProtocolInfo()
     {
         return _protocolInfo;
@@ -288,6 +291,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Sets the current status of a pool. May be null.
      */
+    @Nullable
     public synchronized String getStatus()
     {
         return _status;
@@ -340,6 +344,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Returns the PnfsId of the file to be transferred.
      */
+    @Nullable
     public synchronized PnfsId getPnfsId()
     {
         return _fileAttributes.isDefined(PNFSID) ? _fileAttributes.getPnfsId() : null;
@@ -383,6 +388,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Returns the ID of the mover of this transfer.
      */
+    @Nullable
     public synchronized Integer getMoverId()
     {
         return _moverId;
@@ -408,6 +414,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Returns the pool to use for this transfer.
      */
+    @Nullable
     public synchronized String getPool()
     {
         return _poolName;
@@ -424,6 +431,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Returns the address of the pool to use for this transfer.
      */
+    @Nullable
     public synchronized CellAddressCore getPoolAddress()
     {
         return _poolAddress;
@@ -529,6 +537,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized String getCellName()
     {
+        checkState(_cellAddress != null);
         return _cellAddress.getCellName();
     }
 
@@ -537,6 +546,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized String getDomainName()
     {
+        checkState(_cellAddress != null);
         return _cellAddress.getCellDomainName();
     }
 
@@ -566,6 +576,7 @@ public class Transfer implements Comparable<Transfer>
      * Report the address of the client that connected to dCache when
      * initiated this transfer.
      */
+    @Nullable
     public synchronized InetSocketAddress getClientAddress()
     {
         return _clientAddresses == null ? null : _clientAddresses.get(0);
@@ -577,6 +588,7 @@ public class Transfer implements Comparable<Transfer>
      * earlier in the list represent relay clients.  The first item is the
      * client that directly connected to dCache.
      */
+    @Nullable
     public synchronized List<InetSocketAddress> getClientAddresses()
     {
         return _clientAddresses;
@@ -853,6 +865,23 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * Sets the mover queue to use.
+     */
+    public synchronized void setIoQueue(String queue)
+    {
+        _ioQueue = queue;
+    }
+
+    /**
+     * Returns the mover queue to be used.
+     */
+    @Nullable
+    public synchronized String getIoQueue()
+    {
+        return _ioQueue;
+    }
+
+    /**
      * Returns the read pool selection context.
      */
     protected synchronized PoolMgrSelectReadPoolMsg.Context getReadPoolSelectionContext()
@@ -891,6 +920,7 @@ public class Transfer implements Comparable<Transfer>
             request.setSubject(_subject);
             request.setBillingPath(getBillingPath());
             request.setTransferPath(getTransferPath());
+            request.setIoQueueName(getIoQueue());
 
             ListenableFuture<PoolMgrSelectWritePoolMsg> reply = _poolManager.sendAsync(request, timeout);
             setStatusUntil("PoolManager: Selecting pool", reply);
@@ -922,6 +952,7 @@ public class Transfer implements Comparable<Transfer>
             request.setSubject(_subject);
             request.setBillingPath(getBillingPath());
             request.setTransferPath(getTransferPath());
+            request.setIoQueueName(getIoQueue());
 
             ListenableFuture<PoolMgrSelectReadPoolMsg> reply = _poolManager.sendAsync(request, timeout);
             setStatusUntil("PoolManager: Selecting pool", reply);
@@ -938,10 +969,8 @@ public class Transfer implements Comparable<Transfer>
 
     /**
      * Creates a mover for the transfer.
-     *
-     * @param queue The mover queue of the transfer; may be null
      */
-    public ListenableFuture<Void> startMoverAsync(String queue, long timeout)
+    public ListenableFuture<Void> startMoverAsync(long timeout)
     {
         FileAttributes fileAttributes = getFileAttributes();
         String pool = getPool();
@@ -965,7 +994,7 @@ public class Transfer implements Comparable<Transfer>
         }
         message.setBillingPath(getBillingPath());
         message.setTransferPath(getTransferPath());
-        message.setIoQueueName(queue);
+        message.setIoQueueName(getIoQueue());
         message.setInitiator(getTransaction());
         message.setId(_id);
         message.setSubject(_subject);
@@ -1136,25 +1165,24 @@ public class Transfer implements Comparable<Transfer>
      * according to the {@link TransferRetryPolicy}. Note, that there
      * will be no retries on uploads.
      *
-     * @param queue where mover should be started
      * @param policy to handle error cases
      * @throws CacheException
      * @throws InterruptedException
      */
-    public void selectPoolAndStartMover(String queue, TransferRetryPolicy policy)
+    public void selectPoolAndStartMover(TransferRetryPolicy policy)
             throws CacheException, InterruptedException
     {
-        getCancellable(selectPoolAndStartMoverAsync(queue, policy));
+        getCancellable(selectPoolAndStartMoverAsync(policy));
     }
 
-    public ListenableFuture<Void> selectPoolAndStartMoverAsync(String queue, TransferRetryPolicy policy)
+    public ListenableFuture<Void> selectPoolAndStartMoverAsync(TransferRetryPolicy policy)
     {
         long deadLine = addWithInfinity(System.currentTimeMillis(), policy.getTotalTimeOut());
 
         AsyncFunction<Void, Void> selectPool =
                 ignored -> selectPoolAsync(getTimeoutFor(deadLine));
         AsyncFunction<Void, Void> startMover =
-                ignored -> startMoverAsync(queue, getTimeoutFor(deadLine));
+                ignored -> startMoverAsync(getTimeoutFor(deadLine));
         AsyncFunction<Void, Void> readNameSpaceEntry =
                 ignored -> readNameSpaceEntryAsync(false, getTimeoutFor(_pnfs, deadLine));
 
