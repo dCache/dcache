@@ -4,6 +4,8 @@ import org.junit.Test;
 
 import java.util.NoSuchElementException;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 public class ArgsTest {
@@ -619,5 +621,45 @@ public class ArgsTest {
         assertEquals(2, args.argc());
         assertEquals(arg1, args.argv(0));
         assertEquals(arg2, args.argv(1));
+    }
+
+    @Test
+    public void testParsingToStringOutputWithEqualsArgument()
+    {
+        Args original = new Args("bar=baz");
+        Args parsed = new Args(original.toString());
+        assertThat(parsed, is(equalTo(original)));
+    }
+
+    @Test
+    public void testParsingToStringOutputWithEqualsOptionKey()
+    {
+        Args original = new Args("-foo\\=bar=baz");
+        Args parsed = new Args(original.toString());
+        assertThat(parsed, is(equalTo(original)));
+    }
+
+    @Test
+    public void testParsingToStringOutputWithEqualsOptionValue()
+    {
+        Args original = new Args("-foo=bar=baz");
+        Args parsed = new Args(original.toString());
+        assertThat(parsed, is(equalTo(original)));
+    }
+
+    @Test
+    public void testParsingToStringOutputWithDashArgument()
+    {
+        Args original = new Args("\\-foo");
+        Args parsed = new Args(original.toString());
+        assertThat(parsed, is(equalTo(original)));
+    }
+
+    @Test
+    public void testParsingToStringOutputWithEmptyArgument()
+    {
+        Args original = new Args("\"\"");
+        Args parsed = new Args(original.toString());
+        assertThat(parsed, is(equalTo(original)));
     }
 }
