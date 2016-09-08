@@ -116,7 +116,7 @@ public class FileAttributes implements Serializable {
     private int _mode;
 
     /**
-     * @since 2.17
+     * @since 3.0
      */
     private int _nlink;
 

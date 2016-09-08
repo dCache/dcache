@@ -31,7 +31,7 @@ public enum FileAttribute {
     PNFSID,
 
     /**
-     * @since 2.17
+     * @since 3.0
      */
     NLINK   // Be careful not to send this to pools before next golden release
 }

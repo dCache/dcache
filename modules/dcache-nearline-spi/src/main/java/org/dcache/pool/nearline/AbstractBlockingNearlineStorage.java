@@ -289,7 +289,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      * executor. Subclasses may choose to delay invocation of the runnable, e.g., by scheduling
      * execution of the {@code runnable} on a {@link java.util.concurrent.ScheduledExecutorService}.
      *
-     * @since 2.17
+     * @since 3.0
      */
     protected void retry(Runnable runnable)
     {
