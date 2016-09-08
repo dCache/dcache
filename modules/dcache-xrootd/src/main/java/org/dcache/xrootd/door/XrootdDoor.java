@@ -343,6 +343,7 @@ public class XrootdDoor
         transfer.setClientAddress(client);
         transfer.setUUID(uuid);
         transfer.setDoorAddress(local);
+        transfer.setIoQueue(_ioQueue);
         transfer.setFileHandle(_handleCounter.getAndIncrement());
         return transfer;
     }
@@ -364,7 +365,7 @@ public class XrootdDoor
         _transfers.put(handle, transfer);
         try {
             transfer.readNameSpaceEntry(false);
-            transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
+            transfer.selectPoolAndStartMover(RETRY_POLICY);
             address = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
             if (address == null) {
                 throw new CacheException(transfer.getPool() + " failed to open TCP socket");
@@ -415,7 +416,7 @@ public class XrootdDoor
                 transfer.createNameSpaceEntry();
             }
             try {
-                transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
+                transfer.selectPoolAndStartMover(RETRY_POLICY);
 
                 address = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (address == null) {

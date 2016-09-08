@@ -662,7 +662,7 @@ public class DcacheResourceFactory
             try {
                 transfer.setLength(length);
                 try {
-                    transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
+                    transfer.selectPoolAndStartMover(_retryPolicy);
                     String uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                     if (uri == null) {
                         throw new TimeoutCacheException("Server is busy (internal timeout)");
@@ -709,7 +709,7 @@ public class DcacheResourceFactory
             transfer.createNameSpaceEntry();
             try {
                 transfer.setLength(length);
-                transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
+                transfer.selectPoolAndStartMover(_retryPolicy);
                 uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
@@ -1039,7 +1039,7 @@ public class DcacheResourceFactory
             transfer.setProxyTransfer(isProxyTransfer);
             transfer.readNameSpaceEntry(false);
             try {
-                transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
+                transfer.selectPoolAndStartMover(_retryPolicy);
                 uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
                 if (uri == null) {
                     throw new TimeoutCacheException("Server is busy (internal timeout)");
@@ -1188,6 +1188,7 @@ public class DcacheResourceFactory
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPoolStub(_poolStub);
         transfer.setBillingStub(_billingStub);
+        transfer.setIoQueue(_ioQueue);
         List<InetSocketAddress> addresses = Subjects.getOrigin(subject).getClientChain().stream().
                 map(a -> new InetSocketAddress(a, PROTOCOL_INFO_UNKNOWN_PORT)).
                 collect(Collectors.toList());
