@@ -18,8 +18,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
-import diskCacheV111.pools.CostCalculatable;
-import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.pools.PoolV2Mode;
@@ -185,9 +183,7 @@ public class CostModuleV1
 
     private double getPerformanceCost(PoolCostInfo info)
     {
-        CostCalculatable cost = new CostCalculationV5(info);
-        cost.recalculate();
-        return cost.getPerformanceCost();
+        return info.getPerformanceCost();
     }
 
     public synchronized void messageToForward(PoolIoFileMessage msg)

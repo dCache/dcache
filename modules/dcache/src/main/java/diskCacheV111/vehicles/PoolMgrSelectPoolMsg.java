@@ -6,6 +6,8 @@ import java.util.EnumSet;
 
 import diskCacheV111.poolManager.RequestContainerV5;
 
+import org.dcache.pool.assumption.Assumption;
+import org.dcache.pool.assumption.Assumptions;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -23,6 +25,8 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private boolean _skipCostUpdate;
     private String _transferPath;
 
+    private Assumption _assumption;
+
     public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo)
     {
@@ -36,6 +40,16 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
         super(fileAttributes);
         _protocolInfo = checkNotNull(protocolInfo);
         _allowedStates = checkNotNull(allowedStates);
+    }
+
+    public void setAssumption(Assumption assumption)
+    {
+        _assumption = assumption;
+    }
+
+    public Assumption getAssumption()
+    {
+        return _assumption == null ? Assumptions.none() : _assumption;
     }
 
     public void setSkipCostUpdate(boolean value)

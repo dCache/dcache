@@ -55,6 +55,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.pool.assumption.Assumption;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
@@ -77,6 +78,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     transient boolean locked;
     private String pool;
     private CellAddressCore poolAddress;
+    private Assumption assumption;
     private FTPTransactionLog tlog;
     private FileAttributes fileAttributes;
     public static final int INITIAL_STATE = 0;
@@ -393,6 +395,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
         setPool(pool_info.getPoolName());
         setPoolAddress(pool_info.getPoolAddress());
+        setAssumption(pool_info.getAssumption());
         fileAttributes = pool_info.getFileAttributes();
         manager.persist(this);
         log.debug("Positive reply from pool {}", pool);
@@ -405,11 +408,13 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 ? new PoolAcceptFileMessage(
                 pool,
                 protocol_info,
-                fileAttributes)
+                fileAttributes,
+                assumption)
                 : new PoolDeliverFileMessage(
                 pool,
                 protocol_info,
-                fileAttributes);
+                fileAttributes,
+                assumption);
         poolMessage.setBillingPath(info.getBillingPath());
         poolMessage.setTransferPath(info.getTransferPath());
         poolMessage.setSubject(transferRequest.getSubject());
@@ -754,6 +759,11 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public void setPoolAddress(CellAddressCore poolAddress)
     {
         this.poolAddress = poolAddress;
+    }
+
+    public void setAssumption(Assumption assumption)
+    {
+        this.assumption = assumption;
     }
 
     public void killMover(int moverId, String explanation)

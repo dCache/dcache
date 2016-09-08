@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.pools.CostCalculatable;
-import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CostException;
 import diskCacheV111.util.PnfsId;
@@ -165,13 +163,8 @@ public abstract class ClassicPartition extends Partition
         double bestCost = Double.POSITIVE_INFINITY;
         PoolInfo bestPool = null;
         for (PoolInfo pool: pools) {
-            CostCalculatable calculatable =
-                new CostCalculationV5(pool.getCostInfo());
-            calculatable.recalculate();
-
             double cost =
-                Math.abs(_performanceCostFactor *
-                         calculatable.getPerformanceCost());
+                Math.abs(_performanceCostFactor * pool.getCostInfo().getPerformanceCost());
             if (bestCost >= _minCostCut && cost <= bestCost) {
                 /* As long as at least one of the pools is above min
                  * cost cut, we search for the pool with the lowest
@@ -195,10 +188,7 @@ public abstract class ClassicPartition extends Partition
             }
         }
 
-        CostCalculatable calculatable =
-            new CostCalculationV5(bestPool.getCostInfo());
-        calculatable.recalculate();
-        double cost = calculatable.getPerformanceCost();
+        double cost = bestPool.getCostInfo().getPerformanceCost();
         boolean isPanicCostExceeded = isPanicCostExceeded(cost);
         boolean isFallbackCostExceeded = isFallbackCostExceeded(cost);
         boolean isCostCutExceeded = isCostCutExceeded(cm, cost);
@@ -266,9 +256,9 @@ public abstract class ClassicPartition extends Partition
         final double performanceCost;
         final String host;
 
-        public PoolCost(PoolInfo pool, CostCalculatable cost)
+        public PoolCost(PoolInfo pool)
         {
-            this(pool, cost.getPerformanceCost());
+            this(pool, pool.getCostInfo().getPerformanceCost());
         }
 
         public PoolCost(PoolInfo pool, double performanceCost)
@@ -286,9 +276,7 @@ public abstract class ClassicPartition extends Partition
 
     protected static PoolCost toPoolCost(PoolInfo pool)
     {
-        CostCalculatable calculatable = new CostCalculationV5(pool.getCostInfo());
-        calculatable.recalculate();
-        return new PoolCost(pool, calculatable);
+        return new PoolCost(pool);
     }
 
     private void initTransientFields()

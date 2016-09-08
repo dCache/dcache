@@ -6,14 +6,12 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import diskCacheV111.poolManager.CostModuleV1;
-import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.IoQueueManager;
 
@@ -46,7 +44,6 @@ public class CostModuleTest {
     public static final double FRACTION_JUST_BELOW_TWO_THIRDS = 0.666;
     public static final double FRACTION_JUST_ABOVE_TWO_THIRDS = 0.667;
 
-    /** Value taken from {@link CostCalculationV5#recalculate()} */
     private static final double INFINITE_PERF_COST_VALUE = 1000000;
 
     private CostModuleV1 _costModule;
@@ -341,9 +338,7 @@ public class CostModuleTest {
      * @return
      */
     private double getPerformanceCostOfPercentileFile( String poolName) {
-        CostCalculationV5 cost = new CostCalculationV5(_costModule.getPoolCostInfo(poolName));
-        cost.recalculate();
-        return cost.getPerformanceCost();
+        return _costModule.getPoolCostInfo(poolName).getPerformanceCost();
     }
 
 

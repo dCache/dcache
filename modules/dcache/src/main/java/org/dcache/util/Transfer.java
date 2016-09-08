@@ -65,6 +65,7 @@ import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.pool.assumption.Assumption;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -109,6 +110,7 @@ public class Transfer implements Comparable<Transfer>
 
     private String _poolName;
     private CellAddressCore _poolAddress;
+    private Assumption _assumption;
     private Integer _moverId;
     private boolean _hasMoverBeenCreated;
     private boolean _hasMoverFinished;
@@ -436,6 +438,16 @@ public class Transfer implements Comparable<Transfer>
     public synchronized CellAddressCore getPoolAddress()
     {
         return _poolAddress;
+    }
+
+    public synchronized void setAssumption(Assumption assumption)
+    {
+        _assumption = assumption;
+    }
+
+    public synchronized Assumption getAssumption()
+    {
+        return _assumption;
     }
 
     /**
@@ -932,6 +944,7 @@ public class Transfer implements Comparable<Transfer>
                                       (PoolMgrSelectWritePoolMsg msg) -> {
                                           setPool(msg.getPoolName());
                                           setPoolAddress(msg.getPoolAddress());
+                                          setAssumption(msg.getAssumption());
                                           setFileAttributes(msg.getFileAttributes());
                                           return immediateFuture(null);
                                       });
@@ -963,6 +976,7 @@ public class Transfer implements Comparable<Transfer>
                                       (PoolMgrSelectReadPoolMsg msg) -> {
                                           setPool(msg.getPoolName());
                                           setPoolAddress(msg.getPoolAddress());
+                                          setAssumption(msg.getAssumption());
                                           setFileAttributes(msg.getFileAttributes());
                                           setReadPoolSelectionContext(msg.getContext());
                                           return immediateFuture(null);
@@ -990,10 +1004,10 @@ public class Transfer implements Comparable<Transfer>
                 allocated = fileAttributes.getSize();
             }
             message =
-                    new PoolAcceptFileMessage(pool, protocolInfo, fileAttributes, allocated);
+                    new PoolAcceptFileMessage(pool, protocolInfo, fileAttributes, _assumption, allocated);
         } else {
             message =
-                    new PoolDeliverFileMessage(pool, protocolInfo, fileAttributes);
+                    new PoolDeliverFileMessage(pool, protocolInfo, fileAttributes, _assumption);
         }
         message.setBillingPath(getBillingPath());
         message.setTransferPath(getTransferPath());

@@ -5,6 +5,7 @@ package org.dcache.pool.classic;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
+import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -42,6 +43,7 @@ import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
+import diskCacheV111.util.OutOfDateCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
@@ -89,6 +91,7 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
+import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.nearline.HsmSet;
@@ -97,9 +100,9 @@ import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -112,6 +115,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.stream.Collectors.toList;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 
 public class PoolV4
@@ -191,6 +195,10 @@ public class PoolV4
     private double _breakEven = DEFAULT_BREAK_EVEN;
     private double _moverCostFactor = 0.5;
     private TransferServices _transferServices;
+
+    private final Assumption.Pool _poolInfo = new PoolInfo();
+
+    private final RateLimiter _pingLimiter = RateLimiter.create(100);
 
     protected void assertNotRunning(String error)
     {
@@ -745,6 +753,8 @@ public class PoolV4
 
     private int queueIoRequest(CellMessage envelope, PoolIoFileMessage message) throws CacheException
     {
+        message.getAssumption().check(_poolInfo);
+
         String queueName = message.getIoQueueName();
         String doorUniqueId = envelope.getSourceAddress().toString() + message.getId();
 
@@ -762,6 +772,11 @@ public class PoolV4
         try {
             message.setMoverId(queueIoRequest(envelope, message));
             message.setSucceeded();
+        } catch (OutOfDateCacheException e) {
+            if (_pingLimiter.tryAcquire()) {
+                _pingThread.sendPoolManagerMessage(true);
+            }
+            message.setFailed(e.getRc(), e.getMessage());
         } catch (FileNotInCacheException | FileInCacheException e) {
             _log.warn(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
@@ -1469,47 +1484,7 @@ public class PoolV4
 
     private PoolCostInfo getPoolCostInfo()
     {
-        PoolCostInfo info = new PoolCostInfo(_poolName, IoQueueManager.DEFAULT_QUEUE);
-        SpaceRecord space = _repository.getSpaceRecord();
-
-        info.setSpaceUsage(space.getTotalSpace(), space.getFreeSpace(),
-                           space.getPreciousSpace(), space.getRemovableSpace(),
-                           space.getLRU());
-
-        info.getSpaceInfo().setParameter(_breakEven, space.getGap());
-        info.setMoverCostFactor(_moverCostFactor);
-
-        for (MoverRequestScheduler js : _ioQueue.queues()) {
-            /*
-             * we skip p2p queue as it is handled differently
-             * FIXME: no special cases
-             */
-            if(js.getName().equals(IoQueueManager.P2P_QUEUE_NAME)) {
-                continue;
-            }
-
-            info.addExtendedMoverQueueSizes(js.getName(),
-                                            js.getActiveJobs(),
-                                            js.getMaxActiveJobs(),
-                                            js.getQueueSize(),
-                                            js.getCountByPriority(IoPriority.REGULAR),
-                                            js.getCountByPriority(IoPriority.HIGH));
-        }
-
-        info.setP2pClientQueueSizes(_p2pClient.getActiveJobs(), 0, 0);
-
-        MoverRequestScheduler p2pQueue = _ioQueue.getPoolToPoolQueue();
-        info.setP2pServerQueueSizes(p2pQueue.getActiveJobs(),
-                                    p2pQueue.getMaxActiveJobs(),
-                                    p2pQueue.getQueueSize());
-
-        info.setQueueSizes(_suppressHsmLoad ? 0 : _storageHandler.getActiveFetchJobs(),
-                0,
-                _suppressHsmLoad ? 0 : _storageHandler.getFetchQueueSize(),
-                _suppressHsmLoad ? 0 : _storageHandler.getActiveStoreJobs(),
-                0,
-                _suppressHsmLoad ? 0 : _storageHandler.getStoreQueueSize());
-        return info;
+        return new PoolCostInfo(IoQueueManager.DEFAULT_QUEUE, _poolInfo);
     }
 
     @AffectsSetup
@@ -1908,6 +1883,86 @@ public class PoolV4
             _pingThread.setHeartbeat(value);
 
             return "Heartbeat set to " + (_pingThread.getHeartbeat()) + " seconds";
+        }
+    }
+
+    private static PoolCostInfo.NamedPoolQueueInfo toNamedPoolQueueInfo(MoverRequestScheduler queue)
+    {
+        return new PoolCostInfo.NamedPoolQueueInfo(queue.getName(),
+                                                   queue.getActiveJobs(),
+                                                   queue.getMaxActiveJobs(),
+                                                   queue.getQueueSize(),
+                                                   queue.getCountByPriority(IoPriority.REGULAR),
+                                                   queue.getCountByPriority(IoPriority.HIGH));
+    }
+
+    /**
+     * Provides access to various performance metrics of the pool.
+     */
+    private class PoolInfo implements Assumption.Pool
+    {
+        @Override
+        public String name()
+        {
+            return _poolName;
+        }
+
+        @Override
+        public PoolCostInfo.PoolSpaceInfo space()
+        {
+            SpaceRecord space = _repository.getSpaceRecord();
+            return new PoolCostInfo.PoolSpaceInfo(space.getTotalSpace(), space.getFreeSpace(), space.getPreciousSpace(),
+                                                  space.getRemovableSpace(), space.getLRU(), _breakEven, space.getGap());
+        }
+
+        @Override
+        public double moverCostFactor()
+        {
+            return _moverCostFactor;
+        }
+
+        @Override
+        public PoolCostInfo.NamedPoolQueueInfo getMoverQueue(String name)
+        {
+            return toNamedPoolQueueInfo(_ioQueue.getQueueByNameOrDefault(name));
+        }
+
+        @Override
+        public Collection<PoolCostInfo.NamedPoolQueueInfo> movers()
+        {
+            return _ioQueue.queues().stream()
+                    .filter(q -> !q.getName().equals(IoQueueManager.P2P_QUEUE_NAME))
+                    .map(PoolV4::toNamedPoolQueueInfo)
+                    .collect(toList());
+        }
+
+        @Override
+        public PoolCostInfo.PoolQueueInfo p2PClient()
+        {
+            int active = _p2pClient.getActiveJobs();
+            return new PoolCostInfo.PoolQueueInfo(active, 0, 0, 0, active);
+        }
+
+        @Override
+        public PoolCostInfo.PoolQueueInfo p2pServer()
+        {
+            return toNamedPoolQueueInfo(_ioQueue.getPoolToPoolQueue());
+        }
+
+        @Override
+        public PoolCostInfo.PoolQueueInfo restore()
+        {
+            int active = _storageHandler.getActiveFetchJobs();
+            int queued = _storageHandler.getFetchQueueSize();
+            return new PoolCostInfo.PoolQueueInfo(active, 0, queued, 0, active + queued);
+        }
+
+        @Override
+        public PoolCostInfo.PoolQueueInfo store()
+        {
+            int active = _storageHandler.getActiveStoreJobs();
+            int queued = _storageHandler.getStoreQueueSize();
+            return new PoolCostInfo.PoolQueueInfo(active, 0, queued, 0, active + queued);
         }
     }
 }

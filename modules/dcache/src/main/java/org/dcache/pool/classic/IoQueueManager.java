@@ -128,7 +128,7 @@ public class IoQueueManager
     }
 
     @Nonnull
-    private MoverRequestScheduler getQueueByNameOrDefault(String queueName)
+    public MoverRequestScheduler getQueueByNameOrDefault(String queueName)
     {
         return (queueName == null) ? defaultQueue : queuesByName.getOrDefault(queueName, defaultQueue);
     }

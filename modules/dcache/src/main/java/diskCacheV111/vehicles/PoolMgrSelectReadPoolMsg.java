@@ -8,6 +8,7 @@ import java.util.EnumSet;
 import diskCacheV111.poolManager.RequestContainerV5;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.assumption.Assumption;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;

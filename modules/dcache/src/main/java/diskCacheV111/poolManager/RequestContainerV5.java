@@ -63,6 +63,7 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.UOID;
 
 import org.dcache.cells.CellStub;
+import org.dcache.pool.assumption.PerformanceCostAssumption;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;

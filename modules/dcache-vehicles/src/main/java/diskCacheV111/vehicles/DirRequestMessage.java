@@ -20,6 +20,7 @@ package diskCacheV111.vehicles;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.pool.assumption.Assumptions;
 
 /**
  * A request that the {@literal dir} cell list information about the specified
@@ -31,9 +32,8 @@ public class DirRequestMessage extends PoolIoFileMessage
 
     private final Restriction _restriction;
 
-    public DirRequestMessage(String pool, PnfsId pnfsId, ProtocolInfo info,
-            Restriction restriction) {
-        super(pool, pnfsId, info);
+    public DirRequestMessage(String pool, PnfsId pnfsId, ProtocolInfo info, Restriction restriction) {
+        super(pool, pnfsId, info, Assumptions.none());
         _restriction = restriction;
     }
 

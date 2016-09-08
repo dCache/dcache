@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
-import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
@@ -533,9 +532,7 @@ public class PoolManagerV5
         if (!pool.isActive() || cost == null) {
             offlinePools.add(name);
         } else {
-            CostCalculationV5 calc = new CostCalculationV5(cost);
-            calc.recalculate();
-            onlinePools.add(new PoolManagerPoolInformation(name, cost, calc.getPerformanceCost()));
+            onlinePools.add(new PoolManagerPoolInformation(name, cost, cost.getPerformanceCost()));
         }
     }
 

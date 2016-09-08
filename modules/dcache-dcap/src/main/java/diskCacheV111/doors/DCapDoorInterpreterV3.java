@@ -78,6 +78,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pool.assumption.Assumption;
 import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
@@ -1576,6 +1577,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private String           _ioMode;
         private DCapProtocolInfo _protocolInfo;
         private String           _pool         = "<unknown>" ;
+        private Assumption       _assumption;
         private Integer          _moverId;
         private boolean          _isHsmRequest;
         private boolean          _overwrite;
@@ -1983,6 +1985,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _fileAttributes = reply.getFileAttributes();
 
             _pool = pool ;
+            _assumption = reply.getAssumption();
             PoolIoFileMessage poolMessage;
 
             if( reply instanceof PoolMgrSelectReadPoolMsg ){
@@ -1992,13 +1995,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                         new PoolDeliverFileMessage(
                                 pool,
                                 _protocolInfo ,
-                                _fileAttributes);
+                                _fileAttributes,
+                                _assumption);
             }else if( reply instanceof PoolMgrSelectWritePoolMsg ){
                 poolMessage =
                         new PoolAcceptFileMessage(
                                 pool,
                                 _protocolInfo ,
                                 _fileAttributes,
+                                _assumption,
                                 getPreallocated());
             }else{
                 sendReply( "poolMgrGetPoolArrived" , 7 ,
