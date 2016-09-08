@@ -647,25 +647,28 @@ public class LoginManager
             }
         }
 
-        public synchronized void shutdown()
+        public void shutdown()
         {
             LOGGER.info("Listen thread shutdown requested");
-            //
-            // it is still hard to stop an Pending I/O call.
-            //
-            if (_shutdown || (_serverSocket == null)) {
-                return;
-            }
-            _shutdown = true;
 
-            try {
-                LOGGER.debug("Socket SHUTDOWN local = {}", _serverSocket.getLocalSocketAddress());
-                _serverSocket.close();
-            } catch (IOException ee) {
-                LOGGER.warn("ServerSocket close: {}", ee.toString());
-            }
+            synchronized (this) {
+                //
+                // it is still hard to stop an Pending I/O call.
+                //
+                if (_shutdown || (_serverSocket == null)) {
+                    return;
+                }
+                _shutdown = true;
 
-            notifyAll();
+                try {
+                    LOGGER.debug("Socket SHUTDOWN local = {}", _serverSocket.getLocalSocketAddress());
+                    _serverSocket.close();
+                } catch (IOException ee) {
+                    LOGGER.warn("ServerSocket close: {}", ee.toString());
+                }
+
+                notifyAll();
+            }
 
             _loginCellFactory.awaitTerminated();
 
