@@ -2,6 +2,21 @@
 # Instantiate cell communication services
 ##############################################################
 
+check -strong dcache.broker.satellite.channel.security
+check -strong dcache.broker.channel.credential.key
+check -strong dcache.broker.channel.credential.cert
+check -strong dcache.broker.channel.capath
+check -strong dcache.authn.ciphers
+check -strong dcache.authn.crl-mode
+check -strong dcache.authn.ocsp-mode
+
 create -- dmg.cells.services.CoreRoutingManager RoutingMgr "-role=satellite"
-create -- dmg.cells.services.LocationManager lm "-role=satellite"
+create -- dmg.cells.services.LocationManager lm "-role=satellite \
+                                                    -mode=${dcache.broker.satellite.channel.security} \
+                                                    -service_key="${dcache.broker.channel.credential.key}" \
+                                                    -service_cert="${dcache.broker.channel.credential.cert}" \
+                                                    -service_trusted_certs="${dcache.broker.channel.capath}" \
+                                                    -ciphers='${dcache.authn.ciphers}' \
+                                                    -crl-mode='${dcache.authn.crl-mode}' \
+                                                    -ocsp-mode='${dcache.authn.ocsp-mode}'"
 

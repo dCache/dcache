@@ -131,7 +131,9 @@ public class LocationMgrTunnel
                 }
             } catch (IOException e) {
                 _log.debug("Failed to shutdown socket: {}", e.getMessage());
-            } catch (InterruptedException ignored) {
+            } catch (UnsupportedOperationException ignored) {
+                // SSLSocket does not support shutdown.
+            }  catch (InterruptedException ignored) {
             }
         } finally {
             try {

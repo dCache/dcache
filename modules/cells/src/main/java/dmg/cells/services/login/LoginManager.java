@@ -3,7 +3,6 @@ package dmg.cells.services.login;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.MoreExecutors;
 import javatunnel.UserValidatable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +21,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -33,14 +31,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
@@ -503,8 +498,14 @@ public class LoginManager
                     throw new RuntimeException(e);
                 }
 
-                Method meth = obj.getClass().getMethod("createServerSocket");
-                _serverSocket = (ServerSocket) meth.invoke(obj);
+                try {
+                    Method meth = obj.getClass().getMethod("createServerSocket");
+                    _serverSocket = (ServerSocket) meth.invoke(obj);
+                } catch (NoSuchMethodException | SecurityException e) {
+                    LOGGER.info("Method createServerSocket not found {}", e.getCause());
+                    Throwables.propagateIfPossible(e.getCause(), Exception.class);
+                    throw new RuntimeException(e);
+                }
                 LOGGER.info("ListenThread : got serverSocket class : {}", _serverSocket.getClass().getName());
             }
             _serverSocket.bind(_socketAddress);

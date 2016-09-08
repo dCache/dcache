@@ -5,13 +5,14 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.SocketFactory;
+
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.ClosedByInterruptException;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.Random;
@@ -26,6 +27,8 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
 import org.dcache.util.NDC;
 
+import static java.util.Objects.requireNonNull;
+
 public class LocationManagerConnector
     extends CellAdapter
     implements Runnable
@@ -34,17 +37,19 @@ public class LocationManagerConnector
         LoggerFactory.getLogger("org.dcache.cells.network");
 
     private final String _domain;
+    private final SocketFactory _ssf;
     private final InetSocketAddress _address;
     private Thread _thread;
     private volatile String _status = "disconnected";
     private volatile int _retries;
     private volatile boolean _isRunning;
 
-    public LocationManagerConnector(String cellName, String args)
+    public LocationManagerConnector(String cellName, String args, SocketFactory socketFactory)
     {
         super(cellName, "System", args);
         Args a = getArgs();
         _domain = a.getOpt("domain");
+        _ssf = requireNonNull(socketFactory);
         HostAndPort where = HostAndPort.fromString(a.getOpt("where"));
         _address = new InetSocketAddress(where.getHostText(), where.getPort());
     }
@@ -63,7 +68,7 @@ public class LocationManagerConnector
         _status = "Connecting to " + _address;
         Socket socket;
         try {
-            socket = SocketChannel.open(_address).socket();
+            socket = _ssf.createSocket(_address.getAddress(), _address.getPort());
         } catch (UnsupportedAddressTypeException e) {
             throw new IOException("Unsupported address type: " + _address, e);
         } catch (UnresolvedAddressException e) {
@@ -74,8 +79,7 @@ public class LocationManagerConnector
             throw new IOException("Failed to connect to " + _address + ": " + e, e);
         }
         socket.setKeepAlive(true);
-
-        _log.info("Using clear text channel");
+        _log.info("Connecting using {}", socket.getClass().getSimpleName());
         return new DummyStreamEngine(socket);
     }
 
