@@ -378,15 +378,25 @@ public class LoginManager
     }
 
     @Override
-    public void stopped()
+    protected void stopping()
     {
         LOGGER.info("cleanUp requested by nucleus, closing listen socket");
-        if (_listenThread != null) {
-            _listenThread.shutdown();
-        }
         if (_loginBrokerPublisher != null) {
             _loginBrokerPublisher.beforeStop();
         }
+        /* Shut down the listen thread in stopping to shut down login cell factories
+         * before cell nucleus cancels pending messages with a timeout. Otherwise
+         * some components used by the factories - such as the pool manager handler
+         * subscriber - enter an eager retry loop.
+         */
+        if (_listenThread != null) {
+            _listenThread.shutdown();
+        }
+    }
+
+    @Override
+    public void stopped()
+    {
         if (_scheduledExecutor != null) {
             _scheduledExecutor.shutdown();
         }

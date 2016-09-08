@@ -129,8 +129,8 @@ public class PoolManagerHandlerSubscriber
         startGate = null;
     }
 
-    @PreDestroy
-    public synchronized void stop()
+    @Override
+    public synchronized void beforeStop()
     {
         isStopped = true;
         if (current != null) {

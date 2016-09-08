@@ -143,7 +143,6 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
         socketGroup.shutdownGracefully(500, 2000, TimeUnit.MILLISECONDS).syncUninterruptibly();
         poolManagerHandler.beforeStop();
         executor.shutdown();
-        poolManagerHandler.stop();
         notifyStopped();
     }
 }

@@ -97,7 +97,6 @@ public class LineBasedDoorFactory extends StreamEngineLoginCellFactory
     {
         poolManagerHandler.beforeStop();
         executor.shutdown();
-        poolManagerHandler.stop();
         notifyStopped();
     }
 }
