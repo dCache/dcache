@@ -486,4 +486,10 @@ public class ReplicaStoreCache
     {
         return _inner.getTotalSpace();
     }
+
+    @Override
+    public String toString()
+    {
+        return _inner.toString();
+    }
 }
