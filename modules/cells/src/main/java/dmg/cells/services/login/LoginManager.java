@@ -70,7 +70,6 @@ public class LoginManager
     private final CellNucleus _nucleus;
     private final Args _args;
     private ListenThread _listenThread;
-    private String _locationManager;
     private final AtomicInteger _connectionDeniedCounter = new AtomicInteger();
     private final AtomicInteger _loginCounter = new AtomicInteger();
     private final AtomicInteger _loginFailures = new AtomicInteger();
@@ -159,9 +158,6 @@ public class LoginManager
         _keepAlive.schedule(keepAlive);
 
 
-        // get the location manager
-        _locationManager = _args.getOpt("lm");
-
         _loginCellFactory = new LoginCellFactoryBuilder()
                 .setName(loginCell)
                 .setCellEndpoint(this)
@@ -208,9 +204,6 @@ public class LoginManager
     protected void started()
     {
         _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
-        if (_locationManager != null) {
-            new AsynchronousLocationRegistrationTask(_locationManager).run();
-        }
         if (_loginBrokerPublisher != null) {
             _loginBrokerPublisher.afterStart();
         }
@@ -233,6 +226,11 @@ public class LoginManager
     public CellVersion getCellVersion()
     {
         return _version;
+    }
+
+    public int getListenPort()
+    {
+        return _listenThread.getListenPort();
     }
 
     public static final String hh_get_children = "[-binary]";
@@ -275,50 +273,6 @@ public class LoginManager
             }
             LOGGER.info("LoginEventListener : removing : {}", removedCell);
             loadChanged();
-        }
-    }
-
-    //
-    // the 'send to location manager thread'
-    //
-    private class AsynchronousLocationRegistrationTask implements CellMessageAnswerable, Runnable
-    {
-        private final int _port;
-        private final CellPath _path;
-
-        public AsynchronousLocationRegistrationTask(String dest)
-        {
-            _port = _listenThread.getListenPort();
-            _path = new CellPath(dest);
-        }
-
-        @Override
-        public void run()
-        {
-            LOGGER.info("Sending 'listening on {} {}'", getCellName(), _port);
-            sendMessage(new CellMessage(_path, "listening on " + getCellName() + ' ' + _port),
-                        this, MoreExecutors.directExecutor(), 5000);
-        }
-
-        @Override
-        public void answerArrived(CellMessage request, CellMessage answer)
-        {
-            LOGGER.info("Port number successfully sent to {}", _path);
-            _sending = false;
-        }
-
-        @Override
-        public void exceptionArrived(CellMessage request, Exception exception)
-        {
-            LOGGER.warn("Problem sending port number {}", exception.toString());
-            _scheduledExecutor.schedule(this, 10, TimeUnit.SECONDS);
-        }
-
-        @Override
-        public void answerTimedOut(CellMessage request)
-        {
-            LOGGER.warn("No reply from {}", _path);
-            _scheduledExecutor.schedule(this, 10, TimeUnit.SECONDS);
         }
     }
 
@@ -398,11 +352,6 @@ public class LoginManager
 
         if (_maxLogin > -1) {
             pw.println("  Logins/max     : " + _children.size() + '/' + _maxLogin);
-        }
-
-        if (_locationManager != null) {
-            pw.println("  Location Mgr   : " + _locationManager +
-                       " (" + (_sending ? "Sending" : "Informed") + ')');
         }
 
         pw.println();

@@ -166,7 +166,7 @@ public class LocationManager extends CellAdapter
             addCellEventListener(this);
         }
 
-        public void start() throws ExecutionException, InterruptedException
+        public void start() throws Exception
         {
         }
 
@@ -225,17 +225,11 @@ public class LocationManager extends CellAdapter
         }
 
         @Override
-        public void start() throws ExecutionException, InterruptedException
+        public void start() throws Exception
         {
-            startListener(String.join(" ", args.getArguments()));
-        }
-
-        public String ac_listening_on_$_2(Args args) throws Exception
-        {
-            int port = Integer.parseInt(args.argv(1));
+            int port = startListener(String.join(" ", args.getArguments()));
             HostAndPort address = HostAndPort.fromParts(InetAddress.getLocalHost().getCanonicalHostName(), port);
             coreDomains.setLocalAddress(address);
-            return "";
         }
     }
 
@@ -299,16 +293,17 @@ public class LocationManager extends CellAdapter
         }
     }
 
-    private String startListener(String args) throws ExecutionException, InterruptedException
+    private int startListener(String args) throws ExecutionException, InterruptedException
     {
         String cellName = "l*";
         String cellClass = "dmg.cells.network.LocationMgrTunnel";
-        String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -lm=" + getCellName() + " -role=" + role;
+        String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -role=" + role;
         LOGGER.info("Starting acceptor with arguments: {}", cellArgs);
         LoginManager c = new LoginManager(cellName, "System", cellArgs);
         c.start().get();
         LOGGER.info("Created : {}", c);
-        return c.getCellName();
+
+        return c.getListenPort();
     }
 
     private String startConnector(String remoteDomain, HostAndPort address) throws ExecutionException, InterruptedException
