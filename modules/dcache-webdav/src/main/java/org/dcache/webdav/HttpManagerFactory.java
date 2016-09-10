@@ -14,9 +14,7 @@ import io.milton.http.webdav.PropFindXmlGenerator;
 import io.milton.http.webdav.WebDavResponseHandler;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.core.io.Resource;
 
-import java.io.IOException;
 import java.util.Date;
 
 import org.dcache.webdav.federation.FederationResponseHandler;
@@ -25,7 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBean
 {
-    private Resource _templateResource;
+    private ReloadableTemplate _template;
     private ImmutableMap<String,String> _templateConfig;
     private String _staticContentPath;
     private PathMapper _pathMapper;
@@ -46,7 +44,7 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
         dcacheResponseHandler.setWrapped(
             new DefaultWebDavResponseHandler(getHttp11ResponseHandler(), getResourceTypeHelper(),
                                              getPropFindXmlGenerator()));
-        dcacheResponseHandler.setTemplateResource(_templateResource);
+        dcacheResponseHandler.setReloadableTemplate(_template);
         dcacheResponseHandler.setTemplateConfig(_templateConfig);
         dcacheResponseHandler.setStaticContentPath(_staticContentPath);
         dcacheResponseHandler.setBuffering(getBuffering());
@@ -134,10 +132,10 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
      * Sets the resource containing the StringTemplateGroup for
      * directory listing.
      */
-    public void setTemplateResource(Resource resource)
-        throws IOException
+    @Required
+    public void setTemplate(ReloadableTemplate template)
     {
-        _templateResource = resource;
+        _template = template;
     }
 
     @Required

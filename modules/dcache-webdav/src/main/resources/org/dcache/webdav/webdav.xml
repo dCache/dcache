@@ -85,9 +85,9 @@
   <bean id="list-handler" class="org.dcache.util.list.ListDirectoryHandler">
       <description>Client stub for directory listing</description>
       <constructor-arg>
-	  <bean class="diskCacheV111.util.PnfsHandler">
-	      <constructor-arg ref="pnfs-stub"/>
-	  </bean>
+          <bean class="diskCacheV111.util.PnfsHandler">
+              <constructor-arg ref="pnfs-stub"/>
+          </bean>
       </constructor-arg>
   </bean>
 
@@ -101,11 +101,11 @@
   <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
       <description>Processes login requests</description>
       <property name="loginStrategies">
-	  <list>
+          <list>
           <bean class="org.dcache.services.login.RemoteLoginStrategy">
               <property name="cellStub" ref="login-stub"/>
           </bean>
-	  </list>
+          </list>
       </property>
       <property name="anonymousAccess" value="${webdav.authz.anonymous-operations}"/>
   </bean>
@@ -154,12 +154,12 @@
   </bean>
 
   <bean id="template-config"
-	class="org.dcache.util.ConfigurationMapFactoryBean">
+        class="org.dcache.util.ConfigurationMapFactoryBean">
       <property name="prefix" value="webdav.templates.config"/>
   </bean>
 
   <bean id="custom-headers"
-	class="org.dcache.util.ConfigurationMapFactoryBean">
+        class="org.dcache.util.ConfigurationMapFactoryBean">
       <property name="prefix" value="webdav.custom-response-header"/>
   </bean>
 
@@ -192,7 +192,7 @@
         <property name="transferConfirmationTimeout" value="${webdav.mover.transfer-confirmation-timeout}"/>
         <property name="transferConfirmationTimeoutUnit" value="${webdav.mover.transfer-confirmation-timeout.unit}"/>
         <property name="internalAddress" value="${webdav.net.internal}"/>
-        <property name="templateResource" value="${webdav.templates.html}"/>
+        <property name="template" ref="template"/>
         <property name="templateConfig" ref="template-config"/>
         <property name="staticContentPath" value="${webdav.static-content.uri}"/>
         <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
@@ -216,9 +216,9 @@
         <property name="defaultStandardFilter" ref="dispatch-filter"/>
         <property name="enableDigestAuth" value="false"/>
 
-	<!-- Always enable BASIC auth support in Milton; it is never used for actual
-	     authentication, but we identify logged in users by simulating that a BASIC
-	     authentication has happened -->
+        <!-- Always enable BASIC auth support in Milton; it is never used for actual
+             authentication, but we identify logged in users by simulating that a BASIC
+             authentication has happened -->
         <property name="enableBasicAuth" value="true"/>
         <property name="enableExpectContinue" value="false"/>
         <property name="enableCompression" value="false"/>
@@ -227,7 +227,7 @@
         <property name="resourceFactory" ref="resource-factory"/>
         <property name="buffering" value="never"/>
         <property name="staticContentPath" value="${webdav.static-content.uri}"/>
-        <property name="templateResource" value="${webdav.templates.html}"/>
+        <property name="template" ref="template"/>
         <property name="pathMapper" ref="path-mapper"/>
         <property name="templateConfig" ref="template-config"/>
     </bean>
@@ -396,7 +396,7 @@
             </list>
         </property>
         <property name="handler">
-	  <!--+
+          <!--+
               |  The RewriteHandler allows modification of the
               |  HttpServletResponse headers.  This allows
               |  injection of the admin-supplied non-standard
@@ -406,7 +406,7 @@
               |  admin-supplied header.  While this weakens the
               |  feature, it also prevents the admin from
               |  mistakenly breaking the response.
-	      +-->
+              +-->
             <bean class="org.eclipse.jetty.rewrite.handler.RewriteHandler">
                 <property name="rules">
                     <bean class="org.dcache.util.jetty.HeaderRewriteRuleContainerFactoryBean">
@@ -429,6 +429,13 @@
                 </bean>
             </list>
         </property>
+    </bean>
+
+    <bean id="template" class="org.dcache.webdav.ReloadableTemplateFactory">
+        <description>The template used to generate directory listing and error pages</description>
+        <property name="resource" value="${webdav.templates.html}"/>
+        <property name="autoReload" value="${webdav.enable.auto-reload.templates}"/>
+        <property name="workaroundTemplate" value="#{T(org.dcache.webdav.DcacheResponseHandler).HTML_TEMPLATE_NAME}"/>
     </bean>
 
     <bean id="server-connector" class="org.dcache.util.jetty.ConnectorFactoryBean">

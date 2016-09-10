@@ -24,8 +24,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
-import org.stringtemplate.v4.STGroup;
-import org.stringtemplate.v4.STGroupFile;
 
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -190,7 +188,7 @@ public class DcacheResourceFactory
     private boolean _isAnonymousListingAllowed;
 
     private String _staticContentPath;
-    private STGroup _listingGroup;
+    private ReloadableTemplate _template;
     private ImmutableMap<String,String> _templateConfig;
 
     private TransferRetryPolicy _retryPolicy =
@@ -481,21 +479,10 @@ public class DcacheResourceFactory
      * Sets the resource containing the StringTemplateGroup for
      * directory listing.
      */
-    public void setTemplateResource(org.springframework.core.io.Resource resource)
-        throws IOException
+    @Required
+    public void setTemplate(ReloadableTemplate template)
     {
-        _listingGroup = new STGroupFile(resource.getURL(), "UTF-8", '$', '$');
-        _listingGroup.setListener(new Slf4jSTErrorListener(_log));
-
-        /* StringTemplate has lazy initialisation, but this is very racey and
-         * can break StringTemplate altogether:
-         *
-         *     https://github.com/antlr/stringtemplate4/issues/61
-         *
-         * here we force initialisation to work-around this.
-         */
-        _listingGroup.getInstanceOf(HTML_TEMPLATE_LISTING_NAME);
-
+        _template = template;
     }
 
     @Required
@@ -895,7 +882,8 @@ public class DcacheResourceFactory
      */
     public boolean deliverClient(FsPath path, Writer out) throws IOException
     {
-        final ST t = _listingGroup.getInstanceOf(HTML_TEMPLATE_CLIENT_NAME);
+        final ST t = _template.getInstanceOfQuietly(HTML_TEMPLATE_CLIENT_NAME);
+
         if (t == null) {
             return false;
         }
@@ -916,12 +904,10 @@ public class DcacheResourceFactory
             throw new PermissionDeniedCacheException("Access denied");
         }
 
-        final ST t = _listingGroup.getInstanceOf(HTML_TEMPLATE_LISTING_NAME);
+        final ST t = _template.getInstanceOf(HTML_TEMPLATE_LISTING_NAME);
 
         if (t == null) {
-            _log.error("template '{}' not found in templategroup: {}",
-                    HTML_TEMPLATE_LISTING_NAME, _listingGroup.getFileName());
-            out.append(DcacheResponseHandler.templateNotFoundErrorPage(_listingGroup,
+            out.append(DcacheResponseHandler.templateNotFoundErrorPage(_template.getPath(),
                     HTML_TEMPLATE_LISTING_NAME));
             return;
         }

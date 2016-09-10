@@ -22,8 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.stringtemplate.v4.ST;
-import org.stringtemplate.v4.STGroup;
-import org.stringtemplate.v4.STGroupFile;
 
 import javax.security.auth.Subject;
 import javax.xml.namespace.QName;
@@ -59,7 +57,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     private static final Logger log =
         LoggerFactory.getLogger(DcacheResponseHandler.class);
 
-    private static final String HTML_TEMPLATE_NAME = "errorpage";
+    public static final String HTML_TEMPLATE_NAME = "errorpage";
 
     private static final Splitter PATH_SPLITTER =
         Splitter.on('/').omitEmptyStrings();
@@ -78,7 +76,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
 
     private AuthenticationService _authenticationService;
     private String _staticContentPath;
-    private STGroup _templateGroup;
+    private ReloadableTemplate _template;
     private ImmutableMap<String, String> _templateConfig;
 
     private PathMapper pathMapper;
@@ -97,20 +95,9 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
      * Sets the resource containing the StringTemplateGroup for
      * directory listing.
      */
-    public void setTemplateResource(org.springframework.core.io.Resource resource)
-            throws IOException
+    public void setReloadableTemplate(ReloadableTemplate template)
     {
-        _templateGroup = new STGroupFile(resource.getURL(), "UTF-8", '$', '$');
-        _templateGroup.setListener(new Slf4jSTErrorListener(log));
-
-        /* StringTemplate has lazy initialisation, but this is very racey and
-         * can break StringTemplate altogether:
-         *
-         *     https://github.com/antlr/stringtemplate4/issues/61
-         *
-         * here we force initialisation to work-around this.
-         */
-        _templateGroup.getInstanceOf(HTML_TEMPLATE_NAME);
+        _template = template;
     }
 
     @Required
@@ -227,12 +214,10 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(path), String.class);
 
-        ST template = _templateGroup.getInstanceOf(HTML_TEMPLATE_NAME);
+        ST template = _template.getInstanceOf(HTML_TEMPLATE_NAME);
 
         if (template == null) {
-            log.error("template '{}' not found in templategroup: {}",
-                    HTML_TEMPLATE_NAME, _templateGroup.getFileName());
-            return templateNotFoundErrorPage(_templateGroup, HTML_TEMPLATE_NAME);
+            return templateNotFoundErrorPage(_template.getPath(), HTML_TEMPLATE_NAME);
         }
 
         template.add("path", UrlPathWrapper.forPaths(base));
@@ -250,7 +235,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         return template.render();
     }
 
-    public static String templateNotFoundErrorPage(STGroup group, String template)
+    public static String templateNotFoundErrorPage(String filename, String template)
     {
         return "<html><head><title>Broken dCache installation</title></head>" +
                 "<body><div style='margin: 5px; border: 2px solid red; padding: 2px 10px;'>" +
@@ -259,7 +244,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
                 "installation cannot generate this page correctly because it could " +
                 "not find the <tt style='font-size: 120%; color: green;'>" + template +
                 "</tt> template.  Please check the file <tt>" +
-                group.getFileName() + "</tt> for a line that starts:</p>" +
+                filename + "</tt> for a line that starts:</p>" +
                 "<code>" + template + "(...) ::= &lt;&lt;</code>" +
                 "<p style='width: 50em'>For more details on the format of this file, see the " +
                 "<a href='https://theantlrguy.atlassian.net/wiki/display/ST4/Group+file+syntax'>" +

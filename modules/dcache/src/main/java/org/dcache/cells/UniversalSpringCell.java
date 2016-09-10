@@ -135,6 +135,11 @@ public class UniversalSpringCell
     private static final Class<?>[] TERMINAL_TYPES = new Class<?>[] { Class.class, ApplicationContext.class };
     private static final Class<?>[] HIDDEN_TYPES = new Class<?>[] { ApplicationContext.class, AutoCloseable.class };
 
+    public interface BeanPostProcessorAware
+    {
+        void setBeanPostProcessor(BeanPostProcessor processor);
+    }
+
     /**
      * Environment map this cell was instantiated in.
      */
@@ -979,6 +984,10 @@ public class UniversalSpringCell
                                                   String beanName)
         throws BeansException
     {
+        if (bean instanceof BeanPostProcessorAware) {
+            ((BeanPostProcessorAware)bean).setBeanPostProcessor(this);
+        }
+
         if (bean instanceof CellCommandListener) {
             addCommandListener(bean);
         }

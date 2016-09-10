@@ -57,6 +57,7 @@ check -strong webdav.enable.overwrite
 check -strong webdav.service.missing-files
 check -strong webdav.service.missing-files.timeout
 check -strong webdav.service.missing-files.timeout.unit
+check -strong webdav.enable.auto-reload.templates
 check -strong webdav.enable.missing-files
 check -strong webdav.enable.proxy-protocol
 
