@@ -184,7 +184,7 @@ public class      SystemCell
 
        for (String cellName: cells) {
            try {
-               if (_nucleus.join(cellName, Math.max(0, System.currentTimeMillis() - deadline))) {
+               if (_nucleus.join(cellName, Math.max(1, deadline - System.currentTimeMillis()))) {
                    _log.info("Killed {}", cellName);
                } else {
                    _log.warn("Timeout waiting for {}", cellName);
