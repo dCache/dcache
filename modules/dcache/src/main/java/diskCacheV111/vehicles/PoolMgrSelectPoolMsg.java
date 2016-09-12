@@ -22,7 +22,6 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private String       _linkGroup;
     private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
-    private boolean _skipCostUpdate;
     private String _transferPath;
 
     private Assumption _assumption;
@@ -50,16 +49,6 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     public Assumption getAssumption()
     {
         return _assumption == null ? Assumptions.none() : _assumption;
-    }
-
-    public void setSkipCostUpdate(boolean value)
-    {
-        _skipCostUpdate = value;
-    }
-
-    public boolean getSkipCostUpdate()
-    {
-        return _skipCostUpdate;
     }
 
     @Nonnull

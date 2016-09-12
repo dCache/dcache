@@ -967,7 +967,6 @@ public class RequestContainerV5
                 }
                 _waitingFor = cellMessage.getUOID();
                 _messageHash.put(_waitingFor, this);
-                _poolMonitor.messageToCostModule(cellMessage);
                 sendMessage(cellMessage);
                 _status = "Staging " + LocalDateTime.now().format(DATE_TIME_FORMAT);
             }
@@ -990,7 +989,6 @@ public class RequestContainerV5
                 }
                 _waitingFor = cellMessage.getUOID();
                 _messageHash.put(_waitingFor, this);
-                _poolMonitor.messageToCostModule(cellMessage);
                 sendMessage(cellMessage);
                 _status = "[P2P " + LocalDateTime.now().format(DATE_TIME_FORMAT) + "]";
             }
@@ -1052,9 +1050,6 @@ public class RequestContainerV5
                 }
                 m.revertDirection();
                 sendMessage(m);
-                if (!rpm.getSkipCostUpdate()) {
-                    _poolMonitor.messageToCostModule(m);
-                }
                 messages.remove();
             }
             return messages.hasNext();

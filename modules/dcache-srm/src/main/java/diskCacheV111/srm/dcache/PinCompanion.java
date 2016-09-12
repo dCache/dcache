@@ -223,7 +223,6 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PoolMgrSelectReadPoolMsg(_attributes,
                                              getProtocolInfo(),
                                              _selectPoolContext);
-            msg.setSkipCostUpdate(true);
             msg.setSubject(_subject);
 
             CellStub.addCallback(_poolManagerStub.send(msg), this, _executor);

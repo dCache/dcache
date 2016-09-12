@@ -155,11 +155,6 @@ final class TestCostModule implements CostModule {
         return 0;
     }
 
-    @Override
-    public void messageArrived(CellMessage cellMessage) {
-        //NOP
-    }
-
     String dumpInfo() {
         StringBuilder builder = new StringBuilder();
         String[] keys = poolInfoMap.keySet().toArray(new String[0]);

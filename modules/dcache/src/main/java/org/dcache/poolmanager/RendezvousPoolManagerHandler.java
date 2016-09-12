@@ -118,14 +118,13 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
     public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(
             CellEndpoint endpoint, CellAddressCore pool, T msg, long timeout)
     {
-        return submit(endpoint, new CellPath(backendFor(msg), pool), msg, timeout);
+        return submit(endpoint, new CellPath(pool), msg, timeout);
     }
 
     @Override
     public void start(CellEndpoint endpoint, CellMessage envelope, PoolIoFileMessage msg)
     {
         checkArgument(envelope.getSourcePath().hops() > 0, "Envelope is missing source address.");
-        envelope.getDestinationPath().insert(backendFor(msg));
         envelope.setMessageObject(msg);
         endpoint.sendMessage(envelope, CellEndpoint.SendFlag.PASS_THROUGH);
     }

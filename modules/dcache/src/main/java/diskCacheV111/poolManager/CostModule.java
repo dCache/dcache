@@ -9,8 +9,6 @@ import java.util.Map;
 
 import diskCacheV111.pools.PoolCostInfo;
 
-import dmg.cells.nucleus.CellMessage;
-
 import org.dcache.poolmanager.PoolInfo;
 
 
@@ -19,11 +17,6 @@ import org.dcache.poolmanager.PoolInfo;
  *  is in the form of a PoolCostInfo object
  */
 public interface CostModule {
-
-    /**
-     * Used by PoolManager to send the replies PoolManager sends to doors.
-     */
-    void messageArrived( CellMessage cellMessage ) ;
 
     /**
      * Obtain the PoolCostInfo associated with the named pool.  If the pool is unknown

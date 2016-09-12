@@ -812,9 +812,6 @@ public class PoolManagerV5
             _request.setAssumption(pool.assumption());
             _request.setSucceeded();
             reply(_request);
-            if (!_request.getSkipCostUpdate()) {
-                _costModule.messageArrived(_envelope);
-            }
         }
     }
 

@@ -30,8 +30,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
 
-import dmg.cells.nucleus.CellMessage;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.Partition;
@@ -89,11 +87,6 @@ public class PoolMonitorV5
     public void setPartitionManager(PartitionManager partitionManager)
     {
         _partitionManager = partitionManager;
-    }
-
-    public void messageToCostModule(CellMessage cellMessage)
-    {
-        _costModule.messageArrived(cellMessage);
     }
 
     @Override

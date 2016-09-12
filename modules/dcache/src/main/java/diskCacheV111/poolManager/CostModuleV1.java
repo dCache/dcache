@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,17 +18,9 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import diskCacheV111.pools.PoolCostInfo;
-import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.CostModulePoolInfoTable;
-import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.Pool2PoolTransferMsg;
-import diskCacheV111.vehicles.PoolAcceptFileMessage;
-import diskCacheV111.vehicles.PoolFetchFileMessage;
-import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
-import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
-import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
@@ -39,11 +30,8 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
-import org.dcache.cells.CellMessageDispatcher;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.util.Args;
-import org.dcache.vehicles.FileAttributes;
 
 public class CostModuleV1
     implements Serializable,
@@ -61,9 +49,6 @@ public class CostModuleV1
     private boolean _cachedPercentileCostCutIsValid;
     private double _cachedPercentileCostCut;
     private double _cachedPercentileFraction;
-    private transient CellMessageDispatcher _handlers =
-        new CellMessageDispatcher("messageToForward");
-
 
     /**
      * Information about some specific pool.
@@ -109,11 +94,6 @@ public class CostModuleV1
            return new PoolInfo(_address, _info, _tagMap);
        }
    }
-
-    public CostModuleV1()
-    {
-        _handlers.addMessageListener(this);
-    }
 
     public synchronized void messageArrived(CellMessage envelope, PoolManagerPoolUpMessage msg)
     {
@@ -184,197 +164,6 @@ public class CostModuleV1
     private double getPerformanceCost(PoolCostInfo info)
     {
         return info.getPerformanceCost();
-    }
-
-    public synchronized void messageToForward(PoolIoFileMessage msg)
-    {
-        String poolName = msg.getPoolName();
-        Entry e = _hash.get(poolName);
-        if (e == null) {
-            return;
-        }
-
-        String requestedQueueName = msg.getIoQueueName();
-
-        PoolCostInfo costInfo = e.getPoolCostInfo();
-        double currentPerformanceCost = getPerformanceCost(costInfo);
-        Map<String, NamedPoolQueueInfo> map = costInfo.getExtendedMoverHash();
-
-        PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
-
-        if (requestedQueueName == null || !map.containsKey(requestedQueueName)) {
-            requestedQueueName = costInfo.getDefaultQueueName();
-        }
-        PoolCostInfo.PoolQueueInfo queue = map.get(requestedQueueName);
-
-        int diff = 0;
-        long pinned = 0;
-        FileAttributes attributes = msg.getFileAttributes();
-        if (msg.isReply() && msg.getReturnCode() != 0) {
-            diff = -1;
-            if (msg instanceof PoolAcceptFileMessage && attributes.isDefined(FileAttribute.SIZE)) {
-                pinned = -msg.getFileAttributes().getSize();
-            }
-        }
-
-        queue.modifyQueue(diff);
-        spaceInfo.modifyPinnedSpace(pinned);
-
-        considerInvalidatingCache(currentPerformanceCost, costInfo);
-
-        LOGGER.trace("CostModuleV1 : Mover({}) queue of {} modified by {}/{} due to {}",
-                     requestedQueueName, poolName, diff, pinned, ((Object) msg).getClass().getName());
-    }
-
-    public synchronized void messageToForward(DoorTransferFinishedMessage msg)
-    {
-        String poolName = msg.getPoolName();
-        Entry e = _hash.get(poolName);
-        if (e == null) {
-            return;
-        }
-
-        PoolCostInfo costInfo = e.getPoolCostInfo();
-        double currentPerformanceCost = getPerformanceCost(costInfo);
-
-        Map<String, NamedPoolQueueInfo> map = costInfo.getExtendedMoverHash();
-        String requestedQueueName = msg.getIoQueueName();
-        if (requestedQueueName == null || !map.containsKey(requestedQueueName)) {
-            requestedQueueName = costInfo.getDefaultQueueName();
-        }
-
-        PoolCostInfo.PoolQueueInfo queue = map.get(requestedQueueName);
-
-        int diff = -1;
-        long pinned = 0;
-
-        queue.modifyQueue(diff);
-        considerInvalidatingCache(currentPerformanceCost, costInfo);
-        LOGGER.trace("CostModuleV1 : Mover({}) queue of {} modified by {}/{} due to {}",
-                     requestedQueueName, poolName, diff, pinned, ((Object) msg).getClass().getName());
-    }
-
-    public synchronized void messageToForward(PoolFetchFileMessage msg)
-    {
-         String poolName = msg.getPoolName();
-         Entry e = _hash.get(poolName);
-         if (e == null) {
-             return;
-         }
-
-         PoolCostInfo costInfo = e.getPoolCostInfo();
-         double currentPerformanceCost = getPerformanceCost(costInfo);
-         PoolCostInfo.PoolQueueInfo queue = costInfo.getRestoreQueue();
-         PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
-
-         int diff;
-         long pinned;
-        if (msg.isReply()) {
-            diff = -1;
-            pinned = 0;
-        } else {
-            diff = 1;
-            FileAttributes attributes = msg.getFileAttributes();
-            if (attributes.isDefined(FileAttribute.SIZE)) {
-                pinned = attributes.getSize();
-            } else {
-                pinned = 0;
-            }
-        }
-        queue.modifyQueue(diff);
-         spaceInfo.modifyPinnedSpace(pinned);
-         considerInvalidatingCache(currentPerformanceCost, costInfo);
-        LOGGER.trace("CostModuleV1 : Restore queue of {} modified by {}/{} due to {}",
-                     poolName, diff, pinned, ((Object) msg).getClass().getName());
-    }
-
-    public synchronized void messageToForward(PoolMgrSelectPoolMsg msg)
-    {
-         if (!msg.isReply()) {
-             return;
-         }
-         String poolName = msg.getPoolName();
-         Entry e = _hash.get(poolName);
-         if (e == null) {
-             return;
-         }
-
-         String requestedQueueName = msg.getIoQueueName();
-
-         PoolCostInfo costInfo = e.getPoolCostInfo();
-         double currentPerformanceCost = getPerformanceCost(costInfo);
-         Map<String, NamedPoolQueueInfo> map =
-             costInfo.getExtendedMoverHash();
-         PoolCostInfo.PoolSpaceInfo spaceInfo = costInfo.getSpaceInfo();
-
-        if (requestedQueueName == null || !map.containsKey(requestedQueueName)) {
-            requestedQueueName = costInfo.getDefaultQueueName();
-        }
-        PoolCostInfo.PoolQueueInfo queue = map.get(requestedQueueName);
-
-         int diff = 1;
-         long pinned =
-             (msg instanceof PoolMgrSelectWritePoolMsg) ? ((PoolMgrSelectWritePoolMsg) msg).getPreallocated() : 0;
-         queue.modifyQueue(diff);
-         spaceInfo.modifyPinnedSpace(pinned);
-         considerInvalidatingCache(currentPerformanceCost, costInfo);
-        LOGGER.trace("CostModuleV1 : Mover({}) queue of {} modified by {}/{} due to {}",
-                     requestedQueueName, poolName, diff, pinned, ((Object) msg).getClass().getName());
-    }
-
-    public synchronized void messageToForward(Pool2PoolTransferMsg msg)
-    {
-        String sourceName = msg.getSourcePoolName();
-        Entry source = _hash.get(sourceName);
-        if (source == null) {
-            return;
-        }
-
-        PoolCostInfo sourceCostInfo = source.getPoolCostInfo();
-        double currentSourcePerformanceCost = getPerformanceCost(sourceCostInfo);
-
-        PoolCostInfo.PoolQueueInfo sourceQueue = sourceCostInfo.getP2pQueue();
-
-        String destinationName = msg.getDestinationPoolName();
-        Entry destination = _hash.get(destinationName);
-        if (destination == null) {
-            return;
-        }
-
-        PoolCostInfo destinationCostInfo = destination.getPoolCostInfo();
-        double currentDestinationPerformanceCost =
-            getPerformanceCost(destinationCostInfo);
-
-        PoolCostInfo.PoolQueueInfo destinationQueue =
-            destinationCostInfo.getP2pClientQueue();
-        PoolCostInfo.PoolSpaceInfo destinationSpaceInfo =
-            destinationCostInfo.getSpaceInfo();
-
-        int diff = msg.isReply() ? -1 : 1;
-        long pinned = msg.getFileAttributes().getSizeIfPresent().or(0L);
-
-        sourceQueue.modifyQueue(diff);
-        destinationQueue.modifyQueue(diff);
-        destinationSpaceInfo.modifyPinnedSpace(pinned);
-
-        considerInvalidatingCache(currentSourcePerformanceCost, sourceCostInfo);
-        considerInvalidatingCache(currentDestinationPerformanceCost,
-                destinationCostInfo);
-
-        LOGGER.trace("CostModuleV1 : P2P client queue of {} modified by {}/{} due to {}",
-                     destinationName, diff, pinned, ((Object) msg).getClass().getName());
-        LOGGER.trace("CostModuleV1 : P2P server queue of {} modified by {}/{} due to {}",
-                     sourceName, diff, 0, ((Object) msg).getClass().getName());
-    }
-
-    /**
-     * Defined by CostModule interface. Used by PoolManager to inject
-     * the replies PoolManager sends to doors.
-     */
-    @Override
-    public void messageArrived(CellMessage cellMessage)
-    {
-        _handlers.call(cellMessage);
     }
 
    @Override
@@ -582,14 +371,6 @@ public class CostModuleV1
             }
         }
         return map;
-    }
-
-    private void readObject(ObjectInputStream in)
-        throws IOException, ClassNotFoundException
-    {
-        in.defaultReadObject();
-        _handlers = new CellMessageDispatcher("messageToForward");
-        _handlers.addMessageListener(this);
     }
 
     private synchronized void writeObject(ObjectOutputStream stream) throws IOException
