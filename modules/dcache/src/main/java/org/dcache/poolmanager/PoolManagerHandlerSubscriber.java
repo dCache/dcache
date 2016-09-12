@@ -24,6 +24,8 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.Nullable;
@@ -66,6 +68,8 @@ import static dmg.cells.nucleus.CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL;
 public class PoolManagerHandlerSubscriber
         implements CellLifeCycleAware, PoolManagerHandler
 {
+    private final static Logger LOGGER = LoggerFactory.getLogger(PoolManagerHandlerSubscriber.class);
+
     /**
      * How frequently to poll for updates. Usually updates are propagated immediately by
      * downstream as a result of a PoolManagerGetUpdatedHandler request, but in case
@@ -102,13 +106,19 @@ public class PoolManagerHandlerSubscriber
                                 @Override
                                 public void onSuccess(SerializablePoolManagerHandler handler)
                                 {
-                                    synchronized (PoolManagerHandlerSubscriber.this) {
-                                        current = Futures.immediateFuture(handler);
-                                        if (!isStopped) {
-                                            ListenableFuture<SerializablePoolManagerHandler> next =
-                                                    transform(query(new PoolMgrGetUpdatedHandler(handler.getVersion())), PoolMgrGetHandler::getHandler);
-                                            Futures.addCallback(next, this);
+                                    try {
+                                        synchronized (PoolManagerHandlerSubscriber.this) {
+                                            current = Futures.immediateFuture(handler);
+                                            if (!isStopped) {
+                                                ListenableFuture<SerializablePoolManagerHandler> next =
+                                                        transform(query(new PoolMgrGetUpdatedHandler(
+                                                                handler.getVersion())), PoolMgrGetHandler::getHandler);
+                                                Futures.addCallback(next, this);
+                                            }
                                         }
+                                    } catch (Throwable t) {
+                                        LOGGER.error("Failure in pool manager handler subscriber. Please report to support@dcache.org.", t);
+                                        throw t;
                                     }
                                 }
 
