@@ -24,7 +24,6 @@ import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
@@ -108,7 +107,7 @@ public class PoolMonitorTest
         /* The following isn't testing much as both pools are valid
          * replies.
          */
-        assertTrue(pools.contains(availableLocations.selectReadPool().getName()));
-        assertTrue(pools.contains(availableLocations.selectPinPool().getName()));
+        assertTrue(pools.contains(availableLocations.selectReadPool().name()));
+        assertTrue(pools.contains(availableLocations.selectPinPool().name()));
     }
 }

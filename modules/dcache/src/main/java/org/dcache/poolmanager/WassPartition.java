@@ -12,6 +12,10 @@ import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.SourceCostException;
 
+import org.dcache.pool.assumption.Assumption;
+import org.dcache.pool.assumption.Assumptions;
+import org.dcache.pool.assumption.AvailableSpaceAssumption;
+import org.dcache.pool.assumption.PerformanceCostAssumption;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -64,17 +68,17 @@ public class WassPartition extends ClassicPartition
     }
 
     @Override
-    public PoolInfo selectWritePool(CostModule cm,
-                                    List<PoolInfo> pools,
-                                    FileAttributes attributes,
-                                    long preallocated)
+    public SelectedPool selectWritePool(CostModule cm,
+                                        List<PoolInfo> pools,
+                                        FileAttributes attributes,
+                                        long preallocated)
         throws CacheException
     {
         PoolInfo pool = wass.selectByAvailableSpace(pools, preallocated, PoolInfo::getCostInfo);
         if (pool == null) {
             throw new CostException("All pools are full", null, _fallbackOnSpace, false);
         }
-        return pool;
+        return new SelectedPool(pool, new AvailableSpaceAssumption(preallocated));
     }
 
     /* REVISIT: The current implementation is a mix of the read pool
@@ -131,6 +135,13 @@ public class WassPartition extends ClassicPartition
             throw new DestinationCostException("P2P denied: All destination pools are too busy (performance cost > " + maxTargetCost + ")");
         }
 
+        long filesize = attributes.getSize();
+        Assumption sourceAssumption = force ? Assumptions.none() : PerformanceCostAssumption.of(_error, _alertCostCut);
+        Assumption destinationAssumption = force
+                                           ? new AvailableSpaceAssumption(filesize)
+                                           : new AvailableSpaceAssumption(filesize).and(PerformanceCostAssumption.of(
+                _error, maxTargetCost));
+
         if (_allowSameHostCopy != SameHost.NOTCHECKED) {
             /* Loop over all sources and find the most appropriate
              * destination such that same host constraints are
@@ -145,9 +156,10 @@ public class WassPartition extends ClassicPartition
                 }
 
                 PoolInfo destination =
-                        wass.selectByAvailableSpace(destinations, attributes.getSize(), PoolInfo::getCostInfo);
+                        wass.selectByAvailableSpace(destinations, filesize, PoolInfo::getCostInfo);
                 if (destination != null) {
-                    return new P2pPair(source.pool, destination);
+                    return new P2pPair(new SelectedPool(source.pool, sourceAssumption),
+                                       new SelectedPool(destination, destinationAssumption));
                 }
             }
 
@@ -158,11 +170,12 @@ public class WassPartition extends ClassicPartition
             }
         }
 
-        PoolInfo destination = wass.selectByAvailableSpace(dst, attributes.getSize(), PoolInfo::getCostInfo);
+        PoolInfo destination = wass.selectByAvailableSpace(dst, filesize, PoolInfo::getCostInfo);
         if (destination == null) {
             throw new DestinationCostException("All pools are full");
         }
-        return new P2pPair(sources.get(0).pool, destination);
+        return new P2pPair(new SelectedPool(sources.get(0).pool, sourceAssumption),
+                           new SelectedPool(destination, destinationAssumption));
     }
 
     private PoolInfo selectByPrevious(List<PoolInfo> pools,
@@ -197,11 +210,11 @@ public class WassPartition extends ClassicPartition
     }
 
     @Override
-    public PoolInfo selectStagePool(CostModule cm,
-                                    List<PoolInfo> pools,
-                                    String previousPool,
-                                    String previousHost,
-                                    FileAttributes attributes)
+    public SelectedPool selectStagePool(CostModule cm,
+                                        List<PoolInfo> pools,
+                                        String previousPool,
+                                        String previousHost,
+                                        FileAttributes attributes)
         throws CacheException
     {
         if (_fallbackCostCut > 0.0) {
@@ -214,7 +227,7 @@ public class WassPartition extends ClassicPartition
             PoolInfo pool =
                 selectByPrevious(filtered, previousPool, previousHost, attributes);
             if (pool != null) {
-                return pool;
+                return new SelectedPool(pool, PerformanceCostAssumption.of(_error, _fallbackCostCut));
             }
 
             /* Didn't find a pool. Redo the selection from the full
@@ -227,7 +240,7 @@ public class WassPartition extends ClassicPartition
                                         null, true, false);
             } else {
                 throw new CostException("Fallback cost exceeded",
-                                        pool, true, false);
+                                        new SelectedPool(pool), true, false);
             }
         } else {
             PoolInfo pool =
@@ -236,7 +249,7 @@ public class WassPartition extends ClassicPartition
                 throw new CostException("All pools full",
                                         null, true, false);
             }
-            return pool;
+            return new SelectedPool(pool);
         }
     }
 }

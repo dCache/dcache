@@ -27,6 +27,7 @@ import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 
+import org.dcache.pool.assumption.AvailableSpaceAssumption;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -94,7 +95,7 @@ public class BufferPartition extends Partition
         return 1.0 / (Math.pow(2.0, (cost.getMoverCostFactor() * costFactor * movers)));
     }
 
-    private PoolInfo selectPool(List<PoolInfo> pools)
+    private SelectedPool selectPool(List<PoolInfo> pools)
     {
         double[] available = new double[pools.size()];
         double sum = 0.0;
@@ -108,14 +109,14 @@ public class BufferPartition extends Partition
 
         for (int i = 0; i < available.length; i++) {
             if (threshold < available[i]) {
-                return pools.get(i);
+                return new SelectedPool(pools.get(i));
             }
         }
 
         return null;
     }
 
-    private PoolInfo selectPool(List<PoolInfo> pools, final long preallocated)
+    private SelectedPool selectPool(List<PoolInfo> pools, final long preallocated)
     {
         double[] available = new double[pools.size()];
         double sum = 0.0;
@@ -123,7 +124,7 @@ public class BufferPartition extends Partition
         for (int i = 0; i < available.length; i++) {
             PoolInfo pool = pools.get(i);
             PoolCostInfo.PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
-            if (space.getFreeSpace() + space.getRemovableSpace() > preallocated + space.getGap()) {
+            if (space.getFreeSpace() + space.getRemovableSpace() - space.getGap() > preallocated) {
                 sum += getWeight(pool.getCostInfo());
                 available[i] = sum;
             }
@@ -133,7 +134,7 @@ public class BufferPartition extends Partition
 
         for (int i = 0; i < available.length; i++) {
             if (threshold < available[i]) {
-                return pools.get(i);
+                return new SelectedPool(pools.get(i), new AvailableSpaceAssumption(preallocated));
             }
         }
 
@@ -141,14 +142,14 @@ public class BufferPartition extends Partition
     }
 
     @Override
-    public PoolInfo selectWritePool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes,
-                                    long preallocated) throws CacheException
+    public SelectedPool selectWritePool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes,
+                                        long preallocated) throws CacheException
     {
         return selectPool(pools, preallocated);
     }
 
     @Override
-    public PoolInfo selectReadPool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes) throws CacheException
+    public SelectedPool selectReadPool(CostModule cm, List<PoolInfo> pools, FileAttributes attributes) throws CacheException
     {
         return selectPool(pools);
     }
@@ -161,8 +162,8 @@ public class BufferPartition extends Partition
     }
 
     @Override
-    public PoolInfo selectStagePool(CostModule cm, List<PoolInfo> pools, String previousPool, String previousHost,
-                                    FileAttributes attributes) throws CacheException
+    public SelectedPool selectStagePool(CostModule cm, List<PoolInfo> pools, String previousPool, String previousHost,
+                                        FileAttributes attributes) throws CacheException
     {
         return selectPool(pools, attributes.getSize());
     }

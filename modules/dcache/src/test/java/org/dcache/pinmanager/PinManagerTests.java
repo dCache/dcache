@@ -61,6 +61,7 @@ import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.SelectedPool;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Arrays.asList;
@@ -144,12 +145,12 @@ public class PinManagerTests
             {
                 return new PoolMonitorV5.PnfsFileLocation(fileAttributes, protocolInfo, linkGroup) {
                     @Override
-                    public PoolInfo selectPinPool()
+                    public SelectedPool selectPinPool()
                     {
-                        return new PoolInfo(
+                        return new SelectedPool(new PoolInfo(
                                 new CellAddressCore(POOL1),
                                 new PoolCostInfo(POOL1, IoQueueManager.DEFAULT_QUEUE),
-                                ImmutableMap.<String,String>of());
+                                ImmutableMap.of()));
                     }
                 };
             }

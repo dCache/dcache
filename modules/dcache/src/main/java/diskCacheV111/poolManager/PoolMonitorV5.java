@@ -38,6 +38,7 @@ import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.SelectedPool;
 import org.dcache.poolmanager.SerializablePoolMonitor;
 import org.dcache.vehicles.FileAttributes;
 
@@ -153,7 +154,7 @@ public class PoolMonitorV5
         }
 
         @Override
-        public PoolInfo selectWritePool(long preallocated)
+        public SelectedPool selectWritePool(long preallocated)
             throws CacheException
         {
             String hostName = getHostName();
@@ -211,7 +212,7 @@ public class PoolMonitorV5
         }
 
         @Override
-        public PoolInfo selectReadPool()
+        public SelectedPool selectReadPool()
             throws CacheException
         {
             Collection<String> locations = _fileAttributes.getLocations();
@@ -359,8 +360,8 @@ public class PoolMonitorV5
         }
 
         @Override
-        public PoolInfo selectStagePool(String previousPool,
-                                        String previousHost)
+        public SelectedPool selectStagePool(String previousPool,
+                                            String previousHost)
             throws CacheException
         {
             Collection<String> locations = _fileAttributes.getLocations();
@@ -405,7 +406,7 @@ public class PoolMonitorV5
         // FIXME: There is a fair amount of overlap between this method
         // and getFileLocality.
         @Override
-        public PoolInfo selectPinPool()
+        public SelectedPool selectPinPool()
             throws CacheException
         {
             /* This is the same arbitrary but deterministic ordering we
@@ -451,7 +452,7 @@ public class PoolMonitorV5
                     Optional<PoolInfo> pool =
                             pools.stream().filter(onlinePools::containsKey).min(ordering).map(onlinePools::get);
                     if (pool.isPresent()) {
-                        return pool.get();
+                        return new SelectedPool(pool.get());
                     }
                 }
             }

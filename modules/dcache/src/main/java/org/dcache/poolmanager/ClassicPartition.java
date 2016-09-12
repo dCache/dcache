@@ -6,6 +6,7 @@ import com.google.common.collect.Ordering;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -14,9 +15,12 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CostException;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.pool.assumption.PerformanceCostAssumption;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.lang.Math.max;
+import static java.util.stream.Collectors.*;
 
 /**
  * Legacy partition that provided the classic dCache pool selection semantics. Now
@@ -58,6 +62,8 @@ public abstract class ClassicPartition extends Partition
      *         halt      |  suspend system
      *       fallback    |  Allow fallback in Permission matrix on high load
      *  fallback-onspace |  Allow fallback on write if out of free space
+     *        error      |  How much the performance cost of a pool may exceed
+     *                   |  limits before it rejects a request
      */
     private static final Map<String,String> DEFAULTS =
         ImmutableMap.<String,String>builder()
@@ -73,6 +79,7 @@ public abstract class ClassicPartition extends Partition
         .put("sameHostRetry", "besteffort")
         .put("slope", "0.0")
         .put("idle", "0.0")
+        .put("error", "0.2")
         .build();
 
     protected final SameHost _allowSameHostCopy;
@@ -89,6 +96,7 @@ public abstract class ClassicPartition extends Partition
     protected final double  _spaceCostFactor;
     protected final double  _performanceCostFactor;
 
+    protected final double  _error;
     protected final double  _slope;
     protected final double  _minCostCut;
 
@@ -121,6 +129,7 @@ public abstract class ClassicPartition extends Partition
         _fallbackCostCut = getDouble("fallback");
         _spaceCostFactor = getDouble("spacecostfactor");
         _performanceCostFactor = getDouble("cpucostfactor");
+        _error = getDouble("error");
         _slope = getDouble("slope");
         _minCostCut = getDouble("idle");
         _fallbackOnSpace = getBoolean("fallback-onspace");
@@ -143,51 +152,38 @@ public abstract class ClassicPartition extends Partition
     }
 
     @Override
-    public PoolInfo selectReadPool(CostModule cm,
-                                   List<PoolInfo> pools,
-                                   FileAttributes attributes)
+    public SelectedPool selectReadPool(CostModule cm,
+                                       List<PoolInfo> pools,
+                                       FileAttributes attributes)
         throws CacheException
     {
         checkState(!pools.isEmpty());
 
         /* Randomise order of pools with equal cost. In particular
-         * important when performance cost factor and space cost
-         * factor are 0.
+         * important when performance cost factor is 0.
          */
         Collections.shuffle(pools);
 
-        /* TODO: We could possibly define an Ordering and do a regular
-         * min call.
+        /* Find best pool, taking min cost cut into account.
          */
         PnfsId pnfsId = attributes.getPnfsId();
-        double bestCost = Double.POSITIVE_INFINITY;
-        PoolInfo bestPool = null;
-        for (PoolInfo pool: pools) {
-            double cost =
-                Math.abs(_performanceCostFactor * pool.getCostInfo().getPerformanceCost());
-            if (bestCost >= _minCostCut && cost <= bestCost) {
-                /* As long as at least one of the pools is above min
-                 * cost cut, we search for the pool with the lowest
-                 * cost.
-                 */
-                bestCost = cost;
-                bestPool = pool;
-            } else if (cost < _minCostCut &&
-                       bestCost < _minCostCut &&
-                       minCostCutPosition(pnfsId, pool) <
-                       minCostCutPosition(pnfsId, bestPool)) {
-                /* Once both pools are below cost cust the order
-                 * changes to an arbitrary but deterministic order.
-                 *
-                 * The goal is that for pools with low load we always
-                 * select the same pool to allow other replicas to
-                 * age.
-                 */
-                bestCost = cost;
-                bestPool = pool;
-            }
-        }
+        double pcf = _performanceCostFactor;
+        double mcc = _minCostCut;
 
+        Comparator<PoolInfo> byPerformanceCost =
+                (a, b) -> (Math.max(a.getPerformanceCost(), b.getPerformanceCost()) < mcc)
+                          ? Integer.compare(minCostCutPosition(pnfsId, a), minCostCutPosition(pnfsId, b))
+                          : Double.compare(a.getPerformanceCost() * pcf, b.getPerformanceCost() * pcf);
+
+        List<PoolInfo> best = pools.stream()
+                .sorted(byPerformanceCost)
+                .limit(2)
+                .collect(toList());
+
+        PoolInfo bestPool = best.get(0);
+
+        /* Check cost cuts.
+         */
         double cost = bestPool.getCostInfo().getPerformanceCost();
         boolean isPanicCostExceeded = isPanicCostExceeded(cost);
         boolean isFallbackCostExceeded = isFallbackCostExceeded(cost);
@@ -197,11 +193,18 @@ public abstract class ClassicPartition extends Partition
                                     isFallbackCostExceeded, isCostCutExceeded);
         }
         if (isFallbackCostExceeded || isCostCutExceeded) {
-            throw new CostException("Cost limit exceeded", bestPool,
+            throw new CostException("Cost limit exceeded",
+                                    new SelectedPool(bestPool, PerformanceCostAssumption.of(_error, _panicCostCut)),
                                     isFallbackCostExceeded, isCostCutExceeded);
         }
 
-        return bestPool;
+        /* Add an assumption of the load being lower than the second best pool while still
+         * taking the min cost cut into account.
+         */
+        double nextBest =
+                (best.size() > 1) ? Math.max(best.get(1).getPerformanceCost(), mcc) : Double.POSITIVE_INFINITY;
+
+        return new SelectedPool(bestPool, PerformanceCostAssumption.of(_error, _panicCostCut, _fallbackCostCut, _costCut, nextBest));
     }
 
     /**

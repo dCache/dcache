@@ -36,19 +36,19 @@ public interface PoolSelector
      *        it exceed cost limits; the exception contains information
      *        about how the caller may recover
      */
-    PoolInfo selectReadPool() throws CacheException;
+    SelectedPool selectReadPool() throws CacheException;
 
     /**
      * Returns a pool for writing a file described by this PoolSelector.
      *
      * @param preallocated Space in bytes reserved for the file, or zero.
      */
-    PoolInfo selectWritePool(long preallocated) throws CacheException;
+    SelectedPool selectWritePool(long preallocated) throws CacheException;
 
     Partition.P2pPair selectPool2Pool(boolean force) throws CacheException;
 
-    PoolInfo selectStagePool(String previousPool, String previousHost)
-                    throws CacheException;
+    SelectedPool selectStagePool(String previousPool, String previousHost)
+            throws CacheException;
 
-    PoolInfo selectPinPool() throws CacheException;
+    SelectedPool selectPinPool() throws CacheException;
 }

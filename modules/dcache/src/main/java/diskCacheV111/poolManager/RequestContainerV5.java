@@ -63,11 +63,11 @@ import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.UOID;
 
 import org.dcache.cells.CellStub;
-import org.dcache.pool.assumption.PerformanceCostAssumption;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.SelectedPool;
 import org.dcache.util.Args;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
@@ -720,7 +720,7 @@ public class RequestContainerV5
          * askIfAvailable() returns with an error. Eg when the best
          * pool is too expensive.
          */
-        private   PoolInfo    _bestPool;
+        private SelectedPool _bestPool;
 
         /**
          * The pool from which to read the file or the pool to which
@@ -729,7 +729,7 @@ public class RequestContainerV5
          * RT_OK, and by askForStaging(). Also set in the
          * stateEngine() at various points.
          */
-        private   volatile PoolInfo    _poolCandidate;
+        private   volatile SelectedPool _poolCandidate;
 
         /**
          * The host name of the pool used for staging.
@@ -751,13 +751,13 @@ public class RequestContainerV5
          * The destination of a pool to pool transfer. Set by
          * askForPoolToPool() when it returns RT_FOUND.
          */
-        private   volatile PoolInfo   _p2pDestinationPool;
+        private   volatile SelectedPool _p2pDestinationPool;
 
         /**
          * The source of a pool to pool transfer. Set by
          * askForPoolToPool() when it return RT_FOUND.
          */
-        private   PoolInfo   _p2pSourcePool;
+        private SelectedPool _p2pSourcePool;
 
         private   final long   _started       = System.currentTimeMillis() ;
         private   final String       _name;
@@ -849,9 +849,9 @@ public class RequestContainerV5
         public String getPoolCandidate()
         {
             if (_poolCandidate != null) {
-                return _poolCandidate.getName();
+                return _poolCandidate.name();
             } else if (_p2pDestinationPool != null) {
-                return _p2pDestinationPool.getName();
+                return _p2pDestinationPool.name();
             } else {
                 return POOL_UNKNOWN_STRING;
             }
@@ -860,7 +860,7 @@ public class RequestContainerV5
         private String getPoolCandidateState()
         {
             if (_poolCandidate != null) {
-                return _poolCandidate.getName();
+                return _poolCandidate.name();
             } else if (_p2pDestinationPool != null) {
                 return (_p2pSourcePool == null ? POOL_UNKNOWN_STRING : _p2pSourcePool)
                     + "->" + _p2pDestinationPool;
@@ -951,11 +951,12 @@ public class RequestContainerV5
            _currentRm = errorMessage ;
         }
 
-        private boolean sendFetchRequest(PoolInfo pool)
+        private boolean sendFetchRequest(SelectedPool pool)
         {
+            // TODO: Include assumption in request
             CellMessage cellMessage = new CellMessage(
-                    new CellPath(pool.getAddress()),
-                    new PoolFetchFileMessage(pool.getName(), _fileAttributes)
+                    new CellPath(pool.address()),
+                    new PoolFetchFileMessage(pool.name(), _fileAttributes)
             );
             synchronized (_messageHash) {
                 if (_maxRestore >= 0 && _messageHash.size() >= _maxRestore) {
@@ -973,14 +974,15 @@ public class RequestContainerV5
             return true;
         }
 
-        private void sendPool2PoolRequest(PoolInfo sourcePool, PoolInfo destPool)
+        private void sendPool2PoolRequest(SelectedPool sourcePool, SelectedPool destPool)
         {
+            // TOOD: Include assumptions in request
             Pool2PoolTransferMsg pool2pool =
-                    new Pool2PoolTransferMsg(sourcePool.getName(), destPool.getName(), _fileAttributes);
+                    new Pool2PoolTransferMsg(sourcePool.name(), destPool.name(), _fileAttributes);
             pool2pool.setDestinationFileStatus(_destinationFileStatus);
             _log.info("[p2p] Sending transfer request: " + pool2pool);
             CellMessage cellMessage =
-                    new CellMessage(new CellPath(destPool.getAddress()), pool2pool);
+                    new CellMessage(new CellPath(destPool.address()), pool2pool);
 
             synchronized (_messageHash) {
                 if (_waitingFor != null) {
@@ -1041,8 +1043,9 @@ public class RequestContainerV5
                     (PoolMgrSelectReadPoolMsg) m.getMessageObject();
                 rpm.setContext(_retryCounter + 1, _stageCandidateHost, _stageCandidatePool);
                 if (_currentRc == 0) {
-                    rpm.setPoolName(_poolCandidate.getName());
-                    rpm.setPoolAddress(_poolCandidate.getAddress());
+                    rpm.setPoolName(_poolCandidate.name());
+                    rpm.setPoolAddress(_poolCandidate.info().getAddress());
+                    rpm.setAssumption(_poolCandidate.assumption());
                     rpm.setSucceeded();
                 } else {
                     rpm.setFailed(_currentRc, _currentRm);
@@ -1379,7 +1382,7 @@ public class RequestContainerV5
                        nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo) {
-                           sendHitMsg(_bestPool, true);
+                           sendHitMsg(_bestPool.info(), true);
                        }
 
                     }else if( rc == RT_NOT_FOUND ){
@@ -1396,7 +1399,7 @@ public class RequestContainerV5
                           suspendIfEnabled("Suspended (pool unavailable)");
                        }
                        if (_sendHitInfo && _poolCandidate == null) {
-                           sendHitMsg(_bestPool, false);   //VP
+                           sendHitMsg(_bestPool.info(), false);   //VP
                        }
                        //
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -1455,7 +1458,7 @@ public class RequestContainerV5
                        setError(0, "");
 
                        if (_sendHitInfo) {
-                           sendHitMsg(_p2pSourcePool, true);   //VP
+                           sendHitMsg(_p2pSourcePool.info(), true);   //VP
                        }
 
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -1472,7 +1475,7 @@ public class RequestContainerV5
                             }
                         }else{
                             _poolCandidate = _bestPool;
-                            _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
+                            _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate.info());
 
                           setError(0,"");
                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1495,7 +1498,7 @@ public class RequestContainerV5
                           if( _bestPool != null ){
 
                               _poolCandidate = _bestPool;
-                              _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate);
+                              _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate.info());
 
                              setError(0,"");
                              nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1610,7 +1613,7 @@ public class RequestContainerV5
                     handleCommandObject( (Object []) inputObject ) ;
 
                 } else if (inputObject instanceof PingFailure &&
-                        _p2pDestinationPool.getAddress().equals(((PingFailure) inputObject).getPool())) {
+                        _p2pDestinationPool.address().equals(((PingFailure) inputObject).getPool())) {
                     _log.info("Ping reported that request died.");
                     setError(CacheException.TIMEOUT, "Replication timed out");
                     errorHandler();
@@ -1641,7 +1644,7 @@ public class RequestContainerV5
                     handleCommandObject( (Object []) inputObject ) ;
 
                 } else if (inputObject instanceof PingFailure &&
-                        _poolCandidate.getAddress().equals(((PingFailure) inputObject).getPool())) {
+                        _poolCandidate.address().equals(((PingFailure) inputObject).getPool())) {
                     _log.info("Ping reported that request died.");
                     setError(CacheException.TIMEOUT, "Staging timed out");
                     errorHandler();
@@ -1999,13 +2002,13 @@ public class RequestContainerV5
         private int askForStaging()
         {
             try {
-                PoolInfo pool =
+                SelectedPool pool =
                     _poolSelector.selectStagePool(_stageCandidatePool, _stageCandidateHost);
                 _poolCandidate = pool;
-                _stageCandidatePool = pool.getName();
-                _stageCandidateHost = pool.getHostName();
+                _stageCandidatePool = pool.name();
+                _stageCandidateHost = pool.hostName();
 
-                _log.info("[staging] poolCandidate -> {}", _poolCandidate);
+                _log.info("[staging] poolCandidate -> {}", _poolCandidate.info());
                 if (!sendFetchRequest(_poolCandidate)) {
                     return RT_OUT_OF_RESOURCES;
                 }
@@ -2016,8 +2019,8 @@ public class RequestContainerV5
             } catch (CostException e) {
                if (e.getPool() != null) {
                    _poolCandidate = e.getPool();
-                   _stageCandidatePool = e.getPool().getName();
-                   _stageCandidateHost = e.getPool().getHostName();
+                   _stageCandidatePool = e.getPool().name();
+                   _stageCandidateHost = e.getPool().hostName();
                    return RT_FOUND;
                }
                _log.info("[stage] {}", e.getMessage());
@@ -2097,18 +2100,18 @@ public class RequestContainerV5
                         Multimap<CellAddressCore, PoolRequestHandler> stageRequests = ArrayListMultimap.create();
                         for (PoolRequestHandler handler : list) {
                             if (handler._started < now - _checkFilePingTimer) {
-                                PoolInfo pool;
+                                SelectedPool pool;
                                 switch (handler._state) {
                                 case ST_WAITING_FOR_POOL_2_POOL:
                                     pool = handler._p2pDestinationPool;
                                     if (pool != null) {
-                                        p2pRequests.put(pool.getAddress(), handler);
+                                        p2pRequests.put(pool.address(), handler);
                                     }
                                     break;
                                 case ST_WAITING_FOR_STAGING:
                                     pool = handler._poolCandidate;
                                     if (pool != null) {
-                                        stageRequests.put(pool.getAddress(), handler);
+                                        stageRequests.put(pool.address(), handler);
                                     }
                                     break;
                                 }

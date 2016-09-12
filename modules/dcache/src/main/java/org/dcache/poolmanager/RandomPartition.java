@@ -9,6 +9,7 @@ import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CostException;
 
+import org.dcache.pool.assumption.AvailableSpaceAssumption;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.stream.Collectors.toList;
@@ -62,10 +63,10 @@ public class RandomPartition extends Partition
     }
 
     @Override
-    public PoolInfo selectWritePool(CostModule cm,
-                                    List<PoolInfo> pools,
-                                    FileAttributes attributes,
-                                    long preallocated)
+    public SelectedPool selectWritePool(CostModule cm,
+                                        List<PoolInfo> pools,
+                                        FileAttributes attributes,
+                                        long preallocated)
         throws CacheException
     {
         List<PoolInfo> freePools =
@@ -73,16 +74,16 @@ public class RandomPartition extends Partition
         if (freePools.isEmpty()) {
             throw new CostException("All pools are full", null, false, false);
         }
-        return select(freePools);
+        return new SelectedPool(select(freePools), new AvailableSpaceAssumption(preallocated));
     }
 
     @Override
-    public PoolInfo selectReadPool(CostModule cm,
-                                   List<PoolInfo> pools,
-                                   FileAttributes attributes)
+    public SelectedPool selectReadPool(CostModule cm,
+                                       List<PoolInfo> pools,
+                                       FileAttributes attributes)
         throws CacheException
     {
-        return select(pools);
+        return new SelectedPool(select(pools));
     }
 
     @Override
@@ -94,15 +95,16 @@ public class RandomPartition extends Partition
                         boolean force)
         throws CacheException
     {
-        return new P2pPair(select(src), selectWritePool(cm, dst, attributes, attributes.getSize()));
+        return new P2pPair(new SelectedPool(select(src)),
+                           selectWritePool(cm, dst, attributes, attributes.getSize()));
     }
 
     @Override
-    public PoolInfo selectStagePool(CostModule cm,
-                                    List<PoolInfo> pools,
-                                    String previousPool,
-                                    String previousHost,
-                                    FileAttributes attributes)
+    public SelectedPool selectStagePool(CostModule cm,
+                                        List<PoolInfo> pools,
+                                        String previousPool,
+                                        String previousHost,
+                                        FileAttributes attributes)
         throws CacheException
     {
         return selectWritePool(cm, pools, attributes, attributes.getSize());

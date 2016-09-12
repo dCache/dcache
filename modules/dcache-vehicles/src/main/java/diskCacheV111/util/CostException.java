@@ -1,6 +1,6 @@
 package diskCacheV111.util;
 
-import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.SelectedPool;
 
 /**
  * Exception thrown when cost constraints have been exceeded
@@ -9,11 +9,11 @@ import org.dcache.poolmanager.PoolInfo;
 public class CostException extends MissingResourceCacheException
 {
     private static final long serialVersionUID = 2554467702494555943L;
-    private final PoolInfo _pool;
+    private final SelectedPool _pool;
     private final boolean _shouldFallBack;
     private final boolean _shouldTryAlternatives;
 
-    public CostException(String message, PoolInfo pool,
+    public CostException(String message, SelectedPool pool,
                          boolean shouldFallBack,
                          boolean shouldTryAlternatives)
     {
@@ -30,7 +30,7 @@ public class CostException extends MissingResourceCacheException
      * pool for the operation. May return null.
      *
      */
-    public PoolInfo getPool()
+    public SelectedPool getPool()
     {
         return _pool;
     }

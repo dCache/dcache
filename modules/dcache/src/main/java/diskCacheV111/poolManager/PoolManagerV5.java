@@ -67,6 +67,7 @@ import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.SelectedPool;
 import org.dcache.poolmanager.SerializablePoolMonitor;
 import org.dcache.poolmanager.Utils;
 import org.dcache.util.Args;
@@ -517,7 +518,7 @@ public class PoolManagerV5
 
         Partition partition =
             _poolMonitor.getPartitionManager().getPartition(link.getTag());
-        msg.setPoolName(partition.selectWritePool(_costModule, pools, new FileAttributes(), filesize).getName());
+        msg.setPoolName(partition.selectWritePool(_costModule, pools, new FileAttributes(), filesize).name());
         msg.setSucceeded();
         return msg;
     }
@@ -781,12 +782,12 @@ public class PoolManagerV5
               return ;
            }
 
-           PoolInfo pool;
+           SelectedPool pool;
            try {
                pool = _poolMonitor
                        .getPoolSelector(fileAttributes, protocolInfo, _request.getLinkGroup())
                        .selectWritePool(_request.getPreallocated());
-               _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
+               _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.name(),
                          System.currentTimeMillis() - started);
            } catch (CacheException ce) {
                requestFailed(ce.getRc(), ce.getMessage());
@@ -804,10 +805,11 @@ public class PoolManagerV5
             reply(_request);
         }
 
-        protected void requestSucceeded(PoolInfo pool)
+        protected void requestSucceeded(SelectedPool pool)
         {
-            _request.setPoolName(pool.getName());
-            _request.setPoolAddress(pool.getAddress());
+            _request.setPoolName(pool.name());
+            _request.setPoolAddress(pool.address());
+            _request.setAssumption(pool.assumption());
             _request.setSucceeded();
             reply(_request);
             if (!_request.getSkipCostUpdate()) {

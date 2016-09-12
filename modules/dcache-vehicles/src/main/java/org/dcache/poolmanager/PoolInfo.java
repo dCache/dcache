@@ -42,6 +42,11 @@ public class PoolInfo implements Serializable
         return _cost;
     }
 
+    public double getPerformanceCost()
+    {
+        return _cost.getPerformanceCost();
+    }
+
     public ImmutableMap<String,String> getTags()
     {
         return _tags;

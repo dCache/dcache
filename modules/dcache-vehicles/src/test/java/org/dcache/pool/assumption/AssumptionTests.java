@@ -47,44 +47,44 @@ public class AssumptionTests
     @Test
     public void shouldConcatSomethingAndNoneToSomething() throws OutOfDateCacheException
     {
-        assertThat(new PerformanceCostAssumption(1).and(none()), is(new PerformanceCostAssumption(1)));
+        assertThat(PerformanceCostAssumption.of(0, 1).and(none()), is(PerformanceCostAssumption.of(0, 1)));
     }
 
     @Test
     public void shouldConcatNoneAndSomethingToSomething() throws OutOfDateCacheException
     {
-        assertThat(none().and(new PerformanceCostAssumption(1)), is(new PerformanceCostAssumption(1)));
+        assertThat(none().and(PerformanceCostAssumption.of(0, 1)), is(PerformanceCostAssumption.of(0, 1)));
     }
 
     @Test
     public void shouldConcatNoneAndSomethingAndSomethingToSomethingAndSomething() throws OutOfDateCacheException
     {
-        assertThat(none().and(new PerformanceCostAssumption(1)).and(new PerformanceCostAssumption(1)), is(new PerformanceCostAssumption(1).and(new PerformanceCostAssumption(1))));
+        assertThat(none().and(PerformanceCostAssumption.of(0, 1)).and(PerformanceCostAssumption.of(0, 1)), is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
     }
 
     @Test
     public void shouldConcatNoneAndSomethingAndSomethingToSomethingAndSomething2() throws OutOfDateCacheException
     {
-        assertThat(none().and(new PerformanceCostAssumption(1).and(new PerformanceCostAssumption(1))), is(new PerformanceCostAssumption(1).and(new PerformanceCostAssumption(1))));
+        assertThat(none().and(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))), is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
     }
 
     @Test
     public void shouldConcatSomethingAndNoneAndSomethingToSomethingAndSomething() throws OutOfDateCacheException
     {
-        assertThat(new PerformanceCostAssumption(1).and(none()).and(new PerformanceCostAssumption(1)), is(new PerformanceCostAssumption(1).and(new PerformanceCostAssumption(1))));
+        assertThat(PerformanceCostAssumption.of(0, 1).and(none()).and(PerformanceCostAssumption.of(0, 1)), is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
     }
 
     @Test
     public void shouldConcatSomethingAndNoneAndSomethingToSomethingAndSomething2() throws OutOfDateCacheException
     {
-        assertThat(new PerformanceCostAssumption(1).and(none().and(new PerformanceCostAssumption(1))), is(new PerformanceCostAssumption(1).and(new PerformanceCostAssumption(1))));
+        assertThat(PerformanceCostAssumption.of(0, 1).and(none().and(PerformanceCostAssumption.of(0, 1))), is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))));
     }
 
     @Test
     public void shouldBeAssociative() throws OutOfDateCacheException
     {
-        assertThat((new PerformanceCostAssumption(1).and(new PerformanceCostAssumption(1))).and(new PerformanceCostAssumption(1)),
-                   is(new PerformanceCostAssumption(1).and(new PerformanceCostAssumption(1).and(new PerformanceCostAssumption(1)))));
+        assertThat((PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1))).and(PerformanceCostAssumption.of(0, 1)),
+                   is(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1).and(PerformanceCostAssumption.of(0, 1)))));
     }
 
     private static class EmptyPool implements Assumption.Pool

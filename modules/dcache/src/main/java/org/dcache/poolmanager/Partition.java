@@ -13,6 +13,7 @@ import diskCacheV111.util.CacheException;
 
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.*;
 import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.collect.Maps.filterValues;
@@ -343,11 +344,10 @@ public abstract class Partition implements Serializable
      *
      * An implementation cannot rely on any file attributes being defined.
      */
-    public abstract PoolInfo
-        selectWritePool(CostModule cm,
-                        List<PoolInfo> pools,
-                        FileAttributes attributes,
-                        long preallocated)
+    public abstract SelectedPool selectWritePool(CostModule cm,
+                                                 List<PoolInfo> pools,
+                                                 FileAttributes attributes,
+                                                 long preallocated)
         throws CacheException;
 
     /**
@@ -357,10 +357,9 @@ public abstract class Partition implements Serializable
      * An implementation cannot rely on any file attributes other than
      * PNFS id, storage info and locations being defined.
      */
-    public abstract PoolInfo
-        selectReadPool(CostModule cm,
-                       List<PoolInfo> pools,
-                       FileAttributes attributes)
+    public abstract SelectedPool selectReadPool(CostModule cm,
+                                                List<PoolInfo> pools,
+                                                FileAttributes attributes)
         throws CacheException;
 
     /**
@@ -370,12 +369,11 @@ public abstract class Partition implements Serializable
      * An implementation cannot rely on any file attributes other than
      * PNFS id, storage info and locations being defined.
      */
-    public abstract P2pPair
-        selectPool2Pool(CostModule cm,
-                        List<PoolInfo> src,
-                        List<PoolInfo> dst,
-                        FileAttributes attributes,
-                        boolean force)
+    public abstract P2pPair selectPool2Pool(CostModule cm,
+                                            List<PoolInfo> src,
+                                            List<PoolInfo> dst,
+                                            FileAttributes attributes,
+                                            boolean force)
         throws CacheException;
 
     /**
@@ -385,11 +383,11 @@ public abstract class Partition implements Serializable
      * An implementation cannot rely on any file attributes other than
      * PNFS id, storage info and locations being defined.
      */
-    public abstract PoolInfo selectStagePool(CostModule cm,
-                                             List<PoolInfo> pools,
-                                             String previousPool,
-                                             String previousHost,
-                                             FileAttributes attributes)
+    public abstract SelectedPool selectStagePool(CostModule cm,
+                                                 List<PoolInfo> pools,
+                                                 String previousPool,
+                                                 String previousHost,
+                                                 FileAttributes attributes)
         throws CacheException;
 
     /**
@@ -398,10 +396,10 @@ public abstract class Partition implements Serializable
      */
     public static class P2pPair
     {
-        public final PoolInfo source;
-        public final PoolInfo destination;
+        public final SelectedPool source;
+        public final SelectedPool destination;
 
-        public P2pPair(PoolInfo source, PoolInfo destination)
+        public P2pPair(SelectedPool source, SelectedPool destination)
         {
             this.source = source;
             this.destination = destination;

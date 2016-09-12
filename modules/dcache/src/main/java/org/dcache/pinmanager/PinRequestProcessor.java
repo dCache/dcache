@@ -38,6 +38,7 @@ import org.dcache.pinmanager.model.Pin;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
+import org.dcache.poolmanager.SelectedPool;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static java.util.concurrent.TimeUnit.*;
@@ -323,9 +324,9 @@ public class PinRequestProcessor
                         task.getProtocolInfo(),
                         null);
 
-            PoolInfo pool = poolSelector.selectPinPool();
-            setPool(task, pool.getName());
-            setStickyFlag(task, pool.getName(), pool.getAddress());
+            SelectedPool pool = poolSelector.selectPinPool();
+            setPool(task, pool.name());
+            setStickyFlag(task, pool.name(), pool.address());
         } catch (FileNotOnlineCacheException e) {
             askPoolManager(task);
         }
