@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 import eu.emi.security.authn.x509.X509Credential;
 
+import java.util.Collections;
+
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
@@ -85,6 +87,7 @@ import org.dcache.srm.v2_2.TUserPermission;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ObjectArrays.concat;
+import static org.dcache.srm.shell.TStatusCodes.checkBulkSuccess;
 import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
 
 @ParametersAreNonnullByDefault
@@ -134,8 +137,9 @@ public class AxisSrmFileSystem implements SrmFileSystem
                 new SrmLsRequest(null, new ArrayOfAnyURI(new URI[]{surl}), null, null, true, false, 0, 0, 1));
         if (response.getReturnStatus().getStatusCode() != TStatusCode.SRM_REQUEST_QUEUED &&
                 response.getReturnStatus().getStatusCode() != TStatusCode.SRM_REQUEST_INPROGRESS) {
-            checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
-            return response.getDetails().getPathDetailArray(0);
+            TMetaDataPathDetail details = response.getDetails().getPathDetailArray(0);
+            checkBulkSuccess(response.getReturnStatus(), Collections.singletonList(details.getStatus()));
+            return details;
         } else {
             SrmStatusOfLsRequestResponse status;
             do {
@@ -143,8 +147,9 @@ public class AxisSrmFileSystem implements SrmFileSystem
                         new SrmStatusOfLsRequestRequest(null, response.getRequestToken(), 0, 1));
             } while (response.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_QUEUED ||
                     response.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_INPROGRESS);
-            checkSuccess(status.getReturnStatus(), TStatusCode.SRM_SUCCESS);
-            return status.getDetails().getPathDetailArray(0);
+            TMetaDataPathDetail details = response.getDetails().getPathDetailArray(0);
+            checkBulkSuccess(response.getReturnStatus(), Collections.singletonList(details.getStatus()));
+            return details;
         }
     }
 
@@ -153,7 +158,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     public TPermissionMode checkPermission(URI surl) throws RemoteException, SRMException
     {
         TSURLPermissionReturn[] permission = checkPermissions(surl);
-        checkSuccess(permission[0].getStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(permission[0].getStatus());
         return permission[0].getPermission();
     }
 
@@ -181,7 +186,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     public TPermissionReturn getPermission(URI surl) throws RemoteException, SRMException
     {
         TPermissionReturn[] permission = getPermissions(surl);
-        checkSuccess(permission[0].getStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(permission[0].getStatus());
         return permission[0];
     }
 
@@ -236,8 +241,9 @@ public class AxisSrmFileSystem implements SrmFileSystem
             response.setDetails(status.getDetails());
             response.setReturnStatus(status.getReturnStatus());
         }
-        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
-        return response.getDetails().getPathDetailArray()[0];
+        TMetaDataPathDetail details = response.getDetails().getPathDetailArray()[0];
+        checkBulkSuccess(response.getReturnStatus(), Collections.singletonList(details.getStatus()));
+        return details;
     }
 
     @Nonnull
@@ -274,7 +280,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     {
         SrmGetTransferProtocolsResponse response =
                 srm.srmGetTransferProtocols(new SrmGetTransferProtocolsRequest());
-        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(response.getReturnStatus());
         TSupportedTransferProtocol[] protocolArray = response.getProtocolInfo().getProtocolArray();
         return (protocolArray == null) ? new TSupportedTransferProtocol[0] : protocolArray;
     }
@@ -283,14 +289,14 @@ public class AxisSrmFileSystem implements SrmFileSystem
     public void mkdir(URI surl) throws RemoteException, SRMException
     {
         SrmMkdirResponse response = srm.srmMkdir(new SrmMkdirRequest(null, surl, null));
-        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(response.getReturnStatus());
     }
 
     @Override
     public void rmdir(URI lookup, boolean recursive) throws RemoteException, SRMException
     {
         SrmRmdirResponse response = srm.srmRmdir(new SrmRmdirRequest(null, lookup, null, recursive));
-        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(response.getReturnStatus());
     }
 
     @Nonnull
@@ -299,7 +305,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     {
         SrmRmResponse response = srm.srmRm(new SrmRmRequest(null, new ArrayOfAnyURI(surls), null));
         if (response.getArrayOfFileStatuses().getStatusArray() == null) {
-            checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
+            checkSuccess(response.getReturnStatus());
         } else {
             checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS, TStatusCode.SRM_PARTIAL_SUCCESS,
                          TStatusCode.SRM_FAILURE);
@@ -311,7 +317,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     public void mv(URI fromSurl, URI toSurl) throws RemoteException, SRMException
     {
         SrmMvResponse response = srm.srmMv(new SrmMvRequest(null, fromSurl, toSurl, null));
-        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(response.getReturnStatus());
     }
 
     @Nonnull
@@ -320,7 +326,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     {
         SrmGetSpaceTokensResponse response = srm.srmGetSpaceTokens(
                 new SrmGetSpaceTokensRequest(userSpaceTokenDescription, null));
-        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(response.getReturnStatus());
         ArrayOfString arrayOfSpaceTokens = response.getArrayOfSpaceTokens();
         return (arrayOfSpaceTokens != null) ? arrayOfSpaceTokens.getStringArray() : new String[0];
     }
@@ -370,7 +376,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     {
         SrmReleaseSpaceResponse response = srm.srmReleaseSpace(
                 new SrmReleaseSpaceRequest(null, spaceToken, null, null));
-        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(response.getReturnStatus());
     }
 
     @Nonnull
@@ -396,7 +402,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     public TMetaDataSpace getSpaceMetaData(String spaceToken) throws RemoteException, SRMException
     {
         TMetaDataSpace space = getSpaceMetaData(new String[]{spaceToken})[0];
-        checkSuccess(space.getStatus(), TStatusCode.SRM_SUCCESS);
+        checkSuccess(space.getStatus());
         return space;
     }
 
