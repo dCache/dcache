@@ -94,7 +94,7 @@ public class SpaceManagerHandler extends RemotePoolManagerHandler
     @Override
     public String toString()
     {
-        return "spacemanager={" + super.toString() + ", " + inner.getVersion() + "}";
+        return "spacemanager={" + super.toString() + ", " + inner + "}";
     }
 
     protected <T extends PoolManagerMessage> boolean shouldIntercept(T msg)
