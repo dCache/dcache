@@ -938,14 +938,14 @@ public class CellNucleus implements ThreadFactory
         try {
             checkState(_state == State.NEW);
             _state = State.PRE_STARTUP;
-            _startup = _messageExecutor.submit(wrapLoggingContext(this::doStart), null);
+            _startup = _messageExecutor.submit(wrapLoggingContext(this::doStart));
         } finally {
             _lifeCycleMonitor.leave();
         }
         return Futures.nonCancellationPropagating(_startup);
     }
 
-    private void doStart()
+    private Void doStart() throws Exception
     {
         try {
             checkState(_state == State.PRE_STARTUP);
@@ -958,11 +958,11 @@ public class CellNucleus implements ThreadFactory
             _cell.postStartup(event);
             setState(State.RUNNING);
         } catch (Throwable e) {
-            Thread t = Thread.currentThread();
-            t.getUncaughtExceptionHandler().uncaughtException(t, e);
             setState(State.FAILED);
             __cellGlue.kill(CellNucleus.this);
+            throw e;
         }
+        return null;
     }
 
     void shutdown(KillEvent event)
