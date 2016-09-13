@@ -20,11 +20,16 @@ package org.dcache.srm.shell;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+
 import gov.fnal.srm.util.Configuration;
 import gov.fnal.srm.util.OptionParser;
+
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 
@@ -44,6 +49,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -92,7 +98,12 @@ public class SrmShell extends ShellApplication
 {
     private final SrmFileSystem fs;
     private final URI home;
+    private final Map<Integer,FileTransfer> ongoingTransfers = new ConcurrentHashMap<>();
+    private final Map<Integer,FileTransfer> completedTransfers = new ConcurrentHashMap<>();
+    private final List<String> notifications = new ArrayList<>();
+
     private URI pwd;
+    private int nextTransferId = 1;
 
     public static void main(String[] arguments) throws Throwable
     {
@@ -157,6 +168,8 @@ public class SrmShell extends ShellApplication
                                 configuration.getX509_user_trusted_certificates(),
                                 Transport.GSI));
 
+        fs.setCredential(credential);
+        fs.start();
         cd(configuration.getSrmUrl().toASCIIString());
         home = pwd;
     }
@@ -170,16 +183,36 @@ public class SrmShell extends ShellApplication
     @Override
     protected String getPrompt()
     {
+        StringBuilder prompt = new StringBuilder();
+
+        synchronized (notifications) {
+            if (!notifications.isEmpty()) {
+                prompt.append('\n');
+                for (String notification : notifications) {
+                    prompt.append(notification).append('\n');
+                }
+                notifications.clear();
+            }
+        }
+
         String uri = pwd.toString();
         if (pwd.getPath().length() > 1) {
             uri = uri.substring(0, uri.length()-1);
         }
-        return uri + " # ";
+        prompt.append(uri).append(" # ");
+        return prompt.toString();
     }
 
     @Override
     public void close() throws IOException
     {
+        try {
+            fs.close();
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     @Nonnull
@@ -799,6 +832,254 @@ public class SrmShell extends ShellApplication
             TMetaDataSpace space = fs.getSpaceMetaData(spaceToken);
             append(writer, space);
             return out.toString();
+        }
+    }
+
+    @Command(name = "get", hint = "download a file")
+    public class GetCommand implements Callable<String>
+    {
+        @Argument(index=0, usage="path to the remote file")
+        File remote;
+
+        @Argument(index=1, required=false, usage="path of the downloaded file")
+        File local;
+
+        @Override
+        public String call() throws Exception
+        {
+            URI surl = lookup(remote);
+
+            if (local == null) {
+                local = new File(remote.getName());
+            }
+
+            FileTransfer transfer = fs.get(surl, local);
+
+            if (transfer == null) {
+                return "No support for download.";
+            }
+
+            final int id = nextTransferId++;
+
+            ongoingTransfers.put(id,transfer);
+            Futures.addCallback(transfer, new FutureCallback() {
+                @Override
+                public void onSuccess(Object result)
+                {
+                    synchronized (notifications) {
+                        notifications.add("[" + id + "] Transfer completed.");
+                        FileTransfer successfulTransfer = ongoingTransfers.remove(id);
+                        completedTransfers.put(id, successfulTransfer);
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t)
+                {
+                    synchronized (notifications) {
+                        notifications.add("[" + id + "] Transfer failed: " + t.toString());
+                        FileTransfer failedTransfer = ongoingTransfers.remove(id);
+                        completedTransfers.put(id, failedTransfer);
+                    }
+                }
+            });
+
+            return "[" + id + "] transfer started.";
+        }
+    }
+
+    @Command(name = "put", hint = "upload a file")
+    public class PutCommand implements Callable<String>
+    {
+        @Argument(index=0, usage="path of the file to upload")
+        File local;
+
+        @Argument(index=1, usage = "path to store the file under", required=false)
+        File remote;
+
+        @Override
+        public String call() throws Exception
+        {
+            if (!local.exists()) {
+                return "does not exist: " + local;
+            }
+
+            if (!local.isFile()) {
+                return "not a file: " + local;
+            }
+
+            if (!local.canRead()) {
+                return "cannot read: " + local;
+            }
+
+            URI surl = (remote != null) ? lookup(remote) : lookup(new File(local.getName()));
+
+            FileTransfer transfer = fs.put(local, surl);
+
+            if (transfer == null) {
+                return "No support for upload.";
+            }
+
+            final int id = nextTransferId++;
+
+            ongoingTransfers.put(id,transfer);
+            Futures.addCallback(transfer, new FutureCallback() {
+                @Override
+                public void onSuccess(Object result)
+                {
+                    synchronized (notifications) {
+                        notifications.add("[" + id + "] Transfer completed.");
+                        FileTransfer successfulTransfers = ongoingTransfers.remove(id);
+                        completedTransfers.put(id, successfulTransfers);
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t)
+                {
+                    synchronized (notifications) {
+                        notifications.add("[" + id + "] Transfer failed: " + t.toString());
+                        FileTransfer failedTransfer = ongoingTransfers.remove(id);
+                        completedTransfers.put(id, failedTransfer);
+                    }
+                }
+            });
+
+            return "[" + id + "] transfer started.";
+        }
+    }
+
+    @Command(name = "transfer clear", hint="clear completed transfers")
+    public class TransferClearCommand implements Callable<String>
+    {
+        @Override
+        public String call() throws Exception
+        {
+            completedTransfers.clear();
+            return "";
+        }
+    }
+
+    @Command(name = "transfer ls", hint = "show all ongoing transfers")
+    public class TransferListCommand implements Callable<String>
+    {
+        @Argument(required=false, usage="the ID of a specific transfer")
+        Integer id;
+
+        @Override
+        public String call() throws Exception
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (id == null) {
+                if (ongoingTransfers.isEmpty() && completedTransfers.isEmpty()) {
+                    sb.append("No transfers.");
+                } else {
+                    if (!ongoingTransfers.isEmpty()) {
+                        sb.append("Ongoing transfer:\n");
+                        for (Map.Entry<Integer,FileTransfer> e : ongoingTransfers.entrySet()) {
+                            sb.append("  [").append(e.getKey()).append("] ");
+                            sb.append(e.getValue().getStatus()).append('\n');
+                        }
+                    }
+                    if (!completedTransfers.isEmpty()) {
+                        if (!ongoingTransfers.isEmpty()) {
+                            sb.append('\n');
+                        }
+                        sb.append("Completed transfers:\n");
+                        for (Map.Entry<Integer,FileTransfer> e : completedTransfers.entrySet()) {
+                            sb.append("  [").append(e.getKey()).append("] ");
+                            sb.append(e.getValue().getStatus()).append('\n');
+                        }
+                    }
+                    sb.deleteCharAt(sb.length()-1);
+                }
+            } else {
+                FileTransfer transfer = ongoingTransfers.get(id);
+                if (transfer == null) {
+                    transfer = completedTransfers.get(id);
+                }
+                if (transfer == null) {
+                    return "Unknown transfer: " + id;
+                }
+                sb.append('[').append(id).append("] ").append(transfer.getStatus());
+            }
+
+            return sb.toString();
+        }
+    }
+
+    @Command(name = "transfer cancel", hint = "abort an ongoing transfer")
+    public class TransferCancelCommand implements Callable<String>
+    {
+        @Argument(usage="the ID of the transfer")
+        int id;
+
+        @Override
+        public String call() throws Exception
+        {
+            FileTransfer transfer = ongoingTransfers.remove(id);
+            if (transfer == null) {
+                if (completedTransfers.containsKey(id)) {
+                    return "Transfer " + id + " has already completed.";
+                } else {
+                    return "No such transfer " + id + ".";
+                }
+            }
+
+            transfer.cancel(true);
+            return "Transfer aborted.";
+        }
+    }
+
+    @Command(name = "option ls", hint = "show available configuration")
+    public class OptionLsCommand implements Callable<String>
+    {
+        @Argument(usage="the specific option to query", required=false)
+        String key;
+
+        @Override
+        public String call() throws Exception
+        {
+            StringBuilder sb = new StringBuilder();
+            Map<String,String> options = fs.getTransportOptions();
+
+            if (key == null) {
+                for (Map.Entry<String,String> entry : options.entrySet()) {
+                    sb.append(entry.getKey()).append(": ").append(entry.getValue()).append('\n');
+                }
+
+                if (!options.isEmpty()) {
+                    sb.deleteCharAt(sb.length()-1);
+                }
+            } else {
+                String value = options.get(key);
+
+                if (value != null) {
+                    sb.append(key).append(": ").append(value);
+                } else {
+                    sb.append("Unknown key: ").append(key);
+                }
+            }
+
+            return sb.toString();
+        }
+    }
+
+    @Command(name = "option set", hint = "alter a configuration setting")
+    public class OptionSetCommand implements Callable<String>
+    {
+        @Argument(index=0, usage="the specific option to update")
+        String key;
+
+        @Argument(index=1, usage="the specific option to update")
+        String value;
+
+        @Override
+        public String call() throws Exception
+        {
+            fs.setTransportOption(key, value);
+            return "";
         }
     }
 }

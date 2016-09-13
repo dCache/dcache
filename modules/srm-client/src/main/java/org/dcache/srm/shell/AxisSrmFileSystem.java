@@ -17,6 +17,7 @@
  */
 package org.dcache.srm.shell;
 
+import com.google.common.base.Throwables;
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 
@@ -24,26 +25,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import java.io.File;
 import java.rmi.RemoteException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.srm.SRMAbortedException;
-import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMDuplicationException;
-import org.dcache.srm.SRMExceedAllocationException;
+import eu.emi.security.authn.x509.X509Credential;
+
 import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMFileUnvailableException;
-import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.SRMNoFreeSpaceException;
-import org.dcache.srm.SRMNonEmptyDirectoryException;
-import org.dcache.srm.SRMNotSupportedException;
-import org.dcache.srm.SRMOtherException;
-import org.dcache.srm.SRMReleasedException;
-import org.dcache.srm.SRMRequestTimedOutException;
-import org.dcache.srm.SRMSpaceLifetimeExpiredException;
-import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
@@ -88,7 +78,6 @@ import org.dcache.srm.v2_2.TPermissionMode;
 import org.dcache.srm.v2_2.TPermissionReturn;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
-import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLPermissionReturn;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TSupportedTransferProtocol;
@@ -96,17 +85,46 @@ import org.dcache.srm.v2_2.TUserPermission;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ObjectArrays.concat;
-import static java.util.Arrays.asList;
+import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
 
 @ParametersAreNonnullByDefault
 public class AxisSrmFileSystem implements SrmFileSystem
 {
     private final ISRM srm;
+    private final SrmTransferAgent srmAgent = new SrmTransferAgent();
+    private X509Credential credential;
 
     public AxisSrmFileSystem(ISRM srm)
     {
         this.srm = srm;
     }
+
+    @Override
+    public void setCredential(X509Credential credential)
+    {
+        this.credential = credential;
+    }
+
+    @Override
+    public void start()
+    {
+        ExtendableFileTransferAgent transferAgent = new ExtendableFileTransferAgent();
+        transferAgent.setCredential(credential);
+        transferAgent.start();
+
+        srmAgent.setSrm(srm);
+        srmAgent.setFileTransferAgent(transferAgent);
+    }
+
+    @Override
+    public void close()
+    {
+        try {
+            srmAgent.close();
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+   }
 
     @Nonnull
     @Override
@@ -382,77 +400,31 @@ public class AxisSrmFileSystem implements SrmFileSystem
         return space;
     }
 
-    private void checkSuccess(TReturnStatus returnStatus, TStatusCode... success) throws SRMException
+    @Nullable
+    @Override
+    public FileTransfer get(URI source, File target)
     {
-        TStatusCode statusCode = returnStatus.getStatusCode();
-        String explanation = returnStatus.getExplanation();
-        if (asList(success).contains(statusCode)) {
-            return;
-        }
-        if (statusCode == TStatusCode.SRM_FAILURE) {
-            throw new SRMException(explanation);
-        } else if (statusCode == TStatusCode.SRM_PARTIAL_SUCCESS) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_AUTHENTICATION_FAILURE) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_AUTHORIZATION_FAILURE) {
-            throw new SRMAuthorizationException(explanation);
-        } else if (statusCode == TStatusCode.SRM_INVALID_REQUEST) {
-            throw new SRMInvalidRequestException(explanation);
-        } else if (statusCode == TStatusCode.SRM_INVALID_PATH) {
-            throw new SRMInvalidPathException(explanation);
-        } else if (statusCode == TStatusCode.SRM_FILE_LIFETIME_EXPIRED) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_SPACE_LIFETIME_EXPIRED) {
-            throw new SRMSpaceLifetimeExpiredException(explanation);
-        } else if (statusCode == TStatusCode.SRM_EXCEED_ALLOCATION) {
-            throw new SRMExceedAllocationException(explanation);
-        } else if (statusCode == TStatusCode.SRM_NO_USER_SPACE) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_NO_FREE_SPACE) {
-            throw new SRMNoFreeSpaceException(explanation);
-        } else if (statusCode == TStatusCode.SRM_DUPLICATION_ERROR) {
-            throw new SRMDuplicationException(explanation);
-        } else if (statusCode == TStatusCode.SRM_NON_EMPTY_DIRECTORY) {
-            throw new SRMNonEmptyDirectoryException(explanation);
-        } else if (statusCode == TStatusCode.SRM_TOO_MANY_RESULTS) {
-            throw new SRMTooManyResultsException(explanation);
-        } else if (statusCode == TStatusCode.SRM_INTERNAL_ERROR) {
-            throw new SRMInternalErrorException(explanation);
-        } else if (statusCode == TStatusCode.SRM_FATAL_INTERNAL_ERROR) {
-            throw new SRMInternalErrorException(explanation);
-        } else if (statusCode == TStatusCode.SRM_NOT_SUPPORTED) {
-            throw new SRMNotSupportedException(explanation);
-        } else if (statusCode == TStatusCode.SRM_REQUEST_QUEUED) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_REQUEST_INPROGRESS) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_ABORTED) {
-            throw new SRMAbortedException(explanation);
-        } else if (statusCode == TStatusCode.SRM_RELEASED) {
-            throw new SRMReleasedException(explanation);
-        } else if (statusCode == TStatusCode.SRM_FILE_PINNED) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_FILE_IN_CACHE) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_SPACE_AVAILABLE) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_LOWER_SPACE_GRANTED) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_REQUEST_TIMED_OUT) {
-            throw new SRMRequestTimedOutException(explanation);
-        } else if (statusCode == TStatusCode.SRM_LAST_COPY) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_FILE_BUSY) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_FILE_LOST) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else if (statusCode == TStatusCode.SRM_FILE_UNAVAILABLE) {
-            throw new SRMFileUnvailableException(explanation);
-        } else if (statusCode == TStatusCode.SRM_CUSTOM_STATUS) {
-            throw new SRMOtherException(statusCode, explanation);
-        } else {
-            throw new SRMOtherException(statusCode, explanation);
-        }
+        return srmAgent.download(source, target);
     }
+
+    @Nullable
+    @Override
+    public FileTransfer put(File source, URI target)
+    {
+        return srmAgent.upload(source, target);
+    }
+
+    @Override
+    @Nonnull
+    public Map<String,String> getTransportOptions()
+    {
+        return srmAgent.getOptions();
+    }
+
+    @Override
+    public void setTransportOption(String key, String value)
+    {
+        srmAgent.setOption(key, value);
+    }
+
 }

@@ -18,12 +18,15 @@
 package org.dcache.srm.shell;
 
 import org.apache.axis.types.URI;
+import org.ietf.jgss.GSSCredential;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import java.io.File;
 import java.rmi.RemoteException;
+import java.util.Map;
 
 import org.dcache.srm.SRMException;
 import org.dcache.srm.v2_2.SrmPingResponse;
@@ -36,10 +39,15 @@ import org.dcache.srm.v2_2.TPermissionReturn;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TSURLPermissionReturn;
 import org.dcache.srm.v2_2.TSupportedTransferProtocol;
+import eu.emi.security.authn.x509.X509Credential;
 
 @ParametersAreNonnullByDefault
-public interface SrmFileSystem
+public interface SrmFileSystem extends AutoCloseable
 {
+    void start();
+
+    void setCredential(X509Credential credential);
+
     @Nonnull
     TMetaDataPathDetail stat(URI surl) throws RemoteException, SRMException;
 
@@ -88,4 +96,15 @@ public interface SrmFileSystem
 
     @Nonnull
     TMetaDataSpace getSpaceMetaData(String spaceTokens) throws RemoteException, SRMException;
+
+    @Nullable
+    FileTransfer get(URI surl, File target);
+
+    @Nullable
+    FileTransfer put(File source, URI surl);
+
+    @Nonnull
+    Map<String,String> getTransportOptions();
+
+    void setTransportOption(String key, String value);
 }
