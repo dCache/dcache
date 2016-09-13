@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
 
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -103,11 +104,7 @@ public class LoginBrokerPublisher
         public String call() throws Exception
         {
             checkArgument(time >= 2, "Update time out of range.");
-
-            _brokerUpdateTime = time;
-            _brokerUpdateTimeUnit = TimeUnit.SECONDS;
-            rescheduleTask();
-
+            setBrokerUpdateTime(_brokerUpdateTime, _brokerUpdateTimeUnit);
             return "";
         }
     }
@@ -485,6 +482,13 @@ public class LoginBrokerPublisher
         rescheduleTask();
     }
 
+    public synchronized void setBrokerUpdateTime(long time, TimeUnit unit)
+    {
+        _brokerUpdateTime = time;
+        _brokerUpdateTimeUnit = unit;
+        rescheduleTask();
+    }
+
     public synchronized void setExecutor(ScheduledExecutorService executor)
     {
         _executor = executor;
@@ -501,7 +505,7 @@ public class LoginBrokerPublisher
     public synchronized void beforeStop()
     {
         if (_task != null) {
-            _task.cancel(false);
+            _task.cancel(true);
             _task = null;
         }
         _addresses = Collections::emptyList;
@@ -511,6 +515,7 @@ public class LoginBrokerPublisher
         sendUpdate();
     }
 
+    @GuardedBy("this")
     private void rescheduleTask()
     {
         if (_task != null) {
