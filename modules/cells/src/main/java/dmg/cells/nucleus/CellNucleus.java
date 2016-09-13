@@ -70,18 +70,41 @@ public class CellNucleus implements ThreadFactory
 
     private enum State
     {
-        NEW(CellInfo.INITIAL),
-        STARTING(CellInfo.ACTIVE),
-        RUNNING(CellInfo.ACTIVE),
-        FAILED(CellInfo.REMOVING),
-        STOPPING(CellInfo.REMOVING),
-        TERMINATED(CellInfo.DEAD);
+        NEW(CellInfo.INITIAL,         false, false, true),
+        PRE_STARTUP(CellInfo.ACTIVE,  true,  false, true),
+        POST_STARTUP(CellInfo.ACTIVE, true,  true,  true),
+        RUNNING(CellInfo.ACTIVE,      false, true,  true),
+        FAILED(CellInfo.REMOVING,     false, true,  true),
+        STOPPING(CellInfo.REMOVING,   false, true,  false),
+        TERMINATED(CellInfo.DEAD,     false, false, false);
 
+        /** State included in CellInfo. */
         int externalState;
 
-        State(int externalState)
+        /**
+         * Whether the cell is currently processing startup callbacks.
+         */
+        boolean isStarting;
+
+        /**
+         * Whether it is legal for a cell to call {@link #sendMessage(CellMessage,
+         * boolean, boolean, boolean, CellMessageAnswerable, Executor, long)}.
+         */
+        boolean isSendWithCallbackAllowed;
+
+        /**
+         * Whether callbacks are guaranteed to be called. At some point
+         * during shutdown, the timeout mechanism is stopped and callbacks
+         * are no longer called automatically.
+         */
+        boolean areCallbacksGuaranteed;
+
+        State(int externalState, boolean isStarting, boolean isSendWithCallbackAllowed, boolean areCallbacksGuaranteed)
         {
             this.externalState = externalState;
+            this.isStarting = isStarting;
+            this.isSendWithCallbackAllowed = isSendWithCallbackAllowed;
+            this.areCallbacksGuaranteed = areCallbacksGuaranteed;
         }
     }
 
@@ -134,7 +157,7 @@ public class CellNucleus implements ThreadFactory
         @Override
         public boolean isSatisfied()
         {
-            return _state != State.STARTING;
+            return !_state.isStarting;
         }
     };
 
@@ -482,7 +505,7 @@ public class CellNucleus implements ThreadFactory
                             long timeout)
         throws SerializationException
     {
-        checkState(_state == State.RUNNING || _state == State.FAILED || _state == State.STOPPING);
+        checkState(_state.isSendWithCallbackAllowed);
         checkArgument(!msg.isFinalDestination(), "Message has no next destination: %s", msg.getDestinationPath());
 
         if (shouldAddSource) {
@@ -502,9 +525,9 @@ public class CellNucleus implements ThreadFactory
          * to avoid a race with shutdown.
          */
         _waitHash.put(uoid, lock);
-        if (_state != State.RUNNING) {
-            /*
-             * The cell isn't running, so we time out the message right away.
+
+        if (!_state.areCallbacksGuaranteed) {
+            /* Cell is shutting down so timeout the message.
              */
             timeOutMessage(uoid, lock, (u, l) -> {});
             return;
@@ -870,8 +893,8 @@ public class CellNucleus implements ThreadFactory
         _lifeCycleMonitor.enter();
         try {
             checkState(_state == State.NEW);
+            _state = State.PRE_STARTUP;
             _startup = _messageExecutor.submit(wrapLoggingContext(this::doStart), null);
-            _state = State.STARTING;
         } finally {
             _lifeCycleMonitor.leave();
         }
@@ -881,13 +904,15 @@ public class CellNucleus implements ThreadFactory
     private void doStart()
     {
         try {
+            checkState(_state == State.PRE_STARTUP);
             _timeoutTask = _timer.scheduleWithFixedDelay(wrapLoggingContext(this::executeMaintenanceTasks),
                                                          20, 20, TimeUnit.SECONDS);
             StartEvent event = new StartEvent(new CellPath(_cellName), 0);
             _cell.prepareStartup(event);
-            setState(State.RUNNING);
+            setState(State.POST_STARTUP);
             __cellGlue.publishCell(this);
             _cell.postStartup(event);
+            setState(State.RUNNING);
         } catch (Throwable e) {
             Thread t = Thread.currentThread();
             t.getUncaughtExceptionHandler().uncaughtException(t, e);
@@ -910,8 +935,9 @@ public class CellNucleus implements ThreadFactory
                     _startup.cancel(true);
                     _lifeCycleMonitor.waitForUninterruptibly(isNotStarting);
                 }
-                checkState(_state == State.NEW || _state == State.RUNNING || _state == State.FAILED);
-                wasRunning = (_state == State.RUNNING);
+                State state = _state;
+                checkState(state == State.NEW || state == State.RUNNING || state == State.FAILED);
+                wasRunning = (state == State.RUNNING);
                 _state = State.STOPPING;
             } finally {
                 _lifeCycleMonitor.leave();
@@ -1000,9 +1026,9 @@ public class CellNucleus implements ThreadFactory
          * to avoid a race with shutdown.
          */
         _waitHash.put(uoid, lock);
-        if (_state != State.RUNNING) {
-            /*
-             * The cell isn't running, so we time out the message right away.
+
+        if (!_state.areCallbacksGuaranteed) {
+            /* The cell is shutting down so we time out the message right away.
              */
             timeOutMessage(uoid, lock, (u, l) -> {});
         }
