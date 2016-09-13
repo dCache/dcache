@@ -50,6 +50,7 @@ import dmg.util.Releases;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
+import org.dcache.util.NDC;
 import org.dcache.util.Version;
 
 public class LocationMgrTunnel
@@ -185,6 +186,7 @@ public class LocationMgrTunnel
     @Override
     public void run()
     {
+        NDC.push(_remoteDomainInfo.toString());
         try {
             CellMessage msg;
             while ((msg = _input.readObject()) != null) {
@@ -198,6 +200,7 @@ public class LocationMgrTunnel
             _log.warn("Error while reading from tunnel: {}", e.toString());
         } finally {
             kill();
+            NDC.pop();
         }
     }
 
@@ -210,12 +213,18 @@ public class LocationMgrTunnel
                 _messagesToTunnel.increment();
                 _output.writeObject(msg);
             } catch (IOException e) {
-                _log.warn("Error while sending message: " + e.getMessage());
-                CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),
-                        new NoRouteToCellException(msg, "Communication failure. Message could not be delivered."));
-                envelope.setLastUOID(msg.getUOID());
-                _nucleus.sendMessage(envelope, true, true, true);
-                kill();
+                NDC.push(_remoteDomainInfo.toString());
+                try {
+                    _log.warn("Error while sending message: {}", e.getMessage());
+                    NoRouteToCellException noRoute =
+                            new NoRouteToCellException(msg, "Communication failure. Message could not be delivered.");
+                    CellMessage envelope = new CellMessage(msg.getSourcePath().revert(), noRoute);
+                    envelope.setLastUOID(msg.getUOID());
+                    _nucleus.sendMessage(envelope, true, true, true);
+                    kill();
+                } finally {
+                    NDC.pop();
+                }
             }
         } else {
             super.messageArrived(me);
