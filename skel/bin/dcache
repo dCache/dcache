@@ -1068,9 +1068,11 @@ case "$1" in
         . ${lib}/utils.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey
-        bootLoader check-config | while read line; do
+        out=$(bootLoader check-config) && rc=0 || rc=$?
+        echo "$out" | while read line; do
             printpi "$line" "^[^:]*:[^:]*:"
         done
+        exit $rc
         ;;
 
     property)
