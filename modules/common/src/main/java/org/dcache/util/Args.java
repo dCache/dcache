@@ -92,9 +92,13 @@ public class Args implements Serializable
 
     public static CharSequence quote(String raw)
     {
-        StringBuilder sb = new StringBuilder();
-        quote(raw, sb);
-        return sb;
+        if (raw.isEmpty()) {
+            return "''";
+        } else {
+            StringBuilder sb = new StringBuilder();
+            quote(raw, sb);
+            return sb;
+        }
     }
 
     public Args removeOptions(String... names)
@@ -308,6 +312,9 @@ public class Args implements Serializable
                 break;
             case '=':
                 out.append("\\=");
+                break;
+            case '-':
+                out.append("\\-");
                 break;
             case ' ':
                 out.append("\\ ");
@@ -590,6 +597,7 @@ public class Args implements Serializable
                 case '"':
                 case ' ':
                 case '-':
+                case '=':
                 case '\\':
                     word.append(c);
                     break;
