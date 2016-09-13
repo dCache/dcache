@@ -124,7 +124,7 @@ public class LocationMgrTunnel
             try {
                 _socket.shutdownOutput();
                 if (_thread != null) {
-                    _thread.join(800);
+                    _thread.join(2_000);
                 }
             } catch (IOException e) {
                 _log.debug("Failed to shutdown socket: {}", e.getMessage());
