@@ -451,7 +451,6 @@ public class CoreRoutingManager
             }
             break;
         case CellRoute.DEFAULT:
-            LOG.info("Default route {} was added", cr);
             break;
         }
     }
@@ -461,16 +460,18 @@ public class CoreRoutingManager
     {
         CellRoute cr = (CellRoute) ce.getSource();
         CellAddressCore target = cr.getTarget();
+        LOG.info("Got 'route deleted' event: {}", cr);
         switch (cr.getRouteType()) {
         case CellRoute.DOMAIN:
             updateTopicRoutes(cr.getDomainName(), Collections.emptyList());
             updateQueueRoutes(cr.getDomainName(), Collections.emptyList());
             getTunnelInfo(target)
                     .map(CellTunnelInfo::getTunnel)
-                    .ifPresent(name -> {
-                        coreTunnels.remove(name);
-                        satelliteTunnels.remove(name);
-                        legacyTunnels.remove(name);
+                    .ifPresent(address -> {
+                        coreTunnels.remove(address);
+                        satelliteTunnels.remove(address);
+                        legacyTunnels.remove(address);
+                        delayedDefaultRoutes.remove(new CellRoute(null, address, CellRoute.DEFAULT));
                     });
             break;
         case CellRoute.TOPIC:
