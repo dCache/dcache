@@ -1024,9 +1024,11 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         checkForNonMigratedDcache
-        bootLoader check-config | while read line; do
+        out=$(bootLoader check-config) && rc=0 || rc=$?
+        echo "$out" | while read line; do
             printpi "$line" "^[^:]*:[^:]*:"
         done
+        exit $rc
         ;;
 
     property)
