@@ -320,10 +320,15 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     }
 
     @Override
-    protected void stopped()
+    protected void stopping()
     {
         if (_cronTimer != null) {
             _cronTimer.interrupt();
+            try {
+                _cronTimer.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

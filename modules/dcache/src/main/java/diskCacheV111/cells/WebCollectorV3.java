@@ -958,7 +958,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     }
 
     @Override
-    public void stopped()
+    protected void stopping()
     {
         _log.info("Clean Up sequence started");
         //
@@ -967,12 +967,21 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         _log.info("Waiting for collector thread to be finished");
         _collectThread.interrupt();
         _senderThread.interrupt();
-        _nucleus.getDomainContext().remove("cellInfoTable.html");
+        try {
+            _collectThread.join();
+            _senderThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 
+    @Override
+    public void stopped()
+    {
+        _nucleus.getDomainContext().remove("cellInfoTable.html");
         _log.info("cellInfoTable.html removed from domain context");
 
         _log.info("Clean Up sequence done");
-
     }
 
     @Override
