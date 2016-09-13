@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -140,10 +141,13 @@ class CellGlue
     public void routeAdd(CellRoute route)
     {
         CellAddressCore target = route.getTarget();
-        if (target.getCellDomainName().equals(getCellDomainName()) && !_publicCellList.containsKey(target.getCellName())) {
-            throw new IllegalArgumentException("No such cell: " + target);
+        synchronized (this) {
+            if (target.getCellDomainName().equals(getCellDomainName()) &&
+                !_publicCellList.containsKey(target.getCellName())) {
+                throw new IllegalArgumentException("No such cell: " + target);
+            }
+            _routingTable.add(route);
         }
-        _routingTable.add(route);
         sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_ADDED_EVENT));
     }
 
@@ -348,23 +352,34 @@ class CellGlue
         notifyAll();
     }
 
-    private synchronized void _kill(CellNucleus source, final CellNucleus destination, long to)
+    private void _kill(CellNucleus source, final CellNucleus destination, long to)
     {
-        /* Mark the cell as being killed to prevent it from being killed more
-         * than once and to block certain operations while it is being killed.
-         */
         String cellToKill = destination.getCellName();
-        if (_cellList.get(cellToKill) != destination || !_killedCells.add(destination)) {
-            return;
+        Collection<CellRoute> routes;
+
+        synchronized (this) {
+            /* Mark the cell as being killed to prevent it from being killed more
+             * than once and to block certain operations while it is being killed.
+             */
+            if (_cellList.get(cellToKill) != destination || !_killedCells.add(destination)) {
+                return;
+            }
+
+            /* Remove routes to this cell first to reduce the chance that
+             * we try to route to a no longer existing cell...
+             */
+            routes = _routingTable.delete(destination.getThisAddress());
+
+            /* ... then remove the cell to prevent further messages to be sent to it.
+             */
+            _publicCellList.remove(cellToKill, destination);
         }
 
-        /* Remove routes to this cell first to allow it to be drained cleanly.
+        /* Notify others about the route removal.
          */
-        for (CellRoute route : _routingTable.delete(destination.getThisAddress())) {
+        for (CellRoute route : routes) {
             sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_DELETED_EVENT));
         }
-
-        _publicCellList.remove(cellToKill, destination);
 
         /* Post the obituary.
          */
