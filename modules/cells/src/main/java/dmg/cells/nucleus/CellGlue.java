@@ -75,13 +75,43 @@ class CellGlue
         _masterThreadGroup = new ThreadGroup("Master-Thread-Group");
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
         ThreadFactory killerThreadFactory =
-                new ThreadFactoryBuilder().setNameFormat("killer-%d").setThreadFactory(r -> new Thread(_killerThreadGroup, r)).build();
+                new ThreadFactoryBuilder().setNameFormat("killer-%d").setThreadFactory(r -> newThread(_killerThreadGroup, r)).build();
         _killerExecutor = Executors.newCachedThreadPool(killerThreadFactory);
         _emergencyKillerExecutor = new ThreadPoolExecutor(1, 1,
                                                           0L, TimeUnit.MILLISECONDS,
                                                           new LinkedBlockingQueue<>(),
                                                           killerThreadFactory);
         _emergencyKillerExecutor.prestartCoreThread();
+    }
+
+    static Thread newThread(ThreadGroup threadGroup, Runnable r)
+    {
+        Thread thread = new Thread(threadGroup, r);
+        /* By default threads inherit the daemon status and priority from the creating
+         * thread. Thus we reset them.
+         */
+        if (thread.isDaemon()) {
+            thread.setDaemon(false);
+        }
+        if (thread.getPriority() != Thread.NORM_PRIORITY) {
+            thread.setPriority(Thread.NORM_PRIORITY);
+        }
+        return thread;
+    }
+
+    static Thread newThread(ThreadGroup threadGroup, Runnable r, String name)
+    {
+        Thread thread = new Thread(threadGroup, r, name);
+        /* By default threads inherit the daemon status and priority from the creating
+         * thread. Thus we reset them.
+         */
+        if (thread.isDaemon()) {
+            thread.setDaemon(false);
+        }
+        if (thread.getPriority() != Thread.NORM_PRIORITY) {
+            thread.setPriority(Thread.NORM_PRIORITY);
+        }
+        return thread;
     }
 
     ThreadGroup getMasterThreadGroup()
