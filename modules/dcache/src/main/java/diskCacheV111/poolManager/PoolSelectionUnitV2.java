@@ -677,7 +677,7 @@ public class PoolSelectionUnitV2
                         throw new IllegalArgumentException(
                                         "Unit not matched : " + netUnitName);
                     }
-                    _log.debug("matching net unit found: {}" + unit);
+                    _log.debug("matching net unit found: {}", unit);
                     list.add(unit);
                 } catch (UnknownHostException uhe) {
                     throw new IllegalArgumentException(
