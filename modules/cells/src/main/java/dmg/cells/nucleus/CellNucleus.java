@@ -799,7 +799,7 @@ public class CellNucleus implements ThreadFactory
     @Nonnull
     public Thread newThread(@Nonnull Runnable target, @Nonnull String name)
     {
-        return new Thread(_threads, wrapLoggingContext(target), name);
+        return CellGlue.newThread(_threads, wrapLoggingContext(target), name);
     }
 
     //
