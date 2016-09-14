@@ -21,7 +21,6 @@ package dmg.cells.services;
 
 import com.google.common.net.HostAndPort;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.utils.CloseableUtils;
@@ -34,6 +33,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,12 +128,6 @@ public class LocationManager extends CellAdapter
             }
         }
 
-        HostAndPort readAddressOf(String domainName)
-        {
-            ChildData data = cores.getCurrentData(pathOf(domainName));
-            return (data == null) ? null : toHostAndPort(data.getData());
-        }
-
         Map<String,HostAndPort> cores()
         {
             return cores.getCurrentData().stream()
@@ -158,6 +152,10 @@ public class LocationManager extends CellAdapter
      */
     public class Client implements CellEventListener
     {
+        /**
+         * Concurrent map because cellDied may be called from outside the cell message
+         * thread.
+         */
         private final ConcurrentMap<String, String> connectors = new ConcurrentHashMap<>();
 
         public Client()
