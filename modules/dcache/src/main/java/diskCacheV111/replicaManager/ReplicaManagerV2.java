@@ -64,8 +64,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
   private Thread      _watchDog;
   private Thread      _dbThread;
   private Thread      _adjThread;
-  private boolean     _stopThreads;
-  private boolean     _runAdjuster = true;
+  private volatile boolean     _stopThreads;
+  private volatile boolean     _runAdjuster = true;
 
   private boolean     _XXcheckPoolHost;
   public void   setCheckPoolHost  ( boolean d ) { _XXcheckPoolHost = d; }
@@ -173,7 +173,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
 
   private final Object _dbLock = new Object();
   private boolean _initDbActive;
-  private boolean _runPoolWatchDog;
+  private volatile boolean _runPoolWatchDog;
   private boolean _hotRestart = true;
   private InitDbRunnable _initDbRunnable;
 
@@ -441,13 +441,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
               _watchDog.interrupt();
           }
           if (_dbThread != null) {
-              _dbThread.join(500);
+              _dbThread.join(1000);
           }
           if (_adjThread != null) {
-              _adjThread.join(500);
+              _adjThread.join(1000);
           }
           if (_watchDog != null) {
-              _watchDog.join(500);
+              _watchDog.join(1000);
           }
       } catch (InterruptedException e) {
           _log.warn("Replica manager failed to shut down", e);
