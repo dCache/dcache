@@ -75,6 +75,8 @@ public class LocationManagerConnector
             throw new IOException("Unsupported address type: " + _address, e);
         } catch (UnresolvedAddressException e) {
             throw new IOException("Unable to resolve " + _address, e);
+        } catch (InterruptedIOException e) {
+            throw e;
         } catch (IOException e) {
             throw new IOException("Failed to connect to " + _address + ": " + e, e);
         }
