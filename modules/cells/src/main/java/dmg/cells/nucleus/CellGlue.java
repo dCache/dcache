@@ -8,6 +8,8 @@ import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +20,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -50,14 +52,15 @@ class CellGlue
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
     private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64Url().omitPadding();
     private CellNucleus _systemNucleus;
-    private CellRoutingTable _routingTable = new CellRoutingTable();
-    private ThreadGroup _masterThreadGroup;
+    private final CellRoutingTable _routingTable = new CellRoutingTable();
+    private final ThreadGroup _masterThreadGroup;
 
-    private ThreadGroup _killerThreadGroup;
-    private final Executor _killerExecutor;
+    private final ThreadGroup _killerThreadGroup;
+    private final ExecutorService _killerExecutor;
     private final ThreadPoolExecutor _emergencyKillerExecutor;
     private final CellAddressCore _domainAddress;
     private final CuratorFramework _curatorFramework;
+    private final ExecutorService _listenerExecutor;
 
     CellGlue(String cellDomainName, CuratorFramework curatorFramework)
     {
@@ -85,6 +88,7 @@ class CellGlue
                                                           new LinkedBlockingQueue<>(),
                                                           killerThreadFactory);
         _emergencyKillerExecutor.prestartCoreThread();
+        _listenerExecutor = Executors.newSingleThreadExecutor(r -> newThread(_masterThreadGroup, r, "cell-event-listener"));
     }
 
     static Thread newThread(ThreadGroup threadGroup, Runnable r)
@@ -122,7 +126,7 @@ class CellGlue
         return _masterThreadGroup;
     }
 
-    void registerCell(CellNucleus cell)
+    synchronized void registerCell(CellNucleus cell)
             throws IllegalArgumentException
     {
         if (cell.getThisCell() instanceof SystemCell) {
@@ -171,20 +175,18 @@ class CellGlue
         return _cellContext.get(str);
     }
 
-    public void routeAdd(CellRoute route)
+    public synchronized void routeAdd(CellRoute route)
     {
         CellAddressCore target = route.getTarget();
-        synchronized (this) {
-            if (target.getCellDomainName().equals(getCellDomainName()) &&
-                !_publicCellList.containsKey(target.getCellName())) {
-                throw new IllegalArgumentException("No such cell: " + target);
-            }
-            _routingTable.add(route);
+        if (target.getCellDomainName().equals(getCellDomainName()) &&
+            !_publicCellList.containsKey(target.getCellName())) {
+            throw new IllegalArgumentException("No such cell: " + target);
         }
+        _routingTable.add(route);
         sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_ADDED_EVENT));
     }
 
-    public void routeDelete(CellRoute route)
+    public synchronized void routeDelete(CellRoute route)
     {
         _routingTable.delete(route);
         sendToAll(new CellEvent(route, CellEvent.CELL_ROUTE_DELETED_EVENT));
@@ -234,6 +236,7 @@ class CellGlue
         return (nucleus == null) ? null : nucleus.getThreads();
     }
 
+    @GuardedBy("this")
     private void sendToAll(CellEvent event)
     {
         //
@@ -241,33 +244,32 @@ class CellGlue
         //
 
         for (List<CellEventListener> listners : _cellEventListener.values()) {
-
-            for (CellEventListener hallo : listners) {
-
-                if (hallo == null) {
-                    LOGGER.trace("event distributor found NULL");
-                    continue;
-                }
-                try {
-                    switch (event.getEventType()) {
-                    case CellEvent.CELL_CREATED_EVENT:
-                        hallo.cellCreated(event);
-                        break;
-                    case CellEvent.CELL_DIED_EVENT:
-                        hallo.cellDied(event);
-                        break;
-                    case CellEvent.CELL_ROUTE_ADDED_EVENT:
-                        hallo.routeAdded(event);
-                        break;
-                    case CellEvent.CELL_ROUTE_DELETED_EVENT:
-                        hallo.routeDeleted(event);
-                        break;
+            _listenerExecutor.execute(() -> {
+                for (CellEventListener hallo : listners) {
+                    if (hallo == null) {
+                        LOGGER.trace("event distributor found NULL");
+                        continue;
                     }
-                } catch (Exception e) {
-                    LOGGER.info("Error while sending {}: {}", event, e);
+                    try {
+                        switch (event.getEventType()) {
+                        case CellEvent.CELL_CREATED_EVENT:
+                            hallo.cellCreated(event);
+                            break;
+                        case CellEvent.CELL_DIED_EVENT:
+                            hallo.cellDied(event);
+                            break;
+                        case CellEvent.CELL_ROUTE_ADDED_EVENT:
+                            hallo.routeAdded(event);
+                            break;
+                        case CellEvent.CELL_ROUTE_DELETED_EVENT:
+                            hallo.routeDeleted(event);
+                            break;
+                        }
+                    } catch (Exception e) {
+                        LOGGER.info("Error while sending {}: {}", event, e);
+                    }
                 }
-            }
-
+            });
         }
     }
 
@@ -359,28 +361,26 @@ class CellGlue
         notifyAll();
     }
 
-    private void _kill(CellNucleus source, final CellNucleus destination, long to)
+    private synchronized void _kill(CellNucleus source, final CellNucleus destination, long to)
     {
         String cellToKill = destination.getCellName();
         Collection<CellRoute> routes;
 
-        synchronized (this) {
-            /* Mark the cell as being killed to prevent it from being killed more
-             * than once and to block certain operations while it is being killed.
-             */
-            if (_cellList.get(cellToKill) != destination || !_killedCells.add(destination)) {
-                return;
-            }
-
-            /* Remove routes to this cell first to reduce the chance that
-             * we try to route to a no longer existing cell...
-             */
-            routes = _routingTable.delete(destination.getThisAddress());
-
-            /* ... then remove the cell to prevent further messages to be sent to it.
-             */
-            _publicCellList.remove(cellToKill, destination);
+        /* Mark the cell as being killed to prevent it from being killed more
+         * than once and to block certain operations while it is being killed.
+         */
+        if (_cellList.get(cellToKill) != destination || !_killedCells.add(destination)) {
+            return;
         }
+
+        /* Remove routes to this cell first to reduce the chance that
+         * we try to route to a no longer existing cell...
+         */
+        routes = _routingTable.delete(destination.getThisAddress());
+
+        /* ... then remove the cell to prevent further messages to be sent to it.
+         */
+        _publicCellList.remove(cellToKill, destination);
 
         /* Notify others about the route removal.
          */
@@ -613,5 +613,7 @@ class CellGlue
     public void shutdown()
     {
         _curatorFramework.close();
+        _listenerExecutor.shutdown();
+        _killerExecutor.shutdown();
     }
 }
