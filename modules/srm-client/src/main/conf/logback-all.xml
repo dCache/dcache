@@ -9,10 +9,7 @@
     <appender-ref ref="stdout"/>
   </root>
 
-  <logger name="org.apache.client.Call" level="DEBUG"/>
-  <logger name="org.apache.axis.transport.http.HTTPSender" level="DEBUG"/>
-  <logger name="org.globus.axis.axis.transport" level="DEBUG"/>
-  <logger name="org.apache.client.Call" level="DEBUG"/>
+  <logger name="org.apache.axis.client.Call" level="DEBUG"/>
   <logger name="org.apache.axis.transport.http.HTTPSender" level="DEBUG"/>
   <logger name="org.globus.axis.axis.transport" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.dc.AbstractDataChannel" level="DEBUG"/>
@@ -91,4 +88,7 @@
   <logger name="org.dcache.ftp.client.vanilla.Reply" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.vanilla.TransferMonitor" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.vanilla.TransferState" level="DEBUG"/>
+  <logger name="org.dcache.srm.client.SRMClientV2" level="DEBUG"/>
+  <logger name="org.dcache.srm.client.HttpClientSender" level="DEBUG"/>
+  <logger name="org.dcache.srm.client.FlexibleCredentialSSLConnectionSocketFactory" level="DEBUG"/>
 </configuration>
