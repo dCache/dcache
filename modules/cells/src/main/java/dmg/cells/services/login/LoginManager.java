@@ -195,7 +195,7 @@ public class LoginManager
             _loginBrokerPublisher = null;
         }
 
-        _nucleus.addCellEventListener(new LoginEventListener());
+        addCellEventListener(new LoginEventListener());
 
         _listenThread = new ListenThread(listenPort);
     }

@@ -36,8 +36,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -152,11 +150,7 @@ public class LocationManager extends CellAdapter
      */
     public class Client implements CellEventListener
     {
-        /**
-         * Concurrent map because cellDied may be called from outside the cell message
-         * thread.
-         */
-        private final ConcurrentMap<String, String> connectors = new ConcurrentHashMap<>();
+        private final Map<String, String> connectors = new HashMap<>();
 
         public Client()
         {

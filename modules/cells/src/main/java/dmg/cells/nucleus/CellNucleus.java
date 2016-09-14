@@ -29,6 +29,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -146,14 +147,21 @@ public class CellNucleus implements ThreadFactory
     private ListenableFuture<Void> _startup;
 
     private Pinboard _pinboard;
+
     private FilterThresholdSet _loggingThresholds;
+
     private final BlockingQueue<Runnable> _deferredTasks = new LinkedBlockingQueue<>();
+
     private volatile long _lastQueueTime;
+
     private final CellCuratorFramework _curatorFramework;
 
     private final Monitor _lifeCycleMonitor = new Monitor();
 
-    private final Monitor.Guard isNotStarting = new Monitor.Guard(_lifeCycleMonitor) {
+    private final List<CellEventListener> _cellEventListeners = new CopyOnWriteArrayList<>();
+
+    private final Monitor.Guard isNotStarting = new Monitor.Guard(_lifeCycleMonitor)
+    {
         @Override
         public boolean isSatisfied()
         {
@@ -567,42 +575,22 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
-    public void addCellEventListener(CellEventListener listener) {
-        __cellGlue.addCellEventListener(this, new CellEventListener()
-        {
-            @Override
-            public void cellCreated(CellEvent ce)
-            {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    listener.cellCreated(ce);
-                }
-            }
-
-            @Override
-            public void cellDied(CellEvent ce)
-            {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    listener.cellDied(ce);
-                }
-            }
-
-            @Override
-            public void routeAdded(CellEvent ce)
-            {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    listener.routeAdded(ce);
-                }
-            }
-
-            @Override
-            public void routeDeleted(CellEvent ce)
-            {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    listener.routeDeleted(ce);
-                }
-            }
-        });
+    public void addCellEventListener(CellEventListener listener)
+    {
+        _cellEventListeners.add(listener);
     }
+
+    void addToEventQueue(CellEvent ce)
+    {
+        try {
+            _eventQueueSize.incrementAndGet();
+            _messageExecutor.execute(new CellEventTask(ce));
+        } catch (RejectedExecutionException e) {
+            _eventQueueSize.decrementAndGet();
+            LOGGER.error("Dropping event: {}", e.getMessage());
+        }
+    }
+
 
     public void consume(String queue) { __cellGlue.consume(this, queue);  }
 
@@ -1200,6 +1188,46 @@ public class CellNucleus implements ThreadFactory
         public String toString()
         {
             return "Delivery-of-" + _event;
+        }
+    }
+
+    private class CellEventTask implements Runnable
+    {
+        private final CellEvent _event;
+
+        public CellEventTask(CellEvent event)
+        {
+            this._event = event;
+        }
+
+        @Override
+        public void run()
+        {
+            _eventQueueSize.decrementAndGet();
+            try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                for (CellEventListener listener : _cellEventListeners) {
+                    try {
+                        switch (_event.getEventType()) {
+                        case CellEvent.CELL_CREATED_EVENT:
+                            listener.cellCreated(_event);
+                            break;
+                        case CellEvent.CELL_DIED_EVENT:
+                            listener.cellDied(_event);
+                            break;
+                        case CellEvent.CELL_ROUTE_ADDED_EVENT:
+                            listener.routeAdded(_event);
+                            break;
+                        case CellEvent.CELL_ROUTE_DELETED_EVENT:
+                            listener.routeDeleted(_event);
+                            break;
+                        }
+                    } catch (Throwable e) {
+                        Thread t = Thread.currentThread();
+                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                    }
+                }
+
+            }
         }
     }
 }

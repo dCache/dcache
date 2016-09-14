@@ -7,8 +7,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.concurrent.GuardedBy;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,10 +26,6 @@ import dmg.util.TimebasedCounter;
 
 import static com.google.common.base.Preconditions.checkState;
 
-/**
- * @author Patrick Fuhrmann
- * @version 0.1, 15 Feb 1998
- */
 class CellGlue
 {
     private static final Logger LOGGER =
@@ -42,8 +35,6 @@ class CellGlue
     private final ConcurrentMap<String, CellNucleus> _cellList = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CellNucleus> _publicCellList = new ConcurrentHashMap<>();
     private final Set<CellNucleus> _killedCells = ConcurrentHashMap.newKeySet();
-    private final Map<String, List<CellEventListener>> _cellEventListener =
-            new ConcurrentHashMap<>();
     private final Map<String, Object> _cellContext =
             new ConcurrentHashMap<>();
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
@@ -57,7 +48,6 @@ class CellGlue
     private final ThreadPoolExecutor _emergencyKillerExecutor;
     private final CellAddressCore _domainAddress;
     private final CuratorFramework _curatorFramework;
-    private final ExecutorService _listenerExecutor;
 
     CellGlue(String cellDomainName, CuratorFramework curatorFramework)
     {
@@ -85,7 +75,6 @@ class CellGlue
                                                           new LinkedBlockingQueue<>(),
                                                           killerThreadFactory);
         _emergencyKillerExecutor.prestartCoreThread();
-        _listenerExecutor = Executors.newSingleThreadExecutor(r -> newThread(_masterThreadGroup, r, "cell-event-listener"));
     }
 
     static Thread newThread(ThreadGroup threadGroup, Runnable r)
@@ -233,40 +222,10 @@ class CellGlue
         return (nucleus == null) ? null : nucleus.getThreads();
     }
 
-    @GuardedBy("this")
     private void sendToAll(CellEvent event)
     {
-        //
-        // inform our event listener
-        //
-
-        for (List<CellEventListener> listners : _cellEventListener.values()) {
-            _listenerExecutor.execute(() -> {
-                for (CellEventListener hallo : listners) {
-                    if (hallo == null) {
-                        LOGGER.trace("event distributor found NULL");
-                        continue;
-                    }
-                    try {
-                        switch (event.getEventType()) {
-                        case CellEvent.CELL_CREATED_EVENT:
-                            hallo.cellCreated(event);
-                            break;
-                        case CellEvent.CELL_DIED_EVENT:
-                            hallo.cellDied(event);
-                            break;
-                        case CellEvent.CELL_ROUTE_ADDED_EVENT:
-                            hallo.routeAdded(event);
-                            break;
-                        case CellEvent.CELL_ROUTE_DELETED_EVENT:
-                            hallo.routeDeleted(event);
-                            break;
-                        }
-                    } catch (Exception e) {
-                        LOGGER.info("Error while sending {}: {}", event, e);
-                    }
-                }
-            });
+        for (CellNucleus nucleus : _publicCellList.values()) {
+            nucleus.addToEventQueue(event);
         }
     }
 
@@ -376,7 +335,6 @@ class CellGlue
 
     synchronized void destroy(CellNucleus nucleus)
     {
-        _cellEventListener.remove(nucleus.getCellName());
         _publicCellList.remove(nucleus.getCellName());
         _cellList.remove(nucleus.getCellName());
         _killedCells.remove(nucleus);
@@ -617,11 +575,6 @@ class CellGlue
         }
     }
 
-    void addCellEventListener(CellNucleus nucleus, CellEventListener listener)
-    {
-        _cellEventListener.computeIfAbsent(nucleus.getCellName(), k -> new CopyOnWriteArrayList<>()).add(listener);
-    }
-
     @Override
     public String toString()
     {
@@ -636,7 +589,6 @@ class CellGlue
     public void shutdown()
     {
         _curatorFramework.close();
-        _listenerExecutor.shutdown();
         _killerExecutor.shutdown();
     }
 }

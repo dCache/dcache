@@ -144,7 +144,6 @@ public class CoreRoutingManager
     {
         super(name, "System", arguments);
         nucleus = getNucleus();
-        nucleus.addCellEventListener(this);
         role = getArgs().hasOption("role")
                 ? CellDomainRole.valueOf(getArgs().getOption("role").toUpperCase())
                 : CellDomainRole.SATELLITE;

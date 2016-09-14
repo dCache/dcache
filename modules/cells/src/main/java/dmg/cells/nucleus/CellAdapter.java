@@ -193,6 +193,7 @@ public class CellAdapter
 
         addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
         addCommandListener(_commandInterpreter.new HelpCommands());
+        addCellEventListener(this);
     }
 
     /**
@@ -283,17 +284,7 @@ public class CellAdapter
     public void addCellEventListener(CellEventListener cel) {
         _nucleus.addCellEventListener(cel);
     }
-    /**
-     *  Declares this Cell to be a CellEventListener.
-     *  All methods are implemented by the CellAdapter but
-     *  don't perform any actions. The subclass has to
-     *  overwrite all those methods, it is interested in.
-     *
-     * @see CellEventListener
-     */
-    public void addCellEventListener() {
-        _nucleus.addCellEventListener(this);
-    }
+
     /**
      *  returns an Args object created from the second
      *  argument of the constructor : this(String name, String args).
@@ -1017,7 +1008,7 @@ public class CellAdapter
     {
         private final long deadline;
 
-        private final long cnt;
+        private long cnt;
 
         private final CellMessageAnswerable callback;
         private final CellMessage msg;
@@ -1046,10 +1037,15 @@ public class CellAdapter
                 callback.exceptionArrived(request, exception);
             } else if (deadline <= System.currentTimeMillis()) {
                 callback.answerTimedOut(request);
-            } else if (cnt == _routeAddedCounter.longValue()){
-                _nucleus.invokeLater(this);
             } else {
-                _nucleus.sendMessage(msg, true, true, false, this, executor, subWithInfinity(deadline, System.currentTimeMillis()));
+                long currentCnt = _routeAddedCounter.longValue();
+                if (cnt == currentCnt) {
+                    _nucleus.invokeLater(this);
+                } else {
+                    cnt = currentCnt;
+                    _nucleus.sendMessage(msg, true, true, false, this, executor,
+                                         subWithInfinity(deadline, System.currentTimeMillis()));
+                }
             }
         }
 
