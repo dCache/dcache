@@ -117,6 +117,8 @@ public class LocationManagerConnector
             throw new IOException("Unsupported address type: " + address, e);
         } catch (UnresolvedAddressException e) {
             throw new IOException("Unable to resolve " + address, e);
+        } catch (InterruptedIOException e) {
+            throw e;
         } catch (IOException e) {
             throw new IOException("Failed to connect to " + address + ": " + e.toString(), e);
         }
