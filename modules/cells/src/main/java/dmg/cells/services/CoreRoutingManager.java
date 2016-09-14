@@ -424,13 +424,9 @@ public class CoreRoutingManager
         case CellRoute.DOMAIN:
             updateTopicRoutes(cr.getDomainName(), Collections.emptyList());
             updateQueueRoutes(cr.getDomainName(), Collections.emptyList());
-            getTunnelInfo(target)
-                    .map(CellTunnelInfo::getTunnel)
-                    .ifPresent(address -> {
-                        coreTunnels.remove(address);
-                        satelliteTunnels.remove(address);
-                        delayedDefaultRoutes.remove(new CellRoute(null, address, CellRoute.DEFAULT));
-                    });
+            coreTunnels.remove(target);
+            satelliteTunnels.remove(target);
+            delayedDefaultRoutes.remove(new CellRoute(null, target, CellRoute.DEFAULT));
             break;
         case CellRoute.TOPIC:
             String topic = cr.getCellName();
