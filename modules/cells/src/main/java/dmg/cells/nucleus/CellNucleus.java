@@ -1,7 +1,6 @@
 package dmg.cells.nucleus;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Monitor;
@@ -19,7 +18,6 @@ import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -27,9 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -72,18 +67,26 @@ public class CellNucleus implements ThreadFactory
 
     private enum State
     {
-        NEW(INITIAL),
-        STARTING(ACTIVE),
-        RUNNING(ACTIVE),
-        FAILED(REMOVING),
-        STOPPING(REMOVING),
-        TERMINATED(DEAD);
+        NEW(INITIAL,         false),
+        PRE_STARTUP(ACTIVE,  true),
+        POST_STARTUP(ACTIVE, true),
+        RUNNING(ACTIVE,      false),
+        FAILED(REMOVING,     false),
+        STOPPING(REMOVING,   false),
+        TERMINATED(DEAD,     false);
 
+        /** State included in CellInfo. */
         int externalState;
 
-        State(int externalState)
+        /**
+         * Whether the cell is currently processing startup callbacks.
+         */
+        boolean isStarting;
+
+        State(int externalState, boolean isStarting)
         {
             this.externalState = externalState;
+            this.isStarting = isStarting;
         }
     }
 
@@ -140,7 +143,7 @@ public class CellNucleus implements ThreadFactory
         @Override
         public boolean isSatisfied()
         {
-            return _state != State.STARTING;
+            return !_state.isStarting;
         }
     };
 
@@ -934,30 +937,32 @@ public class CellNucleus implements ThreadFactory
         _lifeCycleMonitor.enter();
         try {
             checkState(_state == State.NEW);
-            _startup = _messageExecutor.submit(wrapLoggingContext(this::doStart), null);
-            _state = State.STARTING;
+            _state = State.PRE_STARTUP;
+            _startup = _messageExecutor.submit(wrapLoggingContext(this::doStart));
         } finally {
             _lifeCycleMonitor.leave();
         }
         return Futures.nonCancellationPropagating(_startup);
     }
 
-    private void doStart()
+    private Void doStart() throws Exception
     {
         try {
+            checkState(_state == State.PRE_STARTUP);
             _timeoutTask = _timer.scheduleWithFixedDelay(wrapLoggingContext(this::executeMaintenanceTasks),
                                                          20, 20, TimeUnit.SECONDS);
             StartEvent event = new StartEvent(new CellPath(_cellName), 0);
             _cell.prepareStartup(event);
-            setState(State.RUNNING);
+            setState(State.POST_STARTUP);
             __cellGlue.publishCell(this);
             _cell.postStartup(event);
+            setState(State.RUNNING);
         } catch (Throwable e) {
-            Thread t = Thread.currentThread();
-            t.getUncaughtExceptionHandler().uncaughtException(t, e);
             setState(State.FAILED);
             __cellGlue.kill(CellNucleus.this);
+            throw e;
         }
+        return null;
     }
 
     void shutdown(KillEvent event)
@@ -973,7 +978,8 @@ public class CellNucleus implements ThreadFactory
                     _startup.cancel(true);
                     _lifeCycleMonitor.waitForUninterruptibly(isNotStarting);
                 }
-                checkState(_state == State.NEW || _state == State.RUNNING || _state == State.FAILED);
+                State state = _state;
+                checkState(state == State.NEW || state == State.RUNNING || state == State.FAILED);
                 _state = State.STOPPING;
             } finally {
                 _lifeCycleMonitor.leave();
