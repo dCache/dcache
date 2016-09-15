@@ -2,4 +2,4 @@
 
 @INIT_SCRIPT@
 
-"${SRM_PATH}/lib/srm" -bringOnline "$@"
+exec "${SRM_PATH}/lib/srm" -bringOnline "$@"
