@@ -335,10 +335,16 @@ class CellGlue
 
     synchronized void destroy(CellNucleus nucleus)
     {
-        _publicCellList.remove(nucleus.getCellName());
-        _cellList.remove(nucleus.getCellName());
-        _killedCells.remove(nucleus);
-        LOGGER.trace("destroy : sendToAll : killed {}", nucleus.getCellName());
+        String cellName = nucleus.getCellName();
+        if (_publicCellList.remove(cellName, nucleus)) {
+            LOGGER.warn("Apparently cell {} wasn't unpublished before being destroyed. Please contact support@dcache.org.", cellName);
+        }
+        if (!_cellList.remove(cellName, nucleus)) {
+            LOGGER.warn("Apparently cell {} wasn't registered before being destroyed. Please contact support@dcache.org.", cellName);
+        }
+        if (!_killedCells.remove(nucleus)) {
+            LOGGER.warn("Apparently cell {} wasn't killed before being destroyed. Please contact support@dcache.org.", cellName);
+        }
         notifyAll();
     }
 
