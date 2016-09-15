@@ -283,7 +283,7 @@ public class LocationManager extends CellAdapter
     }
 
     @Override
-    public void stopped()
+    public void stopping()
     {
         CloseableUtils.closeQuietly(coreDomains);
         if (client != null) {
