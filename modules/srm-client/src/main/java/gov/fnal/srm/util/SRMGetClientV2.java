@@ -82,6 +82,7 @@ import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.util.SrmUrl;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
@@ -129,7 +130,8 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void connect() throws Exception {
-        java.net.URI srmUrl = from[0];
+        java.net.URI srmUrl = SrmUrl.withDefaultPort(from [0],
+                configuration.getDefaultSrmPortNumber());
         srmv2 = new SRMClientV2(srmUrl,
                                 getCredential(),
                                 configuration.getRetry_timeout(),
