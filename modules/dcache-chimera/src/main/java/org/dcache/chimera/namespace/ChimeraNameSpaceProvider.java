@@ -1217,7 +1217,7 @@ public class ChimeraNameSpaceProvider
                 int uid = defaultUid(subject, parentOfPath);
                 int gid = defaultGid(subject, parentOfPath);
                 inode = mkdir(subject, parentOfPath, path.name(), uid, gid,
-                        mode == INHERIT_MODE ? (parentOfPath.statCache().getMode() & UMASK_FILE) : mode);
+                        mode == INHERIT_MODE ? (parentOfPath.statCache().getMode() & UMASK_DIR) : mode);
             } catch (FileExistsChimeraFsException e1) {
                 /* Concurrent directory creation. Current transaction is invalid.
                  */
