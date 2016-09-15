@@ -31,9 +31,7 @@ import org.apache.zookeeper.CreateMode;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.DelayQueue;
@@ -94,6 +92,11 @@ public class PoolManagerHandlerPublisher
     private CuratorFramework client;
 
     /**
+     * When to publish this pool manager in zookeeper.
+     */
+    private long publicationTimestamp;
+
+    /**
      * Current pool manager handler given to services that ask for one.
      */
     private volatile SerializablePoolManagerHandler handler;
@@ -143,7 +146,21 @@ public class PoolManagerHandlerPublisher
         String path = ZKPaths.makePath(getZooKeeperPath(), address.toString());
         byte[] data =  address.toString().getBytes(US_ASCII);
         node = new PersistentNode(client, CreateMode.EPHEMERAL, false, path, data);
-        node.start();
+
+        /* When starting, a pool manager will not know about any pools. As satellite
+         * domains delay installation of a second default route for up to 20 seconds
+         * and pools announce their presence every 30 seconds, it may take up to 50
+         * seconds before we see all pools. We add 5 seconds on top of that as a
+         * safety margin.
+         *
+         * The actual publication is done lazily as a side effect of clients asking
+         * for a pool manager handler.
+         *
+         * Note that if no other pool manager is registered in zookeeper, then this
+         * pool manager still provides handler using itself. I.e. the delay above
+         * has no effect on the first pool manager.
+         */
+        publicationTimestamp = System.currentTimeMillis() + 55_000;
     }
 
     @Override
@@ -156,6 +173,14 @@ public class PoolManagerHandlerPublisher
             CloseableUtils.closeQuietly(node);
         }
         requests.stream().filter(requests::remove).forEach(UpdateRequest::shutdown);
+    }
+
+    private synchronized void checkPublicationTimestamp()
+    {
+        if (publicationTimestamp > 0 && publicationTimestamp < System.currentTimeMillis()) {
+            node.start();
+            publicationTimestamp = 0;
+        }
     }
 
     @Override
@@ -194,12 +219,14 @@ public class PoolManagerHandlerPublisher
 
     public PoolMgrGetHandler messageArrived(PoolMgrGetHandler message)
     {
+        checkPublicationTimestamp();
         message.setHandler(handler);
         return message;
     }
 
     public DelayedReply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message)
     {
+        checkPublicationTimestamp();
         SerializablePoolManagerHandler handler = this.handler;
         UpdateRequest request = new UpdateRequest(envelope, message);
         requests.add(request);
