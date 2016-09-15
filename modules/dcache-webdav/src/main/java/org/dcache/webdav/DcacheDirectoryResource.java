@@ -79,7 +79,7 @@ public class DcacheDirectoryResource
         } catch (FileNotFoundCacheException e) {
             return Collections.emptyList();
         } catch (PermissionDeniedCacheException e) {
-            throw new UnauthorizedException(e.getMessage(), e, this);
+            throw WebDavExceptions.permissionDenied(e.getMessage(), e, this);
         } catch (CacheException | InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }
@@ -105,7 +105,7 @@ public class DcacheDirectoryResource
             // transferred entity's size.
             throw new BadRequestException(this, "Connection closed prematurely, entity smaller than expected.");
         } catch (PermissionDeniedCacheException e) {
-            throw new NotAuthorizedException(this);
+            throw WebDavExceptions.permissionDenied(this);
         } catch (FileExistsCacheException e) {
             throw new ConflictException(this);
         } catch (CacheException e) {
@@ -129,7 +129,7 @@ public class DcacheDirectoryResource
             }
             writer.flush();
         } catch (PermissionDeniedCacheException e) {
-            throw new NotAuthorizedException(this);
+            throw WebDavExceptions.permissionDenied(this);
         } catch (CacheException | InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (UnsupportedEncodingException e) {
@@ -163,7 +163,7 @@ public class DcacheDirectoryResource
         try {
             _factory.deleteDirectory(_attributes.getPnfsId(), _path);
         } catch (PermissionDeniedCacheException e) {
-            throw new NotAuthorizedException(this);
+            throw WebDavExceptions.permissionDenied(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }
@@ -176,7 +176,7 @@ public class DcacheDirectoryResource
         try {
             return _factory.makeDirectory(_attributes, _path.child(newName));
         } catch (PermissionDeniedCacheException e) {
-            throw new NotAuthorizedException(this);
+            throw WebDavExceptions.permissionDenied(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }

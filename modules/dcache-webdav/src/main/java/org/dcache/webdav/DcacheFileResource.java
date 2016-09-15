@@ -121,7 +121,7 @@ public class DcacheFileResource
             // the client has already disconnected.
             throw new WebDavException("Failed to send entity: client closed connection", e, this);
         } catch (PermissionDeniedCacheException e) {
-            throw new NotAuthorizedException(this);
+            throw WebDavExceptions.permissionDenied(this);
         } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
             throw new ForbiddenException(e.getMessage(), e, this);
         } catch (CacheException e) {
@@ -174,7 +174,7 @@ public class DcacheFileResource
             }
             return null;
         } catch (PermissionDeniedCacheException e) {
-            throw new UnauthorizedException(e.getMessage(), e, this);
+            throw WebDavExceptions.permissionDenied(e.getMessage(), e, this);
         } catch (CacheException | InterruptedException e) {
             throw new WebDavException(e.getMessage(), e, this);
         } catch (URISyntaxException e) {
@@ -189,7 +189,7 @@ public class DcacheFileResource
         try {
             _factory.deleteFile(_attributes, _path);
         } catch (PermissionDeniedCacheException e) {
-            throw new NotAuthorizedException(this);
+            throw WebDavExceptions.permissionDenied(this);
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, this);
         }

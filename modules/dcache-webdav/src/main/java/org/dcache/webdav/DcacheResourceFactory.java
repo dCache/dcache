@@ -601,7 +601,7 @@ public class DcacheResourceFactory
                 }
             }
         } catch (PermissionDeniedCacheException e) {
-            throw new UnauthorizedException(e.getMessage(), e, new InaccessibleResource(path));
+            throw WebDavExceptions.permissionDenied(e.getMessage(), e, new InaccessibleResource(path));
         } catch (CacheException e) {
             throw new WebDavException(e.getMessage(), e, new InaccessibleResource(path));
         }
