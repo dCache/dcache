@@ -112,10 +112,8 @@ first=${#fargs[0]}
 cmd=""
 if [ "${skip}" -eq 0 ]
     then
-    if [ ${length} -lt 2 ]
-	then
-	"${SRM_PATH}/lib/srm" -copy $*
-	exit 1
+    if [ ${length} -lt 2 ]; then
+	exec "${SRM_PATH}/lib/srm" -copy "$@"
     else
 	i=0
 	src_protocols=
@@ -207,14 +205,12 @@ if [ "${skip}" -eq 0 ]
 		    error ${src_protocol} ${dst_protocol}
 		fi
 	    fi
-	    $cmd
-	    rc=$?
-	    exit $rc
+	    exec $cmd
 	fi
     fi
 else
     if [ "$delegationMakesSense" = 1 ] && [ "$haveDelegate" = 0 ]; then
         delegate=-delegate=true
     fi
-    "${SRM_PATH}/lib/srm" -copy $delegate "$@"
+    exec "${SRM_PATH}/lib/srm" -copy $delegate "$@"
 fi
