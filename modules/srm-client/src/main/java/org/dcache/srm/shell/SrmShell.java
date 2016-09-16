@@ -42,14 +42,30 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
 import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -86,6 +102,7 @@ import org.dcache.srm.v2_2.TSupportedTransferProtocol;
 import org.dcache.srm.v2_2.TUserPermission;
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
+import org.dcache.util.Glob;
 import org.dcache.util.cli.ShellApplication;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -96,14 +113,19 @@ import static java.util.Arrays.asList;
 
 public class SrmShell extends ShellApplication
 {
+    private final FileSystem lfs = FileSystems.getDefault();
     private final SrmFileSystem fs;
     private final URI home;
     private final Map<Integer,FileTransfer> ongoingTransfers = new ConcurrentHashMap<>();
     private final Map<Integer,FileTransfer> completedTransfers = new ConcurrentHashMap<>();
     private final List<String> notifications = new ArrayList<>();
 
+    private enum PromptType { LOCAL, SRM, SIMPLE };
+
     private URI pwd;
+    private Path lcwd = lfs.getPath(".").toRealPath();
     private int nextTransferId = 1;
+    private PromptType promptType = PromptType.SRM;
 
     public static void main(String[] arguments) throws Throwable
     {
@@ -195,11 +217,19 @@ public class SrmShell extends ShellApplication
             }
         }
 
-        String uri = pwd.toString();
-        if (pwd.getPath().length() > 1) {
-            uri = uri.substring(0, uri.length()-1);
+        switch (promptType) {
+        case SRM:
+            String uri = pwd.toString();
+            if (pwd.getPath().length() > 1) {
+                uri = uri.substring(0, uri.length()-1);
+            }
+            prompt.append(uri).append(' ');
+            break;
+        case LOCAL:
+            prompt.append(lcwd.toString()).append(' ');
+            break;
         }
-        prompt.append(uri).append(" # ");
+        prompt.append("# ");
         return prompt.toString();
     }
 
@@ -248,6 +278,36 @@ public class SrmShell extends ShellApplication
             throw new SRMAuthorizationException("Access denied");
         }
         pwd = uri;
+    }
+
+    private String permissionsFor(PosixFileAttributes attr)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        if (attr.isDirectory()) {
+            sb.append('d');
+        } else if(attr.isSymbolicLink()) {
+            sb.append('l');
+        } else if(attr.isOther()) {
+            sb.append('o');
+        } else if (attr.isRegularFile()) {
+            sb.append('-');
+        } else {
+            sb.append('?');
+        }
+
+        Set<PosixFilePermission> permissions = attr.permissions();
+        sb.append(permissions.contains(PosixFilePermission.OWNER_READ) ? 'r' : '-');
+        sb.append(permissions.contains(PosixFilePermission.OWNER_WRITE) ? 'w' : '-');
+        sb.append(permissions.contains(PosixFilePermission.OWNER_EXECUTE) ? 'x' : '-');
+        sb.append(permissions.contains(PosixFilePermission.GROUP_READ) ? 'r' : '-');
+        sb.append(permissions.contains(PosixFilePermission.GROUP_WRITE) ? 'w' : '-');
+        sb.append(permissions.contains(PosixFilePermission.GROUP_EXECUTE) ? 'x' : '-');
+        sb.append(permissions.contains(PosixFilePermission.OTHERS_READ) ? 'r' : '-');
+        sb.append(permissions.contains(PosixFilePermission.OTHERS_WRITE) ? 'w' : '-');
+        sb.append(permissions.contains(PosixFilePermission.OTHERS_EXECUTE) ? 'x' : '-');
+
+        return sb.toString();
     }
 
     private String permissionsFor(TMetaDataPathDetail entry)
@@ -340,6 +400,302 @@ public class SrmShell extends ShellApplication
             writer.println();
         }
     }
+
+    @Command(name="prompt", hint = "modify prompt")
+    public class PromptCommand implements Callable<Serializable>
+    {
+        @Argument(valueSpec = "local|simple|srm")
+        String style;
+
+        @Override
+        public Serializable call()
+        {
+            switch (style) {
+            case "srm":
+                promptType = PromptType.SRM;
+                break;
+            case "local":
+                promptType = PromptType.LOCAL;
+                break;
+            case "simple":
+                promptType = PromptType.SIMPLE;
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown style \"" + style + "\"");
+            }
+            return null;
+        }
+    }
+
+    /*
+     * Commands for local filesystem manipulation
+     */
+
+    @Command(name="lpwd", hint = "print local working directory")
+    public class LpwdCommand implements Callable<Serializable>
+    {
+        @Override
+        public Serializable call() throws Exception
+        {
+            return lcwd.toString();
+        }
+    }
+
+    @Command(name="lcd", hint = "change local directory")
+    public class LcdCommand implements Callable<Serializable>
+    {
+        @Argument
+        String path;
+
+        @Override
+        public Serializable call() throws IOException
+        {
+            Path newPath = lcwd.resolve(path).normalize();
+
+            if (!Files.exists(newPath)) {
+                throw new IllegalArgumentException("No such directory: " + path);
+            }
+
+            if (!Files.isDirectory(newPath)) {
+                throw new IllegalArgumentException("Not a directory: " + path);
+            }
+
+            if (!Files.isExecutable(newPath)) {
+                throw new IllegalArgumentException("Permission denied: " + path);
+            }
+
+            lcwd = newPath;
+            return null;
+        }
+    }
+
+    @Command(name="lls", hint = "list local directory")
+    public class LlsCommand implements Callable<Serializable>
+    {
+        private static final String DEFAULT_TIME = "mtime";
+
+        @Argument(required = false)
+        String path;
+
+        @Option(name = "time", values = { "modify", "atime", "mtime", "create" },
+                usage = "Show alternative time instead of modification time: modify/mtime is the last write time, " +
+                        "create is the creation time.")
+        String time = DEFAULT_TIME;
+
+        @Option(name = "l",
+                usage = "List in long format.")
+        boolean verbose;
+
+        @Option(name = "h",
+                usage = "Use abbreviated file sizes.")
+        boolean abbrev;
+
+        @Option(name = "a",
+                usage = "Show hidden files.")
+        boolean showHidden;
+
+        @Option(name = "d",
+                usage = "list directories themselves, not their contents")
+        boolean directory;
+
+        @Override
+        public Serializable call() throws IOException
+        {
+            Path dir = path == null ? lcwd : lcwd.resolve(path);
+
+            boolean isPattern = !Files.exists(dir) ||
+                !Files.getFileAttributeView(dir, PosixFileAttributeView.class).readAttributes().isDirectory();
+
+            final Pattern glob = isPattern ? Glob.parseGlobToPattern(dir.getFileName().toString())
+                    : directory ? Pattern.compile(Pattern.quote(dir.getFileName().toString())) : Pattern.compile(".*");
+
+            if (isPattern || directory) {
+                dir = dir.getParent();
+            }
+
+            DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
+                @Override
+                public boolean accept(Path entry) throws IOException
+                {
+                    String name = entry.getFileName().toString();
+                    return glob.matcher(name).matches() &&
+                            (!name.startsWith(".") || showHidden);
+                }
+            };
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
+                if (verbose) {
+                    ColumnWriter writer = new ColumnWriter()
+                            .abbreviateBytes(abbrev)
+                            .left("mode")
+                            .space().left("owner")
+                            .space().left("group")
+                            .space().bytes("size")
+                            .space().date("time")
+                            .space().left("name");
+                    for (Path entry : stream) {
+                        PosixFileAttributes attrs = Files.getFileAttributeView(entry, PosixFileAttributeView.class).readAttributes();
+
+                        writer.row()
+                                .value("mode", permissionsFor(attrs))
+                                .value("owner", attrs.owner().getName())
+                                .value("group", attrs.group().getName())
+                                .value("size", attrs.size())
+                                .value("time", new Date(getFileTime(attrs).toMillis()))
+                                .value("name", entry.getFileName().toString());
+                    }
+                    console.print(writer.toString());
+                } else {
+                    List<String> names = new ArrayList<>();
+                    for (Path entry : stream) {
+                        names.add(entry.getFileName().toString());
+                    }
+                    console.printColumns(names);
+                }
+
+            }
+            return null;
+        }
+
+        private FileTime getFileTime(PosixFileAttributes attrs)
+        {
+            switch (time) {
+            case "mtime":
+            case "modify":
+                return attrs.lastModifiedTime();
+            case "atime":
+                return attrs.lastAccessTime();
+            case "create":
+                return attrs.creationTime();
+            }
+            throw new RuntimeException("Unknown time value \"" + time + "\"");
+        }
+    }
+
+    @Command(name="lrm", hint="remove local file")
+    public class LrmCommand implements Callable<Serializable>
+    {
+        @Argument
+        String path;
+
+        @Override
+        public Serializable call() throws IOException
+        {
+            Path file = lcwd.resolve(path);
+
+            if (!Files.exists(file)) {
+                throw new IllegalArgumentException("No such file: " + path);
+            }
+
+            if (Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                throw new IllegalArgumentException("Is directory: " + path);
+            }
+
+            Files.delete(file);
+
+            return null;
+        }
+    }
+
+    @Command(name="lrmdir", hint="remove local directory")
+    public class LrmdirCommand implements Callable<Serializable>
+    {
+        @Argument
+        String path;
+
+        @Override
+        public Serializable call() throws IOException
+        {
+            Path file = lcwd.resolve(path);
+
+            if (!Files.exists(file)) {
+                throw new IllegalArgumentException("No such directory: " + path);
+            }
+
+            if (!Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                throw new IllegalArgumentException("Not a directory: " + path);
+            }
+
+            try {
+                Files.delete(file);
+            } catch (DirectoryNotEmptyException e) {
+                throw new IllegalArgumentException("Directory not empty: " + path);
+            }
+
+            return null;
+        }
+    }
+
+    @Command(name="lmkdir", hint="create local directory")
+    public class LmkdirCommand implements Callable<Serializable>
+    {
+        @Argument
+        String path;
+
+        @Override
+        public Serializable call() throws IOException
+        {
+            Path file = lcwd.resolve(path);
+
+            if (Files.exists(file)) {
+                throw new IllegalArgumentException("Already exists: " + path);
+            }
+
+            Path parent = file.getParent();
+
+            if (!Files.exists(parent)) {
+                throw new IllegalArgumentException("Does not exist: " + parent);
+            }
+
+            if (!Files.getFileAttributeView(parent, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                throw new IllegalArgumentException("Not a directory: " + parent);
+            }
+
+            Files.createDirectory(file);
+
+            return null;
+        }
+    }
+
+    @Command(name="lmv", hint="move (rename) local files")
+    public class LmvCommand implements Callable<Serializable>
+    {
+        @Argument(index=0, metaVar="SOURCE")
+        String source;
+
+        @Argument(index=1, metaVar="DEST")
+        String dest;
+
+        @Option(name="n", usage="do not overwrite an existing file")
+        boolean noClobber;
+
+        @Option(name="T", usage="treat DEST as a normal file")
+        boolean destNormal;
+
+        @Override
+        public Serializable call() throws IOException
+        {
+            Path dst = lcwd.resolve(dest);
+            Path src = lcwd.resolve(source);
+
+            if (!destNormal && Files.getFileAttributeView(dst, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                dst = dst.resolve(src.getFileName());
+            }
+
+            CopyOption[] options = (noClobber)
+                    ? new CopyOption[0]
+                    : new CopyOption[] {StandardCopyOption.REPLACE_EXISTING};
+            try {
+                Files.move(src, dst, options);
+            } catch (FileAlreadyExistsException e) {
+                throw new IllegalArgumentException("File already exists: " + dst, e);
+            } catch (DirectoryNotEmptyException e) {
+                throw new IllegalArgumentException("Directory not empty: " + dst, e);
+            }
+            return null;
+        }
+    }
+
 
     @Command(name = "cd", hint = "change current directory")
     public class CdCommand implements Callable<Serializable>
@@ -842,18 +1198,15 @@ public class SrmShell extends ShellApplication
         File remote;
 
         @Argument(index=1, required=false, usage="path of the downloaded file")
-        File local;
+        String local;
 
         @Override
         public String call() throws Exception
         {
             URI surl = lookup(remote);
+            Path target = local == null ? lcwd.resolve(remote.getName()) : lcwd.resolve(local);
 
-            if (local == null) {
-                local = new File(remote.getName());
-            }
-
-            FileTransfer transfer = fs.get(surl, local);
+            FileTransfer transfer = fs.get(surl, target.toFile());
 
             if (transfer == null) {
                 return "No support for download.";
@@ -892,7 +1245,7 @@ public class SrmShell extends ShellApplication
     public class PutCommand implements Callable<String>
     {
         @Argument(index=0, usage="path of the file to upload")
-        File local;
+        String local;
 
         @Argument(index=1, usage = "path to store the file under", required=false)
         File remote;
@@ -900,21 +1253,23 @@ public class SrmShell extends ShellApplication
         @Override
         public String call() throws Exception
         {
-            if (!local.exists()) {
+            File source = lcwd.resolve(local).toFile();
+
+            if (!source.exists()) {
                 return "does not exist: " + local;
             }
 
-            if (!local.isFile()) {
+            if (!source.isFile()) {
                 return "not a file: " + local;
             }
 
-            if (!local.canRead()) {
+            if (!source.canRead()) {
                 return "cannot read: " + local;
             }
 
-            URI surl = (remote != null) ? lookup(remote) : lookup(new File(local.getName()));
+            URI surl = (remote != null) ? lookup(remote) : lookup(new File(source.getName()));
 
-            FileTransfer transfer = fs.put(local, surl);
+            FileTransfer transfer = fs.put(source, surl);
 
             if (transfer == null) {
                 return "No support for upload.";
