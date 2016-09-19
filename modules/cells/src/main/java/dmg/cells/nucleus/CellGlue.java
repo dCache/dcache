@@ -74,7 +74,7 @@ class CellGlue
             @Override
             public Thread newThread(Runnable r)
             {
-                return new Thread(_killerThreadGroup, r);
+                return CellGlue.newThread(_killerThreadGroup, r);
             }
         };
         _killerExecutor = Executors.newCachedThreadPool(killerThreadFactory);
@@ -83,6 +83,36 @@ class CellGlue
                                                           new LinkedBlockingQueue<Runnable>(),
                                                           killerThreadFactory);
         _emergencyKillerExecutor.prestartCoreThread();
+    }
+
+    static Thread newThread(ThreadGroup threadGroup, Runnable r)
+    {
+        Thread thread = new Thread(threadGroup, r);
+        /* By default threads inherit the daemon status and priority from the creating
+         * thread. Thus we reset them.
+         */
+        if (thread.isDaemon()) {
+            thread.setDaemon(false);
+        }
+        if (thread.getPriority() != Thread.NORM_PRIORITY) {
+            thread.setPriority(Thread.NORM_PRIORITY);
+        }
+        return thread;
+    }
+
+    static Thread newThread(ThreadGroup threadGroup, Runnable r, String name)
+    {
+        Thread thread = new Thread(threadGroup, r, name);
+        /* By default threads inherit the daemon status and priority from the creating
+         * thread. Thus we reset them.
+         */
+        if (thread.isDaemon()) {
+            thread.setDaemon(false);
+        }
+        if (thread.getPriority() != Thread.NORM_PRIORITY) {
+            thread.setPriority(Thread.NORM_PRIORITY);
+        }
+        return thread;
     }
 
     ThreadGroup getMasterThreadGroup()
