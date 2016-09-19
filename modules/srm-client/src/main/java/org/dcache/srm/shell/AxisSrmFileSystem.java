@@ -131,7 +131,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
 
     @Nonnull
     @Override
-    public TMetaDataPathDetail stat(URI surl) throws RemoteException, SRMException
+    public TMetaDataPathDetail stat(URI surl) throws RemoteException, SRMException, InterruptedException
     {
         SrmLsResponse response = srm.srmLs(
                 new SrmLsRequest(null, new ArrayOfAnyURI(new URI[]{surl}), null, null, true, false, 0, 0, 1));
@@ -143,12 +143,13 @@ public class AxisSrmFileSystem implements SrmFileSystem
         } else {
             SrmStatusOfLsRequestResponse status;
             do {
+                TimeUnit.SECONDS.sleep(2);
                 status = srm.srmStatusOfLsRequest(
                         new SrmStatusOfLsRequestRequest(null, response.getRequestToken(), 0, 1));
-            } while (response.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_QUEUED ||
-                    response.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_INPROGRESS);
-            TMetaDataPathDetail details = response.getDetails().getPathDetailArray(0);
-            checkBulkSuccess(response.getReturnStatus(), Collections.singletonList(details.getStatus()));
+            } while (status.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_QUEUED ||
+                    status.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_INPROGRESS);
+            TMetaDataPathDetail details = status.getDetails().getPathDetailArray(0);
+            checkBulkSuccess(status.getReturnStatus(), Collections.singletonList(details.getStatus()));
             return details;
         }
     }

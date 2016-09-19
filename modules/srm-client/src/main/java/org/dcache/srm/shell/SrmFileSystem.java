@@ -49,7 +49,7 @@ public interface SrmFileSystem extends AutoCloseable
     void setCredential(X509Credential credential);
 
     @Nonnull
-    TMetaDataPathDetail stat(URI surl) throws RemoteException, SRMException;
+    TMetaDataPathDetail stat(URI surl) throws RemoteException, SRMException, InterruptedException;
 
     @Nonnull
     TPermissionMode checkPermission(URI surl) throws RemoteException, SRMException;

@@ -234,7 +234,7 @@ public class SrmShell extends ShellApplication
         return surls;
     }
 
-    private void cd(String path) throws URI.MalformedURIException, RemoteException, SRMException
+    private void cd(String path) throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
     {
         if (!path.endsWith("/")) {
             path = path + "/";
@@ -348,7 +348,7 @@ public class SrmShell extends ShellApplication
         String path;
 
         @Override
-        public Serializable call() throws URI.MalformedURIException, RemoteException, SRMException
+        public Serializable call() throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
         {
             if (path == null) {
                 pwd = home;
@@ -570,7 +570,7 @@ public class SrmShell extends ShellApplication
         boolean parent;
 
         @Override
-        public String call() throws RemoteException, URI.MalformedURIException, SRMException
+        public String call() throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException
         {
             if (parent) {
                 recursiveMkdir(path);
@@ -580,7 +580,7 @@ public class SrmShell extends ShellApplication
             return null;
         }
 
-        private void recursiveMkdir(File path) throws RemoteException, URI.MalformedURIException, SRMException
+        private void recursiveMkdir(File path) throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException
         {
             URI surl = lookup(path);
             try {
