@@ -32,6 +32,28 @@ public class TStatusCodes
         // Utility class: prevent initialisation
     }
 
+    /**
+     * Check the status of a bulk operation.  If the result is PARTIAL_SUCCESS
+     * or FAILURE then also check the result at the file level.
+     */
+    public static void checkBulkSuccess(TReturnStatus requestStatus,
+            Iterable<TReturnStatus> fileStatuses) throws SRMException
+    {
+        TStatusCode code = requestStatus.getStatusCode();
+        if (code == TStatusCode.SRM_FAILURE || code == TStatusCode.SRM_PARTIAL_SUCCESS) {
+            for (TReturnStatus status : fileStatuses) {
+                checkSuccess(status);
+            }
+        } else {
+            checkSuccess(requestStatus);
+        }
+    }
+
+    public static void checkSuccess(TReturnStatus returnStatus) throws SRMException
+    {
+        checkSuccess(returnStatus, TStatusCode.SRM_SUCCESS);
+    }
+
     public static void checkSuccess(TReturnStatus returnStatus, TStatusCode... success) throws SRMException
     {
         TStatusCode statusCode = returnStatus.getStatusCode();
