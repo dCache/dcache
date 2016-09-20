@@ -2,4 +2,4 @@
 
 @INIT_SCRIPT@
 
-"${SRM_PATH}/lib/srm" -releaseFiles "$@"
+exec "${SRM_PATH}/lib/srm" -releaseFiles "$@"

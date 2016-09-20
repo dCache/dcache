@@ -157,5 +157,5 @@ if [ "$DEBUG" = "true" ]; then
     echo
     echo $cmd
 fi
-CLASSPATH="$SRM_CP" $cmd
+CLASSPATH="$SRM_CP" exec $cmd
 

@@ -2,4 +2,4 @@
 
 @INIT_SCRIPT@
 
-"${SRM_PATH}/lib/srm" -advisoryDelete "$@"
+exec "${SRM_PATH}/lib/srm" -advisoryDelete "$@"

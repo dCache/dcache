@@ -17,7 +17,7 @@ else
     x509_user_proxy=/tmp/x509up_u$(id -u)
 fi
 
-CLASSPATH="$SRM_PATH/lib/*" java -Dlog=${DELEGATION_LOG:-warn} \
+CLASSPATH="$SRM_PATH/lib/*" exec java -Dlog=${DELEGATION_LOG:-warn} \
     -client \
     -Djava.awt.headless=true \
     -DwantLog4jSetup=n \
@@ -25,4 +25,5 @@ CLASSPATH="$SRM_PATH/lib/*" java -Dlog=${DELEGATION_LOG:-warn} \
     -XX:+TieredCompilation \
     -XX:TieredStopAtLevel=0 \
     ${SRM_JAVA_OPTIONS} \
-    org.dcache.srm.DelegationShell -x509_user_proxy="$x509_user_proxy" "$@"
+    org.dcache.srm.DelegationShell \
+    -x509_user_proxy="$x509_user_proxy" "$@"

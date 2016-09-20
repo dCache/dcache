@@ -31,4 +31,4 @@ if [ "$DEBUG" = "true" ]
 then
 	echo $cmd
 fi
-$cmd
+exec $cmd

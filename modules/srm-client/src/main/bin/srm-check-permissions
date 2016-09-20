@@ -2,4 +2,4 @@
 
 @INIT_SCRIPT@
 
-"${SRM_PATH}/lib/srm" -checkPermissions "$@"
+exec "${SRM_PATH}/lib/srm" -checkPermissions "$@"
