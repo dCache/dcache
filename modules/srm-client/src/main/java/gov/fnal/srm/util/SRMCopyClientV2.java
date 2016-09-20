@@ -115,6 +115,7 @@ import org.dcache.srm.request.FileStorageType;
 import org.dcache.srm.request.OverwriteMode;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.util.SrmUrl;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTCopyFileRequest;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
@@ -163,9 +164,11 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     public void connect() throws Exception {
         java.net.URI srmUrl;
         if ( configuration.isPushmode()  ) {
-            srmUrl = from[0];
+            srmUrl = SrmUrl.withDefaultPort(from [0],
+                configuration.getDefaultSrmPortNumber());
         } else {
-            srmUrl = to[0];
+            srmUrl = SrmUrl.withDefaultPort(to [0],
+                configuration.getDefaultSrmPortNumber());
         }
         srmv2 = new SRMClientV2(srmUrl,
                                 getCredential(),

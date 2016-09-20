@@ -667,10 +667,8 @@ public class SRMDispatcher {
                 from_urls                = new java.net.URI[number_of_sources];
                 to_urls                  = new java.net.URI[number_of_sources];
                 for(int i=0;i<number_of_sources;++i) {
-                    from_urls[i] = SrmUrl.createWithDefaultPort(from[i],
-                                                                configuration.getDefaultSrmPortNumber());
-                    to_urls[i]   = SrmUrl.createWithDefaultPort(to[i],
-                                                                configuration.getDefaultSrmPortNumber());
+                    from_urls[i] = new URI(from [i]);
+                    to_urls[i]   = new URI(to[i]);
                 }
             }
             else {
@@ -679,8 +677,7 @@ public class SRMDispatcher {
                 String to             = configuration.getTo();
                 from_urls             = new java.net.URI[number_of_sources];
                 for (int i=0;i<number_of_sources;++i) {
-                    from_urls[i] = SrmUrl.createWithDefaultPort(from[i],
-                                                                configuration.getDefaultSrmPortNumber());
+                    from_urls[i] = new URI(from [i]);
                 }
                 to_urls = new java.net.URI[number_of_sources];
                 if (number_of_sources >1) {
@@ -690,13 +687,11 @@ public class SRMDispatcher {
                         if(lastSlash != -1) {
                             file = file.substring(lastSlash);
                         }
-                        to_urls[i] = SrmUrl.createWithDefaultPort(to + "/" + file,
-                                                                  configuration.getDefaultSrmPortNumber());
+                        to_urls[i] = new URI(to + "/" + file);
                     }
                 }
                 else {
-                    to_urls[0] =  SrmUrl.createWithDefaultPort(to,
-                                                               configuration.getDefaultSrmPortNumber());
+                    to_urls[0] =  new URI(to);
                 }
             }
             int fromType = getUrlType(from_urls[0]);
@@ -830,9 +825,8 @@ public class SRMDispatcher {
         String host = urls[0].getHost();
         int port = urls[0].getPort();
         if(type == SRM_URL  || ((type & SUPPORTED_PROTOCOL_URL) == SUPPORTED_PROTOCOL_URL)) {
-            if( host == null || host.equals("") ||
-                    port < 0) {
-                String error = "illegal source url for multiple sources mode"+urls[0];
+            if( host == null || host.equals("")) {
+                String error = "illegal source url for multiple sources mode "+urls[0];
                 esay(error);
                 throw new IllegalArgumentException(error );
             }
