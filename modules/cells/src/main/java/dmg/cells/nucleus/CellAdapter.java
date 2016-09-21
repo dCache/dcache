@@ -717,7 +717,12 @@ public class CellAdapter
     @Override
     public void prepareStartup(StartEvent event) throws Exception
     {
-        starting();
+        try {
+            EventLogger.startingBegin(getCellName());
+            starting();
+        } finally {
+            EventLogger.startingEnd(getCellName());
+        }
         executeSetupContext();
     }
 
@@ -731,13 +736,23 @@ public class CellAdapter
             subscribe(topic);
         }
 
-        started();
+        try {
+            EventLogger.startedBegin(getCellName());
+            started();
+        } finally {
+            EventLogger.startedEnd(getCellName());
+        }
     }
 
     @Override
     public void prepareRemoval(KillEvent killEvent)
     {
-        stopping();
+        try {
+            EventLogger.stoppingBegin(getCellName());
+            stopping();
+        } finally {
+            EventLogger.stoppingEnd(getCellName());
+        }
     }
 
     @Override
@@ -745,8 +760,10 @@ public class CellAdapter
     {
         _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
         try {
+            EventLogger.stoppedBegin(getCellName());
             stopped();
         } finally {
+            EventLogger.stoppedEnd(getCellName());
             dumpPinboard();
         }
         _log.info("CellAdapter : prepareRemoval : done");

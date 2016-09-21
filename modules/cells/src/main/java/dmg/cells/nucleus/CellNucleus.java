@@ -896,10 +896,20 @@ public class CellNucleus implements ThreadFactory
             _timeoutTask = _timer.scheduleWithFixedDelay(wrapLoggingContext(this::executeMaintenanceTasks),
                                                          20, 20, TimeUnit.SECONDS);
             StartEvent event = new StartEvent(new CellPath(_cellName), 0);
-            _cell.prepareStartup(event);
+            try {
+                EventLogger.prepareSetupBegin(_cell, event);
+                _cell.prepareStartup(event);
+            } finally {
+                EventLogger.prepareSetupEnd(_cell, event);
+            }
             setState(State.POST_STARTUP);
             __cellGlue.publishCell(this);
-            _cell.postStartup(event);
+            try {
+                EventLogger.postStartupBegin(_cell, event);
+                _cell.postStartup(event);
+            } finally {
+                EventLogger.postStartupEnd(_cell, event);
+            }
             setState(State.RUNNING);
         } catch (Throwable e) {
             setState(State.FAILED);
@@ -945,7 +955,13 @@ public class CellNucleus implements ThreadFactory
              */
             if (wasRunning) {
                 try {
-                    Uninterruptibles.getUninterruptibly(_messageExecutor.submit(() -> _cell.prepareRemoval(event)));
+                    Uninterruptibles.getUninterruptibly(_messageExecutor.submit(() -> {
+                        try {
+                            EventLogger.prepareRemovalBegin(_cell, event);
+                            _cell.prepareRemoval(event);
+                        } finally {
+                            EventLogger.prepareRemovalEnd(_cell, event);
+                        }}));
                 } catch (Throwable e) {
                     Thread t = Thread.currentThread();
                     t.getUncaughtExceptionHandler().uncaughtException(t, e);
@@ -972,10 +988,13 @@ public class CellNucleus implements ThreadFactory
             /* Shut down cell.
              */
             try {
+                EventLogger.postRemovalBegin(_cell, event);
                 _cell.postRemoval(event);
             } catch (Throwable e) {
                 Thread t = Thread.currentThread();
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
+            } finally {
+                EventLogger.postRemovalEnd(_cell, event);
             }
 
             /* Shut down remaining threads.

@@ -378,7 +378,7 @@ class CellGlue
         /* Post the obituary.
          */
         CellPath sourceAddr = new CellPath(source.getCellName(), getCellDomainName());
-        KillEvent killEvent = new KillEvent(sourceAddr, to);
+        KillEvent killEvent = new KillEvent(cellToKill, sourceAddr, to);
         sendToAll(new CellEvent(cellToKill, CellEvent.CELL_DIED_EVENT));
 
         /* Put out a contract.

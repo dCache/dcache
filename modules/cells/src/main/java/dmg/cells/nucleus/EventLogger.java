@@ -22,7 +22,10 @@ public class EventLogger
         LoggerFactory.getLogger("org.dcache.events.cells.send");
     private static final Logger queue =
         LoggerFactory.getLogger("org.dcache.events.cells.queue");
+    private static final Logger lifecycle =
+        LoggerFactory.getLogger("org.dcache.events.cells.lifecycle");
 
+    /* Message events */
     private static final String DELIVER_BEGIN =
         "org.dcache.cells.deliver.begin";
     private static final String DELIVER_END =
@@ -35,6 +38,206 @@ public class EventLogger
         "org.dcache.cells.queue.begin";
     private static final String QUEUE_END =
         "org.dcache.cells.queue.end";
+
+    /* Cell lifecycle events */
+    private static final String PREPARE_SETUP_BEGIN =
+        "org.dcache.cells.lifecycle.prepare-setup.begin";
+    private static final String PREPARE_SETUP_END =
+        "org.dcache.cells.lifecycle.prepare-setup.end";
+    private static final String POST_SETUP_BEGIN =
+        "org.dcache.cells.lifecycle.post-setup.begin";
+    private static final String POST_SETUP_END =
+        "org.dcache.cells.lifecycle.post-setup.end";
+    private static final String PREPARE_REMOVAL_BEGIN =
+        "org.dcache.cells.lifecycle.prepare-removal.begin";
+    private static final String PREPARE_REMOVAL_END =
+        "org.dcache.cells.lifecycle.prepare-removal.end";
+    private static final String POST_REMOVAL_BEGIN =
+        "org.dcache.cells.lifecycle.post-removal.begin";
+    private static final String POST_REMOVAL_END =
+        "org.dcache.cells.lifecycle.post-removal.end";
+
+    /* AbstractCell lifecycle events */
+    private static final String STARTING_BEGIN =
+        "org.dcache.cells.lifecycle.starting.begin";
+    private static final String STARTING_END =
+        "org.dcache.cells.lifecycle.starting.end";
+    private static final String STARTED_BEGIN =
+        "org.dcache.cells.lifecycle.started.begin";
+    private static final String STARTED_END =
+        "org.dcache.cells.lifecycle.started.end";
+    private static final String STOPPING_BEGIN =
+        "org.dcache.cells.lifecycle.stopping.begin";
+    private static final String STOPPING_END =
+        "org.dcache.cells.lifecycle.stopping.end";
+    private static final String STOPPED_BEGIN =
+        "org.dcache.cells.lifecycle.stopped.begin";
+    private static final String STOPPED_END =
+        "org.dcache.cells.lifecycle.stopped.end";
+
+    public static void prepareSetupBegin(Cell cell, StartEvent event)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(PREPARE_SETUP_BEGIN);
+            log.add("cell", ((CellPath)event.getSource()).getCurrent().getCellName());
+            log.add("class", cell.getClass().getCanonicalName());
+            log.add("timeout", event.getTimeout());
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void prepareSetupEnd(Cell cell, StartEvent event)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(PREPARE_SETUP_END);
+            log.add("cell", ((CellPath)event.getSource()).getCurrent().getCellName());
+            log.add("class", cell.getClass().getCanonicalName());
+            log.add("timeout", event.getTimeout());
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void postStartupBegin(Cell cell, StartEvent event)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(POST_SETUP_BEGIN);
+            log.add("cell", ((CellPath)event.getSource()).getCurrent().getCellName());
+            log.add("class", cell.getClass().getCanonicalName());
+            log.add("timeout", event.getTimeout());
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void postStartupEnd(Cell cell, StartEvent event)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(POST_SETUP_END);
+            log.add("cell", ((CellPath)event.getSource()).getCurrent().getCellName());
+            log.add("class", cell.getClass().getCanonicalName());
+            log.add("timeout", event.getTimeout());
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void prepareRemovalBegin(Cell cell, KillEvent event)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(PREPARE_REMOVAL_BEGIN);
+            log.add("cell", event.getTarget());
+            log.add("class", cell.getClass().getCanonicalName());
+            log.add("killer", ((CellPath)event.getSource()).getCurrent().getCellName());
+            log.add("timeout", event.getTimeout());
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void prepareRemovalEnd(Cell cell, KillEvent event)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(PREPARE_REMOVAL_END);
+            log.add("cell", event.getTarget());
+            log.add("class", cell.getClass().getCanonicalName());
+            log.add("killer", ((CellPath)event.getSource()).getCurrent().getCellName());
+            log.add("timeout", event.getTimeout());
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void postRemovalBegin(Cell cell, KillEvent event)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(POST_REMOVAL_BEGIN);
+            log.add("cell", event.getTarget());
+            log.add("class", cell.getClass().getCanonicalName());
+            log.add("killer", ((CellPath)event.getSource()).getCurrent().getCellName());
+            log.add("timeout", event.getTimeout());
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void postRemovalEnd(Cell cell, KillEvent event)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(POST_REMOVAL_END);
+            log.add("cell", event.getTarget());
+            log.add("class", cell.getClass().getCanonicalName());
+            log.add("killer", ((CellPath)event.getSource()).getCurrent().getCellName());
+            log.add("timeout", event.getTimeout());
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void startingBegin(String cell)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(STARTING_BEGIN);
+            log.add("cell", cell);
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void startingEnd(String cell)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(STARTING_END);
+            log.add("cell", cell);
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void startedBegin(String cell)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(STARTED_BEGIN);
+            log.add("cell", cell);
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void startedEnd(String cell)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(STARTED_END);
+            log.add("cell", cell);
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void stoppingBegin(String cell)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(STOPPING_BEGIN);
+            log.add("cell", cell);
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void stoppingEnd(String cell)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(STOPPING_END);
+            log.add("cell", cell);
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void stoppedBegin(String cell)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(STOPPED_BEGIN);
+            log.add("cell", cell);
+            lifecycle.info(log.toString());
+        }
+    }
+
+    public static void stoppedEnd(String cell)
+    {
+        if (lifecycle.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(STOPPED_END);
+            log.add("cell", cell);
+            lifecycle.info(log.toString());
+        }
+    }
 
     private static String getMessage(CellMessage envelope)
     {
