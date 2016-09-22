@@ -2634,6 +2634,12 @@ public final class Storage
                 for (List<String> hosts: map.values()) {
                     host = hosts.get(0);
                 }
+
+                // Remove trailing dot: it can harm
+                // at least X.509 CN/subjectAltName:DNS comparisons
+                if (host.endsWith(".")) {
+                    host = host.substring(0, host.length() - 1);
+                }
                 return host;
             } catch (NamingException e) {
                 throw new UnknownHostException(e.getMessage());
