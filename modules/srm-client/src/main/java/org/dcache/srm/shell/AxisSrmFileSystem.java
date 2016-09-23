@@ -260,7 +260,8 @@ public class AxisSrmFileSystem implements SrmFileSystem
                 throw new SRMInvalidPathException("Not a directory");
             }
             offset += count;
-            TMetaDataPathDetail[] pathDetailArray = detail.getArrayOfSubPaths().getPathDetailArray();
+            TMetaDataPathDetail[] pathDetailArray = detail.getArrayOfSubPaths() == null
+                    ? null : detail.getArrayOfSubPaths().getPathDetailArray();
             if (pathDetailArray != null) {
                 list = concat(list, pathDetailArray, TMetaDataPathDetail.class);
             }
