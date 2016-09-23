@@ -451,26 +451,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
             }
         }
 
-        /*
-         * generate placeholder extensions from principals
-         * note that the set is ordered so the extensions extracted from
-         * the credentials are given precedence
-         */
-        if (extensions.isEmpty()) {
-            /* REVISIT: This only gets executed if the public credentials do not contain
-             * a chert chain. Shouldn't this plugin fail in such cases? At least the
-             * OGF interoperability profile for XACML doesn't indicate that none DN values
-             * are allowed for the subject x509 id attribute.
-             */
-            for (Principal principal: identifiedPrincipals) {
-                VomsExtensions vomsExtensions =
-                        new VomsExtensions(principal.getName(), null, null, null, null, null, false);
-                logger.debug(" {} authenticate, adding voms extensions = {}",
-                            this, vomsExtensions);
-                extensions.add(vomsExtensions);
-            }
-        }
-
         logger.debug("VOMS extensions found: {}", extensions);
 
         checkAuthentication(!extensions.isEmpty(), "no subjects found to map");
