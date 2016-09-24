@@ -164,6 +164,7 @@ public class NfsTransferService extends AbstractCellComponent
 
     public void shutdown() throws IOException {
         _nfsIO.shutdown();
+        _nfsIO.getNFSServer().getStateHandler().shutdown();
     }
 
     @Override
