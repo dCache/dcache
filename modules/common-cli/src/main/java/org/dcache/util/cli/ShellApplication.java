@@ -13,12 +13,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
+import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Command;
@@ -160,6 +163,13 @@ public abstract class ShellApplication implements Closeable
             out = sb.toString();
         } catch (CommandExitException e) {
             throw e;
+        } catch (CommandPanicException e) {
+            Ansi sb = Ansi.ansi();
+            sb.fg(RED).a("Bug detected! ").reset().a("Please email the following details to <support@dcache.org>:\n");
+            Throwable t = e.getCause() == null ? e : e.getCause();
+            StringWriter sw = new StringWriter();
+            t.printStackTrace(new PrintWriter(sw));
+            out = sb.a(sw.toString()).toString();
         } catch (Exception e) {
             out = Ansi.ansi().fg(RED).a(e.getMessage()).reset().toString();
         }
