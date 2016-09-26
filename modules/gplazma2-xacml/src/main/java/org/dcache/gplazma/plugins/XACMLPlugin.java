@@ -358,22 +358,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             }
         }
 
-        /*
-         * generate placeholder extensions from principals
-         * note that the set is ordered so the extensions extracted from
-         * the credentials are given precedence
-         */
-        if (extensions.isEmpty()) {
-            for (Principal principal: identifiedPrincipals) {
-                VomsExtensions vomsExtensions
-                    = new VomsExtensions(principal.getName(), null, null,
-                                       null, null, null, false);
-                logger.debug(" {} authenticate, adding voms extensions = {}",
-                            this, vomsExtensions);
-                extensions.add(vomsExtensions);
-            }
-        }
-
         logger.debug("VOMS extensions found: {}", extensions);
 
         checkAuthentication(!extensions.isEmpty(), "no subjects found to map");
