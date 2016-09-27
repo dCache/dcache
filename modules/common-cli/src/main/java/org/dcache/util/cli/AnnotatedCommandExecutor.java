@@ -17,6 +17,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,13 +31,16 @@ import dmg.util.CommandThrowableException;
 import dmg.util.command.AnnotatedCommandHelpPrinter;
 import dmg.util.command.AnsiHelpPrinter;
 import dmg.util.command.Argument;
+import dmg.util.command.GlobExpander;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
+import dmg.util.command.ExpandWith;
 import dmg.util.command.HelpFormat;
 import dmg.util.command.Option;
 import dmg.util.command.PlainHelpPrinter;
 
 import org.dcache.util.Args;
+import org.dcache.util.Glob;
 import org.dcache.util.ReflectionUtils;
 
 import static com.google.common.collect.Iterables.*;
@@ -196,13 +201,17 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         }
     }
 
-    private static Handler createFieldHandler(Field field, Argument argument)
+    private Handler createFieldHandler(Field field, Argument argument)
     {
         Class<?> type = field.getType();
         if (type.isArray()) {
             Function<String,Object> typeConverter =
                     createTypeConverter(type.getComponentType());
-            return new MultiValuedArgumentHandler(field, typeConverter, argument);
+            if (field.getAnnotation(ExpandWith.class) == null) {
+                return new MultiValuedArgumentHandler(field, typeConverter, argument);
+            } else {
+                return new ExpandingMultiValuedArgumentHandler(field, typeConverter, argument);
+            }
         } else {
             Function<String,Object> typeConverter = createTypeConverter(type);
             return new ArgumentHandler(field, typeConverter, argument);
@@ -221,7 +230,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         }
     }
 
-    private static List<Handler> createFieldHandlers(Command command, Class<? extends Callable<?>> clazz)
+    private List<Handler> createFieldHandlers(Command command, Class<? extends Callable<?>> clazz)
     {
         Set<String> optionNames = new HashSet<>();
 
@@ -368,6 +377,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
     private abstract static class FieldHandler implements Handler
     {
         protected final Field _field;
+        protected Object _command;
 
         public FieldHandler(Field field)
         {
@@ -378,12 +388,13 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         protected abstract Object getValue(Args args);
 
         @Override
-        public void apply(Object object, Args args)
+        public void apply(Object command, Args args)
                 throws IllegalAccessException
         {
+            _command = command;
             Object value = getValue(args);
             if (value != null) {
-                _field.set(object, value);
+                _field.set(command, value);
             }
         }
     }
@@ -432,8 +443,8 @@ public class AnnotatedCommandExecutor implements CommandExecutor
      */
     private static class MultiValuedArgumentHandler extends FieldHandler
     {
-        private final Function<String,Object> _typeConverter;
-        private final Argument _argument;
+        protected final Function<String,Object> _typeConverter;
+        protected final Argument _argument;
 
         public MultiValuedArgumentHandler(Field field,
                                           Function<String, Object> typeConverter,
@@ -461,17 +472,125 @@ public class AnnotatedCommandExecutor implements CommandExecutor
             int index = _argument.index();
 
             if (index < args.argc()) {
-                Class<?> type = _field.getType().getComponentType();
-                Object values = Array.newInstance(type, args.argc() - index);
-                for (int i = index; i < args.argc(); i++) {
-                    Object value = _typeConverter.apply(args.argv(i));
-                    Array.set(values, i - index, value);
-                }
-                return values;
+                return buildArray(args);
             } else if (_argument.required()) {
                 throw new IllegalArgumentException("Argument " + (index + 1) + " is required");
             }
             return null;
+        }
+
+        protected Object buildArray(Args args)
+        {
+            int index = _argument.index();
+
+            Class<?> type = _field.getType().getComponentType();
+            Object values = Array.newInstance(type, args.argc() - index);
+            for (int i = index; i < args.argc(); i++) {
+                Object value = _typeConverter.apply(args.argv(i));
+                Array.set(values, i - index, value);
+            }
+            return values;
+        }
+    }
+
+    /**
+     * Map arguments to an array after expanding any that are Globs.
+     */
+    private class ExpandingMultiValuedArgumentHandler extends MultiValuedArgumentHandler
+    {
+        private final ExpandWith _expand;
+
+        public ExpandingMultiValuedArgumentHandler(Field field,
+                                          Function<String, Object> typeConverter,
+                                          Argument argument)
+        {
+            super(field, typeConverter, argument);
+            _expand = field.getAnnotation(ExpandWith.class);
+        }
+
+        private GlobExpander<String> createNonstaticExpander(Object parent)
+                throws InstantiationException,
+                IllegalAccessException, IllegalArgumentException,
+                InvocationTargetException
+        {
+            try {
+                Constructor<? extends GlobExpander<String>> constructor =
+                        _expand.value().getDeclaredConstructor(parent.getClass());
+                constructor.setAccessible(true);
+                return constructor.newInstance(parent);
+            } catch (NoSuchMethodException e) {
+                return null;
+            }
+        }
+
+        private GlobExpander<String> createStaticExpander()
+                throws NoSuchMethodException, InstantiationException,
+                IllegalAccessException, IllegalArgumentException,
+                InvocationTargetException
+        {
+            Constructor<? extends GlobExpander<String>> constructor =
+                    _expand.value().getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
+        }
+
+        private GlobExpander<String> createExpander()
+        {
+            GlobExpander<String> expander;
+            try {
+                expander = createNonstaticExpander(_command); // as subclass of @Command class
+                if (expander == null) {
+                    expander = createNonstaticExpander(_parent); // as sibling of @Command class
+                }
+                if (expander == null) {
+                    expander = createStaticExpander(); // as static method
+                }
+                if (expander == null) {
+                    throw new IllegalArgumentException("Cannot find constructor for " + _expand.value());
+                }
+            } catch (InstantiationException | NoSuchMethodException | IllegalAccessException |
+                    IllegalArgumentException | InvocationTargetException e) {
+                throw new RuntimeException("Unable to build GlobExpander: " +
+                        e.toString(), e);
+            }
+            return expander;
+        }
+
+        private Object asArrayForField(List<String> values)
+        {
+            Class<?> type = _field.getType().getComponentType();
+            Object array = Array.newInstance(type, values.size());
+            for (int i = 0; i < values.size(); i++) {
+                Array.set(array, i, _typeConverter.apply(values.get(i)));
+            }
+            return array;
+        }
+
+        @Override
+        protected Object buildArray(Args args)
+        {
+            GlobExpander<String> expander = null;
+
+            List<String> values = new ArrayList<>();
+            for (int i = _argument.index(); i < args.argc(); i++) {
+                String argument = args.argv(i);
+
+                if (Glob.isGlob(argument)) {
+                    if (expander == null) {
+                        expander = createExpander();
+                    }
+                    List<String> expansion = expander.expand(new Glob(argument));
+                    if (expansion.isEmpty()) {
+                        values.add(argument);
+                    } else {
+                        values.addAll(expansion);
+                    }
+                } else {
+                    values.add(argument);
+                }
+            }
+
+            return asArrayForField(values);
         }
     }
 

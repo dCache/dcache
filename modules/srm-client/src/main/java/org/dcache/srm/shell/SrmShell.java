@@ -21,6 +21,10 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
@@ -59,15 +63,19 @@ import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 import dmg.util.command.Argument;
+import dmg.util.command.ExpandWith;
+import dmg.util.command.GlobExpander;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
 
@@ -464,9 +472,90 @@ public class SrmShell extends ShellApplication
         }
     }
 
+    private abstract class AbstractFilesystemExpander implements GlobExpander<String>
+    {
+        abstract protected void expandInto(List<File> matches, File directory, String glob) throws Exception;
+
+        protected List<String> expand(Glob argument, File cwd)
+        {
+            String[] elements = argument.toString().split("/");
+            boolean isAbsolute = elements.length > 0 && elements [0].isEmpty();
+
+            List<File> expansions = Lists.newArrayList(isAbsolute ? new File("/") : cwd);
+
+            try {
+                for (String element : elements) {
+                    if (element.isEmpty() || element.equals(".")) {
+                        continue;
+                    }
+
+                    List<File> newExpansions = new ArrayList<>();
+
+                    if (element.equals("..")) {
+                        for (File expansion : expansions) {
+                            File parent = expansion.getParentFile();
+                            if (parent != null) {
+                                newExpansions.add(parent);
+                            }
+                        }
+                    } else {
+                        for (File expansion : expansions) {
+                            expandInto(newExpansions, expansion, element);
+                        }
+                    }
+
+                    expansions = newExpansions;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Collections.emptyList();
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                try {
+                    console.println("Failed to expand argument: " + e);
+                } catch (IOException ignored) {
+                    System.out.println("Failed to expand argument: " + e);
+                }
+                return Collections.emptyList();
+            }
+
+            List<String> results = new ArrayList<>(expansions.size());
+            for (File expansion : expansions) {
+                if (isAbsolute) {
+                    results.add(expansion.toString());
+                } else {
+                    results.add(cwd.toPath().relativize(expansion.toPath()).toString());
+                }
+            }
+
+            return results;
+        }
+    }
+
     /*
      * Commands for local filesystem manipulation
      */
+
+    private class LocalFilesystemExpander extends AbstractFilesystemExpander
+    {
+        @Override
+        protected void expandInto(List<File> matches, File directory, String glob) throws IOException
+        {
+            // REVISIT: this uses Java's built-in support for glob filters, which
+            // is a superset of dCache's Glob class.
+            try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory.toPath(), glob)) {
+                for (Path path : directoryStream) {
+                    matches.add(path.toFile());
+                }
+            }
+        }
+
+        @Override
+        public List<String> expand(Glob argument)
+        {
+            return expand(argument, lcwd.toFile());
+        }
+    }
 
     @Command(name="lpwd", hint = "print local working directory",
                 description = "Print the current working directory.  This "
@@ -639,56 +728,72 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lrm", hint="remove local file",
-                    description = "Remove a file from the local filesystem.")
+    @Command(name="lrm", hint="remove local files",
+                    description = "Remove one or more files from the local "
+                            + "filesystem.")
     public class LrmCommand implements Callable<Serializable>
     {
         @Argument
-        String path;
+        @ExpandWith(LocalFilesystemExpander.class)
+        String[] paths;
 
         @Override
         public Serializable call() throws IOException
         {
-            Path file = lcwd.resolve(path);
+            for (String path : paths) {
+                Path file = lcwd.resolve(path);
 
-            if (!Files.exists(file)) {
-                throw new IllegalArgumentException("No such file: " + path);
+                if (!Files.exists(file)) {
+                    console.println("No such file: " + path);
+                    continue;
+                }
+
+                if (Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                    console.println("Is directory: " + path);
+                    continue;
+                }
+
+                try {
+                    Files.delete(file);
+                } catch (IOException e) {
+                    console.println(e.toString() + ": " + path);
+                }
             }
-
-            if (Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes().isDirectory()) {
-                throw new IllegalArgumentException("Is directory: " + path);
-            }
-
-            Files.delete(file);
 
             return null;
         }
     }
 
     @Command(name="lrmdir", hint="remove local directory",
-                    description = "Remove a directory if it is empty.")
+                    description = "Remove one or more directories if they are "
+                            + "empty.")
     public class LrmdirCommand implements Callable<Serializable>
     {
         @Argument
-        String path;
+        @ExpandWith(LocalFilesystemExpander.class)
+        String[] paths;
 
         @Override
         public Serializable call() throws IOException
         {
-            Path file = lcwd.resolve(path);
+            for (String path : paths) {
+                Path file = lcwd.resolve(path);
 
-            if (!Files.exists(file)) {
-                throw new IllegalArgumentException("No such directory: " + path);
-            }
+                if (!Files.exists(file)) {
+                    console.println("No such directory: " + path);
+                }
 
-            if (!Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes().isDirectory()) {
-                throw new IllegalArgumentException("Not a directory: " + path);
-            }
+                if (!Files.getFileAttributeView(file, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                    console.println("Not a directory: " + path);
+                }
 
-            try {
-                Files.delete(file);
-            } catch (DirectoryNotEmptyException e) {
-                throw new IllegalArgumentException("Directory not empty: " + path);
+                try {
+                    Files.delete(file);
+                } catch (DirectoryNotEmptyException e) {
+                    console.println("Directory not empty: " + path);
+                } catch (IOException e) {
+                    console.println(e.toString() + ": " + path);
+                }
             }
 
             return null;
@@ -696,34 +801,40 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name="lmkdir", hint="create local directory",
-            description = "Create a new subdirectory.  The parent directory "
-                    + "must already exist")
+            description = "Create one or more new subdirectories.  The parent "
+                    + "directories must already exist.")
     public class LmkdirCommand implements Callable<Serializable>
     {
         @Argument
-        String path;
+        @ExpandWith(LocalFilesystemExpander.class)
+        String[] paths;
 
         @Override
         public Serializable call() throws IOException
         {
-            Path file = lcwd.resolve(path);
+            for (String path : paths) {
+                Path file = lcwd.resolve(path);
 
-            if (Files.exists(file)) {
-                throw new IllegalArgumentException("Already exists: " + path);
+                if (Files.exists(file)) {
+                    console.println("Already exists: " + path);
+                }
+
+                Path parent = file.getParent();
+
+                if (!Files.exists(parent)) {
+                    console.println("Does not exist: " + parent);
+                }
+
+                if (!Files.getFileAttributeView(parent, PosixFileAttributeView.class).readAttributes().isDirectory()) {
+                    console.println("Not a directory: " + parent);
+                }
+
+                try {
+                    Files.createDirectory(file);
+                } catch (IOException e) {
+                    console.println(e.toString() + ": " + file);
+                }
             }
-
-            Path parent = file.getParent();
-
-            if (!Files.exists(parent)) {
-                throw new IllegalArgumentException("Does not exist: " + parent);
-            }
-
-            if (!Files.getFileAttributeView(parent, PosixFileAttributeView.class).readAttributes().isDirectory()) {
-                throw new IllegalArgumentException("Not a directory: " + parent);
-            }
-
-            Files.createDirectory(file);
-
             return null;
         }
     }
@@ -774,6 +885,60 @@ public class SrmShell extends ShellApplication
         }
     }
 
+    /*
+     * SRM commands
+     */
+
+    /**
+     * Expand Glob based on SRM filesystem.  Directory listings are cached
+     * for the duration of the command.
+     */
+    private class SrmFilesystemExpander extends AbstractFilesystemExpander
+    {
+        private final LoadingCache<URI, TMetaDataPathDetail[]> lsCache = CacheBuilder.newBuilder()
+                .build(new CacheLoader<URI, TMetaDataPathDetail[]>() {
+                    @Override
+                    public TMetaDataPathDetail[] load(URI key) throws Exception
+                    {
+                        return fs.list(key, false);
+                    }
+                });
+
+        @Override
+        protected void expandInto(List<File> matches, File directory, String glob)
+                throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
+        {
+            Pattern pattern = Glob.parseGlobToPattern(glob);
+
+            URI path = new URI(pwd);
+            path.setPath(directory.getPath());
+
+            TMetaDataPathDetail[] listing;
+            try {
+                listing = lsCache.get(path);
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                Throwables.propagateIfInstanceOf(cause, URI.MalformedURIException.class);
+                Throwables.propagateIfInstanceOf(cause, RemoteException.class);
+                Throwables.propagateIfInstanceOf(cause, SRMException.class);
+                Throwables.propagateIfInstanceOf(cause, InterruptedException.class);
+                throw Throwables.propagate(cause);
+            }
+
+            for (TMetaDataPathDetail detail : listing) {
+                File item = new File(detail.getPath());
+                if (pattern.matcher(item.getName()).matches()) {
+                    matches.add(item);
+                }
+            }
+        }
+
+        @Override
+        public List<String> expand(Glob argument)
+        {
+            return expand(argument, new File(pwd.getPath()));
+        }
+    }
 
     @Command(name = "cd", hint = "change current directory",
                     description = "Modify the current working directory within "
@@ -1008,13 +1173,14 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "mkdir", hint = "make directory", description = "Create "
-                    + "a subdirectory on the server.  By default, the parent "
-                    + "directory must already exist.  If the -p option is "
-                    + "specified then missing parent directories are created "
-                    + "as necessary.")
+                    + "one or more subdirectories on the server.  By default, "
+                    + "the parent directories must already exist.  If the -p "
+                    + "option is specified then missing parent directories "
+                    + "are created as necessary.")
     public class MkdirCommand implements Callable<String>
     {
         @Argument
+        @ExpandWith(SrmFilesystemExpander.class)
         File path;
 
         @Option(name = "p", usage = "do not fail if the directory already "
@@ -1052,15 +1218,16 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "rmdir", hint = "remove empty directories",
-                    description = "Remove a directory that is empty.  If "
-                            + "the -r option is specified then the removal is "
-                            + "recursive, so that the command will succeed if "
-                            + "the target directory and any subdirectories "
-                            + "contain no files.")
+                    description = "Remove one or more directories that are "
+                            + "empty.  If the -r option is specified then the "
+                            + "removal is recursive, so that the command will "
+                            + "succeed if the target directory and any "
+                            + "subdirectories contain no files.")
     public class RmdirCommand implements Callable<String>
     {
         @Argument
-        File path;
+        @ExpandWith(SrmFilesystemExpander.class)
+        File[] paths;
 
         @Option(name = "r", usage = "delete recursively")
         boolean recursive;
@@ -1068,7 +1235,17 @@ public class SrmShell extends ShellApplication
         @Override
         public String call() throws RemoteException, URI.MalformedURIException, SRMException
         {
-            fs.rmdir(lookup(path), recursive);
+            for (File path : paths) {
+                try {
+                    fs.rmdir(lookup(path), recursive);
+                } catch (RemoteException | SRMException e) {
+                    try {
+                        console.println(e.toString() + ": " + path);
+                    } catch (IOException ignored) {
+                        // ignored
+                    }
+                }
+            }
             return null;
         }
     }
@@ -1079,6 +1256,7 @@ public class SrmShell extends ShellApplication
     public class RmCommand implements Callable<String>
     {
         @Argument
+        @ExpandWith(SrmFilesystemExpander.class)
         File[] paths;
 
         @Override
@@ -1108,7 +1286,7 @@ public class SrmShell extends ShellApplication
             @Override
             public Object apply(TSURLReturnStatus status)
             {
-                return status.getSurl() + ":\n\t" + status.getStatus().getExplanation();
+                return status.getSurl().getPath() + ": " + status.getStatus().getExplanation();
             }
         }
     }
@@ -1153,10 +1331,11 @@ public class SrmShell extends ShellApplication
 
     @Command(name = "get permission", hint = "get permissions on SURLs",
                     description = "Query detailed information about the "
-                            + "permissions of a file or directory.")
+                            + "permissions of files and directories.")
     public class GetPermissionCommand implements Callable<String>
     {
         @Argument
+        @ExpandWith(SrmFilesystemExpander.class)
         File[] paths;
 
         @Override
@@ -1205,13 +1384,14 @@ public class SrmShell extends ShellApplication
     }
 
     @Command(name = "check permission", hint = "check client permissions on SURLs",
-                    description = "Check the (effective) permissions on a file "
-                            + "or directory for the current user.  The result "
+                    description = "Check the (effective) permissions on files "
+                            + "and directories for the current user.  The result "
                             + "is a list of operations that this user is "
                             + "allowed to do.")
     public class CheckPermissionCommand implements Callable<String>
     {
         @Argument
+        @ExpandWith(SrmFilesystemExpander.class)
         File[] paths;
 
         @Override
