@@ -71,7 +71,7 @@
         <version.wicket>7.4.0</version.wicket>
         <version.xrootd4j>3.2.0</version.xrootd4j>
         <version.jersey>2.22.2</version.jersey>
-        <version.dcache-view>1.0.0</version.dcache-view>
+        <version.dcache-view>1.0.2</version.dcache-view>
         <version.netty>4.1.5.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
 
