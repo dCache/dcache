@@ -170,16 +170,24 @@ public class AxisSrmFileSystem implements SrmFileSystem
         checkArgument(surls.length > 0);
         SrmCheckPermissionResponse response = srm.srmCheckPermission(
                 new SrmCheckPermissionRequest(new ArrayOfAnyURI(surls), null, null));
-        TSURLPermissionReturn[] permissionArray = response.getArrayOfPermissions().getSurlPermissionArray();
+
+        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS, TStatusCode.SRM_PARTIAL_SUCCESS,
+                     TStatusCode.SRM_FAILURE);
+
+        TSURLPermissionReturn[] permissionArray = response.getArrayOfPermissions() == null
+                ? null : response.getArrayOfPermissions().getSurlPermissionArray();
         if (permissionArray == null || permissionArray.length == 0) {
             checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS, TStatusCode.SRM_PARTIAL_SUCCESS);
             throw new SrmProtocolException("Server reply lacks permission array.");
         }
 
-        checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS, TStatusCode.SRM_PARTIAL_SUCCESS,
-                     TStatusCode.SRM_FAILURE);
+        if (permissionArray.length != surls.length) {
+            throw new SrmProtocolException("Server returns permissionArray " +
+                    "with wrong size (" + permissionArray.length+" != " +
+                    surls.length + ")");
+        }
 
-        return response.getArrayOfPermissions().getSurlPermissionArray();
+        return permissionArray;
     }
 
     @Nonnull
