@@ -62,10 +62,12 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                 public boolean apply(Field field)
                 {
                     Argument argument = field.getAnnotation(Argument.class);
+                    ExpandWith expandWith = field.getAnnotation(ExpandWith.class);
+
                     /* Arguments that are not required might have a default value and should thus
                      * be included in the help output.
                      */
-                    return argument != null && (!argument.usage().isEmpty() || !argument.required());
+                    return argument != null && (expandWith != null || !argument.usage().isEmpty() || !argument.required());
                 }
             };
 
@@ -287,6 +289,9 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                 String help = argument.usage();
                 if (!argument.required()) {
                     help = Joiner.on(' ').join(help, getDefaultDescription(instance, field));
+                }
+                if (field.getAnnotation(ExpandWith.class) != null) {
+                    help = Joiner.on(' ').join(help, "Glob patterns will be expanded.");
                 }
                 if (!help.isEmpty()) {
                     writer.append(Strings.wrap("              ", help, WIDTH));
