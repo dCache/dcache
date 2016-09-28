@@ -282,7 +282,8 @@ public class BillingParserBuilder
         while (matcher.find()) {
             String expression = matcher.group(1);
             if (!isIf(expression) && !isElse(expression) && !isEndIf(expression)) {
-                attributes.add(expression);
+                int pos = expression.indexOf(';');
+                attributes.add(pos > -1 ? expression.substring(0, pos) : expression);
             }
         }
         return attributes;
