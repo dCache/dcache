@@ -2,11 +2,13 @@ package diskCacheV111.cells;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -236,7 +238,9 @@ public class TransferObserverV1
                 addMoverInfo(args, false);
             }
 
-            builder.append(new Args(args)).append('\n');
+            Joiner.on(" ").appendTo(builder, args);
+
+            builder.append('\n');
         }
 
         String timeWaiting(boolean display) {
