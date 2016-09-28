@@ -1,5 +1,6 @@
 package diskCacheV111.cells;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import org.slf4j.Logger;
@@ -540,7 +541,9 @@ public class TransferObserverV1
                     args.add(String.valueOf(now - mover.getStartTime()));
                 }
             }
-            sb.append(new Args(args)).append('\n');
+            
+            Joiner.on(" ").appendTo(sb, args);
+            sb.append('\n');
         }
         return sb.toString();
     }
