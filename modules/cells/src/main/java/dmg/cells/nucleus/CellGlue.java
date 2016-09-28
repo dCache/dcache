@@ -7,6 +7,8 @@ import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,7 +51,7 @@ class CellGlue
     private final CellAddressCore _domainAddress;
     private final CuratorFramework _curatorFramework;
 
-    CellGlue(String cellDomainName, CuratorFramework curatorFramework)
+    CellGlue(String cellDomainName, @Nullable CuratorFramework curatorFramework)
     {
         String cellDomainNameLocal = cellDomainName;
 
@@ -587,6 +589,7 @@ class CellGlue
         return _cellDomainName;
     }
 
+    @Nullable
     public CuratorFramework getCuratorFramework()
     {
         return _curatorFramework;
@@ -594,7 +597,9 @@ class CellGlue
 
     public void shutdown()
     {
-        _curatorFramework.close();
+        if (_curatorFramework != null) {
+            _curatorFramework.close();
+        }
         _killerExecutor.shutdown();
     }
 }
