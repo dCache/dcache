@@ -776,10 +776,9 @@ public class CellShell extends CommandInterpreter
                    Serializable response = "";
                    try {
                        try {
-                           _nucleus.kill(cellName);
-                           _nucleus.join(cellName, 0);
-                       } catch (IllegalArgumentException e) {
-                           response = e;
+                           _nucleus.kill(cellName).get();
+                       } catch (ExecutionException e) {
+                           response = e.getCause();
                        }
 
                        future.reply(response);

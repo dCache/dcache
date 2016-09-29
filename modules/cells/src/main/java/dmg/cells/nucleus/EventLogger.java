@@ -126,7 +126,6 @@ public class EventLogger
             log.add("cell", event.getTarget());
             log.add("class", cell.getClass().getCanonicalName());
             log.add("killer", ((CellPath)event.getSource()).getCurrent().getCellName());
-            log.add("timeout", event.getTimeout());
             lifecycle.info(log.toString());
         }
     }
@@ -138,7 +137,6 @@ public class EventLogger
             log.add("cell", event.getTarget());
             log.add("class", cell.getClass().getCanonicalName());
             log.add("killer", ((CellPath)event.getSource()).getCurrent().getCellName());
-            log.add("timeout", event.getTimeout());
             lifecycle.info(log.toString());
         }
     }
@@ -150,7 +148,6 @@ public class EventLogger
             log.add("cell", event.getTarget());
             log.add("class", cell.getClass().getCanonicalName());
             log.add("killer", ((CellPath)event.getSource()).getCurrent().getCellName());
-            log.add("timeout", event.getTimeout());
             lifecycle.info(log.toString());
         }
     }
@@ -162,7 +159,6 @@ public class EventLogger
             log.add("cell", event.getTarget());
             log.add("class", cell.getClass().getCanonicalName());
             log.add("killer", ((CellPath)event.getSource()).getCurrent().getCellName());
-            log.add("timeout", event.getTimeout());
             lifecycle.info(log.toString());
         }
     }

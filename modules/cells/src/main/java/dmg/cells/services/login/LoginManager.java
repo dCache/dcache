@@ -618,10 +618,7 @@ public class LoginManager
         {
             for (Object child : _children.values()) {
                 if (child instanceof CellAdapter) {
-                    try {
-                        getNucleus().kill(((CellAdapter) child).getCellName());
-                    } catch (IllegalArgumentException ignored) {
-                    }
+                    getNucleus().kill(((CellAdapter) child).getCellName());
                 }
             }
         }

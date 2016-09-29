@@ -1,6 +1,11 @@
 package dmg.cells.nucleus ;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +16,17 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import dmg.util.AuthorizedString;
 import dmg.util.Gate;
@@ -22,6 +36,10 @@ import dmg.util.logback.FilterShell;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 
+import static com.google.common.util.concurrent.Futures.allAsList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
 import static org.dcache.util.ByteUnit.MiB;
 
 /**
@@ -159,10 +177,10 @@ public class      SystemCell
         }
 
         _log.info("Will try to shutdown non-system cells {}", nonSystem);
-        shutdownCells(nonSystem, System.currentTimeMillis() + 5000);
+        shutdownCells(nonSystem, 5000, 10000);
 
         _log.info("Will try to shutdown remaining cells {}", system);
-        shutdownCells(system, System.currentTimeMillis() + 4000);
+        shutdownCells(system, 5000, 10000);
     }
 
     /**
@@ -170,34 +188,58 @@ public class      SystemCell
      * are dead or until a timeout has occurred.
      *
      * @param cells List of names of cells to kill.
-     * @param deadline Time in milliseconds since the epoch to wait for a cell to die.
+     * @param softTimeout Timeout in milliseconds to wait until we log the cells we are waiting for
+     * @param hardTimeout Timeout in milliseconds to wait until we log stack traces and give up
      */
-    private void shutdownCells(List<String> cells, long deadline)
+    private void shutdownCells(List<String> cells, long softTimeout, long hardTimeout)
     {
-       for (String cellName: cells) {
-           try {
-               _nucleus.kill(cellName);
-           } catch (IllegalArgumentException e) {
-               _log.trace("Problem killing : {} -> {}", cellName, e.getMessage());
-           }
-       }
+        /* We log the completion of cell shutdown from a listener.
+         */
+        long start = System.currentTimeMillis();
+        Function<String, Runnable> listeners =
+                name -> () -> {
+                    long time = System.currentTimeMillis() - start;
+                    if (time > softTimeout) {
+                        _log.warn("Killed {} in {} ms", name, time);
+                    } else {
+                        _log.info("Killed {}", name);
+                    }
+                };
 
-       for (String cellName: cells) {
-           try {
-               if (_nucleus.join(cellName, Math.max(1, deadline - System.currentTimeMillis()))) {
-                   _log.info("Killed {}", cellName);
-               } else {
-                   _log.warn("Timeout waiting for {}", cellName);
-                   CellNucleus.listThreadGroupOf(cellName);
-                   break;
-               }
-           } catch (InterruptedException e) {
-               _log.warn("Problem killing : {} -> {}",
-                         cellName, e.getMessage());
-               break;
-           }
-       }
-    }
+        /* Kill all the cells.
+         */
+        Map<String, ListenableFuture<?>> futures = cells.stream().collect(toMap(name -> name, _nucleus::kill));
+
+        /* And attach the listener.
+         */
+        futures.forEach((name, future) -> future.addListener(listeners.apply(name), MoreExecutors.directExecutor()));
+
+        /* Now wait.
+         */
+        try {
+            try {
+                Futures.successfulAsList(futures.values()).get(softTimeout, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                futures.forEach((name, future) -> {
+                    if (!future.isDone()) {
+                        _log.warn("Still waiting for {} to shut down.", name);
+                    }
+                });
+                Futures.successfulAsList(futures.values()).get(hardTimeout - softTimeout, TimeUnit.MILLISECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (TimeoutException e) {
+            futures.forEach((name, future) -> {
+                if (!future.isDone()) {
+                    CellNucleus.listThreadGroupOf(name);
+                }
+            });
+            CellNucleus.listKillerThreadGroup();
+        } catch (ExecutionException e) {
+            _log.error("Unexpected exception during shutdown.", e.getCause());
+        }
+}
 
     @Override
     public void getInfo(PrintWriter pw)

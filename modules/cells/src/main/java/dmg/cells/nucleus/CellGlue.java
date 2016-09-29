@@ -2,6 +2,10 @@ package dmg.cells.nucleus;
 
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
@@ -14,12 +18,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +39,7 @@ class CellGlue
     private final String _cellDomainName;
     private final ConcurrentMap<String, CellNucleus> _cellList = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CellNucleus> _publicCellList = new ConcurrentHashMap<>();
-    private final Set<CellNucleus> _killedCells = ConcurrentHashMap.newKeySet();
+    private final ConcurrentMap<CellNucleus, ListenableFuture<?>> _killedCells = new ConcurrentHashMap<>();
     private final Map<String, Object> _cellContext =
             new ConcurrentHashMap<>();
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
@@ -46,8 +49,8 @@ class CellGlue
     private final ThreadGroup _masterThreadGroup;
 
     private final ThreadGroup _killerThreadGroup;
-    private final ExecutorService _killerExecutor;
-    private final ThreadPoolExecutor _emergencyKillerExecutor;
+    private final ListeningExecutorService _killerExecutor;
+    private final ListeningExecutorService _emergencyKillerExecutor;
     private final CellAddressCore _domainAddress;
     private final CuratorFramework _curatorFramework;
 
@@ -71,12 +74,18 @@ class CellGlue
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
         ThreadFactory killerThreadFactory =
                 new ThreadFactoryBuilder().setNameFormat("killer-%d").setThreadFactory(r -> newThread(_killerThreadGroup, r)).build();
-        _killerExecutor = Executors.newCachedThreadPool(killerThreadFactory);
-        _emergencyKillerExecutor = new ThreadPoolExecutor(1, 1,
-                                                          0L, TimeUnit.MILLISECONDS,
-                                                          new LinkedBlockingQueue<>(),
-                                                          killerThreadFactory);
-        _emergencyKillerExecutor.prestartCoreThread();
+        _killerExecutor = MoreExecutors.listeningDecorator
+                (new ThreadPoolExecutor(1, Integer.MAX_VALUE,
+                                        3L, TimeUnit.SECONDS,
+                                        new SynchronousQueue<>(),
+                                        killerThreadFactory));
+        ThreadPoolExecutor emergencyKillerExecutor =
+                new ThreadPoolExecutor(1, 1,
+                                       0L, TimeUnit.MILLISECONDS,
+                                       new LinkedBlockingQueue<>(),
+                                       killerThreadFactory);
+        emergencyKillerExecutor.prestartCoreThread();
+        _emergencyKillerExecutor = MoreExecutors.listeningDecorator(emergencyKillerExecutor);
     }
 
     static Thread newThread(ThreadGroup threadGroup, Runnable r)
@@ -136,7 +145,7 @@ class CellGlue
         if (_cellList.get(name) != cell) {
             throw new IllegalStateException("Cell " + name + " does not exist.");
         }
-        if (!_killedCells.contains(cell) && _publicCellList.putIfAbsent(name, cell) != null) {
+        if (!_killedCells.containsKey(cell) && _publicCellList.putIfAbsent(name, cell) != null) {
             throw new IllegalStateException("Cell " + name + " is already published.");
         }
     }
@@ -239,41 +248,40 @@ class CellGlue
         return _cellDomainName;
     }
 
-    void kill(CellNucleus nucleus)
+    ListenableFuture<?> kill(CellNucleus nucleus)
     {
-        _kill(nucleus, nucleus, 0);
+        return kill(nucleus, nucleus);
     }
 
-    void kill(CellNucleus sender, String cellName)
-            throws IllegalArgumentException
+    ListenableFuture<?> kill(CellNucleus sender, String cellName)
     {
         CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus == null) {
-            throw new IllegalArgumentException("Cell Not Found : " + cellName);
+            return Futures.immediateFailedFuture(new NoSuchElementException("No such cell: " + cellName));
         }
-        _kill(sender, nucleus, 0);
+        return kill(sender, nucleus);
     }
 
     /**
      * Log diagnostic information about a cell's ThreadGroup.
      */
-    void threadGroupList(String cellName)
+    void listThreadGroupOf(String cellName)
     {
         CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus != null) {
             nucleus.threadGroupList();
-            if (_killedCells.contains(nucleus)) {
-                threadGroupList(_killerThreadGroup);
-            }
-        } else {
-            LOGGER.warn("cell {} is not running", cellName);
         }
+    }
+
+    void listKillerThreadGroup()
+    {
+        listThreadGroup(_killerThreadGroup);
     }
 
     /**
      * Log diagnostic information about a ThreadGroup.
      */
-    public static void threadGroupList(ThreadGroup threadGroup)
+    static void listThreadGroup(ThreadGroup threadGroup)
     {
         Thread[] threads = new Thread[threadGroup.activeCount()];
         int n = threadGroup.enumerate(threads);
@@ -347,28 +355,34 @@ class CellGlue
         if (!_cellList.remove(cellName, nucleus)) {
             LOGGER.warn("Apparently cell {} wasn't registered before being destroyed. Please contact support@dcache.org.", cellName);
         }
-        if (!_killedCells.remove(nucleus)) {
+        if (_killedCells.remove(nucleus) == null) {
             LOGGER.warn("Apparently cell {} wasn't killed before being destroyed. Please contact support@dcache.org.", cellName);
         }
         notifyAll();
     }
 
-    private synchronized void _kill(CellNucleus source, final CellNucleus destination, long to)
+    private synchronized ListenableFuture<?> kill(CellNucleus source, CellNucleus destination)
     {
         String cellToKill = destination.getCellName();
-        Collection<CellRoute> routes;
+
+        if (_cellList.get(cellToKill) != destination) {
+            return Futures.immediateFailedFuture(new NoSuchElementException("No such cell: " + cellToKill));
+        }
 
         /* Mark the cell as being killed to prevent it from being killed more
          * than once and to block certain operations while it is being killed.
          */
-        if (_cellList.get(cellToKill) != destination || !_killedCells.add(destination)) {
-            return;
-        }
+        return _killedCells.computeIfAbsent(destination, d -> doKill(source, d));
+    }
+
+    private synchronized ListenableFuture<?> doKill(CellNucleus source, CellNucleus destination)
+    {
+        String cellToKill = destination.getCellName();
 
         /* Remove routes to this cell first to reduce the chance that
          * we try to route to a no longer existing cell...
          */
-        routes = _routingTable.delete(destination.getThisAddress());
+        Collection<CellRoute> routes = _routingTable.delete(destination.getThisAddress());
 
         /* ... then remove the cell to prevent further messages to be sent to it.
          */
@@ -382,20 +396,20 @@ class CellGlue
 
         /* Post the obituary.
          */
-        CellPath sourceAddr = new CellPath(source.getCellName(), getCellDomainName());
-        KillEvent killEvent = new KillEvent(cellToKill, sourceAddr, to);
+        CellPath sourceAddr = new CellPath(source.getCellName(), source.getCellDomainName());
+        KillEvent killEvent = new KillEvent(cellToKill, sourceAddr);
         sendToAll(new CellEvent(cellToKill, CellEvent.CELL_DIED_EVENT));
 
         /* Put out a contract.
          */
         Runnable command = () -> destination.shutdown(killEvent);
         try {
-            _killerExecutor.execute(command);
+            return _killerExecutor.submit(command);
         } catch (OutOfMemoryError e) {
             /* This can signal that we cannot create any more threads. The emergency
              * pool has one thread preallocated for this situation.
              */
-            _emergencyKillerExecutor.execute(command);
+            return _emergencyKillerExecutor.submit(command);
         }
     }
 

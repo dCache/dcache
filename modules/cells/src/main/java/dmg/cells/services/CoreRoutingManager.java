@@ -187,10 +187,7 @@ public class CoreRoutingManager
     {
         CellAdapter canary = this.canary;
         if (canary != null) {
-            try {
-                getNucleus().kill(canary.getCellName());
-            } catch (IllegalArgumentException ignored) {
-            }
+            getNucleus().kill(canary.getCellName());
         }
         executor.shutdown();
     }

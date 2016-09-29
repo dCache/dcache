@@ -109,10 +109,7 @@ public class LocationManagerConnector
                         setStatus("Connected");
                         getNucleus().join(tunnel.getCellName());
                     } finally {
-                        try {
-                            getNucleus().kill(tunnel.getCellName());
-                        } catch (IllegalArgumentException ignored) {
-                        }
+                        getNucleus().kill(tunnel.getCellName());
                     }
                 } catch (InterruptedIOException e) {
                     throw e;

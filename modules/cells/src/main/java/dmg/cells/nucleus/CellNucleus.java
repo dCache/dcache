@@ -603,7 +603,11 @@ public class CellNucleus implements ThreadFactory
      * thread. So on return of this method the cell may
      * or may not be alive.
      */
-    public void kill() {   __cellGlue.kill(this);  }
+    public ListenableFuture<?> kill()
+    {
+        return __cellGlue.kill(this);
+    }
+
     /**
      *
      * The kill method schedules this Cell for deletion.
@@ -611,17 +615,27 @@ public class CellNucleus implements ThreadFactory
      * thread. So on return of this method the cell may
      * or may not be alive.
      */
-    public void kill(String cellName) throws IllegalArgumentException {
-        __cellGlue.kill(this, cellName);
+    public ListenableFuture<?> kill(String cellName)
+    {
+        return __cellGlue.kill(this, cellName);
     }
 
 
     /**
-     * List the threads of some cell to stdout.  This is
+     * Log the threads of some cell.  This is
      * intended for diagnostic information.
      */
     public static void listThreadGroupOf(String cellName) {
-        __cellGlue.threadGroupList(cellName);
+        __cellGlue.listThreadGroupOf(cellName);
+    }
+
+    /**
+     * Log the killer threads.  This is
+     * intended for diagnostic information.
+     */
+    public static void listKillerThreadGroup()
+    {
+        __cellGlue.listKillerThreadGroup();
     }
 
     /**
@@ -629,7 +643,7 @@ public class CellNucleus implements ThreadFactory
      * threads at warn level.
      */
     public void  threadGroupList() {
-        CellGlue.threadGroupList(_threads);
+        CellGlue.listThreadGroup(_threads);
     }
 
     /**

@@ -255,7 +255,7 @@ domainStop() # $1 = domain
     fi
 
     printf "Stopping ${domain} "
-    for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25; do
         if [ "$(printSimpleDomainStatus "$domain")" = "stopped" ]; then
             PID_JAVA="$(getProperty dcache.pid.java "$domain")"
             PID_DAEMON="$(getProperty dcache.pid.daemon "$domain")"
