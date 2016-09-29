@@ -92,7 +92,10 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel
         update.appendUpdate(thisCellPath.newChild("type"),
                 new StringStateValue(thisCell.getCellType(), lifetime));
 
-        addVersionInfo(update, thisCellPath, thisCell.getCellVersion(), lifetime);
+        CellVersion cellVersion = thisCell.getCellVersion();
+        if (cellVersion != null) {
+            addVersionInfo(update, thisCellPath, cellVersion, lifetime);
+        }
 
         CellMessageHandlerSkel.addTimeMetrics(update, thisCellPath.newChild("created"), thisCell.getCreationTime(), lifetime);
 

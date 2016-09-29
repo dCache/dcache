@@ -1,5 +1,7 @@
 package org.dcache.admin.webadmin.datacollector.datatypes;
 
+import java.util.Objects;
+
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellPath;
@@ -84,7 +86,7 @@ public class CellStatus {
     public void setCellInfo(CellInfo cellInfo) {
         _cellInfo = cellInfo;
         _createdDateTime = _cellInfo.getCreationTime().toString();
-        _version = _cellInfo.getCellVersion().toString();
+        _version = Objects.toString(_cellInfo.getCellVersion(), "");
     }
 
     public long getLastAliveTime() {
