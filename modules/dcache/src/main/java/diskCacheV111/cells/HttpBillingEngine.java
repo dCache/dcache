@@ -17,17 +17,25 @@ import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
 import org.dcache.cells.CellStub;
+import org.dcache.util.Args;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpBillingEngine
         implements HttpResponseEngine, CellMessageSender, DomainContextAware
 {
+    private final String _billingAddress;
+
     private CellStub _billing;
     private Map<String, Object> _context;
 
-    public HttpBillingEngine(String [] args)
+    public HttpBillingEngine(String[] args)
     {
+        Args arguments = new Args(args);
+        _billingAddress = arguments.getOption("billing");
+        checkArgument(!isNullOrEmpty(_billingAddress),  "billing option is required");
     }
 
     @Override
@@ -45,7 +53,7 @@ public class HttpBillingEngine
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
-        _billing = new CellStub(endpoint, new CellPath("billing"), 5, SECONDS);
+        _billing = new CellStub(endpoint, new CellPath(_billingAddress), 5, SECONDS);
     }
 
     @Override

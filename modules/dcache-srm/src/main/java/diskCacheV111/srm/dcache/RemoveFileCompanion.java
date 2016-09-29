@@ -73,9 +73,6 @@
 
 package diskCacheV111.srm.dcache;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.security.auth.Subject;
 
 import java.util.EnumSet;
@@ -87,9 +84,6 @@ import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
@@ -103,28 +97,24 @@ import static org.dcache.namespace.FileType.REGULAR;
 public class RemoveFileCompanion
     extends AbstractMessageCallback<PnfsDeleteEntryMessage>
 {
-    private static Logger _log =
-        LoggerFactory.getLogger(RemoveFileCompanion.class);
-
-    private static final CellPath BILLING_PATH = new CellPath("billing");
-
     private final Subject _subject;
     private final RemoveFileCallback _callback;
     private final String _path;
-    private final CellEndpoint _endpoint;
     private final CellAddressCore _myAddress;
+
+    private final CellStub _billingStub;
 
     private RemoveFileCompanion(Subject subject,
                                 String path,
                                 RemoveFileCallback callbacks,
                                 CellAddressCore address,
-                                CellEndpoint endpoint)
+                                CellStub billingStub)
     {
         _subject = subject;
         _path = path;
         _callback = callbacks;
         _myAddress = address;
-        _endpoint = endpoint;
+        _billingStub = billingStub;
     }
 
     public static void removeFile(Subject subject,
@@ -132,12 +122,12 @@ public class RemoveFileCompanion
                                   String path,
                                   RemoveFileCallback callbacks,
                                   CellStub pnfsStub,
+                                  CellStub billingStub,
                                   CellAddressCore address,
-                                  CellEndpoint endpoint,
                                   Executor executor)
     {
         RemoveFileCompanion companion =
-            new RemoveFileCompanion(subject, path, callbacks, address, endpoint);
+            new RemoveFileCompanion(subject, path, callbacks, address, billingStub);
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
@@ -201,7 +191,7 @@ public class RemoveFileCompanion
         msg.setPnfsId(pnfsid);
         msg.setClient(Subjects.getOrigin(_subject).getAddress().getHostAddress());
 
-        _endpoint.sendMessage(new CellMessage(BILLING_PATH, msg));
+        _billingStub.notify(msg);
     }
 }
 
