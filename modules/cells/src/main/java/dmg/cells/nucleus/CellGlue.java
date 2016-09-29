@@ -115,7 +115,7 @@ class CellGlue
     }
 
     synchronized void registerCell(CellNucleus cell)
-            throws IllegalArgumentException
+            throws IllegalStateException
     {
         if (cell.getThisCell() instanceof SystemCell) {
             checkState(_systemNucleus == null);
@@ -124,17 +124,20 @@ class CellGlue
 
         String name = cell.getCellName();
         if (_cellList.putIfAbsent(name, cell) != null) {
-            throw new IllegalArgumentException("Name Mismatch ( cell " + name + " exist )");
+            throw new IllegalStateException("Cell " + name + " already exists.");
         }
         sendToAll(new CellEvent(name, CellEvent.CELL_CREATED_EVENT));
     }
 
-    void publishCell(CellNucleus cell)
+    synchronized void publishCell(CellNucleus cell)
             throws IllegalArgumentException
     {
         String name = cell.getCellName();
-        if (_publicCellList.putIfAbsent(name, cell) != null) {
-            throw new IllegalArgumentException("Name Mismatch ( cell " + name + " exist )");
+        if (_cellList.get(name) != cell) {
+            throw new IllegalStateException("Cell " + name + " does not exist.");
+        }
+        if (!_killedCells.contains(cell) && _publicCellList.putIfAbsent(name, cell) != null) {
+            throw new IllegalStateException("Cell " + name + " is already published.");
         }
     }
 
