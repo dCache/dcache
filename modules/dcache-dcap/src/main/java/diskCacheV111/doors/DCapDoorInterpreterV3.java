@@ -1,5 +1,8 @@
 package diskCacheV111.doors;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,8 +182,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
      */
     private int _gid = NameSpaceProvider.DEFAULT;
 
-    private int     _majorVersion;
-    private int     _minorVersion;
+    private Version _version;
     private Date    _startedTS;
     private Date    _lastCommandTS;
 
@@ -393,44 +395,131 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         return login;
     }
 
-    private static class Version implements Comparable<Version> {
+    static class Version
+    {
         private final int _major;
         private final int _minor;
-        private Version( String versionString ){
+        private final Integer _bugfix;
+        private final String _package;
+
+        @VisibleForTesting
+        protected Version(int major, int minor)
+        {
+            this(major, minor, null, null);
+        }
+
+        @VisibleForTesting
+        protected Version(int major, int minor, Integer bugfix, String pack)
+        {
+            _major = major;
+            _minor = minor;
+            _bugfix = bugfix;
+            _package = pack;
+        }
+
+        /**
+         * Generate a predicate Version: 1.2 matches 1.2, 1.2.3 and 1.2.3-4.
+         * @param versionString
+         */
+        Version(String versionString)
+        {
             StringTokenizer st = new StringTokenizer(versionString,".");
             _major = Integer.parseInt(st.nextToken());
             _minor = Integer.parseInt(st.nextToken());
+            if (st.hasMoreTokens()) {
+                st = new StringTokenizer(st.nextToken(), "-");
+                _bugfix = Integer.parseInt(st.nextToken());
+                _package = st.hasMoreTokens() ? st.nextToken() : null;
+            } else {
+                _bugfix = null;
+                _package = null;
+            }
         }
-        @Override
-        public int compareTo( Version other ){
-            return _major != other._major ?
-                    Integer.compare(_major, other._major) : Integer.compare(_minor, other._minor);
-        }
-        @Override
-        public String toString(){ return ""+_major+"."+_minor ; }
-        private Version( int major , int minor ){
-            _major = major ;
-            _minor = minor ;
-        }
-        @Override
-        public boolean equals(Object obj ) {
-           if( obj == this ) {
-               return true;
-           }
-           if( !(obj instanceof Version) ) {
-               return false;
-           }
 
-            return ((Version)obj)._major == this._major && ((Version)obj)._minor == this._minor;
+        public int getMajor()
+        {
+            return _major;
         }
+
+        public int getMinor()
+        {
+            return _minor;
+        }
+
+        /**
+         * Similar to compareTo but use this Version as a predicate.  For
+         * example if this is Version(1,2) then matches returns
+         *
+         * -1 for Version(1,1), Version(1,1,5) and Version(1,1,5,"3")
+         *
+         * 0 for Version(1,2), Version(1,2,5) and Version(1,2,5,"3")
+         *
+         * 1 for Version(1,3), Version(1,3,5) and Version(1,3,5,"3")
+         *
+         * Note that this method is asymmetric if the number of defined
+         * elements is the same; e.g.,
+         *
+         *   Version(1,2).matches(Version(1,3)) is 1
+         *   Version(1,3).matches(Version(1,2)) is -1
+         *
+         * but not asymmetric if the number of defined elements differs; e.g.,
+         *
+         *   Version(1,2).matches(Version(1,2,3)) is 0
+         *   Version(1,2,3).matches(Version(1,2)) is 1
+         */
+        public int matches(Version other)
+        {
+            ComparisonChain cc = ComparisonChain.start()
+                    .compare(_major, other._major)
+                    .compare(_minor, other._minor);
+            if (_bugfix != null) {
+                cc = cc.compare(_bugfix, other._bugfix, Ordering.natural().nullsFirst());
+            }
+            if (_package != null) {
+                cc = cc.compare(_package, other._package, Ordering.natural().nullsFirst());
+            }
+            return cc.result();
+        }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append(_major).append('.').append(_minor);
+            if (_bugfix != null) {
+                sb.append('.').append(_bugfix);
+            }
+            if (_package != null) {
+                sb.append('-').append(_package);
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (obj == this) {
+                return true;
+            }
+
+            if (!(obj instanceof Version)) {
+                return false;
+            }
+
+            Version o = (Version) obj;
+
+            return _major == o._major &&
+                    _minor == o._minor &&
+                    ((_bugfix == null && o._bugfix == null) || (_bugfix != null && _bugfix.equals(o._bugfix))) &&
+                    ((_package == null && o._package == null) || (_package != null && _package.equals(o._package)));
+        }
+
         @Override
         public int hashCode() {
-            return _minor ^ _major;
+            return _major ^ _minor ^ (_bugfix == null ? 0 : _bugfix) ^ (_package == null ? 0 : _package.hashCode());
         }
-
-
-
     }
+
     private void installVersionRestrictions( String versionString ){
         //
         //   majorMin.minorMin[:majorMax.minorMax]
@@ -487,20 +576,25 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     CommandExitException("Command Syntax Exception", 2);
         }
 
-        Version version;
-        try{
-            _majorVersion = Integer.parseInt( args.argv(2) ) ;
-            _minorVersion = Integer.parseInt( args.argv(3) ) ;
-        }catch(NumberFormatException e ){
+        try {
+            int major = Integer.parseInt(args.argv(2));
+            int minor = Integer.parseInt(args.argv(3));
+            Integer bugfix = null;
+            String patch = null;
+            if (args.argc() > 2) {
+                bugfix = Integer.parseInt(args.argv(4));
+                patch = args.argv(5);
+            }
+            _version = new Version(major, minor, bugfix, patch);
+        } catch (NumberFormatException e) {
             _log.error("Syntax error in client version number : {}", e.toString());
             throw new CommandException("Invalid client version number", e);
         }
 
-        version = new Version( _majorVersion , _minorVersion ) ;
-        _log.debug("Client Version : {}", version);
-        if (version.compareTo(_minClientVersion) < 0 || (version.compareTo(_maxClientVersion) > 0)) {
-
-            String error = "Client version rejected : "+version ;
+        _log.debug("Client Version : {}", _version);
+        if (_minClientVersion.matches(_version) > 0 ||
+                _maxClientVersion.matches(_version) > 0) {
+            String error = "Client version rejected : "+_version;
             _log.error(error);
             throw new
             CommandExitException(error , 1 );
@@ -517,7 +611,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _uid = args.getIntOption("uid", _uid);
         _gid = args.getIntOption("gid", _gid);
 
-        return "0 0 "+_ourName+" welcome "+_majorVersion+" "+_minorVersion ;
+        return "0 0 "+_ourName+" welcome "+_version.getMajor()+" "+_version.getMinor();
     }
     public String com_byebye( int sessionId , int commandId , VspArgs args )
         throws CommandException
@@ -2584,10 +2678,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public void   getInfo( PrintWriter pw ){
         pw.println( " ----- DCapDoorInterpreterV3 ----------" ) ;
         pw.println( "      User = " + Subjects.getDisplayName(_authenticatedSubject));
-        pw.println( "  Version  = "+_majorVersion+"/"+_minorVersion ) ;
-        pw.println( "  VLimits  = "+
-        (_minClientVersion==null?"*":_minClientVersion.toString() ) +":" +
-        (_maxClientVersion==null?"*":_maxClientVersion.toString() ) ) ;
+        pw.println( "  Version  = " + (_version == null ? "unknown" : _version));
+        pw.println( "  VLimits  = " + _minClientVersion + ":" + _maxClientVersion);
         pw.println( "   Started = "+_startedTS ) ;
         pw.println( "   Last at = "+_lastCommandTS ) ;
 
