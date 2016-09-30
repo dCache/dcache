@@ -30,6 +30,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -94,7 +96,9 @@ public class CoreRoutingManager
 
     /**
      * Routing updates from downstream domains are processed sequentially on a dedicated
-     * thread.
+     * thread.  In the past we have observed that processing updates with many routes can
+     * overwhelm a routing manager and the separate thread allows us to drop repeated
+     * updates from the same domain.
      */
     private final ExecutorService executor = Executors.newSingleThreadExecutor(getNucleus());
 
@@ -106,21 +110,25 @@ public class CoreRoutingManager
     /**
      * Topic routes installed by routing manager.
      */
+    @GuardedBy("this")
     private final Multimap<String, String> topicRoutes = HashMultimap.create();
 
     /**
      * Well known routes installed by routing manager.
      */
+    @GuardedBy("this")
     private final Multimap<String, String> queueRoutes = HashMultimap.create();
 
     /**
      * Tunnels to core domains.
      */
+    @GuardedBy("this")
     private final Map<CellAddressCore,CellTunnelInfo> coreTunnels = new HashMap<>();
 
     /**
      * Tunnels to satellite domains.
      */
+    @GuardedBy("this")
     private final Map<CellAddressCore,CellTunnelInfo> satelliteTunnels = new HashMap<>();
 
     /**
@@ -131,6 +139,7 @@ public class CoreRoutingManager
      * to a newly created core domain, the installation of all but the first default route
      * is delayed for a moment.
      */
+    @GuardedBy("this")
     private final List<CellRoute> delayedDefaultRoutes = new ArrayList<>();
 
     /**
@@ -153,7 +162,8 @@ public class CoreRoutingManager
     protected void starting() throws ExecutionException, InterruptedException
     {
         if (role == CellDomainRole.CORE) {
-            canary = new CellAdapter(getCellName() + "-canary", "Generic", "") {
+            canary = new CellAdapter(getCellName() + "-canary", "Generic", "")
+            {
                 @Override
                 protected void stopped()
                 {
@@ -170,12 +180,17 @@ public class CoreRoutingManager
         }
     }
 
-    private synchronized void notifyDownstreamOfDomainDeath()
+    private void notifyDownstreamOfDomainDeath()
     {
         canary = null;
+
+        ListenableFuture<List<CellMessage>> future;
+        synchronized (this) {
+            future = sendToPeers(
+                    new PeerShutdownNotification(getCellDomainName()), satelliteTunnels.values(), 7000);
+        }
         try {
-            sendToPeers(
-                    new PeerShutdownNotification(getCellDomainName()), satelliteTunnels.values(), 1000).get();
+            future.get();
         } catch (ExecutionException e) {
             LOG.info("Failed to notify downstream of shutdown: {}", e.toString());
         } catch (InterruptedException ignored) {
@@ -183,7 +198,7 @@ public class CoreRoutingManager
     }
 
     @Override
-    public synchronized void stopped()
+    public void stopped()
     {
         CellAdapter canary = this.canary;
         if (canary != null) {
@@ -300,7 +315,10 @@ public class CoreRoutingManager
                 });
             }
         } else if (obj instanceof GetAllDomainsRequest) {
-            CellTunnelInfo tunnel = Iterables.getFirst(coreTunnels.values(), null);
+            CellTunnelInfo tunnel;
+            synchronized (this) {
+                tunnel = Iterables.getFirst(coreTunnels.values(), null);
+            }
             if (role == CellDomainRole.SATELLITE && tunnel != null) {
                 msg.getDestinationPath().insert(new CellPath(nucleus.getCellName(),
                                                              tunnel.getRemoteCellDomainInfo().getCellDomainName()));
@@ -481,7 +499,6 @@ public class CoreRoutingManager
      *
      * @return a representation of the RoutingManager's little brain.
      */
-    public static final String hh_ls = "[-x]";
     @Deprecated
     public synchronized Object ac_ls_$_0(Args args)
     {
@@ -492,5 +509,4 @@ public class CoreRoutingManager
                         toMap(Map.Entry::getKey, e -> Sets.newHashSet(e.getValue())))
         };
     }
-
 }
