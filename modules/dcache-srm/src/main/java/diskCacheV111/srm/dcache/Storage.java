@@ -1428,8 +1428,8 @@ public final class Storage
                                            config.getPath(surl).toString(),
                                            callbacks,
                                            _pnfsStub,
+                                           _billingStub,
                                            getCellAddress(),
-                                           getCellEndpoint(),
                                            _executor);
         } catch (SRMInvalidPathException e) {
             callbacks.notFound(e.getMessage());
