@@ -15,6 +15,13 @@ if [ -n "$X509_USER_PROXY" ]; then
     x509_user_proxy="$X509_USER_PROXY"
 elif [ -r /tmp/x509up_u$(id -u) ]; then
     x509_user_proxy=/tmp/x509up_u$(id -u)
+else
+   (echo "Could not find X.509 proxy credential."
+    echo
+    echo "Either create a proxy credential if one does not already exist or"
+    echo "use the X509_USER_PROXY environment variable to specify the path"
+    echo "if the proxy is in a non-standard location.") >&2
+    exit 1
 fi
 
 if [ -n "$X509_CERT_DIR" ]; then
