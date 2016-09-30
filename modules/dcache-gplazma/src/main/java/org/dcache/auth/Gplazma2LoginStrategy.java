@@ -174,7 +174,10 @@ public class Gplazma2LoginStrategy
     public static final String fh_explain_login =
             "This command runs a test login with the supplied principals\n" +
             "The result is tracked and an explanation is provided of how \n" +
-            "the result was obtained.\n";
+            "the result was obtained.\n\n" +
+            "Examples:\n" +
+            "  explain login \"dn:/C=DE/O=GermanGrid/OU=DESY/CN=testUser\" fqan:/test\n" +
+            "  explain login name:testuser\n";
     public static final String hh_explain_login = "<principal> [<principal> ...] # explain the result of login";
     public String ac_explain_login_$_1_99(Args args)
     {
