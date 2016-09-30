@@ -228,13 +228,13 @@ public class LocationMgrTunnel
             } catch (IOException e) {
                 NDC.push(_remoteDomainInfo.toString());
                 try {
+                    kill();
                     _log.warn("Error while sending message: {}", e.getMessage());
                     NoRouteToCellException noRoute =
                             new NoRouteToCellException(msg, "Communication failure. Message could not be delivered.");
                     CellMessage envelope = new CellMessage(msg.getSourcePath().revert(), noRoute);
                     envelope.setLastUOID(msg.getUOID());
                     _nucleus.sendMessage(envelope, true, true, true);
-                    kill();
                 } finally {
                     NDC.pop();
                 }
