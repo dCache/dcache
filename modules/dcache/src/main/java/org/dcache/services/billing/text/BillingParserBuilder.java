@@ -276,6 +276,10 @@ public class BillingParserBuilder
      */
     private static String toGroupName(String attribute)
     {
+        int pos = attribute.indexOf(';');
+        if (pos > -1) {
+            attribute = attribute.substring(0, pos);
+        }
         return attribute.replace("X", "XX").replace(".", "X");
     }
 
