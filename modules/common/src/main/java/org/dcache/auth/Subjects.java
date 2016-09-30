@@ -491,6 +491,9 @@ public class Subjects
                 case "email":
                     principal = new EmailAddressPrincipal(value);
                     break;
+                case "user":
+                    principal = new UserNamePrincipal(value);
+                    break;
                 default:
                     try {
                         Class<? extends Principal> principalClass = Class.forName(type).asSubclass(Principal.class);
