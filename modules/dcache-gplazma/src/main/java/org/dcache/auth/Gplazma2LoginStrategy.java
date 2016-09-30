@@ -168,7 +168,7 @@ public class Gplazma2LoginStrategy
             "the result was obtained.\n\n" +
             "Examples:\n" +
             "  explain login \"dn:/C=DE/O=GermanGrid/OU=DESY/CN=testUser\" fqan:/test\n" +
-            "  explain login name:testuser\n";
+            "  explain login user:testuser\n";
     public static final String hh_explain_login = "<principal> [<principal> ...] # explain the result of login";
     public String ac_explain_login_$_1_99(Args args)
     {

@@ -480,6 +480,9 @@ public class Subjects
                 case "name":
                     principal = new LoginNamePrincipal(value);
                     break;
+                case "user":
+                    principal = new UserNamePrincipal(value);
+                    break;
                 default:
                     try {
                         Class principalClass = Class.forName(type);
