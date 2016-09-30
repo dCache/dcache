@@ -151,7 +151,7 @@ public class SrmShell extends ShellApplication
         } catch (SRMException e) {
             System.err.println(uri + " failed request: " + e.getMessage());
             System.exit(1);
-        } catch (MalformedURLException e) {
+        } catch (IOException e) {
             System.err.println(e.getMessage());
             System.exit(1);
         }
