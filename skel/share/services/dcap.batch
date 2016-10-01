@@ -21,6 +21,8 @@ check -strong dcap.loginbroker.version
 check -strong dcap.loginbroker.update-period
 check -strong dcap.loginbroker.update-period.unit
 check -strong dcap.loginbroker.update-threshold
+check -strong dcap.loginbroker.address
+check -strong dcap.loginbroker.port
 check -strong dcap.authn.protocol
 check dcap.authn.capath
 check dcap.authn.hostcert.cert
@@ -99,6 +101,8 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -brokerUpdateTime=${dcap.loginbroker.update-period} \
              -brokerUpdateTimeUnit=${dcap.loginbroker.update-period.unit} \
              -brokerUpdateOffset=${dcap.loginbroker.update-threshold} \
+             -brokerAddress=${dcap.loginbroker.address} \
+             -brokerPort=${dcap.loginbroker.port} \
              -protocolFamily=${dcap.loginbroker.family} \
              -protocolVersion=${dcap.loginbroker.version} \
              -loginBroker=${dcap.service.loginbroker}  \

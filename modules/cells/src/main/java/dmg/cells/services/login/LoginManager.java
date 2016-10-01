@@ -193,9 +193,12 @@ public class LoginManager
             _loginBrokerPublisher.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
             _loginBrokerPublisher.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
             _loginBrokerPublisher.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
-            _loginBrokerPublisher.setRoot(Strings.emptyToNull(_args.getOption("root")));
+            _loginBrokerPublisher.setRoot(Strings.emptyToNull(_args.getOption("brokerRoot", _args.getOption("root"))));
             _loginBrokerPublisher.setReadPaths(byColon.splitToList(_args.getOption("brokerReadPaths", "/")));
             _loginBrokerPublisher.setWritePaths(byColon.splitToList(_args.getOption("brokerWritePaths", "/")));
+            _loginBrokerPublisher.setAddress(Strings.emptyToNull(_args.getOption("brokerAddress")));
+            _loginBrokerPublisher.setPort(_args.getIntOption("brokerPort", 0));
+
             addCommandListener(_loginBrokerPublisher);
             addCellEventListener(_loginBrokerPublisher);
 
@@ -507,7 +510,18 @@ public class LoginManager
             _serverSocket.bind(_socketAddress);
 
             if (_loginBrokerPublisher != null) {
-                _loginBrokerPublisher.setSocketAddress(_socketAddress);
+                /* Synchronize to make update atomic. */
+                synchronized (_loginBrokerPublisher) {
+                    _loginBrokerPublisher.setSocketAddress((InetSocketAddress) _serverSocket.getLocalSocketAddress());
+                    String address = Strings.emptyToNull(_args.getOption("brokerAddress"));
+                    if (address != null) {
+                        _loginBrokerPublisher.setAddress(address);
+                    }
+                    int port = _args.getIntOption("brokerPort", 0);
+                    if (port != 0) {
+                        _loginBrokerPublisher.setPort(port);
+                    }
+                }
             }
 
             LOGGER.info("Listening on {}", _serverSocket.getLocalSocketAddress());

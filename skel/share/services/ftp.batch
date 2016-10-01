@@ -20,6 +20,9 @@ check -strong ftp.loginbroker.update-period.unit
 check -strong ftp.loginbroker.update-threshold
 check -strong ftp.loginbroker.family
 check -strong ftp.loginbroker.version
+check -strong ftp.loginbroker.root
+check -strong ftp.loginbroker.address
+check -strong ftp.loginbroker.port
 check -strong ftp.service.gplazma
 check -strong ftp.service.billing
 check -strong ftp.service.pnfsmanager
@@ -76,8 +79,11 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -brokerUpdateOffset=${ftp.loginbroker.update-threshold} \
    -brokerTopic=\"${ftp.loginbroker.update-topic}\" \
    -brokerTags=\"${ftp.loginbroker.tags}\" \
+   -brokerRoot=\"${ftp.loginbroker.root}\" \
    -brokerReadPaths=/ \
    -brokerWritePaths=${brokerWritePaths-when-readonly-is-${ftp.authz.readonly}} \
+   -brokerAddress=${ftp.loginbroker.address} \
+   -brokerPort=${ftp.loginbroker.port} \
    -gplazma=\"${ftp.service.gplazma}\" \
    -billing=\"${ftp.service.billing}\" \
    -pnfsManager=\"${ftp.service.pnfsmanager}\" \
