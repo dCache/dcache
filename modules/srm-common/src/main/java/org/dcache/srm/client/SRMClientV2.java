@@ -175,7 +175,7 @@ public class SRMClientV2 implements ISRM {
         this.retries = numberofretries;
         this.user_cred = user_cred;
         if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new IOException("credentials have expired");
+            throw new IOException("X.509 credentials have expired");
         }
         host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
