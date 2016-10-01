@@ -37,16 +37,17 @@ public class LoginCLI
             + "either the login succeeds or fails.  If the login succeeds then the set\n"
             + "of identities is shown.\n"
             + "\n"
-            + "Each supplied principal has the form <type>:<value> (e.g. 'name:paul').\n"
+            + "Each supplied principal has the form <type>:<value> (e.g. 'user:paul').\n"
             + "If a principal has spaces then surround the declaration with quote-marks\n"
             + "(e.g., \"dn:/C=DE/O=ACME/CN=Example certificate\").\n"
             + "\n"
             + "Valid principal types are:\n"
             + "\n"
-            + "    name      a user-requested username\n"
-            + "    kerberos  a kerberos principal (e.g. paul@EXAMPLE.ORG)\n"
             + "    dn        the distinguished name from an X509 certificate\n"
-            + "    fqan      an FQAN, the first is taken as the primary FQAN\n";
+            + "    fqan      an FQAN, the first is taken as the primary FQAN\n"
+            + "    kerberos  a kerberos principal (e.g. paul@EXAMPLE.ORG)\n"
+            + "    name      the desired username when authentication without a password\n"
+            + "    user      the authenticated username\n";
     public static final String hh_test_login = "<principal> [<principal> ...] # show result of login";
     public String ac_test_login_$_1_99(Args args) {
         Subject subject = Subjects.subjectFromArgs(args.getArguments());

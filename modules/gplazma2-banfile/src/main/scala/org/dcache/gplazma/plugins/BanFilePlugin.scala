@@ -44,10 +44,10 @@ class BanFilePlugin(properties : Properties) extends GPlazmaAccountPlugin with F
    *   alias <alias>=<full qualified classname>
    *   ban <full qualified classname or alias>:<principal string>
    * e.g.,
-   *   alias username=org.dcache.auth.LoginNamePrincipal
+   *   alias username=org.dcache.auth.UserNamePrincipal
    *   ban username:Someuser
    * or
-   *   ban org.dcache.auth.LoginNamePrincipal:Someuser
+   *   ban org.dcache.auth.UserNamePrincipal:Someuser
    *
    * @return a set of banned principals
    */
