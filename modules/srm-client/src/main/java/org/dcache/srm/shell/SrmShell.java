@@ -451,7 +451,7 @@ public class SrmShell extends ShellApplication
         String path;
 
         @Override
-        public Serializable call() throws IOException
+        public Serializable call() throws IllegalArgumentException, IOException
         {
             Path newPath = lcwd.resolve(path).normalize();
 
