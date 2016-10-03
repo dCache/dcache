@@ -556,11 +556,11 @@ public class TransferObserverV1
         page.td("door", transfer.getCellName());
         page.td("domain", transfer.getDomainName());
         page.td("sequence", transfer.getSerialId());
-        page.td("protocol", transfer.getProtocol());
+        page.td("protocol", transfer.getProtocol().replaceAll("[<]unknown[>]", "?"));
         page.td("uid", transfer.getUserInfo().getUid());
         page.td("gid", transfer.getUserInfo().getGid());
         page.td("vomsGroup", transfer.getUserInfo().getPrimaryVOMSGroup());
-
+        
         String tmp = transfer.getProcess();
         tmp = tmp.contains("known") ? "?" : tmp;
         page.td("process", tmp);
