@@ -1,5 +1,7 @@
 package org.dcache.webadmin.controller.util;
 
+import com.google.common.base.Strings;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -137,12 +139,15 @@ public class BeanDataMapper {
         } else {
             bean.setPnfsId(transfer.session().getPnfsId().toString());
         }
-        if (transfer.session().getPool() != null) {
-            bean.setPool(transfer.session().getPool());
+
+        String poolName = Strings.emptyToNull(transfer.session().getPool());
+        if (poolName == null || poolName.equals("<unknown>")) {
+            poolName = "N.N.";
         }
-        bean.setProcess(transfer.door().getProcess());
-        bean.setProtocol(transfer.door().getProtocolFamily(),
-                        transfer.door().getProtocolVersion());
+
+        bean.setProcess(transfer.door().getProcess().replace("<unknown>", "?"));
+        bean.setProtocol(transfer.door().getProtocolFamily().replace("<unknown>", "?"),
+                         transfer.door().getProtocolVersion().replace("<unknown>", "?"));
         bean.setReplyHost(transfer.session().getReplyHost());
         bean.setSerialId(transfer.session().getSerialId());
         if (transfer.session().getStatus() == null) {
