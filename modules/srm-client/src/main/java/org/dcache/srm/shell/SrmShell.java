@@ -36,6 +36,7 @@ import org.apache.axis.types.UnsignedLong;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -126,6 +127,7 @@ public class SrmShell extends ShellApplication
     private Path lcwd = lfs.getPath(".").toRealPath();
     private int nextTransferId = 1;
     private PromptType promptType = PromptType.SRM;
+    private volatile boolean isClosed;
 
     public static void main(String[] arguments) throws Throwable
     {
@@ -147,6 +149,7 @@ public class SrmShell extends ShellApplication
         args.shift();
 
         try (SrmShell shell = new SrmShell(uri, args)) {
+            closeOnShutdown(shell);
             shell.start(args);
         } catch (SRMException e) {
             System.err.println(uri + " failed request: " + e.getMessage());
@@ -155,6 +158,26 @@ public class SrmShell extends ShellApplication
             System.err.println(e.getMessage());
             System.exit(1);
         }
+    }
+
+    /**
+     * A Ctrl-C will bypass the try-with-resource pattern leaving the
+     * {@link Closeable#close} method uncalled.  This method adds a
+     * shutdown hook to call this method as part of the JVM shutdown, which
+     * ensures the method is called at the risk of calling it twice.
+     */
+    private static void closeOnShutdown(final Closeable closeable)
+    {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                try {
+                    closeable.close();
+                } catch (IOException e) {
+                    System.err.println("Problem shutting down: " + e);
+                }
+            }
+        });
     }
 
     public SrmShell(URI uri, Args args) throws Exception
@@ -239,12 +262,15 @@ public class SrmShell extends ShellApplication
     @Override
     public void close() throws IOException
     {
-        try {
-            fs.close();
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
+        if (!isClosed) {
+            try {
+                fs.close();
+                isClosed = true;
+            } catch (IOException e) {
+                throw e;
+            } catch (Exception e) {
+                throw Throwables.propagate(e);
+            }
         }
     }
 
