@@ -615,8 +615,8 @@ public class TransferObserverV1
         page.td("door", transfer.door().getCellName());
         page.td("domain", transfer.door().getDomainName());
         page.td("sequence", transfer.session().getSerialId());
-        page.td("protocol", transfer.door().getProtocolFamily() +
-                     "-" + transfer.door().getProtocolVersion());
+        page.td("protocol", transfer.door().getProtocolFamily().replace("[<]unknown[>]", "?") +
+                     "-" + transfer.door().getProtocolVersion().replace("[<]unknown[>]", "?"));
 
         String tmp = transfer.door().getOwner() ;
         tmp = tmp.contains("known") ? "?" : _fieldMap.mapOwner(tmp) ;
