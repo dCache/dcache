@@ -131,9 +131,10 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
     }
 
     @Override
-    public void close()
+    public void close() throws Exception
     {
         MoreExecutors.shutdownAndAwaitTermination(_srmExecutor, 500, TimeUnit.MILLISECONDS);
+        agent.close();
     }
 
     @Override
