@@ -560,7 +560,7 @@ public class TransferObserverV1
         page.td("uid", transfer.getUserInfo().getUid());
         page.td("gid", transfer.getUserInfo().getGid());
         page.td("vomsGroup", transfer.getUserInfo().getPrimaryVOMSGroup());
-        
+
         String tmp = transfer.getProcess();
         tmp = tmp.contains("known") ? "?" : tmp;
         page.td("process", tmp);
