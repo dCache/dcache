@@ -6,10 +6,13 @@ import com.google.common.primitives.Ints;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static org.dcache.util.ByteUnit.BYTES;
 import static org.dcache.util.ByteUnit.Type.DECIMAL;
@@ -28,6 +31,14 @@ public class ColumnWriter
     private final List<Column> columns = new ArrayList<>();
     private final List<Row> rows = new ArrayList<>();
     private boolean abbrev;
+
+    public enum DateStyle {
+         /** ISO 8601. */
+        ISO,
+
+        /** As with GNU coreutils 'ls -l'. */
+        LS
+    }
 
     public ColumnWriter()
     {
@@ -158,6 +169,12 @@ public class ColumnWriter
     public ColumnWriter date(String name)
     {
         addColumn(new DateColumn(name));
+        return this;
+    }
+
+    public ColumnWriter date(String name, DateStyle style)
+    {
+        addColumn(new DateColumn(name, style));
         return this;
     }
 
@@ -354,12 +371,30 @@ public class ColumnWriter
 
     private static class DateColumn extends AbstractColumn
     {
-        public static final String FORMAT = "%1$tF %1$tT";
-        public static final int WIDTH_OF_FORMAT = 19;
+        public static final String ISO_FORMAT = "%1$tF %1$tT";
+        public static final String LS_YEAR_FORMAT = "%1$tb %1$2te  %1$tY";
+        public static final String LS_NO_YEAR_FORMAT = "%1$tb %1$2te %1$tR";
+        public static final int WIDTH_OF_ISO_FORMAT = 19;
+        public static final int WIDTH_OF_LS_FORMAT = 12;
+
+        public final DateStyle style;
+        private final long sixMonthsInPast;
+        private final long oneHourInFuture;
 
         public DateColumn(String name)
         {
+            this(name, DateStyle.ISO);
+        }
+
+        public DateColumn(String name, DateStyle style)
+        {
             super(name);
+            this.style = style;
+
+            oneHourInFuture = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1);
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.MONTH, -6);
+            sixMonthsInPast = calendar.getTimeInMillis();
         }
 
         @Override
@@ -371,7 +406,31 @@ public class ColumnWriter
         @Override
         public int width(Object value)
         {
-            return WIDTH_OF_FORMAT;
+            switch (style) {
+            case ISO:
+                return WIDTH_OF_ISO_FORMAT;
+            case LS:
+                return WIDTH_OF_LS_FORMAT;
+            default:
+                throw new RuntimeException("Unknown style: " + style);
+            }
+        }
+
+        private String getFormat(Object value)
+        {
+            switch (style) {
+            case ISO:
+                return ISO_FORMAT;
+            case LS:
+                Date when = (Date) value;
+                if (when.getTime() < sixMonthsInPast || when.getTime() > oneHourInFuture) {
+                    return LS_YEAR_FORMAT;
+                } else {
+                    return LS_NO_YEAR_FORMAT;
+                }
+            default:
+                throw new RuntimeException("Unknown style: " + style);
+            }
         }
 
         @Override
@@ -382,7 +441,7 @@ public class ColumnWriter
                     out.append(' ');
                 }
             } else {
-                out.format(FORMAT, value);
+                out.format(getFormat(value), value);
             }
         }
     }
