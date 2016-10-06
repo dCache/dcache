@@ -18,6 +18,7 @@
 package org.dcache.srm.shell;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
@@ -25,8 +26,11 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.SetMultimap;
+import com.google.common.net.UrlEscapers;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import eu.emi.security.authn.x509.X509Credential;
@@ -63,15 +67,17 @@ import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -117,9 +123,8 @@ import org.dcache.srm.v2_2.TSupportedTransferProtocol;
 import org.dcache.srm.v2_2.TUserPermission;
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
+import org.dcache.util.ColumnWriter.DateStyle;
 import org.dcache.util.Glob;
-import org.dcache.util.TimeUtils;
-import org.dcache.util.TimeUtils.TimeUnitFormat;
 import org.dcache.util.cli.ShellApplication;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -136,6 +141,57 @@ public class SrmShell extends ShellApplication
 {
     @VisibleForTesting
     static final Pattern DN_WITH_CAPTURED_CN = Pattern.compile("^(?:/.+?=.+?)+?/CN=(?<cn>[^/=]+)(?:/.+?=[^/]*)*$");
+
+    private static abstract class FilenameComparator<T> implements Comparator<T>
+    {
+        private String stripNonAlphNum(String original)
+        {
+            int i = CharMatcher.javaLetterOrDigit().indexIn(original);
+            return (i > -1) ? original.subSequence(i, original.length()).toString() : original;
+        }
+
+        @Override
+        public int compare(T o1, T o2)
+        {
+            String f1 = stripNonAlphNum(getName(o1));
+            String f2 = stripNonAlphNum(getName(o2));
+            return f1.compareToIgnoreCase(f2);
+        }
+
+        protected abstract String getName(T item);
+    }
+
+    private static final Comparator<File> FILE_COMPARATOR = new FilenameComparator<File>() {
+                @Override
+                public String getName(File item)
+                {
+                    return item.getName();
+                }
+            };
+
+    private static final Comparator<String> STRING_FILENAME_COMPARATOR = new FilenameComparator<String>() {
+                @Override
+                public String getName(String item)
+                {
+                    return item;
+                }
+            };
+
+    private static final Comparator<StatItem<File,TMetaDataPathDetail>> STATITEM_FILE_COMPARATOR = new FilenameComparator<StatItem<File,TMetaDataPathDetail>>() {
+                @Override
+                public String getName(StatItem<File,TMetaDataPathDetail> item)
+                {
+                    return item.getPath().getName();
+                }
+            };
+
+    private static final Comparator<StatItem<Path,PosixFileAttributes>> STATITEM_PATH_COMPARATOR = new FilenameComparator<StatItem<Path,PosixFileAttributes>>() {
+                @Override
+                public String getName(StatItem<Path,PosixFileAttributes> item)
+                {
+                    return item.getPath().getFileName().toString();
+                }
+            };
 
     private final FileSystem lfs = FileSystems.getDefault();
     private final SrmFileSystem fs;
@@ -155,6 +211,53 @@ public class SrmShell extends ShellApplication
     private PromptType promptType = PromptType.SRM;
     private volatile boolean isClosed;
     private PermissionOperation checkCdPermission = PermissionOperation.SRM_CHECK_PERMISSION;
+
+    private static File getPath(TMetaDataPathDetail metadata)
+    {
+        File absPath = new File(metadata.getPath());
+        try {
+            // work-around DPM bug that returns paths like '//dpm'
+            return absPath.getCanonicalFile();
+        } catch (IOException e) {
+            return absPath;
+        }
+    }
+
+    private void consolePrintln()
+    {
+        try {
+            console.println();
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private void consolePrintln(CharSequence msg)
+    {
+        try {
+            console.println(msg);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private void consolePrint(CharSequence msg)
+    {
+        try {
+            console.print(msg);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private void consolePrintColumns(Collection<? extends CharSequence> items)
+    {
+        try {
+            console.printColumns(items);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
 
     public static void main(String[] arguments) throws Throwable
     {
@@ -541,7 +644,7 @@ public class SrmShell extends ShellApplication
                             expandInto(newExpansions, expansion, element);
                         }
                     }
-
+                    Collections.sort(newExpansions, FILE_COMPARATOR);
                     expansions = newExpansions;
                 }
             } catch (InterruptedException e) {
@@ -568,6 +671,251 @@ public class SrmShell extends ShellApplication
 
             return results;
         }
+    }
+
+    /**
+     * A namespace item with corresponding attributes from stat.
+     */
+    protected static class StatItem<P,A>
+    {
+        private final P path;
+        private final A attrs;
+
+        public StatItem(P path, A attrs)
+        {
+            this.path = path;
+            this.attrs = attrs;
+        }
+
+        public P getPath()
+        {
+            return path;
+        }
+
+        public A getAttributes()
+        {
+            return attrs;
+        }
+    }
+
+    private abstract class AbstractLsCommand<P,A> implements Callable<Serializable>
+    {
+        @Option(name = "time", values = { "modify", "atime", "mtime", "create" },
+                usage = "Show alternative time instead of modification time: "
+                        + "modify/mtime is the last write time, create is the "
+                        + "creation time.")
+        String time = "mtime";
+
+        @Option(name = "l",
+                usage = "List in long format.")
+        boolean verbose;
+
+        @Option(name = "h",
+                usage = "Use abbreviated file sizes. The values use decimal "
+                        + "prefixes; for example, 1 kB is 1000 bytes.")
+        boolean abbrev;
+
+        @Option(name = "a",
+                usage = "Do not hide files that are normally hidden.")
+        boolean showHidden;
+
+        @Option(name = "d",
+                usage = "display information about a directory rather than "
+                        + "listing the contents.")
+        boolean directory;
+
+        protected void acceptArguments(String[] items)
+        {
+            List<P> listTodo;
+            List<StatItem<P,A>> statTodo;
+
+            if (items == null || items.length == 0) {
+                listTodo = Collections.singletonList(getCwd());
+                statTodo = Collections.emptyList();
+            } else {
+                listTodo = new ArrayList<>();
+                statTodo = new ArrayList<>();
+
+                // The cwd or an ancestor path of cwd are always a directory,
+                // so we can avoid doing a stat.
+                List<String> statMultipleTodo = new ArrayList<>();
+                for (String item : items) {
+                    P path = convert(item);
+                    if (!directory && isAncestorOrCwd(path)) {
+                        listTodo.add(path);
+                    } else {
+                        statMultipleTodo.add(item);
+                    }
+                }
+
+                for (StatItem<P,A> item : statMultiple(statMultipleTodo)) {
+                    if (!directory && isDirectory(item.getAttributes())) {
+                        listTodo.add(item.getPath());
+                    } else {
+                        statTodo.add(item);
+                    }
+                }
+            }
+
+            if (verbose) {
+                listEntries(statTodo, false);
+            } else {
+                listNames(statTodo);
+            }
+
+            boolean needBlank = !statTodo.isEmpty();
+            boolean printHeader = !(statTodo.isEmpty() && listTodo.size() == 1);
+
+            for (P dir : listTodo) {
+                if (needBlank) {
+                    consolePrintln();
+                }
+                if (printHeader) {
+                    consolePrintln(dir + ":");
+                }
+                if (verbose) {
+                    listDirectoryStat(dir);
+                } else {
+                    listDirectoryNames(dir);
+                }
+                needBlank = true;
+                printHeader = true;
+            }
+        }
+
+        private void listNames(List<StatItem<P,A>> items)
+        {
+            List<String> names = new ArrayList<>(items.size());
+            for (StatItem<P,A> item : items) {
+                names.add(item.getPath().toString());
+            }
+            consolePrintColumns(names);
+        }
+
+        private void listDirectoryNames(P dir)
+        {
+            try {
+                List<String> filtered = new ArrayList<>();
+                for (String item : lsDirNames(dir)) {
+                    if (!isHidden(convert(item)) || showHidden) {
+                        filtered.add(item);
+                    }
+                }
+
+                Collections.sort(filtered, STRING_FILENAME_COMPARATOR);
+
+                if (showHidden) {
+                    filtered.add(0, ".");
+                    filtered.add(1, "..");
+                }
+
+                consolePrintColumns(filtered);
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                consolePrintln("Failed to list " + dir + ": " + e.getMessage());
+            }
+        }
+
+        private void listDirectoryStat(P dir)
+        {
+            try {
+                List<StatItem<P,A>> filtered = new ArrayList<>();
+                for (StatItem<P,A> item : lsDirStats(dir)) {
+                    if (!isHidden(item.getPath()) || showHidden) {
+                        filtered.add(item);
+                    }
+                }
+
+                sortStats(filtered);
+
+                if (showHidden) {
+                    try {
+                        A dirAttr = stat(dir);
+
+                        P parent = getParent(dir);
+                        try {
+                            A parentAttr = parent == null ? dirAttr : stat(parent);
+                            filtered.add(0, new StatItem(getChild(dir, ".."), parentAttr));
+                        } catch (Exception e) {
+                            Throwables.propagateIfPossible(e);
+                            consolePrintln("Failed to stat ..: " + e.getMessage());
+                        }
+
+                        filtered.add(0, new StatItem(getChild(dir, "."), dirAttr));
+                    } catch (Exception e) {
+                        Throwables.propagateIfPossible(e);
+                        consolePrintln("Failed to stat .: " + e.getMessage());
+                    }
+                }
+                listEntries(filtered, true);
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                consolePrintln("Failed to list " + dir + ": " + e.getMessage());
+            }
+        }
+
+        protected void listEntryNames(Iterable<P> entries, boolean isDirectory)
+        {
+            List<String> names = new ArrayList<>();
+            for (P item : entries) {
+                names.add(isDirectory ? name(item) : item.toString());
+            }
+            consolePrintColumns(names);
+        }
+
+        protected void listEntries(Iterable<StatItem<P,A>> entries, boolean isDirectory)
+        {
+            assert verbose;
+
+            long total = 0;
+            ColumnWriter writer = buildColumnWriter();
+            for (StatItem<P,A> item : entries) {
+                try {
+                    A attrs = item.getAttributes();
+                    long size = size(attrs);
+
+                    if (!isDirectory(attrs) && size > 0) {
+                        total += 1 + (size - 1)/4096;
+                    }
+
+                    acceptRow(writer, item.getPath(), item.getAttributes(), isDirectory);
+                } catch (Exception e) {
+                    Throwables.propagateIfPossible(e);
+                    consolePrintln("Cannot stat " + item + ": " + e.toString());
+                }
+            }
+
+            if (isDirectory) {
+                consolePrintln("total " + total*4);
+            }
+            consolePrint(writer.toString());
+        }
+
+        protected abstract P getCwd();
+        protected abstract P convert(String item);
+        protected abstract P getParent(P item);
+        protected abstract P resolveAgainstCwd(P item);
+        protected abstract boolean isAncestorOrCwd(P path);
+        protected abstract boolean isHidden(P path);
+        protected abstract boolean isDirectory(A attrs);
+        protected abstract String name(P path);
+        protected abstract ColumnWriter buildColumnWriter();
+        protected abstract void acceptRow(ColumnWriter writer, P name, A attrs,
+                boolean omitPath) throws Exception;
+
+        // Return stated items, if item was found. If item is relative then StatItem path is too.
+        protected abstract List<StatItem<P,A>> statMultiple(List<String> items);
+
+        protected abstract A stat(P absPath) throws Exception;
+        protected abstract long size(A attr) throws Exception;
+
+        // List contents of directories, returned values are simple names
+        protected abstract List<String> lsDirNames(P dir) throws Exception;
+
+        // if dir is relative, StatCache#getPath is relative
+        protected abstract List<StatItem<P,A>> lsDirStats(P dir) throws Exception;
+        protected abstract void sortStats(List<StatItem<P,A>> contents);
+        protected abstract P getChild(P dir, String name);
     }
 
     /*
@@ -639,10 +987,11 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lls", hint = "list local directory",
-                    description = "List a file or directory on the local "
-                            + "filesystem.  The format of the "
-                            + "output is controlled via various options."
+    @Command(name="lls", hint = "list contents from local filesystem",
+                    description = "List files and directories on the local "
+                            + "filesystem.  The arguments may be glob patters "
+                            + "that are expanded.  The format of the output is "
+                            + "controlled via various options."
                             + "\n\n"
                             + "The output is either in short or long format. "
                             + "Short format lists only the file or directory "
@@ -661,94 +1010,171 @@ public class SrmShell extends ShellApplication
                             + "and whether the file size is shown as a number "
                             + "of bytes or using decimal (powers of ten)"
                             + "prefixes.")
-    public class LlsCommand implements Callable<Serializable>
+    public class LlsCommand extends AbstractLsCommand<Path,PosixFileAttributes>
     {
-        private static final String DEFAULT_TIME = "mtime";
-
-        @Argument(required = false)
-        String path;
-
-        @Option(name = "time", values = { "modify", "atime", "mtime", "create" },
-                usage = "Show alternative time instead of modification time: "
-                        + "modify/mtime is the last write time, create is the "
-                        + "creation time.")
-        String time = DEFAULT_TIME;
-
-        @Option(name = "l",
-                usage = "List in long format.")
-        boolean verbose;
-
-        @Option(name = "h",
-                usage = "Use abbreviated file sizes. The values use decimal "
-                        + "prefixes; for example, 1 kB is 1000 bytes.")
-        boolean abbrev;
-
-        @Option(name = "a",
-                usage = "Do not hide files that are normally hidden.")
-        boolean showHidden;
-
-        @Option(name = "d",
-                usage = "display information about a directory rather than "
-                        + "listing the contents.")
-        boolean directory;
+        @ExpandWith(LocalFilesystemExpander.class)
+        @Argument(required = false, metaVar="PATH")
+        String[] items;
 
         @Override
-        public Serializable call() throws IOException
+        public Serializable call()
         {
-            Path dir = path == null ? lcwd : lcwd.resolve(path);
-
-            boolean isPattern = !Files.exists(dir) ||
-                !Files.getFileAttributeView(dir, PosixFileAttributeView.class).readAttributes().isDirectory();
-
-            final Pattern glob = isPattern ? Glob.parseGlobToPattern(dir.getFileName().toString())
-                    : directory ? Pattern.compile(Pattern.quote(dir.getFileName().toString())) : Pattern.compile(".*");
-
-            if (isPattern || directory) {
-                dir = dir.getParent();
-            }
-
-            DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
-                @Override
-                public boolean accept(Path entry) throws IOException
-                {
-                    String name = entry.getFileName().toString();
-                    return glob.matcher(name).matches() &&
-                            (!name.startsWith(".") || showHidden);
-                }
-            };
-
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
-                if (verbose) {
-                    ColumnWriter writer = new ColumnWriter()
-                            .abbreviateBytes(abbrev)
-                            .left("mode")
-                            .space().left("owner")
-                            .space().left("group")
-                            .space().bytes("size")
-                            .space().date("time")
-                            .space().left("name");
-                    for (Path entry : stream) {
-                        PosixFileAttributes attrs = Files.getFileAttributeView(entry, PosixFileAttributeView.class).readAttributes();
-
-                        writer.row()
-                                .value("mode", permissionsFor(attrs))
-                                .value("owner", attrs.owner().getName())
-                                .value("group", attrs.group().getName())
-                                .value("size", attrs.size())
-                                .value("time", new Date(getFileTime(attrs).toMillis()))
-                                .value("name", entry.getFileName().toString());
-                    }
-                    console.print(writer.toString());
-                } else {
-                    List<String> names = new ArrayList<>();
-                    for (Path entry : stream) {
-                        names.add(entry.getFileName().toString());
-                    }
-                    console.printColumns(names);
-                }
-
-            }
+            acceptArguments(items);
             return null;
+        }
+
+        @Override
+        protected Path getCwd()
+        {
+            return lcwd;
+        }
+
+        @Override
+        protected Path convert(String item)
+        {
+            Path abs = lcwd.resolve(item);
+            return item.startsWith("/") ? abs : lcwd.relativize(abs);
+        }
+
+        @Override
+        protected Path resolveAgainstCwd(Path path)
+        {
+            return lcwd.resolve(path);
+        }
+
+        @Override
+        protected boolean isHidden(Path path)
+        {
+            try {
+                return Files.isHidden(path);
+            } catch (IOException e) {
+                return false;
+            }
+        }
+
+        @Override
+        protected boolean isDirectory(PosixFileAttributes attrs)
+        {
+            return attrs.isDirectory();
+        }
+
+        @Override
+        protected boolean isAncestorOrCwd(Path path)
+        {
+            return lcwd.startsWith(lcwd.resolve(path));
+        }
+
+        @Override
+        protected Path getParent(Path item)
+        {
+            return item.getParent();
+        }
+
+        @Override
+        protected long size(PosixFileAttributes attr) throws IOException
+        {
+            return attr.size();
+        }
+
+        @Override
+        protected String name(Path path)
+        {
+            return path.getFileName().toString();
+        }
+
+        @Override
+        protected ColumnWriter buildColumnWriter()
+        {
+            return new ColumnWriter()
+                    .abbreviateBytes(abbrev)
+                    .left("mode")
+                    .space().right("ncount")
+                    .space().left("owner")
+                    .space().left("group")
+                    .space().bytes("size")
+                    .space().date("time", DateStyle.LS)
+                    .space().left("name");
+        }
+
+        @Override
+        protected void acceptRow(ColumnWriter writer, Path name,
+                PosixFileAttributes attrs, boolean omitPath) throws IOException
+        {
+            writer.row()
+                    .value("mode", permissionsFor(attrs))
+                    .value("ncount", Files.getAttribute(resolveAgainstCwd(name), "unix:nlink"))
+                    .value("owner", attrs.owner().getName())
+                    .value("group", attrs.group().getName())
+                    .value("size", attrs.size())
+                    .value("time", new Date(getFileTime(attrs).toMillis()))
+                    .value("name", omitPath ? name.getFileName() : name);
+        }
+
+        @Override
+        protected List<String> lsDirNames(Path dir) throws IOException
+        {
+            List<String> names = new ArrayList<>();
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(lcwd.resolve(dir))) {
+                for (Path item : stream) {
+                    names.add(item.getFileName().toString());
+                }
+            }
+
+            return names;
+        }
+
+        @Override
+        protected List<StatItem<Path,PosixFileAttributes>> lsDirStats(Path dir) throws IOException
+        {
+            List<StatItem<Path,PosixFileAttributes>> statList = new ArrayList<>();
+
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(lcwd.resolve(dir))) {
+                for (Path item : stream) {
+                    statList.add(new StatItem(item, stat(item)));
+                }
+            }
+
+            return statList;
+        }
+
+        @Override
+        protected void sortStats(List<StatItem<Path,PosixFileAttributes>> contents)
+        {
+            Collections.sort(contents, STATITEM_PATH_COMPARATOR);
+        }
+
+        @Override
+        protected Path getChild(Path dir, String name)
+        {
+            return dir.resolve(name);
+        }
+
+
+        @Override
+        protected PosixFileAttributes stat(Path absPath) throws IOException
+        {
+            return Files.getFileAttributeView(absPath,
+                    PosixFileAttributeView.class).readAttributes();
+        }
+
+        @Override
+        protected List<StatItem<Path,PosixFileAttributes>> statMultiple(List<String> items)
+        {
+            List<StatItem<Path,PosixFileAttributes>> statItems = new ArrayList<>(items.size());
+
+            for (String item : items) {
+                Path path = convert(item);
+                Path absPath = resolveAgainstCwd(path);
+                try {
+                    PosixFileAttributes attrs = stat(absPath);
+                    statItems.add(new StatItem(path, attrs));
+                } catch (IOException e) {
+                    // simply fail to populate the list.
+                }
+            }
+
+            return statItems;
         }
 
         private FileTime getFileTime(PosixFileAttributes attrs)
@@ -933,14 +1359,110 @@ public class SrmShell extends ShellApplication
      */
     private class SrmFilesystemExpander extends AbstractFilesystemExpander
     {
+        private final boolean verboseList;
+
         private final LoadingCache<URI, TMetaDataPathDetail[]> lsCache = CacheBuilder.newBuilder()
                 .build(new CacheLoader<URI, TMetaDataPathDetail[]>() {
                     @Override
                     public TMetaDataPathDetail[] load(URI key) throws Exception
                     {
-                        return fs.list(key, false);
+                        TMetaDataPathDetail[] contents = fs.list(key, verboseList);
+                        if (verboseList) {
+                            for (TMetaDataPathDetail item : contents) {
+                                statCache.put(getPath(item), item);
+                            }
+                        }
+                        return contents;
                     }
                 });
+
+        private final LoadingCache<File, TMetaDataPathDetail> statCache = CacheBuilder.newBuilder()
+                .build(new CacheLoader<File, TMetaDataPathDetail>() {
+                    @Override
+                    public TMetaDataPathDetail load(File key) throws Exception
+                    {
+                        return fs.stat(asURI(key));
+                    }
+                });
+
+
+        public SrmFilesystemExpander()
+        {
+            this(false);
+        }
+
+        public SrmFilesystemExpander(boolean verboseList)
+        {
+            this.verboseList = verboseList;
+        }
+
+        private File resolveAgainstCwd(File path)
+        {
+            return path.isAbsolute() ? path : new File(pwd.getPath(), path.getPath());
+        }
+
+        private String escape(String path)
+        {
+            if (path.isEmpty() || path.equals("/")) {
+                return path;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (String element : path.split("/")) {
+                sb.append(UrlEscapers.urlPathSegmentEscaper().escape(element));
+                sb.append('/');
+            }
+            return sb.toString();
+        }
+
+        private URI asURI(File directory)
+        {
+            String absPath = resolveAgainstCwd(directory).getPath();
+            String escaped = escape(absPath);
+            URI path = new URI(pwd);
+            try {
+                path.setPath(escaped);
+            } catch (URI.MalformedURIException e) {
+                // Shouldn't happen.
+                throw Throwables.propagate(e);
+            }
+            return path;
+        }
+
+        private RuntimeException propagate(ExecutionException e) throws RemoteException, SRMException, InterruptedException
+        {
+            Throwable cause = e.getCause();
+            Throwables.propagateIfInstanceOf(cause, RemoteException.class);
+            Throwables.propagateIfInstanceOf(cause, SRMException.class);
+            Throwables.propagateIfInstanceOf(cause, InterruptedException.class);
+            throw Throwables.propagate(cause == null ? e : cause);
+        }
+
+        protected TMetaDataPathDetail[] list(File directory) throws RemoteException,
+                SRMException, InterruptedException
+        {
+            try {
+                return lsCache.get(asURI(directory));
+            } catch (ExecutionException e) {
+                throw propagate(e);
+            }
+        }
+
+        protected TMetaDataPathDetail[] listIfPresent(File directory)
+        {
+            return lsCache.getIfPresent(asURI(directory));
+        }
+
+        protected TMetaDataPathDetail stat(File item) throws RemoteException,
+                URI.MalformedURIException, SRMException, InterruptedException
+        {
+            File absPath = resolveAgainstCwd(item);
+            try {
+                return statCache.get(absPath);
+            } catch (ExecutionException e) {
+                throw propagate(e);
+            }
+        }
 
         @Override
         protected void expandInto(List<File> matches, File directory, String glob)
@@ -948,24 +1470,10 @@ public class SrmShell extends ShellApplication
         {
             Pattern pattern = Glob.parseGlobToPattern(glob);
 
-            URI path = new URI(pwd);
-            path.setPath(directory.getPath());
-
-            TMetaDataPathDetail[] listing;
-            try {
-                listing = lsCache.get(path);
-            } catch (ExecutionException e) {
-                Throwable cause = e.getCause();
-                Throwables.propagateIfInstanceOf(cause, URI.MalformedURIException.class);
-                Throwables.propagateIfInstanceOf(cause, RemoteException.class);
-                Throwables.propagateIfInstanceOf(cause, SRMException.class);
-                Throwables.propagateIfInstanceOf(cause, InterruptedException.class);
-                throw Throwables.propagate(cause);
-            }
-
-            for (TMetaDataPathDetail detail : listing) {
-                File item = new File(detail.getPath());
-                if (pattern.matcher(item.getName()).matches()) {
+            for (TMetaDataPathDetail detail : list(directory)) {
+                File item = getPath(detail);
+                if (!item.getName().startsWith(".") &&
+                        pattern.matcher(item.getName()).matches()) {
                     matches.add(item);
                 }
             }
@@ -1004,24 +1512,16 @@ public class SrmShell extends ShellApplication
             description = "List the contents of a directory or information "
                     + "about a file or directory.  Various options modify "
                     + "which information is provided.")
-    public class LsCommand implements Callable<Serializable>
+    public class LsCommand  extends AbstractLsCommand<File,TMetaDataPathDetail>
     {
-        private static final String DEFAULT_TIME = "mtime";
-
-        private final DateFormat format = DateFormat.getDateTimeInstance();
-
-        @Option(name = "time", values = { "modify", "mtime", "create" },
-                usage = "Show alternative time instead of modification time: modify/mtime is the last write time, " +
-                        "create is the creation time.")
-        String time = DEFAULT_TIME;
-
-        @Option(name = "l",
-                usage = "List in long format.")
-        boolean verbose;
-
-        @Option(name = "h",
-                usage = "Use abbreviated file sizes.")
-        boolean abbrev;
+        private class DelegatingExpander implements GlobExpander<String>
+        {
+            @Override
+            public List<String> expand(Glob glob)
+            {
+                return expander.expand(glob);
+            }
+        }
 
         @Option(name = "full-dn",
                 usage = "If server identifies owner with a Distinguished Name, " +
@@ -1029,47 +1529,272 @@ public class SrmShell extends ShellApplication
                         "only the first common name (CN) element is shown.")
         boolean fullDn;
 
-        @Argument(required = false)
-        File path;
+        @ExpandWith(DelegatingExpander.class)
+        @Argument(required = false, metaVar="PATH")
+        String[] items;
+
+        SrmFilesystemExpander expander = new SrmFilesystemExpander(true);
 
         @Override
-        public Serializable call() throws IOException, SRMException, InterruptedException
+        public Serializable call()
         {
-            if (verbose) {
-                ColumnWriter writer = new ColumnWriter()
-                        .abbreviateBytes(abbrev)
-                        .left("mode")
-                        .space().left("owner")
-                        .space().left("group")
-                        .space().bytes("size")
-                        .space().date("time")
-                        .space().left("name");
-                for (TMetaDataPathDetail entry : fs.list(lookup(path), verbose)) {
-                    String userId = entry.getOwnerPermission().getUserID();
-
-                    writer.row()
-                            .value("mode", permissionsFor(entry))
-                            .value("owner", fullDn ? userId : simplifyUserId(userId))
-                            .value("group", entry.getGroupPermission().getGroupID())
-                            .value("size", (entry.getType() == TFileType.FILE) ? entry.getSize().longValue() : null)
-                            .value("time", getTime(entry).getTime())
-                            .value("name", new File(entry.getPath()).getName());
-                }
-                console.print(writer.toString());
-            } else {
-                List<String> names = new ArrayList<>();
-                for (TMetaDataPathDetail entry : fs.list(lookup(path), verbose)) {
-                    names.add(new File(entry.getPath()).getName());
-                }
-                console.printColumns(names);
-            }
+            acceptArguments(items);
             return null;
         }
+
+        @Override
+        protected File getCwd()
+        {
+            return new File(pwd.getPath());
+        }
+
+
+        @Override
+        protected File convert(String item)
+        {
+            return new File(item);
+        }
+
+        @Override
+        protected File resolveAgainstCwd(File path)
+        {
+            if (path.isAbsolute()) {
+                return path;
+            } else {
+                File resolved = new File(getCwd(), path.getPath());
+                try {
+                    return resolved.getCanonicalFile();
+                } catch (IOException e) {
+                    consolePrintln("Problem canonicalising " + resolved + ": " + e.toString());
+                    return resolved;
+                }
+            }
+        }
+
 
         private String simplifyUserId(String id)
         {
             Matcher m = DN_WITH_CAPTURED_CN.matcher(id);
             return m.matches() ? m.group("cn") : id;
+        }
+
+        @Override
+        protected File getChild(File dir, String name)
+        {
+            return new File(dir, name);
+        }
+
+        @Override
+        protected boolean isHidden(File path)
+        {
+            return path.getName().startsWith(".");
+        }
+
+        @Override
+        protected boolean isDirectory(TMetaDataPathDetail attrs)
+        {
+            return attrs.getType() == TFileType.DIRECTORY;
+        }
+
+        @Override
+        protected boolean isAncestorOrCwd(File path)
+        {
+            String cwd = pwd.getPath();
+            String absPath = resolveAgainstCwd(path).getPath();
+            return cwd.startsWith(absPath) || cwd.equals(absPath);
+        }
+
+        @Override
+        protected File getParent(File item)
+        {
+            return item.getParentFile();
+        }
+
+        @Override
+        protected long size(TMetaDataPathDetail attr) throws Exception
+        {
+            UnsignedLong size = attr.getSize();
+            return size == null ? 0 : size.longValue();
+        }
+
+        @Override
+        protected String name(File path)
+        {
+            return path.getName();
+        }
+
+        @Override
+        protected ColumnWriter buildColumnWriter()
+        {
+            return new ColumnWriter()
+                    .abbreviateBytes(abbrev)
+                    .left("mode")
+                    .space().left("owner")
+                    .space().left("group")
+                    .space().bytes("size")
+                    .space().date("time", DateStyle.LS)
+                    .space().left("name");
+        }
+
+        @Override
+        protected void acceptRow(ColumnWriter writer, File name,
+                TMetaDataPathDetail attr, boolean omitPath) throws Exception
+        {
+            String userId = attr.getOwnerPermission().getUserID();
+            writer.row()
+                    .value("mode", permissionsFor(attr))
+                    .value("owner", fullDn ? userId : simplifyUserId(userId))
+                    .value("group", attr.getGroupPermission().getGroupID())
+                    .value("size", (attr.getType() == TFileType.FILE) ? attr.getSize().longValue() : null)
+                    .value("time", getTime(attr).getTime())
+                    .value("name", omitPath ? name.getName() : name);
+        }
+
+        @Override
+        protected List<StatItem<File,TMetaDataPathDetail>> statMultiple(List<String> items)
+        {
+            List<StatItem<File,TMetaDataPathDetail>> statItems = new ArrayList<>(items.size());
+
+            Map<File,TMetaDataPathDetail> statCache = buildStatCache(items);
+            for (String item : items) {
+                File path = convert(item);
+                File absPath = resolveAgainstCwd(path);
+                TMetaDataPathDetail attrs = statCache.get(absPath);
+
+                try {
+                    if (attrs == null && getParent(absPath) == null) {
+                        attrs = stat(absPath);
+                    }
+
+                    if (attrs == null) {
+                        consolePrintln("No such file or directory: " + item);
+                    } else {
+                        statItems.add(new StatItem(path, attrs));
+                    }
+                } catch (RemoteException | URI.MalformedURIException | SRMException | InterruptedException e) {
+                    consolePrintln("Cannot stat /: " + e.toString());
+                }
+            }
+
+            return statItems;
+        }
+
+        private Map<File,TMetaDataPathDetail> buildStatCache(List<String> items)
+        {
+            Map<File,TMetaDataPathDetail> statCache = new HashMap<>();
+
+            SetMultimap<File,String> plan = HashMultimap.create();
+            for (String item : items) {
+                File absPath = resolveAgainstCwd(convert(item));
+                File dir = getParent(absPath);
+                if (dir != null) {
+                    plan.put(dir, name(absPath));
+                }
+            }
+
+            for (File dir : plan.keySet()) {
+                Set<String> names = plan.get(dir);
+                for (StatItem<File,TMetaDataPathDetail> s : lsDirStatsIfPresent(dir, names)) {
+                    statCache.put(s.getPath(), s.getAttributes());
+                    plan.remove(dir, name(s.getPath()));
+                }
+            }
+
+            try {
+                if (!plan.isEmpty()) {
+                    ArrayList<URI> surlList = new ArrayList<>(plan.size());
+                    for (Map.Entry<File,Collection<String>> dirFiles : plan.asMap().entrySet()) {
+                        String dir = dirFiles.getKey().toString();
+                        for (String name : dirFiles.getValue()) {
+                            String path = new File(dir + "/" + name).toString();
+                            try {
+                                surlList.add(new URI(pwd, path));
+                            } catch (URI.MalformedURIException ee) {
+                                consolePrintln("Failed to stat " + path + ": " + ee.getMessage());
+                            }
+                        }
+                    }
+
+                    URI[] surls = surlList.toArray(new URI[surlList.size()]);
+                    for (TMetaDataPathDetail attrs : fs.stat(surls)) {
+                        TReturnStatus status = attrs.getStatus();
+                        TStatusCode code = status.getStatusCode();
+                        File path = new File(attrs.getPath());
+                        if (code == TStatusCode.SRM_SUCCESS) {
+                            statCache.put(path, attrs);
+                        } else {
+                            consolePrintln("Problem with " + path + ": "
+                                    + code + " " + status.getExplanation());
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (SRMException e) {
+                if (e.getStatusCode() != TStatusCode.SRM_FAILURE) {
+                    consolePrintln("Problem with multistat: " + e.getMessage());
+                }
+            } catch (RemoteException e) {
+                consolePrintln("Problem with multistat: " + e.getMessage());
+            }
+
+            return statCache;
+        }
+
+        private List<StatItem<File,TMetaDataPathDetail>> lsDirStatsIfPresent(File dir, Set<String> names)
+        {
+            TMetaDataPathDetail[] dirContents = expander.listIfPresent(dir);
+
+            if (dirContents == null) {
+                return Collections.emptyList();
+            }
+
+            List<StatItem<File,TMetaDataPathDetail>> contents = new ArrayList<>(names.size());
+            for (TMetaDataPathDetail attrs : dirContents) {
+                File absPath = new File(attrs.getPath());
+
+                if (names.contains(absPath.getName())) {
+                    contents.add(new StatItem(absPath, attrs));
+                }
+
+                if (contents.size() == names.size()) {
+                    break;
+                }
+            }
+
+            return contents;
+        }
+
+        @Override
+        protected List<StatItem<File,TMetaDataPathDetail>> lsDirStats(File dir) throws RemoteException, SRMException, InterruptedException
+        {
+            List<StatItem<File,TMetaDataPathDetail>> contents = new ArrayList<>();
+            for (TMetaDataPathDetail item : expander.list(dir)) {
+                contents.add(new StatItem(new File(item.getPath()), item));
+            }
+            return contents;
+        }
+
+        @Override
+        protected List<String> lsDirNames(File dir) throws RemoteException, SRMException, InterruptedException
+        {
+            List<String> names = new ArrayList();
+            for (TMetaDataPathDetail item : expander.list(dir)) {
+                names.add(new File(item.getPath()).getName());
+            }
+            return names;
+        }
+
+        @Override
+        protected void sortStats(List<StatItem<File,TMetaDataPathDetail>> items)
+        {
+            Collections.sort(items, STATITEM_FILE_COMPARATOR);
+        }
+
+        @Override
+        protected TMetaDataPathDetail stat(File item) throws RemoteException, URI.MalformedURIException, SRMException, InterruptedException
+        {
+            return expander.stat(item);
         }
 
         private Calendar getTime(TMetaDataPathDetail entry)

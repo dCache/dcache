@@ -94,6 +94,8 @@ import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
 @ParametersAreNonnullByDefault
 public class AxisSrmFileSystem implements SrmFileSystem
 {
+    private final int MAX_BULK_STAT = 1_000;
+
     private final ISRM srm;
     private final SrmTransferAgent srmAgent = new SrmTransferAgent();
     private X509Credential credential;
@@ -134,29 +136,61 @@ public class AxisSrmFileSystem implements SrmFileSystem
     @Override
     public TMetaDataPathDetail stat(URI surl) throws RemoteException, SRMException, InterruptedException
     {
+        TMetaDataPathDetail result = stat(new URI[]{surl})[0];
+        checkSuccess(result.getStatus());
+        return result;
+    }
+
+    @Nonnull
+    @Override
+    public TMetaDataPathDetail[] stat(URI... surls) throws RemoteException, SRMException, InterruptedException
+    {
+        if (surls.length <= MAX_BULK_STAT) {
+            return doBulkStat(surls);
+        } else {
+            TMetaDataPathDetail[] response = new TMetaDataPathDetail[surls.length];
+            URI[] surlsPart = new URI [MAX_BULK_STAT];
+            int index = 0;
+            while (index < surls.length) {
+                int count = Math.min(surls.length - index, MAX_BULK_STAT);
+                if (surlsPart.length != count) {
+                    surlsPart = new URI [count];
+                }
+                System.arraycopy(surls, index, surlsPart, 0, count);
+                TMetaDataPathDetail[] responsePart = doBulkStat(surlsPart);
+                System.arraycopy(responsePart, 0, response, index, count);
+                index += count;
+            }
+            return response;
+        }
+    }
+
+    private TMetaDataPathDetail[] doBulkStat(URI[] surls) throws RemoteException, SRMException, InterruptedException
+    {
         SrmLsResponse response = srm.srmLs(
-                new SrmLsRequest(null, new ArrayOfAnyURI(new URI[]{surl}), null, null, true, false, 0, 0, 1));
+                new SrmLsRequest(null, new ArrayOfAnyURI(surls), null, null, true, false, 0, 0, surls.length));
 
         ArrayOfTMetaDataPathDetail details;
+
         if (response.getReturnStatus().getStatusCode() != TStatusCode.SRM_REQUEST_QUEUED &&
                 response.getReturnStatus().getStatusCode() != TStatusCode.SRM_REQUEST_INPROGRESS) {
-            checkSuccess(response.getReturnStatus());
+            checkSuccess(response.getReturnStatus(), TStatusCode.SRM_SUCCESS, TStatusCode.SRM_PARTIAL_SUCCESS, TStatusCode.SRM_FAILURE);
             details = response.getDetails();
         } else {
             SrmStatusOfLsRequestResponse status;
             do {
-                TimeUnit.SECONDS.sleep(2);
+                TimeUnit.SECONDS.sleep(1);
                 status = srm.srmStatusOfLsRequest(
-                        new SrmStatusOfLsRequestRequest(null, response.getRequestToken(), 0, 1));
+                        new SrmStatusOfLsRequestRequest(null, response.getRequestToken(), 0, surls.length));
             } while (status.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_QUEUED ||
                     status.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_INPROGRESS);
-            checkSuccess(status.getReturnStatus());
+            checkSuccess(status.getReturnStatus(), TStatusCode.SRM_SUCCESS, TStatusCode.SRM_PARTIAL_SUCCESS, TStatusCode.SRM_FAILURE);
             details = status.getDetails();
         }
-        TMetaDataPathDetail attributes = details.getPathDetailArray(0);
-        checkSuccess(attributes.getStatus());
-        return attributes;
+
+        return details.getPathDetailArray();
     }
+
 
     @Nonnull
     @Override
@@ -247,7 +281,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
                                  count));
         while (response.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_QUEUED ||
                 response.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_INPROGRESS) {
-            TimeUnit.SECONDS.sleep(2);
+            TimeUnit.SECONDS.sleep(1);
             SrmStatusOfLsRequestResponse status =
                     srm.srmStatusOfLsRequest(
                             new SrmStatusOfLsRequestRequest(null, response.getRequestToken(), offset, count));

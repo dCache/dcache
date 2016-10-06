@@ -52,6 +52,9 @@ public interface SrmFileSystem extends AutoCloseable
     TMetaDataPathDetail stat(URI surl) throws RemoteException, SRMException, InterruptedException;
 
     @Nonnull
+    TMetaDataPathDetail[] stat(URI... surl) throws RemoteException, SRMException, InterruptedException;
+
+    @Nonnull
     TPermissionMode checkPermission(URI surl) throws RemoteException, SRMException;
 
     @Nonnull
