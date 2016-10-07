@@ -106,8 +106,8 @@ public class PoolManagerHandlerSubscriber
                                 @Override
                                 public void onSuccess(SerializablePoolManagerHandler handler)
                                 {
-                                    try {
-                                        synchronized (PoolManagerHandlerSubscriber.this) {
+                                    synchronized (PoolManagerHandlerSubscriber.this) {
+                                        try {
                                             current = Futures.immediateFuture(handler);
                                             if (!isStopped) {
                                                 ListenableFuture<SerializablePoolManagerHandler> next =
@@ -115,10 +115,11 @@ public class PoolManagerHandlerSubscriber
                                                                 handler.getVersion())), PoolMgrGetHandler::getHandler);
                                                 Futures.addCallback(next, this);
                                             }
+                                        } catch (Throwable t) {
+                                            current = Futures.immediateFailedFuture(t);
+                                            LOGGER.error("Failure in pool manager handler subscriber. Please report to support@dcache.org.", t);
+                                            throw t;
                                         }
-                                    } catch (Throwable t) {
-                                        LOGGER.error("Failure in pool manager handler subscriber. Please report to support@dcache.org.", t);
-                                        throw t;
                                     }
                                 }
 
