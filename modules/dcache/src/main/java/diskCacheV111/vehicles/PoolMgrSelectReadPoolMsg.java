@@ -28,22 +28,22 @@ import static org.dcache.namespace.FileAttribute.*;
  * free to either copy the file to another pool or stage it from
  * tape. These operations will cause the file attributes to be out of
  * date. In such cases PoolManager will reply with an OUT_OF_DATE
- * error code. The requestor is expected to refresh avilable file
+ * error code. The requester is expected to refresh available file
  * attributes and retry the request immediately.
  *
- * Should pool selection fail for any reason then the requestor may
+ * Should pool selection fail for any reason then the requester may
  * retry the request. In such cases PoolManager needs access to state
  * from the previous request. It is the responsibility of the
- * requestor to maintain this state and provide when retrying the
+ * requester to maintain this state and provide it when retrying the
  * request. The state is encapsulated in the request context. This
  * context should be attached to the retry request.
  *
- * The requestor should expect that a subsequent request to read the
+ * The requester should expect that a subsequent request to read the
  * file from a pool may fail. Typical reasons for such failures is
  * that the pool was disabled after pool manager selected the pool, or
  * that the name space contained stale information (such stale
  * information is cleared by pool on attempt to read the file). The
- * requestor may retry the pool selection and should reread file meta
+ * requester may retry the pool selection and should reread file meta
  * data before doing so.
  */
 public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
