@@ -1076,7 +1076,7 @@ public class CellAdapter
         public void run() {
             long timeout = subWithInfinity(deadline, System.currentTimeMillis());
             if (timeout > 0) {
-                sendMessage(msg, this, executor, timeout);
+                _nucleus.sendMessage(msg, true, true, false, this, executor, timeout);
             } else {
                 callback.answerTimedOut(msg);
             }
