@@ -1,6 +1,7 @@
 package dmg.cells.nucleus;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Monitor;
@@ -476,8 +477,10 @@ public class CellNucleus implements ThreadFactory
                 .filter(e -> e.getValue().getTimeout() < now)
                 .forEach(e -> timeOutMessage(e.getKey(), e.getValue(), this::reregisterCallback));
 
-        // Execute delayed operations
-        consumingIterable(_deferredTasks).forEach(Runnable::run);
+        // Execute delayed tasks; since those tasks may themselves add new deferred
+        // tasks we limit the operation to the number of tasks we started out with
+        // to avoid an infinite loop.
+        Iterables.limit(consumingIterable(_deferredTasks), _deferredTasks.size()).forEach(Runnable::run);
     }
 
     /**
