@@ -21,25 +21,26 @@ package org.dcache.cells;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Uninterruptibles;
 
+import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 
-import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.DelayedReply;
 
 /**
- * Adapts a Future of a Message to be a Reply.
+ * Adapts a Future to be a Reply.
  *
- * <p>Once the future completes, the reply is submitted.
+ * <p>Once the future completes, the reply is submitted. If the future returns null, no
+ * reply is generated. Otherwise the result is submitted as is. If the future fails
+ * with an exception, the exception is submitted as a reply.
  */
-public class FutureReply<T extends Message> extends MessageReply<T> implements Runnable
+public class FutureReply<T extends Serializable> extends DelayedReply implements Runnable
 {
-    private final T request;
-
     private final ListenableFuture<? extends T> future;
 
-    public FutureReply(T request, ListenableFuture<? extends T> future)
+    public FutureReply(ListenableFuture<? extends T> future)
     {
-        this.request = request;
         this.future = future;
         future.addListener(this, MoreExecutors.directExecutor());
     }
@@ -48,14 +49,12 @@ public class FutureReply<T extends Message> extends MessageReply<T> implements R
     public void run()
     {
         try {
-            T msg = future.get();
+            T msg = Uninterruptibles.getUninterruptibly(future);
             if (msg != null) {
                 reply(msg);
             }
-        } catch (InterruptedException e) {
-            fail(request, e);
         } catch (ExecutionException e) {
-            fail(request, e.getCause());
+            reply(e.getCause());
         }
     }
 }

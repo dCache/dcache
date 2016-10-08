@@ -429,7 +429,7 @@ public final class SpaceManagerService
 
     public Reply messageArrived(CellMessage envelope, PoolMgrGetHandler message)
     {
-        return new FutureReply<>(message, forward(envelope, message));
+        return new FutureReply<>(forward(envelope, message));
     }
 
     public Reply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message)
@@ -439,7 +439,7 @@ public final class SpaceManagerService
         ListenableFuture<PoolMgrGetHandler> result = forward(envelope, messageToForward);
         ListenableFuture<PoolMgrGetHandler> resultWithSilentTimeout =
                 catchingAsync(result, TimeoutCacheException.class, t -> Futures.immediateFuture(null));
-        return new FutureReply<>(message, resultWithSilentTimeout);
+        return new FutureReply<>(resultWithSilentTimeout);
     }
 
     protected ListenableFuture<PoolMgrGetHandler> forward(CellMessage envelope, PoolMgrGetHandler message)
