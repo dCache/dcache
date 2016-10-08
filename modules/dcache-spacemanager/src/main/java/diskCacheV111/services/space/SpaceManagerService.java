@@ -104,6 +104,7 @@ import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UserNamePrincipal;
+import org.dcache.cells.CellStub;
 import org.dcache.cells.FutureReply;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -445,7 +446,7 @@ public final class SpaceManagerService
     {
         ListenableFuture<PoolMgrGetHandler> response =
                 poolManagerHandler.sendAsync(endpoint, message, envelope.getTtl() - envelope.getLocalAge());
-        return Futures.transform(response, this::decorateHandler);
+        return CellStub.transform(response, this::decorateHandler);
     }
 
     private PoolMgrGetHandler decorateHandler(PoolMgrGetHandler message)

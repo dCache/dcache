@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.annotation.concurrent.GuardedBy;
 
 import java.util.concurrent.CancellationException;
@@ -99,7 +98,7 @@ public class PoolManagerHandlerSubscriber
     @PostConstruct
     public synchronized void start()
     {
-        current = transformAsync(startGate, ignored -> transform(query(new PoolMgrGetHandler()), PoolMgrGetHandler::getHandler));
+        current = transformAsync(startGate, ignored -> CellStub.transform(query(new PoolMgrGetHandler()), PoolMgrGetHandler::getHandler));
 
         Futures.addCallback(current, new FutureCallback<SerializablePoolManagerHandler>()
                             {
@@ -111,7 +110,7 @@ public class PoolManagerHandlerSubscriber
                                             current = Futures.immediateFuture(handler);
                                             if (!isStopped) {
                                                 ListenableFuture<SerializablePoolManagerHandler> next =
-                                                        transform(query(new PoolMgrGetUpdatedHandler(
+                                                        CellStub.transform(query(new PoolMgrGetUpdatedHandler(
                                                                 handler.getVersion())), PoolMgrGetHandler::getHandler);
                                                 Futures.addCallback(next, this);
                                             }
