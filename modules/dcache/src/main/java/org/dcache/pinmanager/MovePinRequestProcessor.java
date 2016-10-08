@@ -22,6 +22,8 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.Subjects;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.model.Pin;
 import org.dcache.pool.repository.StickyRecord;
@@ -173,7 +175,7 @@ public class MovePinRequestProcessor
     }
 
     private void setSticky(String poolName, PnfsId pnfsId, boolean sticky, String owner, long validTill)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(poolName);
         if (pool == null || !pool.isActive()) {
@@ -185,7 +187,7 @@ public class MovePinRequestProcessor
     }
 
     protected Pin move(Pin pin, String pool, Date expirationTime)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         Pin tmpPin = createTemporaryPin(pin.getPnfsId(), pool);
         setSticky(tmpPin.getPool(),
@@ -210,35 +212,39 @@ public class MovePinRequestProcessor
         messageArrived(PinManagerMovePinMessage message)
         throws CacheException, InterruptedException
     {
-        PnfsId pnfsId = message.getPnfsId();
-        String source = message.getSourcePool();
-        String target = message.getTargetPool();
+        try {
+            PnfsId pnfsId = message.getPnfsId();
+            String source = message.getSourcePool();
+            String target = message.getTargetPool();
 
-        Collection<Pin> pins = _dao.get(_dao.where().pnfsId(pnfsId).pool(source));
+            Collection<Pin> pins = _dao.get(_dao.where().pnfsId(pnfsId).pool(source));
 
-        /* Remove all stale sticky flags.
-         */
-        for (StickyRecord record: message.getRecords()) {
-            if (!containsPin(pins, record.owner())) {
-                setSticky(source, pnfsId, false, record.owner(), 0);
+            /* Remove all stale sticky flags.
+             */
+            for (StickyRecord record: message.getRecords()) {
+                if (!containsPin(pins, record.owner())) {
+                    setSticky(source, pnfsId, false, record.owner(), 0);
+                }
             }
+
+            /* Move all pins to the target pool.
+             */
+            for (Pin pin: pins) {
+                Pin tmpPin = move(pin, target, pin.getExpirationTime());
+
+                setSticky(tmpPin.getPool(),
+                          tmpPin.getPnfsId(),
+                          false,
+                          tmpPin.getSticky(),
+                          0);
+
+                _dao.delete(tmpPin);
+            }
+
+            _log.info("Moved pins for {} from {} to {}", pnfsId, source, target);
+        } catch (NoRouteToCellException e) {
+            throw new CacheException("Failed to move pin due to communication failure: " + e.getDestinationPath(), e);
         }
-
-        /* Move all pins to the target pool.
-         */
-        for (Pin pin: pins) {
-            Pin tmpPin = move(pin, target, pin.getExpirationTime());
-
-            setSticky(tmpPin.getPool(),
-                      tmpPin.getPnfsId(),
-                      false,
-                      tmpPin.getSticky(),
-                      0);
-
-            _dao.delete(tmpPin);
-        }
-
-        _log.info("Moved pins for {} from {} to {}", pnfsId, source, target);
 
         return message;
     }
@@ -247,33 +253,37 @@ public class MovePinRequestProcessor
         messageArrived(PinManagerExtendPinMessage message)
         throws CacheException, InterruptedException
     {
-        Pin pin = _dao.get(_dao.where().pnfsId(message.getFileAttributes().getPnfsId()).id(message.getPinId()));
-        if (pin == null) {
-            throw new InvalidMessageCacheException("Pin does not exist");
-        } else if (!_pdp.canExtend(message.getSubject(), pin)) {
-            throw new PermissionDeniedCacheException("Access denied");
-        } else if (pin.getState() == PINNING) {
-            throw new InvalidMessageCacheException("File is not pinned yet");
-        } else if (pin.getState() == UNPINNING) {
-            throw new InvalidMessageCacheException("Pin is no longer valid");
+        try {
+            Pin pin = _dao.get(_dao.where().pnfsId(message.getFileAttributes().getPnfsId()).id(message.getPinId()));
+            if (pin == null) {
+                throw new InvalidMessageCacheException("Pin does not exist");
+            } else if (!_pdp.canExtend(message.getSubject(), pin)) {
+                throw new PermissionDeniedCacheException("Access denied");
+            } else if (pin.getState() == PINNING) {
+                throw new InvalidMessageCacheException("File is not pinned yet");
+            } else if (pin.getState() == UNPINNING) {
+                throw new InvalidMessageCacheException("Pin is no longer valid");
+            }
+
+            if (_maxLifetime > -1) {
+                message.setLifetime(Math.min(_maxLifetimeUnit.toMillis(_maxLifetime), message.getLifetime()));
+            }
+
+            long lifetime = message.getLifetime();
+            if (pin.hasRemainingLifetimeLessThan(lifetime)) {
+                long now = System.currentTimeMillis();
+                Date date = (lifetime == -1) ? null : new Date(now + lifetime);
+                move(pin, pin.getPool(), date);
+                message.setExpirationTime(date);
+            } else {
+                message.setExpirationTime(pin.getExpirationTime());
+            }
+
+            _log.info("Extended pin for {} ({})", pin.getPnfsId(), pin.getPinId());
+
+            return message;
+        } catch (NoRouteToCellException e) {
+            throw new CacheException("Failed to extend pin due to communication failure: " + e.getDestinationPath(), e);
         }
-
-        if (_maxLifetime > -1) {
-            message.setLifetime(Math.min(_maxLifetimeUnit.toMillis(_maxLifetime), message.getLifetime()));
-        }
-
-        long lifetime = message.getLifetime();
-        if (pin.hasRemainingLifetimeLessThan(lifetime)) {
-            long now = System.currentTimeMillis();
-            Date date = (lifetime == -1) ? null : new Date(now + lifetime);
-            move(pin, pin.getPool(), date);
-            message.setExpirationTime(date);
-        } else {
-            message.setExpirationTime(pin.getExpirationTime());
-        }
-
-        _log.info("Extended pin for {} ({})", pin.getPnfsId(), pin.getPinId());
-
-        return message;
     }
 }

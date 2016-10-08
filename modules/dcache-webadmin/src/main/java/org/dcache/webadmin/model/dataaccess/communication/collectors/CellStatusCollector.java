@@ -25,6 +25,7 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
@@ -58,7 +59,7 @@ public class CellStatusCollector extends Collector implements CellMessageReceive
                     PoolManagerCellInfo.class);
             pools = info.getPoolCells();
             _log.debug("Pools found: {}", pools);
-        } catch (CacheException ex) {
+        } catch (NoRouteToCellException | CacheException ex) {
             pools = Collections.emptySet();
             _log.debug("Could not retrieve Pools from {}", _poolManagerName);
         }

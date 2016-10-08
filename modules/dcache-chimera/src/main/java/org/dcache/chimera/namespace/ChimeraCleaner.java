@@ -392,7 +392,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             if (!_poolsBlackList.containsKey(pool)) {
                 try {
                     cleanPoolComplete(pool);
-                } catch (CacheException e) {
+                } catch (NoRouteToCellException | CacheException e) {
                     _log.warn("Failed to remove files from {}: {}", pool, e.getMessage());
                 }
             }
@@ -409,7 +409,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      */
 
     private void sendRemoveToPoolCleaner(String poolName, List<String> removeList)
-            throws InterruptedException, CacheException
+            throws InterruptedException, CacheException, NoRouteToCellException
     {
         _log.trace("sendRemoveToPoolCleaner: poolName={} removeList={}", poolName, removeList);
 
@@ -428,7 +428,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             } else {
                 throw CacheExceptionFactory.exceptionOf(msg);
             }
-        } catch (CacheException e) {
+        } catch (NoRouteToCellException | CacheException e) {
             _poolsBlackList.put(poolName, System.currentTimeMillis());
             throw e;
         }
@@ -457,24 +457,23 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2)";
         for (String id : _db.queryForList(QUERY, String.class)) {
             try {
-                sendDeleteNotifications(id);
+                sendDeleteNotifications(new PnfsId(id));
+                _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
             } catch (CacheException e) {
                 _log.warn(e.getMessage());
             }
         }
     }
 
-    private void sendDeleteNotifications(String id) throws InterruptedException, CacheException
+    private void sendDeleteNotifications(PnfsId pnfsId) throws InterruptedException, CacheException
     {
-        PnfsId pnfsId = new PnfsId(id);
         for (CellPath address : _deleteNotificationTargets) {
             try {
                 _notificationStub.sendAndWait(address, new PnfsDeleteEntryNotificationMessage(pnfsId));
-            } catch (CacheException e) {
-                throw new CacheException("Failed to notify " + address + " about deletion of " + id + ": " + e.getMessage(), e);
+            } catch (NoRouteToCellException | CacheException e) {
+                throw new CacheException("Failed to notify " + address + " about deletion of " + pnfsId + ": " + e.getMessage(), e);
             }
         }
-        _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
     }
 
     /**
@@ -483,7 +482,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      *
      * @param poolName name of the pool
      */
-    void cleanPoolComplete(final String poolName) throws InterruptedException, CacheException
+    void cleanPoolComplete(final String poolName) throws InterruptedException, CacheException, NoRouteToCellException
     {
         _log.trace("CleanPoolComplete(): poolname={}", poolName);
 
@@ -497,7 +496,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                                   sendRemoveToPoolCleaner(poolName, files);
                                   files.clear();
                               }
-                          } catch (InterruptedException | CacheException e) {
+                          } catch (InterruptedException | CacheException | NoRouteToCellException e) {
                               throw new UncheckedExecutionException(e);
                           }
                       },
@@ -505,6 +504,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         } catch (UncheckedExecutionException e) {
             Throwables.propagateIfInstanceOf(e.getCause(), InterruptedException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
+            Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
             throw Throwables.propagate(e.getCause());
         }
     }
@@ -600,31 +600,32 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     public static final String hh_clean_file =
         "<pnfsID> # clean this file (file will be deleted from DISK)";
-    public String ac_clean_file_$_1(Args args) throws InterruptedException, CacheException
+    public String ac_clean_file_$_1(Args args) throws InterruptedException, CacheException, NoRouteToCellException
     {
         try {
             String pnfsid = args.argv(0);
             List<String> removeFile = Collections.singletonList(pnfsid);
             _db.query("SELECT ilocation FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=1 ORDER BY iatime",
                       rs -> {
+                          String pool = rs.getString("ilocation");
                           try {
-                              String pool = rs.getString("ilocation");
                               sendRemoveToPoolCleaner(pool, removeFile);
-                          } catch (CacheException | InterruptedException e) {
+                          } catch (CacheException | InterruptedException | NoRouteToCellException e) {
                               throw new UncheckedExecutionException(e);
-                          }
+                         }
                       },
                       pnfsid);
         } catch (UncheckedExecutionException e) {
             Throwables.propagateIfInstanceOf(e.getCause(), InterruptedException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
+            Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
             throw Throwables.propagate(e.getCause());
         }
         return "";
     }
 
     public static final String hh_clean_pool = "<poolName> # clean this pool ";
-    public String ac_clean_pool_$_1(Args args) throws CacheException, InterruptedException
+    public String ac_clean_pool_$_1(Args args) throws CacheException, InterruptedException, NoRouteToCellException
     {
         String poolName = args.argv(0);
         if (_poolsBlackList.containsKey(poolName)) {

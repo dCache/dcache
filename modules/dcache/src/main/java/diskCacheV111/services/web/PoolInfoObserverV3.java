@@ -64,7 +64,7 @@ public class PoolInfoObserverV3 extends AbstractCell
                         while (!Thread.interrupted()) {
                             try {
                                 refresh();
-                            } catch (CacheException e) {
+                            } catch (CacheException | NoRouteToCellException e) {
                                 _log.error("Failed to update topology map: " + e.getMessage());
                             } catch (RuntimeException e) {
                                 _log.error("Failed to update topology map: " + e);
@@ -91,7 +91,7 @@ public class PoolInfoObserverV3 extends AbstractCell
     }
 
     private void refresh()
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         CellInfoContainer container = collectPoolGroups();
         PoolCellQueryContainer topology = collectPoolInfo(container);
@@ -99,7 +99,7 @@ public class PoolInfoObserverV3 extends AbstractCell
     }
 
     private CellInfoContainer collectPoolGroups()
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         CellInfoContainer container = new CellInfoContainer();
         Object[] poolGroups =
@@ -126,7 +126,7 @@ public class PoolInfoObserverV3 extends AbstractCell
 
     private PoolCellQueryContainer
         collectPoolInfo(final CellInfoContainer container)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         PoolManagerCellInfo poolManagerInfo =
             _poolManager.sendAndWait("xgetcellinfo", PoolManagerCellInfo.class);

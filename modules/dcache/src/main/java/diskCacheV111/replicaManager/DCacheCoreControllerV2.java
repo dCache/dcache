@@ -1077,7 +1077,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
      return task;
    }
 
-   private void getCostTable() throws CacheException, InterruptedException
+   private void getCostTable() throws CacheException, InterruptedException, NoRouteToCellException
    {
        synchronized (_costTableLock) {
            if (_costTable == null ||
@@ -1400,7 +1400,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
          try {
              PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsId, Pool2PoolTransferMsg.NEEDED_ATTRIBUTES);
              return _pnfsManager.sendAndWait(msg).getFileAttributes();
-         } catch (CacheException e) {
+         } catch (CacheException | NoRouteToCellException e) {
              throw new
                      MissingResourceException(
                      e.getMessage(),
@@ -1442,7 +1442,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
 
        try {
            msg = _pnfsManager.sendAndWait(msg);
-       } catch (CacheException e) {
+       } catch (CacheException | NoRouteToCellException e) {
            throw new MissingResourceException(
                    e.getMessage(),
                    "PnfsManager",
@@ -1556,7 +1556,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
    {
        try {
            return _poolManager.sendAndWait(new PoolManagerGetPoolListMessage()).getPoolList();
-       } catch (CacheException e) {
+       } catch (CacheException | NoRouteToCellException e) {
            throw new
                    MissingResourceException(
                    e.getMessage(),
@@ -1571,7 +1571,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
      Object[] r;
      try {
        r = _poolManager.sendAndWait("psux ls pgroup " + pGroup, Object[].class);
-     } catch (CacheException e) {
+     } catch (CacheException | NoRouteToCellException e) {
        _log.info( "GetPoolGroup: {}", e.getMessage());
        return null;
      }
@@ -1605,7 +1605,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
        PoolCellInfo msg;
        try {
            msg = _poolStub.sendAndWait(new CellPath(poolName), "xgetcellinfo", PoolCellInfo.class);
-       } catch (CacheException e) {
+       } catch (CacheException | NoRouteToCellException e) {
            throw new MissingResourceException(
                    e.getMessage(), poolName, "xgetcellinfo");
        }
@@ -1642,7 +1642,7 @@ public abstract class DCacheCoreControllerV2 extends CellAdapter {
            try {
                msg = _poolStub.sendAndWait(new CellPath(poolName),
                                            new PoolQueryRepositoryMsg(poolName, cookie));
-           } catch (CacheException e) {
+           } catch (CacheException | NoRouteToCellException e) {
                throw new MissingResourceException( e.getMessage(), poolName, "PoolQueryRepositoryMsg");
            }
 

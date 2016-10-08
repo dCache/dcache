@@ -285,7 +285,7 @@ public class UserAdminShell
         Object[] r;
         try {
             r = _acmStub.sendAndWait(request, Object[].class);
-        } catch (TimeoutCacheException e) {
+        } catch (TimeoutCacheException | NoRouteToCellException e) {
             throw new AclException(e.getMessage());
         } catch (CacheException | InterruptedException e) {
             throw new AclException("Problem: " + e.getMessage());
@@ -385,7 +385,7 @@ public class UserAdminShell
      * is preserved (ie. the output contains matching cells in the same order).
      */
     private List<String> expandCellPatterns(List<String> patterns)
-            throws CacheException, InterruptedException, ExecutionException
+            throws CacheException, InterruptedException, ExecutionException, NoRouteToCellException
     {
         /* Query domains and well-known cells on demand. */
         Supplier<Future<Map<String, Collection<String>>>> domains =
@@ -787,7 +787,7 @@ public class UserAdminShell
         Args args;
 
         @Override
-        public String call() throws Exception
+        public String call() throws InterruptedException, CacheException, NoRouteToCellException, AclException
         {
             FileAttributes attributes = getFileAttributes(file);
             args.shift();
@@ -872,7 +872,7 @@ public class UserAdminShell
                                  toGlobPredicate(buffer + "*")).get());
             }
             return 0;
-        } catch (CacheException | ExecutionException e) {
+        } catch (CacheException | NoRouteToCellException | ExecutionException e) {
             _log.info("Completion failed: {}", e.toString());
             return -1;
         } catch (InterruptedException e) {
@@ -912,7 +912,7 @@ public class UserAdminShell
                                  toGlobPredicate(buffer + "*")).get());
             }
             return 0;
-        } catch (CacheException | ExecutionException e) {
+        } catch (CacheException | NoRouteToCellException | ExecutionException e) {
             _log.info("Completion failed: {}", e.toString());
             return -1;
         } catch (InterruptedException e) {
@@ -1000,7 +1000,7 @@ public class UserAdminShell
                     /* Assume all pools have the same commands. */
                     return arguments.completeTail(createRemoteCompleter(Iterables.get(locations, 0)));
                 }
-            } catch (CacheException e) {
+            } catch (CacheException | NoRouteToCellException e) {
                 _log.info("Completion failed: {}", e.toString());
                 return -1;
             } catch (InterruptedException e) {
@@ -1023,7 +1023,7 @@ public class UserAdminShell
     /**
      * Queries the pnfs id and file locations of a file. Used by the {@literal \sl} command.
      */
-    private FileAttributes getFileAttributes(String file) throws CacheException, InterruptedException
+    private FileAttributes getFileAttributes(String file) throws CacheException, InterruptedException, NoRouteToCellException
     {
         /* Lookup file in name space */
         PnfsGetFileAttributes request;

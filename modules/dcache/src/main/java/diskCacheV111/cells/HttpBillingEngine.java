@@ -12,6 +12,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.DomainContextAware;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
@@ -152,6 +153,8 @@ public class HttpBillingEngine
             html.addHeader("/styles/billing.css", "dCache Billing");
             Map<String, long[]> map = _billing.sendAndWait("get pool statistics " + pool, Map.class);
             printPoolStatistics(html, map, pool);
+        } catch (NoRouteToCellException e) {
+            html.print("<blockquote><pre>No connection to billing</pre></blockquote>");
         } catch (TimeoutCacheException e) {
             html.print("<blockquote><pre>Request Timed Out</pre></blockquote>");
         } catch (InterruptedException | CacheException e) {
@@ -178,6 +181,8 @@ public class HttpBillingEngine
                 html.print("<p class=\"error\">This 'billingCell' doesn't support: 'get pool statistics':");
                 html.print("<blockquote><pre>" + e + "</pre></blockquote>");
             }
+        } catch (NoRouteToCellException e) {
+            throw new HttpException(500, "No connection to billing");
         } catch (TimeoutCacheException e) {
             throw new HttpException(500, "Request Timed Out");
         } catch (InterruptedException | CacheException e) {

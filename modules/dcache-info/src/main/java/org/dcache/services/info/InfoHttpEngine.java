@@ -24,6 +24,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
@@ -104,7 +105,8 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
                 .expireAfterWrite(1, TimeUnit.SECONDS)
                 .build(new CacheLoader<List<String>, String>() {
                     @Override
-                    public String load(List<String> path) throws InterruptedException, CacheException {
+                    public String load(List<String> path) throws InterruptedException, CacheException, NoRouteToCellException
+                    {
                         InfoGetSerialisedDataMessage message =
                                 (path == ENTIRE_TREE) ? new InfoGetSerialisedDataMessage(_name)
                                 : new InfoGetSerialisedDataMessage(path, _name);

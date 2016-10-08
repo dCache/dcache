@@ -4,13 +4,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
+
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import javax.security.auth.Subject;
 
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
@@ -28,6 +28,7 @@ import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
@@ -42,7 +43,6 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileType.DIR;
@@ -214,8 +214,10 @@ public class PnfsHandler implements CellMessageSender
         try {
             return CellStub.getMessage(requestAsync(msg));
         } catch (InterruptedException e) {
-            throw  new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                      "Sending message to " + _cellStub.getDestinationPath() + " interrupted");
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Sending message to " + _cellStub.getDestinationPath() + " interrupted");
+        } catch (NoRouteToCellException e) {
+            throw new TimeoutCacheException(e.getMessage(), e);
         }
     }
 

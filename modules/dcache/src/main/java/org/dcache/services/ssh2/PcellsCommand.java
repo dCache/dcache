@@ -186,12 +186,10 @@ public class PcellsCommand implements Command, Runnable
                             in.close();
                         } catch (IOException ignored) {
                         }
+                    } catch (NoRouteToCellException e) {
+                        result = e;
                     } catch (TimeoutCacheException e) {
-                        if (e.getCause() instanceof NoRouteToCellException) {
-                            result = e.getCause();
-                        } else {
-                            result = null;
-                        }
+                        result = null;
                     } catch (Exception ae) {
                         result = ae;
                     }
@@ -216,7 +214,7 @@ public class PcellsCommand implements Command, Runnable
         }
     }
 
-    private String listSpaceReservations() throws CacheException, InterruptedException
+    private String listSpaceReservations() throws CacheException, InterruptedException, NoRouteToCellException
     {
         /* Query information from space manager. */
         Collection<Space> spaces = _spaceManager.sendAndWait(new GetSpaceTokensMessage()).getSpaceTokenSet();

@@ -221,7 +221,7 @@ public class HttpPoolMgrEngineV3 implements
         RestoreHandlerInfo[] infos;
         try {
             infos = _poolManager.sendAndWait("xrc ls", RestoreHandlerInfo[].class);
-        } catch (CacheException e) {
+        } catch (CacheException | NoRouteToCellException e) {
             _log.warn("runRestoreCollector : failure reply from PoolManager : " + e.getMessage());
             return;
         }
@@ -294,7 +294,7 @@ public class HttpPoolMgrEngineV3 implements
             HsmControlGetBfDetailsMsg msg =
                 new HsmControlGetBfDetailsMsg(new PnfsId(pnfsId),storageInfo,"default");
             return _hsmController.sendAndWait(msg).getStorageInfo();
-        } catch (InterruptedException | CacheException e) {
+        } catch (InterruptedException | CacheException | NoRouteToCellException e) {
             _log.warn(e.toString(), e);
             return null;
         }
@@ -305,7 +305,7 @@ public class HttpPoolMgrEngineV3 implements
         try {
             PnfsMapPathMessage msg = new PnfsMapPathMessage(new PnfsId(pnfsId));
             return _pnfsManager.sendAndWait(msg).getGlobalPath();
-        } catch (InterruptedException | CacheException e) {
+        } catch (InterruptedException | CacheException | NoRouteToCellException e) {
             _log.warn(e.toString());
             return null;
         }
@@ -317,7 +317,7 @@ public class HttpPoolMgrEngineV3 implements
             PnfsGetFileAttributes msg =
                     new PnfsGetFileAttributes(new PnfsId(pnfsId), EnumSet.of(FileAttribute.SIZE, FileAttribute.STORAGEINFO));
             return _pnfsManager.sendAndWait(msg).getFileAttributes();
-        } catch (InterruptedException | CacheException e) {
+        } catch (InterruptedException | CacheException | NoRouteToCellException e) {
             _log.warn(e.toString());
             return null;
         }
@@ -600,7 +600,7 @@ public class HttpPoolMgrEngineV3 implements
             }
         } catch (TimeoutCacheException e) {
             showTimeout(pw);
-        } catch (CacheException | InterruptedException e) {
+        } catch (CacheException | InterruptedException | NoRouteToCellException e) {
             showProblem(pw, e.getMessage());
         }
 
@@ -791,7 +791,7 @@ public class HttpPoolMgrEngineV3 implements
             html.endTable();
         } catch (TimeoutCacheException e) {
             showTimeout(html);
-        } catch (InterruptedException | CacheException e) {
+        } catch (InterruptedException | CacheException | NoRouteToCellException e) {
             showProblem(html, e.getMessage());
         }
 

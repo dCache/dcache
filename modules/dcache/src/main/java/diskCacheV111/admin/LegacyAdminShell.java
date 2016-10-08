@@ -310,7 +310,7 @@ public class LegacyAdminShell
         Object[] r;
         try {
             r = _acmStub.sendAndWait(request, Object[].class, _timeout);
-        } catch (TimeoutCacheException e) {
+        } catch (NoRouteToCellException | TimeoutCacheException e) {
             throw new AclException(e.getMessage());
         } catch (CacheException | InterruptedException e) {
             throw new AclException("Problem: " + e.getMessage());
@@ -959,7 +959,7 @@ public class LegacyAdminShell
 
     public static final String hh_p2p = "<pnfsId> [<sourcePool> <destinationPool>] [-ip=<address]";
 
-    public String ac_p2p_$_1_3(Args args) throws CacheException, InterruptedException
+    public String ac_p2p_$_1_3(Args args) throws CacheException, InterruptedException, NoRouteToCellException
     {
 
         if (args.argc() >= 3) {
@@ -1349,7 +1349,7 @@ public class LegacyAdminShell
     {
         try {
             _cellStub.sendAndWait(remoteCell, ADMIN_COMMAND_NOOP, Object.class, CD_PROBE_MESSAGE_TIMEOUT_MS);
-        } catch (TimeoutCacheException e) {
+        } catch (NoRouteToCellException e) {
             throw new IllegalArgumentException("Cannot cd to this cell as it doesn't exist.");
         } catch (CacheException e) {
             // Some other failure, but apparently the cell exists

@@ -60,6 +60,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
 
 import org.dcache.cells.CellStub;
@@ -2127,7 +2128,7 @@ public class RequestContainerV5
                             String reply;
                             try {
                                 reply = CellStub.get(entry.getValue());
-                            } catch (CacheException ignored) {
+                            } catch (NoRouteToCellException | CacheException ignored) {
                                 reply = "";
                             }
 

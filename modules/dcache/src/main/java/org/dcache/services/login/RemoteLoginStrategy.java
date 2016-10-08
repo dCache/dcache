@@ -8,6 +8,9 @@ import java.security.Principal;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
+
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -79,6 +82,8 @@ public class RemoteLoginStrategy implements LoginStrategy
             } else {
                 throw e;
             }
+        } catch (NoRouteToCellException e) {
+            throw new TimeoutCacheException(e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new CacheException("Login failed because the operation was interrupted");
         }
@@ -95,6 +100,8 @@ public class RemoteLoginStrategy implements LoginStrategy
             return _stub.sendAndWait(new MapMessage(principal)).getMappedPrincipal();
         } catch (InterruptedException e) {
             throw new CacheException("Login failed because the operation was interrupted");
+        } catch (NoRouteToCellException e) {
+            throw new TimeoutCacheException(e.getMessage(), e);
         }
     }
 
@@ -109,6 +116,8 @@ public class RemoteLoginStrategy implements LoginStrategy
             return _stub.sendAndWait(new ReverseMapMessage(principal)).getMappedPrincipals();
         } catch (InterruptedException e) {
             throw new CacheException("Login failed because the operation was interrupted");
+        } catch (NoRouteToCellException e) {
+            throw new TimeoutCacheException(e.getMessage());
         }
     }
 }

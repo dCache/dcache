@@ -40,6 +40,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
@@ -129,7 +130,7 @@ public class RemotePoolMonitor
         return getPoolMonitor().getFileLocality(attributes, hostName);
     }
 
-    public void refresh() throws CacheException, InterruptedException
+    public void refresh() throws CacheException, InterruptedException, NoRouteToCellException
     {
         messageArrived(poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor());
     }

@@ -211,12 +211,13 @@ public class CellStub
      * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
-     * @throws CacheException If the message could not be sent, a
-     *       timeout occurred, the object in the reply was of the wrong
-     *       type, or the return code was non-zero.
+     * @throws NoRouteToCellException If the message could not be sent.
+     * @throws TimeoutCacheException If a timeout occurred.
+     * @throws CacheException If the object in the reply was of the
+     *       wrong type or if the service return a failure.
      */
     public <T extends Message> T sendAndWait(T msg, CellEndpoint.SendFlag... flags)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         return getMessage(send(msg, flags));
     }
@@ -233,12 +234,13 @@ public class CellStub
      * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
-     * @throws CacheException If the message could not be sent, a
-     *       timeout occurred, the object in the reply was of the wrong
-     *       type, or the return code was non-zero.
+     * @throws NoRouteToCellException If the message could not be sent.
+     * @throws TimeoutCacheException If a timeout occurred.
+     * @throws CacheException If the object in the reply was of the
+     *       wrong type or if the service return a failure.
      */
     public <T extends Message> T sendAndWait(T msg, long timeout, CellEndpoint.SendFlag... flags)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         return getMessage(send(msg, timeout, flags));
     }
@@ -255,12 +257,13 @@ public class CellStub
      * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
-     * @throws CacheException If the message could not be sent, a
-     *       timeout occurred, the object in the reply was of the wrong
-     *       type, or the return code was non-zero.
+     * @throws NoRouteToCellException If the message could not be sent.
+     * @throws TimeoutCacheException If a timeout occurred.
+     * @throws CacheException If the object in the reply was of the
+     *       wrong type or if the service return a failure.
      */
     public <T extends Message> T sendAndWait(CellPath path, T msg, CellEndpoint.SendFlag... flags)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         return getMessage(send(path, msg, flags));
     }
@@ -275,19 +278,20 @@ public class CellStub
      * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
-     * @throws CacheException If the message could not be sent, a
-     *       timeout occurred, or the object in the reply was of the
-     *       wrong type.
+     * @throws NoRouteToCellException If the message could not be sent.
+     * @throws TimeoutCacheException If a timeout occurred.
+     * @throws CacheException If the object in the reply was of the
+     *       wrong type or if the service return a failure.
      */
     public <T> T sendAndWait(Serializable msg, Class<T> type, CellEndpoint.SendFlag... flags)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         return get(send(msg, type, flags));
     }
 
 
     public <T> T sendAndWait(CellPath path, Serializable msg, Class<T> type, CellEndpoint.SendFlag... flags)
-       throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
        return get(send(path, msg, type, flags));
     }
@@ -304,17 +308,16 @@ public class CellStub
      * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
-     * @throws CacheException If the message could not be sent, a
-     *       timeout occurred, or the object in the reply was of the
-     *       wrong type.
+     * @throws NoRouteToCellException If the message could not be sent.
+     * @throws TimeoutCacheException If a timeout occurred.
+     * @throws CacheException If the object in the reply was of the
+     *       wrong type or if the service return a failure.
      */
     public <T> T sendAndWait(Serializable msg, Class<T> type, long timeout, CellEndpoint.SendFlag... flags)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         return get(send(msg, type, timeout, flags));
     }
-
-
 
     /**
      * Sends a message and waits for the reply. The reply is expected
@@ -329,12 +332,13 @@ public class CellStub
      * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
-     * @throws CacheException If the message could not be sent, a
-     *       timeout occurred, the object in the reply was of the wrong
-     *       type, or the return code was non-zero.
+     * @throws NoRouteToCellException If the message could not be sent.
+     * @throws TimeoutCacheException If a timeout occurred.
+     * @throws CacheException If the object in the reply was of the
+     *       wrong type or if the service return a failure.
      */
     public <T extends Message> T sendAndWait(CellPath path, T msg, long timeout, CellEndpoint.SendFlag... flags)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         return getMessage(send(path, msg, timeout, flags));
     }
@@ -352,12 +356,13 @@ public class CellStub
      * @param  flags   flags affecting how the message is sent
      * @return         the message object from the reply
      * @throws InterruptedException If the thread is interrupted
-     * @throws CacheException If the message could not be sent, a
-     *       timeout occurred, or the object in the reply was of the
-     *       wrong type.
+     * @throws NoRouteToCellException If the message could not be sent.
+     * @throws TimeoutCacheException If a timeout occurred.
+     * @throws CacheException If the object in the reply was of the
+     *       wrong type or if the service return a failure.
      */
     public <T> T sendAndWait(CellPath path, Serializable msg, Class<T> type, long timeout, CellEndpoint.SendFlag... flags)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         return get(send(path, msg, type, timeout, flags));
     }
@@ -502,15 +507,15 @@ public class CellStub
 
     /**
      * Returns the result of {@link java.util.concurrent.Future#get()}, converting most exceptions
-     * and error conditions to a CacheException.
+     * and error conditions to {@link CacheException} or {@link NoRouteToCellException}.
      *
-     * Like CellStub#get, but also checks the return code of the Message reply. If non-zero, it
+     * <p>Like {@link #get}, but also checks the return code of the Message reply. If non-zero, it
      * is rethrown as a CacheException matching the return code.
      *
      * @see CellStub#get
      */
     public static <T extends Message> T getMessage(Future<T> future)
-            throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         T reply = get(future);
         if (reply.getReturnCode() != 0) {
@@ -567,20 +572,20 @@ public class CellStub
 
     /**
      * Returns the result of {@link java.util.concurrent.Future#get()}, converting most exceptions
-     * to a CacheException.
+     * to a {@link CacheException} or {@link NoRouteToCellException}.
      *
      * <p>Exceptions from {@code Future.get} are treated as follows:
      * <ul>
-     * <li>Any {@link ExecutionException} has its <i>cause</i> unwrapped. Any CacheException is
-     *     propagated untouched. A NoRouteToCellException is wrapped in a TimeoutCacheException.
-     *     Other exceptions are wrapped in a CachException with error code UNEXPECTED_SYSTEM_EXCEPTION.
+     * <li>Any {@link ExecutionException} has its <i>cause</i> unwrapped. Any CacheException or
+     *     NoRouteToCellException is propagated untouched. Other exceptions are wrapped in a
+     *     CacheException with error code UNEXPECTED_SYSTEM_EXCEPTION.
      * <li>Any {@link InterruptedException} is propagated untouched.
      * <li>Any {@link java.util.concurrent.CancellationException} is propagated untouched, as is any
      *     other {@link RuntimeException}.
      * </ul>
      */
     public static <T> T get(Future<T> future)
-            throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         try {
             return future.get();
@@ -589,7 +594,7 @@ public class CellStub
             if (cause instanceof CacheException) {
                 throw (CacheException) cause;
             } else if (cause instanceof NoRouteToCellException) {
-                throw new TimeoutCacheException(cause.getMessage(), cause);
+                throw (NoRouteToCellException) cause;
             } else {
                 throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause.getMessage(), cause);
             }

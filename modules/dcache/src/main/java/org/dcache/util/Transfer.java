@@ -44,6 +44,7 @@ import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -61,6 +62,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.TimebasedCounter;
 
 import org.dcache.acl.enums.AccessMask;
@@ -743,7 +745,11 @@ public class Transfer implements Comparable<Transfer>
     public final void readNameSpaceEntry(boolean allowWrite)
             throws CacheException, InterruptedException
     {
-        getCancellable(readNameSpaceEntryAsync(allowWrite));
+        try {
+            getCancellable(readNameSpaceEntryAsync(allowWrite));
+        } catch (NoRouteToCellException e) {
+            throw new TimeoutCacheException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -1096,9 +1102,13 @@ public class Transfer implements Comparable<Transfer>
             throw new IllegalStateException("Transfer has no mover");
         }
 
-        return _pool.sendAndWait(new CellPath(getPoolAddress()),
-                                 "mover ls -binary " + getMoverId(),
-                                 IoJobInfo.class);
+        try {
+            return _pool.sendAndWait(new CellPath(getPoolAddress()),
+                                     "mover ls -binary " + getMoverId(),
+                                     IoJobInfo.class);
+        } catch (NoRouteToCellException e) {
+            throw new TimeoutCacheException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -1192,7 +1202,11 @@ public class Transfer implements Comparable<Transfer>
     public void selectPoolAndStartMover(TransferRetryPolicy policy)
             throws CacheException, InterruptedException
     {
-        getCancellable(selectPoolAndStartMoverAsync(policy));
+        try {
+            getCancellable(selectPoolAndStartMoverAsync(policy));
+        } catch (NoRouteToCellException e) {
+            throw new TimeoutCacheException(e.getMessage(), e);
+        }
     }
 
     public ListenableFuture<Void> selectPoolAndStartMoverAsync(TransferRetryPolicy policy)
@@ -1286,7 +1300,7 @@ public class Transfer implements Comparable<Transfer>
      * Returns the result of {@link Future#get()} as if by {@link CellStub#get}, but
      * cancels {@code future} if the calling thread is interrupted.
      */
-    protected static <T> T getCancellable(ListenableFuture<T> future) throws CacheException, InterruptedException
+    protected static <T> T getCancellable(ListenableFuture<T> future) throws CacheException, InterruptedException, NoRouteToCellException
     {
         try {
             return CellStub.get(future);

@@ -50,6 +50,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
+import dmg.cells.nucleus.NoRouteToCellException;
+
 /**
  * Query current QoS for a file or  change the current QoS
  */
@@ -127,7 +129,7 @@ public class QosManagementNamespace {
             }
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
-        } catch (CacheException | InterruptedException e) {
+        } catch (CacheException | NoRouteToCellException | InterruptedException e) {
             throw new InternalServerErrorException(e);
         }
         return response;
@@ -241,7 +243,8 @@ public class QosManagementNamespace {
 
 
     public boolean isPinned(FileAttributes fileAttributes, CellStub cellStub) throws CacheException, InterruptedException,
-            URISyntaxException {
+            URISyntaxException, NoRouteToCellException
+    {
         boolean isPinned = false;
 
         PinManagerCountPinsMessage message =

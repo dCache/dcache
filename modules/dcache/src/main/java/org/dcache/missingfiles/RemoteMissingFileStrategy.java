@@ -8,6 +8,8 @@ import javax.security.auth.Subject;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.cells.CellStub;
 
 /**
@@ -40,7 +42,7 @@ public class RemoteMissingFileStrategy implements MissingFileStrategy
         try {
             reply = _stub.sendAndWait(msg);
             return reply.getAction();
-        } catch (CacheException e) {
+        } catch (NoRouteToCellException | CacheException e) {
             _log.error(e.getMessage());
         } catch (InterruptedException e) {
             _log.info("interrupted while waiting for advise from missing-files service");

@@ -18,6 +18,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.IoRequestState;
@@ -81,6 +82,8 @@ public class StandardMoverDAO implements MoverDAO {
                         if (e.getRc() != 1) {
                             failed.add(transfer.getMoverId());
                         }
+                    } catch (NoRouteToCellException e) {
+                        failed.add(transfer.getMoverId());
                     }
                 }
                 if (!failed.isEmpty()) {

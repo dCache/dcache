@@ -68,6 +68,8 @@ import java.util.Map;
 
 import diskCacheV111.util.CacheException;
 
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.LogEntry;
@@ -159,7 +161,7 @@ public class StandardAlarmDisplayService implements AlarmDisplayService {
                                 String.valueOf(request.getErrorObject()));
             }
             return request.getMap();
-        } catch (CacheException | InterruptedException t) {
+        } catch (CacheException | NoRouteToCellException | InterruptedException t) {
             LoggerFactory.getLogger(this.getClass())
                          .error("Could not get alarm priority map: {}",
                                  t.getMessage());

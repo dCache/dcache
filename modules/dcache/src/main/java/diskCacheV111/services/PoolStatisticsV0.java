@@ -1386,7 +1386,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     //
     private Map<String,Map<String,long[]>> getBillingStatistics()
             throws InterruptedException,
-            IOException
+            IOException, NoRouteToCellException
     {
         _log.info("getBillingStatistics : asking billing for generic pool statistics");
         Map<String,Map<String,long[]>> generic;

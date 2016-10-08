@@ -58,6 +58,7 @@ import diskCacheV111.vehicles.transferManager.TransferFailedMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
@@ -384,7 +385,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
             try {
                 _id = _transferManager.sendAndWait(message).getId();
                 return _id;
-            } catch (TimeoutCacheException e) {
+            } catch (NoRouteToCellException | TimeoutCacheException e) {
                 LOG.error("Failed to send request to transfer manager: {}", e.getMessage());
                 throw new ErrorResponseException(Response.Status.SC_INTERNAL_SERVER_ERROR,
                         "transfer service unavailable");
@@ -409,7 +410,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 message.setExplanation("client went away");
                 try {
                     _transferManager.sendAndWait(message);
-                } catch (CacheException e) {
+                } catch (NoRouteToCellException | CacheException e) {
                     LOG.error("Failed to cancel transfer id={}: {}", _id, e.toString());
 
                     // Our attempt to kill the transfer failed.  We leave the
@@ -497,7 +498,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 TransferStatusQueryMessage reply = CellStub.getMessage(future);
                 state = reply.getState();
                 info = reply.getMoverInfo();
-            } catch (CacheException e) {
+            } catch (NoRouteToCellException | CacheException e) {
                 LOG.warn("Failed to fetch information for progress marker: {}",
                         e.getMessage());
             }

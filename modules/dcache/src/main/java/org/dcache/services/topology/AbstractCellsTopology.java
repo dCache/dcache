@@ -16,6 +16,7 @@ import dmg.cells.network.CellDomainNode;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellTunnelInfo;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 
@@ -37,7 +38,7 @@ public class AbstractCellsTopology
     }
 
     private CellTunnelInfo[] getCellTunnelInfos(String address)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         List<CellTunnelInfo> tunnels = new ArrayList<>();
 
@@ -93,7 +94,7 @@ public class AbstractCellsTopology
                         map.put(name, connectedNode);
                     }
                 }
-            } catch (CacheException e) {
+            } catch (NoRouteToCellException | CacheException e) {
                 _log.warn("Failed to fetch topology info from {}: {}",
                           node.getAddress(), e.getMessage());
             }

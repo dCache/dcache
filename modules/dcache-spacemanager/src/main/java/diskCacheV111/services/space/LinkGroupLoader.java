@@ -28,6 +28,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellIdentityAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 
@@ -221,7 +222,7 @@ public class LinkGroupLoader
 
         @Override
         protected String execute()
-                throws InterruptedException, DataAccessException, TransactionException, CacheException
+                throws InterruptedException, DataAccessException, TransactionException, CacheException, NoRouteToCellException
         {
             poolMonitor.refresh();
             int updated = updateLinkGroups();

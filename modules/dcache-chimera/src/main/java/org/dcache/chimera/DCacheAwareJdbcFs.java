@@ -86,6 +86,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellIdentityAware;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
@@ -232,7 +233,7 @@ public class DCacheAwareJdbcFs extends JdbcFs implements CellIdentityAware {
              * "localhost", so it is not a deviation from existing behavior.
              */
             locality = _poolMonitor.getFileLocality(attributes, "localhost");
-        } catch (CacheException | InterruptedException t) {
+        } catch (CacheException | NoRouteToCellException | InterruptedException t) {
             throw new ChimeraFsException("getFileLocality", t);
         }
 

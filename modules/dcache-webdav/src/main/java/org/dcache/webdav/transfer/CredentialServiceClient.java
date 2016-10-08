@@ -40,6 +40,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 
@@ -101,7 +102,7 @@ public class CredentialServiceClient
                     bestCredential = new KeyAndCertCredential(msg.getPrivateKey(), certificates);
                     bestRemainingLifetime = lifetime;
                 }
-            } catch (CacheException e) {
+            } catch (CacheException | NoRouteToCellException e) {
                 LOGGER.debug("failed to contact {} querying for {}, {}: {}",
                              path, dn, primaryFqan, e.getMessage());
             } catch (KeyStoreException e) {

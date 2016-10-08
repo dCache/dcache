@@ -7,6 +7,8 @@ import diskCacheV111.services.space.message.GetLinkGroupsMessage;
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import diskCacheV111.util.CacheException;
 
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 
@@ -20,7 +22,8 @@ public class SpaceTokenCollector extends Collector {
         = LoggerFactory.getLogger(SpaceTokenCollector.class);
 
     private void collectSpaceTokens() throws CacheException,
-                    InterruptedException {
+            InterruptedException, NoRouteToCellException
+    {
         _log.debug("Retrieving space tokens");
         GetSpaceTokensMessage reply
             = _cellStub.sendAndWait(new GetSpaceTokensMessage());
@@ -29,7 +32,8 @@ public class SpaceTokenCollector extends Collector {
     }
 
     private void collectLinkGroups() throws CacheException,
-                    InterruptedException {
+            InterruptedException, NoRouteToCellException
+    {
         _log.debug("Retrieving linkgroups");
         GetLinkGroupsMessage reply
             = _cellStub.sendAndWait(new GetLinkGroupsMessage());
@@ -41,7 +45,7 @@ public class SpaceTokenCollector extends Collector {
     public Status call() throws InterruptedException {
         try {
             collectSpaceTokens();
-        } catch (CacheException ce) {
+        } catch (NoRouteToCellException | CacheException ce) {
             _log.debug("problem retrieving space tokens from space manager: {}",
                             ce.getMessage());
             _pageCache.remove(ContextPaths.SPACETOKENS);
@@ -50,7 +54,7 @@ public class SpaceTokenCollector extends Collector {
 
         try {
             collectLinkGroups();
-        } catch (CacheException ce) {
+        } catch (NoRouteToCellException | CacheException ce) {
             _log.debug("problem retrieving link groups from space manager: {}",
                             ce.getMessage());
             _pageCache.remove(ContextPaths.LINKGROUPS);

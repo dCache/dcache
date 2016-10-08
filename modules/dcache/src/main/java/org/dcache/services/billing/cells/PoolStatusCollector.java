@@ -15,6 +15,7 @@ import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 
@@ -58,7 +59,7 @@ public final class PoolStatusCollector extends Thread
                     _log.warn("CollectPoolStatus : {}: {}", pool.getValue(), t.toString());
                 }
             }
-        } catch (CacheException | InterruptedException t) {
+        } catch (CacheException | NoRouteToCellException | InterruptedException t) {
             _log.warn("Exception in CollectPools status : {}", t.toString());
             try {
                 Files.delete(_report);

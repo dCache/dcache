@@ -24,6 +24,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
@@ -349,7 +350,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
           stub.sendAndWait(command, Serializable.class);
       } catch (TimeoutCacheException e) {
           output.append("Command timed out : ").append(command).append("\n");
-      } catch(InterruptedException | CacheException e) {
+      } catch(InterruptedException | CacheException | NoRouteToCellException e) {
           output.append("Exception in command : ").append(command).append("\n") ;
           output.append("     ").append(e.getClass().getName()).
              append(" -> ").append( e.getMessage() ).append("\n") ;

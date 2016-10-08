@@ -747,24 +747,20 @@ public class PoolManagerV5
     //
     // the write io request handler
     //
-    public DelayedReply messageArrived(CellMessage envelope,
-                                       PoolMgrSelectWritePoolMsg msg)
+    public DelayedReply messageArrived(PoolMgrSelectWritePoolMsg msg)
     {
-        WriteRequestHandler writeRequestHandler = new WriteRequestHandler(envelope, msg);
-        _executor.execute( writeRequestHandler );
+        WriteRequestHandler writeRequestHandler = new WriteRequestHandler(msg);
+        _executor.execute(writeRequestHandler);
         return writeRequestHandler;
     }
 
-    public class WriteRequestHandler extends DelayedReply implements Runnable
+    private class WriteRequestHandler extends DelayedReply implements Runnable
     {
-        private final CellMessage _envelope;
         private final PoolMgrSelectWritePoolMsg _request;
         private final PnfsId _pnfsId;
 
-        public WriteRequestHandler(CellMessage envelope,
-                                   PoolMgrSelectWritePoolMsg msg)
+        public WriteRequestHandler(PoolMgrSelectWritePoolMsg msg)
         {
-            _envelope = envelope;
             _request = msg;
             _pnfsId = _request.getPnfsId();
         }

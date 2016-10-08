@@ -8,6 +8,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
@@ -59,6 +60,8 @@ public class ProbeResponseEngine implements HttpResponseEngine, CellMessageSende
             writer.append(new GsonBuilder().serializeSpecialFloatingPointValues().setPrettyPrinting().disableHtmlEscaping().create().toJson(queryReply
                     .getResult()));
             writer.flush();
+        } catch (NoRouteToCellException e) {
+            throw new HttpException(503, "The cell was unreachable, suspect trouble.");
         } catch (TimeoutCacheException e) {
             throw new HttpException(503, "The cell took too long to reply, suspect trouble.");
         } catch (InvalidMessageCacheException e) {

@@ -12,6 +12,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.businessobjects.RestoreInfo;
@@ -27,7 +28,8 @@ public class RestoreHandlerCollector extends Collector {
     private static final long CONSIDERED_NEW_INTERVAL = TimeUnit.MINUTES.toMillis(2L);
     private static final Logger _log = LoggerFactory.getLogger(RestoreHandlerCollector.class);
 
-    private void collectRestores() throws InterruptedException, CacheException {
+    private void collectRestores() throws InterruptedException, CacheException, NoRouteToCellException
+    {
         RestoreHandlerInfo[] restores = _cellStub.sendAndWait(new CellPath(
                         _poolManagerName), "xrc ls", RestoreHandlerInfo[].class);
         List<RestoreInfo> agedList = filterOutNewRestores(restores);
@@ -56,7 +58,7 @@ public class RestoreHandlerCollector extends Collector {
     public Status call() throws InterruptedException {
         try {
             collectRestores();
-        } catch (CacheException ex) {
+        } catch (CacheException | NoRouteToCellException ex) {
             _log.debug("Could not retrieve restoreHandlerInfos from {}",
                             _poolManagerName);
             _pageCache.remove(ContextPaths.RESTORE_INFOS);

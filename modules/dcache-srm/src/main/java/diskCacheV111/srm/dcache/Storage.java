@@ -1187,6 +1187,8 @@ public final class Storage
             throw new SRMInternalErrorException(e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);
+        } catch (NoRouteToCellException e) {
+            throw new SRMInternalErrorException("Internal communication failure", e);
         }
     }
 
@@ -1195,29 +1197,31 @@ public final class Storage
      * removed once pools register actual file size and/or file brokenness in the
      * name space.
      */
-    private void checkNonBrokenUpload(String fullPath) throws InterruptedException, CacheException
+    private void checkNonBrokenUpload(String fullPath) throws InterruptedException, CacheException, NoRouteToCellException
     {
         FileAttributes fileAttributes = _pnfs.getFileAttributes(fullPath, EnumSet.of(PNFSID, LOCATIONS));
         Iterator<String> iterator = fileAttributes.getLocations().iterator();
         if (iterator.hasNext()) {
-            CacheException error;
+            Exception error;
             String location;
             do {
                 location = iterator.next();
                 try {
                     checkPoolFile(location, fileAttributes);
                     return;
-                } catch (CacheException e) {
+                } catch (CacheException | NoRouteToCellException e) {
                     error = e;
                 }
             } while (iterator.hasNext());
-            throw error;
+            Throwables.propagateIfInstanceOf(error, CacheException.class);
+            Throwables.propagateIfInstanceOf(error, NoRouteToCellException.class);
+            throw Throwables.propagate(error);
         }
         throw new FileIsNewCacheException("No file was uploaded.");
     }
 
     private void checkPoolFile(String location, FileAttributes fileAttributes)
-            throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
     {
         /* Since this is a temporary workaround, we borrow the pnfs stub.
          */
@@ -1262,6 +1266,8 @@ public final class Storage
             throw new SRMInternalErrorException(e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);
+        } catch (NoRouteToCellException e) {
+            throw new SRMInternalErrorException("Communication failure", e);
         }
     }
 
@@ -1357,8 +1363,8 @@ public final class Storage
                                          fmd.spaceTokens, 0,
                                          msg.getSpaceTokens().length);
                     }
-                } catch (TimeoutCacheException e) {
-                    /* SpaceManager is optional, so we don't clasify this
+                } catch (NoRouteToCellException e) {
+                    /* SpaceManager is optional, so we don't classify this
                      * as an error.
                      */
                     _log.info(e.getMessage());
@@ -1407,7 +1413,7 @@ public final class Storage
             copyRequest.setSubject(user.getSubject());
             copyRequest.setRestriction(user.getRestriction());
             _transferManagerStub.sendAndWait(copyRequest);
-        } catch (TimeoutCacheException e) {
+        } catch (NoRouteToCellException | TimeoutCacheException e) {
             _log.error("CopyManager is unavailable");
             throw new SRMInternalErrorException("CopyManager is unavailable: " +
                                                 e.getMessage(), e);
@@ -1853,7 +1859,7 @@ public final class Storage
             _log.debug("storing info for callerId = {}", id);
             callerIdToHandler.put(id, info);
             return String.valueOf(id);
-        } catch (TimeoutCacheException e) {
+        } catch (NoRouteToCellException | TimeoutCacheException e) {
             throw new SRMInternalErrorException("Transfer manager is unavailable: " +
                                                 e.getMessage(), e);
         } catch (CacheException e) {
@@ -2234,6 +2240,8 @@ public final class Storage
             getSpaces = _spaceManagerStub.sendAndWait(getSpaces);
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Space manager timeout", e);
+        } catch (NoRouteToCellException e) {
+            throw new SRMNotSupportedException("Space manager is unavailable", e);
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);
         } catch (CacheException e) {
@@ -2400,8 +2408,10 @@ public final class Storage
         } catch (NumberFormatException e){
             throw new SRMException("Cannot parse space token: " +
                                    e.getMessage(), e);
+        } catch (NoRouteToCellException e) {
+            throw new SRMNotSupportedException("Space manager is unavailable.", e);
         } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("Space manager is unavailable: " + e.getMessage(), e);
+            throw new SRMInternalErrorException("Space manager timed out.", e);
         } catch (CacheException e) {
             throw new SRMException("srmExtendReservationLifetime failed, " +
                                    "ExtendLifetime.returnCode="+
@@ -2439,7 +2449,7 @@ public final class Storage
             return extendLifetime.getLifetime();
         } catch (IllegalArgumentException e) {
             throw new SRMException("Invalid PNFS ID: " + fileId, e);
-        } catch (TimeoutCacheException e) {
+        } catch (NoRouteToCellException | TimeoutCacheException e) {
             throw new SRMInternalErrorException("PinManager is unavailable: " +
                                                 e.getMessage(), e);
         } catch (CacheException e) {
