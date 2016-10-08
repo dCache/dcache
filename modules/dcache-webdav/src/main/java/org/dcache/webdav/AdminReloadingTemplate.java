@@ -35,7 +35,6 @@ public class AdminReloadingTemplate extends ReloadableTemplate implements CellCo
     public AdminReloadingTemplate(Resource resource) throws IOException
     {
         super(resource);
-        reload();
     }
 
     @Command(name="reload template", hint="refresh HTML template from file")

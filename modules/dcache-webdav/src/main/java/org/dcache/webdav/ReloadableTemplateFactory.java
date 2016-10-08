@@ -19,22 +19,18 @@ package org.dcache.webdav;
 
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.io.Resource;
-
-import org.dcache.cells.UniversalSpringCell.BeanPostProcessorAware;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * Factory for creating the reloadable template.
  */
-public class ReloadableTemplateFactory implements FactoryBean, BeanPostProcessorAware
+public class ReloadableTemplateFactory implements FactoryBean
 {
     private Resource _templateResource;
     private boolean _isAutoReloadEnabled;
     private String _templateName;
-    private BeanPostProcessor _processor;
 
     @Override
     public Object getObject() throws Exception
@@ -42,8 +38,8 @@ public class ReloadableTemplateFactory implements FactoryBean, BeanPostProcessor
         ReloadableTemplate t = _isAutoReloadEnabled
                 ? new AutoReloadingTemplate(_templateResource)
                 : new AdminReloadingTemplate(_templateResource);
-        t = (ReloadableTemplate) _processor.postProcessBeforeInitialization(t, _templateName);
         t.setTemplateName(_templateName);
+        t.reload();
         return t;
     }
 
@@ -75,11 +71,5 @@ public class ReloadableTemplateFactory implements FactoryBean, BeanPostProcessor
     public void setWorkaroundTemplate(String name)
     {
         _templateName = requireNonNull(name);
-    }
-
-    @Override
-    public void setBeanPostProcessor(BeanPostProcessor processor)
-    {
-        _processor = processor;
     }
 }
