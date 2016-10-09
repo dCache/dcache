@@ -203,7 +203,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                 signature.append("[").append(metaVar).append("]");
             }
             if (field.getType().isArray()) {
-                signature.append(value("..."));
+                signature.append("...");
             }
             signature.append(" ");
         }
@@ -227,7 +227,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                 signature.append("[").append(metaVar).append("]");
             }
             if (field.getType().isArray()) {
-                signature.append(value("..."));
+                signature.append("...");
             }
             signature.append(" ");
         }
