@@ -98,7 +98,7 @@ public class ColumnWriter
         List<Integer> spaces = new ArrayList<>(this.spaces);
 
         StringWriter result = new StringWriter();
-        try (PrintWriter out = new PrintWriter(result)) {
+        try (PrintWriter out = new NoTrailingWhitespacePrintWriter(result)) {
             String header = renderHeader(spaces, widths);
             if (!header.isEmpty()) {
                 out.println(header);
