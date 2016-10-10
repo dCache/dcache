@@ -1,12 +1,11 @@
 package org.dcache.srm.shell;
 
-import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashCode;
-import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
@@ -32,6 +31,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Map;
@@ -44,6 +45,7 @@ import org.dcache.dss.ClientGsiEngineDssContextFactory;
 import org.dcache.ssl.CanlContextFactory;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 
 /**
@@ -53,6 +55,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
 {
     private static final int MAX_CONCURRENT_TRANSFERS = 10;
     private static final ChecksumAlgorithm ADLER32 = new ChecksumAlgorithm("ADLER32");
+    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
 
     private final ExecutorService _executor = Executors.newFixedThreadPool(MAX_CONCURRENT_TRANSFERS);
 
@@ -387,6 +390,11 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                         Throwable cause = Throwables.getRootCause(e);
                         _status = "Transfer failed (client exception): " + cause.getMessage();
                         failed(cause);
+                    } catch (RuntimeException e) {
+                        e.printStackTrace();
+                        Throwable cause = Throwables.getRootCause(e);
+                        _status = "Failed due to bug: " + cause;
+                        failed(cause);
                     } finally {
                         try {
                             _client.close();
@@ -398,28 +406,43 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             });
         }
 
-        protected String getRemoteChecksum() throws IOException
+        protected HashCode getRemoteChecksum() throws IOException
         {
+            String checksum;
+
             switch (getChecksumHandling()) {
             case REQUIRE:
                 try {
-                    return _client.checksum(ADLER32, 0, -1, getRemotePath());
+                    checksum = _client.checksum(ADLER32, 0, -1, getRemotePath());
                 } catch (IOException | ServerException e) {
                     throw new IOException("Unable to fetch remote checksum: " + e.getMessage());
                 }
+                break;
 
             case IGNORE:
                 return null;
 
             case IF_AVAILABLE:
                 try {
-                    return _client.checksum(ADLER32, 0, -1, getRemotePath());
+                    checksum = _client.checksum(ADLER32, 0, -1, getRemotePath());
                 } catch (IOException | ServerException e) {
                     return null;
                 }
+                break;
 
             default:
                 throw new RuntimeException("No further options");
+            }
+
+            try {
+                byte[] raw = BaseEncoding.base16().lowerCase().decode(checksum.toLowerCase());
+                // NB HashCode#fromBytes requires the bytes in little-endian, but
+                // returned value is big-endian so we must turn our egg around!
+                int value = ByteBuffer.wrap(raw).order(ByteOrder.BIG_ENDIAN).getInt();
+                return HashCode.fromInt(value);
+            } catch (IllegalArgumentException e) {
+                throw new IOException("Badly formatted checksum \"" + checksum +
+                        "\": " + Throwables.getRootCause(e).getMessage());
             }
         }
 
@@ -450,11 +473,11 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                 _client.put(getRemotePath(), source, null);
             }
 
-            String localChecksum = source.getHash();
-            String remoteChecksum = getRemoteChecksum();
+            HashCode localChecksum = source.getHash();
+            HashCode remoteChecksum = getRemoteChecksum();
 
-            if (remoteChecksum != null && !localChecksum.equals(remoteChecksum)) {
-                throw new IOException("checksum mismatch: " + remoteChecksum + " != " + localChecksum);
+            if (localChecksum != null && remoteChecksum != null && !remoteChecksum.equals(localChecksum)) {
+                throw new IOException("checksum mismatch: " + bigEndian(remoteChecksum) + " != " + bigEndian(localChecksum));
             }
         }
 
@@ -512,15 +535,10 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                 super.close();
             }
 
-            public String getHash()
+            public HashCode getHash()
             {
-                if (hashcode == null) {
-                    return null;
-                }
-
-                // We cannot use HashCode#toString as that returns a little-endian hex string.
-                int nibbles = hashcode.bits() >> 3;
-                return Strings.padStart(Integer.toHexString(hashcode.asInt()), nibbles, '0');
+                checkState(hasher == null || hashcode != null, "Attempt to call getHash before close");
+                return hashcode;
             }
         }
     }
@@ -549,11 +567,11 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                 _client.get(getRemotePath(), sink, null);
             }
 
-            String localChecksum = sink.getHash();
-            String remoteChecksum = getRemoteChecksum();
+            HashCode localChecksum = sink.getHash();
+            HashCode remoteChecksum = getRemoteChecksum();
 
-            if (remoteChecksum != null && !remoteChecksum.equals(localChecksum)) {
-                throw new IOException("checksum mismatch: " + remoteChecksum + " != " + localChecksum);
+            if (remoteChecksum != null && localChecksum != null && !remoteChecksum.equals(localChecksum)) {
+                throw new IOException("checksum mismatch: " + bigEndian(remoteChecksum) + " != " + bigEndian(localChecksum));
             }
         }
 
@@ -608,16 +626,26 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
                 super.close();
             }
 
-            public String getHash()
+            public HashCode getHash()
             {
-                if (hashcode == null) {
-                    return null;
-                }
-
-                // We cannot use HashCode#toString as that returns a little-endian hex string.
-                int nibbles = hashcode.bits() >> 3;
-                return Strings.padStart(Integer.toHexString(hashcode.asInt()), nibbles, '0');
+                checkState(hasher == null || hashcode != null, "Attempt to call getHash before close");
+                return hashcode;
             }
         }
+    }
+
+    /**
+     * Similar to HashCode#toString but provides the HashCode value in
+     * the more common big-endian format.
+     */
+    String bigEndian(HashCode hash)
+    {
+        byte[] bytes = hash.asBytes();
+        StringBuilder sb = new StringBuilder(2 * bytes.length);
+        for (int i = bytes.length-1; i >= 0; i--) {
+            byte b = bytes[i];
+            sb.append(HEX_DIGITS[(b >> 4) & 0xf]).append(HEX_DIGITS[b & 0xf]);
+        }
+        return sb.toString();
     }
 }
