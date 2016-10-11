@@ -551,7 +551,7 @@ public class CellStub
      * distinguishes this method from {@link Futures#transform}.
      */
     public static <T extends Message, V> ListenableFuture<V> transform(
-            ListenableFuture<T> future, Function<T, V> f)
+            ListenableFuture<T> future, Function<? super T, ? extends V> f)
     {
         return Futures.transformAsync(future,
                                       msg -> {
@@ -573,8 +573,8 @@ public class CellStub
      * returned {@code Future} will fail with the corresponding CacheException. This
      * distinguishes this method from {@link Futures#transform}.
      */
-    public static <T extends Message, V> ListenableFuture<V> transform(
-            ListenableFuture<T> future, AsyncFunction<T, V> f)
+    public static <T extends Message, V> ListenableFuture<V> transformAsync(
+            ListenableFuture<T> future, AsyncFunction<? super T, V> f)
     {
         return Futures.transformAsync(future,
                                       msg -> {
@@ -619,7 +619,7 @@ public class CellStub
     /**
      * Adapter class to turn a CellMessageAnswerable callback into a ListenableFuture.
      */
-    static class CallbackFuture<T> extends AbstractFuture<T> implements CellMessageAnswerable
+    private static class CallbackFuture<T> extends AbstractFuture<T> implements CellMessageAnswerable
     {
         private final Class<? extends T> _type;
         private final Semaphore _concurrency;
