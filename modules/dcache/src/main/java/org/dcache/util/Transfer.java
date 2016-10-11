@@ -1,12 +1,11 @@
 package org.dcache.util;
 
-import static com.google.common.base.Preconditions.*;
-
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FutureFallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
@@ -53,6 +52,7 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
@@ -72,6 +72,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
+import static com.google.common.base.Preconditions.*;
 import static com.google.common.util.concurrent.Futures.*;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.MathUtils.addWithInfinity;
@@ -757,30 +758,29 @@ public class Transfer implements Comparable<Transfer>
 
         setStatusUntil("PnfsManager: Fetching storage info", reply);
 
-        return CellStub.transform(reply,
-                                  (PnfsGetFileAttributes msg) ->
-                                  {
-                                      FileAttributes attributes = msg.getFileAttributes();
-                                     /* We can only transfer regular files.
-                                      */
-                                      FileType type = attributes.getFileType();
-                                      if (type == FileType.DIR || type == FileType.SPECIAL) {
-                                          throw new NotFileCacheException("Not a regular file");
-                                      }
+        return CellStub.transformAsync(reply,
+                                       msg -> {
+                                           FileAttributes attributes = msg.getFileAttributes();
+                                           /* We can only transfer regular files.
+                                            */
+                                           FileType type = attributes.getFileType();
+                                           if (type == FileType.DIR || type == FileType.SPECIAL) {
+                                               throw new NotFileCacheException("Not a regular file");
+                                           }
 
-                                     /* I/O mode must match completeness of the file.
-                                      */
-                                      if (!attributes.getStorageInfo().isCreatedOnly()) {
-                                          setWrite(false);
-                                      } else if (allowWrite) {
-                                          setWrite(true);
-                                      } else {
-                                          throw new FileIsNewCacheException();
-                                      }
+                                           /* I/O mode must match completeness of the file.
+                                            */
+                                           if (!attributes.getStorageInfo().isCreatedOnly()) {
+                                               setWrite(false);
+                                           } else if (allowWrite) {
+                                               setWrite(true);
+                                           } else {
+                                               throw new FileIsNewCacheException();
+                                           }
 
-                                      setFileAttributes(attributes);
-                                      return immediateFuture(null);
-                                  });
+                                           setFileAttributes(attributes);
+                                           return immediateFuture(null);
+                                       });
     }
 
     /**
@@ -872,7 +872,7 @@ public class Transfer implements Comparable<Transfer>
 
     /**
      * Sets the previous read pool selection message. The message
-     * contains state that is maintained accross repeated pool
+     * contains state that is maintained across repeated pool
      * selections.
      */
     protected synchronized void setReadPoolSelectionContext(PoolMgrSelectReadPoolMsg.Context context)
@@ -906,6 +906,7 @@ public class Transfer implements Comparable<Transfer>
         FileAttributes fileAttributes = getFileAttributes();
 
         ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
+        ListenableFuture<? extends PoolMgrSelectPoolMsg> reply;
         if (isWrite()) {
             long allocated = _allocated;
             if (allocated == 0 && fileAttributes.isDefined(SIZE)) {
@@ -920,16 +921,7 @@ public class Transfer implements Comparable<Transfer>
             request.setBillingPath(getBillingPath());
             request.setTransferPath(getTransferPath());
 
-            ListenableFuture<PoolMgrSelectWritePoolMsg> reply = _poolManager.send(request, timeout);
-            setStatusUntil("PoolManager: Selecting pool", reply);
-
-            return CellStub.transform(reply,
-                                      (PoolMgrSelectWritePoolMsg msg) -> {
-                                          setPool(msg.getPoolName());
-                                          setPoolAddress(msg.getPoolAddress());
-                                          setFileAttributes(msg.getFileAttributes());
-                                          return immediateFuture(null);
-                                      });
+            reply = _poolManager.send(request, timeout);
         } else {
             EnumSet<RequestContainerV5.RequestState> allowedStates;
             try {
@@ -951,17 +943,21 @@ public class Transfer implements Comparable<Transfer>
             request.setBillingPath(getBillingPath());
             request.setTransferPath(getTransferPath());
 
-            ListenableFuture<PoolMgrSelectReadPoolMsg> reply = _poolManager.send(request, timeout);
-            setStatusUntil("PoolManager: Selecting pool", reply);
-            return CellStub.transform(reply,
+            reply = Futures.transform(_poolManager.send(request, timeout),
                                       (PoolMgrSelectReadPoolMsg msg) -> {
-                                          setPool(msg.getPoolName());
-                                          setPoolAddress(msg.getPoolAddress());
-                                          setFileAttributes(msg.getFileAttributes());
                                           setReadPoolSelectionContext(msg.getContext());
-                                          return immediateFuture(null);
+                                          return msg;
                                       });
         }
+
+        setStatusUntil("PoolManager: Selecting pool", reply);
+        return CellStub.transform(reply,
+                                  (PoolMgrSelectPoolMsg msg) -> {
+                                      setPool(msg.getPoolName());
+                                      setPoolAddress(msg.getPoolAddress());
+                                      setFileAttributes(msg.getFileAttributes());
+                                      return null;
+                                  });
     }
 
     /**
@@ -1029,7 +1025,7 @@ public class Transfer implements Comparable<Transfer>
 
         ListenableFuture<PoolIoFileMessage> reply = _pool.send(poolPath, message, timeout);
         setStatusUntil("Pool " + pool + ": Creating mover", reply);
-        return CellStub.transform(reply, (PoolIoFileMessage msg) -> {
+        return CellStub.transformAsync(reply, msg -> {
             setMoverId(msg.getMoverId());
             return immediateFuture(null);
         });
