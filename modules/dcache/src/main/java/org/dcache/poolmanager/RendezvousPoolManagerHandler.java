@@ -164,11 +164,23 @@ public class RendezvousPoolManagerHandler implements SerializablePoolManagerHand
         }
 
         @Override
-        public boolean equals(SerializablePoolManagerHandler.Version other)
+        public boolean equals(Object o)
         {
-            return other instanceof Version &&
-                   ((Version) other).serviceAddress.equals(serviceAddress) &&
-                   ((Version) other).backends.equals(backends);
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Version version = (Version) o;
+            return serviceAddress.equals(version.serviceAddress) && backends.equals(version.backends);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return 31 * serviceAddress.hashCode() + backends.hashCode();
         }
     }
 }

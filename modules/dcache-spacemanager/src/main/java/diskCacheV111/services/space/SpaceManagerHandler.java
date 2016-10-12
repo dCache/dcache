@@ -19,7 +19,9 @@
 package diskCacheV111.services.space;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
+import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerMessage;
@@ -28,9 +30,13 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 
-import org.dcache.poolmanager.RemotePoolManagerHandler;
+import org.dcache.cells.FutureCellMessageAnswerable;
 import org.dcache.poolmanager.SerializablePoolManagerHandler;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 /**
  * PoolManagerHandler published by space manager.
@@ -38,29 +44,37 @@ import org.dcache.poolmanager.SerializablePoolManagerHandler;
  * Decides whether to submit requests to space manager or pass them on to a
  * PoolManagerHandler obtained from pool manager.
  */
-public class SpaceManagerHandler extends RemotePoolManagerHandler
+public class SpaceManagerHandler implements SerializablePoolManagerHandler
 {
     private static final long serialVersionUID = -8954797295015774582L;
 
+    protected final CellAddressCore destination;
     protected final SerializablePoolManagerHandler inner;
 
     public SpaceManagerHandler(CellAddressCore destination, SerializablePoolManagerHandler inner)
     {
-        super(destination);
+        this.destination = requireNonNull(destination);
         this.inner = inner;
     }
 
     @Override
     public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(CellEndpoint endpoint, T msg, long timeout)
     {
-        return shouldIntercept(msg) ? super.sendAsync(endpoint, msg, timeout) : inner.sendAsync(endpoint, msg, timeout);
+        if (shouldIntercept(msg)) {
+            return submit(endpoint, new CellPath(destination), msg, timeout);
+        } else {
+            return inner.sendAsync(endpoint, msg, timeout);
+        }
     }
 
     @Override
     public void send(CellEndpoint endpoint, CellMessage envelope, PoolManagerMessage msg)
     {
         if (shouldIntercept(msg)) {
-            super.send(endpoint, envelope, msg);
+            checkArgument(envelope.getSourcePath().hops() > 0, "Envelope is missing source address.");
+            envelope.getDestinationPath().insert(this.destination);
+            envelope.setMessageObject(msg);
+            endpoint.sendMessage(envelope, CellEndpoint.SendFlag.PASS_THROUGH);
         } else {
             inner.send(endpoint, envelope, msg);
         }
@@ -70,16 +84,21 @@ public class SpaceManagerHandler extends RemotePoolManagerHandler
     public <T extends PoolIoFileMessage> ListenableFuture<T> startAsync(
             CellEndpoint endpoint, CellAddressCore pool, T msg, long timeout)
     {
-        return shouldIntercept(msg)
-               ? super.startAsync(endpoint, pool, msg, timeout)
-               : inner.startAsync(endpoint, pool, msg, timeout);
+        if (shouldIntercept(msg)) {
+            return submit(endpoint, new CellPath(destination, pool), msg, timeout);
+        } else {
+            return inner.startAsync(endpoint, pool, msg, timeout);
+        }
     }
 
     @Override
     public void start(CellEndpoint endpoint, CellMessage envelope, PoolIoFileMessage msg)
     {
         if (shouldIntercept(msg)) {
-            super.start(endpoint, envelope, msg);
+            checkArgument(envelope.getSourcePath().hops() > 0, "Envelope is missing source address.");
+            envelope.getDestinationPath().insert(destination);
+            envelope.setMessageObject(msg);
+            endpoint.sendMessage(envelope, CellEndpoint.SendFlag.PASS_THROUGH);
         } else {
             inner.start(endpoint, envelope, msg);
         }
@@ -88,13 +107,21 @@ public class SpaceManagerHandler extends RemotePoolManagerHandler
     @Override
     public SerializablePoolManagerHandler.Version getVersion()
     {
-        return new Version(super.getVersion(), inner.getVersion());
+        return new Version(destination, inner.getVersion());
     }
 
     @Override
     public String toString()
     {
-        return "spacemanager={" + super.toString() + ", " + inner + "}";
+        return "spacemanager={" + destination + ", " + inner + "}";
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T extends Message> ListenableFuture<T> submit(CellEndpoint endpoint, CellPath path, T msg, long timeout)
+    {
+        FutureCellMessageAnswerable<T> callback = new FutureCellMessageAnswerable<>((Class<T>) msg.getClass());
+        endpoint.sendMessage(new CellMessage(path, msg), callback, MoreExecutors.directExecutor(), timeout);
+        return callback;
     }
 
     protected <T extends PoolManagerMessage> boolean shouldIntercept(T msg)
@@ -109,25 +136,41 @@ public class SpaceManagerHandler extends RemotePoolManagerHandler
 
     public static SerializablePoolManagerHandler.Version extractWrappedVersion(SerializablePoolManagerHandler.Version version)
     {
-        return (version instanceof Version) ? ((Version) version).b : version;
+        return (version instanceof Version) ? ((Version) version).version : version;
     }
 
     protected static class Version implements SerializablePoolManagerHandler.Version
     {
-        private final SerializablePoolManagerHandler.Version a;
+        private static final long serialVersionUID = -464748685222944300L;
 
-        private final SerializablePoolManagerHandler.Version b;
+        private final CellAddressCore destination;
 
-        public Version(SerializablePoolManagerHandler.Version a, SerializablePoolManagerHandler.Version b)
+        private final SerializablePoolManagerHandler.Version version;
+
+        public Version(CellAddressCore destination, SerializablePoolManagerHandler.Version version)
         {
-            this.a = a;
-            this.b = b;
+            this.destination = requireNonNull(destination);
+            this.version = requireNonNull(version);
         }
 
         @Override
-        public boolean equals(SerializablePoolManagerHandler.Version other)
+        public boolean equals(Object o)
         {
-            return other instanceof Version && ((Version) other).a.equals(a) && ((Version) other).b.equals(b);
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Version version1 = (Version) o;
+            return destination.equals(version1.destination) && version.equals(version1.version);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return 31 * destination.hashCode() + version.hashCode();
         }
     }
 }
