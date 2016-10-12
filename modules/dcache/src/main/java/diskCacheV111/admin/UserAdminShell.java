@@ -617,7 +617,7 @@ public class UserAdminShell
                                           }, MoreExecutors.directExecutor(), CONNECT_PROBE_MESSAGE_TIMEOUT_MS);
                 CellAddressCore remote = future.get();
                 if (path.hops() == 1 && path.getDestinationAddress().isLocalAddress()) {
-                    return new Position(remote.toString(), path);
+                    return new Position(remote.toString(), new CellPath(remote));
                 } else {
                     return new Position(cell, path);
                 }
