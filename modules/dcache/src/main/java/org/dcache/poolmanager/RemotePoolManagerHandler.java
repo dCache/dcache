@@ -111,9 +111,23 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler
         }
 
         @Override
-        public boolean equals(SerializablePoolManagerHandler.Version other)
+        public boolean equals(Object o)
         {
-            return other instanceof Version && ((Version) other).destination.equals(destination);
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Version version = (Version) o;
+            return destination.equals(version.destination);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return destination.hashCode();
         }
     }
 }

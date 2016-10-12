@@ -1073,9 +1073,7 @@ public final class SpaceManagerService
         Subject subject = selectWritePool.getSubject();
 
         if (defaultSpaceToken != null) {
-            LOGGER.trace("selectPool: file is not " +
-                         "found, found default space " +
-                         "token, calling insertFile()");
+            LOGGER.trace("selectPool: file is not found, using default space token");
             Space space;
             try {
                 space = db.getSpace(Long.parseLong(defaultSpaceToken));
@@ -1092,20 +1090,19 @@ public final class SpaceManagerService
             if (!fileAttributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
                 fileAttributes.setAccessLatency(space.getAccessLatency());
             } else if (fileAttributes.getAccessLatency() != space.getAccessLatency()) {
-                throw new SpaceException("Access latency conflicts with access latency defined by space reservation.");
+                throw new SpaceException("Access latency conflicts with access latency defined by default space reservation.");
             }
             if (!fileAttributes.isDefined(FileAttribute.RETENTION_POLICY)) {
                 fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
             } else if (fileAttributes.getRetentionPolicy() != space.getRetentionPolicy()) {
                 throw new SpaceException(
-                        "Retention policy conflicts with retention policy defined by space reservation.");
+                        "Retention policy conflicts with retention policy defined by default space reservation.");
             }
 
             if (space.getDescription() != null) {
                 storageInfo.setKey("SpaceTokenDescription", space.getDescription());
             }
-            LOGGER.trace("selectPool: found linkGroup = {}, " +
-                         "forwarding message", linkGroupName);
+            LOGGER.trace("selectPool: found linkGroup = {}, forwarding message", linkGroupName);
         } else if (allowUnreservedUploadsToLinkGroups) {
             LOGGER.trace("Upload outside a reservation, identifying appropriate linkgroup");
 
