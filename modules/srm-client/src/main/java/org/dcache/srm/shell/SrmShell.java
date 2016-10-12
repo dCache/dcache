@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
@@ -430,7 +429,16 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="prompt", hint = "modify prompt")
+    @Command(name="prompt", hint = "modify prompt",
+                    description = "Modify the prompt to show different information."
+                            + "\n\n"
+                            + "There are three choices of prompt:"
+                            + "\n\n"
+                            + "    local   show the local current working directory,"
+                            + "\n\n"
+                            + "    srm     show the current working SURL,"
+                            + "\n\n"
+                            + "    simple  show only the '#' symbol.")
     public class PromptCommand implements Callable<Serializable>
     {
         @Argument(valueSpec = "local|simple|srm")
@@ -460,7 +468,10 @@ public class SrmShell extends ShellApplication
      * Commands for local filesystem manipulation
      */
 
-    @Command(name="lpwd", hint = "print local working directory")
+    @Command(name="lpwd", hint = "print local working directory",
+                description = "Print the current working directory.  This "
+                        + "directory is used as a default value for the lls "
+                        + "command and when resolving local relative paths.")
     public class LpwdCommand implements Callable<Serializable>
     {
         @Override
@@ -470,7 +481,10 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lcd", hint = "change local directory")
+    @Command(name="lcd", hint = "change local directory",
+                    description = "Change the local directory.  The new path is "
+                            + "used as a default value for lls commands "
+                            + "and to resolve relative (local) paths.")
     public class LcdCommand implements Callable<Serializable>
     {
         @Argument
@@ -498,7 +512,28 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lls", hint = "list local directory")
+    @Command(name="lls", hint = "list local directory",
+                    description = "List a file or directory on the local "
+                            + "filesystem.  The format of the "
+                            + "output is controlled via various options."
+                            + "\n\n"
+                            + "The output is either in short or long format. "
+                            + "Short format lists only the file or directory "
+                            + "names.  Long format shows one file or directory "
+                            + "per line with additional metadata."
+                            + "\n\n"
+                            + "Normally files and directories that start with "
+                            + "a dot are not shown, but the -a option may be "
+                            + "used to see them.  If the -d option is "
+                            + "specified then information about a directory is "
+                            + "shown rather than than showing information about "
+                            + "the content of that directory."
+                            + "\n\n"
+                            + "If long format is used then further options "
+                            + "allow a choice of which timestamp is printed "
+                            + "and whether the file size is shown as a number "
+                            + "of bytes or using decimal (powers of ten)"
+                            + "prefixes.")
     public class LlsCommand implements Callable<Serializable>
     {
         private static final String DEFAULT_TIME = "mtime";
@@ -507,8 +542,9 @@ public class SrmShell extends ShellApplication
         String path;
 
         @Option(name = "time", values = { "modify", "atime", "mtime", "create" },
-                usage = "Show alternative time instead of modification time: modify/mtime is the last write time, " +
-                        "create is the creation time.")
+                usage = "Show alternative time instead of modification time: "
+                        + "modify/mtime is the last write time, create is the "
+                        + "creation time.")
         String time = DEFAULT_TIME;
 
         @Option(name = "l",
@@ -516,15 +552,17 @@ public class SrmShell extends ShellApplication
         boolean verbose;
 
         @Option(name = "h",
-                usage = "Use abbreviated file sizes.")
+                usage = "Use abbreviated file sizes. The values use decimal "
+                        + "prefixes; for example, 1 kB is 1000 bytes.")
         boolean abbrev;
 
         @Option(name = "a",
-                usage = "Show hidden files.")
+                usage = "Do not hide files that are normally hidden.")
         boolean showHidden;
 
         @Option(name = "d",
-                usage = "list directories themselves, not their contents")
+                usage = "display information about a directory rather than "
+                        + "listing the contents.")
         boolean directory;
 
         @Override
@@ -601,7 +639,8 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lrm", hint="remove local file")
+    @Command(name="lrm", hint="remove local file",
+                    description = "Remove a file from the local filesystem.")
     public class LrmCommand implements Callable<Serializable>
     {
         @Argument
@@ -626,7 +665,8 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lrmdir", hint="remove local directory")
+    @Command(name="lrmdir", hint="remove local directory",
+                    description = "Remove a directory if it is empty.")
     public class LrmdirCommand implements Callable<Serializable>
     {
         @Argument
@@ -655,7 +695,9 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lmkdir", hint="create local directory")
+    @Command(name="lmkdir", hint="create local directory",
+            description = "Create a new subdirectory.  The parent directory "
+                    + "must already exist")
     public class LmkdirCommand implements Callable<Serializable>
     {
         @Argument
@@ -686,7 +728,13 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name="lmv", hint="move (rename) local files")
+    @Command(name="lmv", hint="move (rename) local files",
+            description = "Rename SOURCE to DEST.  If DEST exists and is a file "
+                    + "then it is replaced, unless the -n option is specified. "
+                    + "If DEST is a directory then the SOURCE is moved into that "
+                    + "directory with the same name, unless -T option is "
+                    + "specified.  The -n option prevents the comment from "
+                    + "overwriting existing data.")
     public class LmvCommand implements Callable<Serializable>
     {
         @Argument(index=0, metaVar="SOURCE")
@@ -695,10 +743,11 @@ public class SrmShell extends ShellApplication
         @Argument(index=1, metaVar="DEST")
         String dest;
 
-        @Option(name="n", usage="do not overwrite an existing file")
+        @Option(name="n", usage="fail if the target already exists")
         boolean noClobber;
 
-        @Option(name="T", usage="treat DEST as a normal file")
+        @Option(name="T", usage="If DEST is a directory then do not move SOURCE "
+                        + "into DEST; instead, SOURCE will replace DEST.")
         boolean destNormal;
 
         @Override
@@ -726,7 +775,11 @@ public class SrmShell extends ShellApplication
     }
 
 
-    @Command(name = "cd", hint = "change current directory")
+    @Command(name = "cd", hint = "change current directory",
+                    description = "Modify the current working directory within "
+                            + "the SRM endpoint.  This path is used as a default "
+                            + "value for the ls command, and to resolve relative "
+                            + "paths.")
     public class CdCommand implements Callable<Serializable>
     {
         @Argument(required = false)
@@ -744,7 +797,10 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "ls", hint = "list directory contents")
+    @Command(name = "ls", hint = "list directory contents",
+            description = "List the contents of a directory or information "
+                    + "about a file or directory.  Various options modify "
+                    + "which information is provided.")
     public class LsCommand implements Callable<Serializable>
     {
         private static final String DEFAULT_TIME = "mtime";
@@ -817,7 +873,9 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "stat", hint = "display file status")
+    @Command(name = "stat", hint = "display file status",
+                    description = "Provide detailed information about a file or "
+                            + "directory.")
     public class StatCommand implements Callable<String>
     {
         private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.FULL);
@@ -890,7 +948,9 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "ping", hint = "ping server")
+    @Command(name = "ping", hint = "ping server",
+            description = "Test whether the SRM endpoint is responding and "
+                    + "discover the information the server provides.")
     public class PingCommand implements Callable<String>
     {
         @Override
@@ -914,7 +974,9 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get transfer protocols", hint = "retrieves supported transfer protocols")
+    @Command(name = "get transfer protocols", hint = "retrieves supported transfer protocols",
+                    description = "Query the SRM server to discover which "
+                            + "transfer protocols it supports.")
     public class TransferProtocolsCommand implements Callable<String>
     {
         @Override
@@ -945,13 +1007,18 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "mkdir", hint = "make directory")
+    @Command(name = "mkdir", hint = "make directory", description = "Create "
+                    + "a subdirectory on the server.  By default, the parent "
+                    + "directory must already exist.  If the -p option is "
+                    + "specified then missing parent directories are created "
+                    + "as necessary.")
     public class MkdirCommand implements Callable<String>
     {
         @Argument
         File path;
 
-        @Option(name = "p", usage = "no error if existing, make parent directories as needed")
+        @Option(name = "p", usage = "do not fail if the directory already "
+                        + "exists and create parent directories as necessary.")
         boolean parent;
 
         @Override
@@ -984,13 +1051,18 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "rmdir", hint = "remove empty directories")
+    @Command(name = "rmdir", hint = "remove empty directories",
+                    description = "Remove a directory that is empty.  If "
+                            + "the -r option is specified then the removal is "
+                            + "recursive, so that the command will succeed if "
+                            + "the target directory and any subdirectories "
+                            + "contain no files.")
     public class RmdirCommand implements Callable<String>
     {
         @Argument
         File path;
 
-        @Option(name = "r", usage = "")
+        @Option(name = "r", usage = "delete recursively")
         boolean recursive;
 
         @Override
@@ -1001,7 +1073,9 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "rm", hint = "remove directory entries")
+    @Command(name = "rm", hint = "remove directory entries",
+                    description = "Remove one or more directory items.  All of "
+                            + "the targets must be non-directory items.")
     public class RmCommand implements Callable<String>
     {
         @Argument
@@ -1039,7 +1113,8 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "mv", hint = "move (rename) file or directory")
+    @Command(name = "mv", hint = "move (rename) file or directory",
+            description = "Move or rename a file or directory.")
     public class MvCommand implements Callable<String>
     {
         @Argument(index = 0)
@@ -1056,10 +1131,16 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get space tokens", hint = "get space tokens matching description")
+    @Command(name = "get space tokens", hint = "get space tokens matching description",
+                    description = "Discover the space tokens currently "
+                            + "available to this user.  If description is "
+                            + "supplied then only space tokens that were "
+                            + "created with this description are listed; "
+                            + "otherwise all space reservations are listed.")
     public class GetSpaceTokensCommand implements Callable<String>
     {
-        @Argument(required = false)
+        @Argument(required = false, usage = "The description supplied when "
+                        + "creating this reservation.")
         String description;
 
         @Override
@@ -1070,7 +1151,9 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get permission", hint = "get permissions on SURLs")
+    @Command(name = "get permission", hint = "get permissions on SURLs",
+                    description = "Query detailed information about the "
+                            + "permissions of a file or directory.")
     public class GetPermissionCommand implements Callable<String>
     {
         @Argument
@@ -1121,7 +1204,11 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "check permission", hint = "check client permissions on SURLs")
+    @Command(name = "check permission", hint = "check client permissions on SURLs",
+                    description = "Check the (effective) permissions on a file "
+                            + "or directory for the current user.  The result "
+                            + "is a list of operations that this user is "
+                            + "allowed to do.")
     public class CheckPermissionCommand implements Callable<String>
     {
         @Argument
@@ -1154,18 +1241,42 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "reserve space", hint = "create space reservation")
+    @Command(name = "reserve space", hint = "create space reservation",
+                    description = "Reserve space into which data may be uploaded. "
+                            + "A space reservation is a promise from the "
+                            + "storage system to accept some amount of data.")
     public class ReserveSpaceCommand implements Callable<String>
     {
         @Option(name = "al", required = false,
-                values = { "NEARLINE", "ONLINE" })
+                values = { "NEARLINE", "ONLINE" },
+                usage = "The desired access latency of the space reservation. "
+                        + "If not specified then the remote system will use "
+                        + "an implementation-specific strategy to decide which "
+                        + "value is used. The values have the following meaning:"
+                        + "\n\n"
+                        + "    ONLINE    the lowest latency possible."
+                        + "\n\n"
+                        + "    NEARLINE  files can have their latency improved "
+                        + "automatically.")
         String al;
 
         @Option(name = "rp", required = true,
-                values = { "REPLICA", "OUTPUT", "CUSTODIAL" })
+                values = { "REPLICA", "OUTPUT", "CUSTODIAL" },
+                usage = "The desired retention policy of the space reservation."
+                        + "The values have the following meaning:"
+                        + "\n\n"
+                        + "    REPLICA    highest probability of loss,"
+                        + "\n\n"
+                        + "    OUTPUT     intermediate probability of loss,"
+                        + "\n\n"
+                        + "    CUSTODIAL  lowest probability of loss.")
         String rp;
 
-        @Option(name = "lifetime")
+        @Option(name = "lifetime", usage = "The number of seconds the "
+                        + "reservation should be honoured.  If not specified "
+                        + "then the resulting lifetime is implementation "
+                        + "specific; however, it will be infinite if that is "
+                        + "supported by the SRM service.")
         int lifetime = -1;
 
         @Argument(index = 0)
@@ -1189,7 +1300,13 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "release space", hint = "release space reservation")
+    @Command(name = "release space", hint = "release space reservation",
+                    description = "Release the reserved space from within "
+                            + "storage system.  Once this operation completes "
+                            + "successfully, no further uploads may use the "
+                            + "reservation.  Files that have been uploaded "
+                            + "into the released space reservation are "
+                            + "unaffected by this operation.")
     public class ReleaseSpaceCommand implements Callable<String>
     {
         @Argument
@@ -1203,7 +1320,9 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get space meta data", hint = "get information about a space reservation")
+    @Command(name = "get space meta data", hint = "get information about a space reservation",
+                    description = "Discover information about a specific space "
+                            + "reservation.")
     public class GetSpaceMetaDataCommand implements Callable<String>
     {
         @Argument
@@ -1220,7 +1339,12 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get", hint = "download a file")
+    @Command(name = "get", hint = "download a file",
+                    description = "Download a file from the storage system.  "
+                            + "The remote file path is optional.  If not "
+                            + "specified then a file is created in the current "
+                            + "local working directory with the same name as the"
+                            + "remote file ")
     public class GetCommand implements Callable<String>
     {
         @Argument(index=0, usage="path to the remote file")
@@ -1270,7 +1394,11 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "put", hint = "upload a file")
+    @Command(name = "put", hint = "upload a file", description = "Upload a file "
+                    + "into the SRM storage.  The remote argument is optional."
+                    + "If omitted, the file will be uploaded in the current "
+                    + "working directory in the SRM with the same name as the "
+                    + "source.")
     public class PutCommand implements Callable<String>
     {
         @Argument(index=0, usage="path of the file to upload")
@@ -1333,7 +1461,10 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "transfer clear", hint="clear completed transfers")
+    @Command(name = "transfer clear", hint="clear completed transfers",
+                    description = "Clear the log of completed and failed "
+                            + "transfers.  Ongoing transfers are unaffected "
+                            + "by this command")
     public class TransferClearCommand implements Callable<String>
     {
         @Override
@@ -1344,7 +1475,8 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "transfer ls", hint = "show all ongoing transfers")
+    @Command(name = "transfer ls", hint = "show all ongoing transfers",
+                    description = "Show a list of all ongoing transfers.")
     public class TransferListCommand implements Callable<String>
     {
         @Argument(required=false, usage="the ID of a specific transfer")
@@ -1393,7 +1525,8 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "transfer cancel", hint = "abort an ongoing transfer")
+    @Command(name = "transfer cancel", hint = "abort an ongoing transfer",
+                    description = "Stop a queued or active transfer.")
     public class TransferCancelCommand implements Callable<String>
     {
         @Argument(usage="the ID of the transfer")
@@ -1416,7 +1549,8 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "option ls", hint = "show available configuration")
+    @Command(name = "option ls", hint = "show available configuration",
+                    description = "Show the available list of options.")
     public class OptionLsCommand implements Callable<String>
     {
         @Argument(usage="the specific option to query", required=false)
@@ -1450,7 +1584,8 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "option set", hint = "alter a configuration setting")
+    @Command(name = "option set", hint = "alter a configuration setting",
+                    description = "List all the available options.")
     public class OptionSetCommand implements Callable<String>
     {
         @Argument(index=0, usage="the specific option to update")
