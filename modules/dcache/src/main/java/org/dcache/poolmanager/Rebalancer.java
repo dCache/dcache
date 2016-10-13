@@ -67,7 +67,7 @@ public class Rebalancer
     {
         return allAsList(pools.stream()
                                  .map(pool -> new CellPath(pool.getName()))
-                                 .map(path -> _poolStub.send(path, new PoolMigrationJobCancelMessage(JOB_NAME, true)))
+                                 .map(path -> CellStub.transform(_poolStub.send(path, new PoolMigrationJobCancelMessage(JOB_NAME, true)), m -> m))
                                  .collect(toList()));
     }
 
