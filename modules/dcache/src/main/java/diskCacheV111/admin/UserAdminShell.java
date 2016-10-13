@@ -344,7 +344,7 @@ public class UserAdminShell
      */
     private ListenableFuture<Stream<String>> getPools(String poolGroup)
     {
-        return transform(
+        return CellStub.transform(
                 _poolManager.send(new PoolManagerGetPoolsByPoolGroupMessage(singletonList(poolGroup))),
                 (PoolManagerGetPoolsByPoolGroupMessage m) ->
                         m.getPools().stream().map(PoolManagerPoolInformation::getName));
