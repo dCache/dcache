@@ -266,22 +266,38 @@ public class ColumnWriter
         @Override
         public int width(Object value)
         {
-            return abbrev ? 4 : Objects.toString(value, "").length();
+            if (abbrev && value != null) {
+                return DECIMAL.unitsOf((long) value) == BYTES ? 4 : 5;
+            } else {
+                return Objects.toString(value, "").length();
+            }
         }
 
-        private void render(long value, ByteUnit units, PrintWriter out)
+        private String render(long value, ByteUnit units)
         {
             if (units == BYTES) {
-                out.format("%3d", value);
+                return String.format("%3d", value);
             } else {
                 double tmp = units.convert((double) value, BYTES);
                 if (tmp >= 0 && tmp < 9.95) {
-                    out.format("%3.1f", tmp);
+                    return String.format("%.1f", tmp);
                 } else {
-                    out.format("%3.0f", tmp);
+                    return String.format("%.0f", tmp);
                 }
             }
-            out.append(isoSymbol().of(units));
+        }
+
+        private void render(long value, int actualWidth, PrintWriter out)
+        {
+            ByteUnit units = DECIMAL.unitsOf(value);
+            String symbol = isoSymbol().of(units);
+            String numerical = render(value, units);
+
+            int padding = actualWidth - numerical.length() - symbol.length();
+            while (padding-- > 0) {
+                out.append(' ');
+            }
+            out.append(numerical).append(symbol);
         }
 
         @Override
@@ -294,7 +310,7 @@ public class ColumnWriter
             } else {
                 long value = (long) o;
                 if (abbrev) {
-                    render(value, DECIMAL.unitsOf(value), out);
+                    render(value, actualWidth, out);
                 } else {
                     out.format("%" + actualWidth + 'd', value);
                 }
