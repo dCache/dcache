@@ -135,7 +135,18 @@ public class Gplazma2LoginStrategy
                 .map(_createPrefixRestriction)
                 .forEach(loginAttributes::add);
 
-        return new LoginReply(gPlazmaLoginReply.getSubject(), loginAttributes);
+        // Filter IGTFStatusPrincipal and IGTFPolicyPrincipal until no longer
+        // need backwards compatibility with dCache v3.0 pools
+        Subject replyUser = new Subject();
+        Subject loggedInUser = gPlazmaLoginReply.getSubject();
+        replyUser.getPublicCredentials().addAll(loggedInUser.getPublicCredentials());
+        replyUser.getPrivateCredentials().addAll(loggedInUser.getPrivateCredentials());
+        Set<Principal> replyPrincipals = replyUser.getPrincipals();
+        loggedInUser.getPrincipals().stream()
+                .filter(p -> !(p instanceof IGTFStatusPrincipal))
+                .filter(p -> !(p instanceof IGTFPolicyPrincipal))
+                .forEach(replyPrincipals::add);
+        return new LoginReply(replyUser, loginAttributes);
     }
 
     @Override

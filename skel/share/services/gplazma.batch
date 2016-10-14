@@ -9,6 +9,7 @@ check -strong gplazma.service.pnfsmanager
 check gplazma.authz.upload-directory
 check gplazma.cell.consume
 check gplazma.cell.subscribe
+check gplazma.x509.igtf-info.path
 
 create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
    "classpath:org/dcache/services/login/gplazma.xml \

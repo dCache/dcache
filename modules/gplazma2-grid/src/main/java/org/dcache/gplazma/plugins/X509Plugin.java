@@ -14,6 +14,8 @@ import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.x500.X500Principal;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.Principal;
@@ -34,6 +36,7 @@ import org.dcache.auth.LoAPrincipal;
 import org.dcache.auth.Origin;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertPaths;
+import org.dcache.gplazma.util.IGTFInfoDirectory;
 
 import static eu.emi.security.authn.x509.helpers.CertificateHelpers.getExtensionBytes;
 import static org.dcache.auth.EntityDefinition.*;
@@ -56,8 +59,12 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     private static final String OID_ANY_POLICY = "2.5.29.32";
     private static final DERSequence ANY_POLICY = new DERSequence(new ASN1ObjectIdentifier(OID_ANY_POLICY));
 
+    private final IGTFInfoDirectory infoDirectory;
+
     public X509Plugin(Properties properties)
     {
+        String path = properties.getProperty("gplazma.x509.igtf-info.path");
+        infoDirectory = path == null ? null : new IGTFInfoDirectory(path);
     }
 
     @Override
@@ -94,8 +101,7 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                         continue;
                     }
 
-                    identifiedPrincipals.add(new GlobusPrincipal(
-                            OpensslNameUtils.convertFromRfc2253(eec.getSubjectX500Principal().getName(), true)));
+                    identifiedPrincipals.add(asGlobusPrincipal(eec.getSubjectX500Principal()));
 
                     listPolicies(eec).stream()
                             .map(PolicyInformation::getInstance)
@@ -104,6 +110,13 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                             .map(X509Plugin::asPrincipal)
                             .filter(Objects::nonNull)
                             .forEach(identifiedPrincipals::add);
+
+                    if (infoDirectory != null) {
+                        // REVISIT: this assumes that issuer of EEC is the CA.  This
+                        //          is currently true for all IGTF CAs.
+                        GlobusPrincipal issuer = asGlobusPrincipal(eec.getIssuerX500Principal());
+                        identifiedPrincipals.addAll(infoDirectory.getPrincipals(issuer));
+                    }
 
                     found = true;
                 }
@@ -114,6 +127,10 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         checkAuthentication(found, message);
     }
 
+    private GlobusPrincipal asGlobusPrincipal(X500Principal p)
+    {
+        return new GlobusPrincipal(OpensslNameUtils.convertFromRfc2253(p.getName(), true));
+    }
 
     private List<ASN1Encodable> listPolicies(X509Certificate eec)
             throws AuthenticationException

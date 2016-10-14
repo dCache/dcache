@@ -41,5 +41,10 @@
        <groupId>org.bouncycastle</groupId>
        <artifactId>${bouncycastle.bcprov}</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.jimfs</groupId>
+      <artifactId>jimfs</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
