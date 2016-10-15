@@ -420,16 +420,27 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         (
-            printf "DOMAIN\tSERVICE\tCELL\tREPLICABLE\n"
+            printf "DOMAIN\tSERVICE\tCELL\tPROXIED\tREPLICABLE\n"
             for domain in $(getProperty dcache.domains); do
                 for cell in $(getProperty dcache.domain.cells "$domain"); do
                     service=$(getProperty dcache.domain.service "$domain" "$cell")
+                    case "$(getScopedProperty enable.proxy-protocol "$domain" "$cell")" in
+                    true)
+                        proxied=Yes
+                        ;;
+                    false)
+                        proxied=No
+                        ;;
+                    *)
+                        proxied=-
+                        ;;
+                    esac
                     if [ "$(getScopedProperty cell.replicable "$domain" "$cell")" = "true" ]; then
                         replicable=Yes
                     else
                         replicable=No
                     fi
-                    printf "${domain}\t${service}\t${cell}\t${replicable:-true}\n"
+                    printf "${domain}\t${service}\t${cell}\t${proxied}\t${replicable}\n"
                 done
             done
         ) | column
