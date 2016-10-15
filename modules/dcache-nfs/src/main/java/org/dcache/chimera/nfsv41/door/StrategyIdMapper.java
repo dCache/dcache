@@ -1,27 +1,31 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.net.InternetDomainName;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.Principal;
-import java.util.Set;
-import java.util.Hashtable;
-import javax.naming.NamingException;
+import javax.naming.CommunicationException;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.Principal;
+import java.util.Hashtable;
+import java.util.Set;
+
 import diskCacheV111.util.CacheException;
-import javax.naming.NameNotFoundException;
 
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
@@ -33,8 +37,6 @@ import org.dcache.auth.UserNamePrincipal;
 import org.dcache.nfs.v4.NfsIdMapping;
 import org.dcache.xdr.RpcLoginService;
 import org.dcache.xdr.XdrTransport;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
 
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
 
@@ -235,6 +237,9 @@ public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {
                 LOGGER.info("Using nfs4domain from DNS TXT record: {}", txtRecord);
                 return txtRecord;
             }
+        } catch (CommunicationException e) {
+            LOGGER.warn("DNS query to discover NFS domain name failed: {}",
+                    Throwables.getRootCause(e).getMessage());
         } catch (NameNotFoundException e) {
             // nfsv4idmapdomain record doesn't exists
         }
