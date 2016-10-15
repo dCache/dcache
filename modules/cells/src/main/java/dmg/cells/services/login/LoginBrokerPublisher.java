@@ -131,7 +131,7 @@ public class LoginBrokerPublisher
                           "by these tags.")
     class SetTagCommand implements Callable<String>
     {
-        @Argument
+        @Argument(required = false)
         String[] tags;
 
         @Override
