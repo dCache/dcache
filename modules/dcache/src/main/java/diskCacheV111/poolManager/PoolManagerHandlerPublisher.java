@@ -220,6 +220,9 @@ public class PoolManagerHandlerPublisher
     public PoolMgrGetHandler messageArrived(PoolMgrGetHandler message)
     {
         checkPublicationTimestamp();
+        if (message.isReply()) {
+            return null;
+        }
         message.setHandler(handler);
         return message;
     }
@@ -227,6 +230,9 @@ public class PoolManagerHandlerPublisher
     public DelayedReply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message)
     {
         checkPublicationTimestamp();
+        if (message.isReply()) {
+            return null;
+        }
         SerializablePoolManagerHandler handler = this.handler;
         UpdateRequest request = new UpdateRequest(envelope, message);
         requests.add(request);

@@ -429,11 +429,17 @@ public final class SpaceManagerService
 
     public Reply messageArrived(CellMessage envelope, PoolMgrGetHandler message)
     {
+        if (message.isReply()) {
+            return null;
+        }
         return new FutureReply<>(forward(envelope, message));
     }
 
     public Reply messageArrived(CellMessage envelope, PoolMgrGetUpdatedHandler message)
     {
+        if (message.isReply()) {
+            return null;
+        }
         PoolMgrGetUpdatedHandler messageToForward =
                 new PoolMgrGetUpdatedHandler(SpaceManagerHandler.extractWrappedVersion(message.getVersion()));
         ListenableFuture<PoolMgrGetHandler> result = forward(envelope, messageToForward);
