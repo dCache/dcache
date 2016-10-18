@@ -3,6 +3,8 @@ package org.dcache.chimera.namespace;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -27,10 +29,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -52,7 +56,10 @@ import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Option;
 
+import static com.google.common.util.concurrent.Futures.allAsList;
+import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author Irina Kozlova
@@ -457,24 +464,23 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2)";
         for (String id : _db.queryForList(QUERY, String.class)) {
             try {
-                sendDeleteNotifications(id);
-            } catch (CacheException e) {
-                _log.warn(e.getMessage());
+                sendDeleteNotifications(new PnfsId(id)).get();
+                _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
+            } catch (ExecutionException e) {
+                _log.warn(e.getCause().getMessage());
             }
         }
     }
 
-    private void sendDeleteNotifications(String id) throws InterruptedException, CacheException
+    private ListenableFuture<List<PnfsDeleteEntryNotificationMessage>> sendDeleteNotifications(PnfsId pnfsId)
     {
-        PnfsId pnfsId = new PnfsId(id);
-        for (CellPath address : _deleteNotificationTargets) {
-            try {
-                _notificationStub.sendAndWait(address, new PnfsDeleteEntryNotificationMessage(pnfsId));
-            } catch (CacheException e) {
-                throw new CacheException("Failed to notify " + address + " about deletion of " + id + ": " + e.getMessage(), e);
-            }
-        }
-        _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
+        BiFunction<CellPath, Exception, CacheException> failureFor =
+                (path, e) -> new CacheException("Failed to notify " + path + " about deletion of " + pnfsId + ": " + e.getMessage(), e);
+        return allAsList(
+                Arrays.stream(_deleteNotificationTargets)
+                        .map(a -> Futures.catchingAsync(_notificationStub.send(a, new PnfsDeleteEntryNotificationMessage(pnfsId)),
+                                                        Exception.class, e -> immediateFailedFuture(failureFor.apply(a, e))))
+                        .collect(toList()));
     }
 
     /**
