@@ -135,11 +135,6 @@ public class UniversalSpringCell
     private static final Class<?>[] TERMINAL_TYPES = new Class<?>[] { Class.class, ApplicationContext.class };
     private static final Class<?>[] HIDDEN_TYPES = new Class<?>[] { ApplicationContext.class, AutoCloseable.class };
 
-    public interface BeanPostProcessorAware
-    {
-        void setBeanPostProcessor(BeanPostProcessor processor);
-    }
-
     /**
      * Environment map this cell was instantiated in.
      */
@@ -930,31 +925,6 @@ public class UniversalSpringCell
     }
 
     /**
-     * Add a message sender. Message senders can send cell messages
-     * via a cell endpoint.
-     */
-    public void addMessageSender(CellMessageSender bean)
-    {
-        bean.setCellEndpoint(this);
-    }
-
-    /**
-     * Add provider of CellInfo to a CellInfoAware bean.
-     */
-    public void addCellInfoAware(CellInfoAware bean)
-    {
-        bean.setCellInfoSupplier(this::getCellInfo);
-    }
-
-    /**
-     * Add the cell's identity
-     */
-    public void addCellIdentity(CellIdentityAware bean)
-    {
-        bean.setCellAddress(getNucleus().getThisAddress());
-    }
-
-    /**
      * Registers a setup provider. Setup providers contribute to the
      * result of the <code>save</code> method.
      */
@@ -984,42 +954,6 @@ public class UniversalSpringCell
                                                   String beanName)
         throws BeansException
     {
-        if (bean instanceof BeanPostProcessorAware) {
-            ((BeanPostProcessorAware)bean).setBeanPostProcessor(this);
-        }
-
-        if (bean instanceof CellCommandListener) {
-            addCommandListener(bean);
-        }
-
-        if (bean instanceof CellInfoProvider) {
-            addInfoProviderBean((CellInfoProvider) bean, beanName);
-        }
-
-        if (bean instanceof CellMessageReceiver) {
-            addMessageReceiver((CellMessageReceiver) bean);
-        }
-
-        if (bean instanceof CellMessageSender) {
-            addMessageSender((CellMessageSender) bean);
-        }
-
-        if (bean instanceof CellInfoAware) {
-            addCellInfoAware((CellInfoAware) bean);
-        }
-
-        if (bean instanceof CellIdentityAware) {
-            addCellIdentity((CellIdentityAware) bean);
-        }
-
-        if (bean instanceof CellSetupProvider) {
-            addSetupProviderBean((CellSetupProvider) bean, beanName);
-        }
-
-        if (bean instanceof CellLifeCycleAware) {
-            addLifeCycleAwareBean((CellLifeCycleAware) bean, beanName);
-        }
-
         if (bean instanceof EnvironmentAware) {
             ((EnvironmentAware) bean).setEnvironment(_environment);
         }
@@ -1032,12 +966,20 @@ public class UniversalSpringCell
             ((DomainContextAware) bean).setDomainContext(getDomainContext());
         }
 
-        if (bean instanceof CellEventListener) {
-            addCellEventListener((CellEventListener) bean);
-        }
-
         if (bean instanceof CuratorFrameworkAware) {
             ((CuratorFrameworkAware) bean).setCuratorFramework(getCuratorFramework());
+        }
+
+        if (bean instanceof CellIdentityAware) {
+            ((CellIdentityAware) bean).setCellAddress(getNucleus().getThisAddress());
+        }
+
+        if (bean instanceof CellInfoAware) {
+            ((CellInfoAware) bean).setCellInfoSupplier(this::getCellInfo);
+        }
+
+        if (bean instanceof CellMessageSender) {
+            ((CellMessageSender) bean).setCellEndpoint(this);
         }
 
         return bean;
@@ -1048,6 +990,30 @@ public class UniversalSpringCell
                                                  String beanName)
         throws BeansException
     {
+        if (bean instanceof CellCommandListener) {
+            addCommandListener(bean);
+        }
+
+        if (bean instanceof CellInfoProvider) {
+            addInfoProviderBean((CellInfoProvider) bean, beanName);
+        }
+
+        if (bean instanceof CellMessageReceiver) {
+            addMessageReceiver((CellMessageReceiver) bean);
+        }
+
+        if (bean instanceof CellSetupProvider) {
+            addSetupProviderBean((CellSetupProvider) bean, beanName);
+        }
+
+        if (bean instanceof CellLifeCycleAware) {
+            addLifeCycleAwareBean((CellLifeCycleAware) bean, beanName);
+        }
+
+        if (bean instanceof CellEventListener) {
+            addCellEventListener((CellEventListener) bean);
+        }
+
         return bean;
     }
 
