@@ -41,6 +41,7 @@ public interface SerializablePoolManagerHandler extends PoolManagerHandler, Seri
      */
     interface Version extends Serializable
     {
-        boolean equals(Version version);
+        @Override
+        boolean equals(Object object);
     }
 }
