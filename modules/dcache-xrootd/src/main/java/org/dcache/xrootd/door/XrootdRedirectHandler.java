@@ -18,7 +18,6 @@
 package org.dcache.xrootd.door;
 
 import com.google.common.net.InetAddresses;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,8 +140,8 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
          * introduces an artificial 1 second delay when processing such a response.
          */
 
-        InetSocketAddress localAddress = getLocalAddress();
-        InetSocketAddress remoteAddress = getRemoteAddress();
+        InetSocketAddress localAddress = getDestinationAddress();
+        InetSocketAddress remoteAddress = getSourceAddress();
 
         FilePerm neededPerm = req.getRequiredPermission();
 
@@ -245,7 +244,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     {
         String path = req.getPath();
         try {
-            InetSocketAddress client = getRemoteAddress();
+            InetSocketAddress client = getSourceAddress();
             return new StatResponse(req, _door.getFileStatus(createFullPath(path), req.getSubject(), _authz,
                                                              client.getAddress().getHostAddress()));
         } catch (FileNotFoundCacheException e) {
@@ -704,7 +703,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         public StatListCallback(DirListRequest request, FsPath dirPath, ChannelHandlerContext context)
         {
             super(request, context);
-            _client = getRemoteAddress().getAddress().getHostAddress();
+            _client = getSourceAddress().getAddress().getHostAddress();
             _dirPath = dirPath;
         }
 
