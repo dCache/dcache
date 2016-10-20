@@ -122,7 +122,7 @@ public class CopyFilter implements Filter
 
     private ImmutableMap<String,String> _clientIds;
     private ImmutableMap<String,String> _clientSecrets;
-    private ImmutableMap<String, OpenIdClientSecret> _oidcClientCredentials;
+    private ImmutableMap<String, OpenIdClientSecret> _oidcClientCredentials = ImmutableMap.of();
 
     /**
      * Describes where to fetch the delegated credential, if at all.
@@ -220,26 +220,37 @@ public class CopyFilter implements Filter
     @PostConstruct
     public void validateOidcClientParameters()
     {
-        checkArgument(_clientIds.keySet().equals(_clientSecrets.keySet()),
-                        "Client Ids and Client Secrets must have the same set of hosts");
+        if (_clientSecrets.isEmpty() && _clientIds.isEmpty()) {
+            _log.debug("Client Credentials not configured for OpenId Connect Token Exchange");
+            return;
+        }
 
-        Map<Boolean,Set<String>> validatedProviders = _clientIds.keySet()
-                                                                .stream()
-                                                                .collect(
-                                                                        Collectors.groupingBy(InternetDomainName::isValid,
-                                                                                Collectors.toSet()));
+        checkArgument(!_clientSecrets.isEmpty(), "Client Secret not configured for OpenId Token Exchange");
+
+        checkArgument(!_clientIds.isEmpty(), "Client Id not configured for OpenId Token Exchange");
+
+        checkArgument(_clientIds.keySet().equals(_clientSecrets.keySet()),
+                            "Client Ids and Client Secrets must have the same set of hosts");
+
+        Map<Boolean,Set<String>> validatedProviders =
+                                            _clientIds.keySet()
+                                                      .stream()
+                                                      .collect(Collectors.groupingBy(InternetDomainName::isValid,
+                                                                                       Collectors.toSet()));
+
         checkArgument(!validatedProviders.containsKey(Boolean.FALSE),
                 String.format("Client credentials for invalid hostnames provided: %s",
                         Joiner.on(", ")
-                                .join(validatedProviders.getOrDefault(Boolean.FALSE, new HashSet<>()))));
+                              .join(validatedProviders.getOrDefault(Boolean.FALSE, new HashSet<>()))));
 
         Set<String> hostnames = validatedProviders.get(Boolean.TRUE);
+
         ImmutableMap.Builder<String, OpenIdClientSecret> builder = ImmutableMap.builder();
         hostnames.stream()
-                 .forEach((host) -> builder.put(host, new OpenIdClientSecret(_clientIds.get(host),
-                                                                             _clientSecrets.get(host)))
-                 );
-
+                 .forEach((host) -> builder.put(host,
+                                                new OpenIdClientSecret(_clientIds.get(host),
+                                                                       _clientSecrets.get(host)))
+                );
         _oidcClientCredentials = builder.build();
     }
 
@@ -344,9 +355,9 @@ public class CopyFilter implements Filter
             if (source == CredentialSource.GRIDSITE) {
                 redirectWithDelegation(response);
             } else {
-                _log.error("Client failed OpenId Connect Token Exchange for COPY");
+                _log.error("Error performing OpenId Connect Token Exchange");
                 response.sendError(Status.SC_INTERNAL_SERVER_ERROR,
-                                   "client failed to perform OpenId Connect Token Delegation");
+                                   "Error performing OpenId Connect Token Exchange");
             }
         } else {
             _remoteTransfers.acceptRequest(response.getOutputStream(),
