@@ -99,7 +99,7 @@ public class CheckStagePermission {
      * @throws PatternSyntaxException
      * @throws IOException
      */
-     public boolean canPerformStaging(String dn, FQAN fqan, String storeUnit) throws PatternSyntaxException, IOException {
+     private boolean canPerformStaging(String dn, FQAN fqan, String storeUnit) throws PatternSyntaxException, IOException {
 
          if ( !_isEnabled ) {
              return true;
@@ -122,7 +122,7 @@ public class CheckStagePermission {
       * @throws IOException
       * @throws PatternSyntaxException
       */
-      void rereadConfig() throws PatternSyntaxException, IOException {
+      private void rereadConfig() throws PatternSyntaxException, IOException {
           _fileWriteLock.lock();
           try {
               if ( fileNeedsRereading() ) {
@@ -143,7 +143,7 @@ public class CheckStagePermission {
        *
        * @return true if the file should be reread.
        */
-       boolean fileNeedsRereading() {
+       private boolean fileNeedsRereading() {
            long modificationTimeStageConfigFile;
            modificationTimeStageConfigFile = _stageConfigFile.lastModified();
 
@@ -160,7 +160,7 @@ public class CheckStagePermission {
        * @param storeUnit object's storage unit
        * @return true if the user and object match predicates
        */
-       boolean userMatchesPredicates(String dn, String fqanStr, String storeUnit) {
+       private boolean userMatchesPredicates(String dn, String fqanStr, String storeUnit) {
            _fileReadLock.lock();
            try {
                for (Pattern[] regexLine : _regexList) {
@@ -192,7 +192,7 @@ public class CheckStagePermission {
         * @throws IOException
         * @throws PatternSyntaxException
         */
-        List<Pattern[]> readStageConfigFile(BufferedReader reader) throws IOException, PatternSyntaxException {
+        private List<Pattern[]> readStageConfigFile(BufferedReader reader) throws IOException, PatternSyntaxException {
 
             String line;
             Pattern linePattern = Pattern.compile("\"([^\"]*)\"([ \t]+\"([^\"]*)\"([ \t]+\"([^\"]*)\")?)?");

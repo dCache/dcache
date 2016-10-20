@@ -5,16 +5,20 @@ import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+
+import static java.util.Arrays.asList;
 
 
 public class Subjects
@@ -416,24 +420,6 @@ public class Subjects
     }
 
     /**
-     * Create a subject for UNIX based user record.
-     *
-     * @param uid
-     * @param gid
-     * @param gids
-     */
-    public static Subject of(int uid, int gid, int[] gids)
-    {
-        Subject subject = new Subject();
-        subject.getPrincipals().add(new UidPrincipal(uid));
-        subject.getPrincipals().add(new GidPrincipal(gid, true));
-        for (int g : gids) {
-            subject.getPrincipals().add(new GidPrincipal(g, false));
-        }
-        return subject;
-    }
-
-    /**
      * Create a subject from a list of principals.  The principals are
      * presented as String-based representations that are parsed.  They
      * have a common format {@literal <type>:<value>} where
@@ -515,5 +501,81 @@ public class Subjects
             principals.add(principal);
         }
         return principals;
+    }
+
+    public static Subject of(int uid, int gid, int[] gids)
+    {
+        Builder builder = of().uid(uid).gid(gid);
+        for (int g : gids) {
+            builder.gid(g);
+        }
+        return builder.build();
+    }
+
+    public static Builder of()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private final Subject _subject = new Subject();
+
+        private boolean haveFqan;
+        private boolean haveGid;
+
+        public Subject build()
+        {
+            _subject.setReadOnly();
+            return _subject;
+        }
+
+        private void add(Principal principal)
+        {
+            _subject.getPrincipals().add(principal);
+        }
+
+        public Builder dn(String dn)
+        {
+            add(new GlobusPrincipal(dn));
+            return this;
+        }
+
+        public Builder uid(long uid)
+        {
+            add(new UidPrincipal(uid));
+            return this;
+        }
+
+        /**
+         * Add a gid Principal.  The first gid is automatically the primary
+         * gid; any subsequent calls add non-primary gid principals.
+         */
+        public Builder gid(long gid)
+        {
+            add(new GidPrincipal(gid, !haveGid));
+            haveGid = true;
+            return this;
+        }
+
+        /**
+         * Add an FQAN Principal.  The first FQAN is automatically a
+         * primary FQAN and subsequent FQAN are non-primary FQANs.
+         */
+        public Builder fqan(String fqan)
+        {
+            return fqan(new FQAN(fqan));
+        }
+
+        /**
+         * Add an FQAN Principal.  The first FQAN is automatically a
+         * primary FQAN and subsequent FQAN are non-primary FQANs.
+         */
+        public Builder fqan(FQAN fqan)
+        {
+            add(new FQANPrincipal(fqan, !haveFqan));
+            haveFqan = true;
+            return this;
+        }
     }
 }

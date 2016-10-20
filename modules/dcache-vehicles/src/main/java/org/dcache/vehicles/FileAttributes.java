@@ -678,6 +678,16 @@ public class FileAttributes implements Serializable {
         return of().locations(pools).build();
     }
 
+    public static FileAttributes ofHsm(String hsm)
+    {
+        return of().hsm(hsm).build();
+    }
+
+    public static FileAttributes ofStorageClass(String storageClass)
+    {
+        return of().storageClass(storageClass).build();
+    }
+
     public static Builder of()
     {
         return new FileAttributes().new Builder();
@@ -836,6 +846,18 @@ public class FileAttributes implements Serializable {
         public Builder uid(int uid)
         {
             setOwner(uid);
+            return this;
+        }
+
+        public Builder hsm(String hsm)
+        {
+            setHsm(hsm);
+            return this;
+        }
+
+        public Builder storageClass(String storageClass)
+        {
+            setStorageClass(storageClass);
             return this;
         }
     }
