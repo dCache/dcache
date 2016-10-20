@@ -154,7 +154,8 @@ public final class StandardBillingService implements IBillingService, Runnable, 
     public List<TimeFrameHistogramData> load(PlotType plotType,
                     TimeFrame timeFrame) throws ServiceUnavailableException,
                                                 NoRouteToCellException,
-                                                TimeoutCacheException {
+                                                TimeoutCacheException,
+                                                InterruptedException {
         logger.debug("remote fetch of {} {}", plotType, timeFrame);
         List<TimeFrameHistogramData> histograms = new ArrayList<>();
         try {
@@ -213,6 +214,10 @@ public final class StandardBillingService implements IBillingService, Runnable, 
             cause = Exceptions.findCause(ute, TimeoutCacheException.class);
             if (cause != null) {
                 throw (TimeoutCacheException)cause;
+            }
+            cause = Exceptions.findCause(ute, InterruptedException.class);
+            if (cause != null) {
+                throw (InterruptedException)cause;
             }
             cause = ute.getCause();
             Throwables.propagateIfPossible(cause);
@@ -339,7 +344,8 @@ public final class StandardBillingService implements IBillingService, Runnable, 
     @Override
     public void refresh() throws NoRouteToCellException,
                                  TimeoutCacheException,
-                                 ServiceUnavailableException{
+                                 ServiceUnavailableException,
+                                 InterruptedException {
         TimeFrame[] timeFrames = generateTimeFrames();
         for (int tFrame = 0; tFrame < timeFrames.length; tFrame++) {
             Date low = timeFrames[tFrame].getLow();
@@ -416,7 +422,8 @@ public final class StandardBillingService implements IBillingService, Runnable, 
     private void generatePlot(PlotType type, TimeFrame timeFrame,
                     String fileName, String title) throws ServiceUnavailableException,
                                                           TimeoutCacheException,
-                                                          NoRouteToCellException {
+                                                          NoRouteToCellException,
+                                                          InterruptedException {
         List<TimeFrameHistogramData> data = load(type, timeFrame);
         List<HistogramWrapper<?>> config = new ArrayList<>();
         int i = 0;
