@@ -15,6 +15,7 @@ check -strong httpd.setup
 check -strong httpd.enable.authn
 check -strong httpd.enable.plots.pool-queue
 check -strong httpd.enable.proxy-protocol
+check -strong httpd.enable.forwarded-header
 check httpd.watch
 
 check httpd.statistics.location

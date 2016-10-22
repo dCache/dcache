@@ -21,6 +21,7 @@ import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.ForwardedRequestCustomizer;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.ProxyConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -68,6 +69,7 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
     private KeyPairCache keyPairCache;
 
     private boolean isProxyConnectionEnabled;
+    private boolean isForwardedHeaderProcessingEnabled;
 
     private Protocol protocol;
 
@@ -315,6 +317,16 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
         isProxyConnectionEnabled = proxyConnectionEnabled;
     }
 
+    public boolean isForwardedHeaderProcessingEnabled()
+    {
+        return isForwardedHeaderProcessingEnabled;
+    }
+
+    public void setForwardedHeaderProcessingEnabled(boolean forwardedHeaderProcessingEnabled)
+    {
+        isForwardedHeaderProcessingEnabled = forwardedHeaderProcessingEnabled;
+    }
+
     private SslContextFactory createContextFactory() throws Exception
     {
         CanlContextFactory factory = new CanlContextFactory();
@@ -359,6 +371,10 @@ public class ConnectorFactoryBean implements FactoryBean<ServerConnector>
             httpConnectionFactory.getHttpConfiguration().addCustomizer(new SecureRequestCustomizer());
             httpConnectionFactory.getHttpConfiguration().addCustomizer(new GsiRequestCustomizer());
             break;
+        }
+
+        if (isForwardedHeaderProcessingEnabled) {
+            httpConnectionFactory.getHttpConfiguration().addCustomizer(new ForwardedRequestCustomizer());
         }
 
         List<ConnectionFactory> factories = new ArrayList<>();
