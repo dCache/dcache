@@ -863,7 +863,7 @@ public class RequestContainerV5
                 return _poolCandidate.name();
             } else if (_p2pDestinationPool != null) {
                 return (_p2pSourcePool == null ? POOL_UNKNOWN_STRING : _p2pSourcePool)
-                    + "->" + _p2pDestinationPool;
+                    + "->" + _p2pDestinationPool.name();
             } else {
                 return POOL_UNKNOWN_STRING;
             }
@@ -1898,8 +1898,7 @@ public class RequestContainerV5
                _bestPool = e.getPool();
                _parameter = _poolSelector.getCurrentPartition();
                if (e.shouldTryAlternatives()) {
-                   _log.info("[read] {} ({})",
-                             e.getMessage(), _bestPool);
+                   _log.info("[read] {} ({})", e.getMessage(), _bestPool.name());
                    return RT_COST_EXCEEDED;
                }
            } catch (CacheException e) {
