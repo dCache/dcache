@@ -215,14 +215,14 @@ public class SrmShell extends ShellApplication
             credential = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
         }
         fs = new AxisSrmFileSystem(
-                new SRMClientV2(SrmUrl.withDefaultPort(configuration.getSrmUrl()),
+                new SRMClientV2(configuration.getSrmUrl(),
                                 credential,
                                 configuration.getRetry_timeout(),
                                 configuration.getRetry_num(),
                                 configuration.isDelegate(),
                                 configuration.isFull_delegation(),
                                 configuration.getGss_expected_name(),
-                                configuration.getWebservice_path(),
+                                configuration.getRawWebservice_path(),
                                 configuration.getX509_user_trusted_certificates(),
                                 Transport.GSI));
 
