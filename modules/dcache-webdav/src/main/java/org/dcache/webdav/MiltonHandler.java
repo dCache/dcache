@@ -80,7 +80,7 @@ public class MiltonHandler
                     "to be part of the URL.", s);
             checkArgument(uri.toURL().getPath().isEmpty(), "The URL: %s is invalid. Remove the \"path\" part of the " +
                     "URL.", s);
-            checkArgument(uri.toURL().getQuery().isEmpty(), "The URL: %s is invalid. Remove the query-path part of " +
+            checkArgument(uri.toURL().getQuery() == null, "The URL: %s is invalid. Remove the query-path part of " +
                     "the URL.", s);
             checkArgument(uri.toURL().getRef() == null, "URL: %s is invalid. Reason: no reference or fragment " +
                     "allowed in the URL.", s);
