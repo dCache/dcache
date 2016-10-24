@@ -83,6 +83,7 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidPathException;
+import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.client.Transport;
 import org.dcache.srm.util.SrmUrl;
@@ -129,12 +130,14 @@ public class SrmShell extends ShellApplication
     private final List<String> notifications = new ArrayList<>();
 
     private enum PromptType { LOCAL, SRM, SIMPLE };
+    private enum PermissionOperation { SRM_CHECK_PERMISSION, SRM_LS };
 
     private URI pwd;
     private Path lcwd = lfs.getPath(".").toRealPath();
     private int nextTransferId = 1;
     private PromptType promptType = PromptType.SRM;
     private volatile boolean isClosed;
+    private PermissionOperation checkCdPermission = PermissionOperation.SRM_CHECK_PERMISSION;
 
     public static void main(String[] arguments) throws Throwable
     {
@@ -309,10 +312,28 @@ public class SrmShell extends ShellApplication
         if (fs.stat(uri).getType() != TFileType.DIRECTORY) {
             throw new SRMInvalidPathException("Not a directory");
         }
-        TPermissionMode permission = fs.checkPermission(uri);
-        if (permission != TPermissionMode.RWX && permission != TPermissionMode.RX && permission != TPermissionMode.WX && permission != TPermissionMode.X) {
-            throw new SRMAuthorizationException("Access denied");
+
+        switch (checkCdPermission) {
+        case SRM_CHECK_PERMISSION:
+            try {
+                TPermissionMode permission = fs.checkPermission(uri);
+                if (permission != TPermissionMode.RWX && permission != TPermissionMode.RX && permission != TPermissionMode.WX && permission != TPermissionMode.X) {
+                    throw new SRMAuthorizationException("Access denied");
+                }
+                break;
+            } catch (SRMNotSupportedException e) {
+                /* StoRM does not support checkPermission:
+                 *
+                 *     https://ggus.eu/index.php?mode=ticket_info&ticket_id=124634
+                 */
+                notifications.add("The CheckPermission operation is not supported, using directory listing instead.");
+                checkCdPermission = PermissionOperation.SRM_LS;
+                // fall-through: use srmLs
+            }
+        case SRM_LS:
+            fs.list(uri, false);
         }
+
         pwd = uri;
     }
 
