@@ -218,7 +218,7 @@ public class CellNucleus implements ThreadFactory
             _curatorFramework = null;
         }
 
-        LOGGER.info("Created {}", name);
+        LOGGER.info("Created {}", cellName);
     }
 
     /**
