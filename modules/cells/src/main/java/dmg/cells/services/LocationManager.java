@@ -241,11 +241,11 @@ public class LocationManager extends CellAdapter
             case CORE:
                 checkArgument(this.args.argc() >= 1, "Listening port is required.");
                 client = new CoreClient();
-                coreDomains.onChange(event -> invokeOnMessageThread(() -> client.update(event)));
+                coreDomains.onChange(client::update);
                 break;
             default:
                 client = new Client();
-                coreDomains.onChange(event -> invokeOnMessageThread(() -> client.update(event)));
+                coreDomains.onChange(client::update);
                 break;
             }
         } else {
