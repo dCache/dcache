@@ -3,10 +3,6 @@ package org.dcache.gplazma.oidc;
 import com.google.common.cache.LoadingCache;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
-
-import org.dcache.auth.BearerTokenCredential;
-import org.dcache.auth.FullNamePrincipal;
-import org.dcache.auth.OidcSubjectPrincipal;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
@@ -20,7 +16,12 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+
+import org.dcache.auth.BearerTokenCredential;
 import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.FullNamePrincipal;
+import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.oidc.exceptions.OidcException;
 import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
@@ -142,6 +143,7 @@ public class OidcAuthPluginTest
                     .append("\"name\":\"Kermit The Frog\",  ")
                     .append("\"given_name\": \"Kermit The\",  ")
                     .append("\"family_name\": \"Frog\",  ")
+                    .append("\"groups\": [ \"Users\", \"Developers\" ], ")
                     .append("\"picture\": \"https://lh3.googleusercontent.com/gjworasdfjasgjdlsjvlsjlv/photo.jpg\",  ")
                     .append("\"email\": \"kermit.the.frog@email.com\",  ")
                     .append("\"email_verified\": true } ")
@@ -151,6 +153,8 @@ public class OidcAuthPluginTest
         assertThat(principals, hasSubject("214234823942934792371"));
         assertThat(principals, hasFullName("Kermit The", "Frog", "Kermit The Frog"));
         assertThat(principals, hasEmail("kermit.the.frog@email.com"));
+        assertThat(principals, hasGroup("Users"));
+        assertThat(principals, hasGroup("Developers"));
     }
 
     /*-------------------------------- Helpers --------------------------------------*/
@@ -253,6 +257,11 @@ public class OidcAuthPluginTest
     public static Matcher<Iterable<? super EmailAddressPrincipal>> hasEmail(String email)
     {
         return hasItem(new EmailAddressPrincipal(email));
+    }
+
+    public static Matcher<Iterable<? super OpenIdGroupPrincipal>> hasGroup(String group)
+    {
+        return hasItem(new OpenIdGroupPrincipal(group));
     }
 
 

@@ -7,32 +7,34 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.net.InternetDomainName;
 import org.codehaus.jackson.JsonNode;
-import org.dcache.auth.BearerTokenCredential;
-import org.dcache.auth.EmailAddressPrincipal;
-import org.dcache.auth.FullNamePrincipal;
-import org.dcache.auth.OidcSubjectPrincipal;
-import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.oidc.exceptions.OidcException;
-import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
-import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Base64;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import org.dcache.auth.BearerTokenCredential;
+import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.FullNamePrincipal;
+import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.OpenIdGroupPrincipal;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.oidc.exceptions.OidcException;
+import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
+import org.dcache.gplazma.plugins.GPlazmaAuthenticationPlugin;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
@@ -134,6 +136,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                 addSub(userInfo, principals);
                 addNames(userInfo, principals);
                 addEmail(userInfo, principals);
+                addGroups(userInfo, principals);
                 return principals;
             } else {
                 throw new OidcException(host, "No OpendId \"sub\"");
@@ -214,6 +217,15 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     private boolean addSub(JsonNode userInfo, Set<Principal> principals)
     {
         return principals.add(new OidcSubjectPrincipal(userInfo.get("sub").asText()));
+    }
+
+    private void addGroups(JsonNode userInfo, Set<Principal> principals)
+    {
+        if (userInfo.has("groups") && userInfo.get("groups").isArray()) {
+            for (JsonNode group : userInfo.get("groups")) {
+                principals.add(new OpenIdGroupPrincipal(group.asText()));
+            }
+        }
     }
 
     private static <T> Predicate<T> not(Predicate<T> t) {
