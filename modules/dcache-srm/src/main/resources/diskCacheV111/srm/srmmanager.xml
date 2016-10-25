@@ -147,6 +147,10 @@
         <property name="poolManagerStub" ref="pool-manager-stub"/>
     </bean>
 
+    <bean id="surl-service" class="diskCacheV111.srm.dcache.SurlService">
+        <property name="srm" ref="srm"/>
+    </bean>
+
     <!--
          AUTHORIZATION
          =====================================================================================
