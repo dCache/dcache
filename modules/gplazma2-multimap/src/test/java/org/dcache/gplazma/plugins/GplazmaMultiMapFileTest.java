@@ -1,12 +1,5 @@
 package org.dcache.gplazma.plugins;
 
-import org.dcache.auth.EmailAddressPrincipal;
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.OidcSubjectPrincipal;
-import org.dcache.auth.UidPrincipal;
-import org.dcache.auth.UserNamePrincipal;
-import org.dcache.gplazma.AuthenticationException;
-
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -15,12 +8,22 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.security.Principal;
 import java.util.Set;
+
+import org.dcache.auth.EmailAddressPrincipal;
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.OpenIdGroupPrincipal;
+import org.dcache.auth.UidPrincipal;
+import org.dcache.auth.UserNamePrincipal;
+import org.dcache.gplazma.AuthenticationException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -144,6 +147,15 @@ public class GplazmaMultiMapFileTest {
 
         assertThat(principals, is(not(empty())));
         assertThat(principals, hasUserNamePrincipal("kermit"));
+    }
+
+    @Test
+    public void shouldPassWhenOpenIdGroupMapped() throws Exception {
+        givenConfig("oidcgrp:Users    group:desy");
+
+        whenMapUsername(withOpenIdGroup("Users"));
+
+        assertThat(principals, hasItem(new GroupNamePrincipal("desy")));
     }
 
     @Test
@@ -273,6 +285,10 @@ public class GplazmaMultiMapFileTest {
 
     private Principal withOidcSubject(String s) {
         return new OidcSubjectPrincipal(s);
+    }
+
+    private Principal withOpenIdGroup(String s) {
+        return new OpenIdGroupPrincipal(s);
     }
 
     private Matcher<Iterable<? super UserNamePrincipal>> hasUserNamePrincipal(String username) {

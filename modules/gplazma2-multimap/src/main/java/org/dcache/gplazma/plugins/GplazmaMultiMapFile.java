@@ -22,7 +22,9 @@ import java.util.Set;
 
 import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.OidcSubjectPrincipal;
+import org.dcache.auth.OpenIdGroupPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
@@ -36,13 +38,6 @@ public class GplazmaMultiMapFile
     private File file;
     private long lastLoaded;
     private Map<Principal,Set<Principal>> map = Collections.emptyMap();
-    private static final String[] principalTypes = new String[]{"dn",
-                                                                "email",
-                                                                "username",
-                                                                "kerberos",
-                                                                "oidc",
-                                                                "uid",
-                                                                "gid" };
 
     public GplazmaMultiMapFile(String path)
     {
@@ -116,10 +111,14 @@ public class GplazmaMultiMapFile
             switch (predicate) {
                 case "oidc":
                     return new OidcSubjectPrincipal(principal);
+                case "oidcgrp":
+                    return new OpenIdGroupPrincipal(principal);
                 case "email":
                     return new EmailAddressPrincipal(principal);
                 case "username":
                     return new UserNamePrincipal(principal);
+                case "group":
+                    return new GroupNamePrincipal(principal);
                 case "dn":
                     return new GlobusPrincipal(principal);
                 case "kerberos":
