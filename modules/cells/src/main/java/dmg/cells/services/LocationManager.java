@@ -336,7 +336,6 @@ public class LocationManager extends CellAdapter
         LOGGER.info("Starting connector with {}", cellArgs);
         LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs);
         c.start().get();
-        LOGGER.info("Created : {}", c);
         return c.getCellName();
     }
 
