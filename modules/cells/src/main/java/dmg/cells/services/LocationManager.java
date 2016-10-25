@@ -168,23 +168,43 @@ public class LocationManager extends CellAdapter
 
         public void update(PathChildrenCacheEvent event)
         {
-            LOGGER.debug("{}", event);
+            LOGGER.info("{}", event);
             String domain = ZKPaths.getNodeFromPath(event.getData().getPath());
+            String cell;
             switch (event.getType()) {
+            case CHILD_REMOVED:
+                cell = connectors.remove(domain);
+                if (cell != null) {
+                    getNucleus().kill(cell);
+                }
+                break;
+            case CHILD_UPDATED:
+                cell = connectors.remove(domain);
+                if (cell != null) {
+                    getNucleus().kill(cell);
+                }
+                // fall through
             case CHILD_ADDED:
                 try {
                     if (shouldConnectTo(domain)) {
-                        connectors.put(domain, startConnector(domain, toHostAndPort(event.getData().getData())));
+                        cell = connectors.remove(domain);
+                        if (cell != null) {
+                            LOGGER.error("About to create tunnel to core domain {}, but to my surprise " +
+                                         "a tunnel called {} already exists. Will kill it. Please contact " +
+                                         "support@dcache.org.", domain, cell);
+                            getNucleus().kill(cell);
+                        }
+                        cell = connectors.put(domain, startConnector(domain, toHostAndPort(event.getData().getData())));
+                        if (cell != null) {
+                            LOGGER.error("Created a tunnel to core domain {}, but to my surprise " +
+                                         "a tunnel called {} already exists. Will kill it. Please contact " +
+                                         "support@dcache.org.", domain, cell);
+                            getNucleus().kill(cell);
+                        }
                     }
                 } catch (ExecutionException e) {
                     LOGGER.error("Failed to start tunnel connector to {}: {}", domain, e.getCause());
                 } catch (InterruptedException ignored) {
-                }
-                break;
-            case CHILD_REMOVED:
-                String cell = connectors.remove(domain);
-                if (cell != null) {
-                    getNucleus().kill(cell);
                 }
                 break;
             }
