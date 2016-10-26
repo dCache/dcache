@@ -169,22 +169,22 @@ public class LocationManager extends CellAdapter
         public void update(PathChildrenCacheEvent event)
         {
             LOGGER.info("{}", event);
-            String domain = ZKPaths.getNodeFromPath(event.getData().getPath());
             String cell;
             switch (event.getType()) {
             case CHILD_REMOVED:
-                cell = connectors.remove(domain);
+                cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
                 if (cell != null) {
                     getNucleus().kill(cell);
                 }
                 break;
             case CHILD_UPDATED:
-                cell = connectors.remove(domain);
+                cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
                 if (cell != null) {
                     getNucleus().kill(cell);
                 }
                 // fall through
             case CHILD_ADDED:
+                String domain = ZKPaths.getNodeFromPath(event.getData().getPath());
                 try {
                     if (shouldConnectTo(domain)) {
                         cell = connectors.remove(domain);
