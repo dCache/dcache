@@ -28,9 +28,6 @@ import java.net.InetAddress;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
@@ -38,18 +35,16 @@ import org.dcache.auth.Subjects;
 import org.dcache.poolmanager.PoolManagerHandler;
 
 /**
- * Class to adapt the DCapDoorInterpreterV3 to the LineBasedInterpreter interface.
+ * Class to turn the DCapDoorInterpreterV3 into a LineBasedInterpreter interface.
  *
  * @see DcapInterpreterFactory
  * @see DCapDoorInterpreterV3
  */
-public class DcapLineBasedInterpreterAdapter implements LineBasedInterpreter, CellMessageReceiver, CellInfoProvider
+public class DcapLineBasedInterpreterAdapter
+        extends DCapDoorInterpreterV3
+        implements LineBasedInterpreter
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DcapLineBasedInterpreterAdapter.class);
-
-    private final DCapDoorInterpreterV3 interpreter;
-
-    private final PrintWriter out;
 
     private final InetAddress clientAddress;
 
@@ -64,10 +59,9 @@ public class DcapLineBasedInterpreterAdapter implements LineBasedInterpreter, Ce
     public DcapLineBasedInterpreterAdapter(CellEndpoint endpoint, CellAddressCore myAddress, StreamEngine engine,
                                            DcapDoorSettings settings, PoolManagerHandler handler)
     {
-        out = new PrintWriter(engine.getWriter(), true);
+        super(endpoint, myAddress, settings, new PrintWriter(engine.getWriter(), true), engine.getSubject(), engine.getInetAddress(), handler);
         clientAddress = engine.getInetAddress();
         subject = engine.getSubject();
-        interpreter = new DCapDoorInterpreterV3(endpoint, myAddress, settings, out, subject, clientAddress, handler);
     }
 
     @Override
@@ -82,16 +76,16 @@ public class DcapLineBasedInterpreterAdapter implements LineBasedInterpreter, Ce
         try {
             args = new VspArgs(cmd);
         } catch (IllegalArgumentException e) {
-            interpreter.println("protocol violation: " + e.getMessage());
+            println("protocol violation: " + e.getMessage());
             LOGGER.debug("protocol violation [{}] from {}", e.getMessage(), clientAddress);
             throw new CommandExitException("Protocol violation");
         }
 
         try {
-            String answer = interpreter.execute(args);
+            String answer = execute(args);
             if (answer != null) {
                 LOGGER.info("Our answer : {}", answer);
-                interpreter.println(answer);
+                println(answer);
             }
         } catch (CommandExitException e) {
             hasExited = true;
@@ -103,17 +97,12 @@ public class DcapLineBasedInterpreterAdapter implements LineBasedInterpreter, Ce
     @Override
     public void shutdown()
     {
-        interpreter.close();
+        close();
         if (hasExited) {
-            interpreter.println("0 0 server byebye");
+            println("0 0 server byebye");
         } else {
-            interpreter.println("0 0 server shutdown");
+            println("0 0 server shutdown");
         }
-    }
-
-    public void messageArrived(CellMessage envelope, Object msg)
-    {
-        interpreter.messageArrived(envelope);
     }
 
     @Override
@@ -123,6 +112,6 @@ public class DcapLineBasedInterpreterAdapter implements LineBasedInterpreter, Ce
         pw.println("         Host  : " + clientAddress);
         pw.println(" Last Command  : " + lastCommand);
         pw.println(" Command Count : " + commandCounter);
-        interpreter.getInfo(pw);
+        super.getInfo(pw);
     }
 }
