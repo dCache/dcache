@@ -31,6 +31,8 @@ import org.ietf.jgss.Oid;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import org.dcache.util.Args;
+
 public class KerberosDssContextFactory implements DssContextFactory
 {
     private final Function<GSSName, GSSContext> createInitialContext =
@@ -88,9 +90,14 @@ public class KerberosDssContextFactory implements DssContextFactory
         }
     }
 
-    public KerberosDssContextFactory(String principal) throws GSSException
+    public KerberosDssContextFactory(String args) throws GSSException
     {
-        this(principal, Optional.<String>absent());
+        this(new Args(args));
+    }
+
+    public KerberosDssContextFactory(Args args) throws GSSException
+    {
+        this(args.argv(0), Optional.<String>absent());
     }
 
     public KerberosDssContextFactory(String principal, String peerName) throws GSSException
