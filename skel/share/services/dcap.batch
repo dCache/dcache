@@ -41,6 +41,7 @@ check -strong dcap.authz.mover-queue-overwrite
 check dcap.mover.queue
 check dcap.net.listen
 check -strong dcache.paths.share
+check dcap.limits.client-version
 
 exec file:${dcache.paths.share}/cells/stage.fragment dcap doors
 
@@ -115,5 +116,6 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -io-queue=${dcap.mover.queue} \
              -io-queue-overwrite=${dcap.authz.mover-queue-overwrite} \
              -anonymous-access=${dcap.authz.anonymous-operations} \
+             -clientVersion=\"${dcap.limits.client-version}\" \
              ${arguments-${dcap.authn.protocol}} \
              "
