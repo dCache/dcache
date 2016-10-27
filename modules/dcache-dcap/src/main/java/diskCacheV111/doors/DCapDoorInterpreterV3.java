@@ -569,15 +569,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         try {
             int major = Integer.parseInt(args.argv(2));
             int minor = Integer.parseInt(args.argv(3));
-            Integer bugfix = null;
-            String patch = null;
-            if (args.argc() > 2) {
-                bugfix = Integer.parseInt(args.argv(4));
-                patch = args.argv(5);
-            }
+            Integer bugfix = args.argc() > 4 ? Integer.parseInt(args.argv(4)) : null;
+            String patch = args.argv(5);
             _version = new Version(major, minor, bugfix, patch);
         } catch (NumberFormatException e) {
-            _log.error("Syntax error in client version number : {}", e.toString());
+            _log.error("Syntax error in client version number {} : {}", args, e.toString());
             throw new CommandException("Invalid client version number", e);
         }
 
