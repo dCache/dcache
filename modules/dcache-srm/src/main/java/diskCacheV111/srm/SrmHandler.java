@@ -369,12 +369,13 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 return toGetRequestSummaryResponse(futureMap);
             }
             default: {
-                CellPath address = mapRequest(request);
-                ListenableFuture<SrmResponse> future =
-                        (address == null)
-                        ? srmManagerStub.send(toMessage.apply(request), SrmResponse.class)
-                        : srmManagerStub.send(address, toMessage.apply(request), SrmResponse.class);
-                return mapResponse(future.get());
+                try (MappedRequest mapped = mapRequest(request)) {
+                    ListenableFuture<SrmResponse> future =
+                            (mapped == null)
+                            ? srmManagerStub.send(toMessage.apply(request), SrmResponse.class)
+                            : srmManagerStub.send(mapped.getBackend(), toMessage.apply(mapped.getRequest()), SrmResponse.class);
+                    return mapResponse(future.get());
+                }
             }
             }
         } catch (ExecutionException e) {
@@ -575,7 +576,54 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         return new CellPath(new String(data.getData(), US_ASCII));
     }
 
-    private CellPath mapRequest(Object request) throws SRMInternalErrorException
+    /**
+     * Encapsulates the result of mapping a request to a backend.
+     *
+     * The request is modified inline to reflect the internal request token. This
+     * avoids copying the request, however the modification must be undone by
+     * closing this MappedRequest once the mapped request is no longer needed.
+     */
+    private class MappedRequest implements AutoCloseable
+    {
+        private final Object request;
+
+        private final CellPath backend;
+
+        private final Field field;
+
+        private final String token;
+
+        MappedRequest(Object request, CellPath backend, Field field, String token) throws IllegalAccessException
+        {
+            this.request = request;
+            this.backend = backend;
+            this.field = field;
+            this.token = token;
+            field.set(request, backendTokenOf(token));
+        }
+
+        CellPath getBackend()
+        {
+            return backend;
+        }
+
+        Object getRequest()
+        {
+            return request;
+        }
+
+        @Override
+        public void close()
+        {
+            try {
+                field.set(request, token);
+            } catch (IllegalAccessException e) {
+                Throwables.propagate(e);
+            }
+        }
+    }
+
+    private MappedRequest mapRequest(Object request) throws SRMInternalErrorException
     {
         Optional<Field> field = requestTokenFieldCache.getUnchecked(request.getClass());
         if (field.isPresent()) {
@@ -583,12 +631,11 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                 Field f = field.get();
                 String token = (String) f.get(request);
                 if (hasPrefix(token)) {
-                    f.set(request, backendTokenOf(token));
                     CellPath path = backendOf(token);
                     if (path == null) {
                         throw new SRMInternalErrorException("SRM backend serving this request token is currently offline.");
                     }
-                    return path;
+                    return new MappedRequest(request, path, f, token);
                 }
             } catch (IllegalAccessException e) {
                 Throwables.propagate(e);
