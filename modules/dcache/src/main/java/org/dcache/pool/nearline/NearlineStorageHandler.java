@@ -1064,8 +1064,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 if (cause instanceof InterruptedException || cause instanceof CancellationException) {
                     cause = new TimeoutCacheException("Stage was cancelled.", cause);
                 }
-                LOGGER.warn("Stage of {} failed with {}.",
-                            pnfsId, cause);
+                LOGGER.warn("Stage of {} failed with {}.", pnfsId, cause.toString());
             }
             descriptor.close();
             if (cause instanceof CacheException) {
@@ -1119,7 +1118,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             if (cause instanceof InterruptedException || cause instanceof CancellationException) {
                 cause = new TimeoutCacheException("Stage was cancelled.", cause);
             }
-            LOGGER.warn("Remove of {} failed with {}.", uri, cause);
+            LOGGER.warn("Remove of {} failed with {}.", uri, cause.toString());
             removeRequests.removeAndCallback(uri, cause);
         }
 
