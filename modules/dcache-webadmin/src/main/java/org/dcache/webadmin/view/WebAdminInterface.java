@@ -11,6 +11,8 @@ import org.apache.wicket.core.request.mapper.CryptoMapper;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.https.HttpsConfig;
 import org.apache.wicket.protocol.https.HttpsMapper;
+import org.apache.wicket.protocol.https.Scheme;
+import org.apache.wicket.request.IRequestHandler;
 import org.apache.wicket.request.Request;
 import org.apache.wicket.request.Response;
 import org.slf4j.Logger;
@@ -329,7 +331,14 @@ public class WebAdminInterface extends WebApplication implements CellMessageSend
 
         if (getAuthenticatedMode()) {
             setRootRequestMapper(new HttpsMapper(getRootRequestMapper(),
-                            new HttpsConfig(_httpPort, _httpsPort)));
+                            new HttpsConfig(_httpPort, _httpsPort)) {
+                @Override
+                protected Scheme getDesiredSchemeFor(IRequestHandler handler)
+                {
+                    Scheme desiredSchemeFor = super.getDesiredSchemeFor(handler);
+                    return desiredSchemeFor == Scheme.HTTP ? Scheme.ANY : desiredSchemeFor;
+                }
+            });
         }
     }
 
