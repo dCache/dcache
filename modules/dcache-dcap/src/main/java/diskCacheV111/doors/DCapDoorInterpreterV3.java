@@ -1,8 +1,10 @@
 package diskCacheV111.doors;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -273,16 +275,28 @@ public class DCapDoorInterpreterV3
          */
         Version(String versionString)
         {
-            StringTokenizer st = new StringTokenizer(versionString,".");
-            _major = Integer.parseInt(st.nextToken());
-            _minor = Integer.parseInt(st.nextToken());
-            if (st.hasMoreTokens()) {
-                st = new StringTokenizer(st.nextToken(), "-");
-                _bugfix = Integer.parseInt(st.nextToken());
-                _package = st.hasMoreTokens() ? st.nextToken() : null;
-            } else {
-                _bugfix = null;
-                _package = null;
+            List<String> values = Splitter.on('.').limit(3).splitToList(versionString);
+            if (values.size() < 2) {
+                throw new IllegalArgumentException("Versions requires at least one dot.");
+            }
+            try {
+                _major = Integer.parseInt(values.get(0));
+                _minor = Integer.parseInt(values.get(1));
+                if (values.size() > 2) {
+                    int idx = values.get(2).indexOf('-');
+                    if (idx == -1) {
+                        _bugfix = Integer.parseInt(values.get(2));
+                        _package = null;
+                    } else {
+                        _bugfix = Integer.parseInt(values.get(2).substring(0, idx));
+                        _package = values.get(2).substring(idx+1);
+                    }
+                } else {
+                    _bugfix = null;
+                    _package = null;
+                }
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("invalid integer: " + e.getMessage());
             }
         }
 
@@ -418,25 +432,24 @@ public class DCapDoorInterpreterV3
             throw new CommandException("Invalid client version number", e);
         }
 
-        _log.debug("Client Version : {}", _version);
-        if (_settings.getMinClientVersion().matches(_version) > 0 ||
-                _settings.getMaxClientVersion().matches(_version) < 0) {
-            String error = "Client version rejected : "+_version;
-            _log.error(error);
-            throw new
-            CommandExitException(error , 1 );
-        }
-        String yourName = args.getName() ;
-        if( yourName.equals("server") ) {
-            _ourName = "client";
-        }
-
         /*
           replace current values if alternatives are provided
         */
         _pid = args.getOption("pid", _pid);
         _uid = args.getIntOption("uid", _uid);
         _gid = args.getIntOption("gid", _gid);
+
+        _log.debug("Client Version : {}", _version);
+        if (_settings.getMinClientVersion().matches(_version) > 0 ||
+                _settings.getMaxClientVersion().matches(_version) < 0) {
+            _log.error("Client {} (proc \"{}\" running with uid:{} gid:{}) rejected: bad client version: {}",
+                    InetAddresses.toAddrString(_clientAddress), _pid, _uid, _gid, _version);
+            throw new CommandExitException("Client version rejected : "+_version, 1);
+        }
+        String yourName = args.getName() ;
+        if( yourName.equals("server") ) {
+            _ourName = "client";
+        }
 
         return "0 0 "+_ourName+" welcome "+_version.getMajor()+" "+_version.getMinor();
     }

@@ -18,10 +18,11 @@
  */
 package diskCacheV111.doors;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 
 import java.util.Collections;
-import java.util.StringTokenizer;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CheckStagePermission;
@@ -148,13 +149,19 @@ public class DcapDoorSettings
 
         if (clientVersion != null) {
             try {
-                StringTokenizer st = new StringTokenizer(clientVersion, ":");
-                minClientVersion  = new DCapDoorInterpreterV3.Version(st.nextToken());
-                if (st.countTokens() > 0) {
-                    maxClientVersion  = new DCapDoorInterpreterV3.Version(st.nextToken());
+                List<String> values = Splitter.on(':').limit(2).trimResults().splitToList(clientVersion);
+                if (values.get(0).isEmpty()) {
+                    throw new IllegalArgumentException("missing minimum version");
                 }
-            } catch (NumberFormatException e) {
-                _log.error("Client Version : syntax error (limits ignored) : {} : {}", clientVersion, e.toString());
+                minClientVersion  = new DCapDoorInterpreterV3.Version(values.get(0));
+                if (values.size() > 1) {
+                    if (values.get(1).isEmpty()) {
+                        throw new IllegalArgumentException("missing maximum version");
+                    }
+                    maxClientVersion  = new DCapDoorInterpreterV3.Version(values.get(1));
+                }
+            } catch (IllegalArgumentException e) {
+                _log.error("Ignoring client version limits: syntax error with '{}': {}", clientVersion, e.getMessage());
             }
         }
 
