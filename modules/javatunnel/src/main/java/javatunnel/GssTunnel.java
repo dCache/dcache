@@ -22,12 +22,13 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.dcache.util.Args;
 
 
 class GssTunnel extends TunnelConverter {
@@ -50,8 +51,12 @@ class GssTunnel extends TunnelConverter {
     protected GssTunnel() {}
 
     // Creates a new instance of GssTunnel
-    public GssTunnel(String principalStr ) {
-    	_principalStr   = principalStr;
+    public GssTunnel(String args) {
+        this(new Args(args));
+    }
+
+    public GssTunnel(Args args) {
+        _principalStr = args.argv(0);
     }
 
     public GssTunnel(String principalStr, boolean init) throws GSSException {
