@@ -89,5 +89,6 @@ public interface IBillingService {
     void initialize();
 
     void refresh() throws NoRouteToCellException,
-                    TimeoutCacheException, ServiceUnavailableException;
+                    TimeoutCacheException, ServiceUnavailableException,
+                    InterruptedException;
 }
