@@ -63,8 +63,11 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
@@ -95,8 +98,9 @@ import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.DIR;
 import static org.dcache.namespace.FileType.REGULAR;
 
-public class DCapDoorInterpreterV3 implements KeepAliveListener,
-        DcapProtocolInterpreter {
+public class DCapDoorInterpreterV3
+        implements KeepAliveListener, CellMessageReceiver, CellInfoProvider, CellCommandListener
+{
 
     private static final int UNDEFINED = -1;
 
@@ -2345,7 +2349,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public String toString() { return "od ["+_pool+"] "+super.toString() ; }
     }
 
-    @Override
     public String execute(VspArgs args)
         throws CommandExitException
     {
@@ -2433,7 +2436,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         return problem;
     }
 
-    @Override
     public void close() {
         for(SessionHandler sh: _sessions.values()) {
             try {
@@ -2461,18 +2463,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
     }
 
-    @Override
-    public void  messageArrived(CellMessage msg)
+    public void  messageArrived(CellMessage msg, Message reply)
     {
-        Object object = msg.getMessageObject();
-
-        if (!(object instanceof Message)) {
-            _log.warn("Unexpected message class {} source = {}",
-                      object.getClass(), msg.getSourcePath());
-            return;
-        }
-
-        Message reply = (Message) object;
         SessionHandler handler = _sessions.get((int) reply.getId());
         if (handler == null) {
             _log.info("Reply ({}) for obsolete session: {}", reply.getClass(), reply.getId());
@@ -2500,8 +2492,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             ((IoHandler)handler).poolPassiveIoFileMessage( (PoolPassiveIoFileMessage<byte[]>) reply )  ;
 
         } else {
-            _log.warn("Unexpected message class {} source = {}",
-                      object.getClass(), msg.getSourcePath());
+            _log.warn("Unexpected message class {} source = {}", reply.getClass(), msg.getSourcePath());
         }
     }
 
