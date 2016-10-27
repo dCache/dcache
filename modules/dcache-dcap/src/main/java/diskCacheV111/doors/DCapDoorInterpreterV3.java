@@ -1,8 +1,10 @@
 package diskCacheV111.doors;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -413,16 +415,28 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
          */
         Version(String versionString)
         {
-            StringTokenizer st = new StringTokenizer(versionString,".");
-            _major = Integer.parseInt(st.nextToken());
-            _minor = Integer.parseInt(st.nextToken());
-            if (st.hasMoreTokens()) {
-                st = new StringTokenizer(st.nextToken(), "-");
-                _bugfix = Integer.parseInt(st.nextToken());
-                _package = st.hasMoreTokens() ? st.nextToken() : null;
-            } else {
-                _bugfix = null;
-                _package = null;
+            List<String> values = Splitter.on('.').limit(3).splitToList(versionString);
+            if (values.size() < 2) {
+                throw new IllegalArgumentException("Versions requires at least one dot.");
+            }
+            try {
+                _major = Integer.parseInt(values.get(0));
+                _minor = Integer.parseInt(values.get(1));
+                if (values.size() > 2) {
+                    int idx = values.get(2).indexOf('-');
+                    if (idx == -1) {
+                        _bugfix = Integer.parseInt(values.get(2));
+                        _package = null;
+                    } else {
+                        _bugfix = Integer.parseInt(values.get(2).substring(0, idx));
+                        _package = values.get(2).substring(idx+1);
+                    }
+                } else {
+                    _bugfix = null;
+                    _package = null;
+                }
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("invalid integer: " + e.getMessage());
             }
         }
 
@@ -510,25 +524,26 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
     }
 
-    private void installVersionRestrictions( String versionString ){
-        //
-        //   majorMin.minorMin[:majorMax.minorMax]
-        //
-        if( versionString == null ){
-            _log.debug("Client Version not restricted");
-            return ;
-        }
-        _log.debug("Client Version Restricted to : {}", versionString);
-        try{
-            StringTokenizer st = new StringTokenizer(versionString,":");
-            _minClientVersion  = new Version( st.nextToken() ) ;
-            if (st.countTokens() > 0) {
-                _maxClientVersion  =  new Version(st.nextToken());
+    private void installVersionRestrictions(String clientVersion) {
+        if (clientVersion != null) {
+            try {
+                List<String> values = Splitter.on(':').limit(2).trimResults().splitToList(clientVersion);
+                if (values.get(0).isEmpty()) {
+                    throw new IllegalArgumentException("missing minimum version");
+                }
+                _minClientVersion = new DCapDoorInterpreterV3.Version(values.get(0));
+                if (values.size() > 1) {
+                    if (values.get(1).isEmpty()) {
+                        throw new IllegalArgumentException("missing maximum version");
+                    }
+                    _maxClientVersion = new DCapDoorInterpreterV3.Version(values.get(1));
+                }
+            } catch (IllegalArgumentException e) {
+                _log.error("Ignoring client version limits: syntax error with '{}': {}", clientVersion, e.getMessage());
             }
-        } catch (Exception e) {
-            _log.error("Client Version : syntax error (limits ignored) : {} : {}", versionString, e.toString());
         }
     }
+
     public synchronized void println( String str ){
         _log.debug("(DCapDoorInterpreterV3) toclient(println) : {}", str);
         _out.println(str);
@@ -577,25 +592,24 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             throw new CommandException("Invalid client version number", e);
         }
 
-        _log.debug("Client Version : {}", _version);
-        if (_minClientVersion.matches(_version) > 0 ||
-                _maxClientVersion.matches(_version) > 0) {
-            String error = "Client version rejected : "+_version;
-            _log.error(error);
-            throw new
-            CommandExitException(error , 1 );
-        }
-        String yourName = args.getName() ;
-        if( yourName.equals("server") ) {
-            _ourName = "client";
-        }
-
         /*
           replace current values if alternatives are provided
         */
         _pid = args.getOption("pid", _pid);
         _uid = args.getIntOption("uid", _uid);
         _gid = args.getIntOption("gid", _gid);
+
+        _log.debug("Client Version : {}", _version);
+        if (_minClientVersion.matches(_version) > 0 ||
+                _maxClientVersion.matches(_version) < 0) {
+            _log.error("Client {} (proc \"{}\" running with uid:{} gid:{}) rejected: bad client version: {}",
+                    InetAddresses.toAddrString(_clientAddress), _pid, _uid, _gid, _version);
+            throw new CommandExitException("Client version rejected : "+_version, 1);
+        }
+        String yourName = args.getName() ;
+        if( yourName.equals("server") ) {
+            _ourName = "client";
+        }
 
         return "0 0 "+_ourName+" welcome "+_version.getMajor()+" "+_version.getMinor();
     }
