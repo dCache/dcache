@@ -257,6 +257,17 @@ public abstract class NetworkUtils {
         throw new IllegalArgumentException("Unknown protocol family: " + address);
     }
 
+    public static String toString(InetAddress a)
+    {
+        String name = a.getHostName();
+        if (InetAddresses.isInetAddress(name)) {
+            return InetAddresses.toAddrString(a);
+        } else {
+            return name + "/" + InetAddresses.toUriString(a);
+        }
+    }
+
+
     private static String getPreferredHostName() {
         List<InetAddress> addresses =
                 Ordering.natural().onResultOf(InetAddressScope.OF).reverse().sortedCopy(getLocalAddresses());
