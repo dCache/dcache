@@ -340,13 +340,13 @@ public class ChecksumChannel implements RepositoryChannel
      * @throws IOException
      */
     @VisibleForTesting
-    synchronized void updateChecksum(ByteBuffer buffer, long position, long bytes) throws IOException {
+    synchronized void updateChecksum(ByteBuffer buffer, long position, int bytes) throws IOException {
         if (bytes == 0) {
             return;
         }
 
         if (bytes < buffer.remaining()) {
-            buffer.limit(buffer.position() + (int)bytes);
+            buffer.limit(buffer.position() + bytes);
         }
 
         Range<Long> writeRange = Range.closed(position, position + buffer.remaining() - 1).canonical(DiscreteDomain.longs());
@@ -370,15 +370,19 @@ public class ChecksumChannel implements RepositoryChannel
         digestStart += buffer.remaining();
         _digest.update(buffer);
         long bytesToRead = digestEnd - digestStart;
-        long lastBytesRead;
-        for (long totalBytesRead = 0; totalBytesRead < bytesToRead; totalBytesRead += lastBytesRead) {
+
+        while (bytesToRead > 0) {
             _readBackBuffer.clear();
-            long limit = Math.min(_readBackBuffer.capacity(), bytesToRead - totalBytesRead);
+            long limit = Math.min(_readBackBuffer.capacity(), bytesToRead);
             _readBackBuffer.limit((int)limit);
-            lastBytesRead = _channel.read(_readBackBuffer, digestStart + totalBytesRead);
+            int lastBytesRead = _channel.read(_readBackBuffer, digestStart);
+
             if (lastBytesRead < 0) {
                 throw new IOException("Checksum: Unexpectedly hit end-of-stream while reading data back from channel.");
             }
+
+            digestStart += lastBytesRead;
+            bytesToRead -= lastBytesRead;
             _readBackBuffer.flip();
             _digest.update(_readBackBuffer);
         }
