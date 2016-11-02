@@ -8,7 +8,7 @@ end
 onerror shutdown
 check ${0}.authz.staging.pep
 onerror continue
-eval "${0}.authz.staging.pep" "${1}" !=
-exec env stage-disable-pep.exe -ifok
+eval ${${0}.authz.staging.pep} "${1}" ==
+exec env stage-disable-pep.exe -ifnotok
 onerror shutdown
 
