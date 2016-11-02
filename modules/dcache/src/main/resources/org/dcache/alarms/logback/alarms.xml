@@ -17,21 +17,13 @@
     <context:property-placeholder/>
     <context:annotation-config/>
 
-    <bean id="definitionsMap" class="org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap"
-        init-method="initialize">
-        <property name="definitionsPath" value="${alarms.custom-definitions.path}"/>
-    </bean>
-
     <bean id="priorityMap" class="org.dcache.alarms.file.FileBackedAlarmPriorityMap"
         init-method="initialize">
         <property name="propertiesPath" value="${alarms.priority-mapping.path}"/>
         <property name="defaultPriority" value="${alarms.priority-mapping.default}"/>
-        <property name="definitions" ref="definitionsMap"/>
     </bean>
 
-    <bean id="logEventConverter" class="org.dcache.alarms.logback.LoggingEventConverter">
-        <property name="definitions" ref="definitionsMap"/>
-    </bean>
+    <bean id="logEventConverter" class="org.dcache.alarms.logback.LoggingEventConverter"/>
 
     <bean id="logEntryHandler" class="org.dcache.alarms.logback.LogEntryHandler"
         init-method="start" destroy-method="stop">
@@ -74,7 +66,6 @@
     </bean>
 
     <bean id="admin" class="org.dcache.alarms.admin.AlarmCommandHandler">
-        <property name="alarmDefinitionsMap" ref="definitionsMap"/>
         <property name="alarmPriorityMap" ref="priorityMap"/>
         <property name="serverHost" value="${alarms.net.host}"/>
         <property name="serverPort" value="${alarms.net.port}"/>

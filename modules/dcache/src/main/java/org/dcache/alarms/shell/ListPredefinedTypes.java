@@ -77,12 +77,14 @@ import org.dcache.alarms.PredefinedAlarm;
  * @author arossi
  */
 public final class ListPredefinedTypes {
+    private static final String ERROR_PROMPT = "--> cause: ";
+
     public static void main(String[] args) {
         try {
             System.out.println("PREDEFINED DCACHE ALARM TYPES:\n");
             System.out.println(getSortedList());
         } catch (Throwable t) {
-            AlarmDefinitionManager.printError(t);
+            printError(t);
         }
     }
 
@@ -100,5 +102,25 @@ public final class ListPredefinedTypes {
         Arrays.sort(names);
 
         return Joiner.on('\n').join(names);
+    }
+
+    static void printError(Throwable t) {
+        if (t != null) {
+            if (t instanceof NullPointerException) {
+                /*
+                 * a bug, shouldn't happen
+                 */
+                System.err.println("This is a bug; please report it "
+                                                   + "to the dCache team.");
+                t.printStackTrace();
+            } else {
+                System.err.println(t.getMessage());
+            }
+            t = t.getCause();
+        }
+        while (t != null) {
+            System.err.println(ERROR_PROMPT + t.getMessage());
+            t = t.getCause();
+        }
     }
 }

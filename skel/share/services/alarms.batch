@@ -8,7 +8,6 @@ check -strong alarms.cell.name
 check -strong alarms.net.port
 check -strong alarms.db.type
 check -strong alarms.db.url
-check -strong alarms.custom-definitions.path
 check alarms.cell.consume
 check alarms.db.xml.path
 check alarms.enable.email

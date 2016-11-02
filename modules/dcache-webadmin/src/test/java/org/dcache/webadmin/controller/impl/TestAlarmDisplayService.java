@@ -5,7 +5,6 @@ import java.util.Map;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
-import org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
@@ -34,8 +33,6 @@ public class TestAlarmDisplayService extends StandardAlarmDisplayService {
             }
         });
         pmap = new FileBackedAlarmPriorityMap();
-        XmlBackedAlarmDefinitionsMap dmap = new XmlBackedAlarmDefinitionsMap();
-        pmap.setDefinitions(dmap);
         pmap.setPropertiesPath("dummy.properties");
         pmap.initialize();
     }

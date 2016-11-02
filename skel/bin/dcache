@@ -756,18 +756,6 @@ case "$1" in
                 send_alarm $@
                 ;;
 
-            add)
-                handle_alarm_definition $command
-                ;;
-
-            modify)
-                handle_alarm_definition $command
-                ;;
-
-            remove)
-                handle_alarm_definition $command
-                ;;
-
             *)
                 usage
                 ;;

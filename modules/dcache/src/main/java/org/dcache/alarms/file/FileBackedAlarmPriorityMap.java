@@ -70,17 +70,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import dmg.cells.nucleus.CellMessageReceiver;
-
 import org.dcache.alarms.Alarm;
-import org.dcache.alarms.AlarmDefinitionsMap;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.PredefinedAlarm;
@@ -98,7 +94,6 @@ public final class FileBackedAlarmPriorityMap
         implements AlarmPriorityMap, CellMessageReceiver {
     private final Map<String, AlarmPriority> internalMap = new ConcurrentHashMap<>();
 
-    private AlarmDefinitionsMap definitions;
     private AlarmPriority defaultPriority = AlarmPriority.CRITICAL;
     private String propertiesPath;
 
@@ -118,7 +113,6 @@ public final class FileBackedAlarmPriorityMap
 
     @Override
     public Map<String, AlarmPriority> getPriorityMap() {
-        refreshDefinitions();
         return ImmutableMap.copyOf(internalMap);
     }
 
@@ -149,7 +143,6 @@ public final class FileBackedAlarmPriorityMap
             internalMap.put(alarm.getType(), defaultPriority);
         }
 
-        refreshDefinitions();
         overrideFromSavedMappings(env);
     }
 
@@ -189,10 +182,6 @@ public final class FileBackedAlarmPriorityMap
         this.defaultPriority = AlarmPriority.valueOf(priority.toUpperCase());
     }
 
-    public void setDefinitions(AlarmDefinitionsMap definitions) {
-        this.definitions = definitions;
-    }
-
     @Override
     public void setPriority(String alarm, AlarmPriority priority) {
         if (!internalMap.containsKey(alarm)) {
@@ -221,36 +210,6 @@ public final class FileBackedAlarmPriorityMap
             String key = property.toString();
             String value = properties.getProperty(key);
             internalMap.put(key, AlarmPriority.valueOf(value));
-        }
-    }
-
-    private void refreshDefinitions() {
-        Set<String> customtypes = definitions.getTypes();
-        Set<String> alarmtypes = new HashSet(internalMap.keySet());
-
-        for (PredefinedAlarm predefined: PredefinedAlarm.values()) {
-            alarmtypes.remove(predefined.getType());
-        }
-
-        for (String type: alarmtypes) {
-            if (customtypes.contains(type)) {
-                /*
-                 * current map already has this defined
-                 */
-                customtypes.remove(type);
-            } else{
-                /*
-                 * current map contains stale definition
-                 */
-                internalMap.remove(type);
-            }
-        }
-
-        /*
-         * leftover definitions are new, so they get the default priority
-         */
-        for (String type: customtypes) {
-            internalMap.put(type, defaultPriority);
         }
     }
 }

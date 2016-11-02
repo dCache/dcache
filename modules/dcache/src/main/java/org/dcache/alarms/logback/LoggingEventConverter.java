@@ -60,24 +60,18 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.IThrowableProxy;
 import com.google.common.base.Preconditions;
 import org.slf4j.Marker;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import dmg.cells.nucleus.CDC;
 import org.dcache.alarms.Alarm;
-import org.dcache.alarms.AlarmDefinition;
-import org.dcache.alarms.AlarmDefinitionsMap;
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.alarms.LogEntry;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.NDC;
 import org.dcache.util.NetworkUtils;
 
@@ -144,15 +138,7 @@ final class LoggingEventConverter {
         String type;
         String key;
 
-        if (alarm instanceof AlarmDefinition) {
-            AlarmDefinition definition = (AlarmDefinition)alarm;
-            type = definition.getType();
-            key = definition.createKey(event.getFormattedMessage(),
-                                       event.getTimeStamp(),
-                                       entry.getHost(),
-                                       entry.getDomain(),
-                                       entry.getService());
-        } else if (alarm instanceof MarkedAlarm) {
+        if (alarm instanceof MarkedAlarm) {
             MarkedAlarm marked = (MarkedAlarm)alarm;
             type = marked.type;
             key = type + ":" + marked.key;
@@ -163,12 +149,6 @@ final class LoggingEventConverter {
 
         entry.setType(type);
         entry.setKey(key);
-    }
-
-    private AlarmDefinitionsMap definitionsMapping;
-
-    public void setDefinitions(AlarmDefinitionsMap definitionsMapping) {
-        this.definitionsMapping = definitionsMapping;
     }
 
     /**
@@ -224,70 +204,21 @@ final class LoggingEventConverter {
         if (AlarmMarkerFactory.containsAlarmMarker(marker)) {
             marked = new MarkedAlarm(getTypeFromMarker(marker),
 				                     getKeyFromMarker(marker));
-            entry.setAlarm(true);
-            if (marked.type != null) {
-                return marked;
-            }
-            /*
-             * An untyped event with an ALARM marker has been received.
-             * We allow this to fall through so that its type may
-             * be inferred from any definitions on the server end.
-             */
-        }
 
-        try {
-            Alarm match = findMatchingDefinition(event);
-            entry.setAlarm(true);
-            return match;
-        } catch (NoSuchElementException notDefined) {
-            /*
-             * Fall-through failed.  Mark the Alarm as GENERIC.
-             */
-            if (marked != null) {
+            if (marked.type == null) {
+                /*
+                 * An untyped event with an ALARM marker has been received.
+                 * Mark the Alarm as GENERIC.
+                 */
                 marked.type = PredefinedAlarm.GENERIC.toString();
-                return marked;
             }
-
-            /*
-             * Not an alarm.
-             */
-            return null;
-        }
-    }
-
-    private AlarmDefinition findMatchingDefinition(ILoggingEvent event)
-                    throws NoSuchElementException {
-        Collection<AlarmDefinition> definitions
-            = definitionsMapping.getDefinitions();
-        for (AlarmDefinition definition : definitions) {
-            if (matches(event, definition)) {
-                return definition;
-            }
-        }
-        throw new NoSuchElementException();
-    }
-
-    private boolean matches(ILoggingEvent event,
-                            AlarmDefinition definition) {
-        Pattern regex = definition.getRegexPattern();
-        if (regex.matcher(event.getFormattedMessage()).find()) {
-            return true;
+            entry.setAlarm(true);
+            return marked;
         }
 
-        Integer depth = definition.getDepth();
-        int d = depth == null ? Integer.MAX_VALUE : depth - 1;
-
-        if (definition.isMatchException()) {
-            IThrowableProxy p = event.getThrowableProxy();
-            while (p != null && d >= 0) {
-                if (regex.matcher(p.getMessage()).find()) {
-                    return true;
-                }
-                p = p.getCause();
-                --d;
-            }
-        }
-
-        return false;
+        /*
+         * Not an alarm.
+         */
+        return null;
     }
 }

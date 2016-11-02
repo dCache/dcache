@@ -64,7 +64,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import java.io.StringWriter;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -74,276 +73,17 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
-import org.dcache.alarms.AlarmDefinition;
-import org.dcache.alarms.AlarmDefinitionValidationException;
-import org.dcache.alarms.AlarmDefinitionsMap;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
-import org.dcache.alarms.jdom.JDomAlarmDefinition;
 import org.dcache.alarms.shell.ListPredefinedTypes;
 import org.dcache.alarms.shell.SendAlarmCLI;
 
 /**
- * Provides commands for adding, setting, removing, listing, loading and saving
- * external (custom) alarm definitions; for setting, listing, loading and saving
- * priority mappings, for setting the priority default or for restoring the
+ * Provides commands for sending (test) alarms, for setting, listing, loading and
+ * saving priority mappings, for setting the priority default or for restoring the
  * default value to all alarm types, and for pausing and restarting the server.
- *
- * @author arossi
  */
 public final class AlarmCommandHandler implements CellCommandListener {
-    @Command(name = "definition add",
-                    hint = "Add a new custom definition; if a definition of "
-                                    + "this type already exists, the new "
-                                    + "definition will overwrite it.",
-                    description = "To save this "
-                                    + "definition for future reloading, "
-                                    + "use the 'definition save' command.")
-    class DefinitionAddCommand implements Callable<String> {
-        @Option(name = "type",
-                usage = "Name of alarm type.",
-                required=true)
-        String type;
-
-        @Option(name = "keyWords",
-                usage = "Whitespace delimited set of attribute names whose "
-                                + "values constitute a unique identifier for "
-                                + "this alarm.  For possible attribute names,"
-                                + "use the command 'definition keywords'.",
-                required=true)
-        String keyWords;
-
-        @Option(name = "regex",
-                usage = "Java-style regular expression used to match messages.",
-                required=true)
-        String regex;
-
-        @Option(name = "regexFlags",
-                usage = "Java-style flag options for regex; join using '|' (or).",
-                valueSpec="CASE_INSENSITIVE|MULTILINE|DOTALL|UNICODE_CASE|"
-                                + "CANON_EQ|LITERAL|COMMENTS|UNIX_LINES ")
-        String regexFlags;
-
-        @Option(name = "matchException",
-                usage = "Apply the regex to nested exception messages "
-                                + "(default is false).",
-                valueSpec="true|false ")
-        String matchException;
-
-        @Option(name = "depth",
-                usage = "Match nested exception messages only down to this level"
-                    + " (integer; default is undefined).")
-        String depth;
-
-        public String call() throws Exception {
-            AlarmDefinition definition = new JDomAlarmDefinition();
-            try {
-                definition.validateAndSet(AlarmDefinition.TYPE_TAG,
-                                          type);
-                definition.validateAndSet(AlarmDefinition.KEY_WORDS_TAG,
-                                          keyWords);
-                definition.validateAndSet(AlarmDefinition.REGEX_TAG,
-                                          regex);
-                definition.validateAndSet(AlarmDefinition.REGEX_FLAGS_TAG,
-                                          regexFlags);
-                definition.validateAndSet(AlarmDefinition.MATCH_EXCEPTION_TAG,
-                                          matchException);
-                definition.validateAndSet(AlarmDefinition.DEPTH_TAG, depth);
-            } catch (AlarmDefinitionValidationException e) {
-                return "Invalid definition: " + e.getMessage();
-            } catch (Exception e) {
-                return "Failed to create defintion: " + e.getMessage();
-            }
-
-            alarmDefinitionsMap.add(definition);
-
-            return "Added:\n\n" + definition.toString();
-        }
-    }
-
-    @Command(name = "definition keywords",
-             hint = "Print the list of attribute names whose values can be "
-                     + "used as keyword identifiers for the alarm.",
-             description = "These are attributes which belong to all "
-                             + "alarm definitions; 'N' in 'groupN' refers to "
-                             + "the regular expression group index, with "
-                             + "group0 meaning the entire message.")
-    class DefinitionKeywordsCommand implements Callable<String> {
-        public String call() throws Exception {
-            StringBuilder builder = new StringBuilder();
-            builder.append("POSSIBLE KEY WORD NAMES:\n\n");
-            for (String key: AlarmDefinition.KEY_VALUES) {
-                builder.append(key).append("\n");
-            }
-            builder.append("---------------------------\n");
-            return builder.toString();
-        }
-    }
-
-    @Command(name = "definition ls",
-                    hint = "Print a single definition or sorted list of definitions.",
-                    description = "External/custom definitions are those provided by users; "
-                                   + "they match against logging message content "
-                                   + "when the event arrives at the remote server "
-                                   + "and mark them matched events as alarms/alerts.")
-    class DefinitionListCommand implements Callable<String> {
-        @Argument(required = false,
-                  usage="Name of alarm type; if not specified, all are listed.")
-        String type;
-
-        public String call() throws Exception {
-            if (Strings.emptyToNull(type) == null) {
-                return listCustomDefinitions();
-            }
-            try {
-                AlarmDefinition definition = alarmDefinitionsMap.getDefinition(type);
-                return definition.toString();
-            } catch (NoSuchElementException noSuchDef) {
-                return noSuchDef.getMessage();
-            }
-        }
-    }
-
-    @Command(name = "definition reload",
-                    hint = "Reinitialize the definitions from the saved changes.",
-                    description = "The default implementation of the backup store"
-                                        + " is an XML file.")
-    class DefinitionReloadCommand implements Callable<String> {
-        @Argument(required = false,
-                  usage="Optional path of an alternative XML file to use. NOTE: "
-                                  + "the path defined in the local dcache.conf "
-                                  + "or layout file will remain as the working "
-                                  + "store after this command completes.")
-        String path;
-
-        public String call() throws Exception {
-            Properties env = new Properties();
-            if (Strings.emptyToNull(path) != null) {
-                env.setProperty(AlarmPriorityMap.PATH, path);
-            }
-            alarmDefinitionsMap.load(env);
-            return listCustomDefinitions();
-        }
-    }
-
-    @Command(name = "definition rm",
-             hint = "Remove the existing alarm definition.",
-             description = "To remove this definition from future reloading, "
-                                   + "use the 'definitions save' command.")
-    class DefinitionRemoveCommand implements Callable<String> {
-        @Argument(required = true,
-                  usage="Name of alarm type.")
-        String type;
-
-        public String call() throws Exception {
-            if (alarmDefinitionsMap.removeDefinition(type) == null) {
-                return type + " undefined; nothing removed.";
-            }
-            return listCustomDefinitions();
-        }
-    }
-
-    @Command(name = "definition save",
-                    hint = "Save the current definitions to persistent backup.",
-                    description = "The default implementation of the backup store"
-                                        + " is an XML file).")
-    class DefinitionSaveCommand implements Callable<String> {
-        @Argument(required = false,
-                  usage="Optional path of an alternative XML file to use. NOTE: "
-                                      + "the path defined in the local dcache.conf "
-                                      + "or layout file will remain as the working "
-                                      + "store after this command completes.")
-        String path;
-
-        public String call() throws Exception {
-            Properties env = new Properties();
-            if (Strings.emptyToNull(path) != null) {
-                env.setProperty(AlarmPriorityMap.PATH, path);
-            }
-            alarmDefinitionsMap.save(env);
-            return listCustomDefinitions();
-        }
-    }
-
-    @Command(name = "definition set",
-             hint = "Set the attribute of an existing alarm definition.",
-             description = "To save this definition for future reloading, "
-                                   + "use the 'definitions save' command.")
-    class DefinitionSetCommand implements Callable<String> {
-        @Argument(index=0,
-                  required = true,
-                  usage="Name of alarm type.")
-        String type;
-
-        @Argument(index=1,
-                  required = true,
-                  usage="Name of alarm attribute.")
-        String name;
-
-        @Argument(index=2,
-                  required = true,
-                  usage="Value of alarm attribute.")
-        String value;
-
-        public String call() throws Exception {
-            AlarmDefinition definition;
-
-            try {
-                definition = alarmDefinitionsMap.getDefinition(type);
-            } catch (NoSuchElementException e) {
-                return e.getMessage();
-            }
-
-            if (value.trim().equals(AlarmDefinition.RM)) {
-                return "To remove an attribute definition, "
-                                + "use the 'definition unset' command.";
-            }
-
-            try {
-                definition.validateAndSet(name, value);
-            } catch (AlarmDefinitionValidationException e) {
-                return "Invalid definition: " + e.getMessage();
-            }
-
-            return "Modified:\n\n" + definition.toString();
-        }
-    }
-
-    @Command(name = "definition unset",
-             hint = "Unset (remove) the attribute of an existing alarm definition.",
-             description = "To save this definition for future reloading, "
-                                   + "use the 'definitions save' command.")
-    class DefinitionUnsetCommand implements Callable<String> {
-        @Argument(index=0,
-                  required = true,
-                  usage="Name of alarm type.")
-        String type;
-
-        @Argument(index=1,
-                  required = true,
-                  usage="Name of alarm attribute.")
-        String name;
-
-        public String call() throws Exception {
-            AlarmDefinition definition;
-
-            try {
-                definition = alarmDefinitionsMap.getDefinition(type);
-            } catch (NoSuchElementException e) {
-                return e.getMessage();
-            }
-
-            try {
-                definition.validateAndSet(name, AlarmDefinition.RM);
-            } catch (AlarmDefinitionValidationException e) {
-                return "Invalid definition: " + e.getMessage();
-            }
-
-            return "Modified:\n\n" + definition.toString();
-        }
-    }
-
     @Command(name = "predefined ls",
                     hint = "Print a list of all internally defined alarms.")
     class PredifinedListCommand implements Callable<String> {
@@ -530,13 +270,8 @@ public final class AlarmCommandHandler implements CellCommandListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(AlarmCommandHandler.class);
 
     private AlarmPriorityMap alarmPriorityMap;
-    private AlarmDefinitionsMap alarmDefinitionsMap;
     private String serverHost;
     private Integer serverPort;
-
-    public void setAlarmDefinitionsMap(AlarmDefinitionsMap alarmDefinitionsMap) {
-        this.alarmDefinitionsMap = alarmDefinitionsMap;
-    }
 
     public void setAlarmPriorityMap(AlarmPriorityMap alarmPriorityMap) {
         this.alarmPriorityMap = alarmPriorityMap;
@@ -548,19 +283,6 @@ public final class AlarmCommandHandler implements CellCommandListener {
 
     public void setServerPort(Integer serverPort) {
         this.serverPort = serverPort;
-    }
-
-    private String listCustomDefinitions() {
-        StringWriter writer = new StringWriter();
-        try {
-            alarmDefinitionsMap.getSortedList(writer);
-            return "Current (external) definitions:\n\n " + writer.toString();
-        } catch (Exception e) {
-            Throwable cause = e.getCause();
-            String message = cause == null ? e.getMessage() : cause.getMessage();
-            return "There is a problem with one or more definitions: "
-                            + message;
-        }
     }
 
     private String listPriorityMappings() {

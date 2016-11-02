@@ -79,8 +79,6 @@ import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
-import org.dcache.alarms.jdom.JDomAlarmDefinition;
-import org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap;
 import org.dcache.alarms.spi.LogEntryListenerFactory;
 
 import static org.hamcrest.Matchers.is;
@@ -115,18 +113,6 @@ public class LogEntryAppenderTest {
         protected void append(ILoggingEvent eventObject) {
             handler.handle(eventObject);
         }
-    }
-
-    private static JDomAlarmDefinition givenAlarmDefinition(
-                    String regex, Boolean error, Integer depth, String type,
-                    String include) {
-        JDomAlarmDefinition definition = new JDomAlarmDefinition();
-        definition.setType(type);
-        definition.setRegexString(regex);
-        definition.setKeyWords(include);
-        definition.setMatchException(error);
-        definition.setDepth(depth);
-        return definition;
     }
 
     private final LogEntryDAO testStore = new LogEntryDAO() {
@@ -189,12 +175,8 @@ public class LogEntryAppenderTest {
         handler.setHistoryEnabled(false);
         handler.setRootLevel("ERROR");
         handler.setStore(testStore);
-        XmlBackedAlarmDefinitionsMap dmap = new XmlBackedAlarmDefinitionsMap();
-        addDefinitions(dmap);
         LoggingEventConverter converter = new LoggingEventConverter();
-        converter.setDefinitions(dmap);
         FileBackedAlarmPriorityMap pmap = new FileBackedAlarmPriorityMap();
-        pmap.setDefinitions(dmap);
         pmap.setPropertiesPath("dummy.properties");
         pmap.initialize();
         handler.setPriorityMap(pmap);
@@ -217,34 +199,9 @@ public class LogEntryAppenderTest {
     }
 
     @Test
-    public void shouldCreateAlarmWhenDefinedErrorWithNoMarkerIsUsed() {
-        String message = givenLoggingMessageWhichMatchesType("CHECKSUM");
-        whenMessageIsLogged(null, message, null);
-        assertThat(lastEntry.isAlarm(), is(true));
-    }
-
-    @Test
     public void shouldCreateAlarmWhenUndefinedErrorWithMarkerIsUsed() {
         String message = givenLoggingMessageWhichMatchesType(null);
         whenMessageIsLogged(AlarmMarkerFactory.getMarker(), message, null);
-        assertThat(lastEntry.isAlarm(), is(true));
-    }
-
-    @Test
-    public void shouldCreateAlarmWithDepthDefinedCorrectly() {
-        String message = givenLoggingMessageWhichMatchesType("DB_UNAVAILABLE");
-        Exception exception = givenExceptionWithMessageEmbeddedAt(1, message);
-        whenMessageIsLogged(null, exception.getMessage(),
-                        exception.getCause());
-        assertThat(lastEntry.isAlarm(), is(true));
-    }
-
-    @Test
-    public void shouldCreateAlarmWithExceptionMatchDefined() {
-        String message = givenLoggingMessageWhichMatchesType("OUT_OF_FILE_DESCRIPTORS");
-        Exception exception = givenExceptionWithMessageEmbeddedAt(0, message);
-        whenMessageIsLogged(null, exception.getMessage(),
-                        exception.getCause());
         assertThat(lastEntry.isAlarm(), is(true));
     }
 
@@ -255,66 +212,13 @@ public class LogEntryAppenderTest {
         assertNull(lastEntry);
     }
 
-    @Test
-    public void shouldCreateNonAlarmWithDepthDefinedIncorrectly() {
-        String message = givenLoggingMessageWhichMatchesType("DB_UNAVAILABLE");
-        Exception exception = givenExceptionWithMessageEmbeddedAt(3, message);
-        whenMessageIsLogged(null, exception.getMessage(),
-                        exception.getCause());
-        assertNull(lastEntry);
-    }
-
-    @Test
-    public void shouldCreateNonAlarmWithoutExceptionMatchDefined() {
-        String message = givenLoggingMessageWhichMatchesType("CHECKSUM");
-        Exception exception = givenExceptionWithMessageEmbeddedAt(1, message);
-        whenMessageIsLogged(null, exception.getMessage(),
-                        exception.getCause());
-        assertNull(lastEntry);
-    }
-
     @After
     public void teardown() throws Exception {
         logger.detachAndStopAllAppenders();
     }
 
-    private void addDefinitions(XmlBackedAlarmDefinitionsMap map) {
-        map.add(givenAlarmDefinition(
-                        "Unable to open a test connection to the given database|"
-                                        + "Connections could not be acquired "
-                                        + "from the underlying database", true,
-                        1, "DB_UNAVAILABLE", "type host"));
-        map.add(givenAlarmDefinition("OutOfMemory",
-                        false, null, "JVM_OUT_OF_MEMORY",
-                        "type host domain"));
-        map.add(givenAlarmDefinition(
-                        "[Tt]oo many open files", true, null,
-                        "OUT_OF_FILE_DESCRIPTORS",
-                        "type host domain"));
-        map.add(givenAlarmDefinition(
-                        "Checksum mismatch detected for (.+) - marking as BROKEN",
-                        false, null, "CHECKSUM",
-                        "group1 type host service domain"));
-    }
-
     private void clearLast() {
         lastEntry = null;
-    }
-
-    private Exception givenExceptionWithMessageEmbeddedAt(int depth,
-                    String message) {
-        Exception top = new Exception("TOP LEVEL MESSAGE");
-        Exception next = top;
-        int current = 1;
-        while (current < depth) {
-            Exception cause = new Exception("LEVEL " + current + " MESSAGE");
-            next.initCause(cause);
-            next = cause;
-            ++current;
-        }
-        Exception cause = new Exception(message);
-        next.initCause(cause);
-        return top;
     }
 
     private String givenLoggingMessageWhichMatchesType(String type) {
