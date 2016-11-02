@@ -69,20 +69,26 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+
 /**
- * While logback provides an MDC Turbofilter, we prefer to hardcode this type so
- * as not to expose the special property key (ALARMS_INTERNAL) in the
- * logback.xml; otherwise, it would be susceptible to modification, accidental
- * or otherwise, which could potentially cause the alarm service logging to go
- * into an infinite loop.
+ * While logback provides MDC and Marker TurboFilters, these do not work
+ * exactly as what is required here – that is, specifically on the remote
+ * appender and not on the context as a whole.
  *
- * @author arossi
+ * Hardcoding the behavior here also has the advantage of not exposing
+ * the special property keys (ALARM, ALARMS_INTERNAL) in the
+ * logback.xml, though users still might inadvertently remove the
+ * filter itself.
  */
-public final class AlarmsInternalFilter extends Filter<ILoggingEvent> {
+public final class AlarmFilter extends Filter<ILoggingEvent> {
     public static final String ALARMS_INTERNAL = "alarms-internal";
 
     @Override
     public FilterReply decide(ILoggingEvent event) {
+        if (!AlarmMarkerFactory.containsAlarmMarker(event.getMarker())) {
+            return FilterReply.DENY;
+        }
         if (event.getMDCPropertyMap().get(ALARMS_INTERNAL) != null) {
             return FilterReply.DENY;
         }

@@ -23,13 +23,6 @@ check alarms.email.subject
 check alarms.email.buffer-size
 check alarms.email.threshold
 check alarms.email.encoding-pattern
-check alarms.enable.history
-check alarms.history.encoding-pattern
-check alarms.history.log-path
-check alarms.history.log-file.pattern
-check alarms.history.max-file-size
-check alarms.history.min-index
-check alarms.history.max-index
 check alarms.enable.cleaner
 check alarms.limits.workers
 check alarms.limits.queue-size

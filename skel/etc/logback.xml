@@ -107,7 +107,9 @@
   </appender>
 
   <appender name="socket" class="ch.qos.logback.classic.net.SocketAppender">
-      <filter class="org.dcache.alarms.logback.AlarmsInternalFilter"/>
+      <!-- Regardless of the level to which the remote appender is set,
+           only messages marked as ALARM are allowed through -->
+      <filter class="org.dcache.alarms.logback.AlarmFilter"/>
       <remoteHost>${dcache.log.server.host}</remoteHost>
       <port>${dcache.log.server.port}</port>
       <reconnectionDelay>10000</reconnectionDelay>

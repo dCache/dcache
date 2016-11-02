@@ -83,27 +83,14 @@ import org.dcache.util.NetworkUtils;
  * @author arossi
  */
 final class LoggingEventConverter {
-    static class MarkedAlarm implements Alarm {
-        String type;
-        final String key;
-
-        MarkedAlarm(String type, String key) {
-            this.type = type;
-            if (key == null) {
-                key = UUID.randomUUID().toString();
-            }
-            this.key = key;
-        }
-
-        public String getType() {
-            return type;
-        }
-    }
-
     private static String getKeyFromMarker(Marker marker) {
         Marker keyMarker = AlarmMarkerFactory.getKeySubmarker(marker);
         if (keyMarker == null) {
-            return null;
+            /*
+             * An untyped event with an ALARM marker has been received.
+             * Provide a UUID as key.
+             */
+            return UUID.randomUUID().toString();
         }
 
         StringBuilder builder = new StringBuilder();
@@ -116,39 +103,18 @@ final class LoggingEventConverter {
 
     private static String getTypeFromMarker(Marker marker) {
         Marker typeMarker = AlarmMarkerFactory.getTypeSubmarker(marker);
+
         if (typeMarker == null) {
-            return null;
+            /*
+             * An untyped event with an ALARM marker has been received.
+             * Mark the Alarm as GENERIC.
+             */
+            return PredefinedAlarm.GENERIC.toString();
         }
 
         Marker alarmType = typeMarker.iterator().next();
         Preconditions.checkNotNull(alarmType);
         return alarmType.getName();
-    }
-
-    /*
-     * NOTE: when the alarm is generated at the origin using a marker,
-     * its key is determined directly by the value of the key
-     * submarker.  This is distinct from the key generation
-     * based on attribute names and/or regex groups used when the
-     * alarm is matched against a definition.
-     */
-    private static void setTypeAndKey(ILoggingEvent event,
-                                      Alarm alarm,
-                                      LogEntry entry) {
-        String type;
-        String key;
-
-        if (alarm instanceof MarkedAlarm) {
-            MarkedAlarm marked = (MarkedAlarm)alarm;
-            type = marked.type;
-            key = type + ":" + marked.key;
-        } else {
-            type = event.getLevel().toString();
-            key = UUID.randomUUID().toString();
-        }
-
-        entry.setType(type);
-        entry.setKey(key);
     }
 
     /**
@@ -158,6 +124,15 @@ final class LoggingEventConverter {
      * @return storage object with all metadata set.
      */
     LogEntry createEntryFromEvent(ILoggingEvent event) {
+        Marker marker = event.getMarker();
+
+        if (!AlarmMarkerFactory.containsAlarmMarker(marker)) {
+            throw new IllegalArgumentException(
+                            String.format( "%s did not contain an alarm marker; "
+                                                           + "this is a bug.",
+                                           event.getFormattedMessage()));
+        }
+
         Map<String, String> mdc = event.getMDCPropertyMap();
 
         String host = mdc.get(Alarm.HOST_TAG);
@@ -190,35 +165,18 @@ final class LoggingEventConverter {
         entry.setDomain(domain);
         entry.setService(service);
 
-        Alarm alarm = determineIfAlarm(event, entry);
+        /*
+         * For the moment, we leave the schema and query structure
+         * alone, even though all future entry objects should be
+         * marked as alarms.
+         */
+        entry.setAlarm(true);
 
-        setTypeAndKey(event, alarm, entry);
+        String type = getTypeFromMarker(marker);
+        String key = getKeyFromMarker(marker);
+        entry.setType(type);
+        entry.setKey(type + ":" + key);
 
         return entry;
-    }
-
-    private Alarm determineIfAlarm(ILoggingEvent event, LogEntry entry) {
-        Marker marker = event.getMarker();
-        MarkedAlarm marked = null;
-
-        if (AlarmMarkerFactory.containsAlarmMarker(marker)) {
-            marked = new MarkedAlarm(getTypeFromMarker(marker),
-				                     getKeyFromMarker(marker));
-
-            if (marked.type == null) {
-                /*
-                 * An untyped event with an ALARM marker has been received.
-                 * Mark the Alarm as GENERIC.
-                 */
-                marked.type = PredefinedAlarm.GENERIC.toString();
-            }
-            entry.setAlarm(true);
-            return marked;
-        }
-
-        /*
-         * Not an alarm.
-         */
-        return null;
     }
 }
