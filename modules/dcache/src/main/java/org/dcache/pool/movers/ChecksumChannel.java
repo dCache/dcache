@@ -8,6 +8,7 @@ import com.google.common.collect.TreeRangeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InterruptedIOException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
@@ -16,8 +17,9 @@ import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.annotation.concurrent.GuardedBy;
 
 import diskCacheV111.util.ChecksumFactory;
 
@@ -65,25 +67,29 @@ public class ChecksumChannel implements RepositoryChannel
     private final RangeSet<Long> _dataRangeSet = TreeRangeSet.create();
 
     /**
-     * Reference to the range containing the file beginning
+     * The offset where the checksum was calculated.
      */
-    private Range<Long> _fileStartRange = Range.openClosed(0L, 0L);
+    @GuardedBy("_digest")
+    private long _nextChecksumOffset = 0L;
 
     /**
      * Flag to indicate whether it is still possible to calculated a checksum
      */
-    private boolean _isChecksumViable = true;
+    private volatile boolean _isChecksumViable = true;
 
     /**
      * Flag to indicate whether we still allow writing to the channel.
      * This flag is set to false after getChecksum has been called.
      */
+    @GuardedBy("_ioStateLock")
     private boolean _isWritable = true;
 
     /**
-     * lock to prevent writes while or after getChecksum was called
+     * Lock to protect _isWritable field.
      */
-    private final ReadWriteLock _checksumLock = new ReentrantReadWriteLock(false);
+    private final ReentrantReadWriteLock _ioStateLock = new ReentrantReadWriteLock();
+    private final Lock _ioStateReadLock = _ioStateLock.readLock();
+    private final Lock _ioStateWriteLock = _ioStateLock.writeLock();
 
     /**
      * Buffer to be used for reading data back from the inner channel for
@@ -133,10 +139,8 @@ public class ChecksumChannel implements RepositoryChannel
     }
 
     @Override
-    public int write(ByteBuffer buffer, long position) throws IOException
-    {
-        Lock lock = _checksumLock.readLock();
-        lock.lock();
+    public int write(ByteBuffer buffer, long position) throws IOException {
+        _ioStateReadLock.lock();
         try {
             checkState(_isWritable, "ChecksumChannel must not be written to after getChecksum");
 
@@ -150,7 +154,7 @@ public class ChecksumChannel implements RepositoryChannel
             }
             return bytes;
         } finally {
-            lock.unlock();
+            _ioStateReadLock.unlock();
         }
     }
 
@@ -190,9 +194,9 @@ public class ChecksumChannel implements RepositoryChannel
     @Override
     public int write(ByteBuffer src) throws IOException
     {
-        Lock lock = _checksumLock.readLock();
-        lock.lock();
+        _ioStateReadLock.lock();
         try {
+
             checkState(_isWritable, "ChecksumChannel must not be written to after getChecksum");
 
             int bytes;
@@ -203,17 +207,16 @@ public class ChecksumChannel implements RepositoryChannel
             }
             return bytes;
         } finally {
-            lock.unlock();
+            _ioStateReadLock.unlock();
         }
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length)
-            throws IOException
-    {
-        Lock lock = _checksumLock.readLock();
-        lock.lock();
+            throws IOException {
+        _ioStateReadLock.lock();
         try {
+
             checkState(_isWritable, "ChecksumChannel must not be written to after getChecksum");
 
             long bytes = 0;
@@ -226,7 +229,7 @@ public class ChecksumChannel implements RepositoryChannel
             }
             return bytes;
         } finally {
-            lock.unlock();
+            _ioStateReadLock.unlock();
         }
     }
 
@@ -288,21 +291,29 @@ public class ChecksumChannel implements RepositoryChannel
      * @return Checksum
      */
     private Checksum finalizeChecksum() {
-        Lock lock = _checksumLock.writeLock();
-        lock.lock();
+
+        _ioStateWriteLock.lock();
         try {
             _isWritable = false;
-
-            if (_dataRangeSet.asRanges().size() != 1 || _fileStartRange.isEmpty()) {
-                feedZerosToDigesterForRangeGaps();
-            }
-
-            return _checksumFactory.create(_digest.digest());
-        } catch (IOException e) {
-            _log.info("Unable to generate checksum of sparse file: {}", e.toString());
-            return null;
         } finally {
-            lock.unlock();
+            _ioStateWriteLock.unlock();
+        }
+
+        // we need to synchronize on rangeSet and digest get exclusive access
+        synchronized (_dataRangeSet) {
+            synchronized (_digest) {
+                try {
+
+                    if (_dataRangeSet.asRanges().size() != 1 || _nextChecksumOffset == 0) {
+                        feedZerosToDigesterForRangeGaps();
+                    }
+
+                    return _checksumFactory.create(_digest.digest());
+                } catch (IOException e) {
+                    _log.info("Unable to generate checksum of sparse file: {}", e.toString());
+                    return null;
+                }
+            }
         }
     }
 
@@ -311,13 +322,19 @@ public class ChecksumChannel implements RepositoryChannel
         complement.sort((r1, r2) -> r1.lowerEndpoint().compareTo(r2.lowerEndpoint()));
 
         for (Range<Long> range : complement) {
-            long rangeLength = range.upperEndpoint() - range.lowerEndpoint();
-            for (long totalDigestedZeros = 0L; totalDigestedZeros < rangeLength; totalDigestedZeros += _zerosBuffer.limit()) {
-                assert totalDigestedZeros >= 0L;
+
+            long bytesToWrite = range.upperEndpoint() - range.lowerEndpoint();
+            long chunkOffset = range.lowerEndpoint();
+
+            while (bytesToWrite > 0) {
                 _zerosBuffer.clear();
-                long limit = Math.min(_zerosBuffer.capacity(), rangeLength - totalDigestedZeros);
-                _zerosBuffer.limit((int)limit);
-                updateChecksum(_zerosBuffer, range.lowerEndpoint() + totalDigestedZeros, _zerosBuffer.limit());
+                long chunkSize = Math.min(_zerosBuffer.capacity(), bytesToWrite);
+                _zerosBuffer.limit((int)chunkSize);
+
+                updateChecksum(_zerosBuffer, chunkOffset, _zerosBuffer.limit());
+
+                chunkOffset += chunkSize;
+                bytesToWrite -= chunkSize;
             }
         }
     }
@@ -340,7 +357,8 @@ public class ChecksumChannel implements RepositoryChannel
      * @throws IOException
      */
     @VisibleForTesting
-    synchronized void updateChecksum(ByteBuffer buffer, long position, int bytes) throws IOException {
+    void updateChecksum(ByteBuffer buffer, long position, int bytes) throws IOException {
+
         if (bytes == 0) {
             return;
         }
@@ -350,41 +368,78 @@ public class ChecksumChannel implements RepositoryChannel
         }
 
         Range<Long> writeRange = Range.closed(position, position + buffer.remaining() - 1).canonical(DiscreteDomain.longs());
+        Range<Long> fileStartRange;
 
-        RangeSet<Long> overlappingRanges = _dataRangeSet.subRangeSet(writeRange);
-        if (!overlappingRanges.isEmpty()) {
-            _isChecksumViable = false;
-            _log.info("On-transfer checksum aborted due to overlapping writes from client.");
-            return;
-        }
+        synchronized (_dataRangeSet) {
 
-        _dataRangeSet.add(writeRange);
-        if (!_fileStartRange.isConnected(writeRange)) {
-            return;
-        }
-
-        long digestStart = _fileStartRange.upperEndpoint();
-        _fileStartRange = _dataRangeSet.rangeContaining(0L);
-        long digestEnd = _fileStartRange.upperEndpoint();
-
-        digestStart += buffer.remaining();
-        _digest.update(buffer);
-        long bytesToRead = digestEnd - digestStart;
-
-        while (bytesToRead > 0) {
-            _readBackBuffer.clear();
-            long limit = Math.min(_readBackBuffer.capacity(), bytesToRead);
-            _readBackBuffer.limit((int)limit);
-            int lastBytesRead = _channel.read(_readBackBuffer, digestStart);
-
-            if (lastBytesRead < 0) {
-                throw new IOException("Checksum: Unexpectedly hit end-of-stream while reading data back from channel.");
+            RangeSet<Long> overlappingRanges = _dataRangeSet.subRangeSet(writeRange);
+            if (!overlappingRanges.isEmpty()) {
+                _isChecksumViable = false;
+                _log.info("On-transfer checksum aborted due to overlapping writes from client.");
+                return;
             }
 
-            digestStart += lastBytesRead;
-            bytesToRead -= lastBytesRead;
-            _readBackBuffer.flip();
-            _digest.update(_readBackBuffer);
+            fileStartRange = _dataRangeSet.rangeContaining(0L);
+            boolean canCalculateChecksum = position == 0 || (fileStartRange != null && fileStartRange.upperEndpoint() == position);
+
+            _dataRangeSet.add(writeRange);
+            if (!canCalculateChecksum) {
+                return;
+            }
+
+            // get it again as we may have merged two segments
+            fileStartRange = _dataRangeSet.rangeContaining(0L);
+        }
+
+        synchronized (_digest) {
+
+            /*
+             * we are one of the threads which got the merge into continues block.
+             * Nevertheless, there may be a different thread which needs to update
+             * ahead of us. Wait for our turn.
+             */
+            while(_nextChecksumOffset != position) {
+               try {
+                    _digest.wait();
+               } catch (InterruptedException e) {
+                    throw new InterruptedIOException();
+               }
+            }
+
+            long bytesToRead = fileStartRange.upperEndpoint() - position;
+
+            // update current buffer and then keep procesing following blocks, if any
+            bytesToRead -= buffer.remaining();
+            // update offset prior digest calculation as digets#update will update position in the buffer
+            _nextChecksumOffset += buffer.remaining();
+            _digest.update(buffer);
+
+            long expectedOffsetAfterRead = _nextChecksumOffset + bytesToRead;
+            try {
+
+                while (bytesToRead > 0) {
+                    _readBackBuffer.clear();
+                    long limit = Math.min(_readBackBuffer.capacity(), bytesToRead);
+                    _readBackBuffer.limit((int) limit);
+                    int lastBytesRead = _channel.read(_readBackBuffer, _nextChecksumOffset);
+
+                    if (lastBytesRead < 0) {
+                        throw new IOException("Checksum: Unexpectedly hit end-of-stream while reading data back from channel.");
+                    }
+
+                    _readBackBuffer.flip();
+                    _digest.update(_readBackBuffer);
+                    bytesToRead -= lastBytesRead;
+                    _nextChecksumOffset += lastBytesRead;
+                }
+
+            } catch (IOException | RuntimeException e) {
+                _isChecksumViable = false;
+                throw e;
+            } finally {
+                _nextChecksumOffset = expectedOffsetAfterRead;
+                _digest.notifyAll();
+            }
         }
     }
 }
