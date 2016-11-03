@@ -18,7 +18,6 @@
  */
 package diskCacheV111.srm.dcache;
 
-import com.google.common.collect.Iterables;
 import org.springframework.beans.factory.annotation.Required;
 
 import diskCacheV111.util.CacheException;
@@ -29,10 +28,7 @@ import dmg.cells.nucleus.CellMessageReceiver;
 
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.PutFileRequest;
-import org.dcache.srm.scheduler.IllegalStateTransition;
 
 /**
  * A message processor embedded in the SrmManager for handling the SURL locking
@@ -55,11 +51,12 @@ public class SurlService implements CellMessageReceiver
 
     public SrmGetPutRequestMessage messageArrived(SrmGetPutRequestMessage msg) throws CacheException
     {
-        PutFileRequest request = Iterables.getFirst(
-                srm.getActiveFileRequests(PutFileRequest.class, msg.getSurl()), null);
+        PutFileRequest request = srm.getActivePutFileRequests(msg.getSurl())
+                .min((a, b) -> a.getSurl().compareTo(b.getSurl())).orElse(null);
         if (request == null) {
             throw new CacheException("No upload on SURL");
         }
+        msg.setSurl(request.getSurl());
         msg.setFileId(request.getFileId());
         msg.setRequestId(request.getId());
         msg.setSucceeded();
@@ -68,18 +65,7 @@ public class SurlService implements CellMessageReceiver
 
     public SrmAbortTransfersMessage messageArrived(SrmAbortTransfersMessage msg) throws SRMException
     {
-        for (PutFileRequest request : srm.getActiveFileRequests(PutFileRequest.class, msg.getSurl())) {
-            try {
-                request.abort(msg.getReason());
-            } catch (SRMInvalidRequestException | IllegalStateTransition ignored) {
-            }
-        }
-        for (GetFileRequest request : srm.getActiveFileRequests(GetFileRequest.class, msg.getSurl())) {
-            try {
-                request.abort(msg.getReason());
-            } catch (SRMInvalidRequestException | IllegalStateTransition ignored) {
-            }
-        }
+        msg.setUploadAborted(srm.abortTransfers(msg.getSurl(), msg.getReason()));
         msg.setSucceeded();
         return msg;
     }

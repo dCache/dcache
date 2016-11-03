@@ -34,6 +34,8 @@ public class SrmAbortTransfersMessage extends SrmMessage
 
     private final String reason;
 
+    private boolean isUploadAborted;
+
     public SrmAbortTransfersMessage(URI surl, String reason)
     {
         this.surl = surl;
@@ -48,5 +50,15 @@ public class SrmAbortTransfersMessage extends SrmMessage
     public String getReason()
     {
         return reason;
+    }
+
+    public boolean isUploadAborted()
+    {
+        return isUploadAborted;
+    }
+
+    public void setUploadAborted(boolean uploadAborted)
+    {
+        isUploadAborted = uploadAborted;
     }
 }
