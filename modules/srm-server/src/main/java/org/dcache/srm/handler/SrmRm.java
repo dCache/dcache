@@ -99,49 +99,29 @@ public class SrmRm
             if (returnStatus.getStatus().getStatusCode() == TStatusCode.SRM_INTERNAL_ERROR) {
                 throw new SRMInternalErrorException(returnStatus.getStatus().getExplanation());
             }
-            if (returnStatus.getStatus().getStatusCode() == TStatusCode.SRM_AUTHORIZATION_FAILURE) {
-                continue;
-            }
+            if (returnStatus.getStatus().getStatusCode() == TStatusCode.SRM_SUCCESS ||
+                returnStatus.getStatus().getStatusCode() == TStatusCode.SRM_INVALID_PATH) {
 
-            // [SRM 2.2, 4.3.2, e)] srmRm aborts the SURLs from srmPrepareToPut requests not yet
-            // in SRM_PUT_DONE state, and must set its file status as SRM_ABORTED.
-            //
-            // [SRM 2.2, 4.3.2, f)] srmRm must remove SURLs even if the statuses of the SURLs
-            // are SRM_FILE_BUSY. In this case, operations such as srmPrepareToPut or srmCopy
-            // that holds the SURL status as SRM_FILE_BUSY must return SRM_INVALID_PATH upon
-            // status request or srmPutDone.
-            //
-            // It seems the SRM specs is undecided about whether to move put requests to
-            // SRM_ABORTED or SRM_INVALID_PATH. We choose SRM_ABORTED as it seems like the saner
-            // of the two options.
-            URI surl = URI.create(surls[i].toString());
-            for (PutFileRequest request : srm.getActiveFileRequests(PutFileRequest.class, surl)) {
+                // [SRM 2.2, 4.3.2, e)] srmRm aborts the SURLs from srmPrepareToPut requests not yet
+                // in SRM_PUT_DONE state, and must set its file status as SRM_ABORTED.
+                //
+                // [SRM 2.2, 4.3.2, f)] srmRm must remove SURLs even if the statuses of the SURLs
+                // are SRM_FILE_BUSY. In this case, operations such as srmPrepareToPut or srmCopy
+                // that holds the SURL status as SRM_FILE_BUSY must return SRM_INVALID_PATH upon
+                // status request or srmPutDone.
+                //
+                // It seems the SRM specs is undecided about whether to move put requests to
+                // SRM_ABORTED or SRM_INVALID_PATH. We choose SRM_ABORTED as it seems like the saner
+                // of the two options.
+
+                // [SRM 2.2, 4.3.2, d)] srmLs,srmPrepareToGet or srmBringOnline must not find these
+                // removed files any more. It must set file requests on SURL from srmPrepareToGet
+                // as SRM_ABORTED.
+                URI surl = URI.create(surls[i].toString());
                 try {
-                    request.abort("file was deleted by request " + JDC.getSession() + ".");
-                    returnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "Upload was aborted."));
-                } catch (IllegalStateTransition e) {
-                    // The request likely aborted or finished before we could abort it
-                    LOGGER.debug("srmRm attempted to abort put request {}, but failed: {}",
-                            request.getId(), e.getMessage());
-                } catch (SRMException e) {
-                    returnStatus.setStatus(new TReturnStatus(e.getStatusCode(), e.getMessage()));
-                }
-            }
-
-            if (returnStatus.getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
-                continue;
-            }
-
-            // [SRM 2.2, 4.3.2, d)] srmLs,srmPrepareToGet or srmBringOnline must not find these
-            // removed files any more. It must set file requests on SURL from srmPrepareToGet
-            // as SRM_ABORTED.
-            for (GetFileRequest request : srm.getActiveFileRequests(GetFileRequest.class, surl)) {
-                try {
-                    request.abort("file was deleted by request " + JDC.getSession() + ".");
-                } catch (IllegalStateTransition e) {
-                    // The request likely aborted or finished before we could abort it
-                    LOGGER.debug("srmRm attempted to abort get request {}, but failed: {}",
-                            request.getId(), e.getMessage());
+                    if (srm.abortTransfers(surl, "File was deleted by request " + JDC.getSession() + ".")) {
+                        returnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "Upload was aborted."));
+                    }
                 } catch (SRMException e) {
                     returnStatus.setStatus(new TReturnStatus(e.getStatusCode(), e.getMessage()));
                 }

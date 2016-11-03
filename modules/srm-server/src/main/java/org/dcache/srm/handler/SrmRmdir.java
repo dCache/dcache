@@ -1,6 +1,5 @@
 package org.dcache.srm.handler;
 
-import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +13,6 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMNonEmptyDirectoryException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.v2_2.SrmRmdirRequest;
 import org.dcache.srm.v2_2.SrmRmdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -26,7 +24,6 @@ public class SrmRmdir
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmRmdir.class);
-    private static final String SFN_STRING = "SFN=";
 
     private final AbstractStorageElement storage;
     private final SrmRmdirRequest request;
@@ -71,51 +68,15 @@ public class SrmRmdir
             throws SRMException
     {
         URI surl = URI.create(request.getSURL().toString());
-        String path = getPath(surl);
 
         /* If surl is a prefix to any active upload, then we report the directory as
          * non-empty. This is not strictly required by the SRM spec, however S2 tests
          * (usecase.RmdirBeingPutInto) check for this behaviour.
          */
-        for (PutFileRequest putFileRequest : srm.getActiveJobs(PutFileRequest.class)) {
-            String requestPath = getPath(putFileRequest.getSurl());
-            if (path.equals(requestPath)) {
-                throw new SRMInvalidPathException("Not a directory");
-            }
-            if (requestPath.startsWith(path)) {
-                throw new SRMNonEmptyDirectoryException("Directory is not empty");
-            }
-        }
+        srm.checkRemoveDirectory(surl);
 
         storage.removeDirectory(user, surl, request.getRecursive() != null && request.getRecursive());
         return new SrmRmdirResponse(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
-    }
-
-    private static String getPath(URI surl)
-    {
-        String path = surl.getPath();
-        String query = surl.getQuery();
-        if (query != null) {
-            int i = query.indexOf(SFN_STRING);
-            if (i != -1) {
-                path = query.substring(i + SFN_STRING.length());
-            }
-        }
-        /* REVISIT
-         *
-         * This is not correct in the presence of symlinked directories. The
-         * simplified path may refer to a different directory than the one
-         * we will delete.
-         *
-         * For now we ignore this problem - fixing it requires resolving the
-         * paths to an absolute path, which requires additional name space
-         * lookups.
-         */
-        path = Files.simplifyPath(path);
-        if (!path.endsWith("/")) {
-            path = path + "/";
-        }
-        return path;
     }
 
     public static final SrmRmdirResponse getFailedResponse(String error)

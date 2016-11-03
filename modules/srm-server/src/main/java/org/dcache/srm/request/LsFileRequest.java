@@ -127,12 +127,11 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         t0 = System.currentTimeMillis();
                     }
 
-                    PutFileRequest request =
-                            Iterables.getFirst(SRM.getSRM().getActiveFileRequests(PutFileRequest.class, surl), null);
+                    String fileId = SRM.getSRM().getUploadFileId(surl);
 
                     TMetaDataPathDetail detail;
 
-                    if (request != null) {
+                    if (fileId != null) {
                         // [SRM 2.2, 4.4.3]
                         //
                         // SRM_FILE_BUSY
@@ -142,7 +141,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         try {
                             FileMetaData fmd = getStorage().getFileMetaData(getUser(),
                                                                             surl,
-                                                                            request.getFileId());
+                                                                            fileId);
                             detail = convertFileMetaDataToTMetaDataPathDetail(surl,
                                                                               fmd,
                                                                               parent.getLongFormat());
