@@ -309,13 +309,11 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 // SRM_FILE_BUSY at the file level. If another srmPrepareToPut or srmCopy is requested on
                 // the same SURL, SRM_FILE_BUSY must be returned if the SURL can be overwritten, otherwise
                 // SRM_DUPLICATION_ERROR must be returned at the file level.
-                for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, getSurl())) {
-                    if (request != this) {
-                        if (!getContainerRequest().isOverwrite()) {
-                            throw new SRMDuplicationException("The requested SURL is locked by another upload.");
-                        } else {
-                            throw new SRMFileBusyException("The requested SURL is locked by another upload.");
-                        }
+                if (SRM.getSRM().hasMultipleUploads(getSurl())) {
+                    if (!getContainerRequest().isOverwrite()) {
+                        throw new SRMDuplicationException("The requested SURL is locked by another upload.");
+                    } else {
+                        throw new SRMFileBusyException("The requested SURL is locked by another upload.");
                     }
                 }
 
