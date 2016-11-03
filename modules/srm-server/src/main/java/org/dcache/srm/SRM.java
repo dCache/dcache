@@ -85,12 +85,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -159,8 +161,6 @@ public class SRM implements CellLifeCycleAware
 
     /**
      * Creates a new instance of SRM
-     * @param config
-     * @param name
      * @throws IOException
      * @throws InterruptedException
      * @throws DataAccessException
@@ -652,21 +652,30 @@ public class SRM implements CellLifeCycleAware
     }
 
     /**
-     * Returns true if an upload on the given SURL exists.
+     * Returns PutFileRequests on the given SURL or within the directory tree of that SURL.
      */
-    public boolean isFileBusy(URI surl) throws DataAccessException
+    public Stream<PutFileRequest> getActivePutFileRequests(URI surl)
+            throws DataAccessException
     {
-        return StreamSupport.stream(getActiveFileRequests(PutFileRequest.class, surl).spliterator(), false)
-                .findAny().isPresent();
+        String path = getPath(surl);
+        return StreamSupport.stream(getActiveJobs(PutFileRequest.class).spliterator(), false)
+                .filter(r -> getPath(r.getSurl()).startsWith(path));
     }
 
     /**
-     * Returns true if multiple uploads on the given SURL exist.
+     * Returns true if an upload on the given SURL exists or within the directory tree of the SURL.
+     */
+    public boolean isFileBusy(URI surl) throws DataAccessException
+    {
+        return getActivePutFileRequests(surl).findAny().isPresent();
+    }
+
+    /**
+     * Returns true if multiple uploads on the given SURL exist or within the directory tree of the SURL.
      */
     public boolean hasMultipleUploads(URI surl)
     {
-        return StreamSupport.stream(getActiveFileRequests(PutFileRequest.class, surl).spliterator(), false)
-                       .limit(2).count() > 1;
+        return getActivePutFileRequests(surl).limit(2).count() > 1;
     }
 
     /**
@@ -674,7 +683,8 @@ public class SRM implements CellLifeCycleAware
      */
     public String getUploadFileId(URI surl)
     {
-        return StreamSupport.stream(getActiveFileRequests(PutFileRequest.class, surl).spliterator(), false)
+        return getActivePutFileRequests(surl)
+                .filter(m -> m.getSurl().equals(surl))
                 .map(PutFileRequest::getFileId)
                 .filter(Objects::nonNull)
                 .findFirst()
@@ -718,13 +728,12 @@ public class SRM implements CellLifeCycleAware
      */
     public void checkRemoveDirectory(URI surl) throws SRMInvalidPathException, SRMNonEmptyDirectoryException
     {
-        String path = getPath(surl);
-        for (PutFileRequest putFileRequest : getActiveJobs(PutFileRequest.class)) {
-            String requestPath = getPath(putFileRequest.getSurl());
-            if (path.equals(requestPath)) {
+        Optional<URI> upload =
+                getActivePutFileRequests(surl).map(PutFileRequest::getSurl).min(URI::compareTo);
+        if (upload.isPresent()) {
+            if (upload.get().equals(surl)) {
                 throw new SRMInvalidPathException("Not a directory");
-            }
-            if (requestPath.startsWith(path)) {
+            } else {
                 throw new SRMNonEmptyDirectoryException("Directory is not empty");
             }
         }
