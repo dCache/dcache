@@ -503,6 +503,7 @@ public class Subjects
         return principals;
     }
 
+    // Returned Subject must NOT be readOnly.
     public static Subject of(int uid, int gid, int[] gids)
     {
         Builder builder = of().uid(uid).gid(gid);
@@ -523,16 +524,25 @@ public class Subjects
 
         private boolean haveFqan;
         private boolean haveGid;
+        private boolean readOnly;
 
         public Subject build()
         {
-            _subject.setReadOnly();
+            if (readOnly) {
+                _subject.setReadOnly();
+            }
             return _subject;
         }
 
         private void add(Principal principal)
         {
             _subject.getPrincipals().add(principal);
+        }
+
+        public Builder readOnly()
+        {
+            readOnly = true;
+            return this;
         }
 
         public Builder dn(String dn)
