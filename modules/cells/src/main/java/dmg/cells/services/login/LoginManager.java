@@ -860,7 +860,11 @@ public class LoginManager
                 if (cause instanceof Error) {
                     throw (Error) cause;
                 }
-                LOGGER.warn("Exception (ITE) in secure protocol : {}", cause);
+                if (cause instanceof RuntimeException) {
+                    LOGGER.warn("Bug detected in dCache; please report this to <support@dcache.org>", cause);
+                } else {
+                    LOGGER.warn("Exception (ITE) in secure protocol: {}", cause.getMessage());
+                }
                 try {
                     _socket.close();
                 } catch (IOException ee) {/* dead any way....*/}
