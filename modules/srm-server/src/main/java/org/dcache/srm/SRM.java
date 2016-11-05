@@ -268,7 +268,7 @@ public class SRM implements CellLifeCycleAware
         return srm;
     }
 
-    public void start() throws IllegalStateException, IOException
+    public void start() throws Exception
     {
         checkState(schedulers != null, "Cannot start SRM with no schedulers");
         setSRM(this);
@@ -309,7 +309,7 @@ public class SRM implements CellLifeCycleAware
         tasks.forEach(f -> f.cancel(false));
     }
 
-    public void stop() throws InterruptedException
+    public void stop() throws Exception
     {
         databaseFactory.shutdown();
     }
@@ -665,7 +665,7 @@ public class SRM implements CellLifeCycleAware
     /**
      * Returns true if an upload on the given SURL exists or within the directory tree of the SURL.
      */
-    public boolean isFileBusy(URI surl) throws DataAccessException
+    public boolean isFileBusy(URI surl) throws SRMException
     {
         return getActivePutFileRequests(surl).findAny().isPresent();
     }
@@ -673,7 +673,7 @@ public class SRM implements CellLifeCycleAware
     /**
      * Returns true if multiple uploads on the given SURL exist or within the directory tree of the SURL.
      */
-    public boolean hasMultipleUploads(URI surl)
+    public boolean hasMultipleUploads(URI surl) throws SRMException
     {
         return getActivePutFileRequests(surl).limit(2).count() > 1;
     }
@@ -681,7 +681,7 @@ public class SRM implements CellLifeCycleAware
     /**
      * Returns the file id of an active upload on the given SURL.
      */
-    public String getUploadFileId(URI surl)
+    public String getUploadFileId(URI surl) throws SRMException
     {
         return getActivePutFileRequests(surl)
                 .filter(m -> m.getSurl().equals(surl))
@@ -726,7 +726,7 @@ public class SRM implements CellLifeCycleAware
     /**
      * Checks if an active upload blocks the removal of a directory.
      */
-    public void checkRemoveDirectory(URI surl) throws SRMInvalidPathException, SRMNonEmptyDirectoryException
+    public void checkRemoveDirectory(URI surl) throws SRMException
     {
         Optional<URI> upload =
                 getActivePutFileRequests(surl).map(PutFileRequest::getSurl).min(URI::compareTo);

@@ -16,8 +16,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package diskCacheV111.vehicles.srm;
 
+package org.dcache.srm;
+
+import java.io.Serializable;
 import java.net.URI;
 
 /**
@@ -25,32 +27,28 @@ import java.net.URI;
  *
  * The given SURL is considered a prefix for SURLs to search for. The intention
  * is that given a directory SURL, an upload to that directory or a directory
- * within that tree may be returned. In such cases the return message will contain
- * the SURL of the actual transfer.
+ * within that directory tree may be returned. In such cases the return message
+ * will contain the SURL of the actual transfer.
  *
- * Although a particular SrmManager instance could have several put requests on the
- * same SURL, the reply to this message only contains information about the transfer
- * with the lexicographically first SURL.
+ * Although a particular SrmManager instance can have several put requests for the
+ * same SURL or within the same directory tree, the reply to this message only
+ * contains information about the transfer with the lexicographically smallest SURL.
+ *
+ * If no matching upload is found, the response contains null values for the surl,
+ * file id and request id.
  *
  * The intended use of this message is when an SrmManager queries other SrmManagers
  * for the existence of other uploads.
+ *
+ * Responses to this request are SrmQueryPutResponse and SrmException.
  */
-public class SrmGetPutRequestMessage extends SrmMessage
+public class SrmQueryPutRequest implements Serializable
 {
-    private static final long serialVersionUID = -2970662416496090431L;
+    private static final long serialVersionUID = 6336465316695026669L;
 
-    private URI surl;
+    private final URI surl;
 
-    private Long requestId;
-
-    private String fileId;
-
-    public SrmGetPutRequestMessage(URI surl)
-    {
-        this.surl = surl;
-    }
-
-    public void setSurl(URI surl)
+    public SrmQueryPutRequest(URI surl)
     {
         this.surl = surl;
     }
@@ -58,25 +56,5 @@ public class SrmGetPutRequestMessage extends SrmMessage
     public URI getSurl()
     {
         return surl;
-    }
-
-    public Long getRequestId()
-    {
-        return requestId;
-    }
-
-    public void setRequestId(Long requestId)
-    {
-        this.requestId = requestId;
-    }
-
-    public String getFileId()
-    {
-        return fileId;
-    }
-
-    public void setFileId(String fileId)
-    {
-        this.fileId = fileId;
     }
 }
