@@ -89,6 +89,13 @@
         <property name="timeoutUnit" value="${srmmanager.service.spacemanager.timeout.unit}"  />
     </bean>
 
+    <bean id="srm-manager-stub" class="org.dcache.cells.CellStub">
+        <description>SRM manager communication stub</description>
+        <property name="destination" value="${srmmanager.service.srmmanager}" />
+        <property name="timeout" value="${srmmanager.service.srmmanager.timeout}"  />
+        <property name="timeoutUnit" value="${srmmanager.service.srmmanager.timeout.unit}"  />
+    </bean>
+
     <bean id="transfer-manager-stub" class="org.dcache.cells.CellStub">
         <description>Transfer manager communication stub</description>
         <property name="destination" value="${srmmanager.service.transfermanager}" />
@@ -145,10 +152,6 @@
     <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
         <description>Maintains runtime information about all pools</description>
         <property name="poolManagerStub" ref="pool-manager-stub"/>
-    </bean>
-
-    <bean id="surl-service" class="diskCacheV111.srm.dcache.SurlService">
-        <property name="srm" ref="srm"/>
     </bean>
 
     <!--
@@ -550,7 +553,7 @@
         </property>
     </bean>
 
-    <bean id="srm" class="org.dcache.srm.SRM" init-method="start" destroy-method="stop">
+    <bean id="srm" class="diskCacheV111.srm.dcache.DcacheSrm" init-method="start" destroy-method="stop">
         <description>SRM engine</description>
         <constructor-arg ref="config"/>
         <constructor-arg ref="storage"/>
@@ -558,8 +561,9 @@
         <property name="requestCredentialStorage" ref="srm-credential-store"/>
         <property name="srmUserPersistenceManager" ref="user-manager"/>
         <property name="executor" ref="scheduledExecutor"/>
-	<property name="expiredJobCheckPeriod"
-		  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+        <property name="srmManagerStub" ref="srm-manager-stub"/>
+        <property name="expiredJobCheckPeriod"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
 			 ${srmmanager.expired-job-period},
 			 '${srmmanager.expired-job-period.unit}')}"/>
     </bean>
