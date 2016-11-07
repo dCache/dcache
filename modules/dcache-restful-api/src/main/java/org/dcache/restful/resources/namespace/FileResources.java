@@ -164,6 +164,7 @@ public class FileResources {
 
                     chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), isLocality);
                     childrenAttributes.setFileName(fName);
+                    childrenAttributes.setFileMimeType(fName);
                     children.add(childrenAttributes);
                 }
 

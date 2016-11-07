@@ -1,5 +1,7 @@
 package org.dcache.restful.providers;
 
+import java.net.FileNameMap;
+import java.net.URLConnection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +25,10 @@ import org.dcache.vehicles.FileAttributes;
  * Therefore, we are forced to keep  JsonFileAttributes to  bypass  "quards" and set manually file attributes.
  *
  */
-public class JsonFileAttributes {
+public class JsonFileAttributes
+{
+    private static final FileNameMap MIME_TYPE_MAP =
+            URLConnection.getFileNameMap();
 
     /**
      * NFSv4 Access control list.
@@ -129,6 +134,11 @@ public class JsonFileAttributes {
      * The name of a file.
      */
     private String fileName;
+
+    /**
+     * The file MIME type.
+     */
+    private String fileMimeType;
 
     /**
      * The current parent directory of a file.
@@ -319,6 +329,32 @@ public class JsonFileAttributes {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getFileMimeType()
+    {
+        return fileMimeType;
+    }
+
+    public void setFileMimeType(String fileName)
+    {
+        switch (this._fileType) {
+            case DIR:
+                this.fileMimeType = "application/vnd.dcache.folder";
+                break;
+            case LINK:
+                this.fileMimeType = "application/vnd.dcache.link";
+                break;
+            case SPECIAL:
+                this.fileMimeType = "application/vnd.dcache.special";
+                break;
+            default:
+                if (MIME_TYPE_MAP.getContentTypeFor(fileName) == null) {
+                    this.fileMimeType = "application/octet-stream";
+                } else {
+                    this.fileMimeType = MIME_TYPE_MAP.getContentTypeFor(fileName);
+                }
+        }
     }
 
     public String getSourcePath() {
