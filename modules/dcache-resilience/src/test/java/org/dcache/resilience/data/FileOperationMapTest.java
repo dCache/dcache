@@ -101,6 +101,15 @@ public final class FileOperationMapTest extends TestBase {
     }
 
     @Test
+    public void shouldMakeDefaultNumberOfCopiesForFileWithUnmappedStorageUnit()
+                    throws CacheException, IOException {
+        givenANewPnfsIdWithUnmappedStorageUnit();
+        afterOperationAdded(1);
+        whenScanIsRun();
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
+    }
+
+    @Test
     public void shouldBehaveLikeCancelAllWhenOperationIsVoided()
                     throws CacheException, IOException {
         givenANewPnfsId();
@@ -323,10 +332,9 @@ public final class FileOperationMapTest extends TestBase {
     private void afterOperationAdded(int count) throws CacheException {
         PnfsId pnfsId = attributes.getPnfsId();
         String pool = attributes.getLocations().iterator().next();
-        String unit = attributes.getStorageClass() + "@" + attributes.getHsm();
         Integer pindex = poolInfoMap.getPoolIndex(pool);
         Integer gindex = poolInfoMap.getResilientPoolGroup(pindex);
-        Integer sindex = poolInfoMap.getGroupIndex(unit);
+        Integer sindex = poolInfoMap.getStorageUnitIndex(attributes);
         FileUpdate update = new FileUpdate(pnfsId, pool,
                                            MessageType.ADD_CACHE_LOCATION, pindex, gindex, sindex,
                                            attributes);
@@ -352,6 +360,11 @@ public final class FileOperationMapTest extends TestBase {
 
     private void givenANewPnfsId() throws CacheException {
         loadNewFilesOnPoolsWithNoTags();
+        attributes = aReplicaOnlineFileWithNoTags();
+    }
+
+    private void givenANewPnfsIdWithUnmappedStorageUnit() throws CacheException {
+        loadNewFilesWithUnmappedStorageUnit();
         attributes = aReplicaOnlineFileWithNoTags();
     }
 
