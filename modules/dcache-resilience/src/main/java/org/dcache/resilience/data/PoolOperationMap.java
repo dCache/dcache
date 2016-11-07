@@ -627,7 +627,7 @@ public class PoolOperationMap extends RunnableModule {
                     operation.state = State.WAITING;
                     operation.group = update.group;
                     if (update.storageUnit != null) {
-                        operation.unit = poolInfoMap.getGroupIndex(update.storageUnit);
+                        operation.unit = poolInfoMap.getUnitIndex(update.storageUnit);
                     }
                     operation.psuAction = update.action;
                     operation.exception = null;
@@ -825,7 +825,7 @@ public class PoolOperationMap extends RunnableModule {
         operation.group = update.group;
 
         if (update.storageUnit != null) {
-            operation.unit = poolInfoMap.getGroupIndex(update.storageUnit);
+            operation.unit = poolInfoMap.getUnitIndex(update.storageUnit);
         }
 
         operation.exception = null;

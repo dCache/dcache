@@ -321,8 +321,9 @@ public class PoolInfoChangeHandlerTest extends TestBase {
 
     private void assertThatPoolInfoContainsResilientUnitsForPoolGroup(
                     String group) {
-        Set<String> units = poolInfoMap.getStorageUnitsFor(group).stream().map(
-                        poolInfoMap::getGroup).collect(Collectors.toSet());
+        Set<String> units = poolInfoMap.getStorageUnitsFor(group).stream()
+                                       .map(poolInfoMap::getUnit)
+                                       .collect(Collectors.toSet());
         assertTrue(units.contains("resilient-0.dcache-devel-test@enstore"));
         assertTrue(units.contains("resilient-1.dcache-devel-test@enstore"));
         assertTrue(units.contains("resilient-2.dcache-devel-test@enstore"));
@@ -331,7 +332,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     }
 
     private void assertThatPoolInfoContainsStorageUnit(String unit) {
-        assertNotNull(poolInfoMap.getGroupIndex(unit));
+        assertNotNull(poolInfoMap.getUnitIndex(unit));
     }
 
     private void assertThatPoolInfoDoesNotContainPool(String pool) {
@@ -372,7 +373,7 @@ public class PoolInfoChangeHandlerTest extends TestBase {
     private void assertThatPoolInfoDoesNotContainStorageUnit(String unit) {
         Integer index = null;
         try {
-            index = poolInfoMap.getGroupIndex(unit);
+            index = poolInfoMap.getUnitIndex(unit);
         } catch (NoSuchElementException e) {
             assertNull(index);
         }

@@ -84,11 +84,7 @@ import org.dcache.resilience.util.ResilientFileTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public final class FileOperationHandlerTest extends TestBase
                 implements TestMessageProcessor {
@@ -385,9 +381,9 @@ public final class FileOperationHandlerTest extends TestBase
         StorageUnitConstraints constraints
                         = poolInfoMap.getStorageUnitConstraints(unit);
         int req = constraints.getRequired();
-        storageUnit = poolInfoMap.getGroupName(unit);
-        poolInfoMap.setGroupConstraints(storageUnit, req,
-                        ImmutableList.of("hostname","rack"));
+        storageUnit = poolInfoMap.getUnit(unit);
+        poolInfoMap.setUnitConstraints(storageUnit, req,
+                                       ImmutableList.of("hostname","rack"));
 
     }
 
