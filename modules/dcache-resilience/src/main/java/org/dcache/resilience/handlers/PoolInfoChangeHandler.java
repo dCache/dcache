@@ -388,7 +388,7 @@ public final class PoolInfoChangeHandler implements CellMessageReceiver {
         poolInfoMap.getPoolGroupsFor(unit)
                    .stream()
                    .filter(poolInfoMap::isResilientGroup)
-                   .map(poolInfoMap::getGroupName)
+                   .map(poolInfoMap::getGroup)
                    .forEach((group) -> scanPoolsInGroup(group, unit));
     }
 }
