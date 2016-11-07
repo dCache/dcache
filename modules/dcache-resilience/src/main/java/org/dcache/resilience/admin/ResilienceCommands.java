@@ -1090,7 +1090,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
             try {
                 if (name == null) {
-                    name = poolInfoMap.getGroupName(key);
+                    name = poolInfoMap.getGroup(key);
                 } else {
                     key = poolInfoMap.getGroupIndex(name);
                 }
@@ -1099,14 +1099,6 @@ public final class ResilienceCommands implements CellCommandListener {
                     return String.format("No pool group with key = %s.", key);
                 }
                 return String.format("No such pool group: %s.", name);
-            }
-
-            try {
-                poolInfoMap.getStorageUnitConstraints(key);
-                return String.format("%s (%s) is not a pool group.",
-                                     name, key);
-            } catch (NoSuchElementException e) {
-                // OK, not a storage unit.
             }
 
             if (!poolInfoMap.isResilientGroup(key)) {
@@ -1120,7 +1112,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
             if (showUnits) {
                 poolInfoMap.getStorageUnitsFor(name).stream()
-                           .map(poolInfoMap::getGroupName)
+                           .map(poolInfoMap::getUnit)
                            .forEach((u) -> builder.append("    ")
                                                   .append(u).append("\n"));
             }

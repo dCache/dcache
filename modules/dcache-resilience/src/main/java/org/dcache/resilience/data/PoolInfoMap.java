@@ -179,6 +179,8 @@ public class PoolInfoMap {
 
     private final List<String>                   pools              = new NonReindexableList<>();
     private final List<String>                   groups             = new NonReindexableList<>();
+    private final List<String>                   sunits             = new NonReindexableList<>();
+    private final Map<Integer, ResilienceMarker> markers            = new HashMap<>();
     private final Map<Integer, ResilienceMarker> constraints        = new HashMap<>();
     private final Map<Integer, PoolInformation>  poolInfo           = new HashMap<>();
     private final Multimap<Integer, Integer>     poolGroupToPool    = HashMultimap.create();
@@ -213,7 +215,7 @@ public class PoolInfoMap {
             LOGGER.trace("removing stale pools, pool groups and storage units");
             diff.getOldPools().stream().forEach(this::removePool);
             diff.getOldGroups().stream().forEach(this::removeGroup);
-            diff.getOldUnits().stream().forEach(this::removeGroup);
+            diff.getOldUnits().stream().forEach(this::removeUnit);
 
             /*
              *  -- Remove pools from current groups.
@@ -362,16 +364,6 @@ public class PoolInfoMap {
         }
     }
 
-    public String getGroupName(Integer group) {
-        read.lock();
-        try {
-            return groups.get(group);
-        } finally {
-            read.unlock();
-        }
-    }
-
-
     public Set<String> getMemberLocations(Integer gindex,
                                           Collection<String> locations) {
         read.lock();
@@ -409,7 +401,7 @@ public class PoolInfoMap {
     }
 
     public Collection<Integer> getPoolGroupsFor(String storageUnit) {
-        Integer uindex = getGroupIndex(storageUnit);
+        Integer uindex = getUnitIndex(storageUnit);
         if (uindex == null) {
             return ImmutableList.of();
         }
@@ -571,7 +563,7 @@ public class PoolInfoMap {
             unitKey += ("@" + hsm);
         }
         try {
-            return getGroupIndex(unitKey);
+            return getUnitIndex(unitKey);
         } catch (NoSuchElementException e) {
             return resolveStorageUnitIndex(classKey);
         }
@@ -587,9 +579,9 @@ public class PoolInfoMap {
         Integer index = null;
         read.lock();
         try {
-            index = groups.indexOf("*@" + classKey);
+            index = sunits.indexOf("*@" + classKey);
         } catch (NoSuchElementException e) {
-            index = groups.indexOf("*@*");
+            index = sunits.indexOf("*@*");
         } finally {
             read.unlock();
         }
@@ -624,6 +616,24 @@ public class PoolInfoMap {
         return tags;
     }
 
+    public String getUnit(Integer index) {
+        read.lock();
+        try {
+            return sunits.get(index);
+        } finally {
+            read.unlock();
+        }
+    }
+
+    public Integer getUnitIndex(String name) {
+        read.lock();
+        try {
+            return sunits.indexOf(name);
+        } finally {
+            read.unlock();
+        }
+    }
+
     public Set<Integer> getValidLocations(Collection<Integer> locations,
                                           boolean writable) {
         read.lock();
@@ -650,7 +660,7 @@ public class PoolInfoMap {
     public boolean isResilientGroup(Integer gindex) {
         read.lock();
         try {
-            return constraints.get(gindex).isResilient();
+            return markers.get(gindex).isResilient();
         } finally {
             read.unlock();
         }
@@ -693,9 +703,9 @@ public class PoolInfoMap {
      * the map here.
      */
     @VisibleForTesting
-    public void setGroupConstraints(String group, Integer required,
-                                    Collection<String> oneCopyPer) {
-        constraints.put(groups.indexOf(group),
+    public void setUnitConstraints(String group, Integer required,
+                                   Collection<String> oneCopyPer) {
+        constraints.put(sunits.indexOf(group),
                         new StorageUnitConstraints(required, oneCopyPer));
     }
 
@@ -743,7 +753,7 @@ public class PoolInfoMap {
     private void addPoolGroup(SelectionPoolGroup group) {
         String name = group.getName();
         groups.add(name);
-        constraints.put(groups.indexOf(name),
+        markers.put(groups.indexOf(name),
                         new ResilienceMarker(group.isResilient()));
     }
 
@@ -786,8 +796,8 @@ public class PoolInfoMap {
     /** Called under write lock **/
     private void addStorageUnit(StorageUnit unit) {
         String name = unit.getName();
-        groups.add(name);
-        constraints.put(groups.indexOf(name),
+        sunits.add(name);
+        constraints.put(sunits.indexOf(name),
                         new StorageUnitConstraints(unit.getRequiredCopies(),
                                                    unit.getOnlyOneCopyPer()));
     }
@@ -795,7 +805,7 @@ public class PoolInfoMap {
     /** Called under write lock **/
     private void addUnitToPoolGroup(Entry<String, String> entry) {
         Integer gindex = groups.indexOf(entry.getKey());
-        Integer sindex = groups.indexOf(entry.getValue());
+        Integer sindex = sunits.indexOf(entry.getValue());
         storageToPoolGroup.put(sindex, gindex);
         poolGroupToStorage.put(gindex, sindex);
     }
@@ -909,7 +919,7 @@ public class PoolInfoMap {
                                                        PoolSelectionUnit psu) {
         for (String unit : common) {
             StorageUnit storageUnit = psu.getStorageUnit(unit);
-            int index = groups.indexOf(unit);
+            int index = sunits.indexOf(unit);
             Set<String> next = ImmutableSet
                             .copyOf(StorageUnitInfoExtractor
                                                     .getPoolGroupsFor(unit,
@@ -951,7 +961,7 @@ public class PoolInfoMap {
                                 .collect(Collectors.toSet());
         Set<String> curr = storageToPoolGroup.keySet()
                                 .stream()
-                                .map(this::getGroup)
+                                .map(this::getUnit)
                                 .collect(Collectors.toSet());
         Sets.difference(next, curr)
                                 .stream()
@@ -1003,12 +1013,7 @@ public class PoolInfoMap {
     private void removeGroup(String group) {
         int index = groups.indexOf(group);
         groups.remove(index);
-        constraints.remove(index);
-
-        /*
-         * One of these two sequences will be relevant, the other will
-         * result in an empty set being returned.
-         */
+        markers.remove(index);
         poolGroupToPool.removeAll(index)
                        .stream()
                        .forEach((pindex) -> poolToPoolGroup.remove(pindex,
@@ -1016,10 +1021,6 @@ public class PoolInfoMap {
         poolGroupToStorage.removeAll(index)
                           .stream()
                           .forEach((gindex) -> storageToPoolGroup.remove(
-                                          gindex, index));
-        // OR
-        storageToPoolGroup.removeAll(index).stream()
-                          .forEach((gindex) -> poolGroupToStorage.remove(
                                           gindex, index));
     }
 
@@ -1033,8 +1034,17 @@ public class PoolInfoMap {
     }
 
     /** Called under write lock **/
+    private void removeUnit(String unit) {
+        int index = sunits.indexOf(unit);
+        sunits.remove(index);
+        constraints.remove(index);
+        storageToPoolGroup.removeAll(index).stream()
+                          .forEach((gindex) -> poolGroupToStorage.remove(gindex, index));
+    }
+
+    /** Called under write lock **/
     private void removeStorageUnit(Entry<String, String> entry) {
-        Integer sindex = groups.indexOf(entry.getValue());
+        Integer sindex = sunits.indexOf(entry.getValue());
         Integer pindex = groups.indexOf(entry.getKey());
         storageToPoolGroup.remove(sindex, pindex);
         poolGroupToStorage.remove(pindex, sindex);
@@ -1053,13 +1063,13 @@ public class PoolInfoMap {
 
     /** Called under write lock **/
     private void updateConstraints(Entry<String, StorageUnitConstraints> entry) {
-        constraints.put(groups.indexOf(entry.getKey()), entry.getValue());
+        constraints.put(sunits.indexOf(entry.getKey()), entry.getValue());
     }
 
     /**
      * Called under read lock
      *
-     * @param index     of pool group or storage unit.
+     * @param index     of pool group.
      * @param extractor configured for the specific tag constraints.
      * @param required  specific to this group or storage unit.
      * @throws IllegalStateException upon encountering the first set of

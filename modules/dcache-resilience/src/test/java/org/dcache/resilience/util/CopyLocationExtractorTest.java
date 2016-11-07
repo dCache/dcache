@@ -328,11 +328,9 @@ public final class CopyLocationExtractorTest extends TestBase {
 
     private void givenTheSourceAndConstraintsOfThisFile() {
         pool = attributes.getLocations().iterator().next();
-        Integer pgindex = poolInfoMap.getResilientPoolGroup(
-                        poolInfoMap.getPoolIndex(pool));
         String storageGroupName = attributes.getStorageClass() + "@"
                         + attributes.getHsm();
-        Integer sindex = poolInfoMap.getGroupIndex(storageGroupName);
+        Integer sindex = poolInfoMap.getUnitIndex(storageGroupName);
         StorageUnitConstraints constraints = poolInfoMap.getStorageUnitConstraints(sindex);
         extractor = new CopyLocationExtractor(constraints.getOneCopyPer(),
                         poolInfoMap);
