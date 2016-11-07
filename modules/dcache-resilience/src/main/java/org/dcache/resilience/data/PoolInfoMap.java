@@ -564,12 +564,36 @@ public class PoolInfoMap {
     }
 
     public Integer getStorageUnitIndex(FileAttributes attributes) {
-        String unitKey = attributes.getStorageClass();
+        String classKey = attributes.getStorageClass();
+        String unitKey = classKey;
         String hsm = attributes.getHsm();
         if (hsm != null) {
             unitKey += ("@" + hsm);
         }
-        return getGroupIndex(unitKey);
+        try {
+            return getGroupIndex(unitKey);
+        } catch (NoSuchElementException e) {
+            return resolveStorageUnitIndex(classKey);
+        }
+    }
+
+    /**
+     * <p>This method is a minimal alternate search for storage unit
+     *    based on matching either the class key or universal key.</p>
+     *
+     * @param classKey the storage class of the unit
+     */
+    private Integer resolveStorageUnitIndex(String classKey) {
+        Integer index = null;
+        read.lock();
+        try {
+            index = groups.indexOf("*@" + classKey);
+        } catch (NoSuchElementException e) {
+            index = groups.indexOf("*@*");
+        } finally {
+            read.unlock();
+        }
+        return index;
     }
 
     public Collection<Integer> getStorageUnitsFor(String poolGroup) {
