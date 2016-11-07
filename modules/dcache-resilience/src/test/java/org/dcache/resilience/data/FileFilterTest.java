@@ -278,7 +278,7 @@ public final class FileFilterTest extends TestBase {
     private void givenOperationWith(PnfsId pnfsId, String retentionPolicy,
                     String storageUnit, String state, Long update) {
         Integer sunit = storageUnit != null ?
-                        poolInfoMap.getGroupIndex(storageUnit) : null;
+                        poolInfoMap.getUnitIndex(storageUnit) : null;
 
         operation = new FileOperation(pnfsId, -1, sunit, 0, 1, 2L);
 
