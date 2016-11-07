@@ -132,6 +132,11 @@ final class TestSelectionUnit implements PoolSelectionUnit {
     }
 
     @Override
+    public boolean isEnabledRegex() {
+        return psu.isEnabledRegex();
+    }
+
+    @Override
     public boolean updatePool(String poolName, CellAddressCore address,
                               long serialId, PoolV2Mode mode,
                               Set<String> hsmInstances) {
@@ -231,6 +236,10 @@ final class TestSelectionUnit implements PoolSelectionUnit {
             psu.setActive(pool, false);
             psu.setPoolDisabled(pool);
         }
+    }
+
+    void setUseRegex() {
+        psu.setRegex("on");
     }
 
     private void createLinks(PoolSelectionUnitV2 psu) {

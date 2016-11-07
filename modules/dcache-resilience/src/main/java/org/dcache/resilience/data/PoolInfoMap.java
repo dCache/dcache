@@ -79,6 +79,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.CostModule;
@@ -192,6 +193,8 @@ public class PoolInfoMap {
     private final Lock          write = lock.writeLock();
     private final Lock          read  = lock.readLock();
 
+    private boolean useRegex = false;
+
     /**
      * <p>Called on a dedicated thread.</p>
      *
@@ -293,6 +296,7 @@ public class PoolInfoMap {
     public PoolInfoDiff compare(PoolMonitor poolMonitor) {
         read.lock();
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
+        useRegex = psu.isEnabledRegex();
         PoolInfoDiff diff = new PoolInfoDiff();
         try {
             LOGGER.trace("Searching for currently uninitialized pools.");
@@ -565,27 +569,8 @@ public class PoolInfoMap {
         try {
             return getUnitIndex(unitKey);
         } catch (NoSuchElementException e) {
-            return resolveStorageUnitIndex(classKey);
+            return resolveStorageUnitIndex(classKey, unitKey);
         }
-    }
-
-    /**
-     * <p>This method is a minimal alternate search for storage unit
-     *    based on matching either the class key or universal key.</p>
-     *
-     * @param classKey the storage class of the unit
-     */
-    private Integer resolveStorageUnitIndex(String classKey) {
-        Integer index = null;
-        read.lock();
-        try {
-            index = sunits.indexOf("*@" + classKey);
-        } catch (NoSuchElementException e) {
-            index = sunits.indexOf("*@*");
-        } finally {
-            read.unlock();
-        }
-        return index;
     }
 
     public Collection<Integer> getStorageUnitsFor(String poolGroup) {
@@ -1048,6 +1033,56 @@ public class PoolInfoMap {
         Integer pindex = groups.indexOf(entry.getKey());
         storageToPoolGroup.remove(sindex, pindex);
         poolGroupToStorage.remove(pindex, sindex);
+    }
+
+
+    /**
+     * <p>This method is an alternate search for storage unit.
+     *    It first attempts to match units by interpreting the
+     *    class names as a regex. If that fails, it tries
+     *    first the class key, then universal key.</p>
+     *
+     * @param classKey the storage class of the unit
+     * @param unitKey  the full name of the storage unit
+     */
+    private Integer resolveStorageUnitIndex(String classKey, String unitKey)
+                    throws NoSuchElementException {
+        Integer universalCoverage = null;
+        Integer classCoverage = null;
+        Integer specific = null;
+
+        read.lock();
+        try {
+            for (String unit : sunits) {
+                if (unit.equals("*@*")) {
+                    universalCoverage = sunits.indexOf(unit);
+                } else if (unit.equals("*@" + classKey)) {
+                    classCoverage = sunits.indexOf(unit);
+                } else if (useRegex && Pattern.matches(unit, unitKey)) {
+                    specific = sunits.indexOf(unit);
+                    break;
+                }
+            }
+        } finally {
+            read.unlock();
+        }
+
+        if (specific != null) {
+            return specific;
+        }
+
+        if (classCoverage != null) {
+            return classCoverage;
+        }
+
+        if (universalCoverage != null) {
+            return universalCoverage;
+        }
+
+        /*
+         *  Preserve behavior of the NonReindexable list
+         */
+        throw new NoSuchElementException(String.valueOf(unitKey));
     }
 
     /** Called under write lock **/

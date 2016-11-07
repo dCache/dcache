@@ -408,6 +408,10 @@ public abstract class TestBase implements Cancellable {
         testNamespaceAccess.loadNewResilientWithUnmappedStorageUnit();
     }
 
+    protected void loadNewFilesWithStorageUnitMatchingPattern(){
+        testNamespaceAccess.loadNewFilesWithStorageUnitMatchingPattern();
+    }
+
     protected void loadNewFilesOnPoolsWithNoTags() {
         testNamespaceAccess.loadNewResilient();
     }
@@ -471,6 +475,11 @@ public abstract class TestBase implements Cancellable {
          * Leave out other initializations here; taken care of in
          * the specific test case.
          */
+    }
+
+    protected void turnOnRegex() {
+        testSelectionUnit.setUseRegex();
+        poolInfoMap.apply(poolInfoMap.compare(testPoolMonitor));
     }
 
     protected void wireFileOperationHandler() {

@@ -164,7 +164,8 @@ final class TestData {
                     "resilient-3.dcache-devel-test",
                     "resilient-4.dcache-devel-test",
                     "standard.dcache-devel-test",
-                    "*@*"
+                    "*@*",
+                    "^test.*"
     };
 
     static final String[] STORAGE_UNITS = {
@@ -174,7 +175,8 @@ final class TestData {
                     getStorageUnitName(STORAGE_CLASSES[3]),
                     getStorageUnitName(STORAGE_CLASSES[4]),
                     getStorageUnitName(STORAGE_CLASSES[5]),
-                    STORAGE_CLASSES[6]
+                    STORAGE_CLASSES[6],
+                    STORAGE_CLASSES[7]
     };
 
     static final String[][] STORAGE_UNITS_SET = {
@@ -184,19 +186,22 @@ final class TestData {
                     {"2", "hostname,rack"},
                     {"3", ""},
                     null,
-                    {"2", ""}
+                    {"2", ""},
+                    {"4", ""}
     };
 
     static final String[][] POOL_GROUPS = {
                     {"standard-group", ""},
-                    {"resilient-group", "-resilient"}
+                    {"resilient-group", "-resilient"},
+                    {"pattern-group", "-resilient"}
     };
 
     static final String[] UNIT_GROUPS= {
                     "world-net",
                     "any-protocol",
                     "standard-storage",
-                    "resilient-storage"
+                    "resilient-storage",
+                    "pattern-storage"
     };
 
     static final String[][] UNIT_GROUPS_ADD = {
@@ -209,22 +214,26 @@ final class TestData {
                     {UNIT_GROUPS[3], STORAGE_UNITS[2], "false"},
                     {UNIT_GROUPS[3], STORAGE_UNITS[3], "false"},
                     {UNIT_GROUPS[3], STORAGE_UNITS[4], "false"},
-                    {UNIT_GROUPS[3], STORAGE_UNITS[6], "false"}
+                    {UNIT_GROUPS[3], STORAGE_UNITS[6], "false"},
+                    {UNIT_GROUPS[4], STORAGE_UNITS[7], "false"}
     };
 
     static final String[][] LINKS = {
                     {"standard-link", UNIT_GROUPS[0], UNIT_GROUPS[1], UNIT_GROUPS[2]},
-                    {"resilient-link", UNIT_GROUPS[0], UNIT_GROUPS[1], UNIT_GROUPS[3]}
+                    {"resilient-link", UNIT_GROUPS[0], UNIT_GROUPS[1], UNIT_GROUPS[3]},
+                    {"pattern-link", UNIT_GROUPS[0], UNIT_GROUPS[1], UNIT_GROUPS[4]}
     };
 
     static final String[][] LINKS_SET = {
+                    {"10", "10", "10", "-1", null},
                     {"10", "10", "10", "-1", null},
                     {"10", "10", "10", "-1", null}
     };
 
     static final String[][] LINKS_ADD = {
                     {POOL_GROUPS[0][0]},
-                    {POOL_GROUPS[1][0]}
+                    {POOL_GROUPS[1][0]},
+                    {POOL_GROUPS[2][0]}
     };
 
     static String getStorageUnitName(String storageClass) {

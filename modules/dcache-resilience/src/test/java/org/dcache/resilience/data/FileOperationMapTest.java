@@ -101,9 +101,18 @@ public final class FileOperationMapTest extends TestBase {
     }
 
     @Test
-    public void shouldMakeDefaultNumberOfCopiesForFileWithUnmappedStorageUnit()
+    public void shouldMakeCopiesForFileWithUnmappedStorageUnit()
                     throws CacheException, IOException {
         givenANewPnfsIdWithUnmappedStorageUnit();
+        afterOperationAdded(1);
+        whenScanIsRun();
+        assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
+    }
+
+    @Test
+    public void shouldMakeCopiesForFileWithStorageUnitMatchingPattern()
+                    throws CacheException, IOException {
+        givenANewPnfsIdWithStorageUnitMatchingPattern();
         afterOperationAdded(1);
         whenScanIsRun();
         assertNotNull(fileOperationMap.getOperation(operation.getPnfsId()));
@@ -365,6 +374,12 @@ public final class FileOperationMapTest extends TestBase {
 
     private void givenANewPnfsIdWithUnmappedStorageUnit() throws CacheException {
         loadNewFilesWithUnmappedStorageUnit();
+        attributes = aReplicaOnlineFileWithNoTags();
+    }
+
+    private void givenANewPnfsIdWithStorageUnitMatchingPattern() throws CacheException {
+        turnOnRegex();
+        loadNewFilesWithStorageUnitMatchingPattern();
         attributes = aReplicaOnlineFileWithNoTags();
     }
 

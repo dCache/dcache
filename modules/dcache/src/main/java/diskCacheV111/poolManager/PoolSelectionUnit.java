@@ -207,4 +207,5 @@ public interface PoolSelectionUnit  {
    Map<String, SelectionLinkGroup> getLinkGroups();
    Map<String, SelectionUnit> getSelectionUnits();
    Map<String, SelectionUnitGroup> getUnitGroups();
+   boolean isEnabledRegex();
 }

@@ -1126,6 +1126,11 @@ public class PoolSelectionUnitV2
         }
     }
 
+    @Override
+    public boolean isEnabledRegex() {
+        return _useRegex;
+    }
+
     public String setRegex(String onOff) {
         String retVal;
         switch (onOff) {
