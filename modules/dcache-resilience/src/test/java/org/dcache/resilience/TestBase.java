@@ -404,6 +404,10 @@ public abstract class TestBase implements Cancellable {
         testNamespaceAccess.loadNewResilientOnHostTagDefined();
     }
 
+    protected void loadNewFilesWithUnmappedStorageUnit() {
+        testNamespaceAccess.loadNewResilientWithUnmappedStorageUnit();
+    }
+
     protected void loadNewFilesOnPoolsWithNoTags() {
         testNamespaceAccess.loadNewResilient();
     }
