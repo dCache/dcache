@@ -163,7 +163,8 @@ final class TestData {
                     "resilient-2.dcache-devel-test",
                     "resilient-3.dcache-devel-test",
                     "resilient-4.dcache-devel-test",
-                    "standard.dcache-devel-test"
+                    "standard.dcache-devel-test",
+                    "*@*"
     };
 
     static final String[] STORAGE_UNITS = {
@@ -172,7 +173,8 @@ final class TestData {
                     getStorageUnitName(STORAGE_CLASSES[2]),
                     getStorageUnitName(STORAGE_CLASSES[3]),
                     getStorageUnitName(STORAGE_CLASSES[4]),
-                    getStorageUnitName(STORAGE_CLASSES[5])
+                    getStorageUnitName(STORAGE_CLASSES[5]),
+                    STORAGE_CLASSES[6]
     };
 
     static final String[][] STORAGE_UNITS_SET = {
@@ -181,7 +183,8 @@ final class TestData {
                     {"2", "rack"},
                     {"2", "hostname,rack"},
                     {"3", ""},
-                    null
+                    null,
+                    {"2", ""}
     };
 
     static final String[][] POOL_GROUPS = {
@@ -206,6 +209,7 @@ final class TestData {
                     {UNIT_GROUPS[3], STORAGE_UNITS[2], "false"},
                     {UNIT_GROUPS[3], STORAGE_UNITS[3], "false"},
                     {UNIT_GROUPS[3], STORAGE_UNITS[4], "false"},
+                    {UNIT_GROUPS[3], STORAGE_UNITS[6], "false"}
     };
 
     static final String[][] LINKS = {

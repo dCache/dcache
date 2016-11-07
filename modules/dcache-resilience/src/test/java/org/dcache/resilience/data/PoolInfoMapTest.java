@@ -127,9 +127,9 @@ public final class PoolInfoMapTest extends TestBase {
     }
 
     @Test
-    public void shouldReturnFiveStorageClassesForResilientPoolGroup() {
+    public void shouldReturnSixStorageClassesForResilientPoolGroup() {
         whenStorageGroupsAreRequestedFor("resilient-group");
-        assertEquals(5, collection.size());
+        assertEquals(6, collection.size());
     }
 
     @Test
