@@ -39,6 +39,7 @@ import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
+import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
 import org.dcache.srm.v2_2.ArrayOfTUserPermission;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmCheckPermissionRequest;
@@ -135,11 +136,12 @@ public class AxisSrmFileSystem implements SrmFileSystem
     {
         SrmLsResponse response = srm.srmLs(
                 new SrmLsRequest(null, new ArrayOfAnyURI(new URI[]{surl}), null, null, true, false, 0, 0, 1));
+
+        ArrayOfTMetaDataPathDetail details;
         if (response.getReturnStatus().getStatusCode() != TStatusCode.SRM_REQUEST_QUEUED &&
                 response.getReturnStatus().getStatusCode() != TStatusCode.SRM_REQUEST_INPROGRESS) {
-            TMetaDataPathDetail details = response.getDetails().getPathDetailArray(0);
-            checkBulkSuccess(response.getReturnStatus(), Collections.singletonList(details.getStatus()));
-            return details;
+            checkSuccess(response.getReturnStatus());
+            details = response.getDetails();
         } else {
             SrmStatusOfLsRequestResponse status;
             do {
@@ -148,10 +150,12 @@ public class AxisSrmFileSystem implements SrmFileSystem
                         new SrmStatusOfLsRequestRequest(null, response.getRequestToken(), 0, 1));
             } while (status.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_QUEUED ||
                     status.getReturnStatus().getStatusCode() == TStatusCode.SRM_REQUEST_INPROGRESS);
-            TMetaDataPathDetail details = status.getDetails().getPathDetailArray(0);
-            checkBulkSuccess(status.getReturnStatus(), Collections.singletonList(details.getStatus()));
-            return details;
+            checkSuccess(status.getReturnStatus());
+            details = status.getDetails();
         }
+        TMetaDataPathDetail attributes = details.getPathDetailArray(0);
+        checkSuccess(attributes.getStatus());
+        return attributes;
     }
 
     @Nonnull
