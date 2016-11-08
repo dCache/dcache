@@ -206,6 +206,15 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
         }
     }
 
+    void loadNewResilientWithUnmappedStorageUnit() {
+        for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
+            loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,
+                         RetentionPolicy.REPLICA, TestData.HSM,
+                         "unmapped-storage",
+                         TestData.NEW_RESILIENT_LOCATIONS_H[i]);
+        }
+    }
+
     void loadNewResilientOnHostTagDefined() {
         for (int i = 0; i < TestData.REPLICA_ONLINE.length; ++i) {
             loadRequired(TestData.REPLICA_ONLINE[i], AccessLatency.ONLINE,

@@ -404,6 +404,10 @@ public abstract class TestBase implements Cancellable {
         testNamespaceAccess.loadNewResilientOnHostTagDefined();
     }
 
+    protected void loadNewFilesWithUnmappedStorageUnit() {
+        testNamespaceAccess.loadNewResilientWithUnmappedStorageUnit();
+    }
+
     protected void loadNewFilesOnPoolsWithNoTags() {
         testNamespaceAccess.loadNewResilient();
     }
@@ -414,7 +418,7 @@ public abstract class TestBase implements Cancellable {
 
     protected void makeNonResilient(String unit) {
         testSelectionUnit.makeStorageUnitNonResilient(unit);
-        poolInfoMap.setGroupConstraints(unit, 1, ImmutableList.of());
+        poolInfoMap.setUnitConstraints(unit, 1, ImmutableList.of());
     }
 
     protected void offlinePools(String... pool) {

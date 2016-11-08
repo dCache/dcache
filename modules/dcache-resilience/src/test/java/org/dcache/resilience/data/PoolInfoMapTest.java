@@ -127,9 +127,9 @@ public final class PoolInfoMapTest extends TestBase {
     }
 
     @Test
-    public void shouldReturnFiveStorageClassesForResilientPoolGroup() {
+    public void shouldReturnSixStorageClassesForResilientPoolGroup() {
         whenStorageGroupsAreRequestedFor("resilient-group");
-        assertEquals(5, collection.size());
+        assertEquals(6, collection.size());
     }
 
     @Test
@@ -156,8 +156,8 @@ public final class PoolInfoMapTest extends TestBase {
 
     private void givenAResilientStorageGroupWithRequirementsEqualTo(
                     int required, Collection<String> tags) {
-        poolInfoMap.setGroupConstraints("resilient-0.dcache-devel-test@enstore",
-                        required, tags);
+        poolInfoMap.setUnitConstraints("resilient-0.dcache-devel-test@enstore",
+                                       required, tags);
     }
 
     private void givenResilientGroup() {
@@ -166,7 +166,7 @@ public final class PoolInfoMapTest extends TestBase {
 
     private void whenStorageGroupsAreRequestedFor(String poolGroup) {
         collection = poolInfoMap.getStorageUnitsFor(poolGroup).stream().map(
-                        (i) -> poolInfoMap.getGroupName(i)).collect(
-                        Collectors.toList());
+                        (i) -> poolInfoMap.getUnit(i))
+                                          .collect(Collectors.toList());
     }
 }
