@@ -141,8 +141,8 @@ public final class FileFilter implements FileMatcher {
             return false;
         }
 
-        if (storageUnit != null && !storageUnit.equals(
-                        map.getGroupName(operation.getStorageUnit()))) {
+        if (storageUnit != null &&
+                        !storageUnit.equals(map.getUnit(operation.getStorageUnit()))) {
             return false;
         }
 

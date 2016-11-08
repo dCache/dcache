@@ -103,8 +103,8 @@ public final class PoolManagerInfoExtractorTest extends TestBase {
     }
 
     @Test
-    public void shouldReturnFiveStorageUnitsForResilientPoolGroup() {
-        assertEquals(5, StorageUnitInfoExtractor.getStorageUnitsInGroup(
+    public void shouldReturnSixStorageUnitsForResilientPoolGroup() {
+        assertEquals(6, StorageUnitInfoExtractor.getStorageUnitsInGroup(
                         "resilient-group", testSelectionUnit).size());
     }
 
