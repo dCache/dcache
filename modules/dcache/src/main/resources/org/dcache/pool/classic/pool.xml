@@ -327,6 +327,7 @@
       <property name="minTcpPort" value="${pool.mover.nfs.port.min}"/>
       <property name="maxTcpPort" value="${pool.mover.nfs.port.max}"/>
       <property name="tcpPortFile" value="${pool.path}/mover-tcp-port.nfs"/>
+      <property name="ioStrategy" value="${pool.mover.nfs.thread-policy}" />
   </bean>
 
   <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService"
