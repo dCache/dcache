@@ -5,7 +5,7 @@
 lib="$(getProperty dcache.paths.share.lib)"
 . ${lib}/utils.sh
 
-classpath=$(printLimitedClassPath chimera HikariCP javassist \
+classpath=$(printLimitedClassPath dcache-vehicles dcache-chimera chimera HikariCP javassist \
     guava jline common-cli dcache-common acl-vehicles acl \
     slf4j-api logback-classic logback-core logback-console-config jcl-over-slf4j \
     spring-core spring-beans spring-jdbc spring-tx \
@@ -13,8 +13,11 @@ classpath=$(printLimitedClassPath chimera HikariCP javassist \
 
 CLASSPATH="$classpath" quickJava -Dlog=${DCACHE_LOG:-warn} \
     org.dcache.chimera.cli.Shell \
-    "$(getProperty chimera.db.url)" \
-    "$(getProperty chimera.db.user)" \
-    "$(getProperty chimera.db.password)" \
+    "$(getProperty chimerashell.db.url)" \
+    "$(getProperty chimerashell.db.user)" \
+    "$(getProperty chimerashell.db.password)" \
+    "$(getProperty chimerashell.plugins.storage-info-extractor)" \
+    "$(getProperty chimerashell.default-access-latency)" \
+    "$(getProperty chimerashell.default-retention-policy)" \
     "$@"
 

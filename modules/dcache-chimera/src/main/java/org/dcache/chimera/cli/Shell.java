@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -34,6 +35,10 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.RetentionPolicy;
 
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -52,6 +57,9 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.UnixPermission;
+import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
+import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
+import org.dcache.chimera.namespace.ExtendedInode;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
@@ -68,28 +76,43 @@ import static org.dcache.util.ByteUnit.KiB;
 public class Shell extends ShellApplication
 {
     private final FileSystemProvider fs;
+    private final ChimeraStorageInfoExtractable extractor;
+
     private String path = "/";
     private FsInode pwd;
 
-    public static void main(String[] arguments) throws Throwable
-    {
-        if (arguments.length < 3) {
-            System.err.println("Usage: chimera <jdbcUrl> <dbUser> <dbPass>");
+
+
+
+    public static void main(String[] arguments) throws Throwable {
+        if (arguments.length < 6) {
+            System.err.println("Usage: chimera <jdbcUrl> <dbUser> <dbPass> " +
+                    "<storageInfoExtractor> <accessLatency> <retentionPolicy>");
             System.exit(4);
         }
 
         Args args = new Args(arguments);
-        args.shift(3);
+        args.shift(6);
 
-        try (Shell shell = new Shell(arguments[0], arguments[1], arguments[2])) {
+        try (Shell shell = new Shell(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5])) {
             shell.start(args);
         }
     }
 
-    public Shell(String url, String user, String password) throws Exception
+    public Shell(String url, String user, String password, String extractor, String accessLatency, String retentionPolicy) throws Exception
     {
+
         fs = FsFactory.createFileSystem(url, user, password);
         pwd = fs.path2inode(path);
+
+
+        Class<? extends ChimeraOsmStorageInfoExtractor> storageInfoExtractor =
+                Class.forName(extractor).asSubclass(ChimeraOsmStorageInfoExtractor.class);
+        Constructor<? extends ChimeraStorageInfoExtractable> constructor = storageInfoExtractor.getConstructor(AccessLatency.class, RetentionPolicy.class);
+
+        this.extractor = (ChimeraStorageInfoExtractable) constructor.newInstance(
+                AccessLatency.getAccessLatency(accessLatency),
+                RetentionPolicy.getRetentionPolicy(retentionPolicy));
     }
 
     @Override
@@ -595,13 +618,52 @@ public class Shell extends ShellApplication
         String tag;
 
         @Override
-        public Serializable call() throws IOException
+        public Serializable call() throws IOException, CacheException
         {
             FsInode inode = lookup(path);
+
             Stat stat = fs.statTag(inode, tag);
             byte[] data = new byte[(int) stat.getSize()];
             fs.getTag(inode, tag, data, 0, data.length);
             console.println(new String(data));
+            return null;
+        }
+    }
+
+    @Command(name = "get AccessLatency", hint = "display access latency of files/directories")
+    public class GetAccessLatencyCommand implements Callable<Serializable>
+    {
+        @Argument(required = false)
+        File path;
+
+        @Override
+        public Serializable call() throws IOException, CacheException
+        {
+
+            ExtendedInode inode = new ExtendedInode(fs, lookup(path));
+            AccessLatency accessLatency = extractor.getAccessLatency(inode);
+
+            console.println(accessLatency.toString());
+            return null;
+        }
+    }
+
+
+    @Command(name = "get RetentionPolicy", hint = "display retention policy of files/directories")
+    public class GetRetentionPolicyCommand implements Callable<Serializable>
+    {
+
+        @Argument(required = false)
+        File path;
+
+        @Override
+        public Serializable call() throws IOException, CacheException
+        {
+
+            ExtendedInode inode = new ExtendedInode(fs, lookup(path));
+            RetentionPolicy retentionPolicy = extractor.getRetentionPolicy(inode);
+
+            console.println(retentionPolicy.toString());
             return null;
         }
     }
