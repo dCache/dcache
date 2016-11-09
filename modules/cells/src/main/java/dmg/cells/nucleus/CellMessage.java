@@ -174,7 +174,7 @@ public boolean equals( Object obj ){
             copy._messageStream = _messageStream;
             return copy;
         } catch (CloneNotSupportedException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

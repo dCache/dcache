@@ -76,8 +76,9 @@ public class      TelnetSAuth_A
         try {
             answerMsg = reply.get();
         } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
-            throw Throwables.propagate(e.getCause());
+            Throwables.throwIfInstanceOf(e.getCause(), Exception.class);
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
 
         Serializable answer = answerMsg.getMessageObject();

@@ -374,7 +374,7 @@ public class UniversalSpringCell
                 }
             }
         } catch (IOException e) {
-            Throwables.propagate(e); // Should not be possible
+            throw new RuntimeException(e); // Should not be possible
         }
     }
 
@@ -1060,13 +1060,13 @@ public class UniversalSpringCell
             context.refresh();
         } catch (BeanInstantiationException e) {
             Throwable t = e.getMostSpecificCause();
-            Throwables.propagateIfPossible(t);
+            Throwables.throwIfUnchecked(t);
             String msg = "Failed to instantiate class " + e.getBeanClass().getName() +
                     ": " + t.getMessage();
             throw new CommandThrowableException(msg, t);
         } catch (BeanCreationException e) {
             Throwable t = e.getMostSpecificCause();
-            Throwables.propagateIfPossible(t);
+            Throwables.throwIfUnchecked(t);
             String msg = "Failed to create bean '" + e.getBeanName() +
                     "' : " + t.getMessage();
             throw new CommandThrowableException(msg, t);
@@ -1417,7 +1417,7 @@ public class UniversalSpringCell
                 sw.close();
                 return sw.getBuffer().toString().getBytes(UTF_8);
             } catch (IOException e) {
-                throw Throwables.propagate(e); // Should not be possible
+                throw new RuntimeException(e); // Should not be possible
             }
         }
 

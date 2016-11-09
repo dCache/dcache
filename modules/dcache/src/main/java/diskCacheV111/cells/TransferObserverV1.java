@@ -475,8 +475,11 @@ public class TransferObserverV1
                                     createDynamicTable(transfers, entry.getFields()));
                 }
             }
-        } catch (ExecutionException | JsonProcessingException e) {
-            throw Throwables.propagate(e.getCause());
+        } catch (ExecutionException e) {
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new RuntimeException(e.getCause());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
     }
 

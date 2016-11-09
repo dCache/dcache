@@ -58,7 +58,7 @@ public class NoTrailingWhitespacePrintWriter extends PrintWriter
     {
         int idx = -1;
         for (int i = off+len-1; i >= off; i--) {
-            if (!CharMatcher.WHITESPACE.matches(buf [i])) {
+            if (!CharMatcher.whitespace().matches(buf [i])) {
                 break;
             }
             idx = i;
@@ -70,7 +70,7 @@ public class NoTrailingWhitespacePrintWriter extends PrintWriter
     {
         int idx = -1;
         for (int i = off+len-1; i >= off; i--) {
-            if (!CharMatcher.WHITESPACE.matches(s.charAt(i))) {
+            if (!CharMatcher.whitespace().matches(s.charAt(i))) {
                 break;
             }
             idx = i;
@@ -100,7 +100,7 @@ public class NoTrailingWhitespacePrintWriter extends PrintWriter
     @Override
     public void write(int c)
     {
-        if (CharMatcher.WHITESPACE.matches((char)c)) {
+        if (CharMatcher.whitespace().matches((char)c)) {
             getPadding().append((char)c);
         } else {
             flushPadding();

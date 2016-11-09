@@ -78,7 +78,8 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
             executor.execute(task);
             task.get();
         } catch (ExecutionException e) {
-            Throwables.propagate(e.getCause());
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new RuntimeException(e.getCause());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

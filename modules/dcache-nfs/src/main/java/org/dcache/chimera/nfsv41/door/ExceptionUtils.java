@@ -30,7 +30,7 @@ public class ExceptionUtils {
      */
     public static ChimeraNFSException asNfsException(Throwable t, Class< ? extends ChimeraNFSException> defaultException) {
 
-        Throwables.propagateIfPossible(t);
+        Throwables.throwIfUnchecked(t);
 
         if (t instanceof ChimeraNFSException) {
             return (ChimeraNFSException)t;

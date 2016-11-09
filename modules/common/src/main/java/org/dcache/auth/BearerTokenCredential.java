@@ -13,7 +13,7 @@ public class BearerTokenCredential implements Serializable
 
     public BearerTokenCredential(String token)
     {
-        checkArgument(CharMatcher.ASCII.matchesAllOf(token), "Bearer Token not ASCII");
+        checkArgument(CharMatcher.ascii().matchesAllOf(token), "Bearer Token not ASCII");
         _token = token;
     }
 

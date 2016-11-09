@@ -113,8 +113,9 @@ public class DelegationHandler implements Delegation
         } catch (InterruptedException e) {
             throw new DelegationException("Server shutdown.");
         } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), RemoteException.class);
-            throw Throwables.propagate(e.getCause());
+            Throwables.throwIfInstanceOf(e.getCause(), RemoteException.class);
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 

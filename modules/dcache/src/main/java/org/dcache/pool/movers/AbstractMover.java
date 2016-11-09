@@ -265,7 +265,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                     } catch (IOException e) {
                         t.addSuppressed(e);
                     }
-                    Throwables.propagate(t);
+                    throw t;
                 }
             }
         } catch (IOException e) {

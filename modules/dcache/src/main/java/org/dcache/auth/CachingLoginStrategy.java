@@ -86,7 +86,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
         } catch (UncheckedExecutionException e) {
-            Throwables.propagateIfPossible(e.getCause());
+            Throwables.throwIfUnchecked(e.getCause());
             throw new RuntimeException(e.getCause());
         }
     }
@@ -99,7 +99,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
         } catch (UncheckedExecutionException e) {
-            Throwables.propagateIfPossible(e.getCause());
+            Throwables.throwIfUnchecked(e.getCause());
             throw new RuntimeException(e.getCause());
         }
     }
@@ -112,7 +112,7 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener,
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
         } catch (UncheckedExecutionException e) {
-            Throwables.propagateIfPossible(e.getCause());
+            Throwables.throwIfUnchecked(e.getCause());
             throw new RuntimeException(e.getCause());
         }
     }

@@ -14,7 +14,7 @@ public class OidcSubjectPrincipal implements Principal, Serializable
 
     public OidcSubjectPrincipal(String sub)
     {
-        checkArgument(CharMatcher.ASCII.matchesAllOf(sub), "OpenId \"sub\" is not ASCII encoded");
+        checkArgument(CharMatcher.ascii().matchesAllOf(sub), "OpenId \"sub\" is not ASCII encoded");
         checkArgument(sub.length() <= 255, "OpenId \"sub\" must not exceed 255 ASCII characters");
         _sub = sub;
     }

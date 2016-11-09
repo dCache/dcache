@@ -17,11 +17,11 @@
  */
 package dmg.util.command;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 import java.io.PrintWriter;
@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
 
 import org.dcache.util.Strings;
 
-import static com.google.common.base.CharMatcher.JAVA_UPPER_CASE;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
@@ -95,7 +94,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                 out.append(s);
                 break;
             default:
-                if (JAVA_UPPER_CASE.matchesAllOf(s)) {
+                if (CharMatcher.javaUpperCase().matchesAllOf(s)) {
                     out.append(value(s));
                 } else {
                     out.append(literal(s));
@@ -360,7 +359,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
                 return "Defaults to " + literal(value) + '.';
             }
         } catch (IllegalAccessException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         return "";
     }

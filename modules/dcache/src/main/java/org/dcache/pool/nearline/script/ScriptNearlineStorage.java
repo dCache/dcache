@@ -264,10 +264,10 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
                 }
             }
         } catch (FileNotFoundException e) {
-                /* Should not happen unless somebody else is removing
-                 * the file before we got a chance to read it.
-                 */
-            throw Throwables.propagate(e);
+            /* Should not happen unless somebody else is removing
+             * the file before we got a chance to read it.
+             */
+            throw new RuntimeException(e);
         }
         return Collections.emptySet();
     }

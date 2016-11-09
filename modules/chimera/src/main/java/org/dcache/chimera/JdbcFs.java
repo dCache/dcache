@@ -652,9 +652,10 @@ public class JdbcFs implements FileSystemProvider {
                 return id;
             });
         } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), ChimeraFsException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), DataAccessException.class);
-            throw Throwables.propagate(e.getCause());
+            Throwables.throwIfInstanceOf(e.getCause(), ChimeraFsException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), DataAccessException.class);
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -670,9 +671,10 @@ public class JdbcFs implements FileSystemProvider {
                     return ino;
                 }));
             } catch (ExecutionException e) {
-                Throwables.propagateIfInstanceOf(e.getCause(), ChimeraFsException.class);
-                Throwables.propagateIfInstanceOf(e.getCause(), DataAccessException.class);
-                throw Throwables.propagate(e.getCause());
+                Throwables.throwIfInstanceOf(e.getCause(), ChimeraFsException.class);
+                Throwables.throwIfInstanceOf(e.getCause(), DataAccessException.class);
+                Throwables.throwIfUnchecked(e.getCause());
+                throw new RuntimeException(e.getCause());
             }
         } else {
             Stat stat = _sqlDriver.stat(id);

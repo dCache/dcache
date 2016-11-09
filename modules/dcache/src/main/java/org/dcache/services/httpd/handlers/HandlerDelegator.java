@@ -180,7 +180,7 @@ public class HandlerDelegator extends AbstractHandler {
                     handler.stop();
                 }
             } catch (Exception e) {
-                Throwables.propagateIfPossible(e);
+                Throwables.throwIfUnchecked(e);
                 throw new InvocationTargetException(e, "Handler failed to stop.");
             }
         }
@@ -205,7 +205,7 @@ public class HandlerDelegator extends AbstractHandler {
                 handler.setServer(getServer());
                 handler.start();
             } catch (Exception e) {
-                Throwables.propagateIfPossible(e);
+                Throwables.throwIfUnchecked(e);
                 throw new InvocationTargetException(e, "Handler failed to start.");
             }
         }

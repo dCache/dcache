@@ -68,7 +68,8 @@ public class FilterThresholdSet
                                    ? Optional.<Level>absent()
                                    : Optional.of(Collections.min(map.values(), LEVEL_ORDER));
                         } catch (ExecutionException e) {
-                            throw Throwables.propagate(e.getCause());
+                            Throwables.throwIfUnchecked(e.getCause());
+                            throw new RuntimeException(e.getCause());
                         }
                     }));
 
@@ -247,7 +248,8 @@ public class FilterThresholdSet
         try {
             return _effectiveMaps.get(logger).get(appender);
         } catch (ExecutionException e) {
-            throw Throwables.propagate(e.getCause());
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -259,7 +261,8 @@ public class FilterThresholdSet
         try {
             return _effectiveLevels.get(logger).orNull();
         } catch (ExecutionException e) {
-            throw Throwables.propagate(e.getCause());
+            Throwables.throwIfUnchecked(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 }

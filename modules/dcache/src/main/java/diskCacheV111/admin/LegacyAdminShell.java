@@ -1454,9 +1454,9 @@ public class LegacyAdminShell
             if (_fullException) {
                 return getStackTrace(cause);
             }
-            Throwables.propagateIfInstanceOf(cause, Error.class);
-            Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
-            Throwables.propagateIfInstanceOf(cause, CommandException.class);
+            Throwables.throwIfInstanceOf(cause, Error.class);
+            Throwables.throwIfInstanceOf(cause, NoRouteToCellException.class);
+            Throwables.throwIfInstanceOf(cause, CommandException.class);
             throw new CommandThrowableException(cause.toString(), cause);
         }
     }

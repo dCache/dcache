@@ -99,7 +99,7 @@ class AcCommandExecutor implements CommandExecutor
                 }
             }
         } catch (IllegalAccessException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         return null;
     }
@@ -128,7 +128,7 @@ class AcCommandExecutor implements CommandExecutor
                 return sb.toString();
             }
         } catch (IllegalAccessException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         return null;
     }
@@ -151,8 +151,8 @@ class AcCommandExecutor implements CommandExecutor
         } catch (InvocationTargetException e) {
             Throwable te = e.getTargetException();
 
-            Throwables.propagateIfInstanceOf(te, CommandException.class);
-            Throwables.propagateIfInstanceOf(te, Error.class);
+            Throwables.throwIfInstanceOf(te, CommandException.class);
+            Throwables.throwIfInstanceOf(te, Error.class);
 
             if (te instanceof RuntimeException &&
                     !(te instanceof IllegalArgumentException) &&

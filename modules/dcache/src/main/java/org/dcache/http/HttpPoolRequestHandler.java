@@ -132,7 +132,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         sb.append(';');
 
         // See RFC 2183 part 2. for description of when and how to encode
-        if(value.length() > 78 || !CharMatcher.ASCII.matchesAllOf(value)) {
+        if(value.length() > 78 || !CharMatcher.ascii().matchesAllOf(value)) {
             appendUsingRfc2231Encoding(sb, name, "UTF-8", null, value);
         } else if(TSPECIAL.matchesAnyOf(value)) {
             appendAsQuotedString(sb, name, value);

@@ -747,7 +747,7 @@ public class PoolV4
             return moverFactory.createMover(handle, message, source);
         } catch (Throwable t) {
             handle.close();
-            throw Throwables.propagate(t);
+            throw t;
         }
     }
 

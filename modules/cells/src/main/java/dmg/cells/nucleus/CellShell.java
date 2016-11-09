@@ -1051,9 +1051,10 @@ public class CellShell extends CommandInterpreter
            } catch (CancellationException e) {
                throw new CommandThrowableException("Startup of " + cellName + " was cancelled.", e);
            } catch (InvocationTargetException e) {
-               throw Throwables.propagate(e.getTargetException());
+               Throwables.throwIfUnchecked(e.getCause());
+               throw new RuntimeException(e.getCause());
            } catch (ExecutionException e) {
-               Throwables.propagateIfInstanceOf(e.getCause(), CommandException.class);
+               Throwables.throwIfInstanceOf(e.getCause(), CommandException.class);
                throw new CommandThrowableException(e.getCause().getMessage(), e.getCause());
            }
        }

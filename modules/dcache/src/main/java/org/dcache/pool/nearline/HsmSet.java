@@ -196,7 +196,7 @@ public class HsmSet
             } catch (Exception e) {
                 _newAttributes.clear();
                 _newAttributes.putAll(_currentAttributes);
-                throw Throwables.propagate(e);
+                throw e;
             }
         }
 

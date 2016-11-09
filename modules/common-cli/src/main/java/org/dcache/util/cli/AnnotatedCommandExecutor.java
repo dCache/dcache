@@ -960,7 +960,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                 return _constructor.newInstance(value);
             } catch (InvocationTargetException e) {
                 Throwable t = e.getTargetException();
-                Throwables.propagateIfPossible(t);
+                Throwables.throwIfUnchecked(t);
                 throw new IllegalArgumentException(t.getMessage(), t);
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException("This is a bug. Please notify support@dcache.org", e);
@@ -987,7 +987,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                 return _method.invoke(null, value);
             } catch (InvocationTargetException e) {
                 Throwable t = e.getTargetException();
-                Throwables.propagateIfPossible(t);
+                Throwables.throwIfUnchecked(t);
                 throw new IllegalArgumentException(t.getMessage(), t);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException("This is a bug. Please notify support@dcache.org", e);

@@ -459,8 +459,8 @@ public class CellNucleus implements ThreadFactory
         } catch (TimeoutException e) {
             return null;
         } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
-            Throwables.propagateIfInstanceOf(e.getCause(), SerializationException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), NoRouteToCellException.class);
+            Throwables.throwIfInstanceOf(e.getCause(), SerializationException.class);
             throw e;
         }
     }

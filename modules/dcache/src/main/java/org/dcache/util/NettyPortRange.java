@@ -95,8 +95,9 @@ public class NettyPortRange extends PortRange
                 return future.channel();
             } catch (ExecutionException e) {
                 if (!(e.getCause() instanceof BindException)) {
-                    Throwables.propagateIfPossible(e.getCause(), IOException.class);
-                    throw Throwables.propagate(e.getCause());
+                    Throwables.throwIfInstanceOf(e.getCause(), IOException.class);
+                    Throwables.throwIfUnchecked(e.getCause());
+                    throw new RuntimeException(e.getCause());
                 }
             }
             port = succ(port);

@@ -306,7 +306,8 @@ public class CanlContextFactory extends SslContextFactory
         try {
             return wrapEngine(delegate.call().newSSLEngine());
         } catch (Exception e) {
-            throw Throwables.propagate(e);
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -316,7 +317,8 @@ public class CanlContextFactory extends SslContextFactory
         try {
             return wrapEngine(delegate.call().newSSLEngine(host, port));
         } catch (Exception e) {
-            throw Throwables.propagate(e);
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
     }
 }

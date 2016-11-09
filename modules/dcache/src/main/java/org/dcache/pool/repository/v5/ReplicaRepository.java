@@ -563,7 +563,7 @@ public class ReplicaRepository
             try {
                 return Collections.unmodifiableCollection(_store.index()).iterator();
             } catch (CacheException e) {
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
         } finally {
             _stateLock.readLock().unlock();

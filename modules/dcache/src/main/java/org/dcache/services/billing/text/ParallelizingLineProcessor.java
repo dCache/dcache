@@ -69,7 +69,7 @@ public class ParallelizingLineProcessor<T> implements LineProcessor<T>, AutoClos
             throw new InterruptedIOException(e.getMessage());
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
-            Throwables.propagateIfPossible(cause);
+            Throwables.throwIfUnchecked(cause);
             throw new IOException(cause.getMessage(), cause);
         }
     }

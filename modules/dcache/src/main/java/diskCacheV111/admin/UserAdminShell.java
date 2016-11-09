@@ -861,7 +861,7 @@ public class UserAdminShell
     private int completeConnectCommand(String buffer, int cursor, List<CharSequence> candidates)
     {
         try {
-            if (CharMatcher.WHITESPACE.or(CharMatcher.is('/')).matchesAnyOf(buffer)) {
+            if (CharMatcher.whitespace().or(CharMatcher.is('/')).matchesAnyOf(buffer)) {
                 return -1;
             }
             candidates.addAll(expandCellPatterns(singletonList(buffer + "*")));
@@ -1149,9 +1149,9 @@ public class UserAdminShell
             if (_fullException) {
                 return getStackTrace(cause);
             }
-            Throwables.propagateIfInstanceOf(cause, Error.class);
-            Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
-            Throwables.propagateIfInstanceOf(cause, CommandException.class);
+            Throwables.throwIfInstanceOf(cause, Error.class);
+            Throwables.throwIfInstanceOf(cause, NoRouteToCellException.class);
+            Throwables.throwIfInstanceOf(cause, CommandException.class);
             throw new CommandThrowableException(cause.toString(), cause);
         }
     }
@@ -1239,10 +1239,10 @@ public class UserAdminShell
 
         Completable(String buffer, int cursor, List<CharSequence> candidates)
         {
-            int offset = CharMatcher.WHITESPACE.indexIn(buffer);
+            int offset = CharMatcher.whitespace().indexIn(buffer);
             if (offset > -1) {
                 head = buffer.substring(0, offset);
-                int i = CharMatcher.WHITESPACE.negate().indexIn(buffer, offset);
+                int i = CharMatcher.whitespace().negate().indexIn(buffer, offset);
                 offset = (i > -1) ? i : buffer.length();
                 tail = buffer.substring(offset);
             } else {
