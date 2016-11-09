@@ -32,6 +32,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import eu.emi.security.authn.x509.X509Credential;
+import org.apache.axis.types.URI;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.slf4j.Logger;
@@ -55,6 +56,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -98,6 +100,7 @@ import org.dcache.srm.v2_2.ArrayOfTCopyFileRequest;
 import org.dcache.srm.v2_2.ArrayOfTCopyRequestFileStatus;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.ArrayOfTGetFileRequest;
+import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
 import org.dcache.srm.v2_2.ArrayOfTMetaDataPathDetail;
 import org.dcache.srm.v2_2.ArrayOfTPutFileRequest;
 import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
@@ -135,7 +138,6 @@ import org.dcache.srm.v2_2.SrmGetTransferProtocolsResponse;
 import org.dcache.srm.v2_2.SrmLsRequest;
 import org.dcache.srm.v2_2.SrmLsResponse;
 import org.dcache.srm.v2_2.SrmMkdirRequest;
-import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
 import org.dcache.srm.v2_2.SrmMkdirResponse;
 import org.dcache.srm.v2_2.SrmMvRequest;
 import org.dcache.srm.v2_2.SrmMvResponse;
@@ -204,6 +206,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.*;
+import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 import static org.dcache.srm.v2_2.TStatusCode.*;
 
 /**
@@ -443,39 +446,76 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
                                       remoteHost, requestName, req);
         try {
             switch (requestName) {
-            case "srmGetRequestTokens": {
-                List<ListenableFuture<SrmResponse>> futures =
-                        backends.getCurrentData().stream()
-                                .map(this::toCellPath)
-                                .map(path -> srmManagerStub.send(path, toMessage.apply(request), SrmResponse.class))
-                                .collect(toList());
-                return mapGetRequestTokensResponse(Futures.allAsList(futures).get());
-            }
-            case "srmGetRequestSummary": {
-                SrmGetRequestSummaryRequest summaryRequest = (SrmGetRequestSummaryRequest) request;
-                String[] requestTokens = summaryRequest.getArrayOfRequestTokens().getStringArray();
-                if (requestTokens == null || requestTokens.length == 0) {
-                    throw new SRMInvalidRequestException("arrayOfRequestTokens is empty");
-                }
-                Map<String, ListenableFuture<TRequestSummary>> futureMap =
-                        provideRequestSummary(toMessage, summaryRequest.getAuthorizationID(), requestTokens);
-                return toGetRequestSummaryResponse(futureMap);
-            }
-            default: {
-                try (MappedRequest mapped = mapRequest(request)) {
-                    ListenableFuture<SrmResponse> future =
-                            (mapped == null)
-                            ? srmManagerStub.send(toMessage.apply(request), SrmResponse.class)
-                            : srmManagerStub.send(mapped.getBackend(), toMessage.apply(mapped.getRequest()), SrmResponse.class);
-                    return mapResponse(future.get());
-                }
-            }
+            case "srmGetRequestTokens":
+                return dispatch((SrmGetRequestTokensRequest) request, toMessage);
+            case "srmGetRequestSummary":
+                return dispatch((SrmGetRequestSummaryRequest) request, toMessage);
+            case "srmReleaseFiles":
+                return dispatch((SrmReleaseFilesRequest) request, toMessage);
+            case "srmExtendFileLifeTime":
+                // The token in extend file life time is optional, however since we do
+                // not support this request anyway, there is no harm in not doing any
+                // special processing.
+                return dispatch(request, toMessage);
+            default:
+                return dispatch(request, toMessage);
             }
         } catch (ExecutionException e) {
             Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), CacheException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
             throw Throwables.propagate(e.getCause());
+        }
+    }
+
+    private Object dispatch(SrmGetRequestTokensRequest request, Function<Object, SrmRequest> toMessage)
+            throws InterruptedException, ExecutionException
+    {
+        List<ListenableFuture<SrmResponse>> futures =
+                backends.getCurrentData().stream()
+                        .map(this::toCellPath)
+                        .map(path -> srmManagerStub.send(path, toMessage.apply(request), SrmResponse.class))
+                        .collect(toList());
+        return mapGetRequestTokensResponse(Futures.allAsList(futures).get());
+    }
+
+    private Object dispatch(SrmGetRequestSummaryRequest summaryRequest, Function<Object, SrmRequest> toMessage)
+            throws SRMInvalidRequestException, InterruptedException, CacheException, NoRouteToCellException
+    {
+        String[] requestTokens = summaryRequest.getArrayOfRequestTokens().getStringArray();
+        if (requestTokens == null || requestTokens.length == 0) {
+            throw new SRMInvalidRequestException("arrayOfRequestTokens is empty");
+        }
+        Map<String, ListenableFuture<TRequestSummary>> futureMap =
+                provideRequestSummary(toMessage, summaryRequest.getAuthorizationID(), requestTokens);
+        return toGetRequestSummaryResponse(futureMap);
+    }
+
+    private Object dispatch(SrmReleaseFilesRequest request, Function<Object, SrmRequest> toMessage)
+            throws InterruptedException, ExecutionException, SRMInternalErrorException
+    {
+        if (request.getRequestToken() == null) {
+            // TODO: We could do the unpin calls here to avoid that each backend does that repeatedly
+            List<ListenableFuture<SrmResponse>> futures =
+                    backends.getCurrentData().stream()
+                            .map(this::toCellPath)
+                            .map(path -> srmManagerStub.send(path, toMessage.apply(request), SrmResponse.class))
+                            .collect(toList());
+            return mapReleaseFilesResponse(request, Futures.allAsList(futures).get());
+        } else {
+            return dispatch((Object) request, toMessage);
+        }
+    }
+
+    private Object dispatch(Object request, Function<Object, SrmRequest> toMessage)
+            throws InterruptedException, ExecutionException, SRMInternalErrorException
+    {
+        try (MappedRequest mapped = mapRequest(request)) {
+            ListenableFuture<SrmResponse> future =
+                    (mapped == null)
+                    ? srmManagerStub.send(toMessage.apply(request), SrmResponse.class)
+                    : srmManagerStub.send(mapped.getBackend(), toMessage.apply(mapped.getRequest()), SrmResponse.class);
+            return mapResponse(future.get());
         }
     }
 
@@ -754,6 +794,37 @@ public class SrmHandler implements CellInfoProvider, CuratorFrameworkAware
         ArrayOfTRequestTokenReturn arrayOfRequestTokens = new ArrayOfTRequestTokenReturn(
                 tokens.stream().toArray(TRequestTokenReturn[]::new));
         return new SrmGetRequestTokensResponse(new TReturnStatus(SRM_SUCCESS, "Request processed successfully."), arrayOfRequestTokens);
+    }
+
+    private SrmReleaseFilesResponse mapReleaseFilesResponse(SrmReleaseFilesRequest request, List<SrmResponse> responses)
+    {
+        Map<URI,TSURLReturnStatus> map = new HashMap<>();
+        for (SrmResponse srmResponse : responses) {
+            SrmReleaseFilesResponse response = (SrmReleaseFilesResponse) srmResponse.getResponse();
+            for (TSURLReturnStatus status : response.getArrayOfFileStatuses().getStatusArray()) {
+                if (status.getStatus().getStatusCode() == SRM_SUCCESS) {
+                    map.put(status.getSurl(), status);
+                } else if (status.getStatus().getStatusCode() == SRM_INVALID_PATH) {
+                    // no entry
+                } else if (status.getStatus().getStatusCode() == SRM_AUTHORIZATION_FAILURE) {
+                    map.putIfAbsent(status.getSurl(), status);
+                } else if (status.getStatus().getStatusCode() == SRM_FILE_LIFETIME_EXPIRED) {
+                    map.putIfAbsent(status.getSurl(), status);
+                } else if (status.getStatus().getStatusCode() == SRM_FAILURE) {
+                    map.putIfAbsent(status.getSurl(), status);
+                }
+            }
+        }
+
+        TSURLReturnStatus[] statuses = Stream.of(request.getArrayOfSURLs().getUrlArray())
+                .map(surl -> {
+                    TSURLReturnStatus status = map.get(surl);
+                    return (status != null) ? status : new TSURLReturnStatus(surl, new TReturnStatus(SRM_INVALID_PATH,
+                                                                                                     "File not found"));
+                })
+                .toArray(TSURLReturnStatus[]::new);
+
+        return new SrmReleaseFilesResponse(getSummaryReturnStatus(statuses), new ArrayOfTSURLReturnStatus(statuses));
     }
 
     private Object mapResponse(SrmResponse response)
