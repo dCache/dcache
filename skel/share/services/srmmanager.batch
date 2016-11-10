@@ -21,10 +21,6 @@ check -strong srmmanager.db.user
 check srmmanager.db.password
 check srmmanager.db.password.file
 
-check -strong srmmanager.service.gplazma.cache.size
-check -strong srmmanager.service.gplazma.cache.timeout
-check -strong srmmanager.service.gplazma.cache.timeout.unit
-
 check -strong srmmanager.plugins.scheduler
 check -strong srmmanager.plugins.transfer
 
@@ -144,6 +140,9 @@ check -strong srmmanager.root
 check -strong srmmanager.service.gplazma
 check -strong srmmanager.service.gplazma.timeout
 check -strong srmmanager.service.gplazma.timeout.unit
+check -strong srmmanager.service.gplazma.cache.size
+check -strong srmmanager.service.gplazma.cache.timeout
+check -strong srmmanager.service.gplazma.cache.timeout.unit
 
 check -strong srmmanager.credential-service.topic
 
@@ -156,6 +155,14 @@ check -strong srmmanager.service.pnfsmanager.timeout.unit
 check -strong srmmanager.service.poolmanager
 check -strong srmmanager.service.poolmanager.timeout
 check -strong srmmanager.service.poolmanager.timeout.unit
+
+check -strong srmmanager.service.srmmanager
+check -strong srmmanager.service.srmmanager.timeout
+check -strong srmmanager.service.srmmanager.timeout.unit
+
+check -strong srmmanager.service.spacemanager
+check -strong srmmanager.service.spacemanager.timeout
+check -strong srmmanager.service.spacemanager.timeout.unit
 
 check -strong srmmanager.service.billing
 

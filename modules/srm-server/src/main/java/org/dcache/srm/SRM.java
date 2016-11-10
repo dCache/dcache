@@ -66,11 +66,10 @@ documents or software obtained from this server.
 
 package org.dcache.srm;
 
-import static com.google.common.base.Preconditions.*;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -85,13 +84,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import dmg.cells.nucleus.CellLifeCycleAware;
 
@@ -126,9 +128,9 @@ import org.dcache.srm.scheduler.SchedulerContainer;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
+import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.concat;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * SRM class creates an instance of SRM client class and publishes it on a
@@ -139,6 +141,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class SRM implements CellLifeCycleAware
 {
     private static final Logger logger = LoggerFactory.getLogger(SRM.class);
+    private static final String SFN_STRING = "SFN=";
     private final InetAddress host;
     private final Configuration configuration;
     private RequestCredentialStorage requestCredentialStorage;
@@ -158,8 +161,6 @@ public class SRM implements CellLifeCycleAware
 
     /**
      * Creates a new instance of SRM
-     * @param config
-     * @param name
      * @throws IOException
      * @throws InterruptedException
      * @throws DataAccessException
@@ -267,7 +268,7 @@ public class SRM implements CellLifeCycleAware
         return srm;
     }
 
-    public void start() throws IllegalStateException, IOException
+    public void start() throws Exception
     {
         checkState(schedulers != null, "Cannot start SRM with no schedulers");
         setSRM(this);
@@ -308,7 +309,7 @@ public class SRM implements CellLifeCycleAware
         tasks.forEach(f -> f.cancel(false));
     }
 
-    public void stop() throws InterruptedException
+    public void stop() throws Exception
     {
         databaseFactory.shutdown();
     }
@@ -644,26 +645,124 @@ public class SRM implements CellLifeCycleAware
         return ids;
     }
 
-    public boolean isFileBusy(URI surl) throws DataAccessException
-    {
-        return hasActivePutRequests(surl);
-    }
-
-    private boolean hasActivePutRequests(URI surl) throws DataAccessException
-    {
-        Set<PutFileRequest> requests = getActiveJobs(PutFileRequest.class);
-        for (PutFileRequest request: requests) {
-            if (request.getSurl().equals(surl)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public <T extends FileRequest<?>> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
             throws DataAccessException
     {
         return Iterables.filter(getActiveJobs(type), request -> request.isTouchingSurl(surl));
     }
 
+    /**
+     * Returns PutFileRequests on the given SURL or within the directory tree of that SURL.
+     */
+    public Stream<PutFileRequest> getActivePutFileRequests(URI surl)
+            throws DataAccessException
+    {
+        String path = getPath(surl);
+        return StreamSupport.stream(getActiveJobs(PutFileRequest.class).spliterator(), false)
+                .filter(r -> getPath(r.getSurl()).startsWith(path));
+    }
+
+    /**
+     * Returns true if an upload on the given SURL exists or within the directory tree of the SURL.
+     */
+    public boolean isFileBusy(URI surl) throws SRMException
+    {
+        return getActivePutFileRequests(surl).findAny().isPresent();
+    }
+
+    /**
+     * Returns true if multiple uploads on the given SURL exist or within the directory tree of the SURL.
+     */
+    public boolean hasMultipleUploads(URI surl) throws SRMException
+    {
+        return getActivePutFileRequests(surl).limit(2).count() > 1;
+    }
+
+    /**
+     * Returns the file id of an active upload on the given SURL.
+     */
+    public String getUploadFileId(URI surl) throws SRMException
+    {
+        return getActivePutFileRequests(surl)
+                .filter(m -> m.getSurl().equals(surl))
+                .map(PutFileRequest::getFileId)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Aborts uploads and downloads on the given SURL. Returns true if and only if an
+     * upload was aborted.
+     */
+    public boolean abortTransfers(URI surl, String reason) throws SRMException
+    {
+        boolean didAbortUpload = false;
+
+        for (PutFileRequest request : getActiveFileRequests(PutFileRequest.class, surl)) {
+            try {
+                request.abort(reason);
+                didAbortUpload = true;
+            } catch (IllegalStateTransition e) {
+                // The request likely aborted or finished before we could abort it
+                logger.debug("Attempted to abort put request {}, but failed: {}",
+                             request.getId(), e.getMessage());
+            }
+        }
+
+        for (GetFileRequest request : getActiveFileRequests(GetFileRequest.class, surl)) {
+            try {
+                request.abort(reason);
+            } catch (IllegalStateTransition e) {
+                // The request likely aborted or finished before we could abort it
+                logger.debug("Attempted to abort get request {}, but failed: {}",
+                             request.getId(), e.getMessage());
+            }
+        }
+
+        return didAbortUpload;
+    }
+
+    /**
+     * Checks if an active upload blocks the removal of a directory.
+     */
+    public void checkRemoveDirectory(URI surl) throws SRMException
+    {
+        Optional<URI> upload =
+                getActivePutFileRequests(surl).map(PutFileRequest::getSurl).min(URI::compareTo);
+        if (upload.isPresent()) {
+            if (upload.get().equals(surl)) {
+                throw new SRMInvalidPathException("Not a directory");
+            } else {
+                throw new SRMNonEmptyDirectoryException("Directory is not empty");
+            }
+        }
+    }
+
+    private static String getPath(URI surl)
+    {
+        String path = surl.getPath();
+        String query = surl.getQuery();
+        if (query != null) {
+            int i = query.indexOf(SFN_STRING);
+            if (i != -1) {
+                path = query.substring(i + SFN_STRING.length());
+            }
+        }
+        /* REVISIT
+         *
+         * This is not correct in the presence of symlinked directories. The
+         * simplified path may refer to a different directory than the one
+         * we will delete.
+         *
+         * For now we ignore this problem - fixing it requires resolving the
+         * paths to an absolute path, which requires additional name space
+         * lookups.
+         */
+        path = Files.simplifyPath(path);
+        if (!path.endsWith("/")) {
+            path = path + "/";
+        }
+        return path;
+    }
 }

@@ -16,32 +16,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package diskCacheV111.vehicles.srm;
 
+package org.dcache.srm;
+
+import java.io.Serializable;
 import java.net.URI;
 
 /**
- * Queries for the existing of an upload on a particular SURL.
- *
- * Although a particular SrmManager instance could have several put requests on the
- * same SURL, the reply to this message at most refers to a single one of those.
- *
- * The intended use of this message is when an SrmManager queries other SrmManagers
- * for the existence of other uploads.
+ * Successful response to SrmAbortTransferRequest.
  */
-public class SrmGetPutRequestMessage extends SrmMessage
+public class SrmAbortTransfersResponse implements Serializable
 {
-    private static final long serialVersionUID = -2970662416496090431L;
+    private static final long serialVersionUID = 1214273745164562223L;
 
     private final URI surl;
 
-    private Long requestId;
+    private final boolean isUploadAborted;
 
-    private String fileId;
-
-    public SrmGetPutRequestMessage(URI surl)
+    public SrmAbortTransfersResponse(URI surl, boolean isUploadAborted)
     {
         this.surl = surl;
+        this.isUploadAborted = isUploadAborted;
     }
 
     public URI getSurl()
@@ -49,23 +44,8 @@ public class SrmGetPutRequestMessage extends SrmMessage
         return surl;
     }
 
-    public Long getRequestId()
+    public boolean isUploadAborted()
     {
-        return requestId;
-    }
-
-    public void setRequestId(Long requestId)
-    {
-        this.requestId = requestId;
-    }
-
-    public String getFileId()
-    {
-        return fileId;
-    }
-
-    public void setFileId(String fileId)
-    {
-        this.fileId = fileId;
+        return isUploadAborted;
     }
 }
