@@ -255,6 +255,10 @@ public class Configuration {
         return ws_path;
     }
 
+    public String getRawWebservice_path() {
+        return webservice_path;
+    }
+
     public void setWebservice_path(String webservice_path) {
         this.webservice_path = webservice_path;
     }
