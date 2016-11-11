@@ -1385,22 +1385,28 @@ public class SrmShell extends ShellApplication
             if (status != null && status.getStatusCode() != TStatusCode.SRM_SUCCESS) {
                 writer.append(prefix).println(status.getExplanation());
             } else {
-                String owner = permission.getOwner();
-                if (owner != null) {
-                    append(writer, prefix, "owner", permission.getOwnerPermission(), owner);
+                if (permission.getOwnerPermission() != null) {
+                    append(writer, prefix, "owner", permission.getOwnerPermission(), permission.getOwner());
                 }
-                for (TUserPermission p : permission.getArrayOfUserPermissions().getUserPermissionArray()) {
-                    append(writer, prefix, "user ", p.getMode(), p.getUserID());
+                if (permission.getArrayOfUserPermissions() != null) {
+                    for (TUserPermission p : permission.getArrayOfUserPermissions().getUserPermissionArray()) {
+                        append(writer, prefix, "user", p.getMode(), p.getUserID());
+                    }
                 }
-                for (TUserPermission p : permission.getArrayOfUserPermissions().getUserPermissionArray()) {
-                    append(writer, prefix, "user ", p.getMode(), p.getUserID());
+                if (permission.getArrayOfGroupPermissions() != null) {
+                    for (TGroupPermission p : permission.getArrayOfGroupPermissions().getGroupPermissionArray()) {
+                        append(writer, prefix, "group", p.getMode(), p.getGroupID());
+                    }
+                }
+                if (permission.getOtherPermission() != null) {
+                    append(writer, prefix, "other", permission.getOtherPermission(), "");
                 }
             }
         }
 
-        private void append(PrintWriter writer, String prefix, String type, TPermissionMode mode, String user)
+        private void append(PrintWriter writer, String prefix, String type, TPermissionMode mode, String name)
         {
-            writer.append(prefix).append(permissionsFor(mode)).append(' ').append(type).append(' ').println(user);
+            writer.append(prefix).append(permissionsFor(mode)).append(' ').append(type).append(' ').println(name == null ? "(unknown)" : name);
         }
     }
 
