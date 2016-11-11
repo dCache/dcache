@@ -26,14 +26,12 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import eu.emi.security.authn.x509.X509Credential;
-import eu.emi.security.authn.x509.impl.PEMCredential;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.PEMCredential;
 import gov.fnal.srm.util.Configuration;
 import gov.fnal.srm.util.OptionParser;
-
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 
@@ -46,6 +44,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
@@ -71,14 +70,19 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import dmg.util.command.ExpandWith;
 import dmg.util.command.GlobExpander;
-import dmg.util.command.Command;
 import dmg.util.command.Option;
 
+import org.dcache.commons.stats.RequestCounter;
+import org.dcache.commons.stats.RequestCounters;
+import org.dcache.commons.stats.RequestExecutionTimeGauge;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMException;
@@ -86,9 +90,9 @@ import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.client.Transport;
-import org.dcache.srm.util.SrmUrl;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
+import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmPingResponse;
 import org.dcache.srm.v2_2.SrmRmResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
@@ -112,6 +116,8 @@ import org.dcache.srm.v2_2.TUserPermission;
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.Glob;
+import org.dcache.util.TimeUtils;
+import org.dcache.util.TimeUtils.TimeUnitFormat;
 import org.dcache.util.cli.ShellApplication;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -119,6 +125,10 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.commons.stats.MonitoringProxy.decorateWithMonitoringProxy;
+import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
+import static org.dcache.util.TimeUtils.duration;
 
 public class SrmShell extends ShellApplication
 {
@@ -128,6 +138,8 @@ public class SrmShell extends ShellApplication
     private final Map<Integer,FileTransfer> ongoingTransfers = new ConcurrentHashMap<>();
     private final Map<Integer,FileTransfer> completedTransfers = new ConcurrentHashMap<>();
     private final List<String> notifications = new ArrayList<>();
+    private final RequestCounters<Method> counters = new RequestCounters<>("requests");
+    private final RequestExecutionTimeGauges<Method> gauges = new RequestExecutionTimeGauges<>("requests");
 
     private enum PromptType { LOCAL, SRM, SIMPLE };
     private enum PermissionOperation { SRM_CHECK_PERMISSION, SRM_LS };
@@ -214,18 +226,18 @@ public class SrmShell extends ShellApplication
         } else {
             credential = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
         }
-        fs = new AxisSrmFileSystem(
+        fs = new AxisSrmFileSystem(decorateWithMonitoringProxy(new Class[]{ISRM.class},
                 new SRMClientV2(configuration.getSrmUrl(),
-                                credential,
-                                configuration.getRetry_timeout(),
-                                configuration.getRetry_num(),
-                                configuration.isDelegate(),
-                                configuration.isFull_delegation(),
-                                configuration.getGss_expected_name(),
-                                configuration.getRawWebservice_path(),
-                                configuration.getX509_user_trusted_certificates(),
-                                Transport.GSI));
-
+                        credential,
+                        configuration.getRetry_timeout(),
+                        configuration.getRetry_num(),
+                        configuration.isDelegate(),
+                        configuration.isFull_delegation(),
+                        configuration.getGss_expected_name(),
+                        configuration.getRawWebservice_path(),
+                        configuration.getX509_user_trusted_certificates(),
+                        Transport.GSI),
+                counters, gauges));
         fs.setCredential(credential);
         fs.start();
         cd(configuration.getSrmUrl().toASCIIString());
@@ -1799,6 +1811,63 @@ public class SrmShell extends ShellApplication
         public String call() throws Exception
         {
             fs.setTransportOption(key, value);
+            return "";
+        }
+    }
+
+    @Command(name = "show statistics", hint = "show SRM call statistics",
+                    description = "Show statistics on SRM requests.")
+    public class StatisticsShowCommand implements Callable<String>
+    {
+        @Override
+        public String call() throws Exception
+        {
+            ColumnWriter requests = new ColumnWriter()
+                    .header("Operation").left("operation").space()
+                    .header("Requests").right("requests").space()
+                    .header("Success").right("success").space()
+                    .header("Fail").right("fail").space()
+                    .header("Mean").right("mean")
+                    .header(" ").right("mean-sd")
+                    .header("StdDev").right("sd").space()
+                    .header("Min").right("min").space()
+                    .header("Max").right("max");
+
+            for (Method m : counters.keySet()) {
+                RequestCounter c = counters.getCounter(m);
+                RequestExecutionTimeGauge g = gauges.getGauge(m);
+                requests.row().value("operation", m.getName())
+                        .value("requests", c.getTotalRequests())
+                        .value("success", c.getSuccessful())
+                        .value("fail", c.getFailed())
+                        .value("mean", duration((long)Math.floor(g.getAverageExecutionTime()+0.5), MILLISECONDS, SHORT))
+                        .value("mean-sd", "\u00B1")
+                        .value("sd", duration((long)Math.floor(g.getStandardDeviation()+0.5), MILLISECONDS, SHORT))
+                        .value("min", duration(g.getMinExecutionTime(), MILLISECONDS, SHORT))
+                        .value("max", duration(g.getMaxExecutionTime(), MILLISECONDS, SHORT));
+            }
+
+            requests.row("");
+
+            RequestCounter total = counters.getTotalRequestCounter();
+            requests.row().value("operation", "TOTALS")
+                    .value("requests", total.getTotalRequests())
+                    .value("success", total.getSuccessful())
+                    .value("fail", total.getFailed());
+
+            return requests.toString();
+        }
+    }
+
+    @Command(name = "clear statistics", hint = "reset all statistics",
+                    description = "Reset SRM call statistics.")
+    public class StatisticsResetCommand  implements Callable<String>
+    {
+        @Override
+        public String call() throws Exception
+        {
+            counters.reset();
+            gauges.reset();
             return "";
         }
     }
