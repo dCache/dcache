@@ -1160,7 +1160,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get transfer protocols", hint = "retrieves supported transfer protocols",
+    @Command(name = "show transfer protocols", hint = "discover supported transfer protocols",
                     description = "Query the SRM server to discover which "
                             + "transfer protocols it supports.")
     public class TransferProtocolsCommand implements Callable<String>
@@ -1330,12 +1330,12 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get space tokens", hint = "get space tokens matching description",
-                    description = "Discover the space tokens currently "
+    @Command(name = "list spaces", hint = "discover space reservations",
+                    description = "Discover the space reservations currently "
                             + "available to this user.  If description is "
-                            + "supplied then only space tokens that were "
+                            + "supplied then only reservations that were "
                             + "created with this description are listed; "
-                            + "otherwise all space reservations are listed.")
+                            + "otherwise all reservations are listed.")
     public class GetSpaceTokensCommand implements Callable<String>
     {
         @Argument(required = false, usage = "The description supplied when "
@@ -1350,10 +1350,10 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get permission", hint = "get permissions on SURLs",
+    @Command(name = "show permissions", hint = "describe permissions on SURL",
                     description = "Query detailed information about the "
                             + "permissions of files and directories.")
-    public class GetPermissionCommand implements Callable<String>
+    public class ShowPermissionCommand implements Callable<String>
     {
         @Argument
         @ExpandWith(SrmFilesystemExpander.class)
@@ -1404,7 +1404,7 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "check permission", hint = "check client permissions on SURLs",
+    @Command(name = "check permissions", hint = "check client permissions on SURLs",
                     description = "Check the (effective) permissions on files "
                             + "and directories for the current user.  The result "
                             + "is a list of operations that this user is "
@@ -1521,10 +1521,10 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    @Command(name = "get space meta data", hint = "get information about a space reservation",
+    @Command(name = "show space", hint = "show information about a space reservation",
                     description = "Discover information about a specific space "
                             + "reservation.")
-    public class GetSpaceMetaDataCommand implements Callable<String>
+    public class SpaceMetaDataCommand implements Callable<String>
     {
         @Argument
         String spaceToken;
