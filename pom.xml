@@ -60,19 +60,19 @@
         <source.version>1.8</source.version>
         <target.version>1.8</target.version>
 
-        <version.slf4j>1.7.15</version.slf4j>
+        <version.slf4j>1.7.21</version.slf4j>
         <version.milton>2.7.2.0</version.milton>
-        <version.spring>4.3.2.RELEASE</version.spring>
+        <version.spring>4.3.4.RELEASE</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
         <version.aspectj>1.8.9</version.aspectj>
         <version.smc>6.6.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
-        <version.jetty>9.3.11.v20160721</version.jetty>
-        <version.wicket>7.4.0</version.wicket>
+        <version.jetty>9.3.14.v20161028</version.jetty>
+        <version.wicket>7.5.0</version.wicket>
         <version.xrootd4j>3.2.2</version.xrootd4j>
-        <version.jersey>2.22.2</version.jersey>
+        <version.jersey>2.24</version.jersey>
         <version.dcache-view>1.0.2</version.dcache-view>
-        <version.netty>4.1.5.Final</version.netty>
+        <version.netty>4.1.6.Final</version.netty>
         <version.dcache>${project.version}</version.dcache>
 
         <!-- BouncyCastle seems to change the naming convention of
@@ -136,12 +136,12 @@
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
-                <version>2.11.7</version>
+                <version>2.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
-                <version>2.11.7</version>
+                <version>2.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -257,7 +257,7 @@
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>4.1.0</version>
+                <version>4.2.2</version>
             </dependency>
             <!-- xacml client incompatible with the newer opensaml library -->
             <dependency>
@@ -325,12 +325,12 @@
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
-                <version>2.5.0</version>
+                <version>2.5.1</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>9.4.1210</version>
+                <version>9.4.1212</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -492,7 +492,7 @@
             <dependency>
                 <groupId>org.apache.sshd</groupId>
                 <artifactId>sshd-core</artifactId>
-                <version>1.2.0</version>
+                <version>1.3.0</version>
             </dependency>
             <dependency>
                 <!-- Newer versions have two problems. A performance regression causes it to block on non-responding network
@@ -689,7 +689,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.7</version>
+                <version>2.8.0</version>
             </dependency>
 
             <dependency>
@@ -886,8 +886,8 @@
         </dependency>
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_2.11</artifactId>
-            <version>2.2.4</version>
+            <artifactId>scalatest_2.12</artifactId>
+            <version>3.0.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
