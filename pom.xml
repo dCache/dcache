@@ -65,7 +65,7 @@
         <version.spring>4.3.2.RELEASE</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
         <version.aspectj>1.8.9</version.aspectj>
-        <version.smc>6.3.0</version.smc>
+        <version.smc>6.6.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.3.11.v20160721</version.jetty>
         <version.wicket>7.4.0</version.wicket>
