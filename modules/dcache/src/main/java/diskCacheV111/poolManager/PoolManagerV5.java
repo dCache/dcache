@@ -740,6 +740,7 @@ public class PoolManagerV5
         messageArrived(PoolManagerGetPoolMonitor msg)
     {
         msg.setPoolMonitor(_poolMonitor);
+        msg.setSucceeded();
         return msg;
     }
 

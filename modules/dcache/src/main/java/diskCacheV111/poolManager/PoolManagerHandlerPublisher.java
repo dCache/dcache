@@ -224,6 +224,7 @@ public class PoolManagerHandlerPublisher
             return null;
         }
         message.setHandler(handler);
+        message.setSucceeded();
         return message;
     }
 
@@ -268,6 +269,7 @@ public class PoolManagerHandlerPublisher
         public void send(SerializablePoolManagerHandler handler)
         {
             message.setHandler(handler);
+            message.setSucceeded();
             reply(message);
         }
 

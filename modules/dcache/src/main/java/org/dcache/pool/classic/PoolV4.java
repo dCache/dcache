@@ -1116,6 +1116,7 @@ public class PoolV4
         {
             if (succeeded.size() + failed.size() >= msg.getFiles().size()) {
                 msg.setResult(succeeded, failed);
+                msg.setSucceeded();
                 reply(msg);
             }
         }
