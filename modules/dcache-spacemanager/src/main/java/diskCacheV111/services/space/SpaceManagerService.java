@@ -480,6 +480,7 @@ public final class SpaceManagerService
                     if (!isStopped || isImportantMessage(message)) {
                         processMessage(message);
                         if (message.getReplyRequired()) {
+                            message.setReply();
                             returnMessage();
                         }
                     } else {

@@ -175,6 +175,7 @@ public class HsmFlushController
             gain.setCellInfo(getCellInfo());
             gain.setFlushInfos(_storageQueue.getFlushInfos());
         }
+        gain.setSucceeded();
         return gain;
     }
 
@@ -231,6 +232,7 @@ public class HsmFlushController
                     long flushId = info.flush((max == 0) ? Integer.MAX_VALUE : max, this, _flushExecutor);
                     _flush.setFlushId(flushId);
                 }
+                _flush.setSucceeded();
             } catch (RuntimeException e) {
                 LOGGER.error("Private flush failed for " + composed + ". Please report to support@dcache.org", e);
                 _flush.setFailed(576, e);
