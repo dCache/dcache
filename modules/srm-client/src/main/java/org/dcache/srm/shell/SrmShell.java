@@ -17,6 +17,7 @@
  */
 package org.dcache.srm.shell;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
@@ -71,6 +72,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import dmg.util.command.Argument;
@@ -132,6 +134,9 @@ import static org.dcache.util.TimeUtils.duration;
 
 public class SrmShell extends ShellApplication
 {
+    @VisibleForTesting
+    static final Pattern DN_WITH_CAPTURED_CN = Pattern.compile("^(?:/.+?=.+?)+?/CN=(?<cn>[^/=]+)(?:/.+?=[^/]*)*$");
+
     private final FileSystem lfs = FileSystems.getDefault();
     private final SrmFileSystem fs;
     private final URI home;
@@ -1018,6 +1023,12 @@ public class SrmShell extends ShellApplication
                 usage = "Use abbreviated file sizes.")
         boolean abbrev;
 
+        @Option(name = "full-dn",
+                usage = "If server identifies owner with a Distinguished Name, " +
+                        "show complete value with long format.  By default, " +
+                        "only the first common name (CN) element is shown.")
+        boolean fullDn;
+
         @Argument(required = false)
         File path;
 
@@ -1034,9 +1045,11 @@ public class SrmShell extends ShellApplication
                         .space().date("time")
                         .space().left("name");
                 for (TMetaDataPathDetail entry : fs.list(lookup(path), verbose)) {
+                    String userId = entry.getOwnerPermission().getUserID();
+
                     writer.row()
                             .value("mode", permissionsFor(entry))
-                            .value("owner", entry.getOwnerPermission().getUserID())
+                            .value("owner", fullDn ? userId : simplifyUserId(userId))
                             .value("group", entry.getGroupPermission().getGroupID())
                             .value("size", (entry.getType() == TFileType.FILE) ? entry.getSize().longValue() : null)
                             .value("time", getTime(entry).getTime())
@@ -1051,6 +1064,12 @@ public class SrmShell extends ShellApplication
                 console.printColumns(names);
             }
             return null;
+        }
+
+        private String simplifyUserId(String id)
+        {
+            Matcher m = DN_WITH_CAPTURED_CN.matcher(id);
+            return m.matches() ? m.group("cn") : id;
         }
 
         private Calendar getTime(TMetaDataPathDetail entry)
