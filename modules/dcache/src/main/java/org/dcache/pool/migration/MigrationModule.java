@@ -1,6 +1,7 @@
 package org.dcache.pool.migration;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
@@ -156,6 +157,11 @@ public class MigrationModule
     {
         _isStarted = true;
         _jobs.values().stream().filter(j -> j.getState() == Job.State.NEW).forEach(Job::start);
+    }
+
+    private synchronized Collection<Job> getJobs()
+    {
+        return ImmutableList.copyOf(_jobs.values());
     }
 
     /** Returns the job with the given id. */
@@ -1064,14 +1070,13 @@ public class MigrationModule
         }
     }
 
-    public synchronized
-        void messageArrived(PoolMigrationCopyFinishedMessage message)
+    public void messageArrived(PoolMigrationCopyFinishedMessage message)
     {
         if (!message.getPool().equals(_context.getPoolName())) {
             return;
         }
 
-        for (Job job: _jobs.values()) {
+        for (Job job: getJobs()) {
             job.messageArrived(message);
         }
     }
