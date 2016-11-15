@@ -1,11 +1,12 @@
 package org.dcache.pool.migration;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import org.parboiled.Parboiled;
 import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
+
+import javax.annotation.concurrent.GuardedBy;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -13,14 +14,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -126,8 +127,8 @@ public class MigrationModule
     private static final Pattern STICKY_PATTERN =
             Pattern.compile("(\\w+)(\\((-?\\d+)\\))?");
 
-    private final Map<String,Job> _jobs = new HashMap<>();
-    private final Map<Job,String> _commands = new HashMap<>();
+    private final ConcurrentMap<String,Job> _jobs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Job,String> _commands = new ConcurrentHashMap<>();
     private final MigrationContext _context;
 
     private static final Expression TRUE_EXPRESSION =
@@ -159,13 +160,8 @@ public class MigrationModule
         _jobs.values().stream().filter(j -> j.getState() == Job.State.NEW).forEach(Job::start);
     }
 
-    private synchronized Collection<Job> getJobs()
-    {
-        return ImmutableList.copyOf(_jobs.values());
-    }
-
     /** Returns the job with the given id. */
-    private synchronized Job getJob(String id)
+    private Job getJob(String id)
         throws NoSuchElementException
     {
         Job job = _jobs.get(id);
@@ -176,11 +172,10 @@ public class MigrationModule
     }
 
     /** Returns a one line description of a job. */
-    private synchronized String getJobSummary(String id)
+    private String getJobSummary(String id)
     {
         Job job = getJob(id);
-        return String.format("[%s] %-12s %s", id, job.getState(),
-                             _commands.get(job));
+        return String.format("[%s] %-12s %s", id, job.getState(), _commands.get(job));
     }
 
     /**
@@ -217,7 +212,7 @@ public class MigrationModule
     /**
      * Immediately cancels all jobs.
      */
-    public synchronized void cancelAll()
+    public void cancelAll()
     {
         for (Job job: _jobs.values()) {
             try {
@@ -230,7 +225,8 @@ public class MigrationModule
         }
     }
 
-    private synchronized String nextId()
+    @GuardedBy("this")
+    private String nextId()
     {
         String id;
         do {
@@ -863,8 +859,9 @@ public class MigrationModule
                         case FINISHED:
                             break;
                         case CANCELLING:
-                            _jobs.put(nextId(), job);
-                            _jobs.remove(id);
+                            if (_jobs.remove(id) == job) {
+                                _jobs.put(nextId(), job);
+                            }
                             break;
                         default:
                             throw new IllegalArgumentException("Job id is already in use: " + id);
@@ -984,20 +981,18 @@ public class MigrationModule
         @Override
         public String call()
         {
-            synchronized (MigrationModule.this) {
-                Iterator<Job> i = _jobs.values().iterator();
-                while (i.hasNext()) {
-                    Job job = i.next();
-                    switch (job.getState()) {
-                    case CANCELLED:
-                    case FAILED:
-                    case FINISHED:
-                        i.remove();
-                        _commands.remove(job);
-                        break;
-                    default:
-                        break;
-                    }
+            Iterator<Job> i = _jobs.values().iterator();
+            while (i.hasNext()) {
+                Job job = i.next();
+                switch (job.getState()) {
+                case CANCELLED:
+                case FAILED:
+                case FINISHED:
+                    i.remove();
+                    _commands.remove(job);
+                    break;
+                default:
+                    break;
                 }
             }
             return "";
@@ -1012,10 +1007,8 @@ public class MigrationModule
         public String call() throws NoSuchElementException
         {
             StringBuilder s = new StringBuilder();
-            synchronized (MigrationModule.this) {
-                for (String id : _jobs.keySet()) {
-                    s.append(getJobSummary(id)).append('\n');
-                }
+            for (String id : _jobs.keySet()) {
+                s.append(getJobSummary(id)).append('\n');
             }
             return s.toString();
         }
@@ -1058,15 +1051,13 @@ public class MigrationModule
         public String call()
                 throws NoSuchElementException
         {
-            synchronized (MigrationModule.this) {
-                Job job = getJob(id);
-                String command = _commands.get(job);
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                pw.println("Command    : " + command);
-                job.getInfo(pw);
-                return sw.toString();
-            }
+            Job job = getJob(id);
+            String command = _commands.get(job);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            pw.println("Command    : " + command);
+            job.getInfo(pw);
+            return sw.toString();
         }
     }
 
@@ -1076,7 +1067,7 @@ public class MigrationModule
             return;
         }
 
-        for (Job job: getJobs()) {
+        for (Job job: _jobs.values()) {
             job.messageArrived(message);
         }
     }
@@ -1092,7 +1083,7 @@ public class MigrationModule
     }
 
     @Override
-    public synchronized void getInfo(PrintWriter pw)
+    public void getInfo(PrintWriter pw)
     {
         for (String id: _jobs.keySet()) {
             pw.println(getJobSummary(id));
@@ -1100,7 +1091,7 @@ public class MigrationModule
     }
 
     @Override
-    public synchronized void printSetup(PrintWriter pw)
+    public void printSetup(PrintWriter pw)
     {
         pw.println("#\n# MigrationModule\n#");
         _commands.forEach((job, cmd) -> {
@@ -1149,7 +1140,7 @@ public class MigrationModule
         });
     }
 
-    public synchronized boolean isActive(PnfsId id)
+    public boolean isActive(PnfsId id)
     {
         return _context.isActive(id);
     }
