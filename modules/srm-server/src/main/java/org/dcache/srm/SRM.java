@@ -663,19 +663,19 @@ public class SRM implements CellLifeCycleAware
     }
 
     /**
-     * Returns true if an upload on the given SURL exists or within the directory tree of the SURL.
+     * Returns true if an upload on the given SURL exists.
      */
     public boolean isFileBusy(URI surl) throws SRMException
     {
-        return getActivePutFileRequests(surl).findAny().isPresent();
+        return getActivePutFileRequests(surl).anyMatch(m -> m.getSurl().equals(surl));
     }
 
     /**
-     * Returns true if multiple uploads on the given SURL exist or within the directory tree of the SURL.
+     * Returns true if multiple uploads on the given SURL exist.
      */
     public boolean hasMultipleUploads(URI surl) throws SRMException
     {
-        return getActivePutFileRequests(surl).limit(2).count() > 1;
+        return getActivePutFileRequests(surl).filter(m -> m.getSurl().equals(surl)).limit(2).count() > 1;
     }
 
     /**
