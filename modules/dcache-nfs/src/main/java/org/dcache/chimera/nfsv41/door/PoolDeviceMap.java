@@ -5,7 +5,6 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfsv41.door.NFSv41Door.PoolDS;
@@ -20,7 +19,7 @@ public class PoolDeviceMap {
     /**
      * next device id, 0 reserved for MDS
      */
-    private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
+    private int _nextDeviceID = 1;
 
     /**
      * dCache-friendly NFS device id to pool name mapping
@@ -77,7 +76,7 @@ public class PoolDeviceMap {
                 // remove old mapping
                 _deviceMap.remove(ds.getDeviceId());
             }
-            deviceid4 deviceid = deviceidOf(_nextDeviceID.incrementAndGet());
+            deviceid4 deviceid = deviceidOf(_nextDeviceID++);
             ds = new PoolDS(deviceid, poolAddress, verifier);
             _poolNameToIpMap.put(name, ds);
             _deviceMap.put(ds.getDeviceId(), ds);
