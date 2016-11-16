@@ -3,12 +3,12 @@ package org.dcache.chimera.nfsv41.door;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import org.dcache.nfs.v4.xdr.deviceid4;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 public class PoolDeviceMapTest {
 
@@ -43,6 +43,16 @@ public class PoolDeviceMapTest {
         InetSocketAddress[] ip = new InetSocketAddress[]{new InetSocketAddress(0)};
 
         NFSv41Door.PoolDS ds = _poolDeviceMap.getOrCreateDS(name, 0, ip);
-        Assert.assertSame(ds, _poolDeviceMap.getOrCreateDS(name, 0, ip));
+        assertSame(ds, _poolDeviceMap.getOrCreateDS(name, 0, ip));
+    }
+
+    @Test
+    public void testRemoveExisting() throws UnknownHostException {
+        String name = "somePool";
+        InetSocketAddress[] ip = new InetSocketAddress[]{new InetSocketAddress(0)};
+
+        NFSv41Door.PoolDS ds = _poolDeviceMap.getOrCreateDS(name, 0, ip);
+        _poolDeviceMap.remove(name);
+        assertNull("Removed pool stil available", _poolDeviceMap.getByDeviceId(ds.getDeviceId()));
     }
 }

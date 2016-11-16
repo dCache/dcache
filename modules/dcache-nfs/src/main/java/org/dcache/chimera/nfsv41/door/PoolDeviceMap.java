@@ -107,7 +107,11 @@ public class PoolDeviceMap {
     PoolDS remove(String pool) {
         _wlock.lock();
         try {
-            return _poolNameToIpMap.remove(pool);
+            PoolDS ds = _poolNameToIpMap.remove(pool);
+            if (ds != null) {
+                _deviceMap.remove(ds.getDeviceId());
+            }
+            return ds;
         } finally {
             _wlock.unlock();
         }
