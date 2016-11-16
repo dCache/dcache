@@ -804,10 +804,10 @@ public class Job
     @Override
     public void taskCompleted(Task task)
     {
+        PnfsId pnfsId = task.getPnfsId();
+        applySourceMode(pnfsId);
         _lock.lock();
         try {
-            PnfsId pnfsId = task.getPnfsId();
-            applySourceMode(pnfsId);
             _running.remove(pnfsId);
             _context.unlock(pnfsId);
             _statistics.addCompleted(_sizes.remove(pnfsId));
@@ -895,7 +895,6 @@ public class Job
     }
 
     /** Apply source mode update to replica. */
-    @GuardedBy("_lock")
     private void applySourceMode(PnfsId pnfsId)
     {
         try {
