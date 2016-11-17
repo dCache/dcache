@@ -116,7 +116,7 @@ public class DcacheSrm extends SRM implements CuratorFrameworkAware, CellIdentit
     @Override
     public boolean isFileBusy(URI surl) throws SRMException
     {
-        return super.isFileBusy(surl) || findRemoteUpload(surl).isPresent();
+        return super.isFileBusy(surl) || findRemoteUpload(surl, false).isPresent();
     }
 
     @Override
@@ -124,7 +124,7 @@ public class DcacheSrm extends SRM implements CuratorFrameworkAware, CellIdentit
     {
         Preconditions.checkState(super.isFileBusy(surl),
                                  "Must only be called while at least one local upload is active");
-        return super.hasMultipleUploads(surl) || findRemoteUpload(surl).isPresent();
+        return super.hasMultipleUploads(surl) || findRemoteUpload(surl, false).isPresent();
     }
 
     @Override
@@ -135,7 +135,7 @@ public class DcacheSrm extends SRM implements CuratorFrameworkAware, CellIdentit
             return fileId;
         }
 
-        return findRemoteUpload(surl).map(SrmQueryPutResponse::getFileId).orElse(null);
+        return findRemoteUpload(surl, false).map(SrmQueryPutResponse::getFileId).orElse(null);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class DcacheSrm extends SRM implements CuratorFrameworkAware, CellIdentit
     {
         super.checkRemoveDirectory(surl);
 
-        Optional<SrmQueryPutResponse> request = findRemoteUpload(surl);
+        Optional<SrmQueryPutResponse> request = findRemoteUpload(surl, true);
         if (request.isPresent()) {
             if (request.get().getSurl().equals(surl)) {
                 throw new SRMInvalidPathException("Not a directory");
@@ -177,13 +177,13 @@ public class DcacheSrm extends SRM implements CuratorFrameworkAware, CellIdentit
         return super.abortTransfers(surl, reason);
     }
 
-    private Optional<SrmQueryPutResponse> findRemoteUpload(URI surl) throws SRMException
+    private Optional<SrmQueryPutResponse> findRemoteUpload(URI surl, boolean isRecursive) throws SRMException
     {
         for (ListenableFuture<SrmQueryPutResponse> future :
                 queryRemotes(new SrmQueryPutRequest(surl), SrmQueryPutResponse.class)) {
             try {
                 SrmQueryPutResponse response = Uninterruptibles.getUninterruptibly(future);
-                if (response.getSurl() != null) {
+                if (response.getSurl() != null && (isRecursive || response.getSurl().equals(surl))) {
                     return Optional.of(response);
                 }
             } catch (ExecutionException e) {
