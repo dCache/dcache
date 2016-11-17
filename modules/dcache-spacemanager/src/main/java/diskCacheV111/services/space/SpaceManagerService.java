@@ -530,8 +530,7 @@ public final class SpaceManagerService
                         // in case of a redundant space manager deployment, the resubmission may go to one of
                         // the other instances.
                         message.setFailed(CacheException.OUT_OF_DATE, "Space manager is shutting down.");
-                    } else if (message instanceof DoorTransferFinishedMessage ||
-                               message instanceof PoolAcceptFileMessage) {
+                    } else if (isEnRouteToDoor) {
                         // Pass it on as is since space manager will recover from the lost notification eventually
                     } else {
                         envelope.setMessageObject(new NoRouteToCellException(envelope, "Space manager is shutting down."));
