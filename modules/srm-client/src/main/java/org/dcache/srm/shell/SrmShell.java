@@ -1873,7 +1873,9 @@ public class SrmShell extends ShellApplication
             if (arrayOfSpaceTokens != null) {
                 writer.append("    Spaces: ").println(asList(arrayOfSpaceTokens.getStringArray()));
             }
-            writer.append("  Locality: ").println(fileLocality.getValue().toLowerCase());
+            if (fileLocality != null) {
+                writer.append("  Locality: ").println(fileLocality.getValue().toLowerCase());
+            }
             if (fileStorageType != null) {
                 writer.append("Durability: ").append(fileStorageType.getValue().toLowerCase());
                 if (fileStorageType != TFileStorageType.PERMANENT) {
