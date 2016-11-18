@@ -1146,7 +1146,7 @@ public class ReplicaRepository
         DiskSpace gap = DiskSpace.UNSPECIFIED;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             _stateLock.writeLock().lock();
             try {

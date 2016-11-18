@@ -359,7 +359,7 @@ public class StorageClassContainer
         boolean verbose;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             StringBuilder sb = new StringBuilder();
             for (StorageClassInfo classInfo : getStorageClassInfos()) {

@@ -179,7 +179,7 @@ public class ChecksumModuleV1
     public class InfoCommand implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call()
         {
             return getPolicies();
         }

@@ -2942,7 +2942,7 @@ public class PoolSelectionUnitV2
         String name;
 
         @Override
-        public String call() throws Exception
+        public String call() throws IllegalArgumentException
         {
             Preconditions.checkArgument(required == null || required >= 1,
                                         "required must be >= 1, was set to %s.",

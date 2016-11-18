@@ -686,7 +686,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         int mover;
 
         @Override
-        public String call() throws Exception {
+        public String call() {
             PoolMoverKillMessage message = new PoolMoverKillMessage(pool, mover,
                     "killed by door 'kill mover' command");
             message.setReplyRequired(false);
@@ -952,7 +952,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         boolean isBinary;
 
         @Override
-        public Serializable call() throws Exception {
+        public Serializable call() {
             if (isBinary) {
                 String[] children = new String[]{NFSv41Door.this.getCellName()};
                 return new LoginManagerChildrenInfo(NFSv41Door.this.getCellName(), NFSv41Door.this.getCellDomainName(), children);
@@ -968,7 +968,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         boolean isBinary;
 
         @Override
-        public Serializable call() throws Exception {
+        public Serializable call() {
 
             List<IoDoorEntry> entries = _ioMessages.values()
                     .stream()

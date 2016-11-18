@@ -107,7 +107,7 @@ public class MoverMapTransferService extends AbstractMoverProtocolTransferServic
     class ListCommand implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call()
         {
             StringBuilder sb = new StringBuilder();
             for (Map.Entry<String, Class<? extends MoverProtocol>> entry : _movermap.entrySet()) {

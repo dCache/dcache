@@ -49,7 +49,7 @@ public class RequestContainerExecutor
         int count;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             if (count == 0) {
                 count = Integer.MAX_VALUE;

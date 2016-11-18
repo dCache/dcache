@@ -87,7 +87,7 @@ public class CachingCertificateValidator implements X509CertChainValidatorExt
             return cache.get(certFingerprint, new Callable<ValidationResult>()
             {
                 @Override
-                public ValidationResult call() throws Exception
+                public ValidationResult call()
                 {
                     return validator.validate(certChain);
                 }

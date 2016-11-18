@@ -60,19 +60,23 @@ documents or software obtained from this server.
 package org.dcache.alarms.admin;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.shell.ListPredefinedTypes;
@@ -87,7 +91,8 @@ public final class AlarmCommandHandler implements CellCommandListener {
     @Command(name = "predefined ls",
                     hint = "Print a list of all internally defined alarms.")
     class PredifinedListCommand implements Callable<String> {
-        public String call() throws Exception {
+        @Override
+        public String call() {
             return "PREDEFINED DCACHE ALARM TYPES:\n\n"
                             + ListPredefinedTypes.getSortedList();
         }
@@ -96,7 +101,8 @@ public final class AlarmCommandHandler implements CellCommandListener {
     @Command(name = "priority get default",
              hint = "Get the current default alarm priority value.")
     class PriorityGetDefaultCommand implements Callable<String> {
-        public String call() throws Exception {
+        @Override
+        public String call() {
             return "Current default priority value is "
                             + alarmPriorityMap.getDefaultPriority() + ".";
         }
@@ -112,7 +118,8 @@ public final class AlarmCommandHandler implements CellCommandListener {
                   usage="Name of alarm type; if not specified, all are listed.")
         String type;
 
-        public String call() throws Exception {
+        @Override
+        public String call() {
             if (Strings.emptyToNull(type) == null) {
                 return listPriorityMappings();
             }
@@ -142,12 +149,19 @@ public final class AlarmCommandHandler implements CellCommandListener {
                                   + "store after this command completes.")
         String path;
 
-        public String call() throws Exception {
+        @Override
+        public String call() throws CommandException {
             Properties env = new Properties();
             if (Strings.emptyToNull(path) != null) {
                 env.setProperty(AlarmPriorityMap.PATH, path);
             }
-            alarmPriorityMap.load(env);
+            try {
+                alarmPriorityMap.load(env);
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                throw new CommandException("Failed to reload alarm priorities: "
+                        + e.getMessage(), e);
+            }
             return listPriorityMappings();
         }
     }
@@ -157,7 +171,8 @@ public final class AlarmCommandHandler implements CellCommandListener {
              description = "Modifies the internal mapping; to save values for future "
                              + "reloading, use the 'priority save' command.")
     class PriorityRestoreAllCommand implements Callable<String> {
-        public String call() throws Exception {
+        @Override
+        public String call() {
             alarmPriorityMap.restoreAllToDefaultPriority();
             return listPriorityMappings();
         }
@@ -175,12 +190,19 @@ public final class AlarmCommandHandler implements CellCommandListener {
                                     + "store after this command completes.")
         String path;
 
-        public String call() throws Exception {
+        @Override
+        public String call() throws CommandException {
             Properties env = new Properties();
             if (Strings.emptyToNull(path) != null) {
                 env.setProperty(AlarmPriorityMap.PATH, path);
             }
-            alarmPriorityMap.save(env);
+            try {
+                alarmPriorityMap.save(env);
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                throw new CommandException("Failed to save alarm priorities: " +
+                        e.getMessage(), e);
+            }
             return listPriorityMappings();
         }
     }
@@ -205,7 +227,8 @@ public final class AlarmCommandHandler implements CellCommandListener {
                   valueSpec="LOW|MODERATE|HIGH|CRITICAL ")
         String priority;
 
-        public String call() throws Exception {
+        @Override
+        public String call() {
             try {
                 alarmPriorityMap.setPriority(type,
                                 AlarmPriority.valueOf(priority.toUpperCase()));
@@ -225,7 +248,8 @@ public final class AlarmCommandHandler implements CellCommandListener {
                   valueSpec="LOW|MODERATE|HIGH|CRITICAL ")
         String priority;
 
-        public String call() throws Exception {
+        @Override
+        public String call() {
             alarmPriorityMap.setDefaultPriority(priority.toUpperCase());
             return "Default priority value is now set to " + priority + ".";
         }
@@ -261,7 +285,7 @@ public final class AlarmCommandHandler implements CellCommandListener {
         String message;
 
         @Override
-        public String call() throws Exception {
+        public String call() throws IOException {
             SendAlarmCLI.sendEvent(serverHost, serverPort, SendAlarmCLI.createEvent(domain, service, type, message));
             return "sending alarm to " + serverHost + ":" + serverPort;
         }

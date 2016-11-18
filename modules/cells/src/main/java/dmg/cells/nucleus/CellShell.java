@@ -395,7 +395,7 @@ public class CellShell extends CommandInterpreter
     public class GetroutesCommand implements Callable<CellRoute[]>
     {
         @Override
-        public CellRoute[] call() throws Exception
+        public CellRoute[] call()
         {
             return _nucleus.getRoutingList() ;
         }
@@ -422,7 +422,7 @@ public class CellShell extends CommandInterpreter
         String cellName;
 
         @Override
-        public CellInfo call() throws Exception
+        public CellInfo call() throws CommandException
         {
             CellInfo info = _nucleus.getCellInfo(cellName);
             if(info == null ) {
@@ -446,7 +446,7 @@ public class CellShell extends CommandInterpreter
     public class GetcellinfosCommand implements Callable<CellInfo[]>
     {
         @Override
-        public CellInfo[] call() throws Exception
+        public CellInfo[] call()
         {
             List<String> names = _nucleus.getCellNames();
 
@@ -475,7 +475,7 @@ public class CellShell extends CommandInterpreter
         String contextName;
 
         @Override
-        public Serializable call() throws Exception
+        public Serializable call() throws CommandException
         {
             if (contextName == null) {
                 return _nucleus.getDomainContext().keySet().toArray();
@@ -947,7 +947,7 @@ public class CellShell extends CommandInterpreter
         private final Stopwatch sw = Stopwatch.createUnstarted();
 
         @Override
-        public PingCommand call() throws Exception
+        public PingCommand call()
         {
             sw.start();
             ping();
@@ -2181,9 +2181,15 @@ public class CellShell extends CommandInterpreter
         String path = "/";
 
         @Override
-        public String call() throws Exception
+        public String call() throws CommandException
         {
-            return String.join("\n", _nucleus.getCuratorFramework().getChildren().forPath(path));
+            try {
+                return String.join("\n", _nucleus.getCuratorFramework().getChildren().forPath(path));
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                throw new CommandException("Failed to list zookeeper nodes: " +
+                        e.getMessage(), e);
+            }
         }
     }
 
@@ -2194,9 +2200,15 @@ public class CellShell extends CommandInterpreter
         String path;
 
         @Override
-        public String call() throws Exception
+        public String call() throws CommandException
         {
-            return new String(_nucleus.getCuratorFramework().getData().forPath(path), StandardCharsets.UTF_8);
+            try {
+                return new String(_nucleus.getCuratorFramework().getData().forPath(path), StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                Throwables.propagateIfPossible(e);
+                throw new CommandException("Failed to get zookeeper node data: "
+                        + e.getMessage(), e);
+            }
         }
     }
 

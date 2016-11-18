@@ -226,7 +226,7 @@ public class CostModuleV1
         String value;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             return "The 'cm set active' command is obsolete.";
         }
@@ -240,7 +240,7 @@ public class CostModuleV1
         String value;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             return "The 'cm set update' command is obsolete.";
         }
@@ -254,7 +254,7 @@ public class CostModuleV1
         String value;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             return "The 'cm set magic' command is obsolete.";
         }

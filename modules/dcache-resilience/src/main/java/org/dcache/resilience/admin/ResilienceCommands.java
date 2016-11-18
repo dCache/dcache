@@ -143,7 +143,7 @@ public final class ResilienceCommands implements CellCommandListener {
 
     abstract class ResilienceCommand implements Callable<String> {
         @Override
-        public String call() throws Exception {
+        public String call() {
             String error = initializer.getInitError();
 
             if (error != null) {
@@ -323,7 +323,7 @@ public final class ResilienceCommands implements CellCommandListener {
                                     + "are not running.  Executed asynchronously.")
     class EnableCommand implements Callable<String>  {
         @Override
-        public String call() throws Exception {
+        public String call() {
             if (!messageGuard.isEnabled()) {
                 messageGuard.enable();
 

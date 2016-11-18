@@ -42,6 +42,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -284,7 +285,7 @@ public class CanlContextFactory implements SslContextFactory
                     new Callable<SSLContext>()
                     {
                         @Override
-                        public SSLContext call() throws Exception
+                        public SSLContext call() throws GeneralSecurityException, IOException
                         {
                             return factory.getContext(
                                     new PEMCredential(keyPath.toString(), certificatePath.toString(), null));

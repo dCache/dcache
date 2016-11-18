@@ -102,7 +102,7 @@ public class RepositoryInterpreter
         boolean all;
 
         @Override
-        public String call() throws Exception
+        public String call() throws CacheException, InterruptedException
         {
             long expire;
             switch (state) {
@@ -386,7 +386,7 @@ public class RepositoryInterpreter
         boolean isForced;
 
         @Override
-        public String call() throws Exception
+        public String call() throws CacheException, InterruptedException
         {
             CacheEntry entry = _repository.getEntry(pnfsId);
             if (isForced || entry.getState() == ReplicaState.CACHED && !entry.isSticky()) {
@@ -408,7 +408,7 @@ public class RepositoryInterpreter
         PnfsId pnfsId;
 
         @Override
-        public String call() throws Exception
+        public String call() throws IllegalArgumentException, IllegalTransitionException, InterruptedException, CacheException
         {
             _repository.setState(pnfsId, ReplicaState.PRECIOUS);
             return "";
@@ -425,7 +425,7 @@ public class RepositoryInterpreter
         PnfsId pnfsId;
 
         @Override
-        public String call() throws Exception
+        public String call() throws IllegalArgumentException, IllegalTransitionException, InterruptedException, CacheException
         {
             _repository.setState(pnfsId, ReplicaState.CACHED);
             return "";
@@ -441,7 +441,7 @@ public class RepositoryInterpreter
         PnfsId pnfsId;
 
         @Override
-        public String call() throws Exception
+        public String call() throws IllegalArgumentException, IllegalTransitionException, InterruptedException, CacheException
         {
             _repository.setState(pnfsId, ReplicaState.BROKEN);
             return "";

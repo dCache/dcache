@@ -507,7 +507,7 @@ public class UserAdminShell
         Boolean trace;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             if (trace != null) {
                 _fullException = trace;
@@ -525,7 +525,7 @@ public class UserAdminShell
         Integer seconds;
 
         @Override
-        public String call() throws Exception
+        public String call() throws IllegalArgumentException
         {
             if (seconds != null) {
                 checkArgument(seconds >= 1, "Timeout must be positive.");
@@ -546,9 +546,14 @@ public class UserAdminShell
         String[] pattern = {"*"};
 
         @Override
-        public String call() throws Exception
+        public String call() throws CacheException, InterruptedException, NoRouteToCellException, CommandException
         {
-            return String.join("\n", expandCellPatterns(asList(pattern)));
+            try {
+                return String.join("\n", expandCellPatterns(asList(pattern)));
+            } catch (ExecutionException e) {
+                Throwables.propagateIfPossible(e.getCause());
+                throw new CommandException("Failed to list cells: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -565,7 +570,7 @@ public class UserAdminShell
         String user;
 
         @Override
-        public String call() throws Exception
+        public String call() throws AclException, InterruptedException
         {
             String oldUser = _user;
             try {
@@ -582,7 +587,7 @@ public class UserAdminShell
                 checkCdPermission(name);
                 _currentPosition = resolve(name);
                 _completer = null;
-            } catch (Throwable e) {
+            } catch (AclException | InterruptedException | RuntimeException e) {
                 _user = oldUser;
                 throw e;
             }
@@ -636,7 +641,7 @@ public class UserAdminShell
     class QuitCommand implements Callable<Serializable>
     {
         @Override
-        public Serializable call() throws Exception
+        public Serializable call() throws CommandExitException
         {
             throw new CommandExitException("Done", 0);
         }

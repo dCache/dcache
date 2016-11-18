@@ -106,7 +106,7 @@ public class LoginBrokerPublisher
         int time;
 
         @Override
-        public String call() throws Exception
+        public String call() throws IllegalArgumentException
         {
             checkArgument(time >= 2, "Update time out of range.");
             setBrokerUpdateTime(_brokerUpdateTime, _brokerUpdateTimeUnit);
@@ -124,7 +124,7 @@ public class LoginBrokerPublisher
         double load;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             setUpdateThreshold(load);
             return "";
@@ -140,7 +140,7 @@ public class LoginBrokerPublisher
         String[] tags;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             setTags(asList(tags));
             return "";
@@ -163,7 +163,7 @@ public class LoginBrokerPublisher
         boolean write;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             if (read || !write) {
                 setReadEnabled(false);
@@ -188,7 +188,7 @@ public class LoginBrokerPublisher
         boolean write;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             if (read || !write) {
                 setReadEnabled(true);

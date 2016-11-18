@@ -281,7 +281,7 @@ public class PinManagerCLI
     public class BulkClearCommand implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call()
         {
             int count = 0;
             Iterator<BulkJob> i = _jobs.values().iterator();

@@ -259,7 +259,7 @@ public class SrmCommandLineInterface
         Long id;
 
         @Override
-        public String call() throws Exception
+        public String call() throws DataAccessException, SRMInvalidRequestException
         {
             StringBuilder sb = new StringBuilder();
             if (id != null) {

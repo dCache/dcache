@@ -109,7 +109,8 @@ public class BillingInfoMessageReceiver implements CellMessageReceiver,
         @Argument(valueSpec = "start|stop")
         String option;
 
-        public String call() throws Exception {
+        @Override
+        public String call() {
             if ("start".equals(option)) {
                 stopStatistics();
                 startStatistics();

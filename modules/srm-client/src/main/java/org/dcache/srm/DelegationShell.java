@@ -436,7 +436,7 @@ public class DelegationShell extends ShellApplication
         public String policy;
 
         @Override
-        public Serializable call() throws Exception
+        public Serializable call() throws CommandException
         {
             if (policy == null) {
                 switch (_versionPolicy) {
@@ -562,7 +562,7 @@ public class DelegationShell extends ShellApplication
         Integer lifetime = 60*60*24;
 
         @Override
-        public Serializable call() throws Exception
+        public Serializable call() throws CommandException
         {
             checkHaveEndpoint();
 

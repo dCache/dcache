@@ -41,7 +41,7 @@ public class AdminReloadingTemplate extends ReloadableTemplate implements CellCo
     class ReloadTemplateCommand implements Callable<Serializable>
     {
         @Override
-        public Serializable call() throws Exception
+        public Serializable call() throws IOException
         {
             reload();
             return "";

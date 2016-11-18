@@ -41,7 +41,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand implements Callable<String>
             {
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -77,7 +77,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand implements Callable<String>
             {
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -98,7 +98,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand implements Callable<String>
             {
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -121,7 +121,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand implements Callable<String>
             {
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -145,7 +145,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand implements Callable<String>
             {
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -172,7 +172,7 @@ public class AnnotatedCommandScannerTest
                 String argument2;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(argument1, is(1));
                     assertThat(argument2, is("2"));
@@ -198,7 +198,7 @@ public class AnnotatedCommandScannerTest
                 int argument;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(argument, is(1));
                     return null;
@@ -220,7 +220,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand implements Callable<String>
             {
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return "result";
                 }
@@ -245,7 +245,7 @@ public class AnnotatedCommandScannerTest
                 int required;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -269,7 +269,7 @@ public class AnnotatedCommandScannerTest
                 int required;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -296,7 +296,7 @@ public class AnnotatedCommandScannerTest
                 Integer required;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(optional, is(1));
                     assertThat(required, is(2));
@@ -325,7 +325,7 @@ public class AnnotatedCommandScannerTest
                 Integer required;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(optional, is((Integer) null));
                     assertThat(required, is(2));
@@ -351,7 +351,7 @@ public class AnnotatedCommandScannerTest
                 int optional = 10;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(optional, is(10));
                     return null;
@@ -430,7 +430,7 @@ public class AnnotatedCommandScannerTest
                 long[] arg18;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(arg0, is(0));
                     assertThat(arg1, is(1));
@@ -474,7 +474,7 @@ public class AnnotatedCommandScannerTest
 
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(bar, is(true));
                     return null;
@@ -500,7 +500,7 @@ public class AnnotatedCommandScannerTest
 
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(bar, is(2));
                     return null;
@@ -526,7 +526,7 @@ public class AnnotatedCommandScannerTest
 
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(bar, is(2));
                     return null;
@@ -552,7 +552,7 @@ public class AnnotatedCommandScannerTest
 
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(bar, is(0));
                     return null;
@@ -578,7 +578,7 @@ public class AnnotatedCommandScannerTest
                 }
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -601,7 +601,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand implements Callable<ReturnType>
             {
                 @Override
-                public ReturnType call() throws Exception
+                public ReturnType call()
                 {
                     return null;
                 }
@@ -619,7 +619,7 @@ public class AnnotatedCommandScannerTest
             class AbstractCommand implements Callable<String>
             {
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     return null;
                 }
@@ -646,7 +646,7 @@ public class AnnotatedCommandScannerTest
                 public String line;
 
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(line, is("base"));
                     return null;
@@ -657,7 +657,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand extends BaseCommand
             {
                 @Override
-                public String call() throws Exception
+                public String call()
                 {
                     assertThat(line, is("test"));
                     return null;

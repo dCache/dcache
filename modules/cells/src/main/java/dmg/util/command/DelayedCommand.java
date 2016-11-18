@@ -39,7 +39,7 @@ public abstract class DelayedCommand<T extends Serializable>
     }
 
     @Override
-    public Reply call() throws Exception
+    public Reply call()
     {
         executor.execute(this);
         return this;

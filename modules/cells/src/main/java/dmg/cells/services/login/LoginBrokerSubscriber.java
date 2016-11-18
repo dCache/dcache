@@ -263,7 +263,7 @@ public class LoginBrokerSubscriber
         boolean showTime;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             Set<String> protocolSet = (protocols != null) ? new HashSet<>(asList(protocols)) : null;
             StringBuilder sb = new StringBuilder();
@@ -290,7 +290,7 @@ public class LoginBrokerSubscriber
     class UpdateCommand extends DelayedReply implements Callable<DelayedReply>
     {
         @Override
-        public DelayedReply call() throws Exception
+        public DelayedReply call()
         {
             return this;
         }

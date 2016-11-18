@@ -727,7 +727,7 @@ public class PnfsManagerV3
         PnfsIdOrPath file;
 
         @Override
-        public String call() throws Exception
+        public String call() throws CacheException
         {
             FileAttributes attributes =
                     _nameSpaceProvider.getFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider),

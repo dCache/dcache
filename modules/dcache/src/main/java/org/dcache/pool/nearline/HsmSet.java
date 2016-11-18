@@ -40,6 +40,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.CommandException;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -317,12 +318,12 @@ public class HsmSet
         Args options;
 
         @Override
-        public String call() throws Exception
+        public String call() throws CommandException
         {
             String instance = (this.instance == null) ? type : this.instance;
             if (_isReadingSetup) {
                 if (_newConfig.containsKey(instance)) {
-                    throw new IllegalArgumentException("Nearline storage already exists: " + instance);
+                    throw new CommandException("Nearline storage already exists: " + instance);
                 }
                 HsmInfo info = _hsm.get(instance);
                 if (info == null) {
@@ -332,7 +333,7 @@ public class HsmSet
                 _newConfig.put(instance, info);
             } else {
                 if (_hsm.containsKey(instance)) {
-                    throw new IllegalArgumentException("Nearline storage already exists: " + instance);
+                    throw new CommandException("Nearline storage already exists: " + instance);
                 }
                 HsmInfo info = new HsmInfo(instance, type, provider);
                 info.scanOptions(options);
@@ -356,11 +357,11 @@ public class HsmSet
         Args options;
 
         @Override
-        public String call() throws Exception
+        public String call() throws CommandException
         {
             HsmInfo info = _isReadingSetup ? _newConfig.get(instance) : _hsm.get(instance);
             if (info == null) {
-                throw new IllegalArgumentException(instance + ": No such nearline storage. You may need to run 'hsm create'.");
+                throw new CommandException(instance + ": No such nearline storage. You may need to run 'hsm create'.");
             }
             info.scanOptions(options);
             return "";
@@ -380,11 +381,11 @@ public class HsmSet
         Args options;
 
         @Override
-        public String call() throws Exception
+        public String call() throws CommandException
         {
             HsmInfo info = _isReadingSetup ? _newConfig.get(instance) : _hsm.get(instance);
             if (info == null) {
-                throw new IllegalArgumentException(instance + ": No such nearline storage. You may need to run 'hsm create'.");
+                throw new CommandException(instance + ": No such nearline storage. You may need to run 'hsm create'.");
             }
             info.scanOptionsUnset(options);
             return "";
@@ -400,7 +401,7 @@ public class HsmSet
         String[] instances;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             StringBuilder sb = new StringBuilder();
             if (instances != null && instances.length > 0) {
@@ -425,7 +426,7 @@ public class HsmSet
         String instance;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             HsmInfo info = (_isReadingSetup ? _newConfig : _hsm).remove(instance);
             if (info != null) {
@@ -442,7 +443,7 @@ public class HsmSet
     public class ShowProvidersCommand implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call()
         {
             ColumnWriter writer = new ColumnWriter();
             writer.header("PROVIDER").left("provider").space();

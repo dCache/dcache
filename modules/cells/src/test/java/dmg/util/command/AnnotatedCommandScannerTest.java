@@ -22,7 +22,7 @@ public class AnnotatedCommandScannerTest
     private AnnotatedCommandScanner _scanner;
 
     @Before
-    public void setUp() throws Exception
+    public void setUp()
     {
         _scanner = new AnnotatedCommandScanner();
     }
@@ -36,7 +36,7 @@ public class AnnotatedCommandScannerTest
             class TestCommand implements Callable<DelayedReply>
             {
                 @Override
-                public DelayedReply call() throws Exception
+                public DelayedReply call()
                 {
                     return new DelayedReply();
                 }

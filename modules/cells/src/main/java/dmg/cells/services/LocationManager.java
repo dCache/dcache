@@ -344,7 +344,7 @@ public class LocationManager extends CellAdapter
     class ListCommand implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call()
         {
             ColumnWriter writer = new ColumnWriter()
                     .header("NAME").left("name").space()

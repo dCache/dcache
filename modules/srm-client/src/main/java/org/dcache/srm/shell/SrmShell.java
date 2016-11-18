@@ -639,7 +639,7 @@ public class SrmShell extends ShellApplication
         String style;
 
         @Override
-        public Serializable call()
+        public Serializable call() throws IllegalArgumentException
         {
             switch (style) {
             case "srm":
@@ -995,7 +995,7 @@ public class SrmShell extends ShellApplication
     public class LpwdCommand implements Callable<Serializable>
     {
         @Override
-        public Serializable call() throws Exception
+        public Serializable call()
         {
             return lcwd.toString();
         }
@@ -1870,7 +1870,7 @@ public class SrmShell extends ShellApplication
         File path;
 
         @Override
-        public String call() throws Exception
+        public String call() throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
         {
             TMetaDataPathDetail detail = fs.stat(lookup(path));
 
@@ -2145,7 +2145,7 @@ public class SrmShell extends ShellApplication
         String description;
 
         @Override
-        public String call() throws Exception
+        public String call() throws RemoteException, IOException, SRMException
         {
             console.printColumns(asList(fs.getSpaceTokens(description)));
             return null;
@@ -2162,7 +2162,7 @@ public class SrmShell extends ShellApplication
         File[] paths;
 
         @Override
-        public String call() throws Exception
+        public String call() throws RemoteException, URI.MalformedURIException, SRMException
         {
             TPermissionReturn[] permissions = fs.getPermissions(lookup(paths));
 
@@ -2224,7 +2224,7 @@ public class SrmShell extends ShellApplication
         File[] paths;
 
         @Override
-        public String call() throws Exception
+        public String call() throws RemoteException, URI.MalformedURIException, SRMException
         {
             TSURLPermissionReturn[] permissions = fs.checkPermissions(lookup(paths));
 
@@ -2295,7 +2295,7 @@ public class SrmShell extends ShellApplication
         String description;
 
         @Override
-        public String call() throws Exception
+        public String call() throws RemoteException, SRMException, InterruptedException
         {
             TMetaDataSpace space =
                     fs.reserveSpace(size, description,
@@ -2322,7 +2322,7 @@ public class SrmShell extends ShellApplication
         String spaceToken;
 
         @Override
-        public String call() throws Exception
+        public String call() throws RemoteException, SRMException
         {
             fs.releaseSpace(spaceToken);
             return null;
@@ -2338,7 +2338,7 @@ public class SrmShell extends ShellApplication
         String spaceToken;
 
         @Override
-        public String call() throws Exception
+        public String call() throws RemoteException, SRMException
         {
             StringWriter out = new StringWriter();
             PrintWriter writer = new PrintWriter(out);
@@ -2387,7 +2387,7 @@ public class SrmShell extends ShellApplication
         String local;
 
         @Override
-        public String call() throws Exception
+        public String call() throws URI.MalformedURIException
         {
             URI surl = lookup(remote);
             Path target = local == null ? lcwd.resolve(remote.getName()) : lcwd.resolve(local);
@@ -2441,7 +2441,7 @@ public class SrmShell extends ShellApplication
         File remote;
 
         @Override
-        public String call() throws Exception
+        public String call() throws URI.MalformedURIException
         {
             File source = lcwd.resolve(local).toFile();
 
@@ -2500,7 +2500,7 @@ public class SrmShell extends ShellApplication
     public class TransferClearCommand implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call()
         {
             completedTransfers.clear();
             return "";
@@ -2515,7 +2515,7 @@ public class SrmShell extends ShellApplication
         Integer id;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             StringBuilder sb = new StringBuilder();
 
@@ -2567,7 +2567,7 @@ public class SrmShell extends ShellApplication
         int id;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             FileTransfer transfer = removeOngoingTransfer(id);
             if (transfer == null) {
@@ -2591,7 +2591,7 @@ public class SrmShell extends ShellApplication
         String key;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             StringBuilder sb = new StringBuilder();
             Map<String,String> options = fs.getTransportOptions();
@@ -2629,7 +2629,7 @@ public class SrmShell extends ShellApplication
         String value;
 
         @Override
-        public String call() throws Exception
+        public String call()
         {
             fs.setTransportOption(key, value);
             return "";
@@ -2641,7 +2641,7 @@ public class SrmShell extends ShellApplication
     public class StatisticsShowCommand implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call()
         {
             ColumnWriter requests = new ColumnWriter()
                     .header("Operation").left("operation").space()
@@ -2685,7 +2685,7 @@ public class SrmShell extends ShellApplication
     public class StatisticsResetCommand  implements Callable<String>
     {
         @Override
-        public String call() throws Exception
+        public String call()
         {
             counters.reset();
             gauges.reset();

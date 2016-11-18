@@ -175,7 +175,7 @@ public interface Repository
      * @throws CacheException in case of other errors
      */
     void setState(PnfsId id, ReplicaState state)
-        throws IllegalArgumentException, InterruptedException, CacheException;
+        throws IllegalArgumentException, IllegalTransitionException, InterruptedException, CacheException;
 
     /**
      * Adds a state change listener.
