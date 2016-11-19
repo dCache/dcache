@@ -5,6 +5,9 @@ package org.dcache.pool.classic;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFutureTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -26,11 +29,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
@@ -88,6 +94,7 @@ import dmg.util.command.Option;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageReply;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
@@ -113,6 +120,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.stream.Collectors.toList;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 
 public class PoolV4
@@ -199,6 +207,8 @@ public class PoolV4
     private double _breakEven = DEFAULT_BREAK_EVEN;
     private double _moverCostFactor = 0.5;
     private TransferServices _transferServices;
+
+    private Executor _executor;
 
     public PoolV4(String poolName)
     {
@@ -305,6 +315,12 @@ public class PoolV4
         } else {
             throw new IllegalArgumentException("Illegal 'dupRequest' value");
         }
+    }
+
+    @Required
+    public void setExecutor(Executor executor)
+    {
+        _executor = executor;
     }
 
     @Required
@@ -1165,47 +1181,58 @@ public class PoolV4
         return msg;
     }
 
-    public PoolRemoveFilesMessage messageArrived(PoolRemoveFilesMessage msg)
-        throws CacheException, InterruptedException
+    public Reply messageArrived(PoolRemoveFilesMessage msg)
+        throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
-            _log.warn("PoolRemoveFilesMessage request rejected due to "
-                      + _poolMode);
+            _log.warn("PoolRemoveFilesMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
-        String[] fileList = msg.getFiles();
-        int counter = 0;
-        for (int i = 0; i < fileList.length; i++) {
-            try {
-                PnfsId pnfsId = new PnfsId(fileList[i]);
-                if (!_cleanPreciousFiles && _hasTapeBackend
-                    && (_repository.getState(pnfsId) == EntryState.PRECIOUS)) {
-                    counter++;
-                    _log.error("Replica " + fileList[i] + " kept (precious)");
-                } else {
-                    _repository.setState(pnfsId, EntryState.REMOVED);
-                    fileList[i] = null;
-                }
-            } catch (IllegalTransitionException e) {
-                _log.error("Replica " + fileList[i] + " not removed: "
-                           + e.getMessage());
-                counter++;
-            }
-        }
-        if (counter > 0) {
-            String[] replyList = new String[counter];
-            for (int i = 0, j = 0; i < fileList.length; i++) {
-                if (fileList[i] != null) {
-                    replyList[j++] = fileList[i];
-                }
-            }
-            msg.setFailed(1, replyList);
-        } else {
-            msg.setSucceeded();
-        }
+        List<ListenableFutureTask<String>> tasks = Stream.of(msg.getFiles())
+                .map(file -> ListenableFutureTask.create(() -> remove(file))).collect(toList());
+        tasks.forEach(_executor::execute);
+        MessageReply<PoolRemoveFilesMessage> reply = new MessageReply<>();
+        Futures.addCallback(Futures.allAsList(tasks),
+                            new FutureCallback<List<String>>()
+                            {
+                                @Override
+                                public void onSuccess(List<String> files)
+                                {
+                                    String[] replyList = files.stream().filter(Objects::nonNull).toArray(String[]::new);
+                                    if (replyList.length > 0) {
+                                        msg.setFailed(1, replyList);
+                                    } else {
+                                        msg.setSucceeded();
+                                    }
+                                    reply.reply(msg);
+                                }
 
-        return msg;
+                                @Override
+                                public void onFailure(Throwable t)
+                                {
+                                    reply.fail(msg, t);
+                                }
+                            });
+        return reply;
+    }
+
+    private String remove(String file) throws CacheException, InterruptedException
+    {
+        try {
+            PnfsId pnfsId = new PnfsId(file);
+            if (!_cleanPreciousFiles && _hasTapeBackend
+                && (_repository.getState(pnfsId) == EntryState.PRECIOUS)) {
+                _log.error("Replica {} kept (precious)", file);
+                return file;
+            } else {
+                _repository.setState(pnfsId, EntryState.REMOVED);
+                return null;
+            }
+        } catch (IllegalTransitionException e) {
+            _log.error("Replica {} not removed: {}", file, e.getMessage());
+            return file;
+        }
     }
 
     public PoolModifyPersistencyMessage

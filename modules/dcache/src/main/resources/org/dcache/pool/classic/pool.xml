@@ -92,6 +92,7 @@
     <property name="ioQueueManager" ref="io-queue-manager" />
     <property name="poolMode" ref="pool-mode"/>
     <property name="billingStub" ref="billing-stub"/>
+    <property name="executor" ref="workerThreadPool"/>
   </bean>
 
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
