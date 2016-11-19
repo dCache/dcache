@@ -61,6 +61,9 @@ public class TStatusCodes
         if (asList(success).contains(statusCode)) {
             return;
         }
+        if (explanation == null) {
+            explanation = "Operation failed with " + returnStatus.getStatusCode();
+        }
         if (statusCode == TStatusCode.SRM_FAILURE) {
             throw new SRMException(explanation);
         } else if (statusCode == TStatusCode.SRM_PARTIAL_SUCCESS) {

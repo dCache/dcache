@@ -1622,7 +1622,8 @@ public class SrmShell extends ShellApplication
                 public void onFailure(Throwable t)
                 {
                     synchronized (notifications) {
-                        notifications.add("[" + id + "] Transfer failed: " + t.toString());
+                        String msg = t.getMessage();
+                        notifications.add("[" + id + "] Transfer failed: " + msg == null ? t.toString() : msg);
                         FileTransfer failedTransfer = ongoingTransfers.remove(id);
                         completedTransfers.put(id, failedTransfer);
                     }
