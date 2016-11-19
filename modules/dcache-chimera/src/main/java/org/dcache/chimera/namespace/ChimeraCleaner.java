@@ -282,23 +282,19 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         try {
             _log.info("*********NEW_RUN*************");
 
-            if (_log.isDebugEnabled()){
-                _log.debug("INFO: Refresh Interval : " + _refreshInterval + " " + _refreshIntervalUnit);
-                _log.debug("INFO: Number of files processed at once: " + _processAtOnce);
-            }
+            _log.debug("INFO: Refresh Interval : {} {}", _refreshInterval, _refreshIntervalUnit);
+            _log.debug("INFO: Number of files processed at once: {}", _processAtOnce);
 
             // get list of pool names from the trash_table
             List<String> poolList = getPoolList();
 
-            if (_log.isDebugEnabled()){
-                _log.debug("List of Pools from the trash-table : "+ poolList);
-            }
+            _log.debug("List of Pools from the trash-table : {}", poolList);
 
             // if there are some pools in the blackPoolList (i.e.,
             //pools that are down/do not exist), extract them from the
             //poolList
             if (!_poolsBlackList.isEmpty()) {
-                _log.debug("htBlackPools.size()="+ _poolsBlackList.size());
+                _log.debug("{} pools are currently blacklisted.", _poolsBlackList.size());
 
                 for (Map.Entry<String, Long> blackListEntry : _poolsBlackList.entrySet()) {
                     String poolName = blackListEntry.getKey();
@@ -309,28 +305,22 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                         && (_recoverTimer > 0)
                         && ((System.currentTimeMillis() - valueTime) > _recoverTimerUnit.toMillis(_recoverTimer))) {
                         _poolsBlackList.remove(poolName);
-                        if (_log.isDebugEnabled()) {
-                            _log.debug("Remove the following pool from the Black List : "+ poolName);
-                        }
-                    }
+                        _log.debug("Removed the following pool from the black list: {}", poolName);}
                 }
 
                 poolList.removeAll(_poolsBlackList.keySet());
             }
 
             if (!poolList.isEmpty()) {
-                _log.debug("The following pools are sent to runDelete(..): {}",
-                           poolList);
+                _log.debug("The following pools are cleaned: {}", poolList);
                 runDelete(poolList);
             }
 
             //HSM part
             if (_hsmCleanerEnabled){
                 runDeleteHSM();
+                runNotification();
             }
-
-            // Notify other components that we are done deleting
-            runNotification();
         } catch (DataAccessException e) {
             _log.error("Database failure: " + e.getMessage());
         } catch (InterruptedException e) {
@@ -395,13 +385,21 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 throw new InterruptedException("Cleaner interrupted");
             }
 
-            _log.info("runDelete(): Now processing pool {}", pool);
-            if (!_poolsBlackList.containsKey(pool)) {
-                try {
-                    cleanPoolComplete(pool);
-                } catch (CacheException e) {
-                    _log.warn("Failed to remove files from {}: {}", pool, e.getMessage());
-                }
+            runDelete(pool);
+
+            // Notify other components that we are done deleting
+            runNotification();
+        }
+    }
+
+    private void runDelete(String pool) throws InterruptedException
+    {
+        _log.info("runDelete(): Now processing pool {}", pool);
+        if (!_poolsBlackList.containsKey(pool)) {
+            try {
+                cleanPoolComplete(pool);
+            } catch (CacheException e) {
+                _log.warn("Failed to remove files from {}: {}", pool, e.getMessage());
             }
         }
     }
