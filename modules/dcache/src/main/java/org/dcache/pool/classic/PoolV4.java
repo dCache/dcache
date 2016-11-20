@@ -91,6 +91,7 @@ import dmg.cells.nucleus.Reply;
 import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -153,8 +154,8 @@ public class PoolV4
     private final long _serialId = System.currentTimeMillis();
     private static final CellVersion VERSION = new CellVersion(Version.of(PoolV4.class));
     private PoolV2Mode _poolMode;
-    private boolean _reportOnRemovals;
-    private boolean _suppressHsmLoad;
+    private volatile boolean _reportOnRemovals;
+    private volatile boolean _suppressHsmLoad;
     private boolean _cleanPreciousFiles;
     private String     _poolStatusMessage = "OK";
     private int        _poolStatusCode;
@@ -183,8 +184,6 @@ public class PoolV4
 
     private boolean _isVolatile;
     private boolean _hasTapeBackend = true;
-
-    private int _cleaningInterval = 60;
 
     private final Object _hybridInventoryLock = new Object();
     private boolean _hybridInventoryActive;
@@ -1733,169 +1732,213 @@ public class PoolV4
         }
     }
 
-    public static final String hh_set_replication = "[-off] [<mgr> [<host>]]";
-    public String ac_set_replication_$_0_2(Args args)
+    @Command(name = "set replication")
+    class SetReplicationCommand implements Callable<String>
     {
-        if (args.hasOption("off")) {
-            setReplicationNotificationDestination("");
-        } else if (args.argc() > 0) {
-            setReplicationNotificationDestination(args.argv(0));
-            if (args.argc() > 1) {
-                setReplicationIp(args.argv(1));
+        @Option(name = "off")
+        boolean off;
+
+        @Argument(required = false, index = 0)
+        String mgr;
+
+        @Argument(required = false, index = 1)
+        String host;
+
+        @Override
+        public String call()
+        {
+            if (off) {
+                setReplicationNotificationDestination("");
+            } else if (mgr != null) {
+                setReplicationNotificationDestination(mgr);
+                if (host != null) {
+                    setReplicationIp(host);
+                }
             }
+            return _replicationHandler.toString();
         }
-        return _replicationHandler.toString();
     }
 
-    public static final String hh_pool_suppress_hsmload = "on|off";
+    @Command(name = "pool suppress hsmload")
     @AffectsSetup
-    public String ac_pool_suppress_hsmload_$_1(Args args)
+    class SetPoolSuppressCommand implements Callable<String>
     {
-        String mode = args.argv(0);
-        switch (mode) {
-        case "on":
-            _suppressHsmLoad = true;
-            break;
-        case "off":
-            _suppressHsmLoad = false;
-            break;
-        default:
-            throw new IllegalArgumentException("Illegal syntax : pool suppress hsmload on|off");
-        }
+        @Argument(valueSpec = "on|off")
+        String mode;
 
-        return "hsm load suppression switched : "
-            + (_suppressHsmLoad ? "on" : "off");
+        @Override
+        public String call() throws CommandSyntaxException
+        {
+            switch (mode) {
+            case "on":
+                _suppressHsmLoad = true;
+                break;
+            case "off":
+                _suppressHsmLoad = false;
+                break;
+            default:
+                throw new CommandSyntaxException("Illegal syntax : pool suppress hsmload on|off");
+            }
+
+            return "hsm load suppression switched : " + (_suppressHsmLoad ? "on" : "off");
+        }
     }
 
-    public static final String hh_set_duplicate_request = "none|ignore|refresh";
     @AffectsSetup
-    public String ac_set_duplicate_request_$_1(Args args)
-        throws CommandSyntaxException
-    {
-        String mode = args.argv(0);
-        switch (mode) {
-        case "none":
-            _dupRequest = DUP_REQ_NONE;
-            break;
-        case "ignore":
-            _dupRequest = DUP_REQ_IGNORE;
-            break;
-        case "refresh":
-            _dupRequest = DUP_REQ_REFRESH;
-            break;
-        default:
-            throw new CommandSyntaxException("Not Found : ",
-                    "Usage : pool duplicate request none|ignore|refresh");
+    @Command(name="set duplicate request")
+    class SetDuplicateRequestCommand implements Callable<String> {
+        @Argument(valueSpec = "none|ignore|refresh")
+        String mode;
+
+        @Override
+        public String call() throws CommandSyntaxException
+        {
+            switch (mode) {
+            case "none":
+                _dupRequest = DUP_REQ_NONE;
+                break;
+            case "ignore":
+                _dupRequest = DUP_REQ_IGNORE;
+                break;
+            case "refresh":
+                _dupRequest = DUP_REQ_REFRESH;
+                break;
+            default:
+                throw new CommandSyntaxException("Not Found : ",
+                                                 "Usage : pool duplicate request none|ignore|refresh");
+            }
+            return "";
         }
-        return "";
     }
 
-    public static final String hh_set_p2p = "integrated|separated; OBSOLETE";
+    @Deprecated
     public String ac_set_p2p_$_1(Args args)
     {
         return "WARNING: this command is obsolete";
     }
 
-    public static final String fh_pool_disable = "   pool disable [options] [ <errorCode> [<errorMessage>]]\n"
-        + "      OPTIONS :\n"
-        + "        -fetch    #  disallows fetch (transfer to client)\n"
-        + "        -stage    #  disallows staging (from HSM)\n"
-        + "        -store    #  disallows store (transfer from client)\n"
-        + "        -p2p-client\n"
-        + "        -rdonly   #  := store,stage,p2p-client\n"
-        + "        -strict   #  := disallows everything\n";
-    public static final String hh_pool_disable = "[options] [<errorCode> [<errorMessage>]] # suspend sending 'up messages'";
-    public String ac_pool_disable_$_0_2(Args args)
+    @Command(name = "pool disable")
+    class PoolDisableCommand implements Callable<String>
     {
-        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
-            return "The pool is dead and a restart is required to enable it";
-        }
+        @Option(name = "fetch", usage = "disallows fetch (transfer to client)")
+        boolean fetch;
 
-        int rc = (args.argc() > 0) ? Integer.parseInt(args.argv(0)) : 1;
-        String rm = (args.argc() > 1) ? args.argv(1) : "Operator intervention";
+        @Option(name = "stage", usage = "disallows staging (from HSM)")
+        boolean stage;
 
-        int modeBits = PoolV2Mode.DISABLED;
-        if (args.hasOption("strict")) {
-            modeBits |= PoolV2Mode.DISABLED_STRICT;
-        }
-        if (args.hasOption("stage")) {
-            modeBits |= PoolV2Mode.DISABLED_STAGE;
-        }
-        if (args.hasOption("fetch")) {
-            modeBits |= PoolV2Mode.DISABLED_FETCH;
-        }
-        if (args.hasOption("store")) {
-            modeBits |= PoolV2Mode.DISABLED_STORE;
-        }
-        if (args.hasOption("p2p-client")) {
-            modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
-        }
-        if (args.hasOption("p2p-server")) {
-            modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
-        }
-        if (args.hasOption("rdonly")) {
-            modeBits |= PoolV2Mode.DISABLED_RDONLY;
-        }
+        @Option(name = "store", usage = "disallows store (transfer from client)")
+        boolean store;
 
-        disablePool(modeBits, rc, rm);
+        @Option(name = "p2p-client", usage = "disallows pool to pool transfers to this pool")
+        boolean p2pClient;
 
-        return "Pool " + _poolName + " " + _poolMode;
+        @Option(name = "p2p-server", usage = "disallows pool to pool transfers from this pool")
+        boolean p2pServer;
+
+        @Option(name = "rdonly", usage = "equivalent to -store -stage -p2p-client")
+        boolean rdonly;
+
+        @Option(name = "strict", usage = "disallows everything")
+        boolean strict;
+
+        @Argument(required = false, index = 0)
+        int errorCode = 1;
+
+        @Argument(required = false, index = 1)
+        String errorMessage = "Operator intervention";
+
+        @Override
+        public String call()
+        {
+            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
+                return "The pool is dead and a restart is required to enable it";
+            }
+
+            int modeBits = PoolV2Mode.DISABLED;
+            if (strict) {
+                modeBits |= PoolV2Mode.DISABLED_STRICT;
+            }
+            if (stage) {
+                modeBits |= PoolV2Mode.DISABLED_STAGE;
+            }
+            if (fetch) {
+                modeBits |= PoolV2Mode.DISABLED_FETCH;
+            }
+            if (store) {
+                modeBits |= PoolV2Mode.DISABLED_STORE;
+            }
+            if (p2pClient) {
+                modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
+            }
+            if (p2pServer) {
+                modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
+            }
+            if (rdonly) {
+                modeBits |= PoolV2Mode.DISABLED_RDONLY;
+            }
+
+            disablePool(modeBits, errorCode, errorMessage);
+
+            return "Pool " + _poolName + " " + _poolMode;
+        }
     }
 
-    public static final String hh_pool_enable = "# start sending 'up messages' again";
-    public String ac_pool_enable(Args args)
+    @Command(name = "pool enable")
+    class PoolEnableCommand implements Callable<String>
     {
-        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
-            return "The pool is dead and a restart is required to enable it";
-        }
+        @Override
+        public String call()
+        {
+            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
+                return "The pool is dead and a restart is required to enable it";
+            }
 
-        enablePool(PoolV2Mode.ENABLED);
-        return "Pool " + _poolName + " " + _poolMode;
+            enablePool(PoolV2Mode.ENABLED);
+            return "Pool " + _poolName + " " + _poolMode;
+        }
     }
 
-    public static final String hh_set_max_movers = "!!! Please use 'mover|st|rh set max active <jobs>'";
+    @Deprecated
     public String ac_set_max_movers_$_1(Args args)
-        throws IllegalArgumentException
     {
-        int num = Integer.parseInt(args.argv(0));
-        if ((num < 0) || (num > 10000)) {
-            throw new IllegalArgumentException("Not in range (0...10000)");
-        }
         return "Please use 'mover|st|rh set max active <jobs>'";
 
     }
 
-    public static final String hh_set_report_remove = "on|off";
     @AffectsSetup
-    public String ac_set_report_remove_$_1(Args args)
-        throws CommandSyntaxException
+    @Command(name = "set report remove")
+    class SetReportRemoveCommand implements Callable<String>
     {
-        String onoff = args.argv(0);
-        switch (onoff) {
-        case "on":
-            _reportOnRemovals = true;
-            break;
-        case "off":
-            _reportOnRemovals = false;
-            break;
-        default:
-            throw new CommandSyntaxException("Invalid value : " + onoff);
+        @Argument(valueSpec = "on|off")
+        String onoff;
+
+        @Override
+        public String call() throws CommandSyntaxException
+        {
+            switch (onoff) {
+            case "on":
+                _reportOnRemovals = true;
+                break;
+            case "off":
+                _reportOnRemovals = false;
+                break;
+            default:
+                throw new CommandSyntaxException("Invalid value : " + onoff);
+            }
+            return "";
         }
-        return "";
     }
 
-    public static final String hh_set_sticky = "# Deprecated";
+    @Deprecated
     public String ac_set_sticky_$_0_1(Args args)
     {
         return "The command is deprecated and has no effect";
     }
 
-    public static final String hh_set_cleaning_interval = "<interval/sec>";
+    @Deprecated
     public String ac_set_cleaning_interval_$_1(Args args)
     {
-        _cleaningInterval = Integer.parseInt(args.argv(0));
-        LOGGER.info("set cleaning interval to {}", _cleaningInterval);
-        return "";
+        return "The command is deprecated and has no effect";
     }
 
     @AffectsSetup
