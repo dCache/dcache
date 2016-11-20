@@ -142,7 +142,7 @@ public class PoolV4
     private static final Pattern TAG_PATTERN =
         Pattern.compile("([^=]+)=(\\S*)\\s*");
 
-    private static final Logger _log = LoggerFactory.getLogger(PoolV4.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolV4.class);
 
     private String _poolName;
 
@@ -417,10 +417,10 @@ public class PoolV4
             throw new IllegalArgumentException(msg);
         }
 
-        for (Map.Entry<String,String> e: newTags.entrySet()) {
-            _tags.put(e.getKey(), e.getValue());
-            _log.info("Tag: " + e.getKey() + "="+ e.getValue());
-        }
+        newTags.forEach(((key,value) -> {
+            _tags.put(key, value);
+            LOGGER.info("Tag: {}={}", key, value);
+        }));
     }
 
     @Required
@@ -458,7 +458,7 @@ public class PoolV4
         assertNotRunning("Cannot initialize several times");
         checkState(!_isVolatile || !_hasTapeBackend, "Volatile pool cannot have a tape backend");
 
-        _log.info("Pool {} starting", _poolName);
+        LOGGER.info("Pool {} starting", _poolName);
 
         _repository.addFaultListener(this);
         _repository.addListener(new RepositoryLoader());
@@ -489,29 +489,29 @@ public class PoolV4
                     enablePool(PoolV2Mode.ENABLED);
                     _flushingThread.start();
                 } catch (RuntimeException e) {
-                    _log.error(AlarmMarkerFactory.getMarker
+                    LOGGER.error(AlarmMarkerFactory.getMarker
                                     (PredefinedAlarm.POOL_DISABLED, _poolName),
                                      "Pool {} initialization failed, repository "
                                      + "reported a problem."
                                      + "Please report this to support@dcache.org.",
-                                     _poolName, e);
-                    _log.warn("Pool not enabled {}", _poolName);
+                                 _poolName, e);
+                    LOGGER.warn("Pool not enabled {}", _poolName);
                     disablePool(PoolV2Mode.DISABLED_DEAD
                                     | PoolV2Mode.DISABLED_STRICT,
                                     666, "Init failed: " + e.getMessage());
                 } catch (Throwable e) {
-                    _log.error(AlarmMarkerFactory.getMarker
+                    LOGGER.error(AlarmMarkerFactory.getMarker
                                     (PredefinedAlarm.POOL_DISABLED, _poolName),
                                      "Pool {} initialization failed, repository "
                                      + "reported a problem ({}).",
-                                     _poolName, e.getMessage());
-                    _log.warn("Pool not enabled {}", _poolName);
+                                 _poolName, e.getMessage());
+                    LOGGER.warn("Pool not enabled {}", _poolName);
                     disablePool(PoolV2Mode.DISABLED_DEAD
                                     | PoolV2Mode.DISABLED_STRICT,
                                     666, "Init failed: " + e.getMessage());
                 }
 
-                _log.info("Repository finished");
+                LOGGER.info("Repository finished");
             }
         }.start();
     }
@@ -561,14 +561,14 @@ public class PoolV4
                         + event.getMessage() +". " + poolState;
 
         if (cause != null) {
-            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
-                            _poolName),
-                            message,
-                            cause);
+            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
+                                                      _poolName),
+                         message,
+                         cause);
         } else {
-            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
-                            _poolName),
-                            message);
+            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
+                                                      _poolName),
+                         message);
         }
     }
 
@@ -608,7 +608,7 @@ public class PoolV4
             }
 
             if (to == ReplicaState.PRECIOUS) {
-                _log.debug("Adding {} to flush queue", id);
+                LOGGER.debug("Adding {} to flush queue", id);
 
                 if (_hasTapeBackend) {
                     try {
@@ -618,15 +618,15 @@ public class PoolV4
                          * anything with it. We don't care about deleted
                          * files so we ignore this.
                          */
-                        _log.info("Failed to flush " + id + ": Replica is no longer in the pool", e);
+                        LOGGER.info("Failed to flush {}: Replica is no longer in the pool", id);
                     } catch (CacheException | InterruptedException e) {
-                        _log.error("Error adding {} to flush queue: {}", id, e.getMessage());
+                        LOGGER.error("Error adding {} to flush queue: {}", id, e.getMessage());
                     }
                 }
             } else if (from == ReplicaState.PRECIOUS) {
-                _log.debug("Removing {} from flush queue", id);
+                LOGGER.debug("Removing {} from flush queue", id);
                 if (!_storageQueue.removeCacheEntry(id)) {
-                    _log.info("File {} not found in flush queue", id);
+                    LOGGER.info("File {} not found in flush queue", id);
                 }
             }
         }
@@ -803,16 +803,16 @@ public class PoolV4
             }
             message.setFailed(e.getRc(), e.getMessage());
         } catch (FileNotInCacheException | FileInCacheException e) {
-            _log.warn(e.getMessage());
+            LOGGER.warn(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
         } catch (LockedCacheException e) {
-            _log.info(e.getMessage());
+            LOGGER.info(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {
-            _log.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
-            _log.error("Possible bug found: " + e.getMessage(), e);
+            LOGGER.error("Possible bug found: " + e.getMessage(), e);
             message.setFailed(CacheException.DEFAULT_ERROR_CODE,
                               "Failed to enqueue mover: " + e.getMessage());
         }
@@ -861,10 +861,10 @@ public class PoolV4
                 try {
                     _initiateReplication(_repository.getEntry(id), source);
                 } catch (InterruptedException e) {
-                    _log.error("Problem in sending replication request: " + e);
+                    LOGGER.warn("Replication request was interrupted");
                     Thread.currentThread().interrupt();
                 } catch (CacheException e) {
-                    _log.error("Problem in sending replication request: " + e);
+                    LOGGER.error("Problem in sending replication request: {}", e.getMessage());
                 }
             }
         }
@@ -933,7 +933,7 @@ public class PoolV4
                 int errorCode = ce.getRc();
                 switch (errorCode) {
                 case CacheException.FILE_IN_CACHE:
-                    _log.info("Pool already contains replica");
+                    LOGGER.info("Pool already contains replica");
                     _message.setSucceeded();
                     break;
                 case CacheException.ERROR_IO_DISK:
@@ -941,11 +941,11 @@ public class PoolV4
                 case 42:
                 case 43:
                     disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce.getMessage());
-                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
-                                                            _poolName),
-                                    "Error encountered during fetch of {}",
-                                    pnfsId,
-                                    ce.getMessage());
+                    LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
+                                                              _poolName),
+                                 "Error encountered during fetch of {}",
+                                 pnfsId,
+                                 ce.getMessage());
                     _message.setFailed(errorCode, ce.getMessage());
                     break;
                 default:
@@ -1024,11 +1024,11 @@ public class PoolV4
             int id = kill.getMoverId();
             MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
             String explanation = kill.getExplanation();
-            _log.info("Killing mover {}: {}", id, explanation);
+            LOGGER.info("Killing mover {}: {}", id, explanation);
             js.cancel(id, explanation);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
-            _log.info(e.toString());
+            LOGGER.info(e.toString());
             kill.setReply(1, e);
         }
         return kill;
@@ -1047,8 +1047,8 @@ public class PoolV4
                 && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
             if (!msg.isForceSourceMode()) {
-                _log.warn("PoolIoFileMessage request rejected due to "
-                          + _poolMode);
+                LOGGER.warn("PoolIoFileMessage request rejected due to "
+                            + _poolMode);
                 throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
             }
         }
@@ -1061,8 +1061,8 @@ public class PoolV4
         throws CacheException, IOException, InterruptedException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
-            _log.warn("Pool2PoolTransferMsg request rejected due to "
-                       + _poolMode);
+            LOGGER.warn("Pool2PoolTransferMsg request rejected due to "
+                        + _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
@@ -1092,19 +1092,19 @@ public class PoolV4
         throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
-            _log.warn("PoolFetchFileMessage request rejected due to "
-                       + _poolMode);
+            LOGGER.warn("PoolFetchFileMessage request rejected due to "
+                        + _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
         if (!_hasTapeBackend) {
-            _log.warn("PoolFetchFileMessage request rejected due to LFS mode");
+            LOGGER.warn("PoolFetchFileMessage request rejected due to LFS mode");
             throw new CacheException(CacheException.POOL_DISABLED, "Pool has no tape backend");
         }
 
         FileAttributes fileAttributes = msg.getFileAttributes();
         String hsm = _hsmSet.getInstanceName(fileAttributes);
-        _log.info("Pool {} asked to fetch file {} (hsm={})",
-                _poolName, fileAttributes.getPnfsId(), hsm);
+        LOGGER.info("Pool {} asked to fetch file {} (hsm={})",
+                    _poolName, fileAttributes.getPnfsId(), hsm);
         ReplyToPoolFetch reply = new ReplyToPoolFetch(msg);
         _storageHandler.stage(hsm, fileAttributes, reply);
         return reply;
@@ -1151,12 +1151,12 @@ public class PoolV4
         throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
-            _log.warn("PoolRemoveFilesFromHsmMessage request rejected due to "
-                      + _poolMode);
+            LOGGER.warn("PoolRemoveFilesFromHsmMessage request rejected due to "
+                        + _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
         if (!_hasTapeBackend) {
-            _log.warn("PoolRemoveFilesFromHsmMessage request rejected due to LFS mode");
+            LOGGER.warn("PoolRemoveFilesFromHsmMessage request rejected due to LFS mode");
             throw new CacheException(CacheException.POOL_DISABLED, "Pool has no tape backend");
         }
 
@@ -1199,7 +1199,7 @@ public class PoolV4
         throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
-            _log.warn("PoolRemoveFilesMessage request rejected due to {}", _poolMode);
+            LOGGER.warn("PoolRemoveFilesMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
@@ -1237,14 +1237,14 @@ public class PoolV4
             PnfsId pnfsId = new PnfsId(file);
             if (!_cleanPreciousFiles && _hasTapeBackend
                 && (_repository.getState(pnfsId) == ReplicaState.PRECIOUS)) {
-                _log.error("Replica {} kept (precious)", file);
+                LOGGER.error("Replica {} kept (precious)", file);
                 return file;
             } else {
                 _repository.setState(pnfsId, ReplicaState.REMOVED);
                 return null;
             }
         } catch (IllegalTransitionException e) {
-            _log.error("Replica {} not removed: {}", file, e.getMessage());
+            LOGGER.error("Replica {} not removed: {}", file, e.getMessage());
             return file;
         }
     }
@@ -1310,8 +1310,8 @@ public class PoolV4
         throws CacheException, InterruptedException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)) {
-            _log.warn("PoolSetStickyMessage request rejected due to "
-                      + _poolMode);
+            LOGGER.warn("PoolSetStickyMessage request rejected due to "
+                        + _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
@@ -1364,8 +1364,8 @@ public class PoolV4
                  * it reality it is accessible (this method is only
                  * used by DCacheCoreControllerV2).
                  */
-                _log.warn("Skipping {} when listing contents of pool {}: {}.",
-                          pnfsid, _poolName, e.getMessage());
+                LOGGER.warn("Skipping {} when listing contents of pool {}: {}.",
+                            pnfsid, _poolName, e.getMessage());
             }
         }
         return listing;
@@ -1420,7 +1420,7 @@ public class PoolV4
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
-        _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
+        LOGGER.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
     }
 
     /**
@@ -1434,7 +1434,7 @@ public class PoolV4
         _poolStatusMessage = "OK";
 
         _pingThread.sendPoolManagerMessage(true);
-        _log.warn("Pool mode changed to " + _poolMode);
+        LOGGER.warn("Pool mode changed to {}", _poolMode);
     }
 
     private class PoolManagerPingThread implements Runnable
@@ -1460,7 +1460,7 @@ public class PoolV4
         @Override
         public void run()
         {
-            _log.debug("Ping thread started");
+            LOGGER.debug("Ping thread started");
             try {
                 while (!Thread.interrupted()) {
                     sendPoolManagerMessage(true);
@@ -1469,7 +1469,7 @@ public class PoolV4
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } finally {
-                _log.debug("Ping Thread finished");
+                LOGGER.debug("Ping Thread finished");
             }
         }
 
@@ -1604,14 +1604,14 @@ public class PoolV4
             } catch (FileNotFoundCacheException e) {
                 try {
                     _repository.setState(id, ReplicaState.REMOVED);
-                    _log.info("File not found in PNFS; removed " + id);
+                    LOGGER.info("File not found in PNFS; removed {}", id);
                 } catch (InterruptedException | CacheException f) {
-                    _log.error("File not found in PNFS, but failed to remove "
-                               + id + ": " + f);
+                    LOGGER.error("File not found in PNFS, but failed to remove "
+                                 + id + ": " + f);
                 }
             } catch (CacheException e) {
-                _log.error("Cache location was not registered for "
-                           + id + ": " + e.getMessage());
+                LOGGER.error("Cache location was not registered for "
+                             + id + ": " + e.getMessage());
             }
         }
 
@@ -1627,9 +1627,9 @@ public class PoolV4
 
             long startTime, stopTime;
             if (_activate) {
-                _log.info("Registering all replicas in PNFS");
+                LOGGER.info("Registering all replicas in PNFS");
             } else {
-                _log.info("Unregistering all replicas in PNFS");
+                LOGGER.info("Unregistering all replicas in PNFS");
             }
             startTime = System.currentTimeMillis();
 
@@ -1653,7 +1653,7 @@ public class PoolV4
                         break;
                     }
                 } catch (CacheException e) {
-                    _log.warn(e.getMessage());
+                    LOGGER.warn(e.getMessage());
                 } catch (InterruptedException e) {
                     break;
                 }
@@ -1663,11 +1663,11 @@ public class PoolV4
                 _hybridInventoryActive = false;
             }
 
-            _log.info("Replica "
-                      + (_activate ? "registration" : "deregistration" )
-                      + " finished. " + _hybridCurrent
-                      + " replicas processed in "
-                      + (stopTime-startTime) + " msec");
+            LOGGER.info("Replica "
+                        + (_activate ? "registration" : "deregistration" )
+                        + " finished. " + _hybridCurrent
+                        + " replicas processed in "
+                        + (stopTime-startTime) + " msec");
         }
     }
 
@@ -1894,7 +1894,7 @@ public class PoolV4
     public String ac_set_cleaning_interval_$_1(Args args)
     {
         _cleaningInterval = Integer.parseInt(args.argv(0));
-        _log.info("set cleaning interval to " + _cleaningInterval);
+        LOGGER.info("set cleaning interval to {}", _cleaningInterval);
         return "";
     }
 
