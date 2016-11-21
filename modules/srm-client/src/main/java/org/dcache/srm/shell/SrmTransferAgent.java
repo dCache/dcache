@@ -13,7 +13,6 @@ import javax.annotation.Nonnull;
 
 import java.io.File;
 import java.rmi.RemoteException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
@@ -46,7 +45,6 @@ import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TAccessPattern;
 import org.dcache.srm.v2_2.TConnectionType;
-import org.dcache.srm.v2_2.TDirOption;
 import org.dcache.srm.v2_2.TGetFileRequest;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.TOverwriteMode;
@@ -393,7 +391,8 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     }
 
                     setDescription("waiting to request status update.");
-                    int delay = max(min(file.getEstimatedWaitTime(), 60), 1);
+                    Integer waitTime = file.getEstimatedWaitTime();
+                    int delay = waitTime == null ? 1 : max(min(waitTime, 60), 1);
                     _srmExecutor.schedule(new FailOnBugTask(new Runnable() {
                         @Override
                         public void run()
@@ -441,7 +440,8 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
                     setDescription("waiting to request status update.");
 
-                    int delay = Math.max(Math.min(file.getEstimatedWaitTime(), 60), 1);
+                    Integer waitTime = file.getEstimatedWaitTime();
+                    int delay = waitTime == null ? 1 : Math.max(Math.min(waitTime, 60), 1);
                     _srmExecutor.schedule(new FailOnBugTask(new Runnable() {
                         @Override
                         public void run()
@@ -582,8 +582,9 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
         {
             setDescription("requesting transfer URL.");
 
+            // DPM requires TDirOption to have null value.
             ArrayOfTGetFileRequest fileRequests = new ArrayOfTGetFileRequest(new TGetFileRequest[]{
-                new TGetFileRequest(getSurl(), new TDirOption(false, false, 0)),
+                new TGetFileRequest(getSurl(), null),
             });
             TTransferParameters params = new TTransferParameters(TAccessPattern.TRANSFER_MODE,
                     TConnectionType.WAN, null, getProtocolPreference());
@@ -614,7 +615,8 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
                     }
 
                     setDescription("waiting to request status update.");
-                    int delay = max(min(file.getEstimatedWaitTime(), 60), 1);
+                    Integer waitTime = file.getEstimatedWaitTime();
+                    int delay = waitTime == null ? 1 : max(min(waitTime, 60), 1);
                     _srmExecutor.schedule(new FailOnBugTask(new Runnable() {
                         @Override
                         public void run()
@@ -682,7 +684,8 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
                     setDescription("waiting to request status update.");
 
-                    int delay = Math.max(Math.min(file.getEstimatedWaitTime(), 60), 1);
+                    Integer waitTime = file.getEstimatedWaitTime();
+                    int delay = waitTime == null ? 1 : Math.max(Math.min(waitTime, 60), 1);
                     _srmExecutor.schedule(new FailOnBugTask(new Runnable() {
                         @Override
                         public void run()
