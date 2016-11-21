@@ -103,7 +103,7 @@ import org.dcache.util.Args;
  *
  * @author  timur
  */
-public class Configuration {
+public class Configuration extends ConnectionConfiguration {
 
     public static final String SRMCPCONFIGNAMESPACE="srmcp.srm.fnal.gov";
     private static final String webservice_pathv1 = "srm/managerv1";
@@ -255,10 +255,6 @@ public class Configuration {
         return ws_path;
     }
 
-    public String getRawWebservice_path() {
-        return webservice_path;
-    }
-
     public void setWebservice_path(String webservice_path) {
         this.webservice_path = webservice_path;
     }
@@ -365,26 +361,6 @@ public class Configuration {
 
     public void setGlobus_tcp_port_range(String globus_tcp_port_range) {
         this.globus_tcp_port_range = globus_tcp_port_range;
-    }
-
-    @Option(
-            name = "gss_expected_name",
-            description = "gss expected name",
-            required=false,
-            log=true,
-            save=true
-    )
-    private String gss_expected_name;
-
-    public String getGss_expected_name() {
-        if (gss_expected_name == null){
-            gss_expected_name = "host";
-        }
-        return gss_expected_name;
-    }
-
-    public void setGss_expected_name(String gss_expected_name) {
-        this.gss_expected_name = gss_expected_name;
     }
 
     @Option(
@@ -1305,44 +1281,6 @@ public class Configuration {
     }
 
     @Option(
-            name = "retry_timeout",
-            description =  "number of miliseconds to sleep after a failure",
-            defaultValue = "10000",
-            unit="milliseconds",
-            required=false,
-            log=true,
-            save=true
-    )
-    private long retry_timeout;
-
-    public long getRetry_timeout() {
-        return retry_timeout;
-    }
-    public void setRetry_timeout(long retry_timeout) {
-        this.retry_timeout = retry_timeout;
-    }
-
-
-    @Option(
-            name = "retry_num",
-            description =  "number of retries before client gives up",
-            defaultValue = "20",
-            required=false,
-            log=true,
-            save=true
-    )
-    private int retry_num;
-
-    public int getRetry_num() {
-        return retry_num;
-    }
-
-    public void setRetry_num(int retry_num) {
-        this.retry_num = retry_num;
-    }
-
-
-    @Option(
             name = "connect_to_wsdl",
             description =  "connect to WSDL instead of connecting to the server directly",
             defaultValue = "false",
@@ -1374,42 +1312,6 @@ public class Configuration {
 
     public void setTransport(String transport) {
         this.transport = Transport.transportFor(transport).name();
-    }
-
-    @Option(
-            name = "delegate",
-            description =  "enables delegation of user credenital to the server",
-            defaultValue = "false",
-            required=false,
-            log=true,
-            save=true
-    )
-    private boolean delegate;
-
-    public boolean isDelegate() {
-        return delegate;
-    }
-
-    public void setDelegate(boolean delegate) {
-        this.delegate = delegate;
-    }
-
-    @Option(
-            name = "full_delegation",
-            description =  	"specifies type (full or limited) of delegation",
-            defaultValue = "true",
-            required=false,
-            log=true,
-            save=true
-    )
-    private boolean full_delegation;
-
-    public boolean isFull_delegation() {
-        return full_delegation;
-    }
-
-    public void setFull_delegation(boolean full_delegation) {
-        this.full_delegation = full_delegation;
     }
 
     @Option(
@@ -2467,13 +2369,13 @@ public class Configuration {
             help=true;
         }
 
-        if (retry_timeout <= 0) {
+        if (getRetry_timeout() <= 0) {
             throw new IllegalArgumentException("illegal retry timeout : "+
-                    retry_timeout);
+                    getRetry_timeout());
         }
-        if(retry_num < 0) {
+        if(getRetry_num() < 0) {
             throw new IllegalArgumentException("illegal number of retries : "+
-                    retry_num);
+                    getRetry_num());
         }
         if (isSrmv1&&isSrmv2) {
             throw new IllegalArgumentException(

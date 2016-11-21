@@ -35,7 +35,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-import gov.fnal.srm.util.Configuration;
+import gov.fnal.srm.util.ConnectionConfiguration;
 import gov.fnal.srm.util.OptionParser;
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
@@ -66,6 +66,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -201,6 +202,7 @@ public class SrmShell extends ShellApplication
     private final List<String> notifications = new ArrayList<>();
     private final RequestCounters<Method> counters = new RequestCounters<>("requests");
     private final RequestExecutionTimeGauges<Method> gauges = new RequestExecutionTimeGauges<>("requests");
+    private final Args shellArgs;
 
     private enum PromptType { LOCAL, SRM, SIMPLE };
     private enum PermissionOperation { SRM_CHECK_PERMISSION, SRM_LS };
@@ -280,7 +282,8 @@ public class SrmShell extends ShellApplication
 
         try (SrmShell shell = new SrmShell(uri, args)) {
             closeOnShutdown(shell);
-            shell.start(args);
+            shell.start(shell.getShellArgs());
+            shell.awaitTransferCompletion();
         } catch (SRMException e) {
             System.err.println(uri + " failed request: " + e.getMessage());
             System.exit(1);
@@ -314,18 +317,22 @@ public class SrmShell extends ShellApplication
     {
         super();
 
-        Configuration configuration = new Configuration();
-        OptionParser.parseOptions(configuration, args);
-        configuration.setSrmProtocolVersion(2);
+        ConnectionConfiguration configuration = new ConnectionConfiguration();
+        shellArgs = OptionParser.parseOptions(configuration, args);
 
+        String wsPath;
+        java.net.URI srmUrl;
         switch (uri.getScheme()) {
         case "srm":
-            configuration.setSrmUrl(new java.net.URI(uri.toString()));
+            srmUrl = new java.net.URI(uri.toString());
+            wsPath = null; // auto-detect
             break;
         case "httpg":
-            configuration.setSrmUrl(new java.net.URI("srm", null,  uri.getHost(), (uri.getPort() > -1 ? uri.getPort() : -1), "/", null, null));
-            configuration.setWebservice_path(uri.getPath());
+            srmUrl = new java.net.URI("srm", null,  uri.getHost(), (uri.getPort() > -1 ? uri.getPort() : -1), "/", null, null);
+            wsPath = uri.getPath();
             break;
+        default:
+            throw new IllegalArgumentException("Unknown scheme \"" + uri.getScheme() + "\"");
         }
 
         X509Credential credential;
@@ -335,21 +342,25 @@ public class SrmShell extends ShellApplication
             credential = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
         }
         fs = new AxisSrmFileSystem(decorateWithMonitoringProxy(new Class[]{ISRM.class},
-                new SRMClientV2(configuration.getSrmUrl(),
-                        credential,
+                new SRMClientV2(srmUrl, credential,
                         configuration.getRetry_timeout(),
                         configuration.getRetry_num(),
                         configuration.isDelegate(),
                         configuration.isFull_delegation(),
                         configuration.getGss_expected_name(),
-                        configuration.getRawWebservice_path(),
+                        wsPath,
                         configuration.getX509_user_trusted_certificates(),
                         Transport.GSI),
                 counters, gauges));
         fs.setCredential(credential);
         fs.start();
-        cd(configuration.getSrmUrl().toASCIIString());
+        cd(srmUrl.toASCIIString());
         home = pwd;
+    }
+
+    private Args getShellArgs()
+    {
+        return shellArgs;
     }
 
     @Override
@@ -358,18 +369,32 @@ public class SrmShell extends ShellApplication
         return "srmfs";
     }
 
+    private List<String> extractPendingNotifications()
+    {
+        List<String> messages;
+
+        synchronized (notifications) {
+            if (notifications.isEmpty()) {
+                messages = Collections.emptyList();
+            } else {
+                messages = new ArrayList<>(notifications);
+                notifications.clear();
+            }
+        }
+
+        return messages;
+    }
+
     @Override
     protected String getPrompt()
     {
         StringBuilder prompt = new StringBuilder();
 
-        synchronized (notifications) {
-            if (!notifications.isEmpty()) {
-                prompt.append('\n');
-                for (String notification : notifications) {
-                    prompt.append(notification).append('\n');
-                }
-                notifications.clear();
+        List<String> messages = extractPendingNotifications();
+        if (!messages.isEmpty()) {
+            prompt.append('\n');
+            for (String notification : notifications) {
+                prompt.append(notification).append('\n');
             }
         }
 
@@ -400,6 +425,22 @@ public class SrmShell extends ShellApplication
                 throw e;
             } catch (Exception e) {
                 throw Throwables.propagate(e);
+            }
+        }
+    }
+
+    public void awaitTransferCompletion() throws InterruptedException
+    {
+        synchronized (ongoingTransfers) {
+            if (!ongoingTransfers.isEmpty()) {
+                consolePrintln("Awaiting transfers to finish (Ctrl-C to abort)");
+
+                while (!ongoingTransfers.isEmpty()) {
+                    ongoingTransfers.wait();
+                    for (String message : extractPendingNotifications()) {
+                        System.out.println(message);
+                    }
+                }
             }
         }
     }
@@ -2304,6 +2345,30 @@ public class SrmShell extends ShellApplication
         }
     }
 
+    private int addOngoingTransfer(FileTransfer transfer)
+    {
+        final int id = nextTransferId++;
+
+        synchronized (ongoingTransfers) {
+            ongoingTransfers.put(id,transfer);
+            ongoingTransfers.notifyAll();
+        }
+
+        return id;
+    }
+
+    private FileTransfer removeOngoingTransfer(int id)
+    {
+        FileTransfer transfer;
+
+        synchronized (ongoingTransfers) {
+            transfer = ongoingTransfers.remove(id);
+            ongoingTransfers.notifyAll();
+        }
+
+        return transfer;
+    }
+
     @Command(name = "get", hint = "download a file",
                     description = "Download a file from the storage system.  "
                             + "The remote file path is optional.  If not "
@@ -2330,29 +2395,28 @@ public class SrmShell extends ShellApplication
                 return "No support for download.";
             }
 
-            final int id = nextTransferId++;
+            final int id = addOngoingTransfer(transfer);
 
-            ongoingTransfers.put(id,transfer);
             Futures.addCallback(transfer, new FutureCallback() {
                 @Override
                 public void onSuccess(Object result)
                 {
                     synchronized (notifications) {
                         notifications.add("[" + id + "] Transfer completed.");
-                        FileTransfer successfulTransfer = ongoingTransfers.remove(id);
-                        completedTransfers.put(id, successfulTransfer);
                     }
+                    FileTransfer successfulTransfer = removeOngoingTransfer(id);
+                    completedTransfers.put(id, successfulTransfer);
                 }
 
                 @Override
                 public void onFailure(Throwable t)
                 {
+                    String msg = t.getMessage();
                     synchronized (notifications) {
-                        String msg = t.getMessage();
                         notifications.add("[" + id + "] Transfer failed: " + msg == null ? t.toString() : msg);
-                        FileTransfer failedTransfer = ongoingTransfers.remove(id);
-                        completedTransfers.put(id, failedTransfer);
                     }
+                    FileTransfer failedTransfer = removeOngoingTransfer(id);
+                    completedTransfers.put(id, failedTransfer);
                 }
             });
 
@@ -2398,18 +2462,17 @@ public class SrmShell extends ShellApplication
                 return "No support for upload.";
             }
 
-            final int id = nextTransferId++;
+            final int id = addOngoingTransfer(transfer);
 
-            ongoingTransfers.put(id,transfer);
             Futures.addCallback(transfer, new FutureCallback() {
                 @Override
                 public void onSuccess(Object result)
                 {
                     synchronized (notifications) {
                         notifications.add("[" + id + "] Transfer completed.");
-                        FileTransfer successfulTransfers = ongoingTransfers.remove(id);
-                        completedTransfers.put(id, successfulTransfers);
                     }
+                    FileTransfer successfulTransfers = removeOngoingTransfer(id);
+                    completedTransfers.put(id, successfulTransfers);
                 }
 
                 @Override
@@ -2417,9 +2480,9 @@ public class SrmShell extends ShellApplication
                 {
                     synchronized (notifications) {
                         notifications.add("[" + id + "] Transfer failed: " + t.toString());
-                        FileTransfer failedTransfer = ongoingTransfers.remove(id);
-                        completedTransfers.put(id, failedTransfer);
                     }
+                    FileTransfer failedTransfer = removeOngoingTransfer(id);
+                    completedTransfers.put(id, failedTransfer);
                 }
             });
 
@@ -2453,38 +2516,40 @@ public class SrmShell extends ShellApplication
         {
             StringBuilder sb = new StringBuilder();
 
-            if (id == null) {
-                if (ongoingTransfers.isEmpty() && completedTransfers.isEmpty()) {
-                    sb.append("No transfers.");
-                } else {
-                    if (!ongoingTransfers.isEmpty()) {
-                        sb.append("Ongoing transfer:\n");
-                        for (Map.Entry<Integer,FileTransfer> e : ongoingTransfers.entrySet()) {
-                            sb.append("  [").append(e.getKey()).append("] ");
-                            sb.append(e.getValue().getStatus()).append('\n');
-                        }
-                    }
-                    if (!completedTransfers.isEmpty()) {
+            synchronized (ongoingTransfers) {
+                if (id == null) {
+                    if (ongoingTransfers.isEmpty() && completedTransfers.isEmpty()) {
+                        sb.append("No transfers.");
+                    } else {
                         if (!ongoingTransfers.isEmpty()) {
-                            sb.append('\n');
+                            sb.append("Ongoing transfer:\n");
+                            for (Map.Entry<Integer,FileTransfer> e : ongoingTransfers.entrySet()) {
+                                sb.append("  [").append(e.getKey()).append("] ");
+                                sb.append(e.getValue().getStatus()).append('\n');
+                            }
                         }
-                        sb.append("Completed transfers:\n");
-                        for (Map.Entry<Integer,FileTransfer> e : completedTransfers.entrySet()) {
-                            sb.append("  [").append(e.getKey()).append("] ");
-                            sb.append(e.getValue().getStatus()).append('\n');
+                        if (!completedTransfers.isEmpty()) {
+                            if (!ongoingTransfers.isEmpty()) {
+                                sb.append('\n');
+                            }
+                            sb.append("Completed transfers:\n");
+                            for (Map.Entry<Integer,FileTransfer> e : completedTransfers.entrySet()) {
+                                sb.append("  [").append(e.getKey()).append("] ");
+                                sb.append(e.getValue().getStatus()).append('\n');
+                            }
                         }
+                        sb.deleteCharAt(sb.length()-1);
                     }
-                    sb.deleteCharAt(sb.length()-1);
+                } else {
+                    FileTransfer transfer = ongoingTransfers.get(id);
+                    if (transfer == null) {
+                        transfer = completedTransfers.get(id);
+                    }
+                    if (transfer == null) {
+                        return "Unknown transfer: " + id;
+                    }
+                    sb.append('[').append(id).append("] ").append(transfer.getStatus());
                 }
-            } else {
-                FileTransfer transfer = ongoingTransfers.get(id);
-                if (transfer == null) {
-                    transfer = completedTransfers.get(id);
-                }
-                if (transfer == null) {
-                    return "Unknown transfer: " + id;
-                }
-                sb.append('[').append(id).append("] ").append(transfer.getStatus());
             }
 
             return sb.toString();
@@ -2501,7 +2566,7 @@ public class SrmShell extends ShellApplication
         @Override
         public String call() throws Exception
         {
-            FileTransfer transfer = ongoingTransfers.remove(id);
+            FileTransfer transfer = removeOngoingTransfer(id);
             if (transfer == null) {
                 if (completedTransfers.containsKey(id)) {
                     return "Transfer " + id + " has already completed.";

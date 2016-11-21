@@ -12,7 +12,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.dcache.util.Args;
@@ -254,11 +256,12 @@ public class OptionParser {
 
      /**
       * Sets class fields to the option values specified in args
-      * or default values
+      * or default values.
+      * @return Copy of supplied Args without any option that was used.
       */
-     public static <T>  void parseOptions(T t,
+     public static <T>  Args parseOptions(T t,
                                           Args args) {
-         checkOptions(t,args);
+         List<String> consumedOptions = new ArrayList<>();
          Class<?> c = t.getClass();
          while(c!=null) {
              for (Field field : c.getDeclaredFields()) {
@@ -281,6 +284,10 @@ public class OptionParser {
                                      s + "' to " + field.getType(), e);
                          }
                      }
+
+                     if (args.getOption(option.name()) != null) {
+                         consumedOptions.add(option.name());
+                     }
                  }
                  catch (SecurityException | IllegalAccessException e) {
                      throw new RuntimeException("Bug detected while processing option "+
@@ -289,6 +296,7 @@ public class OptionParser {
              }
              c = c.getSuperclass();
          }
+         return args.removeOptions(consumedOptions.toArray(new String[consumedOptions.size()]));
      }
 
 
