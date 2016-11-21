@@ -332,8 +332,8 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         {
             GridFTPClient client = new GridFTPClient(_remote.getHost(), getPort());
             client.setUsageInformation("srmfs", "0.0.1");
-            client.setType(GridFTPSession.TYPE_IMAGE);
             client.authenticate(_dssContextFactory);
+            client.setType(GridFTPSession.TYPE_IMAGE);
 
             if (client.isFeatureSupported("DCAU")) {
                 client.setDataChannelAuthentication(DataChannelAuthentication.NONE);
