@@ -17,6 +17,7 @@
  */
 package org.dcache.ftp.client.extended;
 
+import com.google.common.base.Splitter;
 import com.google.common.io.BaseEncoding;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
@@ -26,6 +27,7 @@ import javax.net.ssl.SSLSession;
 import javax.security.auth.x500.X500Principal;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringReader;
@@ -33,6 +35,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 import org.dcache.dss.DssContext;
 import org.dcache.dss.DssContextFactory;
@@ -44,6 +47,8 @@ import org.dcache.ftp.client.vanilla.Command;
 import org.dcache.ftp.client.vanilla.FTPControlChannel;
 import org.dcache.ftp.client.vanilla.Flag;
 import org.dcache.ftp.client.vanilla.Reply;
+
+import static com.google.common.io.BaseEncoding.base64;
 
 /**
  * GridFTP control channel wraps a vanilla control channel and
@@ -198,8 +203,19 @@ public class GridFTPControlChannel extends FTPControlChannel
             throw ServerException.embedUnexpectedReplyCodeException(
                     new UnexpectedReplyCodeException(reply), "Expected 632 or 633 reply.");
         }
-        byte[] token = BaseEncoding.base64().decode(reply.getMessage());
-        lastReply = new Reply(new BufferedReader(new StringReader(new String(context.unwrap(token)))));
+
+        // FIXME: this is a work-around against problems in Reply to fix
+        //        multi-line 63x responses in a way that can be back-ported.
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        boolean isFirstLine = true;
+        for (String line : Splitter.on('\n').split(reply.getMessage())) {
+            byte[] token = base64().decode(isFirstLine ? line : line.substring(4));
+            out.write(token, 0, token.length);
+            isFirstLine = false;
+        }
+
+        String unwrapped = new String(context.unwrap(out.toByteArray()));
+        lastReply = new Reply(new BufferedReader(new StringReader(unwrapped)));
         return lastReply;
     }
 
