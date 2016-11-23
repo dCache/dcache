@@ -98,7 +98,6 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
-import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
@@ -106,7 +105,6 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.transform;
-import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.util.concurrent.Futures.transformAsync;
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -135,11 +133,6 @@ public class NearlineStorageHandler
     private long flushTimeout = TimeUnit.HOURS.toMillis(4);
     private long removeTimeout = TimeUnit.HOURS.toMillis(4);
     private ScheduledFuture<?> timeoutFuture;
-
-    /**
-     * Set of flush script error codes which have to be silently ignored.
-     */
-    private final Set<Integer> suppressedStoreErrors = Collections.synchronizedSet(newHashSet());
 
     private CellAddressCore cellAddress;
 
@@ -260,9 +253,6 @@ public class NearlineStorageHandler
         pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
         pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
         pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
-        synchronized(suppressedStoreErrors) {
-            suppressedStoreErrors.forEach( rc -> pw.append("st suppress rc ").println(rc));
-        }
     }
 
     /**
@@ -902,6 +892,8 @@ public class NearlineStorageHandler
                     cause = new TimeoutCacheException("Flush was cancelled.", cause);
                 }
 
+                LOGGER.warn("Flush of {} failed with: {}.", pnfsId, cause.toString());
+
                 if (cause instanceof CacheException) {
                     infoMsg.setResult(((CacheException) cause).getRc(), cause.getMessage());
                 } else {
@@ -913,12 +905,7 @@ public class NearlineStorageHandler
             infoMsg.setFileSize(getFileAttributes().getSize());
             infoMsg.setTimeQueued(activatedAt - createdAt);
 
-            if (!suppressedStoreErrors.contains(infoMsg.getResultCode())) {
-                if (infoMsg.getResultCode() != 0) {
-                    LOGGER.warn("Flush of {} failed with: {}.", pnfsId, cause.toString());
-                }
-                billingStub.notify(infoMsg);
-            }
+            billingStub.notify(infoMsg);
 
             flushRequests.removeAndCallback(pnfsId, cause);
         }
@@ -1338,41 +1325,6 @@ public class NearlineStorageHandler
                 }
             });
             return block ? this : "Fetch request queued.";
-        }
-    }
-
-    @Deprecated
-    @Command(name = "st suppress rc",
-             hint = "suppress hsm error",
-             description = "The errors from HSM frush operation will be silently " +
-                    " ignored. No errors in billing or log file will be reported. " +
-                     "On success list of currently supresses error codes will be printed")
-    class BillingMaskRc implements Callable<String> {
-
-        @Argument
-        int rc;
-
-        @Override
-        public String call() throws Exception {
-            suppressedStoreErrors.add(rc);
-            return "suppressed error codes: " + suppressedStoreErrors;
-        }
-    }
-
-    @Deprecated
-    @Command(name = "st unsuppress rc",
-             hint = "remove rc from suppression list",
-             description = "Remove rc from the list of suppressed error codes." +
-                     "On success list of remaining supresseed error codes will be printed.")
-    class BillingUnmaskRc implements Callable<String> {
-
-        @Argument
-        int rc;
-
-        @Override
-        public String call() throws Exception {
-            suppressedStoreErrors.remove(rc);
-            return "suppressed error codes: " + suppressedStoreErrors;
         }
     }
 
