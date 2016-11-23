@@ -609,9 +609,21 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Override
     public void layoutReturn(CompoundContext context, stateid4 stateid) throws IOException {
 
-        _log.debug("Releasing device by stateid: {}", stateid);
+        final NFS4Client client;
+        if (context.getMinorversion() > 0) {
+            client = context.getSession().getClient();
+        } else {
+            // v4.0 client use proxy adapter, which calls layoutreturn
+            client = context.getStateHandler().getClientIdByStateId(stateid);
+        }
 
-        NfsTransfer transfer = _ioMessages.get(stateid);
+        final NFS4State layoutState = client.state(stateid);
+        final NFS4State openState = layoutState.getOpenState();
+
+        _log.debug("Releasing layout by stateid: {}, open-state: {}", stateid,
+                openState.stateid());
+
+        NfsTransfer transfer = _ioMessages.get(openState.stateid());
         if (transfer == null) {
             return;
         }
@@ -632,6 +644,9 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.getMoverId(), transfer.getPool(), e.getMessage());
             throw new NfsIoException(e.getMessage(), e);
         }
+
+        // any further use of this layout-stateid must fail with NFS4ERR_BAD_STATEID
+        client.releaseState(stateid);
     }
 
     /*
