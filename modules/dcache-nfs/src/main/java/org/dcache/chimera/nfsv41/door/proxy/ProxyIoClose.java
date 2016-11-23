@@ -40,7 +40,8 @@ public class ProxyIoClose extends AbstractNFSv4Operation {
 
         context.getDeviceManager().layoutReturn(context, _args.opclose.open_stateid);
 
-        client.releaseState(_args.opclose.open_stateid);
+        // REVISIT: as we pass open-state id as layout state id, we dont need to invalidate it
+        // client.releaseState(_args.opclose.open_stateid);
         client.updateLeaseTime();
 
         res.open_stateid = Stateids.invalidStateId();
