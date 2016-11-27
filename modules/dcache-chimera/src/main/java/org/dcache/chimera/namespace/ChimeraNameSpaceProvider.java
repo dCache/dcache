@@ -1342,8 +1342,7 @@ public class ChimeraNameSpaceProvider
                 long expectedSize = Long.parseLong(size.get(0));
                 long actualSize = inodeOfFile.statCache().getSize();
                 if (expectedSize != actualSize) {
-                    throw new FileCorruptedCacheException("File has unexpected size (expected=" + expectedSize +
-                                                          ";actual=" + actualSize + ").");
+                    throw new FileCorruptedCacheException(expectedSize, actualSize);
                 }
             }
 

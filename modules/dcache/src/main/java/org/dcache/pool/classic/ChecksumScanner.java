@@ -121,8 +121,13 @@ public class ChecksumScanner
                         /* It was removed before we could get it. No problem.
                          */
                     } catch (FileCorruptedCacheException e) {
-                        _bad.put(id, e.getActualChecksums().get());
-                        _badCount++;
+                        if (e.getActualChecksums().isPresent()) {
+                            _bad.put(id, e.getActualChecksums().get());
+                            _badCount++;
+                        } else {
+                            _log.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
+                            _unableCount++;
+                        }
                     } catch (CacheException e) {
                         _log.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
                         _unableCount++;
