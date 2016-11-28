@@ -1,12 +1,12 @@
 /*
  * Copyright 1999-2006 University of Chicago
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -154,6 +154,10 @@ public class GridFTPClient extends FTPClient
                 throw ServerException.embedFTPReplyParseException(rpe, "Received faulty reply to PASS command.");
             }
 
+            this.gSession.authorized = true;
+            this.username = username;
+            this.controlChannel = gridFTPControlChannel;
+
             // quietly send version information to the server.
             // ignore errors
             try {
@@ -161,9 +165,6 @@ public class GridFTPClient extends FTPClient
             } catch (Exception ex) {
             }
 
-            this.gSession.authorized = true;
-            this.username = username;
-            this.controlChannel = gridFTPControlChannel;
         } catch (ServerException | IOException e) {
             close();
             throw e;
@@ -249,7 +250,7 @@ public class GridFTPClient extends FTPClient
         Session localSession = localServer.getSession();
         session.matches(localSession);
 
-        // if transfer modes have not been defined, 
+        // if transfer modes have not been defined,
         // set this (dest) as active
         if (session.serverMode == Session.SERVER_DEFAULT) {
             HostPort hp = setLocalPassive();
@@ -556,7 +557,7 @@ public class GridFTPClient extends FTPClient
                                       "Extended transfer mode is necessary");
         }
 
-        // if transfer modes have not been defined, 
+        // if transfer modes have not been defined,
         // set this (source) as active
         if (gSession.serverMode == Session.SERVER_DEFAULT) {
             HostPort hp = destination.setPassive();
