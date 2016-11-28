@@ -1696,6 +1696,10 @@ public class CellShell extends CommandInterpreter
                  */
                 Object answer = objectCommand2(line);
 
+                if (answer instanceof DelayedReply) {
+                    answer = ((DelayedReply)answer).take();
+                }
+
                 /* Process result.
                  */
                 if (!(answer instanceof Throwable)) {
@@ -1744,6 +1748,9 @@ public class CellShell extends CommandInterpreter
                     }
                 }
             }
+        } catch (InterruptedException e) {
+            throw new CommandExitException(String.format("%s: line %d: interrupted", source,
+                    no));
         } catch (IOException e) {
             throw new IOException(String.format("%s: line %d: %s", source,
                                                 no, e.getMessage()), e);
