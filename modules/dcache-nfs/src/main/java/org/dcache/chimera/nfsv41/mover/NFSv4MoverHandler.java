@@ -55,6 +55,7 @@ import org.dcache.pool.movers.IoMode;
 import org.dcache.util.PortRange;
 import org.dcache.util.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
+import org.dcache.xdr.IoStrategy;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
@@ -220,7 +221,8 @@ public class NFSv4MoverHandler {
     private final ScheduledExecutorService _cleanerExecutor;
     private final long _bootVerifier;
 
-    public NFSv4MoverHandler(PortRange portRange, boolean withGss, String serverId, CellStub door, long bootVerifier)
+    public NFSv4MoverHandler(PortRange portRange, IoStrategy ioStrategy,
+            boolean withGss, String serverId, CellStub door, long bootVerifier)
             throws IOException , GSSException, OncRpcException {
 
         _embededDS = new NFSServerV41(_operationFactory, null, _fs, null);
@@ -231,8 +233,14 @@ public class NFSv4MoverHandler {
                 .withTCP()
                 .withoutAutoPublish()
                 .withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS)
-                .withRpcService(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), _v3)
-                .withSameThreadIoStrategy();
+                .withRpcService(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), _v3);
+
+        _log.debug("Using {} IO strategy", ioStrategy);
+        if (ioStrategy == IoStrategy.SAME_THREAD) {
+            oncRpcSvcBuilder.withSameThreadIoStrategy();
+        } else {
+            oncRpcSvcBuilder.withWorkerThreadIoStrategy();
+        }
 
         if (withGss) {
             RpcLoginService rpcLoginService = (t, gss) -> Subjects.NOBODY;

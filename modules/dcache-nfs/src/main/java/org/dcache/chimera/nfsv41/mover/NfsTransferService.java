@@ -49,6 +49,7 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Bytes;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
+import org.dcache.xdr.IoStrategy;
 import org.dcache.xdr.OncRpcException;
 
 /**
@@ -72,6 +73,7 @@ public class NfsTransferService
     private ChecksumModule _checksumModule;
     private int _minTcpPort;
     private int _maxTcpPort;
+    private IoStrategy _ioStrategy;
 
     /**
      * file to store TCP port number used by pool.
@@ -116,7 +118,7 @@ public class NfsTransferService
             retry--;
             portRange = new PortRange(minTcpPort, maxTcpPort);
             try {
-                _nfsIO = new NFSv4MoverHandler(portRange, _withGss, _cellAddress.getCellName(), _door, _bootVerifier);
+                _nfsIO = new NFSv4MoverHandler(portRange, _ioStrategy, _withGss, _cellAddress.getCellName(), _door, _bootVerifier);
                 bound = true;
             } catch (BindException e) {
                 bindException = e;
@@ -177,6 +179,15 @@ public class NfsTransferService
     @Required
     public void setMaxTcpPort(int maxPort) {
         _maxTcpPort = maxPort;
+    }
+
+    @Required
+    public void setIoStrategy(IoStrategy ioStrategy) {
+        _ioStrategy = ioStrategy;
+    }
+
+    public IoStrategy getIoStrategy() {
+        return _ioStrategy;
     }
 
     public void setTcpPortFile(File path) {
