@@ -80,9 +80,11 @@ import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.CommandException;
+import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandThrowableException;
@@ -366,7 +368,12 @@ public class UniversalSpringCell
                     continue;
                 }
                 try {
-                    interpreter.command(new Args(line));
+                    Serializable result = interpreter.command(new Args(line));
+                    if (result instanceof DelayedReply) {
+                        ((DelayedReply)result).take();
+                    }
+                } catch (InterruptedException e) {
+                    throw new CommandExitException("Error at " + source + ":" + lineCount + ": command interrupted");
                 } catch (CommandPanicException e) {
                     throw new CommandPanicException("Error at " + source + ":" + lineCount + ": " + e.getMessage(), e);
                 } catch (CommandException e) {
