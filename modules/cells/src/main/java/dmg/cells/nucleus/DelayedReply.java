@@ -28,6 +28,7 @@ public class DelayedReply implements Reply
         if (_envelope != null) {
             send();
         }
+        notifyAll();
     }
 
     protected synchronized void send()
@@ -37,5 +38,14 @@ public class DelayedReply implements Reply
         _endpoint.sendMessage(_envelope);
         _envelope = null;
         _endpoint = null;
+    }
+
+    public synchronized Serializable take() throws InterruptedException
+    {
+        while (_msg == null) {
+            wait();
+        }
+
+        return _msg;
     }
 }

@@ -72,10 +72,14 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.services.SetupInfoMessage;
 import dmg.util.CommandException;
+import dmg.util.CommandExitException;
+import dmg.util.CommandInterpreter;
+import dmg.util.CommandPanicException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -452,10 +456,16 @@ public class UniversalSpringCell
                     continue;
                 }
                 try {
-                    command(new Args(line));
+                    Serializable result = command(new Args(line));
+                    if (result instanceof DelayedReply) {
+                        ((DelayedReply)result).take();
+                    }
                 } catch (CommandException e) {
                     throw new CommandException("Error at " + setup + ":" +
                             lineCount + ": " + e.getMessage());
+                } catch (InterruptedException e) {
+                    throw new CommandExitException("Error at " + setup + ":" +
+                                    lineCount + ": Command interrupted");
                 }
             }
         } catch (IOException e) {
