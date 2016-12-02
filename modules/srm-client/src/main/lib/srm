@@ -68,12 +68,12 @@ OPTIONS=" ${SRM_JAVA_OPTIONS} -Djava.protocol.handler.pkgs=org.globus.net.protoc
 
 SRMCP_OPTIONS=""
 if [ "$DEBUG" = "true" ]; then
-    OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=${SRM_PATH}/conf/logback-axis.xml"
+    OPTIONS=" ${OPTIONS} \"-Dlogback.configurationFile=${SRM_PATH}/conf/logback-axis.xml\""
     OPTIONS=" ${OPTIONS} -Delectric.logging=SOAP,HTTP"
 elif [ "$SECURITY_DEBUG" = "true" ]; then
-    OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=${SRM_PATH}/conf/logback-security.xml"
+    OPTIONS=" ${OPTIONS} \"-Dlogback.configurationFile=${SRM_PATH}/conf/logback-security.xml\""
 else
-    OPTIONS=" ${OPTIONS} -Dlogback.configurationFile=${SRM_PATH}/conf/logback.xml"
+    OPTIONS=" ${OPTIONS} \"-Dlogback.configurationFile=${SRM_PATH}/conf/logback.xml\""
 fi
 
 if [ -n "$SRM_CONFIG" -a  "$SRM_CONFIG" != "NONE" -a  ! -f "$SRM_CONFIG" ]; then
@@ -115,13 +115,13 @@ if [ -n "$SRM_CONFIG" -a "$SRM_CONFIG" != "NONE" ]; then
       url_copy="$SRM_PATH/sbin/url-copy.sh"
 
       cmd="$java_location -cp $SRM_CP $OPTIONS gov.fnal.srm.util.SRMDispatcher \
-        -urlcopy=$url_copy \
+        \"-urlcopy=$url_copy\" \
         -x509_user_proxy=$x509_user_proxy \
         -x509_user_key=$HOME/.globus/userkey.pem \
         -x509_user_cert=$HOME/.globus/usercert.pem \
         -x509_user_trusted_certificates=$x509_user_trusted_certs \
         -use_proxy=$use_proxy \
-        -srmcphome=$SRM_PATH \
+        \"-srmcphome=$SRM_PATH\" \
         -save_conf=$SRM_CONFIG \
         $args"
 
@@ -155,7 +155,7 @@ cmd="$java_location $OPTIONS gov.fnal.srm.util.SRMDispatcher $SRMCP_OPTIONS $arg
 if [ "$DEBUG" = "true" ]; then
     echo "CLASSPATH: $SRM_CP"
     echo
-    echo $cmd
+    echo "$cmd"
 fi
-CLASSPATH="$SRM_CP" exec $cmd
+CLASSPATH="$SRM_CP" sh -c "$cmd"
 
