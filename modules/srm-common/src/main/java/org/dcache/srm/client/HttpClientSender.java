@@ -433,7 +433,7 @@ public class HttpClientSender extends BasicHandler
                 Message outMsg = extractResponse(msgContext, response);
                 msgContext.setResponseMessage(outMsg);
                 outMsg.getSOAPEnvelope();
-                if (LOGGER.isTraceEnabled()) {
+                if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(outMsg.getSOAPPartAsString());
                 }
             }
