@@ -1,6 +1,7 @@
 package dmg.cells.services.login;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
@@ -44,6 +46,7 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.NDC;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -559,30 +562,101 @@ public class LoginBrokerPublisher
 
     public static class AnyAddressSupplier implements Supplier<List<InetAddress>>
     {
+        private List<InetAddress> _previous;
+
         @Override
         public List<InetAddress> get()
         {
-            ArrayList<InetAddress> addresses = new ArrayList<>();
+            NDC.push("NIC auto-discovery");
             try {
-                Enumeration<NetworkInterface> interfaces =
-                        NetworkInterface.getNetworkInterfaces();
-                while (interfaces.hasMoreElements()) {
-                    NetworkInterface i = interfaces.nextElement();
-                    try {
-                        if (i.isUp() && !i.isLoopback()) {
-                            Enumeration<InetAddress> e = i.getInetAddresses();
-                            while (e.hasMoreElements()) {
-                                addresses.add(NetworkUtils.withCanonicalAddress(e.nextElement()));
+                ArrayList<InetAddress> addresses = new ArrayList<>();
+                Stopwatch stopwatch = _log.isDebugEnabled() ? Stopwatch.createStarted() : null;
+                try {
+                    Enumeration<NetworkInterface> interfaces =
+                            NetworkInterface.getNetworkInterfaces();
+                    while (interfaces.hasMoreElements()) {
+                        NetworkInterface i = interfaces.nextElement();
+                        try {
+                            if (i.isUp() && !i.isLoopback()) {
+                                Enumeration<InetAddress> e = i.getInetAddresses();
+                                while (e.hasMoreElements()) {
+                                    addresses.add(NetworkUtils.withCanonicalAddress(e.nextElement()));
+                                }
                             }
+                        } catch (SocketException e) {
+                            _log.warn("Not publishing NIC {}: {}", i.getName(), e.getMessage());
                         }
-                    } catch (SocketException e) {
-                        _log.warn("Not publishing NIC {}: {}", i.getName(), e.getMessage());
                     }
+                } catch (SocketException e) {
+                    _log.warn("Not publishing NICs: {}", e.getMessage());
                 }
-            } catch (SocketException e) {
-                _log.warn("Not publishing NICs: {}", e.getMessage());
+                if (stopwatch != null) {
+                    _log.debug("Scan took {}", stopwatch);
+                }
+                logChanges(addresses);
+                return addresses;
+            } finally {
+                NDC.pop();
             }
-            return addresses;
+        }
+
+        private synchronized void logChanges(List<InetAddress> addresses)
+        {
+            boolean hasChanged = _previous != null && !_previous.equals(addresses);
+
+            if (hasChanged) {
+                List<InetAddress> removed = new ArrayList<>(_previous);
+                removed.removeAll(addresses);
+                boolean removing = !removed.isEmpty();
+
+                List<InetAddress> added = new ArrayList<>(addresses);
+                added.removeAll(_previous);
+                boolean adding = !added.isEmpty();
+
+                if (removing || adding) {
+                    StringBuilder sb = new StringBuilder();
+                    if (removing) {
+                        sb.append("Removing ");
+                        describeList(sb, added);
+                    }
+
+                    if (adding) {
+                        if (removing) {
+                            sb.append(", adding ");
+                        } else {
+                            sb.append("Adding ");
+                        }
+                        describeList(sb, added);
+                    }
+                    _log.warn(sb.toString());
+                }
+            }
+
+            if (_previous == null || hasChanged) {
+                _previous = new ArrayList<>(addresses);
+            }
+        }
+
+        private static void describeList(StringBuilder sb, List<InetAddress> addresses)
+        {
+            String list = addresses.stream()
+                    .map(AnyAddressSupplier::toString)
+                    .collect(Collectors.joining(", "));
+            if (addresses.size() == 1) {
+                sb.append(list);
+            } else {
+                sb.append('[').append(list).append(']');
+            }
+        }
+
+        private static String toString(InetAddress a)
+        {
+            String name = a.getHostName();
+            if (InetAddresses.isInetAddress(name)) {
+                return InetAddresses.toUriString(a);
+            } else {
+                return name + "/" + InetAddresses.toUriString(a);
+            }
         }
     }
 }
