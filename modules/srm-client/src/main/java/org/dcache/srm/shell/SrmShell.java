@@ -216,7 +216,11 @@ public class SrmShell extends ShellApplication
     {
         File absPath = new File(metadata.getPath());
         try {
-            // work-around DPM bug that returns paths like '//dpm'
+            /* Work-around DPM bug that returns paths like '//dpm' or
+             * '/dpm//gla.scotgrid.ac.uk'.  See:
+             *
+             *    https://ggus.eu/index.php?mode=ticket_info&ticket_id=125321
+             */
             return absPath.getCanonicalFile();
         } catch (IOException e) {
             return absPath;
@@ -1719,7 +1723,7 @@ public class SrmShell extends ShellApplication
                     for (TMetaDataPathDetail attrs : fs.stat(surls)) {
                         TReturnStatus status = attrs.getStatus();
                         TStatusCode code = status.getStatusCode();
-                        File path = new File(attrs.getPath());
+                        File path = getPath(attrs);
                         if (code == TStatusCode.SRM_SUCCESS) {
                             statCache.put(path, attrs);
                         } else {
@@ -1751,7 +1755,7 @@ public class SrmShell extends ShellApplication
 
             List<StatItem<File,TMetaDataPathDetail>> contents = new ArrayList<>(names.size());
             for (TMetaDataPathDetail attrs : dirContents) {
-                File absPath = new File(attrs.getPath());
+                File absPath = getPath(attrs);
 
                 if (names.contains(absPath.getName())) {
                     contents.add(new StatItem(absPath, attrs));
@@ -1770,7 +1774,7 @@ public class SrmShell extends ShellApplication
         {
             List<StatItem<File,TMetaDataPathDetail>> contents = new ArrayList<>();
             for (TMetaDataPathDetail item : expander.list(dir)) {
-                contents.add(new StatItem(new File(item.getPath()), item));
+                contents.add(new StatItem(getPath(item), item));
             }
             return contents;
         }
@@ -1780,7 +1784,7 @@ public class SrmShell extends ShellApplication
         {
             List<String> names = new ArrayList();
             for (TMetaDataPathDetail item : expander.list(dir)) {
-                names.add(new File(item.getPath()).getName());
+                names.add(getPath(item).getName());
             }
             return names;
         }
