@@ -224,7 +224,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         private final TransferMode transferMode = GridFTPTransferAgent.this._transferMode;
         private final ChecksumMode checksumHandling = GridFTPTransferAgent.this._checksumHandling;
 
-        private final URI _remote;
+        private final java.net.URI _remote;
         private final File _localFile;
 
         private long _bytesTransferred;
@@ -234,7 +234,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
 
         GridFTPTransfer(URI remote, File localFile)
         {
-            _remote = remote;
+            _remote = java.net.URI.create(remote.toString());
             _localFile = localFile;
 
             Futures.addCallback(this, new FutureCallback(){
@@ -280,11 +280,6 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         protected long getBytesTransferred()
         {
             return _bytesTransferred;
-        }
-
-        protected URI getRemote()
-        {
-            return _remote;
         }
 
         protected ChecksumMode getChecksumHandling()
