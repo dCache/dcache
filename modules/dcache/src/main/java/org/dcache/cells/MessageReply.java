@@ -48,7 +48,7 @@ public class MessageReply<T extends Message>
         return (_envelope == null || delay <= _envelope.getTtl() - _envelope.getLocalAge());
     }
 
-    public void fail(T msg, Exception e)
+    public void fail(T msg, Throwable e)
     {
         if (e instanceof CacheException) {
             CacheException ce = (CacheException) e;
