@@ -135,6 +135,7 @@ import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.commons.stats.MonitoringProxy.decorateWithMonitoringProxy;
+import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
 import static org.dcache.util.TimeUtils.duration;
 
@@ -455,7 +456,7 @@ public class SrmShell extends ShellApplication
         if (path == null) {
             return pwd;
         } else {
-            return new URI(pwd, path.getPath());
+            return new URI(pwd, percentEncode(path.getPath()));
         }
     }
 
@@ -1749,11 +1750,10 @@ public class SrmShell extends ShellApplication
                 if (!plan.isEmpty()) {
                     ArrayList<URI> surlList = new ArrayList<>(plan.size());
                     for (Map.Entry<File,Collection<String>> dirFiles : plan.asMap().entrySet()) {
-                        String dir = dirFiles.getKey().toString();
                         for (String name : dirFiles.getValue()) {
-                            String path = new File(dir + "/" + name).toString();
+                            File path = new File(dirFiles.getKey() + "/" + name);
                             try {
-                                surlList.add(new URI(pwd, path));
+                                surlList.add(lookup(path));
                             } catch (URI.MalformedURIException ee) {
                                 consolePrintln("Failed to stat " + path + ": " + ee.getMessage());
                             }
