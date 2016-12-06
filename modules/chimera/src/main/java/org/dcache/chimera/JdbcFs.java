@@ -873,8 +873,7 @@ public class JdbcFs implements FileSystemProvider {
                     case "checksums":
                         return new FsInode_PCRC(this, inode.ino());
                     default:
-                        throw new ChimeraFsException
-                            ("unsupported argument for .(get) " + cmd[2]);
+                        throw new FileNotFoundHimeraFsException(cmd[2]);
                 }
             }
 
