@@ -66,7 +66,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -235,7 +234,7 @@ public class SrmShell extends ShellApplication
         try {
             console.println();
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -244,7 +243,7 @@ public class SrmShell extends ShellApplication
         try {
             console.println(msg);
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -253,7 +252,7 @@ public class SrmShell extends ShellApplication
         try {
             console.print(msg);
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -262,7 +261,7 @@ public class SrmShell extends ShellApplication
         try {
             console.printColumns(items);
         } catch (IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -426,10 +425,9 @@ public class SrmShell extends ShellApplication
             try {
                 fs.close();
                 isClosed = true;
-            } catch (IOException e) {
-                throw e;
             } catch (Exception e) {
-                throw Throwables.propagate(e);
+                Throwables.propagateIfPossible(e, IOException.class);
+                throw new RuntimeException(e);
             }
         }
     }
@@ -698,7 +696,7 @@ public class SrmShell extends ShellApplication
                 Thread.currentThread().interrupt();
                 return Collections.emptyList();
             } catch (Exception e) {
-                Throwables.propagateIfPossible(e);
+                Throwables.throwIfUnchecked(e);
                 try {
                     console.println("Failed to expand argument: " + e);
                 } catch (IOException ignored) {
@@ -858,7 +856,7 @@ public class SrmShell extends ShellApplication
 
                 consolePrintColumns(filtered);
             } catch (Exception e) {
-                Throwables.propagateIfPossible(e);
+                Throwables.throwIfUnchecked(e);
                 consolePrintln("Failed to list " + dir + ": " + e.getMessage());
             }
         }
@@ -884,19 +882,19 @@ public class SrmShell extends ShellApplication
                             A parentAttr = parent == null ? dirAttr : stat(parent);
                             filtered.add(0, new StatItem<>(getChild(dir, ".."), parentAttr));
                         } catch (Exception e) {
-                            Throwables.propagateIfPossible(e);
+                            Throwables.throwIfUnchecked(e);
                             consolePrintln("Failed to stat ..: " + e.getMessage());
                         }
 
                         filtered.add(0, new StatItem<>(getChild(dir, "."), dirAttr));
                     } catch (Exception e) {
-                        Throwables.propagateIfPossible(e);
+                        Throwables.throwIfUnchecked(e);
                         consolePrintln("Failed to stat .: " + e.getMessage());
                     }
                 }
                 listEntries(filtered, true);
             } catch (Exception e) {
-                Throwables.propagateIfPossible(e);
+                Throwables.throwIfUnchecked(e);
                 consolePrintln("Failed to list " + dir + ": " + e.getMessage());
             }
         }
@@ -927,7 +925,7 @@ public class SrmShell extends ShellApplication
 
                     acceptRow(writer, item.getPath(), item.getAttributes(), isDirectory);
                 } catch (Exception e) {
-                    Throwables.propagateIfPossible(e);
+                    Throwables.throwIfUnchecked(e);
                     consolePrintln("Cannot stat " + item + ": " + e.toString());
                 }
             }
@@ -1471,7 +1469,7 @@ public class SrmShell extends ShellApplication
                 path.setPath(escaped);
             } catch (URI.MalformedURIException e) {
                 // Shouldn't happen.
-                throw Throwables.propagate(e);
+                throw new RuntimeException(e);
             }
             return path;
         }
@@ -1479,10 +1477,10 @@ public class SrmShell extends ShellApplication
         private RuntimeException propagate(ExecutionException e) throws RemoteException, SRMException, InterruptedException
         {
             Throwable cause = e.getCause();
-            Throwables.propagateIfInstanceOf(cause, RemoteException.class);
-            Throwables.propagateIfInstanceOf(cause, SRMException.class);
-            Throwables.propagateIfInstanceOf(cause, InterruptedException.class);
-            throw Throwables.propagate(cause == null ? e : cause);
+            Throwables.throwIfInstanceOf(cause, RemoteException.class);
+            Throwables.throwIfInstanceOf(cause, SRMException.class);
+            Throwables.throwIfInstanceOf(cause, InterruptedException.class);
+            throw new RuntimeException(cause);
         }
 
         protected TMetaDataPathDetail[] list(File directory) throws RemoteException,

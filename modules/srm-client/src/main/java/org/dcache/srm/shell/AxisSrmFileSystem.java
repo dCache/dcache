@@ -129,7 +129,8 @@ public class AxisSrmFileSystem implements SrmFileSystem
         try {
             srmAgent.close();
         } catch (Exception e) {
-            throw Throwables.propagate(e);
+            Throwables.throwIfUnchecked(e);
+            throw new RuntimeException(e);
         }
    }
 

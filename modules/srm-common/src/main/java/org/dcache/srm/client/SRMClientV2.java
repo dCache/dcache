@@ -332,7 +332,7 @@ public class SRMClientV2 implements ISRM {
 
             return stub;
         } catch (ServiceException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
