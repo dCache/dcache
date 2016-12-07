@@ -22,6 +22,8 @@ import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 
 public class SRMAbortRequestClientV2 extends SRMClient {
     private ISRM isrm;
@@ -51,9 +53,7 @@ public class SRMAbortRequestClientV2 extends SRMClient {
 
     @Override
     public void start() throws Exception{
-        if (credential.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(credential);
         for (String requestToken : configuration.getArrayOfRequestTokens()) {
             try {
                 SrmAbortRequestRequest request = new SrmAbortRequestRequest();

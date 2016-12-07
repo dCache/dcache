@@ -24,6 +24,8 @@ import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 public class SRMReleaseFilesClientV2 extends SRMClient {
     private ISRM isrm;
     private X509Credential credential;
@@ -49,9 +51,7 @@ public class SRMReleaseFilesClientV2 extends SRMClient {
 
     @Override
     public void start() throws Exception{
-        if (credential.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(credential);
         StringBuilder sb = new StringBuilder();
         boolean failed=false;
         if (configuration.getArrayOfRequestTokens()!=null) {

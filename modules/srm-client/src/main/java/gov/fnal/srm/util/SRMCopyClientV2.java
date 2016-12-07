@@ -136,6 +136,8 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 
 public class SRMCopyClientV2 extends SRMClient implements Runnable {
     private java.net.URI from[];
@@ -184,9 +186,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void start() throws Exception {
-        if (cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(cred);
         try {
             //
             // form the request

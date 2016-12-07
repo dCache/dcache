@@ -128,6 +128,8 @@ import org.dcache.ssl.CanlContextFactory;
 import static com.google.common.net.InetAddresses.isInetAddress;
 import static javax.xml.rpc.Stub.ENDPOINT_ADDRESS_PROPERTY;
 import static org.apache.axis.Constants.NS_URI_AXIS;
+import static org.dcache.srm.util.Credentials.checkValid;
+
 /**
  *
  * @author  timur
@@ -217,9 +219,7 @@ public class SRMClientV2 implements ISRM {
         this.retries = numberofretries;
         this.user_cred = user_cred;
         this.delegation = TransportUtil.delegationModeFor(transport, do_delegation, full_delegation);
-        if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new IOException("X.509 credentials have expired");
-        }
+        checkValid(user_cred);
 
         sl = buildServiceLocator(caPath);
         serviceUrl = buildServiceURL(srmurl, transport, webservice_path);
@@ -371,12 +371,15 @@ public class SRMClientV2 implements ISRM {
                     throw new RemoteException(message.toString());
                 }
                 axis_isrm = buildStub(newServiceUrl);
+            } catch (IOException e) {
+                throw new RemoteException("Operation failed: " + e.getMessage(),
+                        e);
             }
         }
     }
 
     public Object handleClientCallWithRetry(String name, Object argument, boolean retry)
-            throws RemoteException, ConnectException
+            throws RemoteException, IOException
     {
         if (logger.isDebugEnabled()) {
             logger.debug(" {} , contacting service {}", name,
@@ -384,17 +387,14 @@ public class SRMClientV2 implements ISRM {
         }
         int i = 0;
         while(true) {
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
+            checkValid(user_cred);
             try {
                 Class<?> clazz = argument.getClass();
                 Method call = axis_isrm.getClass().getMethod(name,new Class[]{clazz});
                 return call.invoke(axis_isrm, argument);
-            }
-            catch(NoSuchMethodException | IllegalAccessException nsme){
+            } catch (NoSuchMethodException | IllegalAccessException nsme) {
                 throw new RemoteException("incorrect usage of the handleClientCall", nsme);
-            } catch(InvocationTargetException ite) {
+            } catch (InvocationTargetException ite) {
                 Throwable e = ite.getCause();
                 if (e instanceof AxisFault && e.getCause() != null) {
                     e = e.getCause();

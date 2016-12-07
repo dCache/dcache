@@ -85,11 +85,14 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Date;
+import java.rmi.RemoteException;
+
+import diskCacheV111.srm.FileMetaData;
 
 import org.dcache.ssl.CanlContextFactory;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
+import static org.dcache.srm.util.Credentials.checkValid;
 
 public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     private static final Logger logger =
@@ -110,6 +113,18 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         Call.setTransportForProtocol("http", HttpClientTransport.class);
         Call.setTransportForProtocol("https", HttpClientTransport.class);
     }
+
+    /** Represents a specific SRMv1 operation. */
+    private interface Operation<T>
+    {
+        T call() throws java.rmi.RemoteException, InterruptedException;
+    }
+
+    private interface Supplier<T>
+    {
+        T get();
+    }
+
 
     public static String unwrapHttpRedirection(String http_url) {
         if(http_url == null || !http_url.startsWith("http://")) {
@@ -184,13 +199,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
                            IOException,InterruptedException,ServiceException{
         this.retrytimeout = retrytimeout;
         this.retries = numberofretries;
-        this.user_cred = user_cred;
-        if(user_cred == null) {
-            throw new NullPointerException("user credential is null");
-        }
-        if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new IOException("credentials have expired");
-        }
+        this.user_cred = checkValid(user_cred);
 
         host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
@@ -245,175 +254,134 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         }
     }
 
+    private <T> T retryCall(String name, Operation<T> operation, Supplier<T> defaultValue)
+    {
+        logger.debug("{}, contacting service {}", name, service_url);
 
+        try {
+            for (int i = 0; i < retries; i++) {
+                if (i > 0) {
+                    long sleep = retrytimeout*i;
+                    logger.debug("sleeping for {} milliseconds before retrying", sleep);
+                    Thread.sleep(sleep);
+                }
 
-    @Override
-    public diskCacheV111.srm.RequestStatus put( String[] sources,
-                                                String[] dests,
-                                                long[] sizes,
-                                                boolean[] wantPerm,
-                                                String[] protocols ) {
-        logger.debug(" put, contacting service {} ", service_url);
-        int i = 0;
-        while(true) {
+                checkValid(user_cred);
 
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
-
-            try {
                 try {
-                    org.dcache.srm.client.axis.RequestStatus rs =
-                        axis_isrm.put(sources, dests,
-                                sizes, wantPerm, protocols);
-                    return ConvertUtil.axisRS2RS(rs);
-                }
-                catch(java.rmi.RemoteException re) {
-                    throw new RuntimeException(re);
+                    return operation.call();
+                } catch (java.rmi.RemoteException e) {
+                    logger.error("{}: try # {} failed with error: {}", name, i,
+                            e.getMessage());
                 }
             }
-            catch(RuntimeException e) {
-                logger.error("put: try #  {} failed with error {}",i,e.getMessage());
-                throw e;
-            }
+
+            logger.error("{}: too many failures", name);
+        } catch (IOException | InterruptedException e) {
+            logger.error("{}: failed to contact server: {}", name, e.getMessage());
         }
+
+        return defaultValue.get();
+    }
+
+
+    @Override
+    public diskCacheV111.srm.RequestStatus put(final String[] sources,
+            final String[] dests, final long[] sizes, final boolean[] wantPerm,
+            final String[] protocols)
+    {
+        return retryCall("put", new Operation<diskCacheV111.srm.RequestStatus>(){
+                    @Override
+                    public diskCacheV111.srm.RequestStatus call() throws RemoteException
+                    {
+                        org.dcache.srm.client.axis.RequestStatus rs =
+                                axis_isrm.put(sources, dests, sizes, wantPerm, protocols);
+                        return ConvertUtil.axisRS2RS(rs);
+                    }
+                }, new Supplier<diskCacheV111.srm.RequestStatus>() {
+                    @Override
+                    public diskCacheV111.srm.RequestStatus get()
+                    {
+                        return null;
+                    }
+                });
     }
 
     @Override
-    public diskCacheV111.srm.RequestStatus get( String[] surls,String[] protocols ) {
-
-        int i = 0;
-        while(true) {
-
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
-
-            try {
-                try
-                {
-                    org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.get(surls,protocols);
-                    return ConvertUtil.axisRS2RS(rs);
-                }catch(java.rmi.RemoteException re) {
-                    logger.debug(re.toString());
-                    throw new RuntimeException (re.toString());
-                }
-
-            }
-            catch(RuntimeException e) {
-                logger.error("get : try # "+i+" failed with error "+e.getMessage());
-                throw e;
-            }
-        }
+    public diskCacheV111.srm.RequestStatus get(final String[] surls,
+            final String[] protocols)
+    {
+        return retryCall("get", new Operation<diskCacheV111.srm.RequestStatus>(){
+                    @Override
+                    public diskCacheV111.srm.RequestStatus call() throws RemoteException
+                    {
+                        org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.get(surls,protocols);
+                        return ConvertUtil.axisRS2RS(rs);
+                    }
+                }, new Supplier<diskCacheV111.srm.RequestStatus>() {
+                    @Override
+                    public diskCacheV111.srm.RequestStatus get()
+                    {
+                        return null;
+                    }
+                });
     }
 
     @Override
-    public diskCacheV111.srm.RequestStatus copy( String[] srcSURLS,
-                                                 String[] destSURLS,
-                                                 boolean[] wantPerm ) {
-        logger.debug(" copy, contacting service {} ",service_url);
-        int i = 0;
-        while(true) {
-
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
-
-            try {
-                try
-                {
-                    org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.copy(srcSURLS,destSURLS,wantPerm);
-                    return ConvertUtil.axisRS2RS(rs);
-                }catch(java.rmi.RemoteException re) {
-                    throw new RuntimeException (re.toString());
-                }
-
-            }
-            catch(RuntimeException e) {
-                logger.error("copy: try #  {} failed with error {} ",i,e.getMessage());
-                throw e;
-            }
-        }
+    public diskCacheV111.srm.RequestStatus copy(final String[] srcSURLS,
+            final String[] destSURLS, final boolean[] wantPerm)
+    {
+        return retryCall("copy", new Operation<diskCacheV111.srm.RequestStatus>(){
+                    @Override
+                    public diskCacheV111.srm.RequestStatus call() throws RemoteException
+                    {
+                        org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.copy(srcSURLS,destSURLS,wantPerm);
+                        return ConvertUtil.axisRS2RS(rs);
+                    }
+                }, new Supplier<diskCacheV111.srm.RequestStatus>() {
+                    @Override
+                    public diskCacheV111.srm.RequestStatus get()
+                    {
+                        return null;
+                    }
+                });
     }
 
     @Override
-    public diskCacheV111.srm.RequestStatus getRequestStatus( int requestId ) {
-        int i = 0;
-        while(true)
-        {
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
-
-            try {
-
-                try
-                {
-                    org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.getRequestStatus(requestId);
-                    return ConvertUtil.axisRS2RS(rs);
-                }catch(java.rmi.RemoteException re) {
-                    throw new RuntimeException (re.toString());
-                }
-            }
-            catch(RuntimeException e) {
-                logger.error("getRequestStatus: try # {} failed with error ",i,e.getMessage());
-                if(i <retries) {
-                    i++;
-                    logger.error("getRequestStatus: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-
-            try {
-                long timeout = retrytimeout*i;
-                logger.debug("sleeping for {} milliseconds before retrying",timeout);
-                Thread.sleep(timeout);
-            }
-            catch(InterruptedException ie) {
-            }
-        }
+    public diskCacheV111.srm.RequestStatus getRequestStatus(final int requestId)
+    {
+        return retryCall("getRequestStatus", new Operation<diskCacheV111.srm.RequestStatus>(){
+                    @Override
+                    public diskCacheV111.srm.RequestStatus call() throws RemoteException
+                    {
+                        org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.getRequestStatus(requestId);
+                        return ConvertUtil.axisRS2RS(rs);
+                    }
+                }, new Supplier<diskCacheV111.srm.RequestStatus>() {
+                    @Override
+                    public diskCacheV111.srm.RequestStatus get()
+                    {
+                        return null;
+                    }
+                });
     }
 
     @Override
-    public boolean ping() {
-        logger.debug(" ping, contacting service {} ",service_url);
-        int i = 0;
-        while(true) {
-
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
-
-            try {
-                try
-                {
-                    return axis_isrm.ping();
-                }catch(java.rmi.RemoteException re) {
-                    throw new RuntimeException (re.toString());
-                }
-
-            }
-            catch(RuntimeException e) {
-                logger.error("ping: try # {} failed with error {}",i,e.getMessage());
-                if(i <retries) {
-                    i++;
-                    logger.error("ping: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            try {
-                long timeout = retrytimeout*i;
-                logger.debug("sleeping for {} milliseconds before retrying",timeout);
-                Thread.sleep(timeout);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
+    public boolean ping()
+    {
+        return retryCall("ping", new Operation<Boolean>(){
+                    @Override
+                    public Boolean call() throws RemoteException
+                    {
+                        return axis_isrm.ping();
+                    }
+                }, new Supplier<Boolean>() {
+                    @Override
+                    public Boolean get()
+                    {
+                        return false;
+                    }
+                });
     }
 
     @Override
@@ -446,137 +414,72 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
     }
 
     @Override
-    public diskCacheV111.srm.FileMetaData[] getFileMetaData( String[] SURLS ) {
-        if (axis_isrm == null) {
-            throw new NullPointerException ("both isrms are null!!!!");
-        }
-        logger.debug(" getFileMetaData, contacting service {}", service_url);
-        int i = 0;
-        while(true) {
-
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
-
-            try {
-                try
-                {
-                    org.dcache.srm.client.axis.FileMetaData[] fmd = axis_isrm.getFileMetaData(SURLS);
-                    return ConvertUtil.axisFMDs2FMDs(fmd);
-                }catch(java.rmi.RemoteException re) {
-                    throw new RuntimeException (re.toString());
-                }
-
-            }
-            catch(RuntimeException e) {
-                logger.error("copy: try # {} failed with error {}",i,e.getMessage());
-                if(i <retries) {
-                    i++;
-                    logger.error("copy: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            try {
-                long timeout = retrytimeout*i;
-                logger.debug("sleeping for {} milliseconds before retrying", timeout);
-                Thread.sleep(timeout);
-            }
-            catch(InterruptedException ie) {
-            }
-        }
+    public diskCacheV111.srm.FileMetaData[] getFileMetaData(final String[] SURLS )
+    {
+        return retryCall("getFileMetaData", new Operation<diskCacheV111.srm.FileMetaData[]>(){
+                    @Override
+                    public FileMetaData[] call() throws RemoteException
+                    {
+                        org.dcache.srm.client.axis.FileMetaData[] fmd = axis_isrm.getFileMetaData(SURLS);
+                        return ConvertUtil.axisFMDs2FMDs(fmd);
+                    }
+                }, new Supplier<diskCacheV111.srm.FileMetaData[]>() {
+                    @Override
+                    public FileMetaData[] get()
+                    {
+                        return null;
+                    }
+                });
     }
 
     @Override
-    public diskCacheV111.srm.RequestStatus setFileStatus( int requestId,
-                                                          int fileId,
-                                                          String state ) {
-        int i = 0;
-        while(true)
-        {
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
+    public diskCacheV111.srm.RequestStatus setFileStatus(int requestId, int fileId,
+            String state)
+    {
+        try {
+            checkValid(user_cred);
 
-            try {
-
-                try
-                {
-                    org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.setFileStatus(requestId,fileId,state);
-                    return ConvertUtil.axisRS2RS(rs);
-                }catch(java.rmi.RemoteException re) {
-                    throw new RuntimeException (re.toString());
-                }
-            }
-            catch(RuntimeException e) {
-                logger.error("getRequestStatus: try # {} failed with error ",i,e.getMessage());
-                /*
-                 * we do not retry in case of setFileStatus for reasons of performance
-                 * and because the setFileStatus fails too often for Castor implementation
-                 *
-                 */
-                throw e;
-            }
+            org.dcache.srm.client.axis.RequestStatus rs = axis_isrm.setFileStatus(requestId,fileId,state);
+            return ConvertUtil.axisRS2RS(rs);
+        } catch (IOException e) {
+            logger.error("getRequestStatus: failed with error ", e.getMessage());
+            /*
+             * we do not retry in case of setFileStatus for reasons of performance
+             * and because the setFileStatus fails too often for Castor implementation
+             *
+             */
         }
+
+        return null;
     }
 
     @Override
-    public void advisoryDelete( String[] SURLS) {
-        logger.debug(" advisoryDelete, contacting service {}",service_url);
-
-        if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
-
-        try
-        {
+    public void advisoryDelete(String[] SURLS)
+    {
+        logger.debug("advisoryDelete, contacting service {}", service_url);
+        try {
+            checkValid(user_cred);
             axis_isrm.advisoryDelete(SURLS);
-        }catch(java.rmi.RemoteException re) {
-            String message = re.getMessage();
-            if(message != null) {
-                throw new RuntimeException(message);
-            }
-            throw new RuntimeException (re);
+        } catch (IOException e) {
+            logger.error("advisoryDelete failed: {}", e.getMessage());
         }
     }
 
     @Override
-    public String[] getProtocols() {
-        logger.debug(" getProtocols, contacting service "+service_url);
-        int i = 0;
-        while(true) {
-
-            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
-                throw new RuntimeException("credentials have expired");
-            }
-
-            try {
-                try
-                {
-                    return axis_isrm.getProtocols();
-                }catch(java.rmi.RemoteException re) {
-                    throw new RuntimeException (re.toString());
-                }
-
-            }
-            catch(RuntimeException e) {
-                logger.error("getProtocols: try # {} failed with error ",i,e.getMessage());
-                if(i <retries) {
-                    i++;
-                    logger.error("getProtocols: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            try {
-                long timeout = retrytimeout*i;
-                logger.debug("sleeping for {} milliseconds before retrying",timeout);
-                Thread.sleep(timeout);
-            }
-            catch(InterruptedException ie) {
-            }
-        }
+    public String[] getProtocols()
+    {
+        return retryCall("getProtocols", new Operation<String[]>(){
+                    @Override
+                    public String[] call() throws RemoteException, InterruptedException
+                    {
+                        return axis_isrm.getProtocols();
+                    }
+                }, new Supplier<String[]>(){
+                    @Override
+                    public String[] get()
+                    {
+                        return new String[]{};
+                    }
+                });
     }
 }

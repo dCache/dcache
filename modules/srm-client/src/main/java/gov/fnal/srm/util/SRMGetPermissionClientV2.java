@@ -100,6 +100,8 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TUserPermission;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 public class SRMGetPermissionClientV2 extends SRMClient {
     private X509Credential cred;
     private java.net.URI[] surls;
@@ -135,9 +137,7 @@ public class SRMGetPermissionClientV2 extends SRMClient {
 
     @Override
     public void start() throws Exception {
-        if (cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(cred);
         ArrayOfAnyURI surlarray=new ArrayOfAnyURI();
         URI[] uriarray=new URI[surl_string.length];
         URI uri;
