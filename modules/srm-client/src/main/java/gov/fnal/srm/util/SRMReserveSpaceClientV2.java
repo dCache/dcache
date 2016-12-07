@@ -109,6 +109,8 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 
 public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
     private java.net.URI srmURL;
@@ -147,9 +149,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void start() throws Exception {
-        if (credential.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(credential);
         try {
             TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?
                 RetentionPolicy.fromString(configuration.getRetentionPolicy()).toTRetentionPolicy() : null;

@@ -93,6 +93,8 @@ import org.dcache.srm.v2_2.SrmMvResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 public class SRMMvClientV2 extends SRMClient {
     private X509Credential cred;
     private java.net.URI[] surls;
@@ -129,9 +131,7 @@ public class SRMMvClientV2 extends SRMClient {
 
     @Override
     public void start() throws Exception {
-        if (cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(cred);
         SrmMvRequest req = new SrmMvRequest();
         req.setFromSURL(new URI(surl_strings[0]));
         req.setToSURL(new URI(surl_strings[1]));

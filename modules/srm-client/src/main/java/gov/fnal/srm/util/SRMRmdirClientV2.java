@@ -93,6 +93,8 @@ import org.dcache.srm.v2_2.SrmRmdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 public class SRMRmdirClientV2 extends SRMClient {
     private X509Credential cred;
     private java.net.URI surl;
@@ -129,9 +131,7 @@ public class SRMRmdirClientV2 extends SRMClient {
 
     @Override
     public void start() throws Exception {
-        if (cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(cred);
         SrmRmdirRequest req = new SrmRmdirRequest();
         if (configuration.isRecursive()) {
             req.setRecursive(Boolean.TRUE);

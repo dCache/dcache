@@ -26,6 +26,8 @@ import org.dcache.srm.v2_2.TRequestSummary;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 public class SRMGetRequestSummaryClientV2 extends SRMClient  {
 
     private java.net.URI srmURL;
@@ -61,9 +63,7 @@ public class SRMGetRequestSummaryClientV2 extends SRMClient  {
 
     @Override
     public void start() throws Exception {
-        if (credential.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(credential);
         try {
             String[] tokens = configuration.getArrayOfRequestTokens();
             SrmGetRequestSummaryRequest request = new SrmGetRequestSummaryRequest();

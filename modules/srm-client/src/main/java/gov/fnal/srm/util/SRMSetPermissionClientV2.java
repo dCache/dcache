@@ -97,6 +97,8 @@ import org.dcache.srm.v2_2.TPermissionType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 public class SRMSetPermissionClientV2 extends SRMClient {
     //
     // SRM v2.2 WSDL srmSetPermission requires non-nullable groupid string
@@ -141,9 +143,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 
     @Override
     public void start() throws Exception {
-        if (cred.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(cred);
         URI uri = new URI(surl_string);
         SrmSetPermissionRequest req = new SrmSetPermissionRequest();
         req.setSURL(uri);
