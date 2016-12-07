@@ -346,7 +346,7 @@ public class SrmShell extends ShellApplication
         } else {
             credential = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
         }
-        fs = new AxisSrmFileSystem(decorateWithMonitoringProxy(new Class[]{ISRM.class},
+        fs = new AxisSrmFileSystem(decorateWithMonitoringProxy(new Class<?>[]{ISRM.class},
                 new SRMClientV2(srmUrl, credential,
                         configuration.getRetry_timeout(),
                         configuration.getRetry_num(),
@@ -469,6 +469,7 @@ public class SrmShell extends ShellApplication
         return surls;
     }
 
+    @SuppressWarnings("fallthrough")
     private void cd(String path) throws URI.MalformedURIException, RemoteException, SRMException, InterruptedException
     {
         if (!path.endsWith("/")) {
@@ -881,13 +882,13 @@ public class SrmShell extends ShellApplication
                         P parent = getParent(dir);
                         try {
                             A parentAttr = parent == null ? dirAttr : stat(parent);
-                            filtered.add(0, new StatItem(getChild(dir, ".."), parentAttr));
+                            filtered.add(0, new StatItem<>(getChild(dir, ".."), parentAttr));
                         } catch (Exception e) {
                             Throwables.propagateIfPossible(e);
                             consolePrintln("Failed to stat ..: " + e.getMessage());
                         }
 
-                        filtered.add(0, new StatItem(getChild(dir, "."), dirAttr));
+                        filtered.add(0, new StatItem<>(getChild(dir, "."), dirAttr));
                     } catch (Exception e) {
                         Throwables.propagateIfPossible(e);
                         consolePrintln("Failed to stat .: " + e.getMessage());
@@ -1177,7 +1178,7 @@ public class SrmShell extends ShellApplication
 
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(lcwd.resolve(dir))) {
                 for (Path item : stream) {
-                    statList.add(new StatItem(item, stat(item)));
+                    statList.add(new StatItem<>(item, stat(item)));
                 }
             }
 
@@ -1214,7 +1215,7 @@ public class SrmShell extends ShellApplication
                 Path absPath = resolveAgainstCwd(path);
                 try {
                     PosixFileAttributes attrs = stat(absPath);
-                    statItems.add(new StatItem(path, attrs));
+                    statItems.add(new StatItem<>(path, attrs));
                 } catch (IOException e) {
                     // simply fail to populate the list.
                 }
@@ -1715,7 +1716,7 @@ public class SrmShell extends ShellApplication
                     if (attrs == null) {
                         consolePrintln("No such file or directory: " + item);
                     } else {
-                        statItems.add(new StatItem(path, attrs));
+                        statItems.add(new StatItem<>(path, attrs));
                     }
                 } catch (RemoteException | URI.MalformedURIException | SRMException | InterruptedException e) {
                     consolePrintln("Cannot stat /: " + e.toString());
@@ -1799,7 +1800,7 @@ public class SrmShell extends ShellApplication
                 File absPath = getPath(attrs);
 
                 if (names.contains(absPath.getName())) {
-                    contents.add(new StatItem(absPath, attrs));
+                    contents.add(new StatItem<>(absPath, attrs));
                 }
 
                 if (contents.size() == names.size()) {
@@ -1815,7 +1816,7 @@ public class SrmShell extends ShellApplication
         {
             List<StatItem<File,TMetaDataPathDetail>> contents = new ArrayList<>();
             for (TMetaDataPathDetail item : expander.list(dir)) {
-                contents.add(new StatItem(getPath(item), item));
+                contents.add(new StatItem<>(getPath(item), item));
             }
             return contents;
         }
@@ -1823,7 +1824,7 @@ public class SrmShell extends ShellApplication
         @Override
         protected List<String> lsDirNames(File dir) throws RemoteException, SRMException, InterruptedException
         {
-            List<String> names = new ArrayList();
+            List<String> names = new ArrayList<>();
             for (TMetaDataPathDetail item : expander.list(dir)) {
                 names.add(getPath(item).getName());
             }
@@ -2401,9 +2402,9 @@ public class SrmShell extends ShellApplication
 
             final int id = addOngoingTransfer(transfer);
 
-            Futures.addCallback(transfer, new FutureCallback() {
+            Futures.addCallback(transfer, new FutureCallback<Void>() {
                 @Override
-                public void onSuccess(Object result)
+                public void onSuccess(Void result)
                 {
                     synchronized (notifications) {
                         notifications.add("[" + id + "] Transfer completed.");
@@ -2468,9 +2469,9 @@ public class SrmShell extends ShellApplication
 
             final int id = addOngoingTransfer(transfer);
 
-            Futures.addCallback(transfer, new FutureCallback() {
+            Futures.addCallback(transfer, new FutureCallback<Void>() {
                 @Override
-                public void onSuccess(Object result)
+                public void onSuccess(Void result)
                 {
                     synchronized (notifications) {
                         notifications.add("[" + id + "] Transfer completed.");

@@ -134,6 +134,11 @@ public class SRMV2CopyJob implements CopyJob {
     }
 
     @Override
+    public int hashCode() {
+        return to.hashCode() ^ from.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "CopyJob, source = "+from+" destination = "+to;
     }

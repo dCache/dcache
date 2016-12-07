@@ -182,9 +182,9 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
             _surl = surl;
             _localFile = localFile;
 
-            Futures.addCallback(this, new FutureCallback(){
+            Futures.addCallback(this, new FutureCallback<Void>(){
                 @Override
-                public void onSuccess(Object result)
+                public void onSuccess(Void result)
                 {
                 }
 

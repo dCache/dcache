@@ -237,9 +237,9 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             _remote = java.net.URI.create(remote.toString());
             _localFile = localFile;
 
-            Futures.addCallback(this, new FutureCallback(){
+            Futures.addCallback(this, new FutureCallback<Void>(){
                 @Override
-                public void onSuccess(Object result)
+                public void onSuccess(Void result)
                 {
                 }
 
