@@ -116,6 +116,7 @@ public class FilterShell
 
         checkArgument(_thresholds.hasAppender(appender), "Appender not found");
         checkArgument(isExistingLogger(logger), "Logger not found");
+        checkArgument(Level.toLevel(threshold, null) != null, "Invalid log level: " + threshold);
 
         _thresholds.setThreshold(logger, appender, Level.valueOf(threshold));
         return "";
