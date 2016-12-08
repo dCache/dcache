@@ -95,6 +95,7 @@ import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
 public class AxisSrmFileSystem implements SrmFileSystem
 {
     private final int MAX_BULK_STAT = 1_000;
+    private final int MAX_LS_RESPONSE = 2_000;
 
     private final ISRM srm;
     private final SrmTransferAgent srmAgent = new SrmTransferAgent();
@@ -298,7 +299,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
     public TMetaDataPathDetail[] list(URI surl, boolean verbose) throws RemoteException, SRMException, InterruptedException
     {
         int offset = 0;
-        int count = 1000;
+        int count = MAX_LS_RESPONSE;
         TMetaDataPathDetail[] list = {};
         do {
             TMetaDataPathDetail detail = list(surl, verbose, offset, count);
