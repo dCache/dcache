@@ -564,8 +564,6 @@ public class LoginBrokerPublisher
 
     public static class AnyAddressSupplier implements Supplier<List<InetAddress>>
     {
-        private final Stopwatch _stopwatch = Stopwatch.createUnstarted();
-
         private List<InetAddress> _previous = Collections.emptyList();
 
         @Override
@@ -574,7 +572,7 @@ public class LoginBrokerPublisher
             NDC.push("NIC auto-discovery");
             try {
                 ArrayList<InetAddress> addresses = new ArrayList<>();
-                _stopwatch.reset().start();
+                Stopwatch stopwatch = Stopwatch.createStarted();
                 try {
                     Enumeration<NetworkInterface> interfaces =
                             NetworkInterface.getNetworkInterfaces();
@@ -593,11 +591,9 @@ public class LoginBrokerPublisher
                     }
                 } catch (SocketException e) {
                     _log.warn("Not publishing NICs: {}", e.getMessage());
-                } finally {
-                    _stopwatch.stop();
                 }
 
-                _log.debug("Scan took {}", _stopwatch);
+                _log.debug("Scan took {}", stopwatch);
                 logChanges(addresses);
                 return addresses;
             } finally {
