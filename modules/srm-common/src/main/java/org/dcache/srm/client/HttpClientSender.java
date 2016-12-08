@@ -430,6 +430,7 @@ public class HttpClientSender extends BasicHandler
 
             HttpUriRequest request = createHttpRequest(msgContext, uri);
             try (CloseableHttpResponse response = httpClient.execute(request, context)) {
+                msgContext.setPastPivot(true);
                 Message outMsg = extractResponse(msgContext, response);
                 msgContext.setResponseMessage(outMsg);
                 outMsg.getSOAPEnvelope();

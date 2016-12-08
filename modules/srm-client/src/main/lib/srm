@@ -61,7 +61,7 @@ fi
 SRM_CP="${SRM_PATH}/lib/*"
 
 if [ -z "${SRM_JAVA_OPTIONS}" ]; then
-    SRM_JAVA_OPTIONS="-Xms64m -Xmx64m -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
+    SRM_JAVA_OPTIONS="-Xms64m -Xmx178m -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 fi
 
 OPTIONS=" ${SRM_JAVA_OPTIONS} -Djava.protocol.handler.pkgs=org.globus.net.protocol"

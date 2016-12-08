@@ -327,6 +327,7 @@ public class SRMClientV2 implements ISRM {
                 stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, user_cred);
                 stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_DELEGATION, delegation);
                 stub._setProperty(Call.SESSION_MAINTAIN_PROPERTY, true);
+                stub._setProperty(Call.STREAMING_PROPERTY, true);
             }
 
             return stub;
