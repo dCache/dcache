@@ -524,7 +524,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
             _out.println("    Timestamp: " +
                     MILLISECONDS.toSeconds(System.currentTimeMillis()));
             _out.println("    State: " + state);
-            _out.println("    State description: " + descriptionForState(state));
+            _out.println("    State description: " + TransferManagerHandler.describeState(state));
             _out.println("    Stripe Index: 0");
             if (info != null) {
                 _out.println("    Stripe Start Time: " +
@@ -540,50 +540,6 @@ public class RemoteTransferHandler implements CellMessageReceiver
             _out.println("    Total Stripe Count: 1");
             _out.println("End");
             _out.flush();
-        }
-
-        private String descriptionForState(int state)
-        {
-            switch (state) {
-            case TransferManagerHandler.INITIAL_STATE:
-                return "initialising";
-            case TransferManagerHandler.WAITING_FOR_PNFS_INFO_STATE:
-                return "querying file metadata";
-            case TransferManagerHandler.RECEIVED_PNFS_INFO_STATE:
-                return "recieved file metadata";
-            case TransferManagerHandler.WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE:
-                return "creating namespace entry";
-            case TransferManagerHandler.RECEIVED_PNFS_ENTRY_CREATION_INFO_STATE:
-                return "namespace entry created";
-            case TransferManagerHandler.WAITING_FOR_POOL_INFO_STATE:
-                return "selecting pool";
-            case TransferManagerHandler.RECEIVED_POOL_INFO_STATE:
-                return "pool selected";
-            case TransferManagerHandler.WAITING_FIRST_POOL_REPLY_STATE:
-                return "waiting for transfer to start";
-            case TransferManagerHandler.RECEIVED_FIRST_POOL_REPLY_STATE:
-                return "transfer has started";
-            case TransferManagerHandler.WAITING_FOR_SPACE_INFO_STATE:
-                return "reserving space";
-            case TransferManagerHandler.RECEIVED_SPACE_INFO_STATE:
-                return "space reserved";
-            case TransferManagerHandler.WAITING_FOR_PNFS_ENTRY_DELETE:
-                return "requesting file deletion";
-            case TransferManagerHandler.RECEIVED_PNFS_ENTRY_DELETE:
-                return "notified of file deletion";
-            case TransferManagerHandler.WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE:
-                return "checking before file deletion";
-            case TransferManagerHandler.RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE:
-                return "confirmed file deletion OK";
-            case TransferManagerHandler.SENT_ERROR_REPLY_STATE:
-                return "transfer failed";
-            case TransferManagerHandler.SENT_SUCCESS_REPLY_STATE:
-                return "transfer succeeded";
-            case TransferManagerHandler.UNKNOWN_ID:
-                return "unknown transfer";
-            default:
-                return "unknown state: " + state;
-            }
         }
     }
 }
