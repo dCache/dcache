@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.CopyManagerMessage;
 import diskCacheV111.vehicles.DCapClientPortAvailableMessage;
@@ -31,6 +32,7 @@ import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 
+import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerStub;
@@ -39,6 +41,7 @@ import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicies;
 
+import static java.util.stream.Collectors.joining;
 import static org.dcache.util.ByteUnit.KiB;
 
 public class CopyManager extends AbstractCellComponent
@@ -86,48 +89,51 @@ public class CopyManager extends AbstractCellComponent
         boolean long_format = args.hasOption("l");
         if (args.argc() > 0) {
             long id = Long.parseLong(args.argv(0));
-            CopyHandler transferHandler = _activeTransfers.get(id);
-            if (transferHandler == null) {
-                return "ID not found : "+ id;
-            }
-            return " transfer id=" + id+" : " +
-                transferHandler.toString(long_format);
+            CopyHandler handler = _activeTransfers.get(id);
+            return id + ": " + (handler == null ? "no such ID" : handler.toString(long_format));
         }
-        StringBuilder sb =  new StringBuilder();
         if (_activeTransfers.isEmpty()) {
-            return "No Active Transfers";
+            return "No active transfers.";
         }
-        sb.append("  Active Transfers ");
-        for (Map.Entry<Long,CopyHandler> entry: _activeTransfers.entrySet()) {
-            sb.append("\n#").append(entry.getKey());
-            sb.append(" ").append(entry.getValue().toString(long_format));
-        }
-        return sb.toString();
+        return _activeTransfers.entrySet().stream()
+                .map(e -> e.getKey() + ": "  + e.getValue().toString(long_format))
+                .collect(joining("\n", "", "\n"));
+    }
+
+    private static void appendPaths(StringBuilder sb, CopyManagerMessage message)
+    {
+        sb.append(' ').append(message.getSrcPnfsPath()).append(" --> ").append(message.getDstPnfsPath());
+    }
+
+    private static StringBuilder appendExtendedInfo(StringBuilder sb, CopyManagerMessage message)
+    {
+        sb.append("    Attempt: ").append(1+message.getNumberOfPerformedRetries())
+                .append(" of ").append(message.getNumberOfRetries()).append('\n');
+        sb.append("    User: ").append(Subjects.getDisplayName(message.getSubject())).append('\n');
+        sb.append("    Restriction: ").append(message.getRestriction());
+        return sb;
     }
 
     public static final String hh_queue = "[-l]";
     public synchronized String ac_queue_$_0(Args args)
     {
-        boolean long_format = args.hasOption("l");
-        StringBuilder sb = new StringBuilder();
+        boolean longFormat = args.hasOption("l");
         if (_queue.isEmpty()) {
             return "Queue is empty";
         }
 
-        int i = 0;
+        StringBuilder sb = new StringBuilder();
+        int i = 1;
         for (CellMessage envelope: _queue) {
-            sb.append("\n#").append(i++);
-            CopyManagerMessage request =
-                (CopyManagerMessage) envelope.getMessageObject();
-            sb.append(" store src=");
-            sb.append(request.getSrcPnfsPath());
-            sb.append(" dest=");
-            sb.append(request.getDstPnfsPath());
+            sb.append("#").append(i++);
 
-            if (!long_format) {
-                continue;
+            CopyManagerMessage message = (CopyManagerMessage) envelope.getMessageObject();
+            appendPaths(sb, message);
+
+            if (longFormat) {
+                sb.append('\n');
+                appendExtendedInfo(sb, message).append('\n');
             }
-            sb.append("\n try#").append(request.getNumberOfPerformedRetries());
         }
         return sb.toString();
     }
@@ -135,17 +141,11 @@ public class CopyManager extends AbstractCellComponent
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("    CopyManager");
-        pw.println("---------------------------------");
-        pw.printf("Name   : %s\n", getCellName());
-        pw.printf("number of active transfers : %d\n",
-                  _numTransfers);
-        pw.printf("number of queuedrequests : %d\n",
-                  _queue.size());
-        pw.printf("max number of active transfers  : %d\n",
-                  getMaxTransfers());
-        pw.printf("PoolManager  : %s\n", _poolManager);
-        pw.printf("Mover timeout  : %d seconds",
+        pw.printf("Active transfers      : %d\n", _numTransfers);
+        pw.printf("Queued requests       : %d\n", _queue.size());
+        pw.printf("Max active transfers  : %d\n", getMaxTransfers());
+        pw.printf("Pool manager          : %s\n", _poolManager);
+        pw.printf("Mover timeout         : %d seconds",
                   _moverTimeoutUnit.toSeconds(_moverTimeout));
     }
 
@@ -213,52 +213,67 @@ public class CopyManager extends AbstractCellComponent
             _envelope = envelope;
         }
 
-        public synchronized String toString(boolean long_format)
+        private void appendTransfer(StringBuilder sb, Transfer transfer)
         {
-            if (_envelope == null) {
-                return getState();
+            PnfsId id = transfer.getPnfsId();
+            String pool = transfer.getPool();
+            Integer mover = transfer.getMoverId();
+            sb.append("        PNFS-ID: ").append(id == null ? "Not yet known" : id).append('\n');
+            sb.append("        Pool: ").append(pool == null ? "Not yet selected" : pool);
+            if (mover != null) {
+                sb.append('\n');
+                sb.append("        Mover: ").append(mover);
+            }
+        }
+
+        public synchronized String toString(boolean isLongFormat)
+        {
+            CopyManagerMessage message = _envelope == null ? null :
+                    (CopyManagerMessage) _envelope.getMessageObject();
+
+            StringBuilder sb = new StringBuilder(getTransferState());
+
+            if (message != null) {
+                appendPaths(sb, message);
             }
 
-            CopyManagerMessage message =
-                (CopyManagerMessage) _envelope.getMessageObject();
+            if (isLongFormat) {
+                if (message != null) {
+                    sb.append('\n');
+                    appendExtendedInfo(sb, message);
+                }
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("store src=");
-            sb.append(message.getSrcPnfsPath());
-            sb.append(" dest=");
-            sb.append(message.getDstPnfsPath());
-            if (!long_format) {
-                return sb.toString();
-            }
-            sb.append("\n   ").append(getState());
-            sb.append("\n try#").append(message.getNumberOfPerformedRetries());
+                if (_source != null) {
+                    sb.append('\n');
+                    sb.append("    SOURCE\n");
+                    appendTransfer(sb, _source);
+                }
 
-            if (_source != null && _source.getPnfsId() != null) {
-                sb.append("\n   srcPnfsId=").append(_source.getPnfsId());
-            }
-            if (_target != null && _target.getPnfsId() != null) {
-                sb.append("\n   dstPnfsId=").append(_target.getPnfsId());
-            }
-            if (_source != null && _source.getPool() != null) {
-                sb.append("\n   srcPool=").append(_source.getPool());
-            }
-            if (_target != null && _target.getPool() != null) {
-                sb.append("\n   dstPool=").append(_target.getPool());
+                if (_target != null) {
+                    sb.append('\n');
+                    sb.append("    TARGET\n");
+                    appendTransfer(sb, _target);
+                }
             }
             return sb.toString();
         }
 
-        public synchronized String getState()
+        private String statusOf(Transfer t)
         {
-            String source = (_source != null) ? _source.getStatus() : null;
-            if (source != null) {
-                return source;
+            if (t == null) {
+                return "no transfer";
+            } else {
+                String status = t.getStatus();
+                return status == null ? "idle" : status;
             }
-            String target = (_target != null) ? _target.getStatus() : null;
-            if (target != null) {
-                return target;
-            }
-            return "Pending";
+        }
+
+        private synchronized String getTransferState()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("source [").append(statusOf(_source)).append("] ");
+            sb.append("target [").append(statusOf(_target)).append("]");
+            return sb.toString();
         }
 
         @Override

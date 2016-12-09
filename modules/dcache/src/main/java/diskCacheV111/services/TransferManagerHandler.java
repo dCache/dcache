@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import jersey.repackaged.com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,8 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.EnumSet;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.FTPTransactionLog;
@@ -59,7 +62,7 @@ import org.dcache.pool.assumption.Assumption;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class TransferManagerHandler extends AbstractMessageCallback<Message>
 {
@@ -99,6 +102,28 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public static final int SENT_ERROR_REPLY_STATE = -1;
     public static final int SENT_SUCCESS_REPLY_STATE = -2;
     public static final int UNKNOWN_ID = -3;
+
+    public static final Map<Integer,String> STATE_DESCRIPTION =
+            ImmutableMap.<Integer,String>builder()
+            .put(INITIAL_STATE, "initialising")
+            .put(WAITING_FOR_PNFS_INFO_STATE, "querying file metadata")
+            .put(RECEIVED_PNFS_INFO_STATE, "recieved file metadata")
+            .put(WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE, "creating namespace entry")
+            .put(RECEIVED_PNFS_ENTRY_CREATION_INFO_STATE, "namespace entry created")
+            .put(WAITING_FOR_POOL_INFO_STATE, "selecting pool")
+            .put(RECEIVED_POOL_INFO_STATE, "pool selected")
+            .put(WAITING_FIRST_POOL_REPLY_STATE, "waiting for transfer to start")
+            .put(RECEIVED_FIRST_POOL_REPLY_STATE, "transfer has started")
+            .put(WAITING_FOR_SPACE_INFO_STATE, "reserving space")
+            .put(RECEIVED_SPACE_INFO_STATE, "space reserved")
+            .put(WAITING_FOR_PNFS_ENTRY_DELETE, "requesting file deletion")
+            .put(RECEIVED_PNFS_ENTRY_DELETE, "notified of file deletion")
+            .put(WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE, "checking before file deletion")
+            .put(RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE, "confirmed file deletion OK")
+            .put(SENT_ERROR_REPLY_STATE, "transfer failed")
+            .put(SENT_SUCCESS_REPLY_STATE, "transfer succeeded")
+            .put(UNKNOWN_ID, "unknown transfer")
+            .build();
     public int state = INITIAL_STATE;
     private long id;
     private Integer moverId;
@@ -166,6 +191,12 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 new ChainedPermissionHandler(
                 new ACLPermissionHandler(),
                 new PosixPermissionHandler());
+    }
+
+    public static String describeState(int state)
+    {
+        String description = STATE_DESCRIPTION.get(state);
+        return description != null ? description : ("Unknown state: " + state);
     }
 
     public void handle()
@@ -666,39 +697,54 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         sendErrorReply(24, new IOException("transfer cancelled: " + explanation));
     }
 
-    public synchronized String toString(boolean long_format)
+    public synchronized String toString(boolean isLongFormat)
     {
-        StringBuilder sb = new StringBuilder("id=");
-        sb.append(id);
-        if (!long_format) {
-            if (store) {
-                sb.append(" store src=");
-                sb.append(transferRequest.getRemoteURL());
-                sb.append(" dest=");
-                sb.append(transferRequest.getPnfsPath());
-            } else {
-                sb.append(" restore src=");
-                sb.append(transferRequest.getPnfsPath());
-                sb.append(" dest=");
-                sb.append(transferRequest.getRemoteURL());
+        String src = store ? transferRequest.getRemoteURL() : transferRequest.getPnfsPath();
+        String dest = store ? transferRequest.getPnfsPath() : transferRequest.getRemoteURL();
+        String siPath = fileAttributes == null ? null : fileAttributes.getStorageInfo().getKey("path");
+
+        StringBuilder sb = new StringBuilder("id: ").append(id);
+
+        if (isLongFormat) {
+            sb.append('\n');
+            sb.append("    Source: ").append(src).append('\n');
+            sb.append("    Destination: ").append(dest).append('\n');
+            if (store && siPath != null && !siPath.equals(dest)) {
+                sb.append("    Final destination: ").append(siPath).append('\n');
             }
-            return sb.toString();
-        }
-        sb.append("\n  state=").append(state);
-        sb.append("\n  user=").append(transferRequest.getSubject());
-        sb.append("\n  restriction=").append(transferRequest.getRestriction());
-        if (pnfsId != null) {
-            sb.append("\n   pnfsId=").append(pnfsId);
-        }
-        if (fileAttributes != null) {
-            sb.append("\n   fileAttributes=").append(fileAttributes);
-        }
-        if (pool != null) {
-            sb.append("\n   pool=").append(pool);
+            sb.append("    State: ").append(describeState(state)).append('\n');
+            sb.append("    User: ").append(Subjects.getDisplayName(transferRequest.getSubject())).append('\n');
+            sb.append("    Restriction: ").append(transferRequest.getRestriction()).append('\n');
+            if (pnfsId != null) {
+                sb.append("    PNFS-ID: ").append(pnfsId).append('\n');
+            }
+            if (fileAttributes != null) {
+                if (fileAttributes.isDefined(ACCESS_LATENCY)) {
+                    sb.append("    Access latency: ").append(fileAttributes.getAccessLatency()).append('\n');
+                }
+                if (fileAttributes.isDefined(RETENTION_POLICY)) {
+                    sb.append("    Retention policy: ").append(fileAttributes.getRetentionPolicy()).append('\n');
+                }
+                if (fileAttributes.isDefined(STORAGECLASS)) {
+                    sb.append("    Storage class: ").append(fileAttributes.getStorageClass()).append('\n');
+                }
+                if (fileAttributes.isDefined(SIZE)) {
+                    sb.append("    Size: ").append(fileAttributes.getSize()).append('\n');
+                }
+            }
+            sb.append("    Pool: ").append(pool == null ? "not yet selected" : pool);
             if (moverId != null) {
-                sb.append("\n   moverId=").append(moverId);
+                sb.append('\n');
+                sb.append("    Mover: ").append(moverId);
+            }
+        } else {
+            sb.append(' ').append(src).append(" --> ").append(dest);
+
+            if (store && siPath != null && !siPath.equals(dest)) {
+                sb.append(" [").append(siPath).append("]");
             }
         }
+
         return sb.toString();
     }
 
