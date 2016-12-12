@@ -44,6 +44,8 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 
+import static java.util.stream.Collectors.joining;
+
 
 /**
  * Base class for services that transfer files on behalf of SRM. Used to
@@ -88,25 +90,14 @@ public abstract class TransferManager extends AbstractCellComponent
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.printf("    %s\n", getClass().getName());
-        pw.println("---------------------------------");
-        pw.printf("Name   : %s\n", getCellName());
-        if (doDbLogging()) {
-            pw.println("dblogging=true");
-        } else {
-            pw.println("dblogging=false");
-        }
-        if (idGenerator != null) {
-            pw.println("TransferID is generated using Data Base");
-        } else {
-            pw.println("TransferID is generated w/o DB access");
-        }
-        pw.printf("number of active transfers : %d\n", _numTransfers);
-        pw.printf("max number of active transfers  : %d\n", getMaxTransfers());
-        pw.printf("PoolManager  : %s\n", _poolManager);
-        pw.printf("next id  : %d seconds\n", nextMessageID);
-        pw.printf("io-queue  : %s\n", _ioQueueName);
-        pw.printf("maxNumberofDeleteRetries  : %d\n", _maxNumberOfDeleteRetries);
+        pw.printf("DB logging            : %b\n", doDbLogging());
+        pw.printf("Transfer ID generated : %s\n", idGenerator == null ? "locally" : "from DB");
+        pw.printf("Next Transfer ID      : %d\n", nextMessageID);
+        pw.printf("Active transfers      : %d\n", _numTransfers);
+        pw.printf("Max active transfers  : %d\n", getMaxTransfers());
+        pw.printf("Pool manager          : %s\n", _poolManager);
+        pw.printf("io-queue              : %s\n", _ioQueueName);
+        pw.printf("Max delete retries    : %d\n", _maxNumberOfDeleteRetries);
     }
 
     public String ac_set_maxNumberOfDeleteRetries_$_1(Args args)
@@ -150,18 +141,14 @@ public abstract class TransferManager extends AbstractCellComponent
             if (handler == null) {
                 return "ID not found : " + id;
             }
-            return " transfer id=" + id + " : " + handler.toString(long_format);
+            return handler.toString(long_format);
         }
-        StringBuilder sb = new StringBuilder();
         if (_activeTransfers.isEmpty()) {
-            return "No Active Transfers";
+            return "No active transfers.";
         }
-        sb.append("  Active Transfers ");
-        for (Map.Entry<Long, TransferManagerHandler> e : _activeTransfers.entrySet()) {
-            sb.append("\n#").append(e.getKey());
-            sb.append(" ").append(e.getValue().toString(long_format));
-        }
-        return sb.toString();
+        return _activeTransfers.values().stream()
+                .map(h -> h.toString(long_format))
+                .collect(joining("\n", "", "\n"));
     }
 
     public static final String hh_kill = " id";
