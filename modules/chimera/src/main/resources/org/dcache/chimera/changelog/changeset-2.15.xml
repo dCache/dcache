@@ -1846,7 +1846,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet author="litvinse" id="24.1" dbms="postgresql">
+    <changeSet author="litvinse" id="24.2" dbms="postgresql">
       <comment>Fix trigger on insert or update on t_level_4</comment>
 
         <createProcedure>
@@ -1869,7 +1869,8 @@
                 CONTINUE;
               ELSE
                 BEGIN
-                  INSERT INTO t_locationinfo VALUES ( ichain.inumber, 0, ilocation, 10, NOW(), NOW(), 1);
+                  INSERT INTO t_locationinfo (inumber, itype, ilocation, ipriority, ictime, iatime, istate)
+                      VALUES (ichain.inumber, 0, ilocation, 10, NOW(), NOW(), 1);
                   EXCEPTION WHEN unique_violation THEN
                         -- do nothing
                     RAISE NOTICE 'Tape location for % aready exist.', ichain.inumber;
@@ -1906,12 +1907,14 @@
               IF location IS NULL THEN
                 -- encp only creates empty layer 4 file
                 -- so NEW.ifiledata is null
-                INSERT INTO t_locationinfo VALUES (NEW.inumber,0,'enstore:',10,NOW(),NOW(),1);
+                INSERT INTO t_locationinfo (inumber, itype, ilocation, ipriority, iatime, ictime, istate)
+                    VALUES (NEW.inumber,0,'enstore:',10,NOW(),NOW(),1);
                 INSERT INTO t_storageinfo
                VALUES (NEW.inumber,'enstore','enstore','enstore');
               ELSE
                     l_entries = string_to_array(encode(NEW.ifiledata,'escape'), E'\n');
-                INSERT INTO t_locationinfo VALUES (NEW.inumber,0,location,10,NOW(),NOW(),1);
+                INSERT INTO t_locationinfo (inumber, itype, ilocation, ipriority, iatime, ictime, istate)
+                    VALUES (NEW.inumber,0,location,10,NOW(),NOW(),1);
                 INSERT INTO t_storageinfo
                VALUES (NEW.inumber,'enstore','enstore',l_entries[4]);
                   END IF;
