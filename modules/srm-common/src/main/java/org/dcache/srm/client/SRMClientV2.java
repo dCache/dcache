@@ -399,7 +399,7 @@ public class SRMClientV2 implements ISRM {
                 if (e instanceof AxisFault && e.getCause() != null) {
                     e = e.getCause();
                 }
-                Throwables.propagateIfInstanceOf(e, ConnectException.class);
+                Throwables.propagateIfPossible(e, ConnectException.class);
                 if (e instanceof AxisFault) {
                     AxisFault af = (AxisFault) e;
                     if (af.getFaultCode().equals(AXIS_HTTP)) {
