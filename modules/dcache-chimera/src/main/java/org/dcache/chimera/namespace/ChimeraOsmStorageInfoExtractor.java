@@ -14,6 +14,7 @@ import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.FileState;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
@@ -33,9 +34,8 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
 
         try {
             Stat stat = inode.statCache();
-            ExtendedInode level2 = inode.getLevel(2);
 
-            boolean isNew = (stat.getSize() == 0) && (!level2.exists());
+            boolean isNew = stat.getState() == FileState.CREATED || stat.getState() == FileState.LEGACY && stat.getSize() == 0 && !inode.getLevel(2).exists();
 
             if (!isNew) {
                 ImmutableList<String> locations = inode.getLocations(StorageGenericLocation.TAPE);

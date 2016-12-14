@@ -90,6 +90,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.nullToEmpty;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
+import org.dcache.chimera.FileState;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
@@ -1028,6 +1029,11 @@ public class ChimeraNameSpaceProvider
             for (FileAttribute attribute : attr.getDefinedAttributes()) {
                 switch (attribute) {
                     case LOCATIONS:
+                        // new location with size indicates upload
+                        // REVISIT: may be we need an explicit indication from pool
+                        if (attr.isDefined(SIZE)) {
+                            stat.setState(FileState.STORED);
+                        }
                         break;
                     case SIZE:
                         stat.setSize(attr.getSize());

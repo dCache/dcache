@@ -65,7 +65,7 @@ public class H2FsSqlDriver extends FsSqlDriver {
                     ps.setInt(5, uid);
                     ps.setInt(6, gid);
                     ps.setLong(7, size);
-                    ps.setInt(8, _ioMode);
+                    ps.setInt(8, FileState.CREATED.getValue());
                     ps.setTimestamp(9, now);
                     ps.setTimestamp(10, now);
                     ps.setTimestamp(11, now);

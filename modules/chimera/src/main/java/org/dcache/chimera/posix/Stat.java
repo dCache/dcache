@@ -22,6 +22,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.util.EnumSet;
 import java.util.Formatter;
+import org.dcache.chimera.FileState;
 
 import org.dcache.chimera.UnixPermission;
 
@@ -49,7 +50,8 @@ public class Stat {
         CRTIME,
         BLK_SIZE,
         ACCESS_LATENCY,
-        RETENTION_POLICY
+        RETENTION_POLICY,
+        STATE
     }
 
     /**
@@ -90,6 +92,11 @@ public class Stat {
      */
     private long _crtime;
 
+    /**
+     * File state in dCache.
+     */
+    private FileState _state;
+
     public Stat()
     {
     }
@@ -113,6 +120,7 @@ public class Stat {
         _mtime = stat._mtime;
         _ctime = stat._ctime;
         _crtime = stat._crtime;
+        _state = stat._state;
     }
 
     public int getDev() {
@@ -282,6 +290,16 @@ public class Stat {
     public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
         define(StatAttributes.RETENTION_POLICY);
         _retentionPolicy = retentionPolicy.getId();
+    }
+
+    public FileState getState() {
+        guard(StatAttributes.STATE);
+        return _state;
+    }
+
+    public void setState(FileState state) {
+        define(StatAttributes.STATE);
+        _state = state;
     }
 
     @Override

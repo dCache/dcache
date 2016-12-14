@@ -407,6 +407,7 @@ public class FsSqlDriver {
         stat.setNlink(rs.getInt("inlink"));
         stat.setDev(17);
         stat.setRdev(13);
+        stat.setState(FileState.valueOf(rs.getInt("iio")));
         return stat;
     }
 
@@ -426,6 +427,7 @@ public class FsSqlDriver {
         stat.setNlink(rs.getInt("inlink"));
         stat.setDev(17);
         stat.setRdev(13);
+        stat.setState(FileState.STORED);
         return stat;
     }
 
@@ -1751,6 +1753,9 @@ public class FsSqlDriver {
         if (stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
             sb.append(",iretention_policy=?");
         }
+        if (stat.isDefined(Stat.StatAttributes.STATE)) {
+            sb.append(",iio=?");
+        }
         sb.append(attrUpdateSuffix);
 
         String statement = sb.toString();
@@ -1785,6 +1790,9 @@ public class FsSqlDriver {
         }
         if (stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
             preparedStatement.setInt(idx++, stat.getRetentionPolicy().getId());
+        }
+        if (stat.isDefined(Stat.StatAttributes.STATE)) {
+            preparedStatement.setInt(idx++, stat.getState().getValue());
         }
         preparedStatement.setLong(idx++, inode.ino());
         return preparedStatement;
