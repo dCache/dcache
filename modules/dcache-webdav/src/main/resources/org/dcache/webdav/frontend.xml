@@ -71,6 +71,10 @@
 	  </bean>
       </constructor-arg>
   </bean>
+    <bean id="path-mapper" class="org.dcache.restful.util.PathMapper">
+        <description>Mapping between request paths and dCache paths</description>
+        <property name="rootPath" value="${frontend.root}"/>
+    </bean>
 
   <bean id="login-strategy" class="org.dcache.webdav.AnonymousUserLoginStrategy">
       <description>Processes login for user 'anonymous'</description>
@@ -114,6 +118,8 @@
         <property name="timeoutUnit" value="${frontend.service.pinmanager.timeout.unit}"/>
         <property name="destination" value="${frontend.service.pinmanager}"/>
     </bean>
+
+
 
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
         <description>List of handlers for HTTP requests</description>
@@ -181,6 +187,8 @@
                                                                value-ref="pool-monitor"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
                                                                value-ref= "pinManagerStub"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PathMapper}"
+                                                               value-ref= "path-mapper"/>
 
                                                     </map>
                                                 </constructor-arg>

@@ -1,6 +1,7 @@
 package org.dcache.restful.resources.namespace;
 
 import com.google.common.collect.Range;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -45,6 +46,7 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.restful.util.PathMapper;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
@@ -129,14 +131,9 @@ public class FileResources {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+        PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
 
-        FsPath path;
-        if (value == null || value.isEmpty()) {
-            path = FsPath.ROOT;
-        } else {
-            path = FsPath.create(FsPath.ROOT + value);
-        }
-
+        FsPath path = pathMapper.asDcachePath(request, value);
 
         try {
 

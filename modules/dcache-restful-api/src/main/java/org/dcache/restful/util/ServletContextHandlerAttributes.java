@@ -18,6 +18,8 @@ public class ServletContextHandlerAttributes {
     public final static String CS = "org.dcache.restful.CS";
     public final static String PM = "org.dcache.restful.PM";
     public final static String PinMngStub = "org.dcache.restful.PinMngStub";
+    public final static String PathMapper = "org.dcache.restful.PathMapper";
+
 
     public static Subject getSubject()
     {
@@ -52,6 +54,13 @@ public class ServletContextHandlerAttributes {
     {
         CellStub cellStub = (CellStub) (ctx.getAttribute(PinMngStub));
         return cellStub;
+
+    }
+
+    public static PathMapper getPathMapper(ServletContext ctx)
+    {
+        PathMapper pathMapper = (PathMapper) (ctx.getAttribute(PathMapper));
+        return pathMapper;
 
     }
 }
