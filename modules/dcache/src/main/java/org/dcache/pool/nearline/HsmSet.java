@@ -396,14 +396,14 @@ public class HsmSet
             description = "Lists all nearline storages defined on this pool.")
     public class LsCommand implements Callable<String>
     {
-        @Argument(usage = "Limit output to these instances.")
+        @Argument(usage = "Limit output to these instances.", required = false)
         String[] instances;
 
         @Override
         public String call() throws Exception
         {
             StringBuilder sb = new StringBuilder();
-            if (instances.length > 0) {
+            if (instances != null && instances.length > 0) {
                 for (String instance : instances) {
                     printInfos(sb, instance);
                 }
