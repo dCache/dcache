@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -233,6 +234,34 @@ public class FileResources {
             throw new InternalServerErrorException(e);
         }
         return successfulResponse(Response.Status.CREATED);
+    }
+
+    @DELETE
+    @Path("{value : .*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteFileEntry(@PathParam("value") String value) throws CacheException {
+
+        PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+        PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
+        FsPath path = pathMapper.asDcachePath(request, value);
+
+        try {
+            handler.deletePnfsEntry(path.toString(), EnumSet.of(FileType.REGULAR));
+
+        } catch (FileNotFoundCacheException e) {
+            throw new NotFoundException(e);
+        } catch (PermissionDeniedCacheException e) {
+            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+                throw new NotAuthorizedException(e);
+            } else {
+                throw new ForbiddenException(e);
+            }
+        } catch (JSONException | IllegalArgumentException | CacheException e) {
+            throw new BadRequestException(e);
+        } catch (Exception e) {
+            throw new InternalServerErrorException(e);
+        }
+        return successfulResponse(Response.Status.OK);
     }
 
     /**

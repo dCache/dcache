@@ -94,7 +94,7 @@ public class MiltonHandler
     {
         String clientOrigin = request.getHeader("origin");
         if (Objects.equals(request.getMethod(), "OPTIONS")) {
-            response.setHeader("Access-Control-Allow-Methods", "PUT");
+            response.setHeader("Access-Control-Allow-Methods", "PUT, DELETE");
             response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Allow-Origin", clientOrigin);
