@@ -954,7 +954,9 @@ public class Transfer implements Comparable<Transfer>
         } else {
             EnumSet<RequestContainerV5.RequestState> allowedStates;
             try {
-                allowedStates = _checkStagePermission.canPerformStaging(_subject, fileAttributes)
+                allowedStates = _checkStagePermission.canPerformStaging(_subject,
+                                                                        fileAttributes,
+                                                                        protocolInfo)
                                 ? RequestContainerV5.allStates
                                 : RequestContainerV5.allStatesExceptStage;
             } catch (IOException e) {
