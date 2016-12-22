@@ -1969,7 +1969,9 @@ public class DCapDoorInterpreterV3
                EnumSet<RequestContainerV5.RequestState> allowedStates;
                try {
                    allowedStates =
-                       _settings.getCheckStagePermission().canPerformStaging(_subject, _fileAttributes)
+                       _settings.getCheckStagePermission().canPerformStaging(_subject,
+                                                                             _fileAttributes,
+                                                                             _protocolInfo)
                        ? RequestContainerV5.allStates
                        : RequestContainerV5.allStatesExceptStage;
                } catch (IOException e) {

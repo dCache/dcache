@@ -13,6 +13,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
 
+import diskCacheV111.vehicles.ProtocolInfo;
+
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
@@ -21,7 +23,65 @@ import static org.hamcrest.Matchers.is;
 
 public class CheckStagePermissionTests
 {
-    private File _file;
+    /*
+     * definition is taken verbatim from NFS4ProtocolInfo
+     * (NFS4) and major=4 seem to be redundant
+     */
+
+    public static final ProtocolInfo NFS4_PROTOCOL_INFO = new ProtocolInfo () {
+            private static final String _protocolName = "NFS4";
+            private static final int _minor = 1;
+            private static final int _major = 4;
+
+            @Override
+            public String getProtocol() {
+                return _protocolName;
+            }
+
+            @Override
+            public int getMinorVersion() {
+                return _minor;
+            }
+
+            @Override
+            public int getMajorVersion() {
+                return _major;
+            }
+
+            @Override
+            public String getVersionString() {
+                return _protocolName + "-" + _major + "." + _minor;
+            }
+        };
+
+
+    public static final ProtocolInfo XROOTD_PROTOCOL_INFO = new ProtocolInfo () {
+            private static final String _protocolName =  "Xrootd";
+            private static final int _minor = 2;
+            private static final int _major = 7;
+
+            @Override
+            public String getProtocol() {
+                return _protocolName;
+            }
+
+            @Override
+            public int getMinorVersion() {
+                return _minor;
+            }
+
+            @Override
+            public int getMajorVersion() {
+                return _major;
+            }
+
+            @Override
+            public String getVersionString() {
+                return _protocolName + "-" + _major + "." + _minor;
+            }
+        };
+
+   private File _file;
     private CheckStagePermission _check;
     private boolean _allowed;
 
@@ -39,7 +99,7 @@ public class CheckStagePermissionTests
     }
 
     /*
-     *  Tests that check behaviour when stage protection is disable.
+     *  Tests that check behaviour when stage protection is disabled.
      */
 
     @Test
@@ -48,7 +108,7 @@ public class CheckStagePermissionTests
         givenCheckConstructedWith("");
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                  FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -59,7 +119,7 @@ public class CheckStagePermissionTests
         givenCheckConstructedWith("");
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                  FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -70,7 +130,7 @@ public class CheckStagePermissionTests
         givenCheckConstructedWith(null);
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -81,7 +141,7 @@ public class CheckStagePermissionTests
         givenCheckConstructedWith(null);
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -96,7 +156,7 @@ public class CheckStagePermissionTests
         given(file().isEmpty());
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -111,7 +171,7 @@ public class CheckStagePermissionTests
         given(file().isMissing());
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -127,7 +187,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -138,7 +198,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -149,7 +209,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=otherExample/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -164,7 +224,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -175,7 +235,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -186,7 +246,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -197,7 +257,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -208,7 +268,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=anotherExample/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -223,13 +283,15 @@ public class CheckStagePermissionTests
     {
         given(file().isEmpty());
         givenCheckedWith(Subjects.of().dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                         FileAttributes.of().storageClass("sql:chimera").hsm("osm"),
+                         NFS4_PROTOCOL_INFO);
         // Note: filesystems have differing granularity of their timestamp: so
         //       we must make sure the mtime has increased.
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\"").withDifferentMtime());
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                  FileAttributes.of().storageClass("sql:chimera").hsm("osm"),
+                  NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -245,7 +307,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/.*\" \"/atlas/Role=.*\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -256,7 +318,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/.*\" \"/atlas/Role=.*\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=anotherExample/CN=test").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
@@ -267,7 +329,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\".*\" \".*\" \".*\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=anotherExample/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -283,7 +345,7 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("sql:chimera").hsm("osm"));
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(true));
     }
@@ -294,15 +356,76 @@ public class CheckStagePermissionTests
         given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\""));
 
         whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
-                FileAttributes.of().storageClass("data:chimera").hsm("osm"));
+                  FileAttributes.of().storageClass("data:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
 
         assertThat(_allowed, is(false));
     }
 
-    private void whenCheck(Subjects.Builder subjectBuilder,
-            FileAttributes.Builder attributeBuilder) throws PatternSyntaxException, IOException
+    /*
+     *  Tests that check behaviour when a (DN,FQAN,StorageUnit) triplet is authorised to stage
+     *  a specific protocol
+     */
+
+    @Test
+    public void shouldAllowUserWithDnFqanStoreToStageIfDnFqanStoreProtocolAuthz() throws Exception
     {
-        _allowed = getCheck().canPerformStaging(subjectBuilder.build(), attributeBuilder.build());
+        given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"NFS4/4\""));
+
+        whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
+                  FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+
+        assertThat(_allowed, is(true));
+    }
+
+    @Test
+    public void shouldDenyUserWithDnFqanStoreWrongProtocoIfDnFqanStoreAuthz() throws Exception
+    {
+        given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"DCap/3\""));
+
+        whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+
+        assertThat(_allowed, is(false));
+    }
+
+    @Test
+    public void shouldDenyUserWithDnFqanStoreProtocoIfDnFqanStoreAuthzButPtocolIsBanned() throws Exception
+    {
+        given(file().hasContents("\"/DC=org/DC=example/CN=test user\" \"/atlas/Role=production\" \"sql:chimera@osm\" \"!NFS4/4\""));
+
+        whenCheck(Subjects.of().dn("/DC=org/DC=example/CN=test user").fqan("/atlas/Role=production").fqan("/atlas"),
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),NFS4_PROTOCOL_INFO);
+
+        assertThat(_allowed, is(false));
+    }
+
+    @Test
+    public void shouldAllowAnonymousUserIfStoreIsNotBlackListedProtocolNotListed() throws Exception
+    {
+        given(file().hasContents("\"\" \"\" \"!sql:chimera@osm\""));
+
+        whenCheck(Subjects.of().dn("").fqan("").fqan(""),
+                FileAttributes.of().storageClass("sql:chimera").hsm("enstore"),NFS4_PROTOCOL_INFO);
+
+        assertThat(_allowed, is(true));
+    }
+
+    @Test
+    public void shouldAllowAnonymousUserStoreIfProtocolNotBlackListed() throws Exception
+    {
+        given(file().hasContents("\"\" \"\" \"sql:chimera@osm\" \"!NFS.*\""));
+
+        whenCheck(Subjects.of().dn("").fqan("").fqan(""),
+                FileAttributes.of().storageClass("sql:chimera").hsm("osm"),XROOTD_PROTOCOL_INFO);
+
+        assertThat(_allowed, is(true));
+    }
+
+    private void whenCheck(Subjects.Builder subjectBuilder,
+                           FileAttributes.Builder attributeBuilder,
+                           ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException
+    {
+        _allowed = getCheck().canPerformStaging(subjectBuilder.build(), attributeBuilder.build(), protocolInfo);
     }
 
     private CheckStagePermission getCheck() throws IOException
@@ -319,9 +442,10 @@ public class CheckStagePermissionTests
     }
 
     private void givenCheckedWith(Subjects.Builder subjectBuilder,
-            FileAttributes.Builder attributeBuilder) throws PatternSyntaxException, IOException
+                                  FileAttributes.Builder attributeBuilder,
+                                  ProtocolInfo protocolInfo) throws PatternSyntaxException, IOException
     {
-        getCheck().canPerformStaging(subjectBuilder.build(), attributeBuilder.build());
+        getCheck().canPerformStaging(subjectBuilder.build(), attributeBuilder.build(),protocolInfo);
     }
 
     private FileStateAssertion file() throws IOException

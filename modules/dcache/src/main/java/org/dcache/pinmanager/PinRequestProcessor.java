@@ -213,7 +213,9 @@ public class PinRequestProcessor
     {
         try {
             Subject subject = task.getSubject();
-            return _checkStagePermission.canPerformStaging(subject, task.getFileAttributes()) ?
+            return _checkStagePermission.canPerformStaging(subject,
+                                                           task.getFileAttributes(),
+                                                           task.getProtocolInfo()) ?
                 RequestContainerV5.allStates :
                 RequestContainerV5.allStatesExceptStage;
         } catch (PatternSyntaxException | IOException ex) {
