@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -261,7 +261,7 @@ public class CephFileStore implements FileStore {
 
     private URI toUri(String imageName) {
         try {
-            return new URI("rbd", poolName, imageName, null, null);
+            return new URI("rbd", poolName, "/" + imageName, null, null);
         } catch (URISyntaxException e) {
             // we sholud neve get here
             throw new RuntimeException("Faled to build URI", e);
