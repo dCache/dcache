@@ -41,7 +41,7 @@ public class CheckStagePermissionTests {
      * (NFS4) and major=4 seem to be redundant
      */
 
-    public static final String TEST_PROTOCOL = "*/*";
+    public static final String TEST_PROTOCOL = ".*";
 
     public static final ProtocolInfo PROTOCOL_INFO = new ProtocolInfo () {
             private static final String _protocolName = "NFS4";
