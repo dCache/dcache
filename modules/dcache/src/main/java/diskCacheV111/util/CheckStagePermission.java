@@ -108,9 +108,9 @@ public class CheckStagePermission {
      */
 
     public boolean canPerformStaging(String dn,
-                                      FQAN fqan,
-                                      String storeUnit,
-                                      String protocol) throws PatternSyntaxException, IOException {
+                                     FQAN fqan,
+                                     String storeUnit,
+                                     String protocol) throws PatternSyntaxException, IOException {
 
         if ( !_isEnabled ) {
             return true;
@@ -136,7 +136,7 @@ public class CheckStagePermission {
      * @throws IOException
      * @throws PatternSyntaxException
      */
-    private void rereadConfig() throws PatternSyntaxException, IOException {
+    public void rereadConfig() throws PatternSyntaxException, IOException {
         _fileWriteLock.lock();
         try {
             if ( fileNeedsRereading() ) {
@@ -157,7 +157,7 @@ public class CheckStagePermission {
      *
      * @return true if the file should be reread.
      */
-    private boolean fileNeedsRereading() {
+    public boolean fileNeedsRereading() {
         long modificationTimeStageConfigFile;
         modificationTimeStageConfigFile = _stageConfigFile.lastModified();
 
