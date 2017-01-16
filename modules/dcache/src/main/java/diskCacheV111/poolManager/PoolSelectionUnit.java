@@ -81,6 +81,11 @@ public interface PoolSelectionUnit  {
         void    setReadOnly(boolean rdOnly);
 
         /**
+         * Returns true if the pools hsmInstances are equal  to the given ones
+         */
+        boolean hasAnyHsmFrom(Collection<String> hsm);
+
+        /**
          * Returns true if the pool is enabled. This is the case if no
          * operations of the pool have been disabled.
          */

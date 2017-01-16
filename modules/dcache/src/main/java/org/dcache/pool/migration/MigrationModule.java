@@ -496,7 +496,7 @@ public class MigrationModule
                         "    selects a pool randomly.\n")
         String select = "proportional";
 
-        @Option(name="target", values={"pool", "pgroup", "link"},
+        @Option(name="target", values={"pool", "pgroup", "link", "hsm"},
                 category="Target options",
                 usage = "Determines the interpretation of the target names.")
         String target = "pool";
@@ -562,6 +562,8 @@ public class MigrationModule
             switch (type) {
             case "pool":
                 return new PoolListByNames(poolManager, targets);
+            case "hsm":
+                return new PoolListByHsm(poolManager, targets);
             case "pgroup":
                 return new PoolListByPoolGroup(poolManager, targets);
             case "link":

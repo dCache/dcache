@@ -51,6 +51,11 @@ public class Pool extends PoolCore implements SelectionPool {
         return _ping ? (System.currentTimeMillis() - _active) : 0L;
     }
 
+    @Override
+    public boolean hasAnyHsmFrom(Collection<String> hsm) {
+        return _hsmInstances.stream().anyMatch(hsm::contains);
+    }
+
     /**
      * Returns true if pool heartbeat was received within the last
      * 5 minutes.
