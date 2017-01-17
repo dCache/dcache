@@ -562,7 +562,7 @@ public class DelegationShell extends ShellApplication
         Integer lifetime = 60*60*24;
 
         @Override
-        public Serializable call() throws CommandException
+        public Serializable call() throws CommandException, IOException, GeneralSecurityException
         {
             checkHaveEndpoint();
 
