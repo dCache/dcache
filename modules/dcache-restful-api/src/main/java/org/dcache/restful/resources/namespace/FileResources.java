@@ -128,12 +128,14 @@ public class FileResources {
                                                 @DefaultValue("false")
                                                 @QueryParam("children") boolean isList,
                                                 @DefaultValue("false")
-                                                @QueryParam("locality") boolean isLocality) throws CacheException {
+                                                @QueryParam("locality") boolean isLocality,
+                                                @QueryParam("limit") String limit,
+                                                @QueryParam("offset") String offset) throws CacheException
+    {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
         PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
-
         FsPath path = pathMapper.asDcachePath(request, value);
 
         try {
@@ -141,9 +143,20 @@ public class FileResources {
             FileAttributes namespaceAttrributes = handler.getFileAttributes(path, attributes);
             chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, isLocality);
 
-
             // fill children list id it's a directory and listing is requested
             if (namespaceAttrributes.getFileType() == FileType.DIR && isList) {
+                Range<Integer> range;
+                try {
+                    int lower = (offset == null) ? 0 : Integer.parseInt(offset);
+                    int ceiling = (limit == null) ? Integer.MAX_VALUE : Integer.parseInt(limit);
+                    if (ceiling < 0 || lower < 0) {
+                        throw new BadRequestException("limit and offset can not be less than zero.");
+                    }
+                    range = (Integer.MAX_VALUE - lower < ceiling) ? Range.atLeast(lower)
+                            : Range.closedOpen(lower, lower+ceiling);
+                } catch (NumberFormatException e) {
+                    throw new BadRequestException("limit and offset must be an integer value.");
+                }
 
                 List<JsonFileAttributes> children = new ArrayList<>();
 
@@ -154,7 +167,7 @@ public class FileResources {
                         ServletContextHandlerAttributes.getRestriction(),
                         path,
                         null,
-                        Range.<Integer>all(),
+                        range,
                         attributes);
 
                 for (DirectoryEntry entry : stream) {
@@ -169,7 +182,6 @@ public class FileResources {
                 }
 
                 fileAttributes.setChildren(children);
-
             }
 
         } catch (FileNotFoundCacheException e) {
