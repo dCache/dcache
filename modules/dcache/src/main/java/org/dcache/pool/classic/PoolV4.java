@@ -209,6 +209,8 @@ public class PoolV4
 
     private Executor _executor;
 
+    private boolean _enableHsmFlag;
+
     protected void assertNotRunning(String error)
     {
         checkState(!_running, error);
@@ -445,6 +447,12 @@ public class PoolV4
         _transferServices = transferServices;
     }
 
+    @Required
+    public void setEnableHsmFlag(boolean enable)
+    {
+        _enableHsmFlag = enable;
+    }
+
     public void init()
     {
         assertNotRunning("Cannot initialize several times");
@@ -455,7 +463,9 @@ public class PoolV4
         _repository.addFaultListener(this);
         _repository.addListener(new RepositoryLoader());
         _repository.addListener(new NotifyBillingOnRemoveListener());
-        _repository.addListener(new HFlagMaintainer());
+        if (_enableHsmFlag) {
+            _repository.addListener(new HFlagMaintainer());
+        }
         _repository.addListener(_replicationHandler);
 
         _ioQueue.addFaultListener(this);
