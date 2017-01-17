@@ -89,6 +89,7 @@ public class H2FsSqlDriver extends FsSqlDriver {
         stat.setNlink(nlink);
         stat.setDev(17);
         stat.setRdev(13);
+        stat.setState(FileState.CREATED);
 
         return stat;
     }

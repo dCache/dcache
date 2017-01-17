@@ -89,14 +89,6 @@ public class FsSqlDriver {
     private static final ServiceLoader<DBDriverProvider> ALL_PROVIDERS
             = ServiceLoader.load(DBDriverProvider.class);
 
-    /**
-     * default file IO mode
-     */
-    private static final int IOMODE_ENABLE = 1;
-    private static final int IOMODE_DISABLE = 0;
-
-    protected final int _ioMode;
-
     final JdbcTemplate _jdbc;
 
     private final long _root;
@@ -107,7 +99,6 @@ public class FsSqlDriver {
      */
     protected FsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
-        _ioMode = Boolean.valueOf(System.getProperty("chimera.inodeIoMode")) ? IOMODE_ENABLE : IOMODE_DISABLE;
         _jdbc = new JdbcTemplate(dataSource);
         _jdbc.setExceptionTranslator(new SQLErrorCodeSQLExceptionTranslator(dataSource) {
             @Override
@@ -594,7 +585,7 @@ public class FsSqlDriver {
                     ps.setInt(5, uid);
                     ps.setInt(6, gid);
                     ps.setLong(7, size);
-                    ps.setInt(8, _ioMode);
+                    ps.setInt(8, FileState.CREATED.getValue());
                     ps.setTimestamp(9, now);
                     ps.setTimestamp(10, now);
                     ps.setTimestamp(11, now);
@@ -618,6 +609,7 @@ public class FsSqlDriver {
         stat.setNlink(nlink);
         stat.setDev(17);
         stat.setRdev(13);
+        stat.setState(FileState.CREATED);
 
         return stat;
     }

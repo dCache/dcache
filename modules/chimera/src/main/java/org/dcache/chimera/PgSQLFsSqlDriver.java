@@ -96,6 +96,7 @@ public class PgSQLFsSqlDriver extends FsSqlDriver {
         stat.setNlink(nlink);
         stat.setDev(17);
         stat.setRdev(13);
+        stat.setState(FileState.CREATED);
 
         return new FsInode(parent.getFs(), inumber, FsInodeType.INODE, 0, stat);
     }
