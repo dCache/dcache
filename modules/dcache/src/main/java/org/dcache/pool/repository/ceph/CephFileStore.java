@@ -263,8 +263,8 @@ public class CephFileStore implements FileStore {
         try {
             return new URI("rbd", poolName, "/" + imageName, null, null);
         } catch (URISyntaxException e) {
-            // we sholud neve get here
-            throw new RuntimeException("Faled to build URI", e);
+            // we should never get here
+            throw new RuntimeException("Failed to build URI", e);
         }
     }
 
