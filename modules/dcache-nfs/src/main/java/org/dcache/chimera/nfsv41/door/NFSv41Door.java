@@ -1,6 +1,5 @@
 package org.dcache.chimera.nfsv41.door;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -80,7 +79,6 @@ import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
-import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v3.xdr.mount_prot;
 import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.CompoundContext;
@@ -122,6 +120,7 @@ import org.dcache.xdr.gss.GssSessionManager;
 import static java.util.stream.Collectors.toList;
 
 import java.util.stream.Stream;
+import javax.annotation.concurrent.GuardedBy;
 
 import org.dcache.auth.attributes.Restrictions;
 
@@ -170,13 +169,21 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     private static final long NFS_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
 
-    private static final long NFS_REQUEST_BLOCKING = 100; // in Millis
+    private static final long NFS_REQUEST_BLOCKING = TimeUnit.SECONDS.toMillis(3);
 
     /**
      * Given that the timeout is pretty short, the retry period has to
      * be rather small too.
      */
     private static final long NFS_RETRY_PERIOD = 500; // In millis
+
+    /**
+     * How long stage request can hang around. As the tape system can be broken,
+     * stage request may stay in a restore queue for a number of days.
+     *
+     * One week (7 days) is good enough to cover most of the public holidays.
+     */
+    private static final long STAGE_REQUEST_TIMEOUT = TimeUnit.DAYS.toMillis(7);
 
     /**
      * Cell communication helper.
@@ -222,8 +229,17 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private ProxyIoFactory _proxyIoFactory;
 
+    /**
+     * retry policy used for accessing online files.
+     */
     private static final TransferRetryPolicy RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, NFS_REPLY_TIMEOUT);
+
+    /**
+     * Retry policy used for accessing off-line files.
+     */
+    private static final TransferRetryPolicy RETRY_POLICY_WITH_STAGE =
+        new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, STAGE_REQUEST_TIMEOUT);
 
     private VfsCacheConfig _vfsCacheConfig;
 
@@ -526,6 +542,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     if ((ioMode == layoutiomode4.LAYOUTIOMODE4_READ) && attr.getLocations().isEmpty()) {
 
                         if (attr.getStorageInfo().isStored()) {
+                            transfer.setOnlineFilesOnly(false);
                             transfer.selectPoolAsync(TimeUnit.SECONDS.toMillis(90));
 
                             // clear file location to enforce re-fetcing from the namespace
@@ -910,34 +927,62 @@ public class NFSv41Door extends AbstractCellComponent implements
             return _nfsInode;
         }
 
+        @GuardedBy("nfsState")
         PoolDS  getPoolDataServer(long timeout) throws
                 InterruptedException, ExecutionException,
-                TimeoutException, CacheException {
+                TimeoutException, CacheException, LayoutTryLaterException {
 
-            synchronized (this) {
-                if (_redirectFuture == null || _redirectFuture.isDone()) {
-                    /*
-                     * Check try to re-run the selection if no pool selected yet.
-                     * Restart/ping mover if not running yet.
-                     */
-                    if (getPool() == null) {
-                        // we did not select a pool
-
-                        _log.debug("looking for {} pool for {}", (isWrite() ? "write" : "read"), getPnfsId());
-
-                        _redirectFuture = selectPoolAndStartMoverAsync(RETRY_POLICY);
-                    } else {
-                        // we may re-send the request, but pool will handle it
-                        _redirectFuture = startMoverAsync(NFS_REQUEST_BLOCKING);
-                    }
-                }
+            if (_redirectFuture == null) {
+                /*
+                 * We start new request with an assumption, that file is available
+                 * and can be directly accessed by the client, e.q. no stage
+                 * or p2p is required.
+                 */
+                setOnlineFilesOnly(true);
+                _log.debug("looking for {} pool for {}", (isWrite() ? "write" : "read"), getPnfsId());
+                _redirectFuture = selectPoolAndStartMoverAsync(RETRY_POLICY);
             }
 
-            Stopwatch sw = Stopwatch.createStarted();
-            _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
+            /*
+             * If we wait for offline file, then there is no need to block.
+             * The async reply will update _redirectFuture when it's timed out or
+             * ready.
+             */
+            if (!isWrite() && !getOnlineFilesOnly() && !_redirectFuture.isDone()) {
+                throw new LayoutTryLaterException("Wating for file to become online.");
+            }
+
+            try {
+                _redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
+            } catch (ExecutionException e) {
+
+                /*
+                 * PERMISSION_DENIED on read indicates that pool manager was not allowed to run p2p or stage.
+                 */
+
+                 // No fancy things on write.
+                if(isWrite()) {
+                    throw e;
+                }
+
+                Throwable t = e.getCause();
+                if (!(t instanceof CacheException)) {
+                    throw e;
+                }
+
+                CacheException ce = (CacheException) t;
+                if (ce.getRc() != CacheException.PERMISSION_DENIED) {
+                    throw e;
+                }
+
+                // kick stage/ p2p
+                setOnlineFilesOnly(false);
+                _redirectFuture = selectPoolAndStartMoverAsync(RETRY_POLICY_WITH_STAGE);
+                throw new LayoutTryLaterException("File is not online: stage or p2p required");
+            }
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
 
-            return  waitForRedirect(NFS_REQUEST_BLOCKING - sw.elapsed(TimeUnit.MILLISECONDS));
+            return  waitForRedirect(NFS_REQUEST_BLOCKING);
         }
     }
 

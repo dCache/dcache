@@ -141,6 +141,12 @@ public class RequestContainerV5
     public static final EnumSet<RequestState> allStatesExceptStage =
         EnumSet.complementOf(EnumSet.of(RequestState.ST_STAGE));
 
+    /**
+     * RC state machine states sufficient to access online files.
+     */
+    public static final EnumSet<RequestState> ONLINE_FILES_ONLY
+            = EnumSet.of(RequestState.ST_INIT, RequestState.ST_DONE);
+
     public RequestContainerV5(long tickerInterval) {
         _ticketInterval = tickerInterval;
     }

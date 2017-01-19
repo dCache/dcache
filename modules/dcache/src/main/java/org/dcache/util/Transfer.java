@@ -140,6 +140,12 @@ public class Transfer implements Comparable<Transfer>
             MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY));
 
     /**
+     * If true, then pool manager select pool messages with restrict selection
+     * to directly available files only, e.g. no stage or p2p.
+     */
+    private boolean _useOnlineFilesOnly = false;
+
+    /**
      * Constructs a new Transfer object.
      *
      * @param pnfs             PnfsHandler used for pnfs communication
@@ -451,6 +457,23 @@ public class Transfer implements Comparable<Transfer>
     public synchronized Assumption getAssumption()
     {
         return _assumption;
+    }
+
+    /**
+     * Restrict pool selection to only online files, e.g. no stage or p2p
+     * are allowed. Has no effect on upload.
+     *
+     * This option has no effect on stage protection. This means, that stage protection
+     * still can reject staging, even if {@code onlineOnly} is {@code false}.
+     *
+     * @param onlineOnly True, is transfer should use on files directly accessible,
+     */
+    public synchronized void setOnlineFilesOnly(boolean onlineOnly) {
+        _useOnlineFilesOnly = onlineOnly;
+    }
+
+    public synchronized boolean getOnlineFilesOnly() {
+        return _useOnlineFilesOnly;
     }
 
     /**
@@ -949,15 +972,19 @@ public class Transfer implements Comparable<Transfer>
             reply = _poolManager.sendAsync(request, timeout);
         } else {
             EnumSet<RequestContainerV5.RequestState> allowedStates;
-            try {
-                allowedStates = _checkStagePermission.canPerformStaging(_subject,
-                                                                        fileAttributes,
-                                                                        protocolInfo)
-                                ? RequestContainerV5.allStates
-                                : RequestContainerV5.allStatesExceptStage;
-            } catch (IOException e) {
-                return immediateFailedFuture(
-                        new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage()));
+            if (_useOnlineFilesOnly) {
+                allowedStates = RequestContainerV5.ONLINE_FILES_ONLY;
+            } else {
+                try {
+                    allowedStates = _checkStagePermission.canPerformStaging(_subject,
+                            fileAttributes,
+                            protocolInfo)
+                                    ? RequestContainerV5.allStates
+                                    : RequestContainerV5.allStatesExceptStage;
+                } catch (IOException e) {
+                    return immediateFailedFuture(
+                            new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage()));
+                }
             }
 
             PoolMgrSelectReadPoolMsg request =
