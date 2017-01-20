@@ -89,7 +89,10 @@ import org.dcache.resilience.util.CheckpointUtils;
 import org.dcache.resilience.util.Operation;
 import org.dcache.resilience.util.OperationHistory;
 import org.dcache.resilience.util.OperationStatistics;
+import org.dcache.resilience.util.ForegroundBackgroundAllocator;
+import org.dcache.resilience.util.ForegroundBackgroundAllocator.ForegroundBackgroundAllocation;
 import org.dcache.resilience.util.ResilientFileTask;
+import org.dcache.resilience.util.StandardForegroundBackgroundAllocator;
 import org.dcache.util.RunnableModule;
 import org.dcache.vehicles.FileAttributes;
 
@@ -457,6 +460,14 @@ public class FileOperationMap extends RunnableModule {
      *    task execution.</p>
      */
     class WaitingOperationProcessor {
+        /*
+         *  The algorithm type is hard-coded for now.  We may eventually
+         *  wish to inject this, if there arises a need for custom
+         *  algorithms.
+         */
+        final ForegroundBackgroundAllocator allocator
+                        = new StandardForegroundBackgroundAllocator();
+
         long fgAvailable;
         long bgAvailable;
 
@@ -473,54 +484,14 @@ public class FileOperationMap extends RunnableModule {
             reset();
         }
 
-        /**
-         * <p>The number of waiting operations which can be promoted
-         *    to running is based on the available slots (maximum minus
-         *    the number of operations still running).</p>
-         *
-         * <p>The proportion allotted to foreground vs background is based
-         *    on the proportion of operations in the queues.</p>
-         *
-         * <p>The maximum allocation percentage places both lower and upper
-         *    bounds on the apportioned number of operations per queue.</p>
-         *
-         * <p>If after application of the bound, the proportion rounds to 0,
-         *    but the relevant queue is not empty, one of its waiting tasks
-         *    will be guaranteed to run.</p>
-         */
         private void computeAvailable() {
-            long available = copyThreads - running.size();
-
-            if (available == 0) {
-                fgAvailable = 0;
-                bgAvailable = 0;
-                return;
-            }
-
-            double fgsize = foreground.size();
-            double bgsize = background.size();
-
-            double size = fgsize+bgsize;
-
-            if (size == 0.0) {
-                fgAvailable = 0;
-                bgAvailable = 0;
-                return;
-            }
-
-            double fgweight = Math.min(Math.max(fgsize/size, 100-maxAllocation),
-                                       maxAllocation);
-
-            fgAvailable = Math.round(available * fgweight);
-            bgAvailable = available - fgAvailable;
-
-            if (fgAvailable == 0 && fgsize > 0) {
-                fgAvailable = 1;
-                --bgAvailable;
-            } else if (bgAvailable == 0 && bgsize > 0) {
-                bgAvailable = 1;
-                --fgAvailable;
-            }
+            ForegroundBackgroundAllocation available = allocator.allocate(copyThreads,
+                                                                          running.size(),
+                                                                          foreground.size(),
+                                                                          background.size(),
+                                                                          maxAllocation);
+            fgAvailable = available.getForeground();
+            bgAvailable = available.getBackground();
         }
 
         /**
