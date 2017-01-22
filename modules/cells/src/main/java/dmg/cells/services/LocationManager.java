@@ -174,13 +174,13 @@ public class LocationManager extends CellAdapter
             case CHILD_REMOVED:
                 cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
                 if (cell != null) {
-                    getNucleus().kill(cell);
+                    killConnector(cell);
                 }
                 break;
             case CHILD_UPDATED:
                 cell = connectors.remove(ZKPaths.getNodeFromPath(event.getData().getPath()));
                 if (cell != null) {
-                    getNucleus().kill(cell);
+                    killConnector(cell);
                 }
                 // fall through
             case CHILD_ADDED:
@@ -192,14 +192,14 @@ public class LocationManager extends CellAdapter
                             LOGGER.error("About to create tunnel to core domain {}, but to my surprise " +
                                          "a tunnel called {} already exists. Will kill it. Please contact " +
                                          "support@dcache.org.", domain, cell);
-                            getNucleus().kill(cell);
+                            killConnector(cell);
                         }
                         cell = connectors.put(domain, startConnector(domain, toHostAndPort(event.getData().getData())));
                         if (cell != null) {
                             LOGGER.error("Created a tunnel to core domain {}, but to my surprise " +
                                          "a tunnel called {} already exists. Will kill it. Please contact " +
                                          "support@dcache.org.", domain, cell);
-                            getNucleus().kill(cell);
+                            killConnector(cell);
                         }
                     }
                 } catch (ExecutionException e) {
@@ -338,6 +338,13 @@ public class LocationManager extends CellAdapter
         c.start().get();
         return c.getCellName();
     }
+
+    private void killConnector(String cell)
+    {
+        LOGGER.info("Killing connector {}", cell);
+        getNucleus().kill(cell);
+    }
+
 
     @Command(name = "ls", hint = "list core domains",
             description = "Provides information on available core domains.")
