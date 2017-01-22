@@ -17,6 +17,9 @@
  */
 package dmg.cells.zookeeper;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.apache.curator.CuratorZookeeperClient;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.ACLBackgroundPathAndBytesable;
@@ -62,10 +65,13 @@ import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.listen.Listenable;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.utils.EnsurePath;
+import org.apache.curator.utils.ThreadUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -84,8 +90,45 @@ import org.dcache.util.SequentialExecutor;
  */
 public class CellCuratorFramework implements CuratorFramework
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CellCuratorFramework.class);
+
     private final CuratorFramework inner;
     private final BoundedExecutor executor;
+
+    private final LoadingCache<Watcher, Watcher> watchers =
+            CacheBuilder.newBuilder().build(new CacheLoader<Watcher, Watcher>()
+            {
+                @Override
+                public Watcher load(Watcher watcher) throws Exception
+                {
+                    CDC cdc = new CDC();
+                    return event -> executor.execute(() -> {
+                        try (CDC ignore = cdc.restore()) {
+                            watcher.process(event);
+                        }
+                    });
+                }
+            });
+
+    private final LoadingCache<CuratorWatcher, CuratorWatcher> curatorWatchers =
+            CacheBuilder.newBuilder().build(new CacheLoader<CuratorWatcher, CuratorWatcher>()
+            {
+                @Override
+                public CuratorWatcher load(CuratorWatcher watcher) throws Exception
+                {
+                    CDC cdc = new CDC();
+                    return event -> executor.execute(() -> {
+                        try (CDC ignore = cdc.restore()) {
+                            try {
+                                watcher.process(event);
+                            } catch (Exception e) {
+                                ThreadUtils.checkInterrupted(e);
+                                LOGGER.error("Watcher exception", e);
+                            }
+                        }
+                    });
+                }
+            });
 
     public CellCuratorFramework(CuratorFramework inner, Executor executor)
     {
@@ -97,7 +140,7 @@ public class CellCuratorFramework implements CuratorFramework
                 try {
                     super.execute(task);
                 } catch (RejectedExecutionException e) {
-                    /* There is no way to unregister watchers from ZooKeeper. Thus
+                    /* There is no way to unregister curatorWatchers from ZooKeeper. Thus
                      * it is possible for ZooKeeper to try to call a watcher after a
                      * cell shut down, resulting in a RejectedExecutionException.
                      */
@@ -117,6 +160,16 @@ public class CellCuratorFramework implements CuratorFramework
                 callback.processResult(client, event);
             }
         };
+    }
+
+    protected Watcher wrap(Watcher watcher)
+    {
+        return watchers.getUnchecked(watcher);
+    }
+
+    protected CuratorWatcher wrap(CuratorWatcher watcher)
+    {
+        return curatorWatchers.getUnchecked(watcher);
     }
 
     @Override
@@ -270,7 +323,10 @@ public class CellCuratorFramework implements CuratorFramework
     @Override
     public void clearWatcherReferences(Watcher watcher)
     {
-        inner.clearWatcherReferences(watcher);
+        Watcher wrapped = watchers.getIfPresent(watcher);
+        if (wrapped != null) {
+            inner.clearWatcherReferences(wrapped);
+        }
     }
 
     @Override
@@ -546,13 +602,13 @@ public class CellCuratorFramework implements CuratorFramework
         @Override
         public BackgroundPathable<Stat> usingWatcher(Watcher watcher)
         {
-            return new BackgroundPathableDecorator<>(inner.usingWatcher(watcher));
+            return new BackgroundPathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
 
         @Override
         public BackgroundPathable<Stat> usingWatcher(CuratorWatcher watcher)
         {
-            return new BackgroundPathableDecorator<>(inner.usingWatcher(watcher));
+            return new BackgroundPathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
     }
 
@@ -642,13 +698,13 @@ public class CellCuratorFramework implements CuratorFramework
         @Override
         public BackgroundPathable<byte[]> usingWatcher(Watcher watcher)
         {
-            return new BackgroundPathableDecorator<>(inner.usingWatcher(watcher));
+            return new BackgroundPathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
 
         @Override
         public BackgroundPathable<byte[]> usingWatcher(CuratorWatcher watcher)
         {
-            return new BackgroundPathableDecorator<>(inner.usingWatcher(watcher));
+            return new BackgroundPathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
     }
 
@@ -788,13 +844,13 @@ public class CellCuratorFramework implements CuratorFramework
         @Override
         public BackgroundPathable<List<String>> usingWatcher(Watcher watcher)
         {
-            return new BackgroundPathableDecorator<>(inner.usingWatcher(watcher));
+            return new BackgroundPathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
 
         @Override
         public BackgroundPathable<List<String>> usingWatcher(CuratorWatcher watcher)
         {
-            return new BackgroundPathableDecorator<>(inner.usingWatcher(watcher));
+            return new BackgroundPathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
     }
 
@@ -1875,17 +1931,17 @@ public class CellCuratorFramework implements CuratorFramework
         @Override
         public BackgroundPathable<byte[]> usingWatcher(Watcher watcher)
         {
-            return new BackgroundPathableDecorator<>(inner.usingWatcher(watcher));
+            return new BackgroundPathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
 
         @Override
         public BackgroundPathable<byte[]> usingWatcher(CuratorWatcher watcher)
         {
-            return new BackgroundPathableDecorator<>(inner.usingWatcher(watcher));
+            return new BackgroundPathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
     }
 
-    private static class WatchPathableDecorator<T> implements WatchPathable<T>
+    private class WatchPathableDecorator<T> implements WatchPathable<T>
     {
         private final WatchPathable<T> inner;
 
@@ -1909,13 +1965,13 @@ public class CellCuratorFramework implements CuratorFramework
         @Override
         public Pathable<T> usingWatcher(Watcher watcher)
         {
-            return new PathableDecorator<>(inner.usingWatcher(watcher));
+            return new PathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
 
         @Override
         public Pathable<T> usingWatcher(CuratorWatcher watcher)
         {
-            return new PathableDecorator<>(inner.usingWatcher(watcher));
+            return new PathableDecorator<>(inner.usingWatcher(wrap(watcher)));
         }
     }
 
