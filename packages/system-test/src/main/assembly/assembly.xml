@@ -46,7 +46,7 @@
             <includes>
                 <include>org.dcache:dcache-view:jar:*</include>
             </includes>
-            <outputDirectory>share</outputDirectory>
+            <outputDirectory>share/dcache-view</outputDirectory>
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
             <unpack>true</unpack>
