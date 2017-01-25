@@ -30,6 +30,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import dmg.util.Formats;
 import dmg.util.PropertiesBackedReplaceable;
@@ -104,6 +105,8 @@ public class ConfigurationProperties
 
     private static final Set<Annotation> OBSOLETE_FORBIDDEN =
         EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
+
+    private static final Pattern MATCH_COMMAS = Pattern.compile(",");
 
     private static final Logger _log =
         LoggerFactory.getLogger(ConfigurationProperties.class);
@@ -284,7 +287,22 @@ public class ConfigurationProperties
             putAnnotatedKey(key);
         }
 
-        return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null : super.put(name, ((String)value).trim());
+        return key.hasAnyOf(OBSOLETE_FORBIDDEN) ? null : super.put(name, canonicalizeValue(name, value));
+    }
+
+    private String canonicalizeValue(String key, Object value)
+    {
+        AnnotatedKey annotatedKey = getAnnotatedKey(key);
+        if (annotatedKey != null && annotatedKey.hasAnnotation(Annotation.ANY_OF)) {
+            return MATCH_COMMAS.splitAsStream(String.valueOf(value))
+                               .map(String::trim)
+                               .filter(s -> !s.isEmpty())
+                               .distinct()
+                               .sorted()
+                               .collect(Collectors.joining(","));
+        }
+
+        return String.valueOf(value).trim();
     }
 
 

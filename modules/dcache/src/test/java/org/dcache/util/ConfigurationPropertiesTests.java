@@ -80,6 +80,11 @@ public class ConfigurationPropertiesTests {
     private static final String ONE_OF_PROPERTY_KEY =
             "(one-of?value-A|value-B)" + ONE_OF_PROPERTY_NAME;
 
+    private static final String ANY_OF_PROPERTY_NAME = "any-ofProperty";
+    private static final String ANY_OF_PROPERTY_VALUE = "value-A,value-C";
+    private static final String ANY_OF_PROPERTY_KEY =
+            "(any-of?value-A|value-B|value-C)" + ANY_OF_PROPERTY_NAME;
+
     private static final String SIMPLE_SYNONYM_OF_DEPRECATED_NAME = "synonym.of.deprecated";
     private static final String SIMPLE_SYNONYM_OF_DEPRECATED_VALUE = "${" + DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME + "}";
     private static final String SIMPLE_SYNONYM_OF_DEPRECATED_KEY = SIMPLE_SYNONYM_OF_DEPRECATED_NAME;
@@ -110,6 +115,7 @@ public class ConfigurationPropertiesTests {
         _properties = new ConfigurationProperties();
         _properties.put( NORMAL_PROPERTY_NAME, NORMAL_PROPERTY_VALUE);
         _properties.put( ONE_OF_PROPERTY_KEY, ONE_OF_PROPERTY_VALUE);
+        _properties.put( ANY_OF_PROPERTY_KEY, ANY_OF_PROPERTY_VALUE);
         _properties.put( IMMUTABLE_PROPERTY_KEY, IMMUTABLE_PROPERTY_VALUE);
         _properties.put( OBSOLETE_PROPERTY_KEY, "");
         _properties.put( OBSOLETE_PROPERTY_W_ERROR_KEY,
@@ -300,6 +306,7 @@ public class ConfigurationPropertiesTests {
                            DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME,
                            DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME,
                            ONE_OF_PROPERTY_NAME,
+                           ANY_OF_PROPERTY_NAME,
                            SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
 
         assertEquals(new HashSet<>(Arrays.asList(expected)),
@@ -315,6 +322,7 @@ public class ConfigurationPropertiesTests {
                            DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME,
                            DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME,
                            ONE_OF_PROPERTY_NAME,
+                           ANY_OF_PROPERTY_NAME,
                            SIMPLE_SYNONYM_OF_DEPRECATED_NAME};
 
         Collection<String> results = new HashSet<>();
@@ -525,6 +533,34 @@ public class ConfigurationPropertiesTests {
     @Test(expected=IllegalArgumentException.class)
     public void testOneOfWithInvalidValueFails() {
         _properties.put(ONE_OF_PROPERTY_NAME, "value-C");
+    }
+
+
+    @Test
+    public void testAnyOfWithValidValueSucceeds() {
+        _properties.put(ANY_OF_PROPERTY_NAME, "value-B");
+    }
+
+    @Test
+    public void testAnyOfWithTwoValidValueSucceeds() {
+        _properties.put(ANY_OF_PROPERTY_NAME, "value-B, value-C");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testAnyOfWithInvalidValueFails() {
+        _properties.put(ANY_OF_PROPERTY_NAME, "value-D");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testAnyOfWithOneValidAndOneInvalidValueFails() {
+        _properties.put(ANY_OF_PROPERTY_NAME, "value-B, value-D");
+    }
+
+    @Test
+    public void testAnyOfWithValueIsCanonicalized() {
+        _properties.put(ANY_OF_PROPERTY_NAME, "  value-C,   value-A   ");
+        assertEquals("testing any-of is canonicalized", ANY_OF_PROPERTY_VALUE,
+                _properties.get(ANY_OF_PROPERTY_NAME));
     }
 
     /*
