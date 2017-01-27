@@ -259,7 +259,7 @@ public class FileResources {
         FsPath path = pathMapper.asDcachePath(request, value);
 
         try {
-            handler.deletePnfsEntry(path.toString(), EnumSet.of(FileType.REGULAR));
+            handler.deletePnfsEntry(path.toString());
 
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
