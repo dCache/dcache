@@ -3,6 +3,7 @@ package org.dcache.pool.repository.meta.db;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.sleepycat.collections.TransactionWorker;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.OperationFailureException;
 import com.sleepycat.je.Transaction;
@@ -15,6 +16,7 @@ import java.net.URI;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import diskCacheV111.util.CacheException;
@@ -252,38 +254,26 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     @Override
     public synchronized <T> T update(Update<T> update) throws CacheException
     {
-        T result;
+        AtomicReference<T> result = new AtomicReference<>();
         ReplicaState state = _state;
         ImmutableList<StickyRecord> sticky = _sticky;
-        Transaction transaction = _repository.beginTransaction();
         try {
-            UpdatableRecordImpl record = new UpdatableRecordImpl();
-            result = update.apply(record);
-            record.save();
-            transaction.commit();
-        } catch (Throwable t) {
+            _repository.run(() -> {
+                UpdatableRecordImpl record = new UpdatableRecordImpl();
+                result.set(update.apply(record));
+                record.save();
+            });
+        } catch (Exception e) {
             _state = state;
             _sticky = sticky;
-            try {
-                if (transaction.getState() != Transaction.State.COMMITTED &&
-                    transaction.getState() != Transaction.State.POSSIBLY_COMMITTED) {
-                    transaction.abort();
-                }
-            } catch (Throwable e) {
-                t.addSuppressed(e);
-            }
-            if (t instanceof EnvironmentFailureException && !_repository.isValid()) {
+            if (e instanceof EnvironmentFailureException && !_repository.isValid()) {
                 throw new DiskErrorCacheException(
-                        "Meta data update failed and a pool restart is required: " + t.getMessage(), t);
+                        "Meta data update failed and a pool restart is required: " + e.getMessage(), e);
             }
-            if (transaction.getState() == Transaction.State.POSSIBLY_COMMITTED) {
-                throw new DiskErrorCacheException(
-                        "Meta data commit and a pool restart is required: " + t.getMessage(), t);
-            }
-            Throwables.propagateIfPossible(t, CacheException.class);
-            throw new CacheException("Meta data update failed: " + t.getMessage(), t);
+            Throwables.propagateIfPossible(e, CacheException.class);
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
         }
-        return result;
+        return result.get();
     }
 
     private synchronized void storeState() throws CacheException
