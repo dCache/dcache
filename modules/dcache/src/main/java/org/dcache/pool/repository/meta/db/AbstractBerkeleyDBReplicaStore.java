@@ -19,6 +19,7 @@
 package org.dcache.pool.repository.meta.db;
 
 import com.sleepycat.collections.StoredMap;
+import com.sleepycat.collections.TransactionWorker;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
@@ -176,9 +177,9 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
         return database.getEnvironment().getConfig();
     }
 
-    public Transaction beginTransaction()
+    public void run(TransactionWorker worker) throws Exception
     {
-        return database.getEnvironment().beginTransaction(null, null);
+        database.run(worker);
     }
 
     public abstract void setLastModifiedTime(PnfsId pnfsId, long time) throws IOException;

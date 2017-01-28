@@ -1,6 +1,8 @@
 package org.dcache.pool.repository.meta.db;
 
 import com.sleepycat.bind.serial.StoredClassCatalog;
+import com.sleepycat.collections.TransactionRunner;
+import com.sleepycat.collections.TransactionWorker;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
@@ -33,6 +35,8 @@ public class ReplicaStoreDatabase
     private final StoredClassCatalog javaCatalog;
     private final Database storageInfoDatabase;
     private final Database stateDatabase;
+    private final TransactionRunner transactionRunner;
+
     private boolean _failed;
     private boolean _closed;
 
@@ -65,6 +69,8 @@ public class ReplicaStoreDatabase
         storageInfoDatabase =
             env.openDatabase(null, STORAGE_INFO_STORE, dbConfig);
         stateDatabase = env.openDatabase(null, STATE_STORE, dbConfig);
+
+        transactionRunner = new TransactionRunner(env);
     }
 
     private synchronized void setFailed()
@@ -92,6 +98,11 @@ public class ReplicaStoreDatabase
     public final Environment getEnvironment()
     {
         return env;
+    }
+
+    public void run(TransactionWorker worker) throws Exception
+    {
+        transactionRunner.run(worker);
     }
 
     public final StoredClassCatalog getClassCatalog()
