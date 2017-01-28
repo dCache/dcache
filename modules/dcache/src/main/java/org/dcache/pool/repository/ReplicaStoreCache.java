@@ -344,7 +344,7 @@ public class ReplicaStoreCache
         public synchronized <T> T update(Update<T> update) throws CacheException
         {
             try {
-                return _record.update(
+                T result = _record.update(
                         r -> update.apply(
                                 new UpdatableRecord()
                                 {
@@ -356,7 +356,8 @@ public class ReplicaStoreCache
                                         boolean changed = r.setSticky(owner, validTill, overwrite);
                                         if (changed) {
                                             CacheEntryImpl newEntry = new CacheEntryImpl(_record);
-                                            _stateChangeListener.stickyChanged(new StickyChangeEvent(oldEntry, newEntry));
+                                            _stateChangeListener.stickyChanged(
+                                                    new StickyChangeEvent(oldEntry, newEntry));
                                         }
                                         return changed;
                                     }
@@ -371,9 +372,6 @@ public class ReplicaStoreCache
                                             _stateChangeListener.stateChanged(
                                                     new StateChangeEvent(oldEntry, newEntry, oldEntry.getState(),
                                                                          newEntry.getState()));
-                                            if (r.getLinkCount() == 0 && state == ReplicaState.REMOVED) {
-                                                destroy();
-                                            }
                                         }
                                         return null;
                                     }
@@ -402,6 +400,10 @@ public class ReplicaStoreCache
                                         return r.getLinkCount();
                                     }
                                 }));
+                if (_record.getLinkCount() == 0 && _record.getState() == ReplicaState.REMOVED) {
+                    destroy();
+                }
+                return result;
             } catch (IllegalArgumentException | IllegalStateException e) {
                 throw e;
             } catch (RuntimeException | DiskErrorCacheException e) {
