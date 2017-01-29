@@ -91,6 +91,7 @@ import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
+import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.device_addr4;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.dcache.nfs.v4.xdr.layout4;
@@ -582,7 +583,7 @@ public class NFSv41Door extends AbstractCellComponent implements
              * Well, according to spec we have to return a different
              * stateid anyway.
              */
-            final NFS4State layoutStateId = client.createState(client.asStateOwner(), nfsState.getOpenState());
+            final NFS4State layoutStateId = client.createState(nfsState.getStateOwner(), nfsState.getOpenState());
 
             /*
              * as  we will never see layout return with this stateid clean it
@@ -758,7 +759,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 return "NFS4 server not running.";
             }
 
-            NFS4Client client = _nfs4.getStateHandler().getClientByID(clientid);
+            NFS4Client client = _nfs4.getStateHandler().getClientByID(new clientid4(clientid));
             _nfs4.getStateHandler().removeClient(client);
             return "Done.";
         }

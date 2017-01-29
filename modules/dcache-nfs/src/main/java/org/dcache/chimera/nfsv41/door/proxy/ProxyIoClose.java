@@ -6,11 +6,13 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.NFS4Client;
+import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.xdr.CLOSE4res;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
+import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +32,14 @@ public class ProxyIoClose extends AbstractNFSv4Operation {
 
         Inode inode = context.currentInode();
 
+        stateid4 stateid = Stateids.getCurrentStateidIfNeeded(context, _args.opclose.open_stateid);
         NFS4Client client;
         if (context.getMinorversion() > 0) {
             client = context.getSession().getClient();
         } else {
-            client = context.getStateHandler().getClientIdByStateId(_args.opclose.open_stateid);
-            client.validateSequence(_args.opclose.seqid);
+            client = context.getStateHandler().getClientIdByStateId(stateid);
+            NFS4State nfsState = client.state(stateid);
+            nfsState.getStateOwner().acceptAsNextSequence(_args.opclose.seqid);
         }
 
         context.getDeviceManager().layoutReturn(context, _args.opclose.open_stateid);

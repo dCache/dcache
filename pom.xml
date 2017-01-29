@@ -779,7 +779,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.13.0</version>
+            <version>0.14.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.common</groupId>
