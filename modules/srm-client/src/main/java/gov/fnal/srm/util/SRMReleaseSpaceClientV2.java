@@ -94,6 +94,8 @@ import org.dcache.srm.v2_2.SrmReleaseSpaceRequest;
 import org.dcache.srm.v2_2.SrmReleaseSpaceResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 public class SRMReleaseSpaceClientV2 extends SRMClient  {
     private java.net.URI srmURL;
     SrmReleaseSpaceRequest request = new SrmReleaseSpaceRequest();
@@ -130,9 +132,7 @@ public class SRMReleaseSpaceClientV2 extends SRMClient  {
 
     @Override
     public void start() throws Exception {
-        if (credential.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(credential);
         try {
             request.setSpaceToken(configuration.getSpaceToken());
             request.setForceFileRelease(configuration.getForceFileRelease());

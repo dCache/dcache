@@ -98,6 +98,8 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static org.dcache.srm.util.Credentials.checkValid;
+
 public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
     private java.net.URI srmURL;
     private X509Credential credential;
@@ -133,9 +135,7 @@ public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
 
     @Override
     public void start() throws Exception {
-        if (credential.getCertificate().getNotAfter().before(new Date())) {
-            throw new RuntimeException("credentials have expired");
-        }
+        checkValid(credential);
         try {
             String[] tokens = configuration.getSpaceTokensList();
             SrmGetSpaceMetaDataRequest request = new SrmGetSpaceMetaDataRequest();
