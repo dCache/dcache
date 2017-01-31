@@ -9,6 +9,7 @@ import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.channels.UnsupportedAddressTypeException;
@@ -73,7 +74,7 @@ public class LocationManagerConnector
             throw new IOException("Unsupported address type: " + _address, e);
         } catch (UnresolvedAddressException e) {
             throw new IOException("Unable to resolve " + _address, e);
-        } catch (InterruptedIOException e) {
+        } catch (InterruptedIOException | ClosedByInterruptException e) {
             throw e;
         } catch (IOException e) {
             throw new IOException("Failed to connect to " + _address + ": " + e.toString(), e);
@@ -95,7 +96,7 @@ public class LocationManagerConnector
         String name = getCellName() + "*";
         Random random = new Random();
         try {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
                     _retries++;
 
@@ -111,7 +112,7 @@ public class LocationManagerConnector
                         } catch (IllegalArgumentException ignored) {
                         }
                     }
-                } catch (InterruptedIOException e) {
+                } catch (InterruptedIOException | ClosedByInterruptException e) {
                     throw e;
                 } catch (ExecutionException | IOException e) {
                     _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOCATION_MANAGER_FAILURE,
@@ -127,8 +128,9 @@ public class LocationManagerConnector
                 _log.warn("Sleeping " + (sleep / 1000) + " seconds");
                 Thread.sleep(sleep);
             }
-        } catch (InterruptedIOException | InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (InterruptedIOException | InterruptedException | ClosedByInterruptException ignored) {
+        } finally {
+            setStatus("Terminated");
         }
     }
 
