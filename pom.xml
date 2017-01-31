@@ -462,6 +462,11 @@
                 <artifactId>jetty-rewrite</artifactId>
                 <version>${version.jetty}</version>
             </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.toolchain</groupId>
+                <artifactId>jetty-schemas</artifactId>
+                <version>3.1</version>
+            </dependency>
 
             <dependency>
                 <groupId>javax.ws.rs</groupId>
