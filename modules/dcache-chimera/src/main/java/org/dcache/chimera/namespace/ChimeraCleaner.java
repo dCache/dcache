@@ -565,6 +565,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             } else {
                 sb.append("\n HSM Cleaner disabled.");
             }
+            sb.append("\nDelete notification targets: ").append(Arrays.toString(_deleteNotificationTargets));
             return sb.toString();
         }
     }
