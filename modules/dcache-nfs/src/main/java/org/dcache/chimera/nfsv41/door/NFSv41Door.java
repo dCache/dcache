@@ -642,22 +642,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         NfsTransfer transfer = _ioMessages.get(openState.stateid());
         if (transfer != null) {
-            _log.debug("Sending KILL to {}@{}", transfer.getMoverId(), transfer.getPool());
-            transfer.killMover(0, "killed by door: returning layout");
-
-            try {
-                if (transfer.hasMover() && !transfer.waitForMover(500)) {
-                    throw new DelayException("Mover not stopped");
-                }
-            } catch (FileNotFoundCacheException e) {
-                // REVISIT: remove when pool will stop sending this exception
-                _log.info("Failed removed while being open mover: {}@{} : {}",
-                        transfer.getMoverId(), transfer.getPool(), e.getMessage());
-            } catch (CacheException | InterruptedException e) {
-                _log.info("Failed to kill mover: {}@{} : {}",
-                        transfer.getMoverId(), transfer.getPool(), e.getMessage());
-                throw new NfsIoException(e.getMessage(), e);
-            }
+            transfer.shutdownMover();
         }
         // any further use of this layout-stateid must fail with NFS4ERR_BAD_STATEID
         client.releaseState(stateid);
@@ -983,6 +968,26 @@ public class NFSv41Door extends AbstractCellComponent implements
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
 
             return  waitForRedirect(NFS_REQUEST_BLOCKING);
+        }
+
+
+        public void shutdownMover() throws NfsIoException, DelayException {
+            _log.debug("Shuting down transfer: {}", this);
+            killMover(0, "killed by door: returning layout");
+
+            try {
+                if (hasMover() && !waitForMover(NFS_REQUEST_BLOCKING)) {
+                    throw new DelayException("Mover not stopped");
+                }
+            } catch (FileNotFoundCacheException e) {
+                // REVISIT: remove when pool will stop sending this exception
+                _log.info("File removed while being opened: {}@{} : {}",
+                        getMoverId(), getPool(), e.getMessage());
+            } catch (CacheException | InterruptedException e) {
+                _log.info("Failed to kill mover: {}@{} : {}",
+                        getMoverId(), getPool(), e.getMessage());
+                throw new NfsIoException(e.getMessage(), e);
+            }
         }
     }
 
