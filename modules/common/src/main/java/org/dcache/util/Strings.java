@@ -193,7 +193,7 @@ public final class Strings {
         StringBuilder sb = new StringBuilder();
         sb.append(m.getName());
         sb.append('(');
-        Joiner.on(c).appendTo(sb, transform(asList(m.getParameterTypes()), GET_SIMPLE_NAME));
+        Joiner.on(c).appendTo(sb, transform(asList(m.getParameterTypes()), Class::getSimpleName));
         sb.append(')');
         return sb.toString();
     }
@@ -289,26 +289,11 @@ public final class Strings {
             } else if (componentType == Short.TYPE) {
                 return Arrays.toString((short[]) value);
             } else {
-                return Joiner.on('\n').join(transform(asList((Object[]) value), TO_STRING));
+                return Joiner.on('\n').join(transform(asList((Object[]) value), (Function<Object, Object>) Strings::toString));
             }
         } else {
             return value.toString();
         }
     }
 
-    public static final Function<Object, Object> TO_STRING = new Function<Object, Object>()
-    {
-        @Override
-        public Object apply(Object input)
-        {
-            return Strings.toString(input);
-        }
-    };
-
-    private static final Function<Class<?>, String> GET_SIMPLE_NAME = new Function<Class<?>, String>() {
-        @Override
-        public String apply(Class<?> c) {
-            return c.getSimpleName();
-        }
-    };
 }

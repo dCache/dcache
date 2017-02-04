@@ -130,7 +130,7 @@ public abstract class NetworkUtils {
                     if (localAddress.isAnyLocalAddress()) {
                         InetAddressScope minScope = InetAddressScope.of(expectedSource);
                         try {
-                            return Ordering.natural().onResultOf(InetAddressScope.OF).min(
+                            return Ordering.natural().onResultOf(InetAddressScope::of).min(
                                     filter(LOCAL_ADDRESS_SUPPLIER.get(),
                                            and(greaterThanOrEquals(minScope),
                                                isNotMulticast())));
@@ -178,7 +178,7 @@ public abstract class NetworkUtils {
             if (localAddress.isAnyLocalAddress()) {
                 InetAddressScope minScope = InetAddressScope.of(expectedSource);
                 try {
-                    return Ordering.natural().onResultOf(InetAddressScope.OF).min(
+                    return Ordering.natural().onResultOf(InetAddressScope::of).min(
                             filter(LOCAL_ADDRESS_SUPPLIER.get(),
                                    and(greaterThanOrEquals(minScope),
                                        hasProtocolFamily(protocolFamily),
@@ -197,7 +197,7 @@ public abstract class NetworkUtils {
                 InetAddressScope intendedScope = InetAddressScope.of(expectedSource);
                 NetworkInterface byInetAddress = NetworkInterface.getByInetAddress(localAddress);
                 try {
-                    return Ordering.natural().onResultOf(InetAddressScope.OF).min(
+                    return Ordering.natural().onResultOf(InetAddressScope::of).min(
                             Iterators.filter(forEnumeration(byInetAddress.getInetAddresses()),
                                              and(greaterThanOrEquals(intendedScope),
                                                  hasProtocolFamily(protocolFamily),
@@ -212,38 +212,17 @@ public abstract class NetworkUtils {
 
     private static Predicate<InetAddress> isNotMulticast()
     {
-        return new Predicate<InetAddress>()
-        {
-            @Override
-            public boolean apply(InetAddress address)
-            {
-                return !address.isMulticastAddress();
-            }
-        };
+        return address -> !address.isMulticastAddress();
     }
 
     private static Predicate<InetAddress> hasProtocolFamily(final ProtocolFamily protocolFamily)
     {
-        return new Predicate<InetAddress>()
-        {
-            @Override
-            public boolean apply(InetAddress address)
-            {
-                return getProtocolFamily(address) == protocolFamily;
-            }
-        };
+        return address -> getProtocolFamily(address) == protocolFamily;
     }
 
     private static Predicate<InetAddress> greaterThanOrEquals(final InetAddressScope scope)
     {
-        return new Predicate<InetAddress>()
-        {
-            @Override
-            public boolean apply(InetAddress address)
-            {
-                return InetAddressScope.of(address).ordinal() >= scope.ordinal();
-            }
-        };
+        return address -> InetAddressScope.of(address).ordinal() >= scope.ordinal();
     }
 
     public static ProtocolFamily getProtocolFamily(InetAddress address)
@@ -270,7 +249,7 @@ public abstract class NetworkUtils {
 
     private static String getPreferredHostName() {
         List<InetAddress> addresses =
-                Ordering.natural().onResultOf(InetAddressScope.OF).reverse().sortedCopy(getLocalAddresses());
+                Ordering.natural().onResultOf(InetAddressScope::of).reverse().sortedCopy(getLocalAddresses());
         if (addresses.isEmpty()) {
             return "localhost";
         }
@@ -374,15 +353,6 @@ public abstract class NetworkUtils {
             return GLOBAL;
         }
 
-        public static final Function<InetAddress,InetAddressScope> OF =
-                new Function<InetAddress, InetAddressScope>()
-                {
-                    @Override
-                    public InetAddressScope apply(InetAddress address)
-                    {
-                        return of(address);
-                    }
-                };
     }
 
     /**

@@ -84,14 +84,7 @@ public class CachingCertificateValidator implements X509CertChainValidatorExt
             }
             String certFingerprint = hasher.hash().toString();
 
-            return cache.get(certFingerprint, new Callable<ValidationResult>()
-            {
-                @Override
-                public ValidationResult call()
-                {
-                    return validator.validate(certChain);
-                }
-            });
+            return cache.get(certFingerprint, () -> validator.validate(certChain));
         } catch (CertificateEncodingException e) {
             return new ValidationResult(false, singletonList(new ValidationError(certChain, pos, ValidationErrorCode.inputError, e.getMessage())));
         } catch (ExecutionException e) {

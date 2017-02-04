@@ -346,14 +346,7 @@ public class Args implements Serializable
             s.append("-- ");
         }
 
-        Joiner.on(' ').appendTo(s, Iterables.transform(_arguments, new Function<String, CharSequence>()
-        {
-            @Override
-            public CharSequence apply(String s)
-            {
-                return quote(s);
-            }
-        }));
+        Joiner.on(' ').appendTo(s, Iterables.transform(_arguments, Args::quote));
 
         return s.toString();
     }

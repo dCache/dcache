@@ -20,14 +20,7 @@ import static org.dcache.util.Strings.toStringSignature;
  */
 public class RequestExecutionTimeGauges<T> {
     private static final Ordering<RequestExecutionTimeGauge> ORDERING =
-            Ordering.natural().onResultOf(new Function<RequestExecutionTimeGauge, String>()
-            {
-                @Override
-                public String apply(RequestExecutionTimeGauge gauge)
-                {
-                    return gauge.getName();
-                }
-            });
+            Ordering.natural().onResultOf(RequestExecutionTimeGauge::getName);
     private final String name;
     private final boolean autoCreate ;
     private final Map<T,RequestExecutionTimeGauge> gauges =

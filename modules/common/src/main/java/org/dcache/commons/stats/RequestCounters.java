@@ -34,14 +34,7 @@ public class RequestCounters<T> {
     private final Map<T,RequestCounterImpl> counters = new HashMap<>();
 
     private static final Ordering<RequestCounter> ORDERING =
-            Ordering.natural().onResultOf(new Function<RequestCounter, String>()
-            {
-                @Override
-                public String apply(RequestCounter counter)
-                {
-                    return counter.getName();
-                }
-            });
+            Ordering.natural().onResultOf(RequestCounter::getName);
 
     /**
      * Creates an instance of the RequestCounters collection

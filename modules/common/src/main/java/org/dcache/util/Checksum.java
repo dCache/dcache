@@ -204,11 +204,6 @@ public class Checksum  implements Serializable
      * @return Optional containing checksum
      */
     public static Optional<Checksum> forType(final Set<Checksum> checksums, final ChecksumType type) {
-        return Iterables.tryFind(checksums, new Predicate<Checksum>() {
-            @Override
-            public boolean apply(Checksum t) {
-                return t.getType() == type;
-            }
-        });
+        return Iterables.tryFind(checksums, t -> t.getType() == type);
     }
 }

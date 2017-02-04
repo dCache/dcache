@@ -2,9 +2,10 @@
 
 package diskCacheV111.cells;
 
-import org.apache.http.annotation.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.concurrent.GuardedBy;
 
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;

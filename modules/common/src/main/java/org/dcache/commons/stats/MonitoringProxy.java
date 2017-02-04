@@ -62,18 +62,13 @@ public class MonitoringProxy  <T> implements InvocationHandler {
             if (result instanceof ListenableFuture) {
                 final ListenableFuture<?> future = (ListenableFuture<?>) result;
                 future.addListener(
-                        new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                try {
-                                    Uninterruptibles.getUninterruptibly(future);
-                                } catch (ExecutionException | Error | RuntimeException e) {
-                                    counter.incrementFailed(method);
-                                }
-                                updateTime(method, startTimeStamp);
+                        () -> {
+                            try {
+                                Uninterruptibles.getUninterruptibly(future);
+                            } catch (ExecutionException | Error | RuntimeException e) {
+                                counter.incrementFailed(method);
                             }
+                            updateTime(method, startTimeStamp);
                         },
                         MoreExecutors.directExecutor());
             } else {
