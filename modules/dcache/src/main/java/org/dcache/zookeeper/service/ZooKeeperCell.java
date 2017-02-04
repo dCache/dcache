@@ -23,7 +23,6 @@ import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.SessionTrackerImpl;
 import org.apache.zookeeper.server.ZooKeeperServer;
-import org.apache.zookeeper.server.ZooTrace;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,16 +110,15 @@ public class ZooKeeperCell extends AbstractCell
             // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2515
             @Override
             protected void createSessionTracker() {
-                sessionTracker = new SessionTrackerImpl(this,
-                        getZKDatabase().getSessionWithTimeOuts(), tickTime, 1)
+                sessionTracker = new SessionTrackerImpl(this, getZKDatabase().getSessionWithTimeOuts(),
+                                                        tickTime, 1, getZooKeeperServerListener())
                 {
                     @Override
                     public void shutdown() {
+                        super.shutdown();
                         synchronized (this) {
-                            running = false;
                             notifyAll();
                         }
-                        super.shutdown();
                     }
                 };
             }

@@ -29,7 +29,6 @@ package org.dcache.srm.client;
 
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.http.HttpHost;
-import org.apache.http.annotation.ThreadSafe;
 import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.Args;
@@ -71,7 +70,7 @@ import static org.apache.http.conn.ssl.SSLConnectionSocketFactory.getDefaultHost
  * A clone of org.apache.http.conn.ssl.SSLConnectionSocketFactory to allow the use of a
  * per-socket client certificate. The certificate is extracted from the HttpContext.
  */
-@ThreadSafe @SuppressWarnings("deprecation")
+@SuppressWarnings("deprecation")
 public class FlexibleCredentialSSLConnectionSocketFactory implements LayeredConnectionSocketFactory
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(FlexibleCredentialSSLConnectionSocketFactory.class);
