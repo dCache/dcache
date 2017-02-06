@@ -383,6 +383,7 @@ public class CopyManager extends AbstractCellComponent
             // _target.setBillingStub();
 
             boolean success = false;
+            boolean targetCreated = false;
             _activeTransfers.put(_target.getId(), this);
             _activeTransfers.put(_source.getId(), this);
 
@@ -390,6 +391,7 @@ public class CopyManager extends AbstractCellComponent
             try {
                 _source.readNameSpaceEntry(false);
                 _target.createNameSpaceEntry();
+                targetCreated = true;
 
                 _target.setProtocolInfo(createTargetProtocolInfo(_target));
                 _target.setLength(_source.getLength());
@@ -419,8 +421,11 @@ public class CopyManager extends AbstractCellComponent
                 if (!success) {
                     String status = _source.getStatus();
                     _source.killMover(0);
-                    _target.killMover(1000);
-                    _target.deleteNameSpaceEntry();
+                    if (targetCreated) {
+                        _target.killMover(1000);
+                        // It is only valid to delete after createNameSpaceEntry returned successfully.
+                        _target.deleteNameSpaceEntry();
+                    }
                     _source.setStatus(status);
                 } else {
                     _source.setStatus("Success");
