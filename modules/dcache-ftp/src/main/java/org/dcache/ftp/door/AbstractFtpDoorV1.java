@@ -2717,6 +2717,7 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> BUFSIZE <SP> <size> - Set network buffer to <size>\r\n" +
             "SITE <SP> CHKSUM <SP> <value> - Fail upload if ADLER32 checksum isn't <value>\r\n" +
             "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>\r\n" +
+            "SITE <SP> CLIENTINFO <SP> <id> - Provide server with information about the client\r\n" +
             "SITE <SP> TASKID <SP> <id> - Provide server with an identifier")
     public void ftp_site(String arg)
         throws FTPCommandException
@@ -2914,12 +2915,33 @@ public abstract class AbstractFtpDoorV1
     }
 
 
+    /**
+     * Create a map from a semi-colon list of chunks, with each chunk
+     * having the form "key=value", "key=\"value\"", or "value".  For the
+     * last type, we assume the key should be "appname".
+     */
+    private static Map<String,String> splitToMap(String info)
+    {
+        Map<String,String> items = new HashMap<>();
+        for (String chunk : Splitter.on(';').omitEmptyStrings().split(info)) {
+            int index = chunk.indexOf('=');
+            if (index == -1) {
+                items.put("appname", chunk.trim());
+            } else {
+                String value = chunk.substring(index+1).trim();
+                if (value.charAt(0) == '\"' && value.charAt(value.length()-1) == '\"') {
+                    value = value.substring(1, value.length()-1);
+                }
+                items.put(chunk.substring(0, index).trim(), value);
+            }
+        }
+        return items;
+    }
+
     public void doClientinfo(String description)
     {
         LOGGER.debug("client-info: {}", description);
-        Map<String,String> items = Splitter.on(';').omitEmptyStrings().
-                withKeyValueSeparator(Splitter.on('=').trimResults(CharMatcher.is('\"'))).
-                split(description);
+        Map<String,String> items = splitToMap(description);
         String appname = items.get("appname");
         if (appname != null && appname.equals("globusonline-fxp")) {
             /* GlobusOnline transfer client expects an upload to have a
