@@ -14,6 +14,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 
+import javax.security.auth.Subject;
+
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
@@ -35,9 +37,12 @@ import diskCacheV111.util.TimeoutCacheException;
 import org.dcache.namespace.FileType;
 import org.dcache.util.PortRange;
 
+import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static com.google.common.net.InetAddresses.forString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.startsWith;
+import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("unchecked")
@@ -56,6 +61,8 @@ public class AbstractFtpDoorV1Test {
     @Mock
     Logger logger;
 
+    Subject subject;
+
     @Before
     public void setUp()
     {
@@ -64,6 +71,8 @@ public class AbstractFtpDoorV1Test {
         door._doorRootPath = new FsPath("pathRoot");
         door._cwd = "/cwd";
         door._pnfs = pnfs;
+        subject = new Subject();
+        door._subject = subject;
     }
 
     @After
@@ -553,5 +562,25 @@ public class AbstractFtpDoorV1Test {
                 EnumSet.of(FileType.DIR));
         thrown.expectCode(550);
         door.ftp_rmd(OLD_DIR);
+    }
+
+    @Test
+    public void whenSiteWhoamiShowUsername() throws Exception {
+        subject.getPrincipals().addAll(aSetOfPrincipals().withUid(1234).withUsername("test-user").build());
+        doCallRealMethod().when(door).doWhoami();
+
+        door.doWhoami();
+
+        verify(door).reply(matches("200 .*test-user"));
+    }
+
+    @Test
+    public void whenSiteWhoamiShowUid() throws Exception {
+        subject.getPrincipals().addAll(aSetOfPrincipals().withUid(1234).build());
+        doCallRealMethod().when(door).doWhoami();
+
+        door.doWhoami();
+
+        verify(door).reply(matches("200 .*1234"));
     }
 }
