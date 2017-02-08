@@ -1614,6 +1614,12 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
+        if (algo.startsWith("markers=")) {
+            // REVISIT when support added for dynamic checksum calculation.
+            reply("200 OK");
+            return;
+        }
+
         try {
             if (!algo.equalsIgnoreCase("NONE")) {
                 _optCheckSumFactory =
