@@ -275,6 +275,9 @@ class FTPCommandException extends Exception
 public abstract class AbstractFtpDoorV1
         implements LineBasedInterpreter, CellMessageReceiver, CellCommandListener, CellInfoProvider, CellMessageSender
 {
+    private static final long MINIMUM_PERFORMANCE_MARKER_PERIOD = 2;
+    private static final long MAXIMUM_PERFORMANCE_MARKER_PERIOD = TimeUnit.MINUTES.toSeconds(5);
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
     private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.ftp");
@@ -1810,23 +1813,41 @@ public abstract class AbstractFtpDoorV1
         reply(builder.toString());
     }
 
-    public void opts_retr(String opt)
+    public void opts_retr(String opt) throws FTPCommandException
     {
         String[] st = opt.split("=");
-        String real_opt = st[0];
-        String real_value= st[1];
-        if (!real_opt.equalsIgnoreCase("Parallelism")) {
-            reply("501 Unrecognized option: " + real_opt + " (" + real_value + ")");
-            return;
+        if (st.length != 2) {
+            throw new FTPCommandException(500, "OPTS failed.");
         }
 
-        st = real_value.split(",|;");
-        _parallel = Integer.parseInt(st[0]);
-        if (_maxStreamsPerClient > 0) {
-            _parallel = Math.min(_parallel, _maxStreamsPerClient);
-        }
+        String key = st[0];
+        String value = st[1].split(",|;") [0];
+        switch (key.toLowerCase()) {
+        case "parallelism":
+            _parallel = Integer.parseInt(value);
+            if (_maxStreamsPerClient > 0) {
+                _parallel = Math.min(_parallel, _maxStreamsPerClient);
+            }
+            reply("200 Parallel streams set (" + opt + ")");
+            break;
 
-        reply("200 Parallel streams set (" + opt + ")");
+        case "markers":
+            try {
+                long period = Integer.parseInt(value);
+                if (period < MINIMUM_PERFORMANCE_MARKER_PERIOD || period > MAXIMUM_PERFORMANCE_MARKER_PERIOD) {
+                    throw new FTPCommandException(500, "Value \"" + value + "\" not acceptable");
+                }
+                _performanceMarkerPeriod = period;
+                _performanceMarkerPeriodUnit = TimeUnit.SECONDS;
+                reply("200 OPTS Command Successful.");
+            } catch (NumberFormatException e) {
+                throw new FTPCommandException(500, "Value \"" + value + "\" not an integer");
+            }
+            break;
+
+        default:
+            throw new FTPCommandException(501, "Unrecognized RETR option: " + key);
+        }
     }
 
     public void opts_stor(String opt, String val)
@@ -1906,7 +1927,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("OPTS <SP> <feat> [<SP> <arg>] - Select desired behaviour for a feature.")
-    public void ftp_opts(String arg)
+    public void ftp_opts(String arg) throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
         if (st.length == 2 && st[0].equalsIgnoreCase("RETR")) {
