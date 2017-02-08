@@ -23,31 +23,45 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.vehicles.HttpProtocolInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
+
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.auth.Subjects;
+import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
+import org.dcache.pinmanager.PinManagerCountPinsMessage;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
+import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
+import static org.dcache.restful.util.Preconditions.checkRequest;
 
 /**
  * RestFul API to  provide files/folders manipulation operations
@@ -57,6 +71,7 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Path("/namespace")
 public class FileResources {
 
+    private final String QOS_PIN_REQUEST_ID = "qos";
 
     @Context
     ServletContext ctx;
@@ -125,7 +140,10 @@ public class FileResources {
                                                 @DefaultValue("false")
                                                 @QueryParam("children") boolean isList,
                                                 @DefaultValue("false")
-                                                @QueryParam("locality") boolean isLocality) throws CacheException {
+                                                @QueryParam("locality") boolean isLocality,
+                                                @DefaultValue("false")
+                                                @QueryParam("qos") boolean isQos) throws CacheException
+    {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
@@ -142,6 +160,9 @@ public class FileResources {
 
             FileAttributes namespaceAttrributes = handler.getFileAttributes(path, attributes);
             chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, isLocality);
+            if (isQos) {
+                addQoSAttributes(fileAttributes, namespaceAttrributes);
+            }
 
 
             // fill children list id it's a directory and listing is requested
@@ -166,6 +187,9 @@ public class FileResources {
 
                     chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), isLocality);
                     childrenAttributes.setFileName(fName);
+                    if (isQos) {
+                        addQoSAttributes(childrenAttributes, entry.getFileAttributes());
+                    }
                     children.add(childrenAttributes);
                 }
 
@@ -181,7 +205,7 @@ public class FileResources {
             } else {
                 throw new ForbiddenException(e);
             }
-        } catch (CacheException | InterruptedException ex) {
+        } catch (CacheException | InterruptedException | NoRouteToCellException ex) {
             throw new InternalServerErrorException(ex);
         }
         return fileAttributes;
@@ -193,15 +217,15 @@ public class FileResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Response cmrResources (@PathParam("value") String path, String requestPayload)
     {
-        JSONObject reqPayload = new JSONObject(requestPayload);
-        String action = (String) reqPayload.get("action");
-        PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
         try {
+            JSONObject reqPayload = new JSONObject(requestPayload);
+            String action = (String) reqPayload.get("action");
+            PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
             switch (action) {
                 case "mkdir":
                     String folderName = (String) reqPayload.get("name");
-                    checkArgument(!folderName.contains("/"), "The folderName cannot contain forward slash.");
-                    checkArgument(!folderName.isEmpty(), "The folderName cannot be empty.");
+                    checkRequest(!folderName.contains("/"), "The folderName cannot contain forward slash.");
+                    checkRequest(!folderName.isEmpty(), "The folderName cannot be empty.");
 
                     String newPath;
                     if (path == null || path.isEmpty()) {
@@ -212,15 +236,80 @@ public class FileResources {
 
                     handler.createPnfsDirectory(newPath);
                     break;
+
                 case "mv":
                     String dest = (String) reqPayload.get("destination");
                     FsPath source = FsPath.ROOT.resolve(path);
                     FsPath target = source.parent().resolve(dest);
                     handler.renameEntry(source.toString(), target.toString(), true);
                     break;
+
+                case "qos":
+                    String targetQos = reqPayload.getString("target");
+
+                    // FIXME: which attributes do we actually need?
+                    FileAttributes attributes = handler.getFileAttributes(FsPath.ROOT.resolve(path), EnumSet.allOf(FileAttribute.class));
+                    RemotePoolMonitor monitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
+                    FileLocality locality = monitor.getFileLocality(attributes, request.getRemoteHost());
+
+                    if (locality == FileLocality.NONE) {
+                        throw new BadRequestException("Transition for directories not supported");
+                    }
+
+                    CellStub pinmanager = ServletContextHandlerAttributes.getPinManager(ctx);
+                    switch (targetQos) {
+                    case QosManagement.DISK_TAPE:
+                        switch (locality) {
+                        case NEARLINE:
+                        case ONLINE_AND_NEARLINE:
+                            ProtocolInfo info = new HttpProtocolInfo("Http", 1, 1,
+                                            new InetSocketAddress(request.getRemoteHost(), 0),
+                                            null, null, null,
+                                            URI.create("http://"+request.getRemoteHost()+"/"));
+                            PinManagerPinMessage message =
+                                    new PinManagerPinMessage(attributes, info,
+                                            QOS_PIN_REQUEST_ID, -1);
+                            pinmanager.notify(message);
+                            break;
+
+                        default:
+                            throw new BadRequestException("Unsupported QoS transition");
+                        }
+                        break;
+
+                    case QosManagement.DISK:
+                        switch (locality) {
+                        case ONLINE:
+                            // do nothing
+                            break;
+
+                        default:
+                            throw new BadRequestException("Unsupported QoS transition");
+                        }
+
+                    case QosManagement.TAPE:
+                        switch (locality) {
+                        case ONLINE_AND_NEARLINE:
+                            PinManagerUnpinMessage message = new PinManagerUnpinMessage(attributes.getPnfsId());
+                            message.setRequestId(QOS_PIN_REQUEST_ID);
+                            pinmanager.notify(message);
+                            break;
+
+                        case NEARLINE:
+                            break; // Nothing to do.
+
+                        default:
+                            throw new BadRequestException("Unsupported QoS transition");
+                        }
+                        break;
+
+                    default:
+                        throw new BadRequestException("Unknown target QoS: " + targetQos);
+                    }
+                    break;
+
                 default:
-                    throw new IllegalArgumentException("The request body must contain the action to be perform. " +
-                            "See the documentation for details.");
+                    throw new BadRequestException("Unknown action: " + action);
             }
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
@@ -230,10 +319,8 @@ public class FileResources {
             } else {
                 throw new ForbiddenException(e);
             }
-        } catch (JSONException | IllegalArgumentException | CacheException e) {
-            throw new BadRequestException(e);
-        } catch (Exception e) {
-            throw new InternalServerErrorException(e);
+        } catch (JSONException | CacheException e) {
+            throw new BadRequestException(e.getMessage(), e);
         }
         return successfulResponse(Response.Status.CREATED);
     }
@@ -263,5 +350,47 @@ public class FileResources {
         }
     }
 
+    private void addQoSAttributes(JsonFileAttributes json, FileAttributes attributes)
+            throws CacheException, NoRouteToCellException, InterruptedException
+    {
+        if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            throw new PermissionDeniedCacheException("Permission denied");
+        }
 
+        CellStub pinmanager = ServletContextHandlerAttributes.getPinManager(ctx);
+        boolean isPinned = pinmanager.sendAndWait(new PinManagerCountPinsMessage(attributes.getPnfsId())).getCount() != 0;
+
+        RemotePoolMonitor monitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
+        FileLocality locality = monitor.getFileLocality(attributes, request.getRemoteHost());
+        switch (locality) {
+        case NEARLINE:
+            json.setCurrentQos(QosManagement.TAPE);
+            if (isPinned) {
+                json.setTargetQos(QosManagement.DISK_TAPE);
+            }
+            break;
+
+        case ONLINE:
+            json.setCurrentQos(QosManagement.DISK);
+            break;
+
+        case ONLINE_AND_NEARLINE:
+            json.setCurrentQos(isPinned ? QosManagement.DISK_TAPE : QosManagement.TAPE);
+            break;
+
+        case NONE: // NONE implies the target is a directory.
+            json.setCurrentQos(attributes.getAccessLatency() == AccessLatency.ONLINE ? QosManagement.DISK : QosManagement.TAPE);
+            break;
+
+        case UNAVAILABLE:
+            json.setCurrentQos(QosManagement.UNAVAILABLE);
+            break;
+
+        // LOST is currently not used by dCache
+        case LOST:
+        default:
+            // error cases
+            throw new InternalServerErrorException("Unexpected file locality: " + locality);
+        }
+    }
 }

@@ -38,6 +38,7 @@ public class QosManagement {
     public static final String DISK = "disk";
     public static final String TAPE = "tape";
     public static final String DISK_TAPE = "disk+tape";
+    public static final String UNAVAILABLE = "unavailable";
 
     public static List<String> cdmi_geographic_placement_provided = Arrays.asList("DE");
 
