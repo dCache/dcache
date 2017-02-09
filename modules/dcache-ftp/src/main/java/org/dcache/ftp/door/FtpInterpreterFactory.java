@@ -29,6 +29,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.LineWriter;
 
 import org.dcache.poolmanager.PoolManagerHandler;
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 import org.dcache.util.OptionParser;
 
@@ -49,7 +50,8 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
     @Override
     public LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
                                        InetSocketAddress remoteAddress, InetSocketAddress proxyAddress, InetSocketAddress localAddress,
-                                       LineWriter writer, Executor executor, PoolManagerHandler poolManagerHandler)
+                                       LineWriter writer, Executor executor, PoolManagerHandler poolManagerHandler,
+                                       IdentityResolverFactory idResolverFactory)
             throws Exception
     {
         AbstractFtpDoorV1 interpreter = createInterpreter();
@@ -62,6 +64,7 @@ public abstract class FtpInterpreterFactory implements NettyLineBasedInterpreter
         interpreter.setCellEndpoint(endpoint);
         interpreter.setCellAddress(myAddress);
         interpreter.setPoolManagerHandler(poolManagerHandler);
+        interpreter.setIdentityResolverFactory(idResolverFactory);
         interpreter.init();
         return interpreter;
     }

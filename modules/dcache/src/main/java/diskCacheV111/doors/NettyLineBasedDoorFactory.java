@@ -44,8 +44,11 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginCellFactory;
 
+import org.dcache.auth.LoginStrategy;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
+import org.dcache.services.login.IdentityResolverFactory;
+import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Args;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.Option;
@@ -60,6 +63,7 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     private ExecutorService executor;
     private PoolManagerHandlerSubscriber poolManagerHandler;
     private NioEventLoopGroup socketGroup;
+    private IdentityResolverFactory idResolverFactory;
 
     @Option(name = "poolManager",
             description = "Well known name of the pool manager",
@@ -82,6 +86,11 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
             defaultValue = "SECONDS")
     protected TimeUnit poolTimeoutUnit;
 
+    @Option(name = "gplazma",
+            description = "Cell path to gPlazma",
+            defaultValue = "gPlazma")
+    protected CellPath gPlazma;
+
     public NettyLineBasedDoorFactory(NettyLineBasedInterpreterFactory factory, Args args, CellEndpoint parentEndpoint,
                                      String parentCellName)
     {
@@ -91,6 +100,9 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
         this.args = args;
 
         new OptionParser(args).inject(this);
+
+        LoginStrategy loginStrategy = new RemoteLoginStrategy(new CellStub(parentEndpoint, gPlazma, 30000));
+        idResolverFactory = new IdentityResolverFactory(loginStrategy);
     }
 
     @Override
@@ -102,7 +114,7 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     @Override
     public Cell newCell(Socket socket) throws InvocationTargetException
     {
-        NettyLineBasedDoor door = new NettyLineBasedDoor(parentCellName + "*", args, factory, executor, poolManagerHandler);
+        NettyLineBasedDoor door = new NettyLineBasedDoor(parentCellName + "*", args, factory, executor, poolManagerHandler, idResolverFactory);
 
         NioSocketChannel channel = new NioSocketChannel(socket.getChannel());
 
