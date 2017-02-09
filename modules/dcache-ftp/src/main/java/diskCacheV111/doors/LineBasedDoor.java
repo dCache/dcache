@@ -24,6 +24,8 @@ import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
 import org.dcache.cells.AbstractCell;
+import org.dcache.ftp.door.AbstractFtpDoorV1;
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.SequentialExecutor;
@@ -53,6 +55,7 @@ public class LineBasedDoor
     private final StreamEngine engine;
 
     private LineBasedInterpreter interpreter;
+    private final IdentityResolverFactory identityFactory;
 
     private final CountDownLatch shutdownGate = new CountDownLatch(1);
 
@@ -62,7 +65,7 @@ public class LineBasedDoor
     private final Executor executor;
 
     public LineBasedDoor(String cellName, Args args, Class<? extends LineBasedInterpreter> interpreterClass,
-                         StreamEngine engine, ExecutorService executor)
+                         StreamEngine engine, ExecutorService executor, IdentityResolverFactory identityFactory)
     {
         super(cellName, args);
 
@@ -70,6 +73,7 @@ public class LineBasedDoor
         this.interpreterClass = interpreterClass;
         this.engine = engine;
         this.executor = new CDCExecutorServiceDecorator<>(executor);
+        this.identityFactory = identityFactory;
 
         try {
             doInit();
@@ -99,6 +103,9 @@ public class LineBasedDoor
         interpreter.setExecutor(executor);
         if (interpreter instanceof CellMessageSender) {
             ((CellMessageSender) interpreter).setCellEndpoint(this);
+        }
+        if (interpreter instanceof AbstractFtpDoorV1) {
+            ((AbstractFtpDoorV1) interpreter).setIdentityResolverFactory(identityFactory);
         }
         interpreter.init();
         if (interpreter instanceof CellCommandListener) {

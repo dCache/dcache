@@ -186,6 +186,7 @@ public class LoginManager
                     .setName(loginCell)
                     .setLoginManagerName(getCellName())
                     .setArgs(childArgs)
+                    .setCellEndpoint(this)
                     .build();
             _version = new CellVersion(Version.of(_loginCellFactory));
 
