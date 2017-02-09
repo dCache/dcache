@@ -27,6 +27,7 @@ import diskCacheV111.util.ConfigurationException;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 import org.dcache.util.OptionParser;
 
@@ -45,7 +46,8 @@ public abstract class FtpInterpreterFactory implements LineBasedInterpreterFacto
     }
 
     @Override
-    public LineBasedInterpreter create(CellEndpoint endpoint, StreamEngine engine, Executor executor) throws Exception
+    public LineBasedInterpreter create(CellEndpoint endpoint, StreamEngine engine,
+            Executor executor, IdentityResolverFactory idResolverFactory) throws Exception
     {
         AbstractFtpDoorV1 interpreter = createInterpreter();
         interpreter.setSettings(settings);
@@ -54,6 +56,7 @@ public abstract class FtpInterpreterFactory implements LineBasedInterpreterFacto
         interpreter.setLocalSocketAddress((InetSocketAddress) engine.getSocket().getLocalSocketAddress());
         interpreter.setExecutor(executor);
         interpreter.setCellEndpoint(endpoint);
+        interpreter.setIdentityResolverFactory(idResolverFactory);
         interpreter.init();
         return interpreter;
     }

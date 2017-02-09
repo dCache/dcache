@@ -20,6 +20,7 @@ import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
 import org.dcache.cells.AbstractCell;
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.SequentialExecutor;
@@ -47,6 +48,7 @@ public class LineBasedDoor
     private final StreamEngine engine;
 
     private final LineBasedInterpreterFactory factory;
+    private final IdentityResolverFactory identityFactory;
 
     private final CountDownLatch shutdownGate = new CountDownLatch(1);
 
@@ -59,13 +61,15 @@ public class LineBasedDoor
     private volatile boolean isStartupCompleted;
 
     public LineBasedDoor(String cellName, Args args, LineBasedInterpreterFactory factory,
-                         StreamEngine engine, ExecutorService executor)
+                         StreamEngine engine, ExecutorService executor,
+                         IdentityResolverFactory identityFactory)
     {
         super(cellName, args, executor);
 
         this.factory = factory;
         this.engine = engine;
         this.executor = new CDCExecutorServiceDecorator<>(executor);
+        this.identityFactory = identityFactory;
     }
 
     @Override
@@ -77,7 +81,7 @@ public class LineBasedDoor
 
         LOGGER.debug("Client host: {}", engine.getInetAddress().getHostAddress());
 
-        interpreter = factory.create(this, engine, executor);
+        interpreter = factory.create(this, engine, executor, identityFactory);
         if (interpreter instanceof CellCommandListener) {
             addCommandListener(interpreter);
         }

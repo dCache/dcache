@@ -24,10 +24,12 @@ import diskCacheV111.util.ConfigurationException;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 
 public interface LineBasedInterpreterFactory
 {
     void configure(Args args) throws ConfigurationException;
-    LineBasedInterpreter create(CellEndpoint endpoint, StreamEngine engine, Executor executor) throws Exception;
+    LineBasedInterpreter create(CellEndpoint endpoint, StreamEngine engine,
+            Executor executor, IdentityResolverFactory idResolverFactory) throws Exception;
 }
