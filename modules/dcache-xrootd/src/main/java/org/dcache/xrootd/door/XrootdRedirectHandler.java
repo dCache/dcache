@@ -409,7 +409,12 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                     s.append(0);
                     break;
                 case "csname":
-                    s.append("1:ADLER32,2:MD5");
+                    /**
+                     * xrdcp expects lower case names for checksum algorithms
+                     * https://github.com/xrootd/xrootd/issues/459
+                     * TODO: revert to upper case then above issue is addressed
+                     */
+                    s.append("1:adler32,2:md5");
                     break;
                 default:
                     s.append(_queryConfig.getOrDefault(name, name));
@@ -424,7 +429,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
                 Set<Checksum> checksums = _door.getChecksums(createFullPath(msg.getArgs()), msg.getSubject());
                 if (!checksums.isEmpty()) {
                     Checksum checksum = Checksums.preferrredOrder().min(checksums);
-                    return new QueryResponse(msg, checksum.getType().getName() + " " + checksum.getValue());
+                    /**
+                     * xrdcp expects lower case names for checksum algorithms
+                     * https://github.com/xrootd/xrootd/issues/459
+                     * TODO: remove toLowerCase() call when above issue is addressed
+                     */
+                    return new QueryResponse(msg,
+                                             checksum.getType().getName().toLowerCase() + " " + checksum.getValue());
                 }
             } catch (FileNotFoundCacheException e) {
                 throw new XrootdException(kXR_NotFound, e.getMessage());
