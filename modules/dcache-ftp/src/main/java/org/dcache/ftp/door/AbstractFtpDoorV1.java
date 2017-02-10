@@ -549,6 +549,7 @@ public abstract class AbstractFtpDoorV1
     protected Restriction _authz = Restrictions.denyAll();
     protected FsPath _userRootPath = FsPath.ROOT;
     protected FsPath _doorRootPath = FsPath.ROOT;
+    protected FsPath _userHomePath = FsPath.ROOT;
     protected String _cwd = "/";    // Relative to _doorRootPath
     protected FsPath _filepath; // Absolute filepath to the file to be renamed
     protected PnfsId _fileId; // Id of the file to be renamed
@@ -1238,6 +1239,7 @@ public abstract class AbstractFtpDoorV1
         _cwd = cwd;
         _doorRootPath = doorRootPath;
         _userRootPath = userRootPath;
+        _userHomePath = FsPath.create(userHomePath);
     }
 
     public static final String hh_get_door_info = "[-binary]";
@@ -1793,7 +1795,19 @@ public abstract class AbstractFtpDoorV1
 
     private FsPath absolutePath(String path) throws FTPCommandException
     {
-        return path.startsWith("/") ? _doorRootPath.chroot(path) : _doorRootPath.chroot(_cwd + "/" + path);
+        String absPath;
+
+        if (path.startsWith("/")) {
+            absPath = path;
+        } else if (path.equals("~")) {
+            absPath = _userHomePath.toString();
+        } else if (path.startsWith("~/")) {
+            absPath = _userHomePath + path.substring(1);
+        } else {
+            absPath = _cwd + "/" + path;
+        }
+
+        return _doorRootPath.chroot(absPath);
     }
 
 
