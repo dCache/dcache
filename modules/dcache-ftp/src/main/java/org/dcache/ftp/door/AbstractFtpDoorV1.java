@@ -468,7 +468,8 @@ public abstract class AbstractFtpDoorV1
         "MFMT",
         "MFCT",
         "MFF " + buildSemiColonList(Fact.MODIFY, Fact.CREATE, Fact.MODE),
-        "PASV AllowDelayed"
+        "PASV AllowDelayed",
+        "MLSC"
         /*
          * do not publish DCAU as supported feature. This will force
          * some clients to always encrypt data channel
@@ -3691,6 +3692,35 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    @Help("MLSC [<SP> <path>] - List the contents of a directory on control channel")
+    public void ftp_mlsc(String arg) throws FTPCommandException
+    {
+        checkLoggedIn(ALLOW_ANONYMOUS_USER);
+
+        try {
+            FsPath path = absolutePath(arg.isEmpty() ? "." : arg);
+
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            pw.print("250- Contents of " + path + "\r\n");
+            int total = _listSource.printDirectory(_subject, _authz,
+                    new MlscFactPrinter(pw), path, null, Range.<Integer>all());
+            pw.print("250 MLSC completed for " + total + " files");
+            reply(sw.toString());
+        } catch (InterruptedException e) {
+            reply("451 Operation cancelled");
+        } catch (FileNotFoundCacheException e) {
+            reply("501 Directory not found");
+        } catch (NotDirCacheException e) {
+            reply("501 Not a directory");
+        } catch (PermissionDeniedCacheException e) {
+            reply("550 Permission denied");
+        } catch (CacheException e) {
+            reply("451 Local error in processing");
+            LOGGER.warn("Error in MLSC: {}", e.getMessage());
+        }
+    }
+
     @Help("MLSD [<SP> <path>] - Lists the contents of a directory.")
     public void ftp_mlsd(String arg)
         throws FTPCommandException
@@ -4730,6 +4760,21 @@ public abstract class AbstractFtpDoorV1
         }
 
         protected abstract void printName(FsPath dir, DirectoryEntry entry);
+    }
+
+    private class MlscFactPrinter extends MlsdFactPrinter
+    {
+        public MlscFactPrinter(PrintWriter writer)
+        {
+            super(writer);
+        }
+
+        @Override
+        public void print(FsPath dir, FileAttributes dirAttr, DirectoryEntry entry)
+        {
+            _out.print(' ');
+            super.print(dir, dirAttr, entry);
+        }
     }
 
     private class MlsdFactPrinter extends FactPrinter
