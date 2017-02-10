@@ -533,6 +533,7 @@ public abstract class AbstractFtpDoorV1
     protected boolean _isUserReadOnly;
     protected FsPath _userRootPath = new FsPath();
     protected FsPath _doorRootPath = new FsPath();
+    protected FsPath _userHomePath = new FsPath();
     protected String _cwd = "/";    // Relative to _doorRootPath
     protected FsPath _filepath; // Absolute filepath to the file to be renamed
     protected PnfsId _fileId; // Id of the file to be renamed
@@ -1201,16 +1202,14 @@ public abstract class AbstractFtpDoorV1
             }
         }
         FsPath doorRootPath;
-        String cwd;
         if (_settings.getRoot() == null) {
             doorRootPath = userRootPath;
-            cwd = userHomePath.toString();
         } else {
             doorRootPath = new FsPath(_settings.getRoot());
             if (userRootPath.startsWith(doorRootPath)) {
-                cwd = doorRootPath.relativize(new FsPath(userRootPath, userHomePath)).toString();
+                userHomePath = doorRootPath.relativize(new FsPath(userRootPath, userHomePath));
             } else if (_absoluteUploadPath != null && _absoluteUploadPath.startsWith(doorRootPath)) {
-                cwd = doorRootPath.relativize(_absoluteUploadPath).toString();
+                userHomePath = doorRootPath.relativize(_absoluteUploadPath);
             } else {
                 throw new PermissionDeniedCacheException("User's files are not visible through this FTP service.");
             }
@@ -1221,11 +1220,12 @@ public abstract class AbstractFtpDoorV1
         _listSource = new ListDirectoryHandler(_pnfs);
 
         _subject = mappedSubject;
-        _cwd = cwd;
+        _cwd = userHomePath.toString();
         _doorRootPath = doorRootPath;
         _userRootPath = userRootPath;
         _isUserReadOnly = isUserReadOnly;
         _identityResolver = _identityResolverFactory.withSubject(mappedSubject);
+        _userHomePath = userHomePath;
     }
 
     public static final String hh_get_door_info = "[-binary]";
@@ -1803,6 +1803,11 @@ public abstract class AbstractFtpDoorV1
 
     private FsPath absolutePath(String path) throws FTPCommandException
     {
+        if (path.equals("~")) {
+            path = _userHomePath.toString();
+        } else if (path.startsWith("~/")) {
+            path = _userHomePath + path.substring(1);
+        }
         FsPath relativePath = new FsPath(_cwd);
         relativePath.add(path);
         FsPath absolutePath = new FsPath(_doorRootPath, relativePath);
