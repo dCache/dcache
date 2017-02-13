@@ -8,6 +8,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.EncodingFilter;
 
 import org.dcache.restful.filters.ResponseHeaderFilter;
+import org.dcache.restful.providers.ErrorResponseProvider;
 import org.dcache.restful.providers.ObjectMapperProvider;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.resources.namespace.FileResources;
@@ -36,6 +37,7 @@ public class DcacheRestApplication extends ResourceConfig
         register(JacksonJsonProvider.class);
         register(JacksonJaxbJsonProvider.class);
         register(EntityFilteringFeature.class);
+        register(ErrorResponseProvider.class);
 
         /**
          * Jersey framework has a built-in functionality to easily enable content encoding.
