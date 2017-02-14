@@ -616,7 +616,12 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
             }
             Checksum checksum = Checksums.preferrredOrder().min(attributes.getChecksums());
-            return new QueryResponse(msg, checksum.getType().getName() + " " + checksum.getValue());
+            /**
+             * xrdcp expects lower case names for checksum algorithms
+             * https://github.com/xrootd/xrootd/issues/459
+             * TODO: remove toLowerCase() call when above issue is addressed
+             */
+            return new QueryResponse(msg, checksum.getType().getName().toLowerCase() + " " + checksum.getValue());
 
         default:
             return unsupported(ctx, msg);
