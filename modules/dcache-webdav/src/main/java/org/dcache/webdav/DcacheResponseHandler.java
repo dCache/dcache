@@ -44,7 +44,7 @@ import org.dcache.util.Slf4jSTErrorListener;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.milton.http.Response.Status.*;
-import static org.dcache.webdav.AuthenticationHandler.DCACHE_LOGIN_ATTRIBUTES;
+import static org.dcache.http.AuthenticationHandler.DCACHE_LOGIN_ATTRIBUTES;
 
 /**
  * This class controls how Milton responds under different circumstances by

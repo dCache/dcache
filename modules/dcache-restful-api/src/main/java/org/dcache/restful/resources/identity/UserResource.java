@@ -18,20 +18,21 @@
  */
 package org.dcache.restful.resources.identity;
 
-import jersey.repackaged.com.google.common.collect.Lists;
-
 import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.HomeDirectory;
+import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.restful.providers.UserAttributes;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 
@@ -44,7 +45,7 @@ public class UserResource
 {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public UserAttributes getUserAttributes()
+    public UserAttributes getUserAttributes(@Context HttpServletRequest request)
     {
         UserAttributes user = new UserAttributes();
 
@@ -60,6 +61,12 @@ public class UserResource
                     .boxed()
                     .collect(Collectors.toList());
             user.setGids(gids);
+
+            for (LoginAttribute attribute : ServletContextHandlerAttributes.getLoginAttributes(request)) {
+                if (attribute instanceof HomeDirectory) {
+                    user.setHomeDirectory(((HomeDirectory)attribute).getHome());
+                }
+            }
         }
 
         return user;
