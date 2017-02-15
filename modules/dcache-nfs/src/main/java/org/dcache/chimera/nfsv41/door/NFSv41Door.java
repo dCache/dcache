@@ -759,7 +759,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 return "NFS4 server not running.";
             }
 
-            NFS4Client client = _nfs4.getStateHandler().getClientByID(new clientid4(clientid));
+            NFS4Client client = _nfs4.getStateHandler().getClient(new clientid4(clientid));
             _nfs4.getStateHandler().removeClient(client);
             return "Done.";
         }
