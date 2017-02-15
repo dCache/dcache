@@ -350,7 +350,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         if(transfer != null) {
                 transfer.finished(transferFinishedMessage);
                 transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
-                _vfs.invalidateStatCache(transfer.getInode());
         }
     }
 
@@ -547,6 +546,14 @@ public class NFSv41Door extends AbstractCellComponent implements
                         }
                     }
             );
+
+            if (ioMode == layoutiomode4.LAYOUTIOMODE4_RW) {
+                // in case of WRITE, invalidate vfs cache on close
+                nfsState.addDisposeListener(state -> {
+                    _vfs.invalidateStatCache(nfsInode);
+                });
+            }
+
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
         } catch (CacheException | TimeoutException | ExecutionException e) {
