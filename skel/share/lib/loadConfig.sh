@@ -84,10 +84,12 @@ shortHostname()
 # Prints the classpath to include plugins for a given domain
 printPluginClassPath() # $1 = domain
 {
+    local classpath
     local plugins
     local plugin
     local jar
 
+    classpath=
     plugins="$(getProperty dcache.paths.plugins "$1")"
     while [ -n "$plugins" ]; do
         # plugins is a colon separated path of directories
@@ -108,7 +110,7 @@ printPluginClassPath() # $1 = domain
         fi
     done
 
-    echo ${classpath%:}
+    (set -f; echo ${classpath%:})
 }
 
 # Prints the classpath of a domain
@@ -118,13 +120,14 @@ printClassPath() # $1 = domain
     local plugin_classpath
 
     classpath="$(getProperty dcache.paths.classpath "$1")"
+    classpath="${classpath#:}"
 
     plugin_classpath="$(printPluginClassPath "$1")"
     if [ -n "$plugin_classpath" ]; then
         classpath="${plugin_classpath}:${classpath}"
     fi
 
-    echo $classpath
+    (set -f; echo $classpath)
 }
 
 # Print the classpath of a CLI.  The dCache jar files are limited to
