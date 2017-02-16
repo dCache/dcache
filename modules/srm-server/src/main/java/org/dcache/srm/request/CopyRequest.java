@@ -87,6 +87,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -787,6 +788,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
         response.setArrayOfFileStatuses(new ArrayOfTCopyRequestFileStatus(getArrayOfTCopyRequestFileStatuses()));
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
@@ -841,6 +843,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         response.setReturnStatus(getTReturnStatus());
         TCopyRequestFileStatus[] fileStatuses = getArrayOfTCopyRequestFileStatuses(fromurls, tourls);
         response.setArrayOfFileStatuses(new ArrayOfTCopyRequestFileStatus(fileStatuses));
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
