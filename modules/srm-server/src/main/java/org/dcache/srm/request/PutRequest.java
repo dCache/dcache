@@ -83,6 +83,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
@@ -360,6 +361,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             tryToReady();
             response = getSrmPrepareToPutResponse();
         }
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
 
         return response;
     }
@@ -371,6 +373,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
         response.setArrayOfFileStatuses(new ArrayOfTPutRequestFileStatus(getArrayOfTPutRequestFileStatus()));
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
@@ -398,6 +401,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         }
 
         response.setArrayOfFileStatuses(new ArrayOfTPutRequestFileStatus(statusArray));
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
