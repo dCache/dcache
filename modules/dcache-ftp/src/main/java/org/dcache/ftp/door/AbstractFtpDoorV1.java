@@ -2512,7 +2512,8 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> CHGRP <SP> <group> <SP> <path> - Change group-owner of <path> to group <group>\r\n" +
             "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>\r\n" +
             "SITE <SP> SYMLINKFROM <SP> <path> - Register symlink location; SYMLINKTO must follow\r\n" +
-            "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command.")
+            "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command\r\n" +
+            "SITE <SP> TASKID <SP> <id> - Provide server with an identifier")
     public void ftp_site(String arg)
         throws FTPCommandException
     {
@@ -2578,6 +2579,12 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             doSymlinkTo(args[1]);
+        } else if (args[0].equalsIgnoreCase("TASKID")) {
+            if (args.length == 1) {
+                reply("501 Syntax error in parameters or arguments.");
+                return;
+            }
+            doTaskid(arg.substring(6));
         } else {
             reply("500 Unknown SITE command");
         }
@@ -2848,6 +2855,14 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
+        reply("250 OK");
+    }
+
+    public void doTaskid(String arg)
+    {
+        // REVISIT: the task id is recorded in the access log, so may be
+        //     discoverable, provided this file still exists.  In future, we
+        //     may want to record client-supplied identifiers in billing.
         reply("250 OK");
     }
 
