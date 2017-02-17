@@ -2716,7 +2716,8 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> HELP - Information about SITE commands\r\n" +
             "SITE <SP> BUFSIZE <SP> <size> - Set network buffer to <size>\r\n" +
             "SITE <SP> CHKSUM <SP> <value> - Fail upload if ADLER32 checksum isn't <value>\r\n" +
-            "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>")
+            "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>\r\n" +
+            "SITE <SP> TASKID <SP> <id> - Provide server with an identifier")
     public void ftp_site(String arg)
         throws FTPCommandException
     {
@@ -2764,6 +2765,12 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             doClientinfo(arg.substring(11));
+        } else if (args[0].equalsIgnoreCase("TASKID")) {
+            if (args.length == 1) {
+                reply("501 Syntax error in parameters or arguments.");
+                return;
+            }
+            doTaskid(arg.substring(6));
         } else {
             reply("500 Unknown SITE command");
         }
@@ -2932,6 +2939,14 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
+        reply("250 OK");
+    }
+
+    public void doTaskid(String arg)
+    {
+        // REVISIT: the task id is recorded in the access log, so may be
+        //     discoverable, provided this file still exists.  In future, we
+        //     may want to record client-supplied identifiers in billing.
         reply("250 OK");
     }
 
