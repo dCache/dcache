@@ -4381,7 +4381,6 @@ public abstract class AbstractFtpDoorV1
             for (Fact fact: _currentFacts) {
                 switch (fact) {
                 case SIZE:
-                    attributes.add(SIMPLE_TYPE);
                     attributes.add(SIZE);
                     attributes.addAll(_pdp.getRequiredAttributes());
                     break;
@@ -4443,7 +4442,7 @@ public abstract class AbstractFtpDoorV1
                 for (Fact fact: _currentFacts) {
                     switch (fact) {
                     case SIZE:
-                        if (attr.isDefined(SIZE) && attr.getFileType() != FileType.DIR) {
+                        if (attr.isDefined(SIZE)) {
                             access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(SIZE));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printSizeFact(attr);
