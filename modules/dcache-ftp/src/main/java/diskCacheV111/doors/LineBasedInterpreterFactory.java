@@ -25,11 +25,13 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 
 public interface LineBasedInterpreterFactory
 {
     void configure(Args args) throws ConfigurationException;
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-            StreamEngine engine, Executor executor) throws Exception;
+            StreamEngine engine, Executor executor,
+            IdentityResolverFactory idResolverFactory) throws Exception;
 }

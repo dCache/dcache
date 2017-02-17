@@ -28,6 +28,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
 
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 import org.dcache.util.OptionParser;
 
@@ -47,7 +48,8 @@ public abstract class FtpInterpreterFactory implements LineBasedInterpreterFacto
 
     @Override
     public LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
-            StreamEngine engine, Executor executor) throws Exception
+            StreamEngine engine, Executor executor,
+            IdentityResolverFactory idResolverFactory) throws Exception
     {
         AbstractFtpDoorV1 interpreter = createInterpreter();
         interpreter.setSettings(settings);
@@ -57,6 +59,7 @@ public abstract class FtpInterpreterFactory implements LineBasedInterpreterFacto
         interpreter.setExecutor(executor);
         interpreter.setCellEndpoint(endpoint);
         interpreter.setCellAddress(myAddress);
+        interpreter.setIdentityResolverFactory(idResolverFactory);
         interpreter.init();
         return interpreter;
     }
