@@ -50,6 +50,27 @@ column()
     }'
 }
 
+age()
+{
+    now=$(date +%s)
+    ago=$(( $now - $1 ))
+    if [ $ago -eq 0 ]; then
+        echo just now
+    elif [ $ago -eq 1 ]; then
+        echo for 1 second
+    elif [ $ago -lt 120 ]; then
+        echo for $ago seconds
+    elif [ $ago -lt 7200 ]; then
+        echo for $(( $ago / 60 )) minutes
+    elif [ $ago -lt 172800 ]; then
+        echo for $(( $ago / 3600 )) hours
+    elif [ $ago -lt 1209600 ]; then
+        echo for $(( $ago / 86400 )) days
+    else
+        echo for $(( $ago / 604800 )) weeks
+    fi
+}
+
 # Utility function for printing to stdout with a line width
 # maximum of 75 characters. Longer lines are broken into several
 # lines. Each argument is interpreted as a separate paragraph.

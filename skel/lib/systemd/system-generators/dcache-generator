@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -e
+
+@DCACHE_LOAD_CONFIG@
+
+for domain in $(getProperty dcache.domains); do
+    RESTART_DELAY="$(getProperty dcache.restart.delay "$domain")"
+    USER="$(getProperty dcache.user "$domain")"
+    JAVA_OPTIONS="$(getProperty dcache.java.options "$domain")"
+    HOME="$(getProperty dcache.home)"
+    CLASSPATH="$(printClassPath "$domain")"
+    JAVA_LIBRARY_PATH="$(getProperty dcache.java.library.path "$domain")"
+
+    cat <<-EOF > "$1/dcache@$domain.service"
+	[Unit]
+	Description=dCache $domain domain
+	After=network.target
+
+	[Service]
+	Type=simple
+	WorkingDirectory=${HOME}
+	Restart=always
+	RestartSec=${RESTART_DELAY}
+	SuccessExitStatus=143
+	ProtectSystem=full
+	ProtectHome=true
+	NoNewPrivileges=true
+	StandardOutput=journal
+	SyslogIdentifier=dcache@$domain
+	Environment="CLASSPATH=$CLASSPATH" "LD_LIBRARY_PATH=$JAVA_LIBRARY_PATH"
+	$( [ -z "$USER" ] || echo "User=$USER" )
+	ExecStart=${JAVA} ${JAVA_OPTIONS} "-Ddcache.home=$HOME" "-Ddcache.paths.defaults=${DCACHE_DEFAULTS}" org.dcache.boot.BootLoader start ${domain}
+
+	[Install]
+	WantedBy=default.target
+	EOF
+done

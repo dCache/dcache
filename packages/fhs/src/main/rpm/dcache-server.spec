@@ -72,6 +72,10 @@ fi
 # fix file /var/lib/dcache directory ownership
 chown dcache:dcache /var/lib/dcache
 
+if [ ! -f /usr/share/dcache/lib/services.sh ]; then
+    ln -s /usr/share/dcache/lib/services-daemon.sh /usr/share/dcache/lib/services.sh
+fi
+
 %preun
 if [ $1 -eq 0 ] ; then
     /sbin/service dcache-server stop >/dev/null 2>&1

@@ -1,25 +1,4 @@
-# Useful functions for working with domains.
-
-# Prints all domains that match a given pattern. Prints all domains if
-# no patterns are provided. Fails if a pattern matches no domains.
-printDomains() # $1+ = patterns
-{
-    local domain
-    local domains
-    domains=$(getProperty dcache.domains)
-    if [ $# -eq 0 ]; then
-        echo $domains
-    else
-        for pattern in "$@"; do
-            hasMatch "$pattern" $domains || fail 1 "$pattern: No such domain"
-        done
-        for domain in $domains; do
-            if matchesAny "$domain" "$@"; then
-                echo $domain
-            fi
-        done
-    fi
-}
+# Useful functions for working with domains using the daemon wrapper script
 
 # Returns the PID stored in pidfile. Fails if the file does not exist,
 # is empty or doesn't contain a valid PID.
@@ -43,7 +22,7 @@ printPidFromFile() # $1 = file
 # Return code is according to that of System V init scripts.
 printSimpleDomainStatus() # $1 = domain
 {
-    local rc
+    local rc state pid since
 
     if printJavaPid "$1" > /dev/null; then
         if printDaemonPid "$1" > /dev/null; then
@@ -67,53 +46,32 @@ printSimpleDomainStatus() # $1 = domain
 fileLastUpdated() # $1 = domain
 {
     if [ -s "$(getProperty dcache.pid.java "$1")" ]; then
-	echo "$(getProperty dcache.pid.java "$1")"
+        echo "$(getProperty dcache.pid.java "$1")"
     elif [ -s "$(getProperty dcache.pid.daemon "$1")" ]; then
-	echo "$(getProperty dcache.pid.daemon "$1")"
+        echo "$(getProperty dcache.pid.daemon "$1")"
     fi
 }
-
 
 printFileAge() # $1 = filename
 {
-
-    file_modified=$(stat --format=%Z "$1")
-    now=$(date +%s)
-    ago=$(( $now - $file_modified ))
-    if [ $ago -eq 0 ]; then
-	echo just now
-    elif [ $ago -eq 1 ]; then
-	echo for 1 second
-    elif [ $ago -lt 120 ]; then
-	echo for $ago seconds
-    elif [ $ago -lt 7200 ]; then
-	echo for $(( $ago / 60 )) minutes
-    elif [ $ago -lt 172800 ]; then
-	echo for $(( $ago / 3600 )) hours
-    elif [ $ago -lt 1209600 ]; then
-	echo for $(( $ago / 86400 )) days
-    else
-	echo for $(( $ago / 604800 )) weeks
-    fi
+    age $(stat --format=%Z "$1")
 }
-
-
 
 # Print a more detailed description of the domains status.  This
 # may include the duration the domain has been in that state.
 printDetailedDomainStatus() # $1 = domain
 {
-    local rc
+    local rc state file duration
 
     rc=0
     state="$(printSimpleDomainStatus "$1")" || rc=$?
     file="$(fileLastUpdated "$1")"
 
     if [ -n "$file" ]; then
-	duration=$(printFileAge "$file")
-	echo "$state ($duration)"
+        duration=$(printFileAge "$file")
+        echo "$state ($duration)"
     else
-	echo "$state"
+        echo "$state"
     fi
 
     return $rc

@@ -1,7 +1,9 @@
 #!/bin/sh -e
 
-if [ -x "/etc/init.d/dcache" ]; then
-        invoke-rc.d dcache stop || exit $?
+if type "systemctl" > /dev/null 2>&1; then
+        systemctl stop dcache@*
+else
+        invoke-rc.d dcache stop || :
 fi
 
 #DEBHELPER#
