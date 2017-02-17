@@ -5,6 +5,8 @@ import com.google.common.collect.Ordering;
 
 import java.util.ServiceLoader;
 
+import dmg.cells.nucleus.CellEndpoint;
+
 import org.dcache.util.Args;
 
 public class LoginCellFactoryBuilder
@@ -15,6 +17,7 @@ public class LoginCellFactoryBuilder
     private String name;
     private Args args;
     private String loginManagerName;
+    private CellEndpoint endpoint;
 
     public LoginCellFactoryBuilder setName(String name)
     {
@@ -34,6 +37,12 @@ public class LoginCellFactoryBuilder
         return this;
     }
 
+    public LoginCellFactoryBuilder setCellEndpoint(CellEndpoint endpoint)
+    {
+        this.endpoint = endpoint;
+        return this;
+    }
+
     public LoginCellFactory build()
     {
         LoginCellProvider bestProvider =
@@ -41,7 +50,7 @@ public class LoginCellFactoryBuilder
         if (bestProvider.getPriority(name) == Integer.MIN_VALUE) {
             throw new IllegalArgumentException("No login cell provider found for " + name);
         }
-        return bestProvider.createFactory(name, args, loginManagerName);
+        return bestProvider.createFactory(name, args, endpoint, loginManagerName);
     }
 
     private static Function<LoginCellProvider, Integer> priorityFor(final String name)

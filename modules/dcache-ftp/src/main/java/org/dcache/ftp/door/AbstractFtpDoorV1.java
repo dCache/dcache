@@ -184,6 +184,8 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
+import org.dcache.services.login.IdentityResolverFactory;
+import org.dcache.services.login.IdentityResolverFactory.IdentityResolver;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Args;
 import org.dcache.util.AsynchronousRedirectedTransfer;
@@ -284,6 +286,9 @@ public abstract class AbstractFtpDoorV1
     protected CellAddressCore _cellAddress;
     protected CellEndpoint _cellEndpoint;
     protected Executor _executor;
+    private IdentityResolverFactory _identityResolverFactory;
+    private IdentityResolver _identityResolver;
+
 
     /**
      * Enumeration type for representing the connection mode.
@@ -329,6 +334,8 @@ public abstract class AbstractFtpDoorV1
         PERM("Perm"),
         OWNER("UNIX.owner"),
         GROUP("UNIX.group"),
+        UID("UNIX.uid"),
+        GID("UNIX.gid"),
         MODE("UNIX.mode"),
         // See http://www.iana.org/assignments/os-specific-parameters
         CHANGE("UNIX.ctime"),
@@ -811,7 +818,7 @@ public abstract class AbstractFtpDoorV1
     /** List of selected RFC 3659 facts. */
     protected Set<Fact> _currentFacts = Sets.newHashSet(
             Fact.SIZE, Fact.MODIFY, Fact.TYPE, Fact.UNIQUE, Fact.PERM,
-            Fact.OWNER, Fact.GROUP, Fact.MODE );
+            Fact.OWNER, Fact.GROUP, Fact.UID, Fact.GID, Fact.MODE );
 
     /**
      * Encapsulation of an FTP transfer.
@@ -1315,6 +1322,12 @@ public abstract class AbstractFtpDoorV1
         _executor = executor;
     }
 
+    public void setIdentityResolverFactory(IdentityResolverFactory factory)
+    {
+        _identityResolverFactory = factory;
+        _identityResolver = factory.withoutSubject();
+    }
+
     @Override
     public void init() throws UnknownHostException
     {
@@ -1429,6 +1442,7 @@ public abstract class AbstractFtpDoorV1
         _doorRootPath = doorRootPath;
         _userRootPath = userRootPath;
         _isUserReadOnly = isUserReadOnly;
+        _identityResolver = _identityResolverFactory.withSubject(mappedSubject);
     }
 
     public static final String hh_get_door_info = "[-binary]";
@@ -4454,10 +4468,12 @@ public abstract class AbstractFtpDoorV1
                 case UNIQUE:
                     attributes.add(PNFSID);
                     break;
+                case UID:
                 case OWNER:
                     attributes.add(OWNER);
                     attributes.addAll(_pdp.getRequiredAttributes());
                     break;
+                case GID:
                 case GROUP:
                     attributes.add(OWNER_GROUP);
                     attributes.addAll(_pdp.getRequiredAttributes());
@@ -4571,6 +4587,22 @@ public abstract class AbstractFtpDoorV1
                             }
                         }
                         break;
+                    case UID:
+                        if (attr.isDefined(OWNER)) {
+                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(OWNER));
+                            if (access == AccessType.ACCESS_ALLOWED) {
+                                printUidFact(attr);
+                            }
+                        }
+                        break;
+                    case GID:
+                        if (attr.isDefined(OWNER_GROUP)) {
+                            access = _pdp.canGetAttributes(_subject, attr, EnumSet.of(OWNER_GROUP));
+                            if (access == AccessType.ACCESS_ALLOWED) {
+                                printGidFact(attr);
+                            }
+                        }
+                        break;
                     case MODE:
                         if (attr.isDefined(MODE)) {
                             access =
@@ -4635,13 +4667,27 @@ public abstract class AbstractFtpDoorV1
         /** Writes a RFC 3659 UNIX.Owner fact to a writer. */
         private void printOwnerFact(FileAttributes attr)
         {
-            printFact(Fact.OWNER, attr.getOwner());
+            long uid = attr.getOwner();
+            printFact(Fact.OWNER, _identityResolver.uidToName(uid).orElseGet(() -> Long.toString(uid)));
         }
 
         /** Writes a RFC 3659 UNIX.group fact to a writer. */
         private void printGroupFact(FileAttributes attr)
         {
-            printFact(Fact.GROUP, attr.getGroup());
+            long gid = attr.getGroup();
+            printFact(Fact.GROUP,  _identityResolver.gidToName(gid).orElseGet(() -> Long.toString(gid)));
+        }
+
+        /** Writes a numerical uid fact to a writer. */
+        private void printUidFact(FileAttributes attr)
+        {
+            printFact(Fact.UID, attr.getOwner());
+        }
+
+        /** Writes a numerical gid fact to a writer. */
+        private void printGidFact(FileAttributes attr)
+        {
+            printFact(Fact.GID, attr.getGroup());
         }
 
         /** Writes a RFC 3659 UNIX.mode fact to a writer. */

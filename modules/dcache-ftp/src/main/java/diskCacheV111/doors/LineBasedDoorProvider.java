@@ -2,6 +2,7 @@ package diskCacheV111.doors;
 
 import diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
 
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.services.login.LoginCellFactory;
 import dmg.cells.services.login.LoginCellProvider;
 
@@ -22,12 +23,13 @@ public class LineBasedDoorProvider implements LoginCellProvider
     }
 
     @Override
-    public LoginCellFactory createFactory(String name, Args args, String parentCellName) throws IllegalArgumentException
+    public LoginCellFactory createFactory(String name, Args args,
+            CellEndpoint parentEndpoint, String parentCellName) throws IllegalArgumentException
     {
         try {
             Class<?> interpreter = Class.forName(name);
             if (LineBasedInterpreter.class.isAssignableFrom(interpreter)) {
-                return new LineBasedDoorFactory(interpreter.asSubclass(LineBasedInterpreter.class), args, parentCellName);
+                return new LineBasedDoorFactory(interpreter.asSubclass(LineBasedInterpreter.class), args, parentEndpoint, parentCellName);
             }
         } catch (ClassNotFoundException ignored) {
         }
