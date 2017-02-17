@@ -526,6 +526,7 @@ public final class FileOperationHandlerTest extends TestBase
         createPoolOperationHandler();
         createPoolOperationMap();
         createFileOperationHandler();
+        createInaccessibleFileHandler();
         createFileOperationMap();
         initializeCounters();
         wirePoolOperationMap();

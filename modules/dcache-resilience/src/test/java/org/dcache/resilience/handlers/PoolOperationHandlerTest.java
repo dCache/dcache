@@ -87,6 +87,7 @@ public class PoolOperationHandlerTest extends TestBase {
         createPoolOperationMap();
         createFileOperationHandler();
         createFileOperationMap();
+        createInaccessibleFileHandler();
         initializeCounters();
         wirePoolOperationMap();
         wirePoolOperationHandler();

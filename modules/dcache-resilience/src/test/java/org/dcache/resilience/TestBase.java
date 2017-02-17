@@ -81,6 +81,7 @@ import org.dcache.resilience.data.PoolInfoDiff;
 import org.dcache.resilience.data.PoolInfoMap;
 import org.dcache.resilience.data.PoolOperationMap;
 import org.dcache.resilience.data.PoolStateUpdate;
+import org.dcache.resilience.handlers.DefaultInaccessibleFileHandler;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.FileTaskCompletionHandler;
 import org.dcache.resilience.handlers.PoolOperationHandler;
@@ -120,6 +121,7 @@ public abstract class TestBase implements Cancellable {
      */
     protected FileTaskCompletionHandler fileTaskCompletionHandler;
     protected PoolTaskCompletionHandler poolTaskCompletionHandler;
+    protected DefaultInaccessibleFileHandler defaultInaccessibleFileHandler;
 
     protected TestSynchronousExecutor shortJobExecutor;
     protected TestSynchronousExecutor longJobExecutor;
@@ -297,6 +299,10 @@ public abstract class TestBase implements Cancellable {
     protected void createFileOperationHandler() {
         fileOperationHandler = new FileOperationHandler();
         fileTaskCompletionHandler = new FileTaskCompletionHandler();
+    }
+
+    protected void createInaccessibleFileHandler() {
+        defaultInaccessibleFileHandler = new DefaultInaccessibleFileHandler();
     }
 
     protected void createFileOperationMap() {
@@ -485,6 +491,9 @@ public abstract class TestBase implements Cancellable {
     protected void wireFileOperationHandler() {
         fileTaskCompletionHandler.setMap(fileOperationMap);
         fileOperationHandler.setCompletionHandler(fileTaskCompletionHandler);
+        fileOperationHandler.setInaccessibleFileHandler(defaultInaccessibleFileHandler);
+        defaultInaccessibleFileHandler.setFileTaskCompletionHandler(fileTaskCompletionHandler);
+        defaultInaccessibleFileHandler.setPoolInfoMap(poolInfoMap);
         fileOperationHandler.setNamespace(testNamespaceAccess);
         fileOperationHandler.setPoolInfoMap(poolInfoMap);
         fileOperationHandler.setLocationSelector(locationSelector);

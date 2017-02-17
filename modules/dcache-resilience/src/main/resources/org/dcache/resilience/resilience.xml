@@ -173,6 +173,12 @@
       <property name="map" ref="PoolOpMap"/>
     </bean>
 
+    <bean id="InaccessibleFileHandler" class="org.dcache.resilience.handlers.DefaultInaccessibleFileHandler">
+      <description>Handles inaccessible files by raising an alarm.</description>
+      <property name="fileTaskCompletionHandler" ref="FileTaskCompletionHandler"/>
+      <property name="poolInfoMap" ref="PoolInfoMap"/>
+    </bean>
+
     <bean id="FileOpMap" class="org.dcache.resilience.data.FileOperationMap" destroy-method="shutdown">
       <description>The central hub of information regarding resilient operations by pnfsid</description>
       <property name="timeout" value="${resilience.limits.file.scan-period}"/>
@@ -213,6 +219,7 @@
     <bean id="FileOpHandler" class="org.dcache.resilience.handlers.FileOperationHandler">
       <description>Encapsulates the logic determining what needs to be done for a given pnfsid</description>
       <property name="completionHandler" ref="FileTaskCompletionHandler"/>
+      <property name="inaccessibleFileHandler" ref="InaccessibleFileHandler"/>
       <property name="pinManagerStub" ref="PinManager"/>
       <property name="poolStub" ref="Pools"/>
       <property name="namespace" ref="NamespaceAccess"/>
