@@ -153,6 +153,12 @@ public class JsonFileAttributes {
 
     public FileLocality fileLocality;
 
+    /** Current QoS for this file. */
+    public String currentQos;
+
+    /** The target QoS if the file is changing QoS, or null otherwise. */
+    public String targetQos;
+
     public ACL getAcl() {
         return _acl;
     }
@@ -367,5 +373,21 @@ public class JsonFileAttributes {
 
     public List<JsonFileAttributes> getChildren() {
         return children;
+    }
+
+    public void setCurrentQos(String qos) {
+        this.currentQos = qos;
+    }
+
+    public String getCurrentQos() {
+        return currentQos;
+    }
+
+    public void setTargetQos(String qos) {
+        targetQos = qos;
+    }
+
+    public String getTargetQos() {
+        return targetQos;
     }
 }
