@@ -29,6 +29,7 @@ import dmg.util.LineWriter;
 import dmg.util.StreamEngine;
 
 import org.dcache.poolmanager.PoolManagerHandler;
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 
 /**
@@ -62,11 +63,13 @@ public interface NettyLineBasedInterpreterFactory
      * @param localAddress Address of the local socket
      * @param executor Executor for background operations
      * @param poolManager Handler for pool manager communication
+     * @param identityResolverFactory factory for creating an identity resolver
      * @return Fully initialized interpreter
      * @throws Exception If the interpreter could not be initialized
      */
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
                                 InetSocketAddress remoteAddress, InetSocketAddress proxyAddress, InetSocketAddress localAddress,
-                                LineWriter writer, Executor executor, PoolManagerHandler poolManager)
+                                LineWriter writer, Executor executor, PoolManagerHandler poolManager,
+                                IdentityResolverFactory identityResolverFactory)
             throws Exception;
 }
