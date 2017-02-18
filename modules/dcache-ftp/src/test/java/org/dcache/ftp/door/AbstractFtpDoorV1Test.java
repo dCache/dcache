@@ -19,6 +19,7 @@ import javax.security.auth.Subject;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
+import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.util.EnumSet;
 import java.util.List;
@@ -41,6 +42,8 @@ import org.dcache.util.OptionParser;
 import static org.dcache.util.PrincipalSetMaker.aSetOfPrincipals;
 import static com.google.common.net.InetAddresses.forString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Matchers.matches;
@@ -282,7 +285,10 @@ public class AbstractFtpDoorV1Test {
             throws FTPCommandException {
         doCallRealMethod().when(door).ftp_eprt(anyString());
         doCallRealMethod().when(door).getExtendedAddressOf(anyString());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
+        door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
 
         thrown.expectCode(522);
         door.ftp_eprt("|3|127.0.0.1|22|");
@@ -292,8 +298,10 @@ public class AbstractFtpDoorV1Test {
     public void EPSVshouldReply200WhenConnectionEstablished()
             throws FTPCommandException, UnknownHostException {
         doCallRealMethod().when(door).ftp_epsv(anyString());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
         when(door.setPassive()).thenReturn(new InetSocketAddress(forString("::1"), 20));
 
         door.ftp_epsv("");
@@ -305,8 +313,10 @@ public class AbstractFtpDoorV1Test {
     public void EPSVshouldReply522WhenRequestingInvalidProtocol()
             throws FTPCommandException, UnknownHostException {
         doCallRealMethod().when(door).ftp_epsv(anyString());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
         when(door.setPassive()).thenReturn(new InetSocketAddress(forString("::1"), 20));
 
         thrown.expectCode(522);
@@ -319,8 +329,10 @@ public class AbstractFtpDoorV1Test {
     {
         doCallRealMethod().when(door).ftp_epsv(anyString());
         doCallRealMethod().when(door).ok(anyString());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
         when(door.setPassive()).thenReturn(new InetSocketAddress(forString("::1"), 20));
 
         door.ftp_epsv("all");
@@ -334,8 +346,10 @@ public class AbstractFtpDoorV1Test {
     {
         doCallRealMethod().when(door).ftp_epsv(anyString());
         doCallRealMethod().when(door).ok(anyString());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
         when(door.setPassive()).thenReturn(new InetSocketAddress(forString("::1"), 20));
 
         door.ftp_epsv("all");
@@ -351,8 +365,10 @@ public class AbstractFtpDoorV1Test {
     {
         doCallRealMethod().when(door).ftp_epsv(anyString());
         doCallRealMethod().when(door).ftp_pasv(anyString());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
         when(door.setPassive()).thenReturn(new InetSocketAddress(forString("::1"), 20));
 
         door.ftp_epsv("all");
@@ -367,8 +383,10 @@ public class AbstractFtpDoorV1Test {
         doCallRealMethod().when(door).ftp_epsv(anyString());
         doCallRealMethod().when(door).ftp_port(anyString());
         doCallRealMethod().when(door).setActive((InetSocketAddress)any());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
         when(door.setPassive()).thenReturn(new InetSocketAddress(forString("::1"), 20));
 
         door.ftp_epsv("all");
@@ -383,8 +401,10 @@ public class AbstractFtpDoorV1Test {
         doCallRealMethod().when(door).ftp_epsv(anyString());
         doCallRealMethod().when(door).ftp_eprt(anyString());
         doCallRealMethod().when(door).setActive((InetSocketAddress)any());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
         when(door.setPassive()).thenReturn(new InetSocketAddress(forString("::1"), 20));
 
         door.ftp_epsv("all");
@@ -397,17 +417,22 @@ public class AbstractFtpDoorV1Test {
             throws Exception {
         doCallRealMethod().when(door).ftp_epsv(anyString());
         doCallRealMethod().when(door).setPassive();
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         List<InterfaceAddress> addresses = Lists.newArrayList(
                 mockInterfaceAddress("::1"), mockInterfaceAddress("127.0.0.1"));
         when(door.getLocalAddressInterfaces()).thenReturn(addresses);
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
 
         door.ftp_epsv("1");
         door.ftp_epsv("");
 
-        assertThat(door._preferredProtocol, is(AbstractFtpDoorV1.Protocol.IPV4));
-        assertEquals(Inet4Address.class, ((InetSocketAddress)door._passiveModeServerSocket.getLocalAddress()).getAddress().getClass());
+        // FIXME: this test has too much knowledge of the class internals
+        assertThat(door._clientConnectionHandler.getPreferredProtocolFamily(),
+                is(equalTo(StandardProtocolFamily.INET)));
+        assertThat(door._clientConnectionHandler.getLocalAddress().getAddress(),
+                is(instanceOf(Inet4Address.class)));
     }
 
     @Test
@@ -416,6 +441,7 @@ public class AbstractFtpDoorV1Test {
         doCallRealMethod().when(door).ftp_epsv(anyString());
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("::1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("::1"), 0);
+        door.buildClientConnectionHandler();
 
         thrown.expectCode(522);
         door.ftp_epsv("3");
@@ -425,8 +451,10 @@ public class AbstractFtpDoorV1Test {
     public void EPSVshouldReply500WhenRequestedOnIpV4()
             throws FTPCommandException {
         doCallRealMethod().when(door).ftp_epsv(anyString());
+        doCallRealMethod().when(door).buildClientConnectionHandler();
         door._localSocketAddress = door._proxySocketAddress = new InetSocketAddress(forString("127.0.0.1"), 21);
         door._remoteSocketAddress = new InetSocketAddress(forString("127.0.0.1"), 0);
+        door.buildClientConnectionHandler();
         thrown.expectCode(502);
         door.ftp_epsv("1");
     }

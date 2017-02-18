@@ -416,7 +416,11 @@ def OptionParser.parse(args)
                   [ :gridftp, '-g2', '-p 10' ],
                   # Stress the data channel handling
                   [ :gridftp, '-no-g2', '-p -100' ],
-                  [ :gridftp, '-g2', '-p -100' ] ],
+                  [ :gridftp, '-g2', '-p -100' ],
+                  # Use Mode E and attempt data-connection reuse
+                  [ :gridftp, '-no-g2 -fast'],
+                  [ :gridftp, '-no-g2 -fast -p 1'],
+                  [ :gridftp, '-no-g2 -fast -p 10'] ],
     :xrootd => [ [ :xrootd ] ],
     :dcap => [ [ :dcap ] ],
     :gsidcap => [ [ :gsidcap ] ],

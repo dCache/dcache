@@ -72,14 +72,16 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.dcache.util.PortRange;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.util.ByteUnit.KiB;
 
 /**
@@ -109,54 +111,41 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketAdapter.class);
 
-    /** Channel listening for connections from the client. */
-    private final ServerSocketChannel _clientListenerChannel;
+    /** Connection orientated ChannelHandler references. */
+    private final PassiveConnectionHandler _clientConnectionHandler;
+    private final PassiveConnectionHandler _poolConnectionHandler;
 
-    /** Channel listening for connections from the pool. */
-    private final ServerSocketChannel _poolListenerChannel;
-
-    /** Current number of data channel connections. */
-    private int _dataChannelConnections;
+    /** Data direction orientated ChannelHandler references. */
+    private PassiveConnectionHandler _inbound;
+    private PassiveConnectionHandler _outbound;
 
     /** True if mode E is used for transfer, false when mode S is used. */
     private boolean _modeE;
 
     /**
-     * Expected number of data channels. In mode S this is 1. In mode
-     * E this information is provided by the client.
-     */
-    private int _eodc = 1;
-
-    /**
-     * The number of data channels we have closed. For informational
-     * purposes only.
-     */
-    private int _dataChannelsClosed;
-
-    /**
-     * The number of EOD markers we have seen.
+     * The number of EOD markers we have seen. This is only used for mode E
+     * transfers.
      */
     private int _eodSeen;
 
     /**
-     * TCP send and receive buffer size. Will use default when zero.
+     * The number of EOD markers expected, or zero if that number is
+     * not yet known.  This is only used for mode E transfers.
      */
-    private int _bufferSize;
+    private long _eodExpected;
 
     /**
      * True for uploads, false for downloads.
      */
-    private boolean _clientToPool;
+    private boolean _clientToPool = true;
 
     /**
      * Non null if an error has occurred and the transfer has failed.
      */
     private String _error;
 
-    /**
-     * Selector for doing asynchronous accept.
-     */
-    private Selector _selector;
+    /** All redirectores created by the SocketAdapter. */
+    private final List<Thread> _redirectors = new ArrayList<>();
 
     /**
      * Size of the largest block allocated in mode E. Blocks larger
@@ -167,7 +156,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /**
      * A thread driving the adapter
      */
-    private Thread _thread;
+    private final Thread _thread;
 
     /**
      * True when the adapter is closing or has been closed. Used to
@@ -176,13 +165,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private boolean _closing;
 
     /**
-     * String form of address on which the adapter listens for client
-     * connections.
-     */
-    private final String _localAddress;
-
-    /**
-     * A redirector moves data between an input channel and an ouput
+     * A redirector moves data between an input channel and an output
      * channel. This particular redirector does so in mode S.
      */
     class StreamRedirector extends Thread
@@ -192,7 +175,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 
         public StreamRedirector(SocketChannel input, SocketChannel output)
         {
-            super("ModeS-Proxy-" + _localAddress);
+            super("ModeS-Proxy-" + _clientConnectionHandler.getLocalAddress());
             _input = input;
             _output = output;
         }
@@ -200,33 +183,43 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         @Override
         public void run()
         {
-            String inputAddress =
-                    _input.socket().getRemoteSocketAddress().toString();
-            String outputAddress =
-                    _output.socket().getRemoteSocketAddress().toString();
-            boolean reading = true;
             try {
-                LOGGER.info("Starting mode S proxy from {} to {}",
-                            inputAddress, outputAddress);
-                ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
-                while (_input.read(buffer) != -1) {
-                    buffer.flip();
-                    reading = false;
-                    _output.write(buffer);
-                    reading = true;
-                    buffer.clear();
+                _inbound.finishAccept(); // only expect a single connection.
+
+                String inputAddress =
+                        _input.socket().getRemoteSocketAddress().toString();
+                String outputAddress =
+                        _output.socket().getRemoteSocketAddress().toString();
+                boolean reading = true;
+                try {
+                    LOGGER.debug("Starting mode S proxy from {} to {}",
+                                inputAddress, outputAddress);
+                    ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
+                    while (_input.read(buffer) != -1) {
+                        buffer.flip();
+                        reading = false;
+                        _output.write(buffer);
+                        reading = true;
+                        buffer.clear();
+                    }
+                } catch (IOException e) {
+                    if (reading) {
+                        setError("Error on socket to " + inputAddress + ": "
+                                         + e.getMessage());
+                    } else {
+                        setError("Error on socket to " + outputAddress + ": "
+                                         + e.getMessage());
+                    }
+                } finally {
+                    try {
+                        _output.close();
+                    } catch (IOException e) {
+                        LOGGER.warn("Problem closing output: {}", e.getMessage());
+                    }
+                    _inbound.returnChannel(_input);
                 }
-                _input.close();
-            } catch (IOException e) {
-                if (reading) {
-                    setError("Error on socket to " + inputAddress + ": "
-                                     + e.getMessage());
-                } else {
-                    setError("Error on socket to " + outputAddress + ": "
-                                     + e.getMessage());
-                }
-            } finally {
-                subtractDataChannel();
+            } catch (InterruptedException e) {
+                LOGGER.warn("Interrupted while waiting for accept loop to terminate");
             }
         }
     }
@@ -242,9 +235,9 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 
         public ModeERedirector(SocketChannel input, SocketChannel output)
         {
-            super("ModeE-Proxy-" + _localAddress);
-            _input  = input;
-            _output = output;
+            super("ModeE-Proxy-" + _clientConnectionHandler.getLocalAddress());
+            _input  = checkNotNull(input);
+            _output = checkNotNull(output);
         }
 
         @Override
@@ -252,180 +245,161 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         {
             boolean eod = false;
             boolean used = false;
-            ByteBuffer header = ByteBuffer.allocate(17);
-            EDataBlockNio block = new EDataBlockNio(getName());
-            String inputAddress =
-                    _input.socket().getRemoteSocketAddress().toString();
-            String outputAddress =
-                    _output.socket().getRemoteSocketAddress().toString();
-            boolean reading = true;
-
-            long count, position;
-
             try {
-                LOGGER.info("Starting mode E proxy from {} to {}",
-                            inputAddress, outputAddress);
+                ByteBuffer header = ByteBuffer.allocate(17);
+                EDataBlockNio block = new EDataBlockNio(getName());
+                SocketAddress inputAddress = _input.socket().getRemoteSocketAddress();
+                SocketAddress outputAddress = _output.socket().getRemoteSocketAddress();
+                boolean reading = true;
 
-                loop: while (!eod && block.readHeader(_input) > -1) {
-                    used = true;
+                long count, position;
 
-                    /* EOF blocks are never forwarded as they do not
-                     * contain any data and the SocketAdapter sends an
-                     * EOF at the beginning of the stream. Other
-                     * blocks are forwarded if they are not empty.
-                     */
-                    if (block.isDescriptorSet(EDataBlockNio.EOF_DESCRIPTOR)) {
-                        setEODExpected(block.getDataChannelCount());
-                        count = position = 0;
-                    } else {
-                        count = block.getSize();
-                        position = block.getOffset();
-                    }
+                try {
+                    LOGGER.debug("Starting mode E proxy from {} to {}",
+                                inputAddress, outputAddress);
 
-                    /* Read and send a single block. To limit memory
-                     * usage, we will read at most _maxBlockSize bytes
-                     * at a time. Larger blocks are divided into
-                     * multiple blocks.
-                     */
-                    while (count > 0) {
-                        long len = Math.min(count, _maxBlockSize);
-                        if (block.readData(_input, len) != len) {
-                            break loop;
+                    loop: while (!eod && block.readHeader(_input) > -1) {
+                        used = true;
+                        /* EOF blocks are never forwarded as they do not
+                         * contain any data and the SocketAdapter sends an
+                         * EOF at the beginning of the stream. Other
+                         * blocks are forwarded if they are not empty.
+                         */
+                        if (block.isDescriptorSet(EDataBlockNio.EOF_DESCRIPTOR)) {
+                            long conns = block.getDataChannelCount();
+                            if (conns <= 0) {
+                                throw new IOException("Invalid Data Channel Count value: " + conns);
+                            }
+                            setEODExcepted(conns);
+                            if (hasSeenAllExpectedEOD()) {
+                                _inbound.finishAccept();
+                            }
+                            count = position = 0;
+                        } else {
+                            count = block.getSize();
+                            position = block.getOffset();
                         }
 
-                        /* Generate output header.
+                        /* Read and send a single block. To limit memory
+                         * usage, we will read at most _maxBlockSize bytes
+                         * at a time. Larger blocks are divided into
+                         * multiple blocks.
                          */
-                        header.clear();
-                        header.put((byte)0);
-                        header.putLong(len);
-                        header.putLong(position);
+                        while (count > 0) {
+                            long len = Math.min(count, _maxBlockSize);
+                            long actual = block.readData(_input, len);
+                            if (actual != len) {
+                                break loop;
+                            }
 
-                        /* Write output.
-                         */
-                        ByteBuffer[] buffers = {
-                                header,
-                                block.getData()
-                        };
-                        buffers[0].flip();
-                        buffers[1].flip();
-                        reading = false;
-                        _output.write(buffers);
-                        reading = true;
+                            /* Generate output header. */
+                            header.clear();
+                            header.put((byte)0);
+                            header.putLong(len);
+                            header.putLong(position);
 
-                        /* Update counters.
-                         */
-                        count = count - len;
-                        position = position + len;
+                            /* Write output. */
+                            ByteBuffer[] buffers = {
+                                    header,
+                                    block.getData()
+                            };
+                            buffers[0].flip();
+                            buffers[1].flip();
+                            reading = false;
+                            _output.write(buffers);
+                            reading = true;
+
+                            /* Update counters. */
+                            count = count - len;
+                            position = position + len;
+                        }
+
+                        /* Check for EOD mark. */
+                        if (block.isDescriptorSet(EDataBlockNio.EOD_DESCRIPTOR)) {
+                            eod = true;
+                        }
                     }
 
-                    /* Check for EOD mark.
-                     */
-                    if (block.isDescriptorSet(EDataBlockNio.EOD_DESCRIPTOR)) {
-                        eod = true;
+                    if (eod) {
+                        incrementEODSeen();
+                        if (hasSeenAllExpectedEOD()) {
+                            _inbound.finishAccept();
+                        }
+                    } else if (used) {
+                        setError("Data channel from " + inputAddress + " was closed before EOD marker");
                     }
-                }
-
-                if (eod) {
-                    addEODSeen();
-                } else if (used) {
-                    setError("Data channel from " + inputAddress
-                                     + " was closed before EOD marker");
-                }
-
-		/* In case of an error, SocketAdapter will close the
-		 * channel instead. We only call close here to free up
-		 * sockets as early as possible when everything went
-		 * as expected.
-		 */
-                _input.close();
-            } catch (Exception e) {
-                if (reading) {
-                    setError("Error on socket to " + inputAddress + ": "
-                                     + e.getMessage());
-                } else {
-                    setError("Error on socket to " + outputAddress + ": "
-                                     + e.getMessage());
+                } catch (InterruptedException e) {
+                    setError("Interrupted waiting for accept to shut down");
+                } catch (IOException e) {
+                    if (reading) {
+                        setError("Error on socket to " + inputAddress + ": "
+                                         + e.getMessage());
+                    } else {
+                        setError("Error on socket to " + outputAddress + ": "
+                                         + e.getMessage());
+                    }
                 }
             } finally {
-                LOGGER.info("Redirector done, EOD = {}, used = {}", eod, used);
-                subtractDataChannel();
+                _inbound.returnChannel(_input);
             }
         }
     }
 
-    public SocketAdapter(ServerSocketChannel clientListenerChannel, InetAddress internalAddress)
+    public SocketAdapter(PassiveConnectionHandler handler, InetAddress addressForPools)
             throws IOException
     {
-        _clientListenerChannel = clientListenerChannel;
-        _poolListenerChannel = ServerSocketChannel.open();
-        _poolListenerChannel.socket().bind(new InetSocketAddress(internalAddress, 0));
+        _clientConnectionHandler = handler;
+        _clientConnectionHandler.setErrorConsumer(this::setError);
 
-        _localAddress =
-                _clientListenerChannel.socket().getLocalSocketAddress().toString();
-        _clientToPool = true;
-        _modeE        = false;
-        _eodSeen      = 0;
-        _thread	      = new Thread(this, "SocketAdapter-" + _localAddress);
+        _poolConnectionHandler = new PassiveConnectionHandler(addressForPools, PortRange.ANY);
+        _poolConnectionHandler.open();
+
+        _thread = new Thread(this, "SocketAdapter-" + _clientConnectionHandler.getLocalAddress());
     }
 
     /** Increments the EOD seen counter. Thread safe. */
-    protected synchronized void addEODSeen()
+    private synchronized void incrementEODSeen()
     {
         _eodSeen++;
     }
 
     /** Returns the EOD seen counter. Thread safe. */
-    protected synchronized int getEODSeen()
+    private synchronized int getEODSeen()
     {
         return _eodSeen;
     }
 
-    /** Returns the number of data channels to expect. Thread safe. */
-    protected synchronized int getEODExpected()
+    /**
+     * Specify expected number of streams, so therefore expected number
+     * of EOD.
+     */
+    private synchronized void setEODExcepted(long value)
     {
-        return _eodc;
+        checkArgument(value > 0);
+        _eodExpected = value;
     }
 
     /**
-     * Sets the number of data channels to expect. Thread safe.  The
-     * selector will be woken up, since run() checks the data channel
-     * count in the loop.
+     * Returns true if the expected number of EOD is known and the
+     * number of observed EOD matches.
      */
-    protected synchronized void setEODExpected(long count)
+    private synchronized boolean hasSeenAllExpectedEOD()
     {
-        LOGGER.trace("Setting data channel count to {}", count);
-        _selector.wakeup();
-        _eodc = (int)count;
-    }
-
-    /** Called whenever a redirector finishes. Thread safe. */
-    protected synchronized void subtractDataChannel()
-    {
-        _dataChannelConnections--;
-        _dataChannelsClosed++;
-
-        if (_eodc < Integer.MAX_VALUE) {
-            LOGGER.trace("Closing redirector {}, remaining: {}, eodc says there will be: {}",
-                         _dataChannelsClosed, _dataChannelConnections, getEODExpected());
-        } else {
-            LOGGER.trace("Closing redirector {}, remaining: {}",
-                         _dataChannelsClosed, _dataChannelConnections);
-        }
-    }
-
-    /** Called whenever a new redirector is created. Thread safe. */
-    protected synchronized void addDataChannel()
-    {
-        _dataChannelConnections++;
+        return isEODExpectedSpecified() && _eodSeen == _eodExpected;
     }
 
     /**
-     * Returns the current number of concurrent data channel
-     * connections. Thread safe.
+     * @return true iff setEODExpected has been called.
      */
-    protected synchronized int getDataChannelConnections()
+    private synchronized boolean isEODExpectedSpecified()
     {
-        return _dataChannelConnections;
+        return _eodExpected > 0;
+    }
+
+    /** Returns the EOD seen counter. Thread safe. */
+    private synchronized long getEODExpected()
+    {
+        return _eodExpected;
     }
 
     /**
@@ -437,7 +411,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         if (!isClosing()) {
             LOGGER.error(msg);
             if (_error == null) {
-                _thread.interrupt();
+                _inbound.close();
                 _error = msg;
             }
         }
@@ -451,10 +425,11 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     protected synchronized void setFatalError(Exception e)
     {
         if (!isClosing()) {
-            LOGGER.error("Socket adapter {} caught fatal error: {}", _localAddress, e.getMessage());
+            LOGGER.error("Socket adapter {} caught fatal error: {}",
+                    _clientConnectionHandler.getLocalAddress(), e.getMessage());
 
             if (_error == null) {
-                _thread.interrupt();
+                _inbound.close();
                 _error = e.getMessage();
             }
         }
@@ -494,14 +469,12 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     public synchronized void setModeE(boolean modeE)
     {
         _modeE = modeE;
-        // MAX_VALUE = unknown until EODC
-        _eodc = (modeE ? Integer.MAX_VALUE : 1);
     }
 
     @Override
     public InetSocketAddress getInternalAddress()
     {
-        return (InetSocketAddress) _poolListenerChannel.socket().getLocalSocketAddress();
+        return _poolConnectionHandler.getLocalAddress();
     }
 
     /* (non-Javadoc)
@@ -511,6 +484,9 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     public void setDirClientToPool()
     {
         _clientToPool = true;
+        _inbound = _clientConnectionHandler;
+        _outbound = _poolConnectionHandler;
+
     }
 
     /* (non-Javadoc)
@@ -520,6 +496,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     public void setDirPoolToClient()
     {
         _clientToPool = false;
+        _inbound = _poolConnectionHandler;
+        _outbound = _clientConnectionHandler;
     }
 
     /**
@@ -541,28 +519,10 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     @Override
     public void run()
     {
+        LOGGER.debug("Socket adapter thread starting");
         assert _clientToPool || !_modeE;
 
-        ServerSocketChannel inputSock;
-        ServerSocketChannel outputSock;
-
-        /** All redirectores created by the SocketAdapter. */
-        List<Thread> redirectors = new ArrayList<>();
-
-        /** All sockets created by the SocketAdapter. */
-        List<SocketChannel> sockets     = new ArrayList<>();
-
         try {
-            _selector = Selector.open();
-
-            if (_clientToPool) {
-                inputSock = _clientListenerChannel;
-                outputSock = _poolListenerChannel;
-            } else {
-                inputSock = _poolListenerChannel;
-                outputSock = _clientListenerChannel;
-            }
-
             /* Accept connection on output channel. Since the socket
              * adapter is only used when the client is active, and
              * since in mode E the active part has to be the sender,
@@ -570,15 +530,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
              * adapter and the pool, there will in any case be exactly
              * one connection on the output channel.
              */
-            LOGGER.debug("Accepting output connection on {}",
-                         outputSock.socket().getLocalSocketAddress());
-            SocketChannel output = outputSock.accept();
-            sockets.add(output);
-            if (_bufferSize > 0) {
-                output.socket().setSendBufferSize(_bufferSize);
-            }
-            output.socket().setKeepAlive(true);
-            LOGGER.debug("Opened {}", output.socket());
+            SocketChannel output = _outbound.accept();
 
             /* Send the EOF. The GridFTP protocol allows us to send
              * this information at any time. Doing it up front will
@@ -586,84 +538,24 @@ public class SocketAdapter implements Runnable, ProxyAdapter
              * it.
              */
             if (_modeE) {
-                ByteBuffer block = ByteBuffer.allocate(17);
-                block.put((byte)(EDataBlockNio.EOF_DESCRIPTOR));
-                block.putLong(0);
-                block.putLong(1);
-                block.flip();
-                output.write(block);
+                sendEof(output);
             }
 
-            /* Keep accepting connections on the input socket as long
-             * as we have not reached the number of streams the client
-             * told us we should expect.
-             *
-             * This loop is one of the few places in which we check
-             * the interrupted flag of the current thread: At most
-             * other places, blocking operations will throw an
-             * exception when the thread was interrupted, however
-             * select() will return normally.
-             */
-            LOGGER.debug("Accepting input connection on {}",
-                         inputSock.socket().getLocalSocketAddress());
-            int totalStreams = 0;
-            inputSock.configureBlocking(false);
-            inputSock.register(_selector, SelectionKey.OP_ACCEPT, null);
-            while (!Thread.currentThread().isInterrupted()
-                    && totalStreams < getEODExpected()) {
-                _selector.select();
-                for (SelectionKey key : _selector.selectedKeys()) {
-                    if (key.isAcceptable()) {
-                        SocketChannel input = inputSock.accept();
-                        sockets.add(input);
-                        LOGGER.debug("Opened {}", input.socket());
+            _inbound.accept(c -> {acceptNewChannel(c, output);});
 
-                        if (_bufferSize > 0) {
-                            input.socket().setSendBufferSize(_bufferSize);
-                        }
-                        input.socket().setKeepAlive(true);
-
-                        addDataChannel();
-
-                        Thread redir;
-                        if (_modeE) {
-                            redir = new ModeERedirector(input, output);
-                        } else {
-                            redir = new StreamRedirector(input, output);
-                        }
-                        redir.start();
-                        redirectors.add(redir);
-
-                        totalStreams++;
-                    }
-                }
-                _selector.selectedKeys().clear();
-            }
-
-            /* Block until all redirector threads have terminated.
-             */
-            LOGGER.trace("Waiting for all redirectors to finish");
-            for (Thread redirector : redirectors) {
-                redirector.join();
-            }
-            redirectors.clear();
-            LOGGER.trace("All redirectors have finished");
+            awaitRedirectors();
 
             /* Send the EOD (remember that we already sent the EOF
              * earlier).
              */
             if (_modeE) {
-                if (getEODExpected() == Integer.MAX_VALUE) {
+                if (!isEODExpectedSpecified()) {
                     setError("Did not receive EOF marker. Transfer failed.");
-                } else if (getEODSeen() != getEODExpected()) {
-                    setError("Did not see enough EOD markers. Transfer failed.");
+                } else if (!hasSeenAllExpectedEOD()) {
+                    setError("Transfer failed: not enough EOD markers (expected " +
+                            getEODExpected() + ", got " + getEODSeen() + ")");
                 } else {
-                    ByteBuffer block = ByteBuffer.allocate(17);
-                    block.put((byte)EDataBlockNio.EOD_DESCRIPTOR);
-                    block.putLong(0);
-                    block.putLong(0);
-                    block.flip();
-                    output.write(block);
+                    sendEod(output);
                 }
             }
         } catch (InterruptedException e) {
@@ -672,42 +564,69 @@ public class SocketAdapter implements Runnable, ProxyAdapter
              */
         } catch (IOException e) {
             setError(e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            _thread.getUncaughtExceptionHandler().uncaughtException(_thread, e);
             setFatalError(e);
         } finally {
-            /* Close the selector. Any keys are automatically cancelled.
-             */
-            if (_selector != null) {
-                try {
-                    _selector.close();
-                    _selector = null;
-                } catch (IOException e) {
-                    setError(e.getMessage());
-                }
-            }
-
             /* Tell any thread still alive to stop. In principal this
              * should not be necessary since closing the channels
              * below should cause all redirectors to break out. On the
              * other hand it doesn't hurt and better safe than
              * sorry...
              */
-            for (Thread redirector : redirectors) {
+            for (Thread redirector : _redirectors) {
                 redirector.interrupt();
             }
 
-            /* Close all channels. The redirectors may already have
-             * closed the channels, however close() is a noop if the
-             * channel is already closed.
-             */
-            for (SocketChannel channel : sockets) {
-                try {
-                    channel.close();
-                } catch (IOException e) {
-                    setError(e.getMessage());
-                }
-            }
+            /* Close down everything on the pool side. */
+            _poolConnectionHandler.close();
         }
+    }
+
+    private void sendEof(SocketChannel channel) throws IOException
+    {
+        ByteBuffer block = ByteBuffer.allocate(17);
+        block.put((byte)(EDataBlockNio.EOF_DESCRIPTOR));
+        block.putLong(0);
+        block.putLong(1);
+        block.flip();
+        channel.write(block);
+    }
+
+    private void sendEod(SocketChannel channel) throws IOException
+    {
+        ByteBuffer block = ByteBuffer.allocate(17);
+        block.put((byte)EDataBlockNio.EOD_DESCRIPTOR);
+        block.putLong(0);
+        block.putLong(0);
+        block.flip();
+        channel.write(block);
+    }
+
+    private void awaitRedirectors() throws InterruptedException
+    {
+        LOGGER.debug("Waiting for {} redirectors to finish", _redirectors.size());
+        for (Thread redirector : _redirectors) {
+            redirector.join();
+        }
+        _redirectors.clear();
+
+        LOGGER.trace("All redirectors have finished");
+    }
+
+    private void acceptNewChannel(SocketChannel input, SocketChannel output)
+    {
+        LOGGER.debug("Accepting new TCP connection");
+
+        Thread redir;
+        if (_modeE) {
+            redir = new ModeERedirector(input, output);
+        } else {
+            redir = new StreamRedirector(input, output);
+        }
+        redir.start();
+
+        _redirectors.add(redir);
     }
 
     /* (non-Javadoc)
@@ -716,19 +635,13 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     @Override
     public void close() {
         LOGGER.debug("Closing listener sockets");
+        _poolConnectionHandler.close();
 
         setClosing(true);
-
-        /* Interrupting this thread is enough to cause
-         * SocketAdapter.run() to break. SocketAdapter.run() will in
-         * turn interrupt all redirectors.
-         */
-        _thread.interrupt();
-
         try {
-            _poolListenerChannel.close();
-        } catch (IOException e) {
-            LOGGER.warn("Failed to close pool socket: {}", e.getMessage());
+            _inbound.finishAccept();
+        } catch (InterruptedException e) {
+            LOGGER.warn("Interrupted while closing SocketAdapter");
         }
     }
 
@@ -761,12 +674,12 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     @Override
     public void start() {
+        LOGGER.debug("SocketAdapter calling _thread.start");
         _thread.start();
     }
 
     @Override
-    public String toString()
-    {
-        return "passiv; " + _dataChannelConnections + " streams created";
+    public String toString() {
+        return "SocketAdapter[mode=" + (_modeE ? "E" : "S") + " in=" + _inbound + ", out=" + _outbound + "]";
     }
 }

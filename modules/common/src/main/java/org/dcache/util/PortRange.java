@@ -41,6 +41,8 @@ public class PortRange
      */
     private static final Random _random = new Random();
 
+    public static final PortRange ANY = new PortRange(0, 0);
+
     /**
      * The port range to use.
      */
