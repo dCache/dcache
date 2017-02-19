@@ -132,7 +132,7 @@
                         </bean>
                     </property>
                 </bean>
-                <bean class="org.dcache.webdav.AuthenticationHandler">
+                <bean class="org.dcache.http.AuthenticationHandler">
                     <property name="handler">
                         <bean class="org.eclipse.jetty.server.handler.HandlerList">
                             <property name="handlers">

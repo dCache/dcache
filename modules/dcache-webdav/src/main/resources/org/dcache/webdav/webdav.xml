@@ -319,7 +319,7 @@
         </property>
     </bean>
 
-    <bean id="authhandler" class="org.dcache.webdav.AuthenticationHandler">
+    <bean id="authhandler" class="org.dcache.http.AuthenticationHandler">
         <property name="handler">
             <bean class="org.eclipse.jetty.server.handler.HandlerList">
                 <property name="handlers">

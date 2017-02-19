@@ -45,6 +45,8 @@ public class UserAttributes
 
     private List<Long> gids;
 
+    private String home;
+
     public AuthenticationStatus getStatus()
     {
         return status;
@@ -73,5 +75,15 @@ public class UserAttributes
     public void setGids(List<Long> gids)
     {
         this.gids = gids;
+    }
+
+    public String getHomeDirectory()
+    {
+        return home;
+    }
+
+    public void setHomeDirectory(String dir)
+    {
+        home = dir;
     }
 }

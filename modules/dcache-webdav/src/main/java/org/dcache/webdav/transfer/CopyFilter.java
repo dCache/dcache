@@ -54,12 +54,12 @@ import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.http.AuthenticationHandler;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.PathMapper;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
-import org.dcache.webdav.AuthenticationHandler;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
