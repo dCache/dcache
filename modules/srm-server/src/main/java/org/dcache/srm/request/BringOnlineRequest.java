@@ -82,6 +82,7 @@ import javax.annotation.Nonnull;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.dcache.srm.SRMFileRequestNotFoundException;
@@ -292,6 +293,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             counter = _stateChangeCounter.get();
             response = getSrmBringOnlineResponse();
         }
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
@@ -306,6 +308,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             new ArrayOfTBringOnlineRequestFileStatus();
         arrayOfTBringOnlineRequestFileStatus.setStatusArray(getArrayOfTBringOnlineRequestFileStatus());
         response.setArrayOfFileStatuses(arrayOfTBringOnlineRequestFileStatus);
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
@@ -334,6 +337,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             }
             logger.debug(s.toString());
         }
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 

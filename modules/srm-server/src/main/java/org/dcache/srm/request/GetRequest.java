@@ -83,6 +83,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.dcache.srm.SRMFileRequestNotFoundException;
@@ -286,6 +287,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
             tryToReady();
             response = getSrmPrepareToGetResponse();
         }
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
 
         return response;
     }
@@ -297,6 +299,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
         response.setArrayOfFileStatuses(new ArrayOfTGetRequestFileStatus(getArrayOfTGetRequestFileStatus()));
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
@@ -323,6 +326,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
             }
             logger.debug(s.toString());
         }
+        response.setRemainingTotalRequestTime(getRemainingLifetimeIn(TimeUnit.SECONDS));
         return response;
     }
 
