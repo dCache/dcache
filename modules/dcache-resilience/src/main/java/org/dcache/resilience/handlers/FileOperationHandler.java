@@ -430,9 +430,7 @@ public class FileOperationHandler {
         LOGGER.trace("handleVerification, {}, readable locations {}", pnfsId,
                         readableLocations);
 
-        if (readableLocations.size() == 0
-                        && operation.getRetentionPolicy()
-                        != FileOperation.CUSTODIAL) {
+        if (readableLocations.size() == 0) {
             Integer pindex = operation.getParent();
             if (pindex == null) {
                 pindex = operation.getSource();
