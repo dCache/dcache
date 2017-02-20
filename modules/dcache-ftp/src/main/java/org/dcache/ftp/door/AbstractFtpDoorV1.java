@@ -2551,7 +2551,8 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> CLIENTINFO <SP> <id> - Provide server with information about the client\r\n" +
             "SITE <SP> SYMLINKFROM <SP> <path> - Register symlink location; SYMLINKTO must follow\r\n" +
             "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command\r\n" +
-            "SITE <SP> TASKID <SP> <id> - Provide server with an identifier")
+            "SITE <SP> TASKID <SP> <id> - Provide server with an identifier\r\n" +
+            "SITE <SP> WHOAMI - Provides the username or uid of the user")
     public void ftp_site(String arg)
         throws FTPCommandException
     {
@@ -2623,6 +2624,12 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             doTaskid(arg.substring(6));
+        } else if (args[0].equalsIgnoreCase("WHOAMI")) {
+            if (args.length != 1) {
+                reply("501 Invalid command arguments.");
+                return;
+            }
+            doWhoami();
         } else {
             reply("500 Unknown SITE command");
         }
@@ -2923,6 +2930,15 @@ public abstract class AbstractFtpDoorV1
         //     discoverable, provided this file still exists.  In future, we
         //     may want to record client-supplied identifiers in billing.
         reply("250 OK");
+    }
+
+    public void doWhoami()
+    {
+        String name = Subjects.getUserName(_subject);
+        if (name == null) {
+            name = Long.toString(Subjects.getUid(_subject));
+        }
+        reply("200 " + name);
     }
 
     @Help("SBUF <SP> <size> - Set buffer size.")
