@@ -104,6 +104,7 @@ import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.PortRange;
+import org.dcache.util.URIs;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.util.ByteUnit.KiB;
@@ -118,7 +119,6 @@ public class RemoteGsiftpTransferProtocol
 
     private static final CellPath PNFS_MANAGER =
         new CellPath("PnfsManager");
-    public static final int DEFAULT_PORT = 2811;
 
     private final CellEndpoint _cell;
     private long _starttime;
@@ -166,8 +166,7 @@ public class RemoteGsiftpTransferProtocol
         }
 
         URI url = new URI(protocolInfo.getGsiftpUrl());
-        int port = (url.getPort() == -1) ? DEFAULT_PORT : url.getPort();
-        _client = new GridftpClient(url.getHost(), port, 0, _portRange, protocolInfo.getCredential(),
+        _client = new GridftpClient(url.getHost(), URIs.portWithDefault(url), 0, _portRange, protocolInfo.getCredential(),
                                     _bannedCiphers, _sslContextFactory);
         _client.setStreamsNum(protocolInfo.getNumberOfStreams());
     }

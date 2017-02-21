@@ -13,6 +13,7 @@ import eu.emi.security.authn.x509.OCSPCheckingMode;
 import java.net.URI;
 
 import org.dcache.util.PortRange;
+import org.dcache.util.URIs;
 
 /**
  *
@@ -58,9 +59,8 @@ public class GridftpList {
                     return;
         }
 
-        int port = directory_url.getPort();
         GridftpClient client = new GridftpClient(directory_url.getHost(),
-            port == -1 ? 2811 : port, PortRange.getGlobusTcpPortRange(), null, new String[0],
+            URIs.portWithDefault(directory_url), PortRange.getGlobusTcpPortRange(), null, new String[0],
                                                  "/etc/grid-security/certificates",
                                                  CrlCheckingMode.IF_VALID, NamespaceCheckingMode.EUGRIDPMA_GLOBUS,
                                                  OCSPCheckingMode.IF_AVAILABLE);

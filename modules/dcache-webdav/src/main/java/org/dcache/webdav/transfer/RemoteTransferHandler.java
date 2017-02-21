@@ -64,6 +64,7 @@ import org.dcache.auth.OpenIdCredential;
 import org.dcache.auth.StaticOpenIdCredential;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
+import org.dcache.util.URIs;
 import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -126,31 +127,24 @@ public class RemoteTransferHandler implements CellMessageReceiver
      * The different transport schemes supported.
      */
     public enum TransferType {
-        GSIFTP("gsiftp", 2811, GRIDSITE, EnumSet.noneOf(CredentialSource.class)),
-        HTTP(  "http",   80,     NONE,   EnumSet.noneOf(CredentialSource.class)),
-        HTTPS( "https",  443,  GRIDSITE, EnumSet.of(OIDC));
+        GSIFTP("gsiftp", GRIDSITE, EnumSet.noneOf(CredentialSource.class)),
+        HTTP(  "http",   NONE,     EnumSet.noneOf(CredentialSource.class)),
+        HTTPS( "https",  GRIDSITE, EnumSet.of(OIDC));
 
         private static final ImmutableMap<String,TransferType> BY_SCHEME =
             ImmutableMap.of("gsiftp", GSIFTP, "http", HTTP, "https", HTTPS);
 
-        private final int _defaultPort;
         private final CredentialSource _defaultCredentialSource;
         private final EnumSet<CredentialSource> _supported;
         private final String _scheme;
 
-        TransferType(String scheme, int port, CredentialSource defaultSource,
+        TransferType(String scheme, CredentialSource defaultSource,
                 EnumSet<CredentialSource> additionalSources)
         {
-            _defaultPort = port;
             _defaultCredentialSource = defaultSource;
             _supported = EnumSet.copyOf(additionalSources);
             _supported.add(defaultSource);
             _scheme = scheme;
-        }
-
-        public int getDefaultPort()
-        {
-            return _defaultPort;
         }
 
         public CredentialSource getDefaultCredentialSource()
@@ -442,12 +436,8 @@ public class RemoteTransferHandler implements CellMessageReceiver
         {
             int buffer = MiB.toBytes(1);
 
-            int port = _destination.getPort();
-            if (port == -1) {
-                port = _type.getDefaultPort();
-            }
-
-            InetSocketAddress address = new InetSocketAddress(_destination.getHost(), port);
+            InetSocketAddress address = new InetSocketAddress(_destination.getHost(),
+                    URIs.portWithDefault(_destination));
 
             switch (_type) {
             case GSIFTP:

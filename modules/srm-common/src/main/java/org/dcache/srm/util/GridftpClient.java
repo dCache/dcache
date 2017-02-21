@@ -46,6 +46,7 @@ import org.dcache.ftp.client.vanilla.Reply;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.PortRange;
+import org.dcache.util.URIs;
 
 import static org.dcache.util.ByteUnit.MiB;
 
@@ -760,8 +761,7 @@ public class GridftpClient
             dst_url.getScheme().equals("file")) {
             GridftpClient client;
 
-            int port = src_url.getPort();
-            client = new GridftpClient(src_url.getHost(), port == -1 ? 2811 : port, bs,
+            client = new GridftpClient(src_url.getHost(), URIs.portWithDefault(src_url), bs,
                                        PortRange.getGlobusTcpPortRange(), x509Credential, new String[0],
                                        "/etc/grid-security/certificates", CrlCheckingMode.IF_VALID,
                                        NamespaceCheckingMode.EUGRIDPMA_GLOBUS, OCSPCheckingMode.IF_AVAILABLE);
@@ -783,7 +783,7 @@ public class GridftpClient
              ) {
             GridftpClient client;
             int port = dst_url.getPort();
-            client = new GridftpClient(dst_url.getHost(), port == -1 ? 2811 : port, bs,
+            client = new GridftpClient(dst_url.getHost(), URIs.portWithDefault(dst_url), bs,
                                        PortRange.getGlobusTcpPortRange(), x509Credential, new String[0],
                                        "/etc/grid-security/certificates", CrlCheckingMode.IF_VALID,
                                        NamespaceCheckingMode.EUGRIDPMA_GLOBUS, OCSPCheckingMode.IF_AVAILABLE);
