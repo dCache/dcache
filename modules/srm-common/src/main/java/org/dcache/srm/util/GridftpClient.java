@@ -760,7 +760,8 @@ public class GridftpClient
             dst_url.getScheme().equals("file")) {
             GridftpClient client;
 
-            client = new GridftpClient(src_url.getHost(), src_url.getPort(), bs,
+            int port = src_url.getPort();
+            client = new GridftpClient(src_url.getHost(), port == -1 ? 2811 : port, bs,
                                        PortRange.getGlobusTcpPortRange(), x509Credential, new String[0],
                                        "/etc/grid-security/certificates", CrlCheckingMode.IF_VALID,
                                        NamespaceCheckingMode.EUGRIDPMA_GLOBUS, OCSPCheckingMode.IF_AVAILABLE);
@@ -781,7 +782,8 @@ public class GridftpClient
                dst_url.getScheme().equals("gridftp") )
              ) {
             GridftpClient client;
-            client = new GridftpClient(dst_url.getHost(), dst_url.getPort(), bs,
+            int port = dst_url.getPort();
+            client = new GridftpClient(dst_url.getHost(), port == -1 ? 2811 : port, bs,
                                        PortRange.getGlobusTcpPortRange(), x509Credential, new String[0],
                                        "/etc/grid-security/certificates", CrlCheckingMode.IF_VALID,
                                        NamespaceCheckingMode.EUGRIDPMA_GLOBUS, OCSPCheckingMode.IF_AVAILABLE);

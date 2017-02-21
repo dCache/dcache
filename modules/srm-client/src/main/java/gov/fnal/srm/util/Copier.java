@@ -580,8 +580,9 @@ public class Copier implements Runnable {
             }
             boolean emode = (numberOfStreams!=1);
             if(! dryRun ) {
+                int port = src_url.getPort();
                 GridftpClient client = new GridftpClient(src_url.getHost(),
-                                                         src_url.getPort(),
+                                                         port == -1 ? 8211 : port,
                                                          configuration.getBuffer_size(),
                                                          configuration.getGlobus_tcp_port_range() != null
                                                          ? PortRange.valueOf(configuration.getGlobus_tcp_port_range())
@@ -639,8 +640,9 @@ public class Copier implements Runnable {
             }
             boolean emode = (numberOfStreams!=1);
             if(! dryRun ) {
+                int port = dst_url.getPort();
                 GridftpClient client = new GridftpClient(dst_url.getHost(),
-                                                         dst_url.getPort(),
+                                                         port == -1 ? 2811 : port,
                                                          configuration.getBuffer_size(),
                                                          configuration.getGlobus_tcp_port_range() != null
                                                          ? PortRange.valueOf(configuration.getGlobus_tcp_port_range())
