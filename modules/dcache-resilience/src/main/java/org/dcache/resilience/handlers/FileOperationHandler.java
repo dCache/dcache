@@ -76,8 +76,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.CellPath;
-import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.PoolSelectionStrategy;
@@ -103,8 +101,6 @@ import org.dcache.resilience.util.StaticSinglePoolList;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.resilience.RemoveReplicaMessage;
 
-//import org.dcache.resilience.util.InaccessibleFileHandler;
-
 /**
  * <p>Principal resilience logic component.</p>
  *
@@ -123,12 +119,6 @@ public class FileOperationHandler {
     private static final ImmutableList<StickyRecord> ONLINE_STICKY_RECORD
                     = ImmutableList.of(
                     new StickyRecord("system", StickyRecord.NON_EXPIRING));
-
-    private static final String INACCESSIBLE_FILE_MESSAGE
-                    = "Resilient pool {} is inaccessible but it contains  "
-                    + "one or more files with no currently readable locations. "
-                    + "Administrator intervention is required.  Run the command "
-                    + "'inaccessible {}' to produce a list of orphaned pnfsids.";
 
     /**
      * <p>For communication with the {@link ResilientFileTask}.</p>
@@ -152,6 +142,7 @@ public class FileOperationHandler {
     private ExecutorService           taskService;
     private ScheduledExecutorService  scheduledService;
     private FileTaskCompletionHandler completionHandler;
+    private InaccessibleFileHandler   inaccessibleFileHandler;
 
     public ExecutorService getTaskService() {
         return taskService;
@@ -430,34 +421,8 @@ public class FileOperationHandler {
         LOGGER.trace("handleVerification, {}, readable locations {}", pnfsId,
                         readableLocations);
 
-        if (readableLocations.size() == 0
-                        && operation.getRetentionPolicy()
-                        != FileOperation.CUSTODIAL) {
-            Integer pindex = operation.getParent();
-            if (pindex == null) {
-                pindex = operation.getSource();
-            }
-
-            if (pindex != null) {
-                String pool = poolInfoMap.getPool(pindex);
-                /*
-                 * Send alarm keyed to pool;
-                 * this will increment the count on the alarm
-                 */
-                LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
-                                pool), INACCESSIBLE_FILE_MESSAGE, pool, pool);
-            }
-
-            String error = String.format(
-                            "%s currently has no active locations.",
-                            pnfsId);
-            CacheException exception
-                            = CacheExceptionUtils.getCacheException(
-                            CacheException.PANIC,
-                            FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
-                            pnfsId, error, null);
-            completionHandler.taskFailed(pnfsId, exception);
-            return Type.VOID;
+        if (inaccessibleFileHandler.isInaccessible(readableLocations, operation)) {
+            return inaccessibleFileHandler.handleInaccessibleFile(operation);
         }
 
         if (shouldEvictALocation(operation, readableLocations)) {
@@ -477,6 +442,15 @@ public class FileOperationHandler {
         this.completionHandler = completionHandler;
     }
 
+    public void setFileOpMap(FileOperationMap fileOpMap) {
+        this.fileOpMap = fileOpMap;
+    }
+
+    public void setInaccessibleFileHandler(
+                    InaccessibleFileHandler inaccessibleFileHandler) {
+        this.inaccessibleFileHandler = inaccessibleFileHandler;
+    }
+
     public void setLocationSelector(LocationSelector locationSelector) {
         this.locationSelector = locationSelector;
     }
@@ -487,10 +461,6 @@ public class FileOperationHandler {
 
     public void setPinManagerStub(CellStub pinManager) {
         this.pinManager = pinManager;
-    }
-
-    public void setFileOpMap(FileOperationMap pnfsOpMap) {
-        this.fileOpMap = pnfsOpMap;
     }
 
     public void setPoolInfoMap(PoolInfoMap poolInfoMap) {

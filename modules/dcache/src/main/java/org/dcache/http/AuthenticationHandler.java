@@ -1,4 +1,4 @@
-package org.dcache.webdav;
+package org.dcache.http;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;

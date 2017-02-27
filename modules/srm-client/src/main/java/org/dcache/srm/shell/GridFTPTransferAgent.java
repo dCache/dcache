@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.dss.ClientGsiEngineDssContextFactory;
 import org.dcache.ssl.CanlContextFactory;
+import org.dcache.util.URIs;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -287,12 +288,6 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             return checksumHandling;
         }
 
-        private int getPort()
-        {
-            int port = _remote.getPort();
-            return port == -1 ? 2811 : port;
-        }
-
         protected String getRemotePath()
         {
             return _remote.getPath();
@@ -325,7 +320,7 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
 
         protected GridFTPClient buildClient() throws IOException, ServerException, ClientException
         {
-            GridFTPClient client = new GridFTPClient(_remote.getHost(), getPort());
+            GridFTPClient client = new GridFTPClient(_remote.getHost(), URIs.portWithDefault(_remote));
             client.setUsageInformation("srmfs", "0.0.1");
             client.authenticate(_dssContextFactory);
             client.setType(GridFTPSession.TYPE_IMAGE);

@@ -35,6 +35,7 @@ import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByHsmMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
@@ -491,10 +492,10 @@ public class PoolManagerV5
     public PoolManagerGetPoolListMessage
         messageArrived(PoolManagerGetPoolListMessage msg)
     {
-       String [] pools = _selectionUnit.getActivePools() ;
-       msg.setPoolList(Arrays.asList(pools)) ;
-       msg.setSucceeded();
-       return msg;
+        String[] pools = _selectionUnit.getActivePools();
+        msg.setPoolList(Arrays.asList(pools));
+        msg.setSucceeded();
+        return msg;
     }
 
     public PoolMgrGetPoolByLink messageArrived(PoolMgrGetPoolByLink msg)
@@ -519,6 +520,23 @@ public class PoolManagerV5
         Partition partition =
             _poolMonitor.getPartitionManager().getPartition(link.getTag());
         msg.setPoolName(partition.selectWritePool(_costModule, pools, new FileAttributes(), filesize).name());
+        msg.setSucceeded();
+        return msg;
+    }
+
+    public PoolManagerGetPoolsByHsmMessage
+    messageArrived(PoolManagerGetPoolsByHsmMessage msg)
+    {
+        List<PoolManagerPoolInformation> onlinePools = new ArrayList<>();
+        List<String> offlinePools = new ArrayList<>();
+
+        Arrays.stream(_selectionUnit.getActivePools())
+                .map(_selectionUnit::getPool)
+                .filter(p -> p.hasAnyHsmFrom(msg.getHsms()))
+                .forEach(p -> getPoolInformation(p, onlinePools, offlinePools));
+
+        msg.setPools(onlinePools);
+        msg.setOfflinePools(offlinePools);
         msg.setSucceeded();
         return msg;
     }

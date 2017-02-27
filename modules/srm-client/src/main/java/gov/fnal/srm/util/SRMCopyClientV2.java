@@ -108,6 +108,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.request.AccessLatency;
@@ -115,7 +116,6 @@ import org.dcache.srm.request.FileStorageType;
 import org.dcache.srm.request.OverwriteMode;
 import org.dcache.srm.request.RetentionPolicy;
 import org.dcache.srm.util.RequestStatusTool;
-import org.dcache.srm.util.SrmUrl;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTCopyFileRequest;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
@@ -135,6 +135,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.util.URIs;
 
 import static org.dcache.srm.util.Credentials.checkValid;
 
@@ -166,11 +167,11 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     public void connect() throws Exception {
         java.net.URI srmUrl;
         if ( configuration.isPushmode()  ) {
-            srmUrl = SrmUrl.withDefaultPort(from [0],
-                configuration.getDefaultSrmPortNumber());
+            srmUrl = URIs.withDefaultPort(from [0],
+                    "srm", configuration.getDefaultSrmPortNumber());
         } else {
-            srmUrl = SrmUrl.withDefaultPort(to [0],
-                configuration.getDefaultSrmPortNumber());
+            srmUrl = URIs.withDefaultPort(to [0],
+                    "srm", configuration.getDefaultSrmPortNumber());
         }
         srmv2 = new SRMClientV2(srmUrl,
                                 getCredential(),

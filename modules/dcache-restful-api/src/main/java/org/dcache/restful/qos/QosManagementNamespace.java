@@ -76,6 +76,7 @@ public class QosManagementNamespace {
      * @return JSONObject current QoS status
      * @throws CacheException
      */
+    @Deprecated
     @GET
     @Path("{requestPath : .*}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -144,6 +145,7 @@ public class QosManagementNamespace {
      * @return JSONObject current QoS status
      * @throws CacheException
      */
+    @Deprecated
     @POST
     @Path("{requestPath : .*}")
     @Consumes({MediaType.APPLICATION_JSON})

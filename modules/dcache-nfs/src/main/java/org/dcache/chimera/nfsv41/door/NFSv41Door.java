@@ -91,6 +91,7 @@ import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
+import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.device_addr4;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.dcache.nfs.v4.xdr.layout4;
@@ -516,14 +517,15 @@ public class NFSv41Door extends AbstractCellComponent implements
                         transfer.setIoQueue(_ioQueue);
 
                         /*
-                         * Bind transfer to open-state.
-                         * Cleanup transfer when state invalidated
+                         * As all our layouts marked 'return-on-close', stop mover when
+                         * open-state disposed on CLOSE.
                          */
-                        nfsState.addDisposeListener((NFS4State state) -> {
-                            Transfer t = _ioMessages.remove(stateid);
-                            if (t != null) {
-                                t.killMover(0, "killed by door: disposed of LAYOUTGET state");
-                            }
+                        final NfsTransfer t = transfer;
+                        nfsState.addDisposeListener(state -> {
+                            /*
+                             * Cleanup transfer when state invalidated.
+                             */
+                            t.shutdownMover();
                         });
 
                          _ioMessages.put(stateid, transfer);
@@ -582,21 +584,7 @@ public class NFSv41Door extends AbstractCellComponent implements
              * Well, according to spec we have to return a different
              * stateid anyway.
              */
-            final NFS4State layoutStateId = client.createState(client.asStateOwner(), nfsState.getOpenState());
-
-            /*
-             * as  we will never see layout return with this stateid clean it
-             * when open state id is disposed
-             */
-            nfsState.addDisposeListener(
-                    state -> {
-                        try {
-                            client.releaseState(layoutStateId.stateid());
-                        }catch(ChimeraNFSException e) {
-                            _log.warn("can't release layout stateid.: {}", e.getMessage() );
-                        }
-                    }
-            );
+            final NFS4State layoutStateId = client.createState(nfsState.getStateOwner(), nfsState.getOpenState());
             layoutStateId.bumpSeqid();
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
@@ -758,7 +746,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 return "NFS4 server not running.";
             }
 
-            NFS4Client client = _nfs4.getStateHandler().getClientByID(clientid);
+            NFS4Client client = _nfs4.getStateHandler().getClient(new clientid4(clientid));
             _nfs4.getStateHandler().removeClient(client);
             return "Done.";
         }
@@ -971,12 +959,17 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
 
 
-        public void shutdownMover() throws NfsIoException, DelayException {
+        public synchronized void shutdownMover() throws NfsIoException, DelayException {
+
+            if (!hasMover()) {
+                return;
+            }
+
             _log.debug("Shuting down transfer: {}", this);
             killMover(0, "killed by door: returning layout");
 
             try {
-                if (hasMover() && !waitForMover(NFS_REQUEST_BLOCKING)) {
+                if (!waitForMover(NFS_REQUEST_BLOCKING)) {
                     throw new DelayException("Mover not stopped");
                 }
             } catch (FileNotFoundCacheException e) {

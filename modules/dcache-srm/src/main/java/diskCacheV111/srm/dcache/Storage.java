@@ -221,6 +221,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.NetworkUtils.InetAddressScope;
+import org.dcache.util.URIs;
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -1744,33 +1745,6 @@ public final class Storage
         }
     }
 
-    private static int portFor(URI target) throws SRMException
-    {
-        if(target.getPort() != -1) {
-            return target.getPort();
-        }
-
-        String scheme = target.getScheme();
-
-        if(scheme == null) {
-            throw new SRMException("No scheme in URI " + target.toString());
-        }
-
-        // REVISIT consider taking default port numbers from /etc/services
-
-        switch(scheme.toLowerCase()) {
-            case "http":
-                return 80;
-            case "https":
-                return 443;
-            case "gsiftp":
-                return 2811;
-            default:
-                throw new SRMException("No default port number for " +
-                        target.toString());
-        }
-    }
-
     private String performRemoteTransfer(SRMUser srmUser,
                                          URI remoteTURL,
                                          FsPath actualFilePath,
@@ -1786,9 +1760,9 @@ public final class Storage
 
         IpProtocolInfo protocolInfo;
 
-        InetSocketAddress remoteAddr =
-                new InetSocketAddress(remoteTURL.getHost(), portFor(remoteTURL));
-
+        InetSocketAddress remoteAddr = new InetSocketAddress(remoteTURL.getHost(),
+                        URIs.optionalPortWithDefault(remoteTURL)
+                                .orElseThrow(() -> new SRMException("Unknown port number for TURL " + remoteTURL)));
 
         X509Credential credential = null;
         RequestCredential result = RequestCredential.getRequestCredential(remoteCredentialId);

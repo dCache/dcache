@@ -56,6 +56,7 @@ import dmg.util.LineWriter;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.poolmanager.PoolManagerHandler;
+import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.util.Args;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.util.SequentialExecutor;
@@ -142,8 +143,14 @@ public class NettyLineBasedDoor
      */
     private InetSocketAddress remoteAddress;
 
+    /**
+     * The identity resolver factory to be injected into the interpreter.
+     */
+    private final IdentityResolverFactory idResolverFactory;
+
     public NettyLineBasedDoor(String cellName, Args args, NettyLineBasedInterpreterFactory factory,
-                              ExecutorService executor, PoolManagerHandler poolManagerHandler)
+                              ExecutorService executor, PoolManagerHandler poolManagerHandler,
+                              IdentityResolverFactory idResolverFactory)
     {
         super(cellName, args, executor);
 
@@ -166,6 +173,7 @@ public class NettyLineBasedDoor
         }
 
         this.expectProxyProtocol = args.getBooleanOption("expectProxyProtocol");
+        this.idResolverFactory = idResolverFactory;
     }
 
     public void messageArrived(NoRouteToCellException e)
@@ -182,7 +190,7 @@ public class NettyLineBasedDoor
 
         interpreter = factory.create(this, getNucleus().getThisAddress(),
                                      remoteAddress, proxyAddress, localAddress,
-                                     writer, executor, poolManager);
+                                     writer, executor, poolManager, idResolverFactory);
         if (interpreter instanceof CellCommandListener) {
             addCommandListener(interpreter);
         }

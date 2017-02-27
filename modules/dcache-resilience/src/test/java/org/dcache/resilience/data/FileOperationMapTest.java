@@ -90,6 +90,7 @@ public final class FileOperationMapTest extends TestBase {
         setMocks();
         createCounters();
         createFileOperationHandler();
+        createInaccessibleFileHandler();
         createFileOperationMap();
         poolTaskCompletionHandler = new PoolTaskCompletionHandler();
         poolTaskCompletionHandler.setMap(poolOperationMap);

@@ -98,6 +98,8 @@ import org.dcache.srm.Logger;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.util.PortRange;
 
+import static org.dcache.util.URIs.portWithDefault;
+
 
 /**
  *
@@ -517,7 +519,7 @@ public class Copier implements Runnable {
         }
         else {
             command = command+
-            " -src-host-port "+from.getHost()+":"+from.getPort();
+            " -src-host-port "+from.getHost()+":"+portWithDefault(from);
         }
         command = command+
         " -src-path "+from.getPath()+
@@ -527,7 +529,7 @@ public class Copier implements Runnable {
         }
         else {
             command = command+
-            " -dst-host-port "+to.getHost()+":"+to.getPort();
+            " -dst-host-port "+to.getHost()+":"+portWithDefault(to);
         }
         command = command+
         " -dst-path "+to.getPath();
@@ -581,7 +583,7 @@ public class Copier implements Runnable {
             boolean emode = (numberOfStreams!=1);
             if(! dryRun ) {
                 GridftpClient client = new GridftpClient(src_url.getHost(),
-                                                         src_url.getPort(),
+                                                         portWithDefault(src_url),
                                                          configuration.getBuffer_size(),
                                                          configuration.getGlobus_tcp_port_range() != null
                                                          ? PortRange.valueOf(configuration.getGlobus_tcp_port_range())
@@ -640,7 +642,7 @@ public class Copier implements Runnable {
             boolean emode = (numberOfStreams!=1);
             if(! dryRun ) {
                 GridftpClient client = new GridftpClient(dst_url.getHost(),
-                                                         dst_url.getPort(),
+                                                         portWithDefault(dst_url),
                                                          configuration.getBuffer_size(),
                                                          configuration.getGlobus_tcp_port_range() != null
                                                          ? PortRange.valueOf(configuration.getGlobus_tcp_port_range())

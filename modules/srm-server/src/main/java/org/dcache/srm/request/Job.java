@@ -78,6 +78,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.dcache.srm.SRMAbortedException;
@@ -726,6 +727,10 @@ public abstract class Job  {
         } finally {
             runlock();
         }
+    }
+
+    public int getRemainingLifetimeIn(TimeUnit unit) {
+        return (int) Math.min(unit.convert(getRemainingLifetime(), TimeUnit.MILLISECONDS), Integer.MAX_VALUE);
     }
 
     public long getLastStateTransitionTime(){

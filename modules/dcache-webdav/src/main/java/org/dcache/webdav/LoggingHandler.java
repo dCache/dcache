@@ -19,8 +19,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 
+import static org.dcache.http.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
 import static org.dcache.webdav.DcacheResourceFactory.TRANSACTION_ATTRIBUTE;
-import static org.dcache.webdav.AuthenticationHandler.DCACHE_SUBJECT_ATTRIBUTE;
 
 
 public class LoggingHandler extends HandlerWrapper {

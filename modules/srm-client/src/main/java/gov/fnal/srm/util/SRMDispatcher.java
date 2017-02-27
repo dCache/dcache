@@ -72,7 +72,7 @@ import java.net.URI;
 import java.util.Date;
 
 import org.dcache.srm.Logger;
-import org.dcache.srm.util.SrmUrl;
+import org.dcache.util.URIs;
 
 /**
  *
@@ -415,8 +415,8 @@ public class SRMDispatcher {
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls     = new java.net.URI[number_of_surls];
             for(int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMGetFileMetaDataClientV1(configuration, surls, surl_strings);
@@ -426,8 +426,8 @@ public class SRMDispatcher {
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls     = new java.net.URI[number_of_surls];
             for(int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMGetPermissionClientV2(configuration, surls,surl_strings);
@@ -437,8 +437,8 @@ public class SRMDispatcher {
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls     = new java.net.URI[number_of_surls];
             for(int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMCheckPermissionClientV2(configuration, surls,surl_strings);
@@ -448,16 +448,16 @@ public class SRMDispatcher {
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls     = new java.net.URI[number_of_surls];
             for(int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMExtendFileLifeTimeClientV2(configuration, surls,surl_strings);
         }
         else if (configuration.isSetPermission()) {
             String surl_string = configuration.getSetPermissionSurl();
-            java.net.URI surl     = SrmUrl.createWithDefaultPort(surl_string,
-                                                                 configuration.getDefaultSrmPortNumber());
+            java.net.URI surl = URIs.createWithDefaultPort(surl_string,
+                    "srm", configuration.getDefaultSrmPortNumber());
             srmclient = new SRMSetPermissionClientV2(configuration, surl,surl_string);
         }
         else if (configuration.isls()) {
@@ -465,8 +465,8 @@ public class SRMDispatcher {
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls      = new java.net.URI[number_of_surls];
             for(int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient              = new SRMLsClientV2(configuration, surls, surl_strings);
@@ -485,8 +485,8 @@ public class SRMDispatcher {
             }
             java.net.URI[] surls      = new java.net.URI[number_of_surls];
             for (int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient              = new SRMReserveSpaceClientV2(configuration, surls[0]);
@@ -505,8 +505,8 @@ public class SRMDispatcher {
             }
             java.net.URI[] surls      = new java.net.URI[number_of_surls];
             for (int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient              = new SRMReleaseSpaceClientV2(configuration, surls[0]);
@@ -516,8 +516,8 @@ public class SRMDispatcher {
             if (  surl_string == null ) {
                 throw new IllegalArgumentException("Must specify SRM URL" ) ;
             }
-            java.net.URI surl      = SrmUrl.withDefaultPort(surl_string,
-                                                            configuration.getDefaultSrmPortNumber());
+            java.net.URI surl = URIs.withDefaultPort(surl_string,
+                    "srm", configuration.getDefaultSrmPortNumber());
             srmclient              = new SRMGetSpaceMetaDataClientV2(configuration, surl);
         }
         else if (configuration.isGetSpaceTokens()) {
@@ -525,8 +525,8 @@ public class SRMDispatcher {
             if (  surl_string == null ) {
                 throw new IllegalArgumentException("Must specify SRM URL" ) ;
             }
-            java.net.URI surl      = SrmUrl.withDefaultPort(surl_string,
-                                                            configuration.getDefaultSrmPortNumber());
+            java.net.URI surl = URIs.withDefaultPort(surl_string,
+                    "srm", configuration.getDefaultSrmPortNumber());
             srmclient              = new SRMGetSpaceTokensClientV2(configuration, surl);
         }
         else if (configuration.isStage()) {
@@ -534,8 +534,8 @@ public class SRMDispatcher {
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls      = new java.net.URI[number_of_surls];
             for(int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient              = new SRMStageClientV1(configuration, surls);
@@ -551,8 +551,8 @@ public class SRMDispatcher {
             }
             java.net.URI[] surls      = new java.net.URI[number_of_surls];
             for (int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMRmdirClientV2(configuration, surls[0], surl_strings[0]);
@@ -568,8 +568,8 @@ public class SRMDispatcher {
             }
             java.net.URI[] surls      = new java.net.URI[number_of_surls];
             for (int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMMkDirClientV2(configuration, surls[0], surl_strings[0]);
@@ -579,8 +579,8 @@ public class SRMDispatcher {
             int number_of_surls    = surl_strings.length;
             java.net.URI[] surls      = new java.net.URI[number_of_surls];
             for (int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMRmClientV2(configuration, surls, surl_strings);
@@ -590,8 +590,8 @@ public class SRMDispatcher {
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls     = new java.net.URI[number_of_surls];
             for (int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient = new SRMAdvisoryDeleteClientV1(configuration, surls, surl_strings);
@@ -599,21 +599,21 @@ public class SRMDispatcher {
         else if(configuration.isGetRequestStatus()) {
             String surl_string = configuration.getGetRequestStatusSurl();
             int requestId      = configuration.getGetRequestStatusId();
-            java.net.URI surl     = SrmUrl.createWithDefaultPort(surl_string,
-                                                                 configuration.getDefaultSrmPortNumber());
+            java.net.URI surl = URIs.createWithDefaultPort(surl_string,
+                    "srm", configuration.getDefaultSrmPortNumber());
 
             srmclient          = new SRMGetRequestStatusClientV1(configuration, surl,requestId);
         }
         else if(configuration.isGetRequestSummary()) {
             String surl_string = configuration.getGetRequestStatusSurl();
-            java.net.URI surl     = SrmUrl.createWithDefaultPort(surl_string,
-                                                                 configuration.getDefaultSrmPortNumber());
+            java.net.URI surl = URIs.createWithDefaultPort(surl_string,
+                    "srm", configuration.getDefaultSrmPortNumber());
             srmclient          = new SRMGetRequestSummaryClientV2(configuration, surl);
         }
         else if(configuration.isGetRequestTokens()) {
             String surl_string = configuration.getGetRequestStatusSurl();
-            java.net.URI surl     = SrmUrl.createWithDefaultPort(surl_string,
-                                                                 configuration.getDefaultSrmPortNumber());
+            java.net.URI surl = URIs.createWithDefaultPort(surl_string,
+                    "srm", configuration.getDefaultSrmPortNumber());
             srmclient          = new SRMGetRequestTokensClientV2(configuration, surl);
         }
         else if (configuration.isMove()) {
@@ -636,10 +636,10 @@ public class SRMDispatcher {
                 from           = configuration.getFrom()[0];
                 to             = configuration.getTo();
             }
-            java.net.URI from_url = SrmUrl.createWithDefaultPort(from,
-                                                                 configuration.getDefaultSrmPortNumber());
-            java.net.URI to_url   = SrmUrl.createWithDefaultPort(to,
-                                                                 configuration.getDefaultSrmPortNumber());
+            java.net.URI from_url = URIs.createWithDefaultPort(from,
+                    "srm", configuration.getDefaultSrmPortNumber());
+            java.net.URI to_url   = URIs.createWithDefaultPort(to,
+                    "srm", configuration.getDefaultSrmPortNumber());
             java.net.URI[] surls  = new java.net.URI[2];
             surls[0] = from_url;
             surls[1] = to_url;
@@ -777,16 +777,16 @@ public class SRMDispatcher {
             int number_of_surls   = surl_strings.length;
             java.net.URI[] surls      = new java.net.URI[number_of_surls];
             for(int i=0;i<number_of_surls;++i) {
-                surls[i] = SrmUrl.createWithDefaultPort(surl_strings[i],
-                                                        configuration.getDefaultSrmPortNumber());
+                surls[i] = URIs.createWithDefaultPort(surl_strings[i],
+                        "srm", configuration.getDefaultSrmPortNumber());
             }
             checkURLSUniformity(SRM_URL, surls, false);
             srmclient              = new SRMBringOnlineClientV2(configuration, surls);
         }
         else if(configuration.isPing()) {
             URI surl_string = configuration.getSrmUrl();
-            java.net.URI surl = SrmUrl.withDefaultPort(surl_string,
-                                                       configuration.getDefaultSrmPortNumber());
+            java.net.URI surl = URIs.withDefaultPort(surl_string,
+                    "srm", configuration.getDefaultSrmPortNumber());
             if(configuration.getSrmProtocolVersion() == 1) {
                 srmclient  = new SRMPingClientV1(configuration,surl);
             }
@@ -799,8 +799,8 @@ public class SRMDispatcher {
             if (  surl_string == null ) {
                 throw new IllegalArgumentException("Must specify SRM URL" ) ;
             }
-            java.net.URI surl      = SrmUrl.withDefaultPort(surl_string,
-                                                            configuration.getDefaultSrmPortNumber());
+            java.net.URI surl = URIs.withDefaultPort(surl_string,
+                    "srm", configuration.getDefaultSrmPortNumber());
             srmclient           = new SRMAbortRequestClientV2(configuration, surl);
         }
         else if (configuration.isAbortFiles()) {

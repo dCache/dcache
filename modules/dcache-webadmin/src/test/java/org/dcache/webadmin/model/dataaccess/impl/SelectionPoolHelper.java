@@ -54,6 +54,11 @@ public class SelectionPoolHelper implements SelectionPool {
         this.readonly = rdOnly;
     }
 
+    @Override
+    public boolean hasAnyHsmFrom(Collection<String> hsm) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }

@@ -92,7 +92,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.RequestStatusTool;
-import org.dcache.srm.util.SrmUrl;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTPutFileRequest;
@@ -116,6 +115,7 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
+import org.dcache.util.URIs;
 
 /**
  *
@@ -199,7 +199,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             return;
         }
         try {
-            java.net.URI srmUrl = SrmUrl.createWithDefaultPort(SURLs[0]);
+            java.net.URI srmUrl = URIs.createWithDefaultPort(SURLs[0]);
             srmv2 = new SRMClientV2(srmUrl,
                                     credential.getDelegatedCredential(),
                                     retry_timout,
@@ -457,8 +457,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                                      int retry_num,
                                      String caCertificatePath, Transport transport) throws Exception
     {
-        java.net.URI srmUrl = SrmUrl.createWithDefaultPort(surl);
-        SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
+        SRMClientV2 srmv2 = new SRMClientV2(URIs.createWithDefaultPort(surl),
                                             credential.getDelegatedCredential(),
                                             retry_timeout,
                                             retry_num,

@@ -32,7 +32,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41Session;
-import org.dcache.nfs.v4.xdr.state_owner4;
+import org.dcache.nfs.v4.StateOwner;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.classic.Cancellable;
@@ -142,7 +142,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      */
     private class MoverState extends NFS4State {
 
-        MoverState(state_owner4 owner,  stateid4 stateid) {
+        MoverState(StateOwner owner,  stateid4 stateid) {
             super(owner, stateid);
         }
 
