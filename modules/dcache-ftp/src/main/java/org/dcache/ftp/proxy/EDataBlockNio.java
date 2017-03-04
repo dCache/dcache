@@ -160,7 +160,7 @@ public class EDataBlockNio {
                 break;
             }
 
-            if (n <= 0) {
+            if (n == -1) {
                 break;
             }
             len += n;
@@ -190,7 +190,7 @@ public class EDataBlockNio {
             } catch (Exception e) {
                 break;
             }
-            if (nr <= 0) {
+            if (nr == -1) {
                 break;
             }
             n += nr;
