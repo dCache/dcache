@@ -34,8 +34,9 @@ public class LocationManagerConnector
     private final String _domain;
     private final InetSocketAddress _address;
     private Thread _thread;
-    private String _status = "disconnected";
-    private int _retries;
+    private volatile String _status = "disconnected";
+    private volatile int _retries;
+    private volatile boolean _isRunning;
 
     public LocationManagerConnector(String cellName, String args)
     {
@@ -51,22 +52,13 @@ public class LocationManagerConnector
     {
         _thread = getNucleus().newThread(this, "TunnelConnector");
         _thread.start();
-    }
-
-    private synchronized void setStatus(String s)
-    {
-        _status = s;
-    }
-
-    private synchronized String getStatus()
-    {
-        return _status;
+        _isRunning = true;
     }
 
     private StreamEngine connect()
         throws IOException, InterruptedException
     {
-        setStatus("Connecting to " + _address);
+        _status = "Connecting to " + _address;
         Socket socket;
         try {
             socket = SocketChannel.open(_address).socket();
@@ -96,7 +88,7 @@ public class LocationManagerConnector
         String name = getCellName() + "*";
         Random random = new Random();
         try {
-            while (!Thread.currentThread().isInterrupted()) {
+            while (_isRunning) {
                 try {
                     _retries++;
 
@@ -104,7 +96,7 @@ public class LocationManagerConnector
                     try {
                         tunnel.start().get();
                         _retries = 0;
-                        setStatus("Connected");
+                        _status = "Connected";
                         getNucleus().join(tunnel.getCellName());
                     } finally {
                         try {
@@ -123,35 +115,37 @@ public class LocationManagerConnector
                                                       + e.getMessage());
                 }
 
-                setStatus("Sleeping");
+                _status = "Sleeping";
                 long sleep = random.nextInt(16000) + 4000;
-                _log.warn("Sleeping " + (sleep / 1000) + " seconds");
+                _log.warn("Sleeping {} seconds", sleep / 1000);
                 Thread.sleep(sleep);
             }
         } catch (InterruptedIOException | InterruptedException | ClosedByInterruptException ignored) {
         } finally {
-            setStatus("Terminated");
+            _status = "Terminated";
         }
     }
 
     public String toString()
     {
-        return getStatus();
+        return _status;
     }
 
     @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("Location manager connector : " + getCellName());
-        pw.println("Status   : " + getStatus());
+        pw.println("Status   : " + _status);
         pw.println("Retries  : " + _retries);
     }
 
     @Override
     public void cleanUp()
     {
-        if (_thread != null) {
-            _thread.interrupt();
+        _isRunning = false;
+        Thread thread = _thread;
+        if (thread != null) {
+            thread.interrupt();
         }
     }
 }
