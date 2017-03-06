@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +44,7 @@ import org.dcache.chimera.DirectoryStreamHelper;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
+import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.FsInode_CONST;
 import org.dcache.chimera.FsInode_ID;
 import org.dcache.chimera.FsInode_NAMEOF;
@@ -54,9 +54,9 @@ import org.dcache.chimera.FsInode_PCRC;
 import org.dcache.chimera.FsInode_PCUR;
 import org.dcache.chimera.FsInode_PLOC;
 import org.dcache.chimera.FsInode_PSET;
+import org.dcache.chimera.FsInode_SURI;
 import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.FsInode_TAGS;
-import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.InvalidArgumentChimeraException;
 import org.dcache.chimera.IsDirChimeraException;
@@ -92,7 +92,9 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
-import static org.dcache.nfs.v4.xdr.nfs4_prot.*;
+import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_EXTEND;
+import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_MODIFY;
+import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
 
 /**
  * Interface to a virtual file system.
@@ -233,10 +235,15 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     }
 
     @Override
-    public WriteResult write(Inode inode, byte[] data, long offset, int count, StabilityLevel stabilityLevel) throws IOException {
-        FsInode fsInode = toFsInode(inode);
-        int bytesWritten = fsInode.write(offset, data, 0, count);
-        return new WriteResult(StabilityLevel.FILE_SYNC, bytesWritten);
+    public WriteResult write(Inode inode, byte[] data, long offset, int count,
+                             StabilityLevel stabilityLevel) throws IOException {
+        try {
+            FsInode fsInode = toFsInode(inode);
+            int bytesWritten = fsInode.write(offset, data, 0, count);
+            return new WriteResult(StabilityLevel.FILE_SYNC, bytesWritten);
+        } catch (PermissionDeniedChimeraFsException exception) {
+            throw new PermException(exception.getMessage());
+        }
     }
 
     @Override
@@ -298,6 +305,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             throw new IsDirException(e.getMessage());
         } catch (FileNotFoundHimeraFsException e) {
             throw new StaleException(e.getMessage());
+        } catch (PermissionDeniedChimeraFsException e) {
+            throw new PermException(e.getMessage());
         }
     }
 
@@ -572,7 +581,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     /**
      * Get a {code FsInode} corresponding to provided bytes.
      *
-     * @param bytes to construct inode from.
+     * @param handle to construct inode from.
      * @return object inode.
      * @throws ChimeraFsException
      */
@@ -623,6 +632,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             case NAMEOF:
                 inode = new FsInode_NAMEOF(_fs, ino);
                 break;
+
             case PARENT:
                 inode = new FsInode_PARENT(_fs, ino);
                 break;
@@ -649,6 +659,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
 
             case PCRC:
                 inode = new FsInode_PCRC(_fs, ino);
+                break;
+
+            case SURI:
+                inode = new FsInode_SURI(_fs, ino);
                 break;
 
             default:

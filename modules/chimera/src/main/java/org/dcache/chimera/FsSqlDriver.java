@@ -33,7 +33,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 
 import javax.sql.DataSource;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -52,21 +51,20 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.ServiceLoader;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
-
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.chimera.spi.DBDriverProvider;
+import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
@@ -989,6 +987,20 @@ public class FsSqlDriver {
                          ps.setLong(1, inode.ino());
                          ps.setInt(2, type);
                          ps.setString(3, location);
+                     });
+    }
+
+    /**
+     *
+     *  remove the tape locations for an inode
+     *
+     * @param inode
+     */
+    void clearTapeLocations(FsInode inode) {
+        _jdbc.update("DELETE FROM t_locationinfo WHERE inumber=? AND itype=?",
+                     ps -> {
+                         ps.setLong(1, inode.ino());
+                         ps.setInt(2, StorageGenericLocation.TAPE);
                      });
     }
 

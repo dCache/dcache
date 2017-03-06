@@ -249,6 +249,8 @@ public interface FileSystemProvider extends Closeable {
     void clearInodeLocation(FsInode inode, int type,
                             String location) throws ChimeraFsException;
 
+    void clearTapeLocations(FsInode inode) throws ChimeraFsException;
+
     String[] tags(FsInode inode) throws ChimeraFsException;
 
     Map<String, byte[]> getAllTags(FsInode inode) throws ChimeraFsException;

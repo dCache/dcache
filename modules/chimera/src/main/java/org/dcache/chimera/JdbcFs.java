@@ -332,7 +332,8 @@ public class JdbcFs implements FileSystemProvider {
                 return new FsInode_TAG(this, parent.ino(), cmd[1]);
             }
 
-            if (name.startsWith(".(pset)(") || name.startsWith(".(fset)(")) {
+            if (name.startsWith(".(pset)(") || name.startsWith(".(fset)(")
+                            || name.startsWith(".(suri)(")) {
                 /**
                  * This is not 100% correct, as we throw exist even if
                  * someone tries to set attribute for a file which does not exist.
@@ -830,6 +831,18 @@ public class JdbcFs implements FileSystemProvider {
                 return tagInode;
             }
 
+            if (name.startsWith(".(suri)(")) {
+                String[] cmd = PnfsCommandProcessor.process(name);
+                if (cmd.length != 2) {
+                    throw new FileNotFoundHimeraFsException(name);
+                }
+                FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
+                if (inode == null) {
+                    throw new FileNotFoundHimeraFsException(cmd[1]);
+                }
+                return new FsInode_SURI(this, inode.ino());
+            }
+
             if (name.equals(".(tags)()")) {
                 return new FsInode_TAGS(this, parent.ino());
             }
@@ -898,16 +911,17 @@ public class JdbcFs implements FileSystemProvider {
                 if (cmd.length < 3) {
                     throw new FileNotFoundHimeraFsException(name);
                 }
+
+                FsInode inode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
+                if (inode == null) {
+                    throw new FileNotFoundHimeraFsException(cmd[1]);
+                }
+
                 String[] args = new String[cmd.length - 2];
                 System.arraycopy(cmd, 2, args, 0, args.length);
 
-                FsInode fsetInode = _sqlDriver.inodeOf(parent, cmd[1], NO_STAT);
-                if (fsetInode == null) {
-                    throw new FileNotFoundHimeraFsException(cmd[1]);
-                }
-                return new FsInode_PSET(this, fsetInode.ino(), args);
+                return new FsInode_PSET(this, inode.ino(), args);
             }
-
         }
 
         FsInode inode = _sqlDriver.inodeOf(parent, name, cacheOption);
@@ -1110,6 +1124,14 @@ public class JdbcFs implements FileSystemProvider {
     public void clearInodeLocation(FsInode inode, int type, String location) throws ChimeraFsException {
         inTransaction(status -> {
             _sqlDriver.clearInodeLocation(inode, type, location);
+            return null;
+        });
+    }
+
+    @Override
+    public void clearTapeLocations(FsInode inode) throws ChimeraFsException {
+        inTransaction(status -> {
+            _sqlDriver.clearTapeLocations(inode);
             return null;
         });
     }
