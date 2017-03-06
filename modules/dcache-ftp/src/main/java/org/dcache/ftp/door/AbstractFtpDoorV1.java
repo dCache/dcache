@@ -98,6 +98,7 @@ import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.ProtocolFamily;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.StandardProtocolFamily;
@@ -204,6 +205,8 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.NetLoggerBuilder;
+import org.dcache.util.PortRange;
+import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -220,6 +223,7 @@ import static org.dcache.ftp.door.AnonymousPermission.ALLOW_ANONYMOUS_USER;
 import static org.dcache.ftp.door.AnonymousPermission.FORBID_ANONYMOUS_USER;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.LINK;
+import static org.dcache.util.ByteUnit.MiB;
 import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 
 @Inherited
@@ -815,6 +819,7 @@ public abstract class AbstractFtpDoorV1
     protected int _parallel;
     protected int _bufSize;
     private long _performanceMarkerPeriod = 0;
+    private long _checksumProgressPeriod = 0;
 
     private final String _ftpDoorName;
     private final String _tlogName;
@@ -1293,7 +1298,7 @@ public abstract class AbstractFtpDoorV1
         void acceptCommand(Method method, String name);
     }
 
-    protected FtpTransfer _transfer;
+    protected Transfer _transfer;
 
     public AbstractFtpDoorV1(String ftpDoorName, String tlogName)
     {
@@ -1480,12 +1485,12 @@ public abstract class AbstractFtpDoorV1
         long[] uids = (_subject != null) ? Subjects.getUids(_subject) : new long[0];
         doorInfo.setOwner((uids.length == 0) ? "0" : Long.toString(uids[0]));
         doorInfo.setProcess("0");
-        FtpTransfer transfer = getTransfer();
-        if (transfer != null) {
+        Transfer transfer = getTransfer();
+        if (transfer instanceof FtpTransfer) {
             IoDoorEntry[] entries = { transfer.getIoDoorEntry() };
             doorInfo.setIoDoorEntries(entries);
             doorInfo.setProtocol("GFtp",
-                    String.valueOf(transfer.getVersion()));
+                    String.valueOf(((FtpTransfer)transfer).getVersion()));
         } else {
             IoDoorEntry[] entries = {};
             doorInfo.setIoDoorEntries(entries);
@@ -1566,9 +1571,9 @@ public abstract class AbstractFtpDoorV1
     {
         /* In case of failure, we may have a transfer hanging around.
          */
-        FtpTransfer transfer = getTransfer();
-        if (transfer != null) {
-            transfer.abort(451, "Aborting transfer due to session termination");
+        Transfer transfer = getTransfer();
+        if (transfer instanceof FtpTransfer) {
+            ((FtpTransfer)transfer).abort(451, "Aborting transfer due to session termination");
         }
 
         closePassiveModeServerSocket();
@@ -1621,9 +1626,9 @@ public abstract class AbstractFtpDoorV1
         pw.println("  Last Command  : " + _lastCommand);
         pw.println(" Command Count  : " + _commandCounter);
         pw.println("     I/O Queue  : " + _settings.getIoQueueName());
-        FtpTransfer transfer = _transfer;
-        if (transfer != null) {
-            transfer.getInfo(pw);
+        Transfer transfer = _transfer;
+        if (transfer instanceof FtpTransfer) {
+            ((FtpTransfer)transfer).getInfo(pw);
         }
         pw.println(ac_get_door_info(new Args("")));
     }
@@ -1638,9 +1643,9 @@ public abstract class AbstractFtpDoorV1
                                 GFtpTransferStartedMessage message)
      {
          LOGGER.debug("Received TransferStarted message");
-         FtpTransfer transfer = getTransfer();
-         if (transfer != null) {
-             transfer.redirect(message);
+         Transfer transfer = getTransfer();
+         if (transfer instanceof FtpTransfer) {
+             ((FtpTransfer)transfer).redirect(message);
          }
      }
 
@@ -1648,7 +1653,7 @@ public abstract class AbstractFtpDoorV1
     {
         LOGGER.debug("Received TransferFinished message [rc={}]",
                 message.getReturnCode());
-        FtpTransfer transfer = getTransfer();
+        Transfer transfer = getTransfer();
         if (transfer != null) {
             transfer.finished(message);
         }
@@ -1664,10 +1669,10 @@ public abstract class AbstractFtpDoorV1
 
     public void messageArrived(DoorCancelledUploadNotificationMessage message)
     {
-        FtpTransfer transfer = _transfer;
-        if (transfer != null && transfer.isWrite() &&
+        Transfer transfer = getTransfer();
+        if (transfer instanceof FtpTransfer && transfer.isWrite() &&
                 message.getPnfsId().equals(transfer.getPnfsId())) {
-            transfer.abort(555, message.getExplanation(),
+            ((FtpTransfer)transfer).abort(555, message.getExplanation(),
                     new CancelledUploadException());
         }
     }
@@ -1854,7 +1859,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (algo.startsWith("markers=")) {
-            // REVISIT when support added for dynamic checksum calculation.
+            _checksumProgressPeriod = Long.parseLong(algo.substring(8).split(";") [0]);
             reply("200 OK");
             return;
         }
@@ -2845,22 +2850,57 @@ public abstract class AbstractFtpDoorV1
         }
 
         try {
+            FsPath absPath = absolutePath(path);
             ChecksumFactory cf =
                 ChecksumFactory.getFactory(ChecksumType.getChecksumType(algo));
             FileAttributes attributes =
-                _pnfs.getFileAttributes(absolutePath(path),
-                                        EnumSet.of(CHECKSUM));
+                _pnfs.getFileAttributes(absPath, EnumSet.of(PNFSID, CHECKSUM));
             Checksum checksum = cf.find(attributes.getChecksums());
             if (checksum == null) {
-                throw new FTPCommandException(504, "Checksum is not available, dynamic checksum calculation is not supported");
+                ChecksumCalculatingTransfer cct = new ChecksumCalculatingTransfer(_pnfs, _subject, _authz, absPath, cf, new PortRange(0,0));
+                setTransfer(cct);
+                TimerTask sendProgress = null;
+                try {
+                    cct.setPoolManagerStub(_poolManagerStub);
+                    cct.setPoolStub(_poolStub);
+                    cct.setAllowStaging(false);
+                    if (_checksumProgressPeriod > 0) {
+                        sendProgress = new TimerTask(){
+                                    @Override
+                                    public void run()
+                                    {
+                                        reply(cct.getReply());
+                                    }
+                                };
+                        long period = TimeUnit.SECONDS.toMillis(_checksumProgressPeriod);
+                        TIMER.schedule(sendProgress, period, period);
+                    }
+                    checksum = cct.calculateChecksum();
+                } finally {
+                    if (sendProgress != null) {
+                        sendProgress.cancel();
+                    }
+                    setTransfer(null);
+                }
+                _pnfs.setFileAttributes(attributes.getPnfsId(), FileAttributes.ofChecksum(checksum));
             }
             reply("213 " + checksum.getValue());
-        } catch (CacheException ce) {
+        } catch (InterruptedException | IOException | CacheException e) {
             throw new FTPCommandException(550, "Error retrieving " + path
-                                          + ": " + ce.getMessage());
+                                          + ": " + e.getMessage());
         } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
             throw new FTPCommandException(504, "Unsupported checksum type:" + e);
         }
+    }
+
+    private Checksum calculateChecksum(String file) throws FTPCommandException, IOException
+    {
+        ServerSocket ss = new ServerSocket();
+
+        FtpTransfer transfer = new FtpTransfer(absolutePath(file),
+                            -1, -1, Mode.PASSIVE, "S", 1, (InetSocketAddress) ss.getLocalSocketAddress(),
+                            MiB.toBytes(1), DelayedPassiveReply.NONE, null, 1);
+        return null;
     }
 
     @Help("SCKS <SP> <alg> <SP> <value> - Fail next upload if checksum does not match.")
@@ -3060,24 +3100,14 @@ public abstract class AbstractFtpDoorV1
     {
         LOGGER.debug("client-info: {}", description);
         Map<String,String> items = splitToMap(description);
-        String appname = items.get("appname");
-        if (appname != null && appname.equals("globusonline-fxp")) {
-            /* GlobusOnline transfer client expects an upload to have a
-             * MD5 checksum available, without explicitly saying this, see:
-             *
-             *     https://support.globus.org/entries/23563241
-             *
-             * As a work-around, we do the equivalent to the 'OPTS CKSM MD5'
-             * command.  Note that this requires on-transfer=yes on the
-             * target pool as on-write will ignore this setting.
-             */
-            try {
-                _optCheckSumFactory =
-                        ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e.getMessage(), e);
-            }
-        }
+
+        // If items.get("appname") is "globusonline-fxp" then client is the
+        // Globus transfer service agent responsible for coordinating
+        // transfers.  This may be used to enable any necessary work-arounds.
+        //
+        // REVISIT: FTS stores task-related information in the CLIENTINFO
+        //     argument.  In future, we may want to record client-supplied
+        //     identifiers in billing. (See doTaskid)
 
         reply("250 OK");
     }
@@ -3286,7 +3316,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    protected synchronized FtpTransfer getTransfer()
+    protected synchronized Transfer getTransfer()
     {
         return _transfer;
     }
@@ -3296,7 +3326,7 @@ public abstract class AbstractFtpDoorV1
         return _transfer != null;
     }
 
-    protected synchronized void setTransfer(FtpTransfer transfer)
+    protected synchronized void setTransfer(Transfer transfer)
     {
         _transfer = transfer;
         notifyAll();
@@ -4056,9 +4086,9 @@ public abstract class AbstractFtpDoorV1
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
-        FtpTransfer transfer = getTransfer();
-        if (transfer != null) {
-            transfer.abort(426, "Transfer aborted");
+        Transfer transfer = getTransfer();
+        if (transfer instanceof FtpTransfer) {
+            ((FtpTransfer)transfer).abort(426, "Transfer aborted");
         }
         closeDataSocket();
         reply("226 Abort successful");

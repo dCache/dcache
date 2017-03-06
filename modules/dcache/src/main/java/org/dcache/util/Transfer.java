@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.RequestContainerV5;
+import diskCacheV111.poolManager.RequestContainerV5.RequestState;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.FileExistsCacheException;
@@ -142,10 +143,14 @@ public class Transfer implements Comparable<Transfer>
             MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY));
 
     /**
-     * If true, then pool manager select pool messages with restrict selection
-     * to directly available files only, e.g. no stage or p2p.
+     * Which activities poolmanager is allowed to do.
      */
-    private boolean _useOnlineFilesOnly = false;
+    private EnumSet<RequestState> _allowedRequestStates = EnumSet.allOf(RequestState.class);
+
+    private synchronized EnumSet<RequestState> getAllowedRequestStates()
+    {
+        return EnumSet.copyOf(_allowedRequestStates);
+    }
 
     /**
      * Constructs a new Transfer object.
@@ -471,11 +476,33 @@ public class Transfer implements Comparable<Transfer>
      * @param onlineOnly True, is transfer should use on files directly accessible,
      */
     public synchronized void setOnlineFilesOnly(boolean onlineOnly) {
-        _useOnlineFilesOnly = onlineOnly;
+        if (onlineOnly) {
+            _allowedRequestStates = RequestContainerV5.ONLINE_FILES_ONLY;
+        } else {
+            _allowedRequestStates = RequestContainerV5.allStates;
+        }
     }
 
     public synchronized boolean getOnlineFilesOnly() {
-        return _useOnlineFilesOnly;
+        return _allowedRequestStates.equals(RequestContainerV5.ONLINE_FILES_ONLY);
+    }
+
+    public synchronized void setAllowStaging(boolean isAllowed)
+    {
+        if (isAllowed) {
+            _allowedRequestStates.add(RequestState.ST_STAGE);
+        } else {
+            _allowedRequestStates.remove(RequestState.ST_STAGE);
+        }
+    }
+
+    public synchronized void setAllowPool2Pool(boolean isAllowed)
+    {
+        if (isAllowed) {
+            _allowedRequestStates.add(RequestState.ST_POOL_2_POOL);
+        } else {
+            _allowedRequestStates.remove(RequestState.ST_POOL_2_POOL);
+        }
     }
 
     /**
@@ -977,20 +1004,16 @@ public class Transfer implements Comparable<Transfer>
 
             reply = _poolManager.sendAsync(request, timeout);
         } else {
-            EnumSet<RequestContainerV5.RequestState> allowedStates;
-            if (_useOnlineFilesOnly) {
-                allowedStates = RequestContainerV5.ONLINE_FILES_ONLY;
-            } else {
-                try {
-                    allowedStates = _checkStagePermission.canPerformStaging(_subject,
-                            fileAttributes,
-                            protocolInfo)
-                                    ? RequestContainerV5.allStates
-                                    : RequestContainerV5.allStatesExceptStage;
-                } catch (IOException e) {
-                    return immediateFailedFuture(
-                            new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage()));
+            EnumSet<RequestState> allowedStates = getAllowedRequestStates();
+            try {
+                if (allowedStates.contains(RequestState.ST_STAGE) &&
+                        !_checkStagePermission.canPerformStaging(_subject,
+                        fileAttributes, protocolInfo)) {
+                    allowedStates.remove(RequestState.ST_STAGE);
                 }
+            } catch (IOException e) {
+                return immediateFailedFuture(
+                        new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage()));
             }
 
             PoolMgrSelectReadPoolMsg request =
