@@ -51,7 +51,9 @@ import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.RemotePoolMonitor;
+import org.dcache.restful.policyengine.MigrationPolicyEngine;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.util.PathMapper;
@@ -142,6 +144,7 @@ public class FileResources {
                                                 @QueryParam("children") boolean isList,
                                                 @DefaultValue("false")
                                                 @QueryParam("locality") boolean isLocality,
+                                                @QueryParam("locations") boolean isLocations,
                                                 @DefaultValue("false")
                                                 @QueryParam("qos") boolean isQos,
                                                 @QueryParam("limit") String limit,
@@ -155,7 +158,7 @@ public class FileResources {
         try {
 
             FileAttributes namespaceAttrributes = handler.getFileAttributes(path, attributes);
-            chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, isLocality, path.name());
+            chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, isLocality, path.name(), isLocations);
             if (isQos) {
                 addQoSAttributes(fileAttributes, namespaceAttrributes);
             }
@@ -192,7 +195,7 @@ public class FileResources {
 
                     JsonFileAttributes childrenAttributes = new JsonFileAttributes();
 
-                    chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), isLocality, fName);
+                    chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), isLocality, fName, isLocations);
                     childrenAttributes.setFileName(fName);
                     if (isQos) {
                         addQoSAttributes(childrenAttributes, entry.getFileAttributes());
@@ -227,6 +230,10 @@ public class FileResources {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
             PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+            // FIXME: which attributes do we actually need?
+            FileAttributes attributes =
+                    handler.getFileAttributes(FsPath.ROOT.resolve(path), EnumSet.allOf(FileAttribute.class));
+
             switch (action) {
                 case "mkdir":
                     String folderName = (String) reqPayload.get("name");
@@ -253,8 +260,6 @@ public class FileResources {
                 case "qos":
                     String targetQos = reqPayload.getString("target");
 
-                    // FIXME: which attributes do we actually need?
-                    FileAttributes attributes = handler.getFileAttributes(FsPath.ROOT.resolve(path), EnumSet.allOf(FileAttribute.class));
                     RemotePoolMonitor monitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
                     FileLocality locality = monitor.getFileLocality(attributes, request.getRemoteHost());
 
@@ -262,25 +267,26 @@ public class FileResources {
                         throw new BadRequestException("Transition for directories not supported");
                     }
 
+                    ProtocolInfo info = new HttpProtocolInfo("Http", 1, 1,
+                            new InetSocketAddress(request.getRemoteHost(), 0),
+                            null, null, null,
+                            URI.create("http://"+request.getRemoteHost()+"/"));
+
+                    CellStub cellStub = ServletContextHandlerAttributes.getPoolManger(ctx);
                     CellStub pinmanager = ServletContextHandlerAttributes.getPinManager(ctx);
+
+                    PoolMonitor poolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
+                    MigrationPolicyEngine migrationPolicyEngine =
+                            new MigrationPolicyEngine(attributes, cellStub, poolMonitor);
+
                     switch (targetQos) {
                     case QosManagement.DISK_TAPE:
-                        switch (locality) {
-                        case NEARLINE:
-                        case ONLINE_AND_NEARLINE:
-                            ProtocolInfo info = new HttpProtocolInfo("Http", 1, 1,
-                                            new InetSocketAddress(request.getRemoteHost(), 0),
-                                            null, null, null,
-                                            URI.create("http://"+request.getRemoteHost()+"/"));
-                            PinManagerPinMessage message =
-                                    new PinManagerPinMessage(attributes, info,
-                                            QOS_PIN_REQUEST_ID, -1);
-                            pinmanager.notify(message);
-                            break;
+                        PinManagerPinMessage message =
+                                new PinManagerPinMessage(attributes, info,
+                                        QOS_PIN_REQUEST_ID, -1);
 
-                        default:
-                            throw new BadRequestException("Unsupported QoS transition");
-                        }
+                        migrationPolicyEngine.adjust();
+                        pinmanager.notify(message);
                         break;
 
                     case QosManagement.DISK:
@@ -294,19 +300,11 @@ public class FileResources {
                         }
 
                     case QosManagement.TAPE:
-                        switch (locality) {
-                        case ONLINE_AND_NEARLINE:
-                            PinManagerUnpinMessage message = new PinManagerUnpinMessage(attributes.getPnfsId());
-                            message.setRequestId(QOS_PIN_REQUEST_ID);
-                            pinmanager.notify(message);
-                            break;
+                        PinManagerUnpinMessage messageUnpin = new PinManagerUnpinMessage(attributes.getPnfsId());
+                        messageUnpin.setRequestId(QOS_PIN_REQUEST_ID);
 
-                        case NEARLINE:
-                            break; // Nothing to do.
-
-                        default:
-                            throw new BadRequestException("Unsupported QoS transition");
-                        }
+                        migrationPolicyEngine.adjust();
+                        pinmanager.notify(messageUnpin);
                         break;
 
                     default:
@@ -325,7 +323,7 @@ public class FileResources {
             } else {
                 throw new ForbiddenException(e);
             }
-        } catch (JSONException | CacheException e) {
+        } catch (JSONException | CacheException | InterruptedException | NoRouteToCellException e) {
             throw new BadRequestException(e.getMessage(), e);
         }
         return successfulResponse(Response.Status.CREATED);
@@ -368,21 +366,27 @@ public class FileResources {
      */
     private void chimeraToJsonAttributes(JsonFileAttributes fileAttributes,
                                          FileAttributes namespaceAttrributes,
-                                         boolean isLocality, String name) throws CacheException
-    {
+                                         boolean isLocality,
+                                         String name,
+                                         boolean isLocations) throws CacheException {
         fileAttributes.setMtime(namespaceAttrributes.getModificationTime());
         fileAttributes.setCreationTime(namespaceAttrributes.getCreationTime());
         fileAttributes.setSize(namespaceAttrributes.getSize());
         fileAttributes.setFileType(namespaceAttrributes.getFileType());
         fileAttributes.setFileMimeType(name);
 
+        RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
+
         // when user set locality param. in the request, the locality should be returned only for directories
         if (isLocality && namespaceAttrributes.getFileType() != FileType.DIR) {
 
             String client = request.getRemoteHost();
-            RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
             FileLocality fileLocality = remotePoolMonitor.getFileLocality(namespaceAttrributes, client);
             fileAttributes.setFileLocality(fileLocality);
+        }
+        //TODO could be removed latter
+        if (isLocations){
+            fileAttributes.setLocations(namespaceAttrributes.getLocations());
         }
     }
 

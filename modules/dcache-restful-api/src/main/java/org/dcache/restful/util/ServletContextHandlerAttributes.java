@@ -20,10 +20,12 @@ import static org.dcache.http.AuthenticationHandler.DCACHE_LOGIN_ATTRIBUTES;
 public class ServletContextHandlerAttributes {
     public final static String DL = "org.dcache.restful";
     public final static String CS = "org.dcache.restful.CS";
+    public final static String POOL_MANAGER = "org.dcache.restful.PoolManager";
     public final static String PM = "org.dcache.restful.PM";
     public final static String TF = "org.dcache.restful.TF";
     public final static String PinMngStub = "org.dcache.restful.PinMngStub";
     public final static String PathMapper = "org.dcache.restful.PathMapper";
+
 
 
     public static Subject getSubject()
@@ -78,4 +80,12 @@ public class ServletContextHandlerAttributes {
     {
         return (TransferInfoService) ctx.getAttribute(TF);
     }
+    public static CellStub getPoolManger(ServletContext ctx)
+    {
+        CellStub cellStub = (CellStub) ctx.getAttribute(POOL_MANAGER);
+        return cellStub;
+
+    }
+
+
 }

@@ -426,4 +426,5 @@ public class JsonFileAttributes
     public String getTargetQos() {
         return targetQos;
     }
+
 }
