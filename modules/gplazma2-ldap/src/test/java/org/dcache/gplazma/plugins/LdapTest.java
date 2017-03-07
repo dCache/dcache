@@ -39,8 +39,8 @@ import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
-import org.dcache.gplazma.plugins.Ldap;
 import org.dcache.ldap4testing.EmbeddedServer;
 import org.dcache.util.PrincipalSetMaker;
 
@@ -83,24 +83,24 @@ public class LdapTest {
         ldapServer.start();
 
         Properties properties = new Properties();
-        properties.put(Ldap.LDAP_URL(), "ldap://localhost:" + ldapServer.getSocketAddress().getPort());
-        properties.put(Ldap.LDAP_ORG(), "o=dcache,c=org");
-        properties.put(Ldap.LDAP_USER_FILTER(), "(uid=%s)");
-        properties.put(Ldap.LDAP_PEOPLE_TREE(), "people");
-        properties.put(Ldap.LDAP_GROUP_TREE(), "group");
-        properties.put(Ldap.LDAP_USER_HOME(), "%homeDirectory%");
-        properties.put(Ldap.LDAP_USER_ROOT(), "/");
-        properties.put(Ldap.LDAP_GROUP_MEMBER(), "uniqueMember");
+        properties.put(LDAP_URL, "ldap://localhost:" + ldapServer.getSocketAddress().getPort());
+        properties.put(LDAP_ORG, "o=dcache,c=org");
+        properties.put(LDAP_USER_FILTER, "(uid=%s)");
+        properties.put(LDAP_PEOPLE_TREE, "people");
+        properties.put(LDAP_GROUP_TREE, "group");
+        properties.put(LDAP_USER_HOME, "/home/%uid%");
+        properties.put(LDAP_USER_ROOT, "/");
+        properties.put(LDAP_GROUP_MEMBER, "uniqueMember");
 
-        properties.put(Ldap.LDAP_AUTH(), "simple");
-        properties.put(Ldap.LDAP_BINDDN(), "uid=kermit,ou=people,o=dcache,c=org");
-        properties.put(Ldap.LDAP_BINDPW(), "kermitTheFrog");
+        properties.put(LDAP_AUTH, "simple");
+        properties.put(LDAP_BINDDN, "uid=kermit,ou=people,o=dcache,c=org");
+        properties.put(LDAP_BINDPW, "kermitTheFrog");
 
         plugin = new Ldap(properties);
     }
 
     @Test
-    public void shouldReturnMatchingUidGid() {
+    public void shouldReturnMatchingUidGid() throws AuthenticationException {
         Set<Principal> principals = Sets.newHashSet(KERMIT_PRINCIPAL);
 
         plugin.map(principals);
@@ -113,7 +113,7 @@ public class LdapTest {
     }
 
     @Test
-    public void shouldReturnMatchingUidGidWithExistingPrimaryGid() {
+    public void shouldReturnMatchingUidGidWithExistingPrimaryGid() throws AuthenticationException {
         Set<Principal> principals = Sets.newHashSet(KERMIT_PRINCIPAL, OTHER_PRIMARY_GID);
 
         plugin.map(principals);
@@ -127,7 +127,7 @@ public class LdapTest {
     }
 
     @Test
-    public void shouldDoNothingForNonExisting() {
+    public void shouldDoNothingForNonExisting() throws AuthenticationException {
         Set<Principal> principals = Sets.newHashSet(NON_EXISTING_PRINCIPAL);
         plugin.map(principals);
         assertThat("unexpected number of returned principals", principals, hasSize(1));
@@ -135,47 +135,47 @@ public class LdapTest {
     }
 
     @Test
-    public void shouldReturnCorrectMappedUid() {
+    public void shouldReturnCorrectMappedUid() throws NoSuchPrincipalException {
         Principal mapped = plugin.map(KERMIT_PRINCIPAL);
         assertEquals("unexpected mapping", KERMIT_UID_PRINCIPAL, mapped);
     }
 
     @Test(expected = NoSuchPrincipalException.class)
-    public void shouldFailMappingForNonExisting() {
+    public void shouldFailMappingForNonExisting() throws NoSuchPrincipalException {
         plugin.map(NON_EXISTING_PRINCIPAL);
     }
 
     @Test
-    public void shouldReturnSetContaningUserNameOnReverseMapping() {
+    public void shouldReturnSetContaningUserNameOnReverseMapping() throws NoSuchPrincipalException {
         Set<Principal> rmap = plugin.reverseMap(KERMIT_UID_PRINCIPAL);
         assertThat("Expceted principal not found", rmap, hasItem(KERMIT_PRINCIPAL));
     }
 
     @Test
-    public void shouldReturnSetContaningGroupNameOnReverseMapping() {
+    public void shouldReturnSetContaningGroupNameOnReverseMapping() throws NoSuchPrincipalException {
         Set<Principal> rmap = plugin.reverseMap(new GidPrincipal(1001, false));
         assertThat("Expceted principal not found", rmap, hasItem(ACTOR_GROUP_PRINCIPAL));
     }
 
     @Test
-    public void shouldReturnSerializableSetOnReverseMapping() {
+    public void shouldReturnSerializableSetOnReverseMapping() throws NoSuchPrincipalException {
         Set<Principal> rmap = plugin.reverseMap(KERMIT_UID_PRINCIPAL);
 
         assertThat("Expecting serializable set", instanceOf(Serializable.class));
     }
 
     @Test(expected = NoSuchPrincipalException.class)
-    public void shouldFailReverseMappingForNonExistingUid() {
+    public void shouldFailReverseMappingForNonExistingUid() throws NoSuchPrincipalException {
         plugin.reverseMap(NON_EXISTING_UID_PRINCIPAL);
     }
 
     @Test(expected = NoSuchPrincipalException.class)
-    public void shouldFailReverseMappingForNonExistingGid() {
+    public void shouldFailReverseMappingForNonExistingGid() throws NoSuchPrincipalException {
         plugin.reverseMap(NON_EXISTING_GID_PRINCIPAL);
     }
 
     @Test
-    public void shouldReturnUserHomeAndRoot() {
+    public void shouldReturnUserHomeAndRoot() throws AuthenticationException {
         Set<Principal> principals = Sets.newHashSet(BERND_PRINCIPAL);
         Set<Object> attrs = new HashSet<>();
 
