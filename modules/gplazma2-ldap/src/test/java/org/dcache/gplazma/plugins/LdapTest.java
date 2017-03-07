@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -35,6 +36,7 @@ import org.junit.Test;
 
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
+import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
@@ -182,6 +184,17 @@ public class LdapTest {
         plugin.session(principals, attrs);
         assertThat("expected HOME attribute not found", attrs, hasItem(BERND_HOME_DIRECTORY));
         assertThat("expected ROOT attribute not found", attrs, hasItem(BERND_ROOT_DIRECTORY));
+    }
+
+    @Test
+    public void shouldAllowLogin() throws AuthenticationException {
+        Set<Principal> principals = new HashSet<>();
+
+        plugin.authenticate(Collections.emptySet(),
+                Collections.<Object>singleton(new PasswordCredential("kermit", "kermitTheFrog")),
+                principals);
+
+        assertThat("Expected principal not found", principals, hasItem(KERMIT_PRINCIPAL));
     }
 
     @After
