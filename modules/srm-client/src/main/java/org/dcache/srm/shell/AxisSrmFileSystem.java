@@ -36,6 +36,7 @@ import java.util.Collections;
 
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidPathException;
+import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
@@ -95,11 +96,14 @@ import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
 public class AxisSrmFileSystem implements SrmFileSystem
 {
     private final int MAX_BULK_STAT = 1_000;
-    private final int MAX_LS_RESPONSE = 2_000;
+    private final int DEFAULT_MAX_LS_RESPONSE = 4_096;
 
     private final ISRM srm;
     private final SrmTransferAgent srmAgent = new SrmTransferAgent();
     private X509Credential credential;
+
+    private boolean haveTunedLsSize;
+    private int maxLsResponse = DEFAULT_MAX_LS_RESPONSE;
 
     public AxisSrmFileSystem(ISRM srm)
     {
@@ -289,6 +293,7 @@ public class AxisSrmFileSystem implements SrmFileSystem
             response.setDetails(status.getDetails());
             response.setReturnStatus(status.getReturnStatus());
         }
+        checkSuccess(response.getReturnStatus());
         TMetaDataPathDetail details = response.getDetails().getPathDetailArray()[0];
         checkBulkSuccess(response.getReturnStatus(), Collections.singletonList(details.getStatus()));
         return details;
@@ -298,8 +303,47 @@ public class AxisSrmFileSystem implements SrmFileSystem
     @Override
     public TMetaDataPathDetail[] list(URI surl, boolean verbose) throws RemoteException, SRMException, InterruptedException
     {
+        try {
+            return doList(surl, verbose);
+        } catch (SRMTooManyResultsException e) {
+            if (haveTunedLsSize) {
+                throw e;
+            } else {
+                maxLsResponse = tuneLsSize(surl, verbose);
+                haveTunedLsSize = true;
+                return doList(surl, verbose);
+            }
+        }
+    }
+
+    private int tuneLsSize(URI surl, boolean verbose)  throws RemoteException, SRMException, InterruptedException
+    {
+        System.err.print("Tuning requests for optimal size");
+
+        int bad = maxLsResponse;
+        int good = 1;
+        try {
+            while (bad-good > 1) {
+                System.err.print(".");
+                int probe = (bad+good)/2;
+                try {
+                    list(surl, verbose, 0, probe);
+                    good = probe;
+                } catch (SRMTooManyResultsException e) {
+                    bad = probe;
+                }
+            }
+        } finally {
+            System.err.println();
+        }
+
+        return good;
+    }
+
+    private TMetaDataPathDetail[] doList(URI surl, boolean verbose) throws RemoteException, SRMException, InterruptedException
+    {
         int offset = 0;
-        int count = MAX_LS_RESPONSE;
+        int count = maxLsResponse;
         TMetaDataPathDetail[] list = {};
         do {
             TMetaDataPathDetail detail = list(surl, verbose, offset, count);
