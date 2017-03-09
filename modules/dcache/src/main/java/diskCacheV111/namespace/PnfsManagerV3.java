@@ -14,12 +14,15 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.Subject;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
@@ -32,12 +35,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
-import javax.security.auth.Subject;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -98,6 +95,7 @@ import org.dcache.namespace.PermissionHandler;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.ColumnWriter;
 import org.dcache.util.MathUtils;
 import org.dcache.util.PrefixMap;
 import org.dcache.vehicles.FileAttributes;
@@ -904,6 +902,37 @@ public class PnfsManagerV3
         }
     }
 
+    @Command(name = "get file checksums",
+            hint = "returns file checksums of all types stored in the PnfsManager",
+            description = "Display the checksums of all the types stored in PnfsManager corresponding to " +
+                    "the specified file. Nothing is returned if there is no corresponding checksum.")
+    public class GetFileChecksumsCommand implements Callable<String>
+    {
+        @Argument(index = 0,
+                usage = "PnfsId of the file.")
+        PnfsId pnfsId;
+
+        @Override
+        public String call() throws CacheException, NoSuchAlgorithmException
+        {
+            Set<Checksum> checksums = getChecksums(ROOT, pnfsId);
+
+            if (checksums.isEmpty()) {
+                return "";
+            } else {
+                ColumnWriter writer = new ColumnWriter()
+                        .header("TYPE").left("type").space()
+                        .header("CHECKSUM").left("checksum");
+                for (Checksum checksum : checksums) {
+                    writer.row()
+                            .value("type", checksum.getType())
+                            .value("checksum", checksum.getValue());
+                }
+                return writer.toString();
+            }
+        }
+    }
+
     @Command(name = "set log slow threshold",
              hint = "set the threshold for reporting slow PNFS interactions",
              description = "Enable reporting of slow PNFS interactions." +
@@ -1005,6 +1034,15 @@ public class PnfsManagerV3
             _nameSpaceProvider.getFileAttributes(subject, pnfsId,
                                                  EnumSet.of(FileAttribute.CHECKSUM));
         return factory.find(attributes.getChecksums());
+    }
+
+    private Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
+            throws CacheException, NoSuchAlgorithmException
+    {
+        FileAttributes attributes =
+                _nameSpaceProvider.getFileAttributes(subject, pnfsId,
+                        EnumSet.of(FileAttribute.CHECKSUM));
+        return attributes.getChecksumsIfPresent().or(Collections.emptySet());
     }
 
     private void setChecksum(PnfsSetChecksumMessage msg){
