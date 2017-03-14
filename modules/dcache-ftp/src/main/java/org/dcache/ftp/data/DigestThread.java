@@ -1,22 +1,24 @@
 package org.dcache.ftp.data;
 
 import java.security.MessageDigest;
+import java.util.Map;
 
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.ChecksumType;
 
 public abstract class DigestThread extends Thread
 {
     protected final RepositoryChannel   _channel;
-    protected final MessageDigest _digest;
+    protected final Map<ChecksumType, MessageDigest> _digests;
     protected final BlockLog      _log;
     protected Exception     _error;
     protected long          _readahead;
 
-    public DigestThread(RepositoryChannel channel, BlockLog log, MessageDigest digest)
+    public DigestThread(RepositoryChannel channel, BlockLog log, Map<ChecksumType, MessageDigest> digests)
     {
         _channel = channel;
         _log     = log;
-        _digest  = digest;
+        _digests  = digests;
         _readahead = Long.MAX_VALUE;
     }
 

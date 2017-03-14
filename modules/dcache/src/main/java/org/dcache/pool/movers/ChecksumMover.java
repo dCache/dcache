@@ -1,6 +1,7 @@
 package org.dcache.pool.movers;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.Set;
 
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -26,7 +27,7 @@ public interface ChecksumMover
      *
      * @return a checksum value for the data or null if none is available.
      */
-    Checksum getActualChecksum();
+    Set<Checksum> getActualChecksums();
 
     /**
      * Obtain an expected checksum provided by the remote party. Called after

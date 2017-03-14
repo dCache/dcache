@@ -1,10 +1,10 @@
 package org.dcache.pool.movers;
 
+import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -26,8 +27,11 @@ import org.dcache.util.ChecksumType;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.dcache.util.ByteUnit.KiB;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -50,7 +54,7 @@ public class ChecksumChannelTest {
         testFile = Files.createTempFile("ChecksumChannelTest", ".tmp");
         RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, "rw");
         ChecksumFactory checksumFactory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        chksumChannel = new ChecksumChannel(mockRepositoryChannel, checksumFactory);
+        chksumChannel = new ChecksumChannel(mockRepositoryChannel, Sets.newHashSet(checksumFactory));
         chksumChannel._readBackBuffer = ByteBuffer.allocate(2);
         chksumChannel._zerosBuffer = ByteBuffer.allocate(1);
         expectedChecksum = new Checksum(ChecksumType.MD5_TYPE, checksumFactory.create().digest(data));
@@ -71,7 +75,7 @@ public class ChecksumChannelTest {
 
         chksumChannel.write(buffer, 0);
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test
@@ -80,8 +84,8 @@ public class ChecksumChannelTest {
 
         chksumChannel.write(buffer, 0);
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test
@@ -90,7 +94,7 @@ public class ChecksumChannelTest {
             chksumChannel.write(buffers[block], block * blocksize);
         }
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test
@@ -100,7 +104,7 @@ public class ChecksumChannelTest {
             chksumChannel.write(buffers[blockorder[i]], blockorder[i] * blocksize);
         }
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test
@@ -111,14 +115,14 @@ public class ChecksumChannelTest {
             chksumChannel.write(buffers[blockorder[i]]);
         }
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test
     public void shouldSucceedIfWrittenInOrderWithMultipleBuffers() throws IOException {
         chksumChannel.write(buffers);
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test
@@ -130,7 +134,7 @@ public class ChecksumChannelTest {
 
         chksumChannel.write(buffers, 1, blockcount);
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test
@@ -139,7 +143,7 @@ public class ChecksumChannelTest {
         buffers[0].rewind();
         chksumChannel.write(buffers[0], 0);
 
-        assertThat(chksumChannel.getChecksum(), equalTo(null));
+        assertThat(chksumChannel.getChecksums(), is(empty()));
     }
 
     @Test
@@ -151,7 +155,7 @@ public class ChecksumChannelTest {
             fail("Pick a blocksize > 1 for testing correct handling of partly overlapping writes!");
         }
 
-        assertThat(chksumChannel.getChecksum(), equalTo(null));
+        assertThat(chksumChannel.getChecksums(), is(empty()));
     }
 
     @Test
@@ -159,7 +163,7 @@ public class ChecksumChannelTest {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
         ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, factory);
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
 
         csc.write(buffers[0]);
     }
@@ -169,7 +173,7 @@ public class ChecksumChannelTest {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
         ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, factory);
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
 
         csc.write(buffers[0], 0);
     }
@@ -180,14 +184,14 @@ public class ChecksumChannelTest {
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(1);
         when(mockRepositoryChannel.read(any(), eq(3L))).thenReturn(1);
         ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, factory);
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
 
         csc.write(buffers[0], 0);
         csc.write(buffers[1], 1);
         csc.write(buffers[3], 3);
         csc.write(buffers[2], 2);
 
-        assertNotNull(csc.getChecksum());
+        assertThat(csc.getChecksums(), is(not(empty())));
     }
 
     @Test
@@ -195,7 +199,7 @@ public class ChecksumChannelTest {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
         ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, factory);
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
 
         csc.write(buffers);
     }
@@ -205,7 +209,7 @@ public class ChecksumChannelTest {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
         ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, factory);
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
 
         csc.write(buffers, 0, blockcount);
     }
@@ -247,12 +251,12 @@ public class ChecksumChannelTest {
             writer.join();
         }
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     @Test(expected = IllegalStateException.class)
     public void shouldThrowIllegalStateExceptionOnWritesAfterGetChecksum() throws IOException {
-        chksumChannel.getChecksum();
+        chksumChannel.getChecksums();
         chksumChannel.write(buffers[0], 0);
     }
 
@@ -275,7 +279,8 @@ public class ChecksumChannelTest {
             writeBuffer.rewind();
         }
         chksumChannel.write(writeBuffer, 0);
-        assertThat(chksumChannel.getChecksum(), notNullValue());
+        assertThat(chksumChannel.getChecksums(), is(not(empty())));
+        assertThat(chksumChannel.getChecksums(), contains(notNullValue()));
     }
 
     @Test
@@ -286,7 +291,7 @@ public class ChecksumChannelTest {
         when(chksumChannel._channel.read(any(), anyLong())).thenReturn(2);
         when(chksumChannel._channel.size()).thenReturn(2L*Integer.MAX_VALUE + 2);
         chksumChannel.write(buffers[0], 2L*Integer.MAX_VALUE);
-        assertThat(chksumChannel.getChecksum(), notNullValue());
+        assertThat(chksumChannel.getChecksums(), is(not(empty())));
     }
 
     @Test
@@ -296,7 +301,7 @@ public class ChecksumChannelTest {
             chksumChannel.write(nonZeroBlocksFromByteArray.get(position), position);
         }
 
-        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksums(), contains(expectedChecksum));
     }
 
     private Map<Long, ByteBuffer> getNonZeroBlocksFromByteArray(byte[] bytes) {

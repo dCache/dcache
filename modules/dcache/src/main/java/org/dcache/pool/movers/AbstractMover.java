@@ -17,9 +17,7 @@
  */
 package org.dcache.pool.movers;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +72,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     protected final String _transferPath;
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
-    private final ChecksumFactory _checksumFactory;
+    private final Set<ChecksumFactory> _checksumFactories;
     private volatile ChecksumChannel _checksumChannel;
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
@@ -96,7 +94,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         _pathToDoor = pathToDoor;
         _handle = handle;
         _transferService = transferService;
-        _checksumFactory = getChecksumFactoryFor(checksumModule, handle);
+        _checksumFactories = getChecksumFactoriesFor(checksumModule,
+                                                     handle);
     }
 
     @Override
@@ -255,7 +254,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
             channel = _handle.createChannel();
             if (getIoMode() == IoMode.WRITE) {
                 try {
-                    channel = _checksumChannel = new ChecksumChannel(channel, _checksumFactory);
+                    channel = _checksumChannel = new ChecksumChannel(channel, _checksumFactories);
                 } catch (Throwable t) {
                     /* This should only happen in case of JVM Errors or if the checksum digest cannot be
                      * instantiated (which, barring bugs, should never happen).
@@ -279,7 +278,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     public Set<Checksum> getActualChecksums() {
         return (_checksumChannel == null)
                 ? Collections.emptySet()
-                : Optional.fromNullable(_checksumChannel.getChecksum()).asSet();
+                : _checksumChannel.getChecksums();
     }
 
     @Override
@@ -304,10 +303,12 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         return sb.toString();
     }
 
-    private static ChecksumFactory getChecksumFactoryFor(ChecksumModule checksumModule, ReplicaDescriptor handle)
+
+    private static Set<ChecksumFactory> getChecksumFactoriesFor(ChecksumModule checksumModule,
+                                                                ReplicaDescriptor handle)
     {
         try {
-            return checksumModule.getPreferredChecksumFactory(handle);
+            return checksumModule.getProvidedChecksumsFactories(handle);
         } catch (NoSuchAlgorithmException | CacheException e) {
             LOGGER.error("Failed to instantiate mover due to unsupported checksum type: " + e.getMessage(), e);
         }

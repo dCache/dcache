@@ -8,23 +8,28 @@ import com.google.common.collect.TreeRangeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InterruptedIOException;
+import javax.annotation.concurrent.GuardedBy;
+
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import javax.annotation.concurrent.GuardedBy;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.ChecksumFactory;
 
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayList;
@@ -49,17 +54,17 @@ public class ChecksumChannel implements RepositoryChannel
     /**
      * Factory object for creating digests.
      */
-    private final ChecksumFactory _checksumFactory;
+    private final Set<ChecksumFactory> _checksumFactories;
 
     /**
      * Digest used for computing the checksum during write.
      */
-    private final MessageDigest _digest;
+    private final Map<ChecksumType, MessageDigest> _digests;
 
     /**
-     * Cached checksum after getChecksum is called the first time.
+     * Cached checksum after getChecksums is called the first time.
      */
-    private Checksum _finalChecksum;
+    private Set<Checksum> _finalChecksums;
 
     /**
      * RangeSet to keep track of written bytes
@@ -69,7 +74,7 @@ public class ChecksumChannel implements RepositoryChannel
     /**
      * The offset where the checksum was calculated.
      */
-    @GuardedBy("_digest")
+    @GuardedBy("_digests")
     private long _nextChecksumOffset = 0L;
 
     /**
@@ -79,7 +84,7 @@ public class ChecksumChannel implements RepositoryChannel
 
     /**
      * Flag to indicate whether we still allow writing to the channel.
-     * This flag is set to false after getChecksum has been called.
+     * This flag is set to false after getChecksums has been called.
      */
     @GuardedBy("_ioStateLock")
     private boolean _isWritable = true;
@@ -113,11 +118,12 @@ public class ChecksumChannel implements RepositoryChannel
     ByteBuffer _zerosBuffer = ZERO_BUFFER.duplicate();
 
     public ChecksumChannel(RepositoryChannel inner,
-                           ChecksumFactory checksumFactory)
+                           Set<ChecksumFactory> checksumFactories)
     {
         _channel = inner;
-        _checksumFactory = checksumFactory;
-        _digest = _checksumFactory.create();
+        _checksumFactories = checksumFactories;
+        _digests = _checksumFactories.stream().collect(Collectors.toMap(f -> f.getType(),
+                                                                        f -> f.create()));
     }
 
     @Override
@@ -142,7 +148,7 @@ public class ChecksumChannel implements RepositoryChannel
     public int write(ByteBuffer buffer, long position) throws IOException {
         _ioStateReadLock.lock();
         try {
-            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksum");
+            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksums");
 
             int bytes;
             if (_isChecksumViable) {
@@ -197,7 +203,7 @@ public class ChecksumChannel implements RepositoryChannel
         _ioStateReadLock.lock();
         try {
 
-            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksum");
+            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksums");
 
             int bytes;
             if (_isChecksumViable) {
@@ -217,7 +223,7 @@ public class ChecksumChannel implements RepositoryChannel
         _ioStateReadLock.lock();
         try {
 
-            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksum");
+            checkState(_isWritable, "ChecksumChannel must not be written to after getChecksums");
 
             long bytes = 0;
             if (_isChecksumViable) {
@@ -273,16 +279,16 @@ public class ChecksumChannel implements RepositoryChannel
     /**
      * @return final checksum of this channel
      */
-    public Checksum getChecksum()
+    public Set<Checksum> getChecksums()
     {
         if (!_isChecksumViable) {
-            return null;
+            return Collections.emptySet();
         }
 
-        if (_finalChecksum == null) {
-            _finalChecksum = finalizeChecksum();
+        if (_finalChecksums == null) {
+            _finalChecksums = finalizeChecksums();
         }
-        return _finalChecksum;
+        return _finalChecksums;
     }
 
     /**
@@ -290,7 +296,7 @@ public class ChecksumChannel implements RepositoryChannel
      *
      * @return Checksum
      */
-    private Checksum finalizeChecksum() {
+    private Set<Checksum> finalizeChecksums() {
 
         _ioStateWriteLock.lock();
         try {
@@ -301,14 +307,16 @@ public class ChecksumChannel implements RepositoryChannel
 
         // we need to synchronize on rangeSet and digest get exclusive access
         synchronized (_dataRangeSet) {
-            synchronized (_digest) {
+            synchronized (_digests) {
                 try {
 
                     if (_dataRangeSet.asRanges().size() != 1 || _nextChecksumOffset == 0) {
                         feedZerosToDigesterForRangeGaps();
                     }
 
-                    return _checksumFactory.create(_digest.digest());
+                    return _checksumFactories.stream().map(e -> e.create(_digests.get(e.getType())
+                                                                                        .digest()))
+                                                      .collect(Collectors.toSet());
                 } catch (IOException e) {
                     _log.info("Unable to generate checksum of sparse file: {}", e.toString());
                     return null;
@@ -391,32 +399,34 @@ public class ChecksumChannel implements RepositoryChannel
             fileStartRange = _dataRangeSet.rangeContaining(0L);
         }
 
-        synchronized (_digest) {
-
+        synchronized (_digests) {
             /*
              * we are one of the threads which got the merge into continues block.
              * Nevertheless, there may be a different thread which needs to update
              * ahead of us. Wait for our turn.
              */
             while(_nextChecksumOffset != position) {
-               try {
-                    _digest.wait();
-               } catch (InterruptedException e) {
+                try {
+                    _digests.wait();
+                } catch (InterruptedException e) {
                     throw new InterruptedIOException();
-               }
+                }
             }
 
             long bytesToRead = fileStartRange.upperEndpoint() - position;
 
             // update current buffer and then keep procesing following blocks, if any
             bytesToRead -= buffer.remaining();
-            // update offset prior digest calculation as digets#update will update position in the buffer
+            // update offset prior digest calculation as digests#update will update position in the buffer
             _nextChecksumOffset += buffer.remaining();
-            _digest.update(buffer);
+
+            _digests.values().stream().forEach(d -> {
+                d.update(buffer.duplicate());
+            });
 
             long expectedOffsetAfterRead = _nextChecksumOffset + bytesToRead;
-            try {
-
+            try
+            {
                 while (bytesToRead > 0) {
                     _readBackBuffer.clear();
                     long limit = Math.min(_readBackBuffer.capacity(), bytesToRead);
@@ -428,7 +438,11 @@ public class ChecksumChannel implements RepositoryChannel
                     }
 
                     _readBackBuffer.flip();
-                    _digest.update(_readBackBuffer);
+
+                    _digests.values().stream().forEach(d -> {
+                        d.update(_readBackBuffer.duplicate());
+                    });
+
                     bytesToRead -= lastBytesRead;
                     _nextChecksumOffset += lastBytesRead;
                 }
@@ -438,7 +452,7 @@ public class ChecksumChannel implements RepositoryChannel
                 throw e;
             } finally {
                 _nextChecksumOffset = expectedOffsetAfterRead;
-                _digest.notifyAll();
+                _digests.notifyAll();
             }
         }
     }

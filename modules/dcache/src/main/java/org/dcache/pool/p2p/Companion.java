@@ -1,6 +1,7 @@
 package org.dcache.pool.p2p;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -26,7 +27,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -296,8 +299,8 @@ class Companion
         try {
             try {
                 handle.allocate(handle.getFileAttributes().getSize());
-                ChecksumFactory checksumFactory = _checksumModule.getPreferredChecksumFactory(handle);
-                Set<Checksum> actualChecksums = copy(uri, handle, checksumFactory);
+                Set<ChecksumFactory> checksumFactories = _checksumModule.getProvidedChecksumsFactories(handle);
+                Set<Checksum> actualChecksums = copy(uri, handle, checksumFactories);
                 _checksumModule.enforcePostTransferPolicy(handle, actualChecksums);
             } finally {
                 setThread(null);
@@ -317,10 +320,10 @@ class Companion
         }
     }
 
-    private Set<Checksum> copy(String uri, ReplicaDescriptor handle, ChecksumFactory checksumFactory)
+    private Set<Checksum> copy(String uri, ReplicaDescriptor handle, Set<ChecksumFactory> checksumFactories)
             throws IOException
     {
-        try (ChecksumChannel checksumChannel = new ChecksumChannel(handle.createChannel(), checksumFactory)) {
+        try (ChecksumChannel checksumChannel = new ChecksumChannel(handle.createChannel(), checksumFactories)) {
 
             HttpGet get = new HttpGet(uri);
             get.addHeader(HttpHeaders.CONNECTION, HTTP.CONN_CLOSE);
@@ -363,8 +366,7 @@ class Companion
             } finally {
                 setRequest(null);
             }
-
-            return Optional.fromNullable(checksumChannel.getChecksum()).asSet();
+            return checksumChannel.getChecksums();
         }
     }
 

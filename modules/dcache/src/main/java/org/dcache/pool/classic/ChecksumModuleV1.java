@@ -18,6 +18,7 @@
 package org.dcache.pool.classic;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -365,11 +367,13 @@ public class ChecksumModuleV1
     }
 
     @Override
-    public ChecksumFactory getPreferredChecksumFactory(ReplicaDescriptor handle)
+    public Set<ChecksumFactory> getProvidedChecksumsFactories(ReplicaDescriptor handle)
             throws NoSuchAlgorithmException, CacheException
     {
-        List<Checksum> existingChecksumsByPreference = Checksums.preferrredOrder().sortedCopy(handle.getChecksums());
-        return ChecksumFactory.getFactory(existingChecksumsByPreference, getDefaultChecksumType());
+        List<Checksum> existingChecksumsByPreference = Checksums.preferrredOrder()
+                                                                .sortedCopy(
+                                                                        Iterables.concat(handle.getChecksums()));
+        return ChecksumFactory.getFactories(existingChecksumsByPreference, getDefaultChecksumType());
     }
 
     @Override

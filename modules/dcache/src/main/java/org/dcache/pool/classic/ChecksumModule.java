@@ -20,6 +20,7 @@ package org.dcache.pool.classic;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -72,15 +73,15 @@ public interface ChecksumModule
     boolean hasPolicy(PolicyFlag policy);
 
     /**
-     * Returns a supported checksum factory for one of the known checksums
+     * Returns a set of supported checksum factories for each of the known checksums
      * of a file, or a default factory if none are supported or known.
      *
      * @param handle A replica descriptor
-     * @return A checksum factory
+     * @return Set of  checksum factories for the provided checksums
      * @throws NoSuchAlgorithmException If no suitable checksum algorithm is supported
      * @throws CacheException If the checksums of the file could not be retrieved
      */
-    ChecksumFactory getPreferredChecksumFactory(ReplicaDescriptor handle)
+    Set<ChecksumFactory> getProvidedChecksumsFactories(ReplicaDescriptor handle)
             throws NoSuchAlgorithmException, CacheException;
 
     /**

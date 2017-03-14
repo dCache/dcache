@@ -78,8 +78,12 @@ import java.nio.ByteBuffer;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -125,8 +129,8 @@ public class RemoteGsiftpTransferProtocol
     private long _timeout_time;
     private PnfsId _pnfsId;
 
-    private ChecksumFactory _checksumFactory;
-    private MessageDigest _transferMessageDigest;
+    private Set<ChecksumFactory> _checksumFactories;
+    private Map<ChecksumType, MessageDigest> _transferMessageDigests;
 
     private long _previousUpdateEndOffset;
 
@@ -199,12 +203,14 @@ public class RemoteGsiftpTransferProtocol
         /* If on transfer checksum calculation is enabled, check if
          * we have a protocol specific preferred algorithm.
          */
-        if (_checksumFactory != null) {
+        if (_checksumFactories != null) {
             ChecksumFactory factory = getChecksumFactory(remoteGsiftpProtocolInfo);
             if (factory != null) {
-                _checksumFactory = factory;
+                _checksumFactories = new HashSet<>(Arrays.asList(factory));
             }
-            _transferMessageDigest = _checksumFactory.create();
+            _transferMessageDigests = _checksumFactories.stream()
+                                                        .collect(Collectors.toMap(f -> f.getType(),
+                                                                                  f -> f.create()));
         }
 
         createFtpClient(remoteGsiftpProtocolInfo);
@@ -322,10 +328,10 @@ public class RemoteGsiftpTransferProtocol
     }
 
     @Override
-    public Checksum getActualChecksum()
+    public Set<Checksum> getActualChecksums()
     {
         try {
-            if (_transferMessageDigest == null) {
+            if (_transferMessageDigests == null) {
                 return null;
             }
 
@@ -333,11 +339,14 @@ public class RemoteGsiftpTransferProtocol
             _fileChannel.position(_previousUpdateEndOffset);
             while (_fileChannel.read(buffer) >= 0) {
                 buffer.flip();
-                _transferMessageDigest.update(buffer);
+                _transferMessageDigests.values().forEach(d -> d.update(buffer));
                 buffer.clear();
             }
 
-            return _checksumFactory.create(_transferMessageDigest.digest());
+            return _checksumFactories.stream()
+                                     .map(f -> f.create(_transferMessageDigests.get(f.getType())
+                                                                               .digest()))
+                                     .collect(Collectors.toSet());
         } catch (IOException e) {
             _log.error(e.toString());
             return null;
@@ -371,9 +380,11 @@ public class RemoteGsiftpTransferProtocol
     public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
             throws NoSuchAlgorithmException
     {
-        _checksumFactory = ChecksumFactory.getFactory(suggestedAlgorithm);
-        _transferMessageDigest =
-                (_checksumFactory != null) ? _checksumFactory.create() : null;
+        _checksumFactories = new HashSet<>(Arrays.asList(ChecksumFactory.getFactory(suggestedAlgorithm)));
+        _transferMessageDigests =
+                (_checksumFactories != null) ?  _checksumFactories.stream().collect(Collectors.toMap(f -> f.getType(),
+                                                                                                     f -> f.create()))
+                                             : null;
     }
 
     @Override
@@ -391,10 +402,10 @@ public class RemoteGsiftpTransferProtocol
 
         ByteBuffer bb = ByteBuffer.wrap(array, offset, length);
         _fileChannel.write(bb, offsetOfArrayInFile);
-        if (_transferMessageDigest != null
+        if (_transferMessageDigests != null
             && _previousUpdateEndOffset == offsetOfArrayInFile) {
             _previousUpdateEndOffset += length;
-            _transferMessageDigest.update(array, offset, length);
+            _transferMessageDigests.values().forEach(d -> d.update(array, offset, length));
         }
     }
 

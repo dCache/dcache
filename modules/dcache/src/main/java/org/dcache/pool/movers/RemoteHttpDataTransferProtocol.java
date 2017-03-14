@@ -1,6 +1,7 @@
 package org.dcache.pool.movers;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.Sets;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
@@ -23,6 +24,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.Channels;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +39,6 @@ import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 
-import org.dcache.auth.OpenIdCredential;
 import org.dcache.auth.OpenIdCredentialRefreshable;
 import org.dcache.pool.movers.MoverChannel.AllocatorMode;
 import org.dcache.pool.repository.Allocator;
@@ -266,10 +269,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
 
         if (_remoteSuppliedChecksum != null) {
-            Checksum transferChecksum  = (_remoteSuppliedChecksumChannel != null) ?
-                _remoteSuppliedChecksumChannel.getChecksum() : _onTransferChecksumChannel.getChecksum();
+            Set<Checksum> transferChecksum  = (_remoteSuppliedChecksumChannel != null) ?
+                _remoteSuppliedChecksumChannel.getChecksums() : _onTransferChecksumChannel.getChecksums();
 
-            if (!_remoteSuppliedChecksum.equals(transferChecksum)) {
+            if (!transferChecksum.stream().anyMatch(c -> c.equals(_remoteSuppliedChecksum)))
+            {
                 throw new ThirdPartyTransferFailedCacheException(
                         String.format("Received data does not match remote server's checksum (%s != %s)",
                         transferChecksum, _remoteSuppliedChecksum));
@@ -294,14 +298,14 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         RepositoryChannel channel = baseChannel;
 
         if (_onTransfer != null) {
-            channel = _onTransferChecksumChannel = new ChecksumChannel(channel, _onTransfer);
+            channel = _onTransferChecksumChannel = new ChecksumChannel(channel, Sets.newHashSet(_onTransfer));
         }
 
         if (_remoteSuppliedChecksum != null &&
                 (_onTransfer == null || _onTransfer.getType() != _remoteSuppliedChecksum.getType())) {
             try {
                 channel = _remoteSuppliedChecksumChannel = new ChecksumChannel(channel,
-                        ChecksumFactory.getFactoryFor(_remoteSuppliedChecksum));
+                        Sets.newHashSet(ChecksumFactory.getFactoryFor(_remoteSuppliedChecksum)));
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException("cannot find algorithm: " +
                         e.getMessage(), e);
@@ -611,9 +615,9 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     }
 
     @Override
-    public Checksum getActualChecksum()
+    public Set<Checksum> getActualChecksums()
     {
-        return _onTransferChecksumChannel != null ? _onTransferChecksumChannel.getChecksum() : null;
+        return _onTransferChecksumChannel != null ? _onTransferChecksumChannel.getChecksums() : Collections.emptySet();
     }
 
     @Override

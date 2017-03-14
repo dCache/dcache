@@ -1,6 +1,7 @@
 package org.dcache.pool.movers;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +19,12 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.file.FileSystems;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -50,13 +57,11 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
-
-import static org.dcache.util.ByteUnit.*;
-
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static org.dcache.util.ByteUnit.*;
 
 /**
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.
@@ -110,12 +115,12 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * If a checksum is requested, this points to the checksum factory
      * to use.
      */
-    protected ChecksumFactory _checksumFactory;
+    protected Set<ChecksumFactory> _checksumFactories;
 
     /**
      * If a checksum is requested, this points to the algorithm used.
      */
-    protected MessageDigest _digest;
+    protected Map<ChecksumType,MessageDigest> _digests = Collections.emptyMap();
 
     /**
      * The role of this transfer in the transaction. Either Sender or
@@ -240,10 +245,10 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      */
     protected DigestThread createDigestThread()
     {
-        if (_digest == null) {
+        if (_digests.isEmpty()) {
             return null;
         }
-        return new DirectDigestThread(_fileChannel, _blockLog, _digest);
+        return new DirectDigestThread(_fileChannel, _blockLog, _digests);
     }
 
     @Override
@@ -422,12 +427,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         /* If on transfer checksum calculation is enabled, check if
          * we have a protocol specific preferred algorithm.
          */
-        if (_checksumFactory != null) {
+        if (_checksumFactories != null) {
             ChecksumFactory factory = getChecksumFactory(gftpProtocolInfo);
             if (factory != null) {
-                _checksumFactory = factory;
+                _checksumFactories = new HashSet<>(Arrays.asList(factory));
             }
-            _digest = _checksumFactory.create();
+            _digests = _checksumFactories.stream().collect(Collectors.toMap(f -> f.getType(),
+                                                                            f -> f.create()));
         }
 
         /* We initialise these things early, as the job timeout
@@ -602,7 +608,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
             throws NoSuchAlgorithmException
     {
-        _checksumFactory = ChecksumFactory.getFactory(suggestedAlgorithm);
+        _checksumFactories = Sets.newHashSet(ChecksumFactory.getFactory(suggestedAlgorithm));
     }
 
     /** Part of the ChecksumMover interface. */
@@ -614,9 +620,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
     /** Part of the ChecksumMover interface. */
     @Override
-    public Checksum getActualChecksum()
+    public Set<Checksum> getActualChecksums()
     {
-        return (_digest == null) ? null : _checksumFactory.create(_digest.digest());
+        return (_digests.isEmpty())
+                        ? Collections.emptySet() :
+                          _checksumFactories.stream()
+                                            .map(f -> f.create(_digests.get(f.getType()).digest()))
+                                            .collect(Collectors.toSet());
     }
 
     /** Part of the ConnectionMonitor interface. */
@@ -774,7 +784,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
             mover.transfer(fileChannel, role, mode, null);
             if (digest.length() > 0) {
-                System.out.println(mover.getActualChecksum());
+                System.out.println(mover.getActualChecksums());
             }
         } catch (Exception e) {
             e.printStackTrace();

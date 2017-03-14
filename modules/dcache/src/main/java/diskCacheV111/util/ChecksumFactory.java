@@ -1,5 +1,7 @@
 package diskCacheV111.util;
 
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,7 +9,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
@@ -61,6 +67,30 @@ public abstract class ChecksumFactory
             }
         }
         return getFactory(defaultType);
+    }
+
+    /**
+     * Returns a Set of ChecksumFactory for the each of the supported checksums.
+     *
+     * @param preferredChecksums Ordered list of checksums
+     * @param defaultType Default type used when none of the preferred types are supported
+     */
+    public static Set<ChecksumFactory> getFactories(Iterable<Checksum> preferredChecksums, ChecksumType defaultType)
+            throws NoSuchAlgorithmException
+    {
+        Map<ChecksumType, ChecksumFactory> checksumFactoryByType = Maps.newHashMap();
+        for (Checksum checksum: preferredChecksums) {
+            if (!checksumFactoryByType.containsKey(checksum.getType())) {
+                checksumFactoryByType.put(checksum.getType(), getFactory(checksum.getType()));
+            }
+        }
+
+        if (!checksumFactoryByType.containsKey(defaultType)) {
+            checksumFactoryByType.put(defaultType, getFactory(defaultType));
+        }
+
+        return Sets.newHashSet(checksumFactoryByType.isEmpty() ? Arrays.asList(getFactory(defaultType))
+                                                               : checksumFactoryByType.values());
     }
 
     public static ChecksumFactory getFactoryFor(Checksum checksum)
