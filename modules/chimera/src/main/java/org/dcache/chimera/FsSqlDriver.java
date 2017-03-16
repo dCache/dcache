@@ -1424,12 +1424,13 @@ public class FsSqlDriver {
      */
     void setInodeChecksum(FsInode inode, int type, String value) {
         _jdbc.update("INSERT INTO t_inodes_checksum (inumber,itype,isum) (SELECT * FROM (VALUES (?,?,?)) v WHERE NOT EXISTS " +
-                     "(SELECT 1 FROM t_inodes_checksum WHERE inumber=?))",
+                     "(SELECT 1 FROM t_inodes_checksum WHERE inumber=? AND itype=?))",
                      ps -> {
                          ps.setLong(1, inode.ino());
                          ps.setInt(2, type);
                          ps.setString(3, value);
                          ps.setLong(4, inode.ino());
+                         ps.setInt(5, type);
                      });
     }
 
