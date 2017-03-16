@@ -742,6 +742,55 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="11.1" author="litvinse" dbms="postgresql">
+        <comment>Handle empty path element in path2inumber function</comment>
+
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION path2inumber(root bigint, path varchar) RETURNS bigint AS $$
+            DECLARE
+                id       bigint := root;
+                elements varchar[] := string_to_array(path, '/');
+                child    bigint;
+                type     int;
+                link     varchar;
+            BEGIN
+                FOR i IN 1..array_upper(elements,1) LOOP
+                    CASE
+                    WHEN elements[i] = '' THEN
+                        RETURN id;
+                    WHEN elements[i] = '.' THEN
+                        child := id;
+                    WHEN elements[i] = '..' THEN
+                        SELECT iparent INTO child FROM t_dirs WHERE ichild = id;
+                        IF NOT FOUND THEN
+                            child := id;
+                        END IF;
+                    ELSE
+                        SELECT d.ichild, c.itype INTO child, type FROM t_dirs d JOIN t_inodes c ON d.ichild = c.inumber WHERE d.iparent = id AND d.iname = elements[i];
+                        IF type = 40960 THEN
+                            SELECT encode(ifiledata,'escape') INTO link FROM t_inodes_data WHERE inumber = child;
+                            IF link LIKE '/%' THEN
+                                child := path2inumber(pnfsid2inumber('000000000000000000000000000000000000'),
+                                                                     substring(link from 2));
+                            ELSE
+                                child := path2inumber(id, link);
+                            END IF;
+                        END IF;
+                    END CASE;
+                    IF child IS NULL THEN
+                        RETURN NULL;
+                    END IF;
+                    id := child;
+                END LOOP;
+                RETURN id;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+
+        <rollback>
+        </rollback>
+    </changeSet>
+
 
     <changeSet id="12" author="behrmann">
         <comment>Replace ipndsid by inumber as foreign key in t_inodes_checksum</comment>
