@@ -2227,7 +2227,9 @@ class FsSqlDriver {
 
         return path;
     }
-    private static final String sqlSetInodeChecksum = "INSERT INTO t_inodes_checksum VALUES(?,?,?)";
+    private static final String sqlSetInodeChecksum =
+                                "INSERT INTO t_inodes_checksum (SELECT * FROM (VALUES (?,?,?)) v WHERE NOT EXISTS " +
+                                "(SELECT 1 FROM t_inodes_checksum WHERE ipnfsid=? AND itype=?))";
 
     /**
      * add a checksum value of <i>type</i> to an inode
@@ -2248,6 +2250,8 @@ class FsSqlDriver {
             stSetInodeChecksum.setString(1, inode.toString());
             stSetInodeChecksum.setInt(2, type);
             stSetInodeChecksum.setString(3, value);
+            stSetInodeChecksum.setString(4, inode.toString());
+            stSetInodeChecksum.setInt(5, type);
 
             stSetInodeChecksum.executeUpdate();
 
