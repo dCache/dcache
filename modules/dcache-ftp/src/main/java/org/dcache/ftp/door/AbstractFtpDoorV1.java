@@ -468,10 +468,6 @@ public abstract class AbstractFtpDoorV1
             _lastCommand = commandLine;
             _commandCounter++;
 
-            if (!isCommandAllowed(this, commandContext)) {
-                return;
-            }
-
             try {
                 if (method == null) {
                     reply(this, err(commandLine, ""));
@@ -480,7 +476,10 @@ public abstract class AbstractFtpDoorV1
 
                 try {
                     _currentRequest = this;
-                    method.invoke(AbstractFtpDoorV1.this, new Object[]{arg});
+
+                    if (isCommandAllowed(this, commandContext)) {
+                        method.invoke(AbstractFtpDoorV1.this, new Object[]{arg});
+                    }
                 } catch (InvocationTargetException ite) {
                     //
                     // is thrown if the underlying method
