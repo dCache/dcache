@@ -98,6 +98,9 @@ import java.util.Set;
 import org.dcache.srm.Logger;
 import org.dcache.srm.client.Transport;
 import org.dcache.util.Args;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
+
 
 /**
  *
@@ -2584,8 +2587,26 @@ public class Configuration extends ConnectionConfiguration {
 
     private void readCksmOptions()
     {
-        if ( this.cksm_type == null && this.cksm_value != null ) {
-            this.cksm_type = "adler32";
+        if ( cksm_type == null ) {
+            if ( cksm_value == null ) {
+                return;
+            }
+            cksm_type = "adler32";
+        }
+
+        if ( cksm_type.equals("negotiate") ) {
+            if ( cksm_value != null ) {
+                throw new IllegalArgumentException("-cksm_type=negotiate and -cksm_value=<value> are mutually exclusive");
+            }
+        }
+        else {
+            /**
+             *  The following just checks checksum validity:
+             */
+            ChecksumType checksumType = ChecksumType.getChecksumType(cksm_type);
+            if ( cksm_value != null ) {
+                Checksum checksum = new Checksum(checksumType,cksm_value);
+            }
         }
     }
 
