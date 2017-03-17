@@ -575,8 +575,7 @@ public class GridftpClient
             return supportedByClientAndServer.get(0);
         }
 
-        if( algorithms.contains(_cksmType)) {
-            // checksum type is specified, but is not supported by the server
+        if( algorithms.contains(_cksmType.toUpperCase())) {
             return _cksmType;
         }
 
