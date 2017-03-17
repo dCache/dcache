@@ -162,6 +162,9 @@
             END;
             $$ LANGUAGE plpgsql;
        </createProcedure>
+       <rollback/>
+    </changeSet>
+
 
     <changeSet author="tigran" id="19.1">
         <preConditions onFail="MARK_RAN" onFailMessage="Not adding igeneration column as it already exists (this is not an error)">
