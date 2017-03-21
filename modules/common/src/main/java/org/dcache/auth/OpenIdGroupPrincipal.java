@@ -17,7 +17,7 @@ public class OpenIdGroupPrincipal implements Principal, Serializable
 
     public OpenIdGroupPrincipal(String group)
     {
-        checkArgument(CharMatcher.ASCII.matchesAllOf(group),
+        checkArgument(CharMatcher.ascii().matchesAllOf(group),
                      "OpenId \"group\": [%s] is not ASCII encoded", group);
         this.group = group;
     }
