@@ -54,17 +54,31 @@ public class Checksum  implements Serializable
         this.value = normalise(value);
     }
 
-    private String normalise(String original)
+    public static boolean isValid(ChecksumType type, String value)
     {
-        String normalised = original.trim().toLowerCase();
+        String normalised = normalise(type, value);
+        return HEXADECIMAL.matchesAllOf(normalised) &&
+            normalised.length() == type.getNibbles();
+    }
 
+    private static String normalise(ChecksumType type, String value)
+    {
+        String normalised = value.trim().toLowerCase();
         /**
          * Due to bug in checksum calculation module, some ADLER32
          * sums are stored without leading zeros.
          */
+
         if (type == ADLER32) {
             normalised = padStart(normalised, type.getNibbles(), '0');
         }
+
+        return normalised;
+    }
+
+    private String normalise(String original)
+    {
+        String normalised = normalise(type, original);
 
         if (!HEXADECIMAL.matchesAllOf(normalised)) {
             throw new IllegalArgumentException("checksum value \"" +

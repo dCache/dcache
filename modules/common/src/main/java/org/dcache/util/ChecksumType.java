@@ -1,5 +1,7 @@
 package org.dcache.util;
 
+import java.util.Arrays;
+
 /**
  * This enum contains information about Checksum types that dCache understands.
  * It also contains some static information about the different checksum types
@@ -55,6 +57,13 @@ public enum ChecksumType
             }
         }
         throw new IllegalArgumentException("Unknown checksum type: " + s);
+    }
+
+    public static final boolean isValid(String s)
+    {
+        return Arrays.stream(ChecksumType.values())
+                     .map(ChecksumType::getName)
+                     .anyMatch(x -> x.equalsIgnoreCase(s));
     }
 
     /**

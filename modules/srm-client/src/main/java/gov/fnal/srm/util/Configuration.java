@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import com.google.common.base.Splitter;
+
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -101,6 +102,7 @@ import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
+import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  *
@@ -2600,12 +2602,10 @@ public class Configuration extends ConnectionConfiguration {
             }
         }
         else {
-            /**
-             *  The following just checks checksum validity:
-             */
-            ChecksumType checksumType = ChecksumType.getChecksumType(cksm_type);
+            checkArgument(ChecksumType.isValid(cksm_type),"Invalid checksum type");
             if ( cksm_value != null ) {
-                Checksum checksum = new Checksum(checksumType,cksm_value);
+                checkArgument(Checksum.isValid(ChecksumType.getChecksumType(cksm_type),
+                                               cksm_value),"Invalid checksum value");
             }
         }
     }
