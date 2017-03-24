@@ -405,6 +405,53 @@
         </rollback>
     </changeSet>
 
+    <changeSet author="behrmann" id="5.1" dbms="postgresql">
+        <comment>use encode on bytea field</comment>
+        <createProcedure>
+            CREATE OR REPLACE FUNCTION path2inode(root varchar, path varchar) RETURNS varchar AS $$
+            DECLARE
+                id varchar := root;
+                elements varchar[] := string_to_array(path, '/');
+                child varchar;
+                itype INT;
+                link varchar;
+            BEGIN
+                FOR i IN 1..array_upper(elements,1) LOOP
+                    CASE
+                    WHEN elements[i] = '' THEN
+                        RETURN id;
+                    WHEN elements[i] = '.' THEN
+                        child := id;
+                    WHEN elements[i] = '..' THEN
+                        IF id = '000000000000000000000000000000000000' THEN
+                            child := id;
+                        ELSE
+                            SELECT iparent INTO child FROM t_dirs WHERE ipnfsid=id;
+                        END IF;
+                    ELSE
+                        SELECT dir.ipnfsid, inode.itype INTO child, itype FROM t_dirs dir, t_inodes inode WHERE dir.ipnfsid = inode.ipnfsid AND dir.iparent=id AND dir.iname=elements[i];
+                        IF itype=40960 THEN
+                            SELECT encode(ifiledata,'escape') INTO link FROM t_inodes_data WHERE ipnfsid=child;
+                            IF link LIKE '/%' THEN
+                                child := path2inode('000000000000000000000000000000000000', substring(link from 2));
+                            ELSE
+                                child := path2inode(id, link);
+                            END IF;
+                        END IF;
+                    END CASE;
+                    IF child IS NULL THEN
+                        RETURN NULL;
+                    END IF;
+                    id := child;
+                END LOOP;
+                RETURN id;
+            END;
+            $$ LANGUAGE plpgsql;
+        </createProcedure>
+        <rollback>
+        </rollback>
+    </changeSet>
+
     <changeSet author="behrmann" id="6.1" dbms="postgresql">
         <createProcedure>
             CREATE OR REPLACE FUNCTION
