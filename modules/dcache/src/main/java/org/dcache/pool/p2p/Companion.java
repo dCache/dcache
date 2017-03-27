@@ -320,8 +320,7 @@ class Companion
     private Set<Checksum> copy(String uri, ReplicaDescriptor handle, ChecksumFactory checksumFactory)
             throws IOException
     {
-        try (RepositoryChannel channel = handle.createChannel();
-             ChecksumChannel checksumChannel = new ChecksumChannel(channel, checksumFactory)) {
+        try (ChecksumChannel checksumChannel = new ChecksumChannel(handle.createChannel(), checksumFactory)) {
 
             HttpGet get = new HttpGet(uri);
             get.addHeader(HttpHeaders.CONNECTION, HTTP.CONN_CLOSE);
