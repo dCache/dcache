@@ -12,6 +12,7 @@ import org.dcache.restful.providers.ErrorResponseProvider;
 import org.dcache.restful.providers.ObjectMapperProvider;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.resources.namespace.FileResources;
+import org.dcache.restful.resources.transfers.TransferResources;
 
 /**
  *
@@ -27,6 +28,7 @@ public class DcacheRestApplication extends ResourceConfig
         //register application resources controller
         register(FileResources.class);
         register(QosManagement.class);
+        register(TransferResources.class);
 
 
         //register filters

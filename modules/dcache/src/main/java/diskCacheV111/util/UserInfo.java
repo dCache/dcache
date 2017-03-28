@@ -62,9 +62,9 @@ package diskCacheV111.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.Subject;
 import java.io.Serializable;
 import java.util.NoSuchElementException;
-import javax.security.auth.Subject;
 
 import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
@@ -84,6 +84,16 @@ public final class UserInfo implements Serializable {
     private FQAN   primaryFqan;
 
     public UserInfo() {
+    }
+
+    public UserInfo(UserInfo info) {
+        this.username = info.username;
+        this.uid = info.uid;
+        this.gid = info.gid;
+        FQAN fqan = info.primaryFqan;
+        if (fqan != null) {
+            this.primaryFqan = new FQAN(fqan.toString());
+        }
     }
 
     public UserInfo(Subject subject) {

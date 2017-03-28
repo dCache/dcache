@@ -188,10 +188,10 @@ public class TransferObserverV1
 
             IoJobInfo moverInfo = transfer.mover();
             if (moverInfo == null) {
-                moverStatus = null;
+                setMoverStatus(null);
             } else {
                 moverId = moverInfo.getJobId();
-                moverStatus = moverInfo.getStatus();
+                setMoverStatus(moverInfo.getStatus());
                 moverSubmit = moverInfo.getSubmitTime();
                 if (moverInfo.getStartTime() > 0L) {
                     transferTime = moverInfo.getTransferTime();
@@ -218,7 +218,7 @@ public class TransferObserverV1
             out.add(timeWaiting(now, true));
 
             if (moverStatus != null) {
-                out.add(moverStatus);
+                out.add(moverStatus.name());
                 out.add(timeElapsedSinceSubmitted(now, true));
                 addMoverInfo(out, true);
             }
@@ -241,7 +241,7 @@ public class TransferObserverV1
             if (moverStatus == null) {
                 args.add("No-mover()-Found");
             } else {
-                args.add(moverStatus);
+                args.add(moverStatus.name());
                 addMoverInfo(args, false);
             }
 

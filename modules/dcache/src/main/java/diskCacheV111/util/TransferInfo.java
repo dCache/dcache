@@ -59,9 +59,9 @@ documents or software obtained from this server.
  */
 package diskCacheV111.util;
 
+import javax.security.auth.Subject;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
-import javax.security.auth.Subject;
 
 import org.dcache.util.TimeUtils.DurationParser;
 
@@ -73,30 +73,44 @@ import org.dcache.util.TimeUtils.DurationParser;
 public class TransferInfo implements Serializable {
     private static final long serialVersionUID = 7303353263666911507L;
 
+    private static final String FORMAT    = "(%s %s %s)(prot %s)"
+                    + "(uid %s gid %s vomsgrp %s)"
+                    + "(proc %s)(%s)(pool %s)(client %s)"
+                    + "(%s)(state %s)(elapsed %s)(transferred %s)(speed %s)\n";
+
     protected static String getTimeString(long time, boolean display) {
         DurationParser durations = new DurationParser(time,
                                                       TimeUnit.MILLISECONDS).parseAll();
 
         if (display) {
             return String.format("%d+%02d:%02d:%02d",
-                            durations.get(TimeUnit.DAYS),
-                            durations.get(TimeUnit.HOURS),
-                            durations.get(TimeUnit.MINUTES),
-                            durations.get(TimeUnit.SECONDS));
+                                 durations.get(TimeUnit.DAYS),
+                                 durations.get(TimeUnit.HOURS),
+                                 durations.get(TimeUnit.MINUTES),
+                                 durations.get(TimeUnit.SECONDS));
         }
 
         if (durations.get(TimeUnit.DAYS) > 0) {
             return String.format("%d d %02d:%02d:%02d",
-                            durations.get(TimeUnit.DAYS),
-                            durations.get(TimeUnit.HOURS),
-                            durations.get(TimeUnit.MINUTES),
-                            durations.get(TimeUnit.SECONDS));
+                                 durations.get(TimeUnit.DAYS),
+                                 durations.get(TimeUnit.HOURS),
+                                 durations.get(TimeUnit.MINUTES),
+                                 durations.get(TimeUnit.SECONDS));
         }
 
         return String.format("%02d:%02d:%02d",
-                        durations.get(TimeUnit.HOURS),
-                        durations.get(TimeUnit.MINUTES),
-                        durations.get(TimeUnit.SECONDS));
+                             durations.get(TimeUnit.HOURS),
+                             durations.get(TimeUnit.MINUTES),
+                             durations.get(TimeUnit.SECONDS));
+    }
+
+    public enum MoverState {
+        NOTFOUND, STAGING, QUEUED, RUNNING, CANCELED, DONE
+    }
+
+    public enum TransferField {
+        DOMAIN, PROT, UID, GID, VOMSGROUP, PROC, PNFSID,
+        POOL, HOST, STATUS, STATE, WAITING, MOVER
     }
 
     protected String cellName   = "";
@@ -108,14 +122,14 @@ public class TransferInfo implements Serializable {
     protected String pool          = "";
     protected String replyHost     = "";
     protected String sessionStatus = "";
-    protected Long   waitingSince;
-    protected String moverStatus = "";
-    protected Long    transferTime;
-    protected Long    bytesTransferred;
-    protected Long    moverId;
-    protected Long    moverSubmit;
-    protected Long    moverStart;
-    protected Subject subject;
+    protected Long waitingSince;
+    protected MoverState moverStatus = MoverState.NOTFOUND;
+    protected Long     transferTime;
+    protected Long     bytesTransferred;
+    protected Long     moverId;
+    protected Long     moverSubmit;
+    protected Long     moverStart;
+    protected Subject  subject;
     protected UserInfo userInfo;
 
     public Long getBytesTransferred() {
@@ -139,7 +153,7 @@ public class TransferInfo implements Serializable {
     }
 
     public String getMoverStatus() {
-        return moverStatus;
+        return moverStatus.name();
     }
 
     public Long getMoverSubmit() {
@@ -225,7 +239,12 @@ public class TransferInfo implements Serializable {
     }
 
     public void setMoverStatus(String moverStatus) {
-        this.moverStatus = moverStatus;
+        if (moverStatus == null) {
+            this.moverStatus = MoverState.NOTFOUND;
+            return;
+        }
+
+        this.moverStatus = MoverState.valueOf(moverStatus.toUpperCase());
     }
 
     public void setMoverSubmit(Long moverSubmit) {
@@ -279,6 +298,40 @@ public class TransferInfo implements Serializable {
 
     public void setWaitingSince(Long waitingSince) {
         this.waitingSince = waitingSince;
+    }
+
+    public String toFormattedString() {
+        String state = "";
+        String elapsed = "";
+        String size = "";
+        String speed = "";
+
+        if (moverStatus != null) {
+            state = moverStatus.name();
+            elapsed= timeElapsedSinceSubmitted(System.currentTimeMillis(), true);
+            size = String.valueOf(bytesTransferred);
+            speed = transferTime > 0 ?
+                            String.valueOf((1000 * bytesTransferred)/(1024 * transferTime))
+                            : "-";
+        }
+
+        return String.format(FORMAT,
+                             cellName,
+                             domainName,
+                             String.valueOf(serialId),
+                             protocol,
+                             userInfo == null ? "" : userInfo.getUid(),
+                             userInfo == null ? "" : userInfo.getGid(),
+                             userInfo == null ? "" : userInfo.getPrimaryVOMSGroup(),
+                             process,
+                             pnfsId,
+                             pool,
+                             replyHost,
+                             sessionStatus,
+                             state,
+                             elapsed,
+                             size,
+                             speed);
     }
 
     protected String timeRunning(long now, boolean display) {

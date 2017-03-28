@@ -57,7 +57,7 @@
   </bean>
 
   <bean id="login-stub" class="org.dcache.cells.CellStub">
-      <description>Login serviceunication stub</description>
+      <description>Login service communication stub</description>
       <property name="destination" value="${frontend.service.gplazma}"/>
       <property name="timeout" value="${frontend.service.gplazma.timeout}"/>
       <property name="timeoutUnit" value="${frontend.service.gplazma.timeout.unit}"/>
@@ -106,6 +106,32 @@
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
      <description>Maintains runtime information about all pools</description>
      <property name="poolManagerStub" ref="pool-manager-stub"/>
+  </bean>
+
+  <bean id="login-broker-source" class="dmg.cells.services.login.LoginBrokerSubscriber">
+      <description>Maintains updated list of doors.</description>
+      <property name="topic" value="${frontend.loginbroker.request-topic}"/>
+  </bean>
+
+  <bean id="scheduling-service" class="java.util.concurrent.ScheduledThreadPoolExecutor"
+          destroy-method="shutdownNow">
+        <description>Used in conjunction with system initialization and pool monitor refresh timeouts</description>
+        <constructor-arg value="3"/>
+  </bean>
+
+  <bean id="transfer-collector" class="org.dcache.restful.util.transfers.TransferCollector">
+      <description>Collects active transfer info from from pools and doors.</description>
+      <property name="loginBrokerSource" ref="login-broker-source"/>
+  </bean>
+
+  <bean id="transfer-info-service" class="org.dcache.restful.services.transfers.TransferInfoServiceImpl"
+        init-method="initialize" destroy-method="shutdown">
+      <description>Caches and serves information on active transfers.</description>
+      <property name="maxCacheSize" value="${frontend.service.transfers.maxCacheSize}"/>
+      <property name="timeout" value="${frontend.service.transfers.timeout}"/>
+      <property name="timeoutUnit" value="${frontend.service.transfers.timeout.unit}"/>
+      <property name="collector" ref="transfer-collector"/>
+      <property name="executorService" ref="scheduling-service"/>
   </bean>
 
   <bean id="custom-headers"
@@ -185,11 +211,12 @@
                                                                value-ref="pnfs-stub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PM}"
                                                                value-ref="pool-monitor"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).TF}"
+                                                               value-ref="transfer-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
                                                                value-ref= "pinManagerStub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PathMapper}"
                                                                value-ref= "path-mapper"/>
-
                                                     </map>
                                                 </constructor-arg>
                                             </bean>

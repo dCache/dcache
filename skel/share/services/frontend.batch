@@ -17,6 +17,9 @@ check -strong frontend.service.poolmanager.timeout.unit
 check -strong frontend.service.gplazma
 check -strong frontend.service.gplazma.timeout
 check -strong frontend.service.gplazma.timeout.unit
+check -strong frontend.service.transfers.timeout
+check -strong frontend.service.transfers.timeout.unit
+check -strong frontend.service.transfers.maxCacheSize
 check -strong frontend.authn.accept-client-cert
 check -strong frontend.authn.require-client-cert
 check -strong frontend.authn.basic
@@ -41,6 +44,8 @@ check -strong frontend.limits.threads.idle-time.unit
 check -strong frontend.limits.queue-length
 check -strong frontend.limits.graceful-shutdown
 check -strong frontend.limits.graceful-shutdown.unit
+
+check -strong frontend.loginbroker.request-topic
 
 check -strong frontend.dcache-view.endpoints.webapi
 check frontend.dcache-view.endpoints.webdav
