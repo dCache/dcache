@@ -23,6 +23,7 @@ import diskCacheV111.util.PnfsId;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -190,6 +191,13 @@ public class CephFileStore implements FileStore {
 
                 }
             };
+        } catch (RadosException e) {
+            // try to map CEPH errors to dCache/java.io alternatives
+            // the errcodes are negative numbers :)
+            if ( Math.abs(e.getErrorCode()) == jnr.constants.platform.Errno.ENOENT.intValue()) {
+                throw new NoSuchFileException(imageName);
+            }
+            throw e;
         }
     }
 
