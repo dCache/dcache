@@ -146,7 +146,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
 
     private final Map<Integer, LayoutDriver> _supportedDrivers = ImmutableMap.of(
-            layouttype4.LAYOUT4_FLEX_FILES,  new FlexFileLayoutDriver(3, 0, new utf8str_mixed("17"), new utf8str_mixed("17")),
+            layouttype4.LAYOUT4_FLEX_FILES,  new FlexFileLayoutDriver(4, 1, new utf8str_mixed("17"), new utf8str_mixed("17")),
             layouttype4.LAYOUT4_NFSV4_1_FILES,  new NfsV41FileLayoutDriver()
     );
 
@@ -630,19 +630,12 @@ public class NFSv41Door extends AbstractCellComponent implements
                 }
             }
 
-            /*
-             * as current linux client (4.6) support only nfs v3, and v3 does not have
-             * stateids, embedd stateid as file handle. Pool knows hato handle it.
-             */
-            nfs_fh4 fh = layoutType == layouttype4.LAYOUT4_FLEX_FILES ?
-                    new nfs_fh4(stateid.other) :  new nfs_fh4(nfsInode.toNfsHandle());
-
             //  -1 is special value, which means entire file
             layout4 layout = new layout4();
             layout.lo_iomode = ioMode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-            layout.lo_content = layoutDriver.getLayoutContent(deviceid, stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh);
+            layout.lo_content = layoutDriver.getLayoutContent(deviceid, stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()));
 
             layoutStateId.bumpSeqid();
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
