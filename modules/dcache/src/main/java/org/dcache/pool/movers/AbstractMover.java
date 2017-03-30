@@ -22,6 +22,7 @@ import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
@@ -274,6 +275,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         return channel;
     }
 
+    @Nonnull
     @Override
     public Set<Checksum> getActualChecksums() {
         return (_checksumChannel == null)
@@ -281,6 +283,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                 : _checksumChannel.getChecksums();
     }
 
+    @Nonnull
     @Override
     public Set<Checksum> getExpectedChecksums() {
         return Collections.emptySet();

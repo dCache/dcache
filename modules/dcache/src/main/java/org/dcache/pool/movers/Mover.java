@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.movers;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
 import java.nio.channels.CompletionHandler;
@@ -125,11 +126,13 @@ public interface Mover<T extends ProtocolInfo>
     /**
      * Returns any checksums computed during the transfer.
      */
+    @Nonnull
     Set<Checksum> getActualChecksums();
 
     /**
      * Returns any known-good checksums obtained from the client.
      */
+    @Nonnull
     Set<Checksum> getExpectedChecksums();
 
     /**

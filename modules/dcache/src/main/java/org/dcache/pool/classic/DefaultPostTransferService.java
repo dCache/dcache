@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.classic;
 
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.Uninterruptibles;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
+import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -86,8 +88,11 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             try {
                 try {
                     if (mover.getIoMode() == IoMode.WRITE) {
-                        handle.addChecksums(mover.getExpectedChecksums());
-                        _checksumModule.enforcePostTransferPolicy(handle, mover.getActualChecksums());
+                        handle.addChecksums(Optional.fromNullable(mover.getExpectedChecksums())
+                                                    .or(Collections.emptySet()));
+                        _checksumModule.enforcePostTransferPolicy(handle,
+                                                                  Optional.fromNullable(mover.getActualChecksums())
+                                                                          .or(Collections.emptySet()));
                     }
                     handle.commit();
                 } finally {

@@ -319,7 +319,7 @@ public class ChecksumChannel implements RepositoryChannel
                                                       .collect(Collectors.toSet());
                 } catch (IOException e) {
                     _log.info("Unable to generate checksum of sparse file: {}", e.toString());
-                    return null;
+                    return Collections.emptySet();
                 }
             }
         }

@@ -71,6 +71,8 @@ package org.dcache.pool.movers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -79,6 +81,7 @@ import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
@@ -327,12 +330,13 @@ public class RemoteGsiftpTransferProtocol
         return null;
     }
 
+    @Nonnull
     @Override
     public Set<Checksum> getActualChecksums()
     {
         try {
             if (_transferMessageDigests == null) {
-                return null;
+                return Collections.emptySet();
             }
 
             ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
@@ -349,7 +353,7 @@ public class RemoteGsiftpTransferProtocol
                                      .collect(Collectors.toSet());
         } catch (IOException e) {
             _log.error(e.toString());
-            return null;
+            return Collections.emptySet();
         }
     }
 

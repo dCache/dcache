@@ -5,6 +5,8 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ConnectException;
@@ -619,6 +621,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     }
 
     /** Part of the ChecksumMover interface. */
+    @Nonnull
     @Override
     public Set<Checksum> getActualChecksums()
     {
