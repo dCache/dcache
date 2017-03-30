@@ -79,6 +79,7 @@ import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
@@ -332,7 +333,7 @@ public class RemoteGsiftpTransferProtocol
     {
         try {
             if (_transferMessageDigests == null) {
-                return null;
+                return Collections.emptySet();
             }
 
             ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
@@ -349,7 +350,7 @@ public class RemoteGsiftpTransferProtocol
                                      .collect(Collectors.toSet());
         } catch (IOException e) {
             _log.error(e.toString());
-            return null;
+            return Collections.emptySet();
         }
     }
 
