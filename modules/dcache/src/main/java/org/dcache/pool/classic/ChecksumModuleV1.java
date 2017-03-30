@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
+import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
@@ -366,6 +368,7 @@ public class ChecksumModuleV1
         return _policy.contains(flag);
     }
 
+    @Nonnull
     @Override
     public Set<ChecksumFactory> getProvidedChecksumsFactories(ReplicaDescriptor handle)
             throws NoSuchAlgorithmException, CacheException
@@ -414,6 +417,7 @@ public class ChecksumModuleV1
         }
     }
 
+    @Nonnull
     @Override
     public Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
@@ -423,6 +427,7 @@ public class ChecksumModuleV1
         }
     }
 
+    @Nonnull
     @Override
     public Iterable<Checksum> verifyChecksum(RepositoryChannel channel, Iterable<Checksum> expectedChecksums)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException

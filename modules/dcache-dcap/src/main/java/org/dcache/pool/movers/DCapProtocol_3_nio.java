@@ -4,6 +4,8 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -1150,6 +1152,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         return  _clientChecksum ;
     }
 
+    @Nonnull
     @Override
     public Set<Checksum> getActualChecksums()
     {

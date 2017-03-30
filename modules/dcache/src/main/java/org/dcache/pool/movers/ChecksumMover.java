@@ -1,5 +1,7 @@
 package org.dcache.pool.movers;
 
+import javax.annotation.Nonnull;
+
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 
@@ -27,6 +29,7 @@ public interface ChecksumMover
      *
      * @return a checksum value for the data or null if none is available.
      */
+    @Nonnull
     Set<Checksum> getActualChecksums();
 
     /**

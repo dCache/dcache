@@ -18,6 +18,8 @@
 
 package org.dcache.pool.classic;
 
+import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Set;
@@ -81,6 +83,7 @@ public interface ChecksumModule
      * @throws NoSuchAlgorithmException If no suitable checksum algorithm is supported
      * @throws CacheException If the checksums of the file could not be retrieved
      */
+    @Nonnull
     Set<ChecksumFactory> getProvidedChecksumsFactories(ReplicaDescriptor handle)
             throws NoSuchAlgorithmException, CacheException;
 
@@ -98,7 +101,7 @@ public interface ChecksumModule
      * @throws InterruptedException If the thread is interrupted
      */
     void enforcePostTransferPolicy(
-            ReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
+            ReplicaDescriptor handle, @Nonnull Iterable<Checksum> actualChecksums)
             throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException;
 
     /**
@@ -142,6 +145,7 @@ public interface ChecksumModule
      * @throws InterruptedException If the thread is interrupted
      * @return Any checksum computed for the file
      */
+    @Nonnull
     Iterable<Checksum> verifyChecksum(ReplicaDescriptor handle)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException;
 
@@ -157,6 +161,7 @@ public interface ChecksumModule
      * @throws InterruptedException If the thread is interrupted
      * @return Any checksum computed for the file
      */
-    Iterable<Checksum> verifyChecksum(RepositoryChannel channel, Iterable<Checksum> checksums)
+    @Nonnull
+    Iterable<Checksum> verifyChecksum(RepositoryChannel channel, @Nonnull Iterable<Checksum> checksums)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException;
 }
