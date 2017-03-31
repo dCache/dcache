@@ -310,12 +310,10 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         } catch (BindException | ConnectException | NoRouteToHostException |
                 PortUnreachableException | UnknownHostException e) {
             throw Exceptions.wrap("Failed to connect " +
-                    mode.getRemoteAddressDescription() + ": " + e.getMessage(),
-                    e, IOException.class);
+                    mode.getRemoteAddressDescription(), e, IOException.class);
         } catch (IOException e) {
             throw Exceptions.wrap("Problem while connected to " +
-                    mode.getRemoteAddressDescription() + ": " + e.getMessage(),
-                    e, IOException.class);
+                    mode.getRemoteAddressDescription(), e, IOException.class);
         } finally {
             _inProgress = false;
 
