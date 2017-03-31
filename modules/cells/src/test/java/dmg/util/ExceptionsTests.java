@@ -49,7 +49,7 @@ public class ExceptionsTests
         IOException wrapped = Exceptions.wrap("Wrapped message", cause, IOException.class);
 
         assertThat(wrapped, is(notNullValue()));
-        assertThat(wrapped.getMessage(), is(equalTo("Wrapped message")));
+        assertThat(wrapped.getMessage(), is(equalTo("Wrapped message: Something went wrong")));
         assertThat(wrapped.getCause(), is(cause));
         assertThat(wrapped.getClass(), is(equalTo(IOException.class)));
 
@@ -64,7 +64,7 @@ public class ExceptionsTests
         Exception wrapped = Exceptions.wrap("Wrapped message", cause, Exception.class);
 
         assertThat(wrapped, is(notNullValue()));
-        assertThat(wrapped.getMessage(), is(equalTo("Wrapped message")));
+        assertThat(wrapped.getMessage(), is(equalTo("Wrapped message: Something went wrong")));
         assertThat(wrapped.getCause(), is(cause));
         assertThat(wrapped.getClass(), is(equalTo(IOException.class)));
 
@@ -82,7 +82,7 @@ public class ExceptionsTests
         Exception wrapped = Exceptions.wrap("Wrapped message", cause, SocketException.class);
 
         assertThat(wrapped, is(notNullValue()));
-        assertThat(wrapped.getMessage(), is(equalTo("Wrapped message")));
+        assertThat(wrapped.getMessage(), is(equalTo("Wrapped message: Something went wrong")));
         assertThat(wrapped.getCause(), is(nullValue()));
         assertThat(wrapped.getClass(), is(equalTo(SocketException.class)));
 
@@ -99,7 +99,7 @@ public class ExceptionsTests
         Exception wrapped = Exceptions.wrap("Wrapped message", cause, Exception.class);
 
         assertThat(wrapped, is(notNullValue()));
-        assertThat(wrapped.getMessage(), is(equalTo("Wrapped message")));
+        assertThat(wrapped.getMessage(), is(equalTo("Wrapped message: " + cause.getMessage())));
         assertThat(wrapped.getCause(), is(cause));
         assertThat(wrapped.getClass(), is(equalTo(Exception.class)));
 
