@@ -58,14 +58,17 @@ public class Exceptions
      * enclosingType is reached.  If enclosingType does not support wrapping
      * then {@literal cause} is returned and a warning is logged.
      * <p />
-     * Note that the wrapped exception will contain only a message and possibly
-     * the {@literal cause} as the triggering exception; in particular, any
-     * additional information from {@literal cause} is not copied into the
-     * wrapped exception.
+     * Note that the wrapping exception will have a message constructed by
+     * concatenating the prefix, the String literal ": ", and a cause-specific
+     * message.  If the cause has a non-null message then this is used as the
+     * cause-specific message, otherwise the cause class simple name is used.
      */
-    public static <T extends Exception> T wrap(String message, T cause, Class<T> enclosingType)
+    public static <T extends Exception> T wrap(String prefix, T cause, Class<T> enclosingType)
     {
         ReflectiveOperationException lastException = null;
+
+        String causeMessage = cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage();
+        String message = prefix + ": " + causeMessage;
 
         Class type = cause.getClass();
         while (enclosingType.isAssignableFrom(type)) {
