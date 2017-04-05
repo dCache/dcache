@@ -27,7 +27,6 @@ import javax.ws.rs.core.Response;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -55,14 +54,13 @@ import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
+import org.dcache.restful.util.PathMapper;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.restful.util.PathMapper;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 import static org.dcache.restful.util.Preconditions.checkRequest;
 
@@ -154,11 +152,10 @@ public class FileResources {
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
         PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
         FsPath path = pathMapper.asDcachePath(request, value);
-
         try {
 
             FileAttributes namespaceAttrributes = handler.getFileAttributes(path, attributes);
-            chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, isLocality);
+            chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, isLocality, path.name());
             if (isQos) {
                 addQoSAttributes(fileAttributes, namespaceAttrributes);
             }
@@ -195,9 +192,8 @@ public class FileResources {
 
                     JsonFileAttributes childrenAttributes = new JsonFileAttributes();
 
-                    chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), isLocality);
+                    chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), isLocality, fName);
                     childrenAttributes.setFileName(fName);
-                    childrenAttributes.setFileMimeType(fName);
                     if (isQos) {
                         addQoSAttributes(childrenAttributes, entry.getFileAttributes());
                     }
@@ -372,11 +368,13 @@ public class FileResources {
      */
     private void chimeraToJsonAttributes(JsonFileAttributes fileAttributes,
                                          FileAttributes namespaceAttrributes,
-                                         boolean isLocality) throws CacheException {
+                                         boolean isLocality, String name) throws CacheException
+    {
         fileAttributes.setMtime(namespaceAttrributes.getModificationTime());
         fileAttributes.setCreationTime(namespaceAttrributes.getCreationTime());
         fileAttributes.setSize(namespaceAttrributes.getSize());
         fileAttributes.setFileType(namespaceAttrributes.getFileType());
+        fileAttributes.setFileMimeType(name);
 
         // when user set locality param. in the request, the locality should be returned only for directories
         if (isLocality && namespaceAttrributes.getFileType() != FileType.DIR) {
