@@ -69,6 +69,7 @@ package org.dcache.ftp.door;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
@@ -119,6 +120,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Timer;
@@ -218,6 +220,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.*;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.util.Objects.requireNonNull;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 import static org.dcache.ftp.door.AnonymousPermission.ALLOW_ANONYMOUS_USER;
 import static org.dcache.ftp.door.AnonymousPermission.FORBID_ANONYMOUS_USER;
@@ -256,10 +259,7 @@ class CancelledUploadException extends Exception
 class FTPCommandException extends Exception
 {
     /** FTP reply code. */
-    protected final int    _code;
-
-    /** Human readable part of FTP reply. */
-    protected final String _reply;
+    protected final int _code;
 
     /**
      * Constructs a command exception with the given ftp reply code and
@@ -268,7 +268,8 @@ class FTPCommandException extends Exception
      */
     public FTPCommandException(int code, String reply)
     {
-        this(code, reply, reply);
+        super(requireNonNull(reply));
+        _code = code;
     }
 
     /**
@@ -278,32 +279,14 @@ class FTPCommandException extends Exception
      */
     public FTPCommandException(int code, String reply, Exception cause)
     {
-        super(reply, cause);
+        super(requireNonNull(reply), cause);
         _code = code;
-        _reply = reply;
-    }
-
-    /**
-     * Constructs a command exception with the given ftp reply code,
-     * public and internal message.
-     */
-    public FTPCommandException(int code, String reply, String msg)
-    {
-        super(msg);
-        _code = code;
-        _reply = reply;
     }
 
     /** Returns FTP reply code. */
     public int getCode()
     {
         return _code;
-    }
-
-    /** Returns the public FTP reply string. */
-    public String getReply()
-    {
-        return _reply;
     }
 }
 
@@ -469,39 +452,31 @@ public abstract class AbstractFtpDoorV1
             _commandCounter++;
 
             try {
-                if (method == null) {
-                    reply(this, err(commandLine, ""));
-                    return;
-                }
+                checkFTPCommand(method != null, 500, "'%s': command not understood", commandLine);
 
                 try {
                     _currentRequest = this;
-
-                    if (isCommandAllowed(this, commandContext)) {
-                        method.invoke(AbstractFtpDoorV1.this, new Object[]{arg});
-                    }
+                    checkCommandAllowed(this, commandContext);
+                    method.invoke(AbstractFtpDoorV1.this, new Object[]{arg});
                 } catch (InvocationTargetException ite) {
                     //
                     // is thrown if the underlying method
                     // actively throws an exception.
                     //
                     Throwable te = ite.getTargetException();
-                    if (te instanceof FTPCommandException) {
-                        FTPCommandException failure = (FTPCommandException) te;
-                        reply(this, String.valueOf(failure.getCode()) + " " + failure.getReply());
-                    } else if (te instanceof CommandExitException) {
-                        throw (CommandExitException) te;
-                    } else {
-                        reply(this, "500 Operation failed due to internal error: " +
-                              te.getMessage());
-                        LOGGER.error("FTP command '{}' got exception", commandLine, te);
-                    }
+                    Throwables.throwIfInstanceOf(te, FTPCommandException.class);
+                    Throwables.throwIfInstanceOf(te, CommandExitException.class);
+                    LOGGER.error("FTP command '{}' got exception", commandLine, te);
+                    throw new FTPCommandException(500, "Operation failed due to internal error: " +
+                          te.getMessage());
                 } catch (IllegalAccessException e) {
-                    reply(this, "500 Operation failed due to internal error: " + e.getMessage());
                     LOGGER.error("This is a bug. Please report it.", e);
+                    throw new FTPCommandException(500, "Operation failed due to internal error: " + e.getMessage());
                 } finally {
                     _currentRequest = null;
                 }
+            } catch (FTPCommandException e) {
+                reply(this, e.getCode() + " " + e.getMessage());
             } finally {
                 if (name == null || !name.equals("rest")) {
                     _skipBytes = 0;
@@ -961,19 +936,11 @@ public abstract class AbstractFtpDoorV1
             if (_size == -1) {
                 _size = fileSize;
             }
-            if (_offset < 0) {
-                throw new FTPCommandException(500, "prm offset is " + _offset);
-            }
-            if (_size < 0) {
-                throw new FTPCommandException(500, "prm_size is " + _size);
-            }
-
-            if (_offset + _size > fileSize) {
-                throw new FTPCommandException(500,
-                                              "invalid prm_offset=" + _offset
-                                              + " and prm_size " + _size
-                                              + " for file of size " + fileSize);
-            }
+            checkFTPCommand(_offset >= 0, 500, "prm offset is %d", _offset);
+            checkFTPCommand(_size >= 0, 500, "prm_size is  %d", _size);
+            checkFTPCommand(_offset + _size <= fileSize,
+                    500, "invalid prm_offset=%d and prm_size %d for file of size %d",
+                    _offset, _size, fileSize);
         }
 
         @Override
@@ -1105,9 +1072,8 @@ public abstract class AbstractFtpDoorV1
                  * it, then we have to fail for now. REVISIT: We should
                  * use the other adapter in this case.
                  */
-                if (_mode == Mode.PASSIVE && !redirect.getPassive() && _xferMode.equals("X")) {
-                    throw new FTPCommandException(504, "Cannot use passive X mode");
-                }
+                checkFTPCommand(_mode != Mode.PASSIVE || redirect.getPassive() || !_xferMode.equals("X"),
+                        504, "Cannot use passive X mode");
 
                 /* Determine the 127 response address to send back to the
                  * client. When the pool is passive, this is the address of
@@ -1159,12 +1125,8 @@ public abstract class AbstractFtpDoorV1
                 if (adapter != null) {
                     LOGGER.info("Waiting for adapter to finish.");
                     adapter.join(300000); // 5 minutes
-                    if (adapter.isAlive()) {
-                        throw new FTPCommandException(451, "FTP proxy did not shut down");
-                    } else if (_adapter.hasError()) {
-                        throw new FTPCommandException(451, "FTP proxy failed: " + _adapter.getError());
-                    }
-
+                    checkFTPCommand(!adapter.isAlive(), 451, "FTP proxy did not shut down");
+                    checkFTPCommand(!_adapter.hasError(), 451, "FTP proxy failed: %s", _adapter.getError());
                     LOGGER.debug("Closing adapter");
                     adapter.close();
                 }
@@ -1236,7 +1198,7 @@ public abstract class AbstractFtpDoorV1
             String replyMsg;
             if (t instanceof FTPCommandException) {
                 replyCode = ((FTPCommandException) t).getCode();
-                replyMsg = ((FTPCommandException) t).getReply();
+                replyMsg = t.getMessage();
             } else if (t instanceof RuntimeException) {
                 _log.error("Possible bug detected.", t);
                 replyCode = 451;
@@ -1265,7 +1227,7 @@ public abstract class AbstractFtpDoorV1
         protected String explain(Throwable t)
         {
             if (t instanceof FTPCommandException) {
-                return ((FTPCommandException)t).getReply();
+                return t.getMessage();
             }
 
             return super.explain(t);
@@ -1323,6 +1285,13 @@ public abstract class AbstractFtpDoorV1
             if (name.startsWith("ftp_")) {
                 visitor.acceptCommand(method, name.substring(4));
             }
+        }
+    }
+
+    protected void checkFTPCommand(boolean isOK, int code, String format, Object... arguments) throws FTPCommandException
+    {
+        if (!isOK) {
+            throw new FTPCommandException(code, String.format(format, arguments));
         }
     }
 
@@ -1503,9 +1472,10 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    protected boolean isCommandAllowed(CommandRequest command, Object commandContext)
+    protected void checkCommandAllowed(CommandRequest command, Object commandContext)
+            throws FTPCommandException
     {
-        return true;
+        // all commands are allowed by default.
     }
 
     public void ftpcommand(String cmdline, Object commandContext, ReplyType replyType)
@@ -1759,13 +1729,9 @@ public abstract class AbstractFtpDoorV1
 
     protected void checkLoggedIn(AnonymousPermission mode) throws FTPCommandException
     {
-        if (_subject == null) {
-            throw new FTPCommandException(530, "Not logged in.");
-        }
-
-        if (mode == FORBID_ANONYMOUS_USER && Subjects.isNobody(_subject)) {
-            throw new FTPCommandException(554, "Anonymous usage not permitted.");
-        }
+        checkFTPCommand(_subject != null, 530, "Not logged in.");
+        checkFTPCommand(mode != FORBID_ANONYMOUS_USER || !Subjects.isNobody(_subject),
+                554, "Anonymous usage not permitted.");
     }
 
     @Help("FEAT - List available features.")
@@ -1798,9 +1764,7 @@ public abstract class AbstractFtpDoorV1
     public void opts_retr(String opt) throws FTPCommandException
     {
         String[] st = opt.split("=");
-        if (st.length != 2) {
-            throw new FTPCommandException(500, "OPTS failed.");
-        }
+        checkFTPCommand(st.length == 2, 500, "OPTS failed.");
 
         String key = st[0];
         String value = st[1].split(",|;") [0];
@@ -1816,9 +1780,8 @@ public abstract class AbstractFtpDoorV1
         case "markers":
             try {
                 long period = Integer.parseInt(value);
-                if (period < MINIMUM_PERFORMANCE_MARKER_PERIOD || period > MAXIMUM_PERFORMANCE_MARKER_PERIOD) {
-                    throw new FTPCommandException(500, "Value \"" + value + "\" not acceptable");
-                }
+                checkFTPCommand(period >= MINIMUM_PERFORMANCE_MARKER_PERIOD && period <= MAXIMUM_PERFORMANCE_MARKER_PERIOD,
+                        500, "Value \"%s\" not acceptable", value);
                 _performanceMarkerPeriod = TimeUnit.SECONDS.toMillis(period);
                 reply("200 OPTS Command Successful.");
             } catch (NumberFormatException e) {
@@ -1831,31 +1794,28 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void opts_stor(String opt, String val)
+    public void opts_stor(String opt, String val) throws FTPCommandException
     {
-        if (!opt.equalsIgnoreCase("EOF")) {
-            reply("501 Unrecognized option: " + opt + " (" + val + ")");
-            return;
-        }
-        if (!val.equals("1")) {
-            _confirmEOFs = true;
-            reply("200 EOF confirmation is ON");
-            return;
-        }
-        if (!val.equals("0")) {
+        checkFTPCommand(opt.equalsIgnoreCase("EOF"),
+                501, "Unrecognized option: %s (%s)", opt, val);
+
+        switch (val) {
+        case "0":
             _confirmEOFs = false;
             reply("200 EOF confirmation is OFF");
-            return;
+            break;
+        case "1":
+            _confirmEOFs = true;
+            reply("200 EOF confirmation is ON");
+            break;
+        default:
+            throw new FTPCommandException(501, "Unrecognized option value: " + val);
         }
-        reply("501 Unrecognized option value: " + val);
     }
 
-    private void opts_cksm(String algo)
+    private void opts_cksm(String algo) throws FTPCommandException
     {
-        if (algo ==  null) {
-            reply("501 CKSM option command requires algorithm type");
-            return;
-        }
+        checkFTPCommand(algo != null, 501, "CKSM option command requires algorithm type");
 
         if (algo.startsWith("markers=")) {
             _checksumProgressPeriod = Long.parseLong(algo.substring(8).split(";") [0]);
@@ -1872,7 +1832,7 @@ public abstract class AbstractFtpDoorV1
             }
             reply("200 OK");
         } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
-            reply("504 Unsupported checksum type: " + algo);
+            throw new FTPCommandException(504, "Unsupported checksum type: " + algo);
         }
     }
 
@@ -1899,16 +1859,13 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void opts_pasv(String s)
+    public void opts_pasv(String s) throws FTPCommandException
     {
         Map<String, String> options = Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(s);
         for (Map.Entry<String, String> option : options.entrySet()) {
-            if (option.getKey().equalsIgnoreCase("AllowDelayed")) {
-                _allowDelayed = option.getValue().equals("1");
-            } else {
-                reply("501 Unrecognized option: " + option.getKey() + " (" + option.getValue() + ')');
-                return;
-            }
+            checkFTPCommand(option.getKey().equalsIgnoreCase("AllowDelayed"),
+                    501, "Unrecognized option: %s (%s)", option.getKey(), option.getValue());
+            _allowDelayed = option.getValue().equals("1");
         }
         reply("200 OK");
     }
@@ -1930,13 +1887,12 @@ public abstract class AbstractFtpDoorV1
         } else if (st.length == 2 && st[0].equalsIgnoreCase("PASV")) {
             opts_pasv(st[1]);
         } else {
-            reply("501 Unrecognized option: " + st[0] + " (" + arg + ")");
+            throw new FTPCommandException(501, "Unrecognized option: " + st[0] + " (" + arg + ")");
         }
     }
 
     @Help("DELE <SP> <pathname> - Delete a file or symbolic link.")
-    public void ftp_dele(String arg)
-        throws FTPCommandException
+    public void ftp_dele(String arg) throws FTPCommandException
     {
         /**
          * DELE
@@ -1971,10 +1927,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("USER <SP> <name> - Authentication username.")
-    public abstract void ftp_user(String arg);
+    public abstract void ftp_user(String arg) throws FTPCommandException;
 
     @Help("PASS <SP> <password> - Authentication password.")
-    public abstract void ftp_pass(String arg);
+    public abstract void ftp_pass(String arg) throws FTPCommandException;
 
     @Help("PBSZ <SP> <size> - Protection buffer size.")
     public void ftp_pbsz(String arg)
@@ -1983,13 +1939,11 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("PROT <SP> <level> - Set data channel protection level.")
-    public void ftp_prot(String arg)
+    public void ftp_prot(String arg) throws FTPCommandException
     {
-        if (!arg.equals("C")) {
-            reply("534 Will accept only Clear protection level");
-        } else {
-            reply("200 OK");
-        }
+        checkFTPCommand(arg.equals("C"), 534, "Will accept only Clear protection level");
+
+        reply("200 OK");
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -2017,8 +1971,7 @@ public abstract class AbstractFtpDoorV1
 
 
     @Help("RMD <SP> <path> - Remove an empty directory.")
-    public void ftp_rmd(String arg)
-        throws FTPCommandException
+    public void ftp_rmd(String arg) throws FTPCommandException
     {
         /**
          * RMD
@@ -2026,11 +1979,7 @@ public abstract class AbstractFtpDoorV1
          *   500, 501, 502, 421, 530, 550
          */
         checkLoggedIn(FORBID_ANONYMOUS_USER);
-
-        if (arg.equals("")) {
-            reply(err("RMD",arg));
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 500, "Missing path argument");
 
         try {
             FsPath path = absolutePath(arg);
@@ -2056,8 +2005,7 @@ public abstract class AbstractFtpDoorV1
 
 
     @Help("MKD <SP> <path> - Create a directory.")
-    public void ftp_mkd(String arg)
-        throws FTPCommandException
+    public void ftp_mkd(String arg) throws FTPCommandException
     {
         /**
          * MKD
@@ -2065,11 +2013,8 @@ public abstract class AbstractFtpDoorV1
          *   500, 501, 502, 421, 530, 550
          */
         checkLoggedIn(FORBID_ANONYMOUS_USER);
+        checkFTPCommand(!arg.isEmpty(), 500, "Missing path argument");
 
-        if (arg.equals("")) {
-            reply(err("MKD",arg));
-            return;
-        }
         FsPath path = absolutePath(arg);
         String properDirectoryStringReply = path.stripPrefix(_doorRootPath).replaceAll("\"","\"\"");
         try {
@@ -2119,8 +2064,12 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("HELP [<SP> <string>] - Help about a command, or all commands if <string> isn't specified.")
-    public void ftp_help(String arg)
+    public void ftp_help(String arg) throws FTPCommandException
     {
+        String lowerCaseCmd = arg.toLowerCase();
+        checkFTPCommand(arg.indexOf('_') == -1 && (arg.isEmpty() || _methodDict.containsKey(lowerCaseCmd)),
+                501, "Unknown command %s", arg.toUpperCase());
+
         StringWriter sr = new StringWriter();
         PrintWriter pw = new PrintWriter(sr);
 
@@ -2151,33 +2100,26 @@ public abstract class AbstractFtpDoorV1
             }
             pw.print("214 Direct comments to support@dcache.org.");
         } else {
-            String command = arg.toUpperCase();
-            String lowerCaseCmd = arg.toLowerCase();
+            Help help = _helpDict.get(lowerCaseCmd);
+            String message = help == null ? arg.toUpperCase() : help.value();
 
-            if (arg.indexOf('_') == -1 && _methodDict.containsKey(lowerCaseCmd)) {
-                Help help = _helpDict.get(lowerCaseCmd);
-                String message = help == null ? command : help.value();
+            Iterator<String> i = Splitter.on("\r\n").split(message).iterator();
+            boolean isFirstLine = true;
+            while (i.hasNext()) {
+                String line = i.next();
 
-                Iterator<String> i = Splitter.on("\r\n").split(message).iterator();
-                boolean isFirstLine = true;
-                while (i.hasNext()) {
-                    String line = i.next();
-
-                    if (isFirstLine) {
-                        if (i.hasNext()) {
-                            pw.print("214-" + line + "\r\n");
-                        } else {
-                            pw.print("214 " + line);
-                        }
-                    } else if (i.hasNext()) {
-                        pw.print(line + "\r\n");
+                if (isFirstLine) {
+                    if (i.hasNext()) {
+                        pw.print("214-" + line + "\r\n");
                     } else {
                         pw.print("214 " + line);
                     }
-                    isFirstLine = false;
+                } else if (i.hasNext()) {
+                    pw.print(line + "\r\n");
+                } else {
+                    pw.print("214 " + line);
                 }
-            } else {
-                pw.print("501 Unknown command " + command);
+                isFirstLine = false;
             }
         }
 
@@ -2220,37 +2162,27 @@ public abstract class AbstractFtpDoorV1
         _allo = 0;
 
         Matcher matcher = ALLO_PATTERN.matcher(arg);
-        if (!matcher.matches()) {
-            reply("501 Invalid argument");
-            return;
-        }
+        checkFTPCommand(matcher.matches(), 501, "Invalid argument");
 
         try {
             _allo = Long.parseLong(matcher.group(1));
         } catch (NumberFormatException e) {
-            reply("501 Invalid argument");
-            return;
+            throw new FTPCommandException(501, "Invalid argument");
         }
 
         reply(ok("ALLO"));
     }
 
     @Help("PWD - Returns the current directory of the host.")
-    public void ftp_pwd(String arg)
-        throws FTPCommandException
+    public void ftp_pwd(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
-
-        if (!arg.equals("")) {
-            reply(err("PWD",arg));
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 500, "Missing path");
         reply("257 \"" + _cwd + "\" is current directory");
     }
 
     @Help("CWD <SP> <path> - Change working directory.")
-    public void ftp_cwd(String arg)
-        throws FTPCommandException
+    public void ftp_cwd(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
@@ -2260,18 +2192,17 @@ public abstract class AbstractFtpDoorV1
             _cwd = newcwd.stripPrefix(_doorRootPath);
             reply("250 CWD command succcessful. New CWD is <" + _cwd + ">");
         } catch (NotDirCacheException e) {
-            reply("550 Not a directory: " + arg);
+            throw new FTPCommandException(550, "Not a directory: " + arg);
         } catch (FileNotFoundCacheException e) {
-            reply("550 File not found");
+            throw new FTPCommandException(550, "File not found");
         } catch (CacheException e) {
-            reply("451 CWD failed: " + e.getMessage());
             LOGGER.error("Error in CWD: {}", e);
+            throw new FTPCommandException(451, "CWD failed: " + e.getMessage());
         }
     }
 
     @Help("CDUP - Change to parent directory.")
-    public void ftp_cdup(String arg)
-        throws FTPCommandException
+    public void ftp_cdup(String arg) throws FTPCommandException
     {
         ftp_cwd("..");
     }
@@ -2293,25 +2224,18 @@ public abstract class AbstractFtpDoorV1
     protected InetSocketAddress getExtendedAddressOf(String arg) throws FTPCommandException
     {
         try {
-            if (arg.isEmpty()) {
-                throw new FTPCommandException(501, "Syntax error: empty arguments.");
-            }
+            checkFTPCommand(!arg.isEmpty(), 501, "Syntax error: empty arguments.");
             ArrayList<String> splitted = Lists.newArrayList(Splitter.on(arg.charAt(0)).split(arg));
-            if (splitted.size() != 5) {
-                throw new FTPCommandException(501, "Syntax error: Wrong number of arguments in '"+arg+"'.");
-            }
+            checkFTPCommand(splitted.size() == 5, 501, "Syntax error: Wrong number of arguments in '%s'.", arg);
             Protocol protocol = Protocol.find(splitted.get(1));
-            if (!InetAddresses.isInetAddress(splitted.get(2))) {
-                throw new FTPCommandException(501, "Syntax error: '"+splitted.get(2)+"' is no valid address.");
-            }
+            checkFTPCommand(InetAddresses.isInetAddress(splitted.get(2)), 501,
+                    "Syntax error: '%s' is no valid address.", splitted.get(2));
             InetAddress address = InetAddresses.forString(splitted.get(2));
-            if (!protocol.getAddressClass().equals(address.getClass())) {
-                throw new FTPCommandException(501, "Protocol code does not match address: '"+arg+"'.");
-            }
+            checkFTPCommand(protocol.getAddressClass().equals(address.getClass()),
+                    501, "Protocol code does not match address: '%s'.", arg);
             int port = Integer.parseInt(splitted.get(3));
-            if (port < 1 || port > 65536) {
-                throw new FTPCommandException(501, "Port number '"+port+"' out of range [1,65536].");
-            }
+            checkFTPCommand(port >= 1 && port <= 65536, 501,
+                    "Port number '%d' out of range [1,65536].", port);
             return new InetSocketAddress(address, port);
 
         } catch (NumberFormatException nfe) {
@@ -2321,9 +2245,7 @@ public abstract class AbstractFtpDoorV1
 
     protected void setActive(InetSocketAddress address) throws FTPCommandException
     {
-        if (_sessionAllPassive) {
-            throw new FTPCommandException(503, "PORT and EPRT not allowed after EPSV ALL.");
-        }
+        checkFTPCommand(!_sessionAllPassive, 503, "PORT and EPRT not allowed after EPSV ALL.");
 
         _mode = Mode.ACTIVE;
         _clientDataAddress = address;
@@ -2385,10 +2307,7 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         String[] st = arg.split(",");
-        if (st.length != 6) {
-            reply(err("PORT",arg));
-            return;
-        }
+        checkFTPCommand(st.length == 6, 500, "Badly formatted argument: %s", arg);
 
         setActive(getAddressOf(st));
         _allowDelayed = false;
@@ -2401,9 +2320,7 @@ public abstract class AbstractFtpDoorV1
         throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
-        if (_sessionAllPassive) {
-            throw new FTPCommandException(503, "PASV not allowed after EPSV ALL");
-        }
+        checkFTPCommand(!_sessionAllPassive, 503, "PASV not allowed after EPSV ALL");
 
         /* PASV can only return IPv4 addresses.
          */
@@ -2454,9 +2371,8 @@ public abstract class AbstractFtpDoorV1
     public void ftp_epsv(String arg)
         throws FTPCommandException
     {
-        if (!_allowDelayed) {
-            checkIpV6();
-        }
+        checkFTPCommand(_allowDelayed || _remoteSocketAddress.getAddress().getClass().equals(Inet6Address.class),
+                502, "Command only supported for IPv6");
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         if  ("ALL".equalsIgnoreCase(arg)) {
@@ -2493,13 +2409,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void checkIpV6() throws FTPCommandException
-    {
-        if (!_remoteSocketAddress.getAddress().getClass().equals(Inet6Address.class)) {
-            throw new FTPCommandException(502, "Command only supported for IPv6");
-        }
-    }
-
     @Help("MODE <SP> <mode> - Sets the transfer mode.")
     public void ftp_mode(String arg)
     {
@@ -2532,10 +2441,7 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         int spaceIndex = arg.indexOf(' ');
-        if (spaceIndex == -1) {
-            reply("500 missing time-val and pathname");
-            return;
-        }
+        checkFTPCommand(spaceIndex != -1, 500, "missing time-val and pathname");
 
         String pathname = arg.substring(spaceIndex + 1);
         String timeval = arg.substring(0, spaceIndex);
@@ -2557,10 +2463,7 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         int spaceIndex = arg.indexOf(' ');
-        if (spaceIndex == -1) {
-            reply("500 missing time-val and pathname");
-            return;
-        }
+        checkFTPCommand(spaceIndex != -1, 500, "missing time-val and pathname");
 
         String pathname = arg.substring(spaceIndex + 1);
         String timeval = arg.substring(0, spaceIndex);
@@ -2582,10 +2485,7 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         int spaceIndex = arg.indexOf(' ');
-        if (spaceIndex == -1) {
-            reply("500 missing mff-facts and pathname");
-            return;
-        }
+        checkFTPCommand(spaceIndex != -1, 500, "missing mff-facts and pathname");
 
         String pathname = arg.substring(spaceIndex + 1);
         String facts = arg.substring(0, spaceIndex);
@@ -2595,17 +2495,13 @@ public abstract class AbstractFtpDoorV1
                 withKeyValueSeparator('=').split(facts);
         for (Map.Entry<String,String> change : changes.entrySet()) {
             Fact fact = Fact.find(change.getKey());
-            if (fact == null) {
-                reply("504 Unsupported fact " + change.getKey());
-                return;
-            }
+            checkFTPCommand(fact != null, 504, "Unsupported fact %s", change.getKey());
             switch (fact) {
             case MODE:
                 try {
                     updates.setMode(Integer.parseInt(change.getValue(), 8));
                 } catch (NumberFormatException e) {
-                    reply("504 value not in octal for UNIX.mode");
-                    return;
+                    throw new FTPCommandException(504, "value not in octal for UNIX.mode");
                 }
                 break;
             case MODIFY:
@@ -2621,8 +2517,7 @@ public abstract class AbstractFtpDoorV1
                         " for UNIX.atime"));
                 break;
             default:
-                reply("504 Unmodifable fact " + change.getKey());
-                return;
+                throw new FTPCommandException(504, "Unmodifable fact " + change.getKey());
             }
         }
 
@@ -2671,8 +2566,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private long parseTimeval(String timeval, String errorSuffix)
-            throws FTPCommandException
+    private long parseTimeval(String timeval, String errorSuffix) throws FTPCommandException
     {
         String fractionalPart = null;
         int dotIndex = timeval.indexOf('.');
@@ -2715,15 +2609,10 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command\r\n" +
             "SITE <SP> TASKID <SP> <id> - Provide server with an identifier\r\n" +
             "SITE <SP> WHOAMI - Provides the username or uid of the user")
-    public void ftp_site(String arg)
-        throws FTPCommandException
+    public void ftp_site(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
-
-        if (arg.equals("")) {
-            reply("500 must supply the site specific command");
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 500, "must supply the site specific command");
 
         String args[] = arg.split(" ");
 
@@ -2739,75 +2628,45 @@ public abstract class AbstractFtpDoorV1
              */
             ftp_help("SITE");
         } else if (args[0].equalsIgnoreCase("BUFSIZE")) {
-            if (args.length != 2) {
-                reply("500 command must be in the form 'SITE BUFSIZE <number>'");
-                return;
-            }
+            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE BUFSIZE <number>'");
             ftp_sbuf(args[1]);
         } else if ( args[0].equalsIgnoreCase("CHKSUM")) {
-            if (args.length != 2) {
-                reply("500 command must be in the form 'SITE CHKSUM <value>'");
-                return;
-            }
+            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE CHKSUM <value>'");
             doCheckSum("adler32",args[1]);
         } else if (args[0].equalsIgnoreCase("CHGRP")) {
-            if (args.length != 3) {
-                reply("504 command must be in the form 'SITE CHGRP <group/gid> <file/dir>'");
-                return;
-            }
+            checkFTPCommand(args.length == 3, 504, "command must be in the form 'SITE CHGRP <group/gid> <file/dir>'");
             doChgrp(args[1], args[2]);
         } else if (args[0].equalsIgnoreCase("CHMOD")) {
-            if (args.length != 3) {
-                reply("500 command must be in the form 'SITE CHMOD <octal perms> <file/dir>'");
-                return;
-            }
+            checkFTPCommand(args.length == 3, 500, "command must be in the form 'SITE CHMOD <octal perms> <file/dir>'");
             doChmod(args[1], args[2]);
         } else if (args[0].equalsIgnoreCase("CLIENTINFO")) {
-            if (args.length < 2) {
-                reply("500 command must be in the form 'SITE CLIENTINFO <info>'");
-                return;
-            }
+            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE CLIENTINFO <info>'");
             doClientinfo(arg.substring(11));
         } else if (args[0].equalsIgnoreCase("SYMLINKFROM")) {
-            if (args.length != 2) {
-                reply("500 command must be in the form 'SITE SYMLINKFROM <path>'");
-                return;
-            }
+            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE SYMLINKFROM <path>'");
             doSymlinkFrom(args[1]);
         } else if (args[0].equalsIgnoreCase("SYMLINKTO")) {
-            if (args.length != 2) {
-                reply("500 command must be in the form 'SITE SYMLINKTO <path>'");
-                return;
-            }
+            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE SYMLINKTO <path>'");
             doSymlinkTo(args[1]);
         } else if (args[0].equalsIgnoreCase("TASKID")) {
-            if (args.length == 1) {
-                reply("501 Syntax error in parameters or arguments.");
-                return;
-            }
+            checkFTPCommand(args.length == 1, 501, "Syntax error in parameters or arguments.");
             doTaskid(arg.substring(6));
         } else if (args[0].equalsIgnoreCase("WHOAMI")) {
-            if (args.length != 1) {
-                reply("501 Invalid command arguments.");
-                return;
-            }
+            checkFTPCommand(args.length == 1, 501, "Invalid command arguments.");
             doWhoami();
         } else {
-            reply("500 Unknown SITE command");
+            throw new FTPCommandException(500, "Unknown SITE command");
         }
     }
 
     @Help("CKSM <SP> <alg> <SP> <off> <SP> <len> <SP> <path> - Return checksum of file.")
-    public void ftp_cksm(String arg)
-        throws FTPCommandException
+    public void ftp_cksm(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         List<String> st = Splitter.on(' ').limit(4).splitToList(arg);
-        if (st.size() != 4) {
-            reply("500 Unsupported CKSM command operands");
-            return;
-        }
+        checkFTPCommand(st.size() == 4, 500, "Unsupported CKSM command operands");
+
         String algo = st.get(0);
         String offset = st.get(1);
         String length = st.get(2);
@@ -2818,35 +2677,24 @@ public abstract class AbstractFtpDoorV1
 
         try {
             offsetL = Long.parseLong(offset);
-        } catch (NumberFormatException ex){
-            reply("501 Invalid offset format:"+ex);
-            return;
+        } catch (NumberFormatException e) {
+            throw new FTPCommandException(501, "Invalid offset format: " + e);
         }
 
         try {
             lengthL = Long.parseLong(length);
-        } catch (NumberFormatException ex){
-            reply("501 Invalid length format:"+ex);
-            return;
+        } catch (NumberFormatException e) {
+            throw new FTPCommandException(501, "Invalid length format: " + e);
         }
 
-        try {
-            doCksm(algo,path,offsetL,lengthL);
-        } catch (FTPCommandException e) {
-            reply(String.valueOf(e.getCode()) + " " + e.getReply());
-        }
+        doCksm(algo, path, offsetL, lengthL);
     }
 
     public void doCksm(String algo, String path, long offsetL, long lengthL)
-        throws FTPCommandException
+            throws FTPCommandException
     {
-        if (lengthL != -1) {
-            throw new FTPCommandException(504, "Unsupported checksum over partial file length");
-        }
-
-        if (offsetL != 0) {
-            throw new FTPCommandException(504, "Unsupported checksum over partial file offset");
-        }
+        checkFTPCommand(lengthL == -1, 504, "Unsupported checksum over partial file length");
+        checkFTPCommand(offsetL == 0, 504, "Unsupported checksum over partial file offset");
 
         try {
             FsPath absPath = absolutePath(path);
@@ -2903,21 +2751,17 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("SCKS <SP> <alg> <SP> <value> - Fail next upload if checksum does not match.")
-    public void ftp_scks(String arg)
-        throws FTPCommandException
+    public void ftp_scks(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         String[] st = arg.split("\\s+");
-        if (st.length != 2) {
-            reply("505 Unsupported SCKS command operands");
-            return;
-        }
+        checkFTPCommand(st.length == 2, 505, "Unsupported SCKS command operands");
         doCheckSum(st[0], st[1]);
     }
 
 
-    public void doCheckSum(String type, String value)
+    public void doCheckSum(String type, String value) throws FTPCommandException
     {
         try {
             _checkSumFactory =
@@ -2927,19 +2771,14 @@ public abstract class AbstractFtpDoorV1
         } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
             _checkSumFactory = null;
             _checkSum = null;
-            reply("504 Unsupported checksum type:" + type);
+            throw new FTPCommandException(504, "Unsupported checksum type:" + type);
         }
     }
 
-    public void doChmod(String permstring, String path)
-        throws FTPCommandException
+    public void doChmod(String permstring, String path) throws FTPCommandException
     {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
-
-        if (path.equals("")){
-            reply(err("SITE CHMOD",path));
-            return;
-        }
+        checkFTPCommand(!path.isEmpty(), 500, "Missing path");
 
         FileAttributes attributes;
         try {
@@ -2949,21 +2788,19 @@ public abstract class AbstractFtpDoorV1
             attributes =
                 _pnfs.getFileAttributes(absolutePath(path), EnumSet.of(PNFSID, TYPE));
 
-            if (attributes.getFileType() == FileType.LINK) {
-                reply("502 chmod of symbolic links is not yet supported.");
-                return;
-            }
+            checkFTPCommand(attributes.getFileType() != FileType.LINK,
+                    502, "chmod of symbolic links is not yet supported.");
 
             _pnfs.setFileAttributes(attributes.getPnfsId(),
                     FileAttributes.ofMode(newperms));
 
             reply("250 OK");
         } catch (NumberFormatException ex) {
-            reply("501 permissions argument must be an octal integer");
+            throw new FTPCommandException(501, "permissions argument must be an octal integer");
         } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
+            throw new FTPCommandException(550, "Permission denied");
         } catch (CacheException ce) {
-            reply("550 Permission denied, reason: " + ce);
+            throw new FTPCommandException(550, "Permission denied, reason: " + ce);
         }
     }
 
@@ -2974,11 +2811,7 @@ public abstract class AbstractFtpDoorV1
     public void doChgrp(String group, String path) throws FTPCommandException
     {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
-
-        if (path.equals("")){
-            reply(err("SITE CHGRP", path));
-            return;
-        }
+        checkFTPCommand(!path.isEmpty(), 500, "Missing path");
 
         int gid;
 
@@ -2986,9 +2819,7 @@ public abstract class AbstractFtpDoorV1
         if (result == null) {
             try {
                 Principal principal = _loginStrategy.map(new GroupNamePrincipal(group));
-                if (principal == null) {
-                    throw new FTPCommandException(504, "Unknown group '" + group + "'");
-                }
+                checkFTPCommand(principal != null, 504, "Unknown group '%s'", group);
                 if (!(principal instanceof GidPrincipal)) {
                     LOGGER.warn("Received non-GID {} principal from map request",
                             principal.getClass().getCanonicalName());
@@ -3008,9 +2839,8 @@ public abstract class AbstractFtpDoorV1
         try {
             attributes = _pnfs.getFileAttributes(absolutePath(path), EnumSet.of(PNFSID, TYPE));
 
-            if (attributes.getFileType() == FileType.LINK) {
-                throw new FTPCommandException(504, "chgrp of symbolic links is not yet supported.");
-            }
+            checkFTPCommand(attributes.getFileType() != FileType.LINK,
+                    504, "chgrp of symbolic links is not yet supported.");
 
             _pnfs.setFileAttributes(attributes.getPnfsId(), FileAttributes.ofGid(gid));
 
@@ -3027,10 +2857,7 @@ public abstract class AbstractFtpDoorV1
     public void doSymlinkFrom(String path) throws FTPCommandException
     {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
-
-        if (path.equals("")) {
-            throw new FTPCommandException(501, "Command requires path argument.");
-        }
+        checkFTPCommand(!path.isEmpty(), 501, "Command requires path argument.");
 
         _symlinkPath = path;
 
@@ -3040,14 +2867,8 @@ public abstract class AbstractFtpDoorV1
     public void doSymlinkTo(String target) throws FTPCommandException
     {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
-
-        if (target.equals("")){
-            throw new FTPCommandException(501, "Command requires path.");
-        }
-
-        if (_symlinkPath == null) {
-            throw new FTPCommandException(503, "Command must follow SITE SYMLINKFROM command.");
-        }
+        checkFTPCommand(!target.isEmpty(), 501, "Command requires path.");
+        checkFTPCommand(_symlinkPath != null, 503, "Command must follow SITE SYMLINKFROM command.");
 
         // NB. if we get here then user has satisfied conditions of
         // {@code #doSymlinkFrom}.
@@ -3129,25 +2950,18 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("SBUF <SP> <size> - Set buffer size.")
-    public void ftp_sbuf(String arg)
+    public void ftp_sbuf(String arg) throws FTPCommandException
     {
-        if (arg.equals("")) {
-            reply("500 must supply a buffer size");
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 500, "must supply a buffer size");
 
         int bufsize;
         try {
             bufsize = Integer.parseInt(arg);
-        } catch(NumberFormatException ex) {
-            reply("500 bufsize argument must be integer");
-            return;
+        } catch (NumberFormatException e) {
+            throw new FTPCommandException(500, "bufsize argument must be integer");
         }
 
-        if (bufsize < 1) {
-            reply("500 bufsize must be positive.  Probably large, but at least positive");
-            return;
-        }
+        checkFTPCommand(bufsize > 0, 500, "bufsize must be positive.  Probably large, but at least positive");
 
         _bufSize = bufsize;
         reply("200 bufsize set to " + arg);
@@ -3157,29 +2971,21 @@ public abstract class AbstractFtpDoorV1
     public void ftp_eret(String arg) throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
-        if (st.length < 2) {
-            reply(err("ERET", arg));
-            return;
-        }
+        checkFTPCommand(st.length >= 2, 500, "Missing argument");
+
         String extended_retrieve_mode = st[0];
         String cmd = "eret_" + extended_retrieve_mode.toLowerCase();
         Object args[] = { arg };
-        if (_methodDict.containsKey(cmd)) {
-            Method m = _methodDict.get(cmd);
-            try {
-                LOGGER.info("Error return invoking: {}({})", m.getName(), arg);
-                m.invoke(this, args);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                _skipBytes = 0;
-                Throwable cause = e.getCause();
-                if (cause instanceof FTPCommandException) {
-                    throw (FTPCommandException) cause;
-                }
-                reply("500 " + e.toString());
-            }
-        } else {
-            reply("504 ERET is not implemented for retrieve mode: "
-                  + extended_retrieve_mode);
+        checkFTPCommand(_methodDict.containsKey(cmd),
+                504, "ERET is not implemented for retrieve mode: %s", extended_retrieve_mode);
+        Method m = _methodDict.get(cmd);
+        try {
+            LOGGER.info("Error return invoking: {}({})", m.getName(), arg);
+            m.invoke(this, args);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            _skipBytes = 0;
+            Throwables.throwIfInstanceOf(e.getCause(), FTPCommandException.class);
+            throw new FTPCommandException(500, e.toString());
         }
     }
 
@@ -3187,30 +2993,21 @@ public abstract class AbstractFtpDoorV1
     public void ftp_esto(String arg) throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
-        if (st.length < 2) {
-            reply(err("ESTO",arg));
-            return;
-        }
+        checkFTPCommand(st.length >= 2, 500, "Missing argument");
 
         String extended_store_mode = st[0];
         String cmd = "esto_" + extended_store_mode.toLowerCase();
         Object args[] = { arg };
-        if (_methodDict.containsKey(cmd)) {
-            Method m = _methodDict.get(cmd);
-            try {
-                LOGGER.info("Esto invoking: {} ({})", m.getName(), arg);
-                m.invoke(this, args);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                _skipBytes = 0;
-                Throwable cause = e.getCause();
-                if (cause instanceof FTPCommandException) {
-                    throw (FTPCommandException) cause;
-                }
-                reply("500 " + e.toString());
-            }
-        } else {
-            reply("504 ESTO is not implemented for store mode: "
-                  + extended_store_mode);
+        checkFTPCommand(_methodDict.containsKey(cmd),
+                504, "ESTO is not implemented for store mode: %s", extended_store_mode);
+        Method m = _methodDict.get(cmd);
+        try {
+            LOGGER.info("Esto invoking: {} ({})", m.getName(), arg);
+            m.invoke(this, args);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            _skipBytes = 0;
+            Throwables.throwIfInstanceOf(e.getCause(), FTPCommandException.class);
+            throw new FTPCommandException(500, e.toString());
         }
     }
 
@@ -3220,35 +3017,24 @@ public abstract class AbstractFtpDoorV1
     // other modes identified by string "MODE" can be implemented by adding
     // void method ftp_esto_"MODE"(String arg)
     //
-    public void ftp_esto_a(String arg)
-        throws FTPCommandException
+    public void ftp_esto_a(String arg) throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
-        if (st.length != 3) {
-            reply(err("ESTO", arg));
-            return;
-        }
+        checkFTPCommand(st.length == 3, 500, "Missing argument");
+
         String extended_store_mode = st[0];
-        if (!extended_store_mode.equalsIgnoreCase("a")) {
-            reply("504 ESTO is not implemented for store mode: "
-                  + extended_store_mode);
-            return;
-        }
+        checkFTPCommand(extended_store_mode.equalsIgnoreCase("a"),
+                504, "ESTO is not implemented for store mode: %s", extended_store_mode);
         String offset = st[1];
         String filename = st[2];
         long asm_offset;
         try {
             asm_offset = Long.parseLong(offset);
         } catch (NumberFormatException e) {
-            String err = "501 ESTO Adjusted Store Mode: invalid offset " + offset;
-            LOGGER.error(err);
-            reply(err);
-            return;
+            throw new FTPCommandException(501, "Adjusted Store Mode: invalid offset " + offset);
         }
-        if (asm_offset != 0) {
-            reply("504 ESTO Adjusted Store Mode does not work with nonzero offset: " + offset);
-            return;
-        }
+        checkFTPCommand(asm_offset == 0,
+                504, "ESTO Adjusted Store Mode does not work with nonzero offset: %s", offset);
         LOGGER.info("Performing esto in \"a\" mode with offset = {}", offset);
         ftp_stor(filename);
     }
@@ -3259,37 +3045,26 @@ public abstract class AbstractFtpDoorV1
     // other modes identified by string "MODE" can be implemented by adding
     // void method ftp_eret_"MODE"(String arg)
     //
-    public void ftp_eret_p(String arg)
-        throws FTPCommandException
+    public void ftp_eret_p(String arg) throws FTPCommandException
     {
         String[] st = arg.split("\\s+");
-        if (st.length != 4) {
-            reply(err("ERET",arg));
-            return;
-        }
+        checkFTPCommand(st.length == 4, 500, "Missing argument");
+
         String extended_retrieve_mode = st[0];
-        if (!extended_retrieve_mode.equalsIgnoreCase("p")) {
-            reply("504 ERET is not implemented for retrieve mode: "+extended_retrieve_mode);
-            return;
-        }
+        checkFTPCommand(extended_retrieve_mode.equalsIgnoreCase("p"),
+                504, "ERET is not implemented for retrieve mode: %s", extended_retrieve_mode);
         String offset = st[1];
         String size = st[2];
         String filename = st[3];
         try {
             prm_offset = Long.parseLong(offset);
         } catch (NumberFormatException e) {
-            String err = "501 ERET Partial Retrieve Mode: invalid offset " + offset;
-            LOGGER.error(err);
-            reply(err);
-            return;
+            throw new FTPCommandException(501, "invalid offset " + offset + ": " + e);
         }
         try {
             prm_size = Long.parseLong(size);
         } catch (NumberFormatException e) {
-            String err = "501 ERET Partial Retrieve Mode: invalid size " + offset;
-            LOGGER.error(err);
-            reply(err);
-            return;
+            throw new FTPCommandException(501, "invalid size " + size + ": " + e);
         }
         LOGGER.info("Performing eret in \"p\" mode with offset = {} size = {}",
                 offset, size);
@@ -3297,14 +3072,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("RETR <SP> <path> - Retrieve a copy of the file.")
-    public void ftp_retr(String arg)
-        throws FTPCommandException
+    public void ftp_retr(String arg) throws FTPCommandException
     {
         try {
-            if (_skipBytes > 0){
-                reply("504 RESTART not implemented");
-                return;
-            }
+            checkFTPCommand(_skipBytes <= 0, 504, "RESTART not implemented");
             retrieve(arg, prm_offset, prm_size, _mode,
                      _xferMode, _parallel, _clientDataAddress, _bufSize,
                      _delayedPassive, _preferredProtocol.getProtocolFamily(),
@@ -3331,8 +3102,7 @@ public abstract class AbstractFtpDoorV1
         notifyAll();
     }
 
-    protected synchronized void joinTransfer()
-        throws InterruptedException
+    protected synchronized void joinTransfer() throws InterruptedException
     {
         while (_transfer != null) {
             wait();
@@ -3362,28 +3132,19 @@ public abstract class AbstractFtpDoorV1
                           int parallel,
                           InetSocketAddress client, int bufSize,
                           DelayedPassiveReply delayedPassive,
-                          ProtocolFamily protocolFamily, int version)
-        throws FTPCommandException
+                          ProtocolFamily protocolFamily, int version) throws FTPCommandException
     {
         /* Check preconditions.
          */
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
-
-        if (file.isEmpty()) {
-            throw new FTPCommandException(501, "Missing path");
-        }
-        if (xferMode.equals("E") && mode == Mode.PASSIVE) {
-            throw new FTPCommandException(500, "Cannot do passive retrieve in E mode");
-        }
-        if (xferMode.equals("X") && mode == Mode.PASSIVE && _settings.isProxyRequiredOnPassive()) {
-            throw new FTPCommandException(504, "Cannot use passive X mode");
-        }
-        if (mode == Mode.INVALID) {
-            throw new FTPCommandException(425, "Issue PASV or PORT to reset data channel.");
-        }
-        if (_checkSumFactory != null || _checkSum != null) {
-            throw new FTPCommandException(503,"Expecting STOR ESTO PUT commands");
-        }
+        checkFTPCommand(!file.isEmpty(), 501, "Missing path");
+        checkFTPCommand(!xferMode.equals("E") || mode != Mode.PASSIVE,
+                500, "Cannot do passive retrieve in E mode");
+        checkFTPCommand(!xferMode.equals("X") || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
+                504, "Cannot use passive X mode");
+        checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
+        checkFTPCommand(_checkSumFactory == null && _checkSum == null,
+                503,"Expecting STOR ESTO PUT commands");
 
         FtpTransfer transfer =
             new FtpTransfer(absolutePath(file),
@@ -3459,17 +3220,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("STOR <SP> <path> - Tell server to start accepting data.")
-    public void ftp_stor(String arg)
-        throws FTPCommandException
+    public void ftp_stor(String arg) throws FTPCommandException
     {
-        if (_clientDataAddress == null) {
-            reply("504 Host somehow not set");
-            return;
-        }
-        if (_skipBytes > 0) {
-            reply("504 RESTART not implemented for STORE");
-            return;
-        }
+        checkFTPCommand(_clientDataAddress != null, 504, "Host somehow not set");
+        checkFTPCommand(_skipBytes == 0, 504, "RESTART not implemented for STORE");
 
         store(arg, _mode, _xferMode, _parallel, _clientDataAddress, _bufSize,
               _delayedPassive, _preferredProtocol.getProtocolFamily(),
@@ -3495,23 +3249,16 @@ public abstract class AbstractFtpDoorV1
                        int parallel,
                        InetSocketAddress client, int bufSize,
                        DelayedPassiveReply delayedPassive,
-                       ProtocolFamily protocolFamily, int version)
-        throws FTPCommandException
+                       ProtocolFamily protocolFamily, int version) throws FTPCommandException
     {
         checkLoggedIn(FORBID_ANONYMOUS_USER);
 
-        if (file.equals("")) {
-            throw new FTPCommandException(501, "STOR command not understood");
-        }
-        if (xferMode.equals("E") && mode == Mode.ACTIVE) {
-            throw new FTPCommandException(504, "Cannot store in active E mode");
-        }
-        if (xferMode.equals("X") && mode == Mode.PASSIVE && _settings.isProxyRequiredOnPassive()) {
-            throw new FTPCommandException(504, "Cannot use passive X mode");
-        }
-        if (mode == Mode.INVALID) {
-            throw new FTPCommandException(425, "Issue PASV or PORT to reset data channel.");
-        }
+        checkFTPCommand(!file.equals(""), 501, "STOR command not understood");
+        checkFTPCommand(!xferMode.equals("E") || mode != Mode.ACTIVE,
+                504, "Cannot store in active E mode");
+        checkFTPCommand(!xferMode.equals("X") || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
+                504, "Cannot use passive X mode");
+        checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
 
         FtpTransfer transfer =
             new FtpTransfer(absolutePath(file),
@@ -3583,15 +3330,10 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Help("SIZE <SP> <path> - Return the size of a file.")
-    public void ftp_size(String arg)
-        throws FTPCommandException
+    public void ftp_size(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
-
-        if (arg.equals("")) {
-            reply(err("SIZE",""));
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 500, "Missing argument");
 
         FsPath path = absolutePath(arg);
         long filelength;
@@ -3600,25 +3342,18 @@ public abstract class AbstractFtpDoorV1
                 _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIZE));
             filelength = attributes.getSizeIfPresent().or(0L);
         } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
-            return;
-        } catch (CacheException ce) {
-            reply("550 Permission denied, reason: " + ce);
-            return;
+            throw new FTPCommandException(550, "Permission denied");
+        } catch (CacheException e) {
+            throw new FTPCommandException(550, "Permission denied, reason: " + e);
         }
         reply("213 " + filelength);
     }
 
     @Help("MDTM <SP> <path> - Return the last-modified time of a specified file.")
-    public void ftp_mdtm(String arg)
-        throws FTPCommandException
+    public void ftp_mdtm(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
-
-        if (arg.equals("")) {
-            reply(err("MDTM",""));
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 500, "Missing argument");
 
         try {
             FsPath path = absolutePath(arg);
@@ -3631,25 +3366,22 @@ public abstract class AbstractFtpDoorV1
                 TIMESTAMP_FORMAT.format(new Date(modification_time));
             reply("213 " + time_val);
         } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
+            throw new FTPCommandException(550, "Permission denied");
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
-                reply("550 File not found");
-                break;
+                throw new FTPCommandException(550, "File not found");
             case CacheException.TIMEOUT:
-                reply("451 Internal timeout");
                 LOGGER.warn("Timeout in MDTM: {}", e);
-                break;
+                throw new FTPCommandException(451, "Internal timeout");
             default:
-                reply("451 Internal failure: " + e.getMessage());
                 LOGGER.error("Error in MDTM: {}", e);
+                throw new FTPCommandException(451, "Internal failure: " + e.getMessage());
             }
         }
     }
 
-    private void openDataSocket()
-        throws IOException, FTPCommandException
+    private void openDataSocket() throws IOException, FTPCommandException
     {
         /* Mode being PASSIVE means the client did a PASV.  Otherwise
          * we establish the data connection to the client.
@@ -3700,8 +3432,7 @@ public abstract class AbstractFtpDoorV1
      * @see ftp_syst
      */
     @Help("LIST [<SP> <path>] - Returns information on <path> or the current working directory.")
-    public void ftp_list(String arg)
-        throws FTPCommandException
+    public void ftp_list(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
@@ -3724,8 +3455,7 @@ public abstract class AbstractFtpDoorV1
             try {
                 openDataSocket();
             } catch (IOException e) {
-                reply("425 Cannot open connection");
-                return;
+                throw new FTPCommandException(425, "Cannot open connection");
             }
 
             int total;
@@ -3763,28 +3493,26 @@ public abstract class AbstractFtpDoorV1
             }
             reply("226 " + total + " files");
         } catch (InterruptedException e) {
-            reply("451 Operation cancelled");
+            throw new FTPCommandException(451, "Operation cancelled");
         } catch (FileNotFoundCacheException e) {
-            reply("550 File not found");
+            throw new FTPCommandException(550, "File not found");
         } catch (NotDirCacheException e) {
-            reply("550 Not a directory");
+            throw new FTPCommandException(550, "Not a directory");
         } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
+            throw new FTPCommandException(550, "Permission denied");
         } catch (EOFException e) {
-            reply("426 Connection closed; transfer aborted");
-        } catch (CacheException | IOException e){
-            reply("451 Local error in processing");
+            throw new FTPCommandException(426, "Connection closed; transfer aborted");
+        } catch (CacheException | IOException e) {
             LOGGER.warn("Error in LIST: {}", e.getMessage());
+            throw new FTPCommandException(451, "Local error in processing");
         }
     }
 
 
-    private static final Pattern GLOB_PATTERN =
-        Pattern.compile("[*?]");
+    private static final Pattern GLOB_PATTERN = Pattern.compile("[*?]");
 
     @Help("NLST [<SP> <path>] - Returns a list of file names in a specified directory.")
-    public void ftp_nlst(String arg)
-        throws FTPCommandException
+    public void ftp_nlst(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
@@ -3809,8 +3537,7 @@ public abstract class AbstractFtpDoorV1
             try {
                 openDataSocket();
             } catch (IOException e) {
-                reply("425 Cannot open connection");
-                return;
+                throw new FTPCommandException(425, "Cannot open connection");
             }
 
             int total;
@@ -3832,28 +3559,27 @@ public abstract class AbstractFtpDoorV1
             }
             reply("226 " + total + " files");
         } catch (InterruptedException e) {
-            reply("451 Operation cancelled");
+            throw new FTPCommandException(451, "Operation cancelled");
         } catch (FileNotFoundCacheException e) {
             /* 550 is not a valid reply for NLST. However other FTP
              * servers use this return code for NLST. Gerd and Timur
              * decided to follow their example and violate the spec.
              */
-            reply("550 Directory not found");
+            throw new FTPCommandException(550, "Directory not found");
         } catch (NotDirCacheException e) {
-            reply("550 Not a directory");
+            throw new FTPCommandException(550, "Not a directory");
         } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
+            throw new FTPCommandException(550, "Permission denied");
         } catch (EOFException e) {
-            reply("426 Connection closed; transfer aborted");
+            throw new FTPCommandException(426, "Connection closed; transfer aborted");
         } catch (CacheException | IOException e) {
-            reply("451 Local error in processing");
             LOGGER.warn("Error in NLST: {}", e.getMessage());
+            throw new FTPCommandException(451, "Local error in processing");
         }
     }
 
     @Help("MLST [<SP> <path>] - Returns data about exactly one object.")
-    public void ftp_mlst(String arg)
-        throws FTPCommandException
+    public void ftp_mlst(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
@@ -3867,19 +3593,19 @@ public abstract class AbstractFtpDoorV1
             pw.print("250 End");
             reply(sw.toString());
         } catch (InterruptedException e) {
-            reply("451 Operation cancelled");
+            throw new FTPCommandException(451, "Operation cancelled");
         } catch (FileNotFoundCacheException e) {
             /**
              * see https://github.com/JasonAlt/UberFTP/issues/2
              * reply "No such file or directory" to make
              * uberftp client happy.
              */
-            reply("550 No such file or directory");
+            throw new FTPCommandException(550, "No such file or directory");
         } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
+            throw new FTPCommandException(550, "Permission denied");
         } catch (CacheException e) {
-            reply("451 Local error in processing");
             LOGGER.warn("Error in MLST: {}", e.getMessage());
+            throw new FTPCommandException(451, "Local error in processing");
         }
     }
 
@@ -3899,16 +3625,16 @@ public abstract class AbstractFtpDoorV1
             pw.print("250 MLSC completed for " + total + " files");
             reply(sw.toString());
         } catch (InterruptedException e) {
-            reply("451 Operation cancelled");
+            throw new FTPCommandException(451, "Operation cancelled");
         } catch (FileNotFoundCacheException e) {
-            reply("501 Directory not found");
+            throw new FTPCommandException(501, "Directory not found");
         } catch (NotDirCacheException e) {
-            reply("501 Not a directory");
+            throw new FTPCommandException(501, "Not a directory");
         } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
+            throw new FTPCommandException(550, "Permission denied");
         } catch (CacheException e) {
-            reply("451 Local error in processing");
             LOGGER.warn("Error in MLSC: {}", e.getMessage());
+            throw new FTPCommandException(451, "Local error in processing");
         }
     }
 
@@ -3936,8 +3662,7 @@ public abstract class AbstractFtpDoorV1
             try {
                 openDataSocket();
             } catch (IOException e) {
-                reply("425 Cannot open connection");
-                return;
+                throw new FTPCommandException(425, "Cannot open connection");
             }
 
             int total;
@@ -3954,18 +3679,18 @@ public abstract class AbstractFtpDoorV1
             }
             reply("226 MLSD completed for " + total + " files");
         } catch (InterruptedException e) {
-            reply("451 Operation cancelled");
+            throw new FTPCommandException(451, "Operation cancelled");
         } catch (FileNotFoundCacheException e) {
-            reply("501 Directory not found");
+            throw new FTPCommandException(501, "Directory not found");
         } catch (NotDirCacheException e) {
-            reply("501 Not a directory");
+            throw new FTPCommandException(501, "Not a directory");
         } catch (PermissionDeniedCacheException e) {
-            reply("550 Permission denied");
+            throw new FTPCommandException(550, "Permission denied");
         } catch (EOFException e) {
-            reply("426 Connection closed; transfer aborted");
+            throw new FTPCommandException(426, "Connection closed; transfer aborted");
         } catch (CacheException | IOException e) {
-            reply("451 Local error in processing");
             LOGGER.warn("Error in MLSD: {}", e.getMessage());
+            throw new FTPCommandException(451, "Local error in processing");
         }
     }
 
@@ -3977,9 +3702,7 @@ public abstract class AbstractFtpDoorV1
             _filepath = null;
             _fileId = null;
 
-            if (Strings.isNullOrEmpty(arg)) {
-                throw new FTPCommandException(500, "Missing file name for RNFR");
-            }
+            checkFTPCommand(!Strings.isNullOrEmpty(arg), 500, "Missing file name for RNFR");
 
             FsPath path = absolutePath(arg);
             _fileId = _pnfs.getPnfsIdByPath(path.toString());
@@ -3998,12 +3721,8 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
 
         try {
-            if (_filepath == null) {
-                throw new FTPCommandException(503, "RNTO must be preceeded by RNFR");
-            }
-            if (Strings.isNullOrEmpty(arg)) {
-                throw new FTPCommandException(500, "missing destination name for RNTO");
-            }
+            checkFTPCommand(_filepath != null, 503, "RNTO must be preceeded by RNFR");
+            checkFTPCommand(!arg.isEmpty(), 500, "missing destination name for RNTO");
 
             FsPath newName = absolutePath(arg);
             _pnfs.renameEntry(_fileId, _filepath.toString(), newName.toString(), true);
@@ -4020,16 +3739,14 @@ public abstract class AbstractFtpDoorV1
     }
     //----------------------------------------------
     // DCAU: data channel authtication
-    // currentrly ( 07.04.2008 ) it's not supported
+    // currently ( 07.04.2008 ) it's not supported
     //----------------------------------------------
     @Help("DCAU <SP> <enable> - Data channel authentication.")
-    public void ftp_dcau(String arg)
+    public void ftp_dcau(String arg) throws FTPCommandException
     {
-        if(arg.equalsIgnoreCase("N")) {
-            reply("200 data channel authtication switched off");
-        }else{
-            reply("202 data channel authtication not sopported");
-        }
+        checkFTPCommand(arg.equalsIgnoreCase("N"), 202, "data channel authentication not supported");
+
+        reply("200 data channel authentication switched off");
     }
 
     // ---------------------------------------------
@@ -4093,17 +3810,6 @@ public abstract class AbstractFtpDoorV1
         reply("226 Abort successful");
     }
 
-    // --------------------------------------------
-    public String err(String cmd, String arg)
-    {
-        String msg = "500 '" + cmd;
-        if (arg.length() > 0) {
-            msg = msg + " " + arg;
-        }
-        msg = msg + "': command not understood";
-        return msg;
-    }
-
     public String ok(String cmd)
     {
         return "200 "+cmd+" command successful";
@@ -4114,8 +3820,7 @@ public abstract class AbstractFtpDoorV1
      * directory. Throws FileNotFoundCacheException if the path does
      * not exist.
      */
-    private void checkIsDirectory(FsPath path)
-        throws CacheException
+    private void checkIsDirectory(FsPath path) throws CacheException
     {
         FileAttributes attributes =
             _pnfs.getFileAttributes(path.toString(), EnumSet.of(SIMPLE_TYPE));
@@ -4342,12 +4047,10 @@ public abstract class AbstractFtpDoorV1
                 /* Check format of value.
                  */
                 Pattern valuePattern = _valuePatterns.get(keyword);
-                if (valuePattern == null && value != null
-                    || valuePattern != null && !valuePattern.matcher(value != null ? value : "").matches()) {
-                    String msg = "Illegal or unexpected value for " +
-                                 keyword + "=" + value;
-                    throw new FTPCommandException(501, msg);
-                }
+                checkFTPCommand(value == null || valuePattern != null,
+                        501, "Unexpected value '%s' for %s", value, keyword);
+                checkFTPCommand(valuePattern == null || valuePattern.matcher(value != null ? value : "").matches(),
+                        501, "Illegal value for %s=%s", keyword, value);
                 parameters.put(keyword, value);
             }
             matcher.region(matcher.end(), matcher.regionEnd());
@@ -4355,10 +4058,8 @@ public abstract class AbstractFtpDoorV1
 
         /* Detect trailing garbage.
          */
-        if (matcher.regionStart() != matcher.regionEnd()) {
-            String msg = "Cannot parse '" + s.substring(matcher.regionStart()) + "'";
-            throw new FTPCommandException(501, msg);
-        }
+        checkFTPCommand(matcher.regionStart() == matcher.regionEnd(),
+                501, "Cannot parse '%s'", s.substring(matcher.regionStart()));
         return parameters;
     }
 
@@ -4414,22 +4115,16 @@ public abstract class AbstractFtpDoorV1
      * @param arg the argument string of the GET command.
      */
     @Help("GET <SP> <args> - Flexible transfer of data to client.")
-    public void ftp_get(String arg)
+    public void ftp_get(String arg) throws FTPCommandException
     {
         try {
-            if (_skipBytes > 0){
-                throw new FTPCommandException(501, "RESTART not implemented");
-            }
+            checkFTPCommand(_skipBytes == 0, 501, "RESTART not implemented");
 
             Map<String,String> parameters = parseGetPutParameters(arg);
 
-            if (parameters.containsKey("pasv") && parameters.containsKey("port")) {
-                throw new FTPCommandException(501, "Cannot use both 'pasv' and 'port'");
-            }
-
-            if (!parameters.containsKey("path")) {
-                throw new FTPCommandException(501, "Missing path");
-            }
+            checkFTPCommand(!parameters.containsKey("pasv") || !parameters.containsKey("port"),
+                    501, "Cannot use both 'pasv' and 'port'");
+            checkFTPCommand(parameters.containsKey("path"), 501, "Missing path");
 
             if (parameters.containsKey("mode")) {
                 _xferMode = parameters.get("mode").toUpperCase();
@@ -4451,8 +4146,6 @@ public abstract class AbstractFtpDoorV1
             retrieve(parameters.get("path"), prm_offset, prm_size, _mode,
                      _xferMode, _parallel, _clientDataAddress, _bufSize,
                      _delayedPassive, _preferredProtocol.getProtocolFamily(), 2);
-        } catch (FTPCommandException e) {
-            reply(String.valueOf(e.getCode()) + ' ' + e.getReply());
         } finally {
             prm_offset=-1;
             prm_size=-1;
@@ -4465,42 +4158,33 @@ public abstract class AbstractFtpDoorV1
      * @param arg the argument string of the PUT command.
      */
     @Help("PUT <SP> <args> - Flexible transfer of data to server.")
-    public void ftp_put(String arg)
+    public void ftp_put(String arg) throws FTPCommandException
     {
-        try {
-            Map<String,String> parameters = parseGetPutParameters(arg);
+        Map<String,String> parameters = parseGetPutParameters(arg);
 
-            if (parameters.containsKey("pasv") && parameters.containsKey("port")) {
-                throw new FTPCommandException(501,
-                                              "Cannot use both 'pasv' and 'port'");
-            }
+        checkFTPCommand(!parameters.containsKey("pasv") || !parameters.containsKey("port"),
+                501, "Cannot use both 'pasv' and 'port'");
+        checkFTPCommand(parameters.containsKey("path"), 501, "Missing path");
 
-            if (!parameters.containsKey("path")) {
-                throw new FTPCommandException(501, "Missing path");
-            }
-
-            if (parameters.containsKey("mode")) {
-                _xferMode = parameters.get("mode").toUpperCase();
-            }
-
-            if (parameters.containsKey("pasv")) {
-                _preferredProtocol = Protocol.IPV4;
-                _delayedPassive = DelayedPassiveReply.PASV;
-                setPassive();
-            }
-
-            if (parameters.containsKey("port")) {
-                _delayedPassive = DelayedPassiveReply.NONE;
-                setActive(getAddressOf(parameters.get("port").split(",")));
-            }
-
-            /* Now do the transfer...
-             */
-            store(parameters.get("path"), _mode, _xferMode, _parallel,  _clientDataAddress,
-                  _bufSize, _delayedPassive, _preferredProtocol.getProtocolFamily(), 2);
-        } catch (FTPCommandException e) {
-            reply(String.valueOf(e.getCode()) + ' ' + e.getReply());
+        if (parameters.containsKey("mode")) {
+            _xferMode = parameters.get("mode").toUpperCase();
         }
+
+        if (parameters.containsKey("pasv")) {
+            _preferredProtocol = Protocol.IPV4;
+            _delayedPassive = DelayedPassiveReply.PASV;
+            setPassive();
+        }
+
+        if (parameters.containsKey("port")) {
+            _delayedPassive = DelayedPassiveReply.NONE;
+            setActive(getAddressOf(parameters.get("port").split(",")));
+        }
+
+        /* Now do the transfer...
+         */
+        store(parameters.get("path"), _mode, _xferMode, _parallel,  _clientDataAddress,
+              _bufSize, _delayedPassive, _preferredProtocol.getProtocolFamily(), 2);
     }
 
     private void sendRemoveInfoToBilling(PnfsId pnfsId, FsPath path) {

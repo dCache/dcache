@@ -1,5 +1,7 @@
 package org.dcache.ftp.door;
 
+import com.google.common.base.Strings;
+
 import org.dcache.dss.DssContext;
 import org.dcache.dss.DssContextFactory;
 
@@ -24,6 +26,7 @@ import dmg.util.CommandExitException;
 
 import org.dcache.auth.LoginNamePrincipal;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -99,27 +102,25 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     public void ftp_auth(String arg) throws FTPCommandException
     {
         LOGGER.info("GssFtpDoorV1::secure_reply: going to authorize using {}", gssFlavor);
-        if (!arg.equals("GSSAPI")) {
-            /* From RFC 2228 Section 3. New FTP Commands, AUTH:
-             *
-             *    If the server does not understand the named security
-             *    mechanism, it should respond with reply code 504.
-             */
-            throw new FTPCommandException(504, "Authenticating method not supported");
-        }
-        if (context != null && context.isEstablished()) {
-            /* From RFC 2228 Section 3. New FTP Commands, AUTH:
-             *
-             *     Some servers will allow the AUTH command to be reissued in
-             *     order to establish new authentication.  [...]
-             *
-             * That dCache does not allow re-authentication is allowed by the
-             * RFC, but the RFC does not mention which return code is to be used
-             * when rejecting the command. "534 Request denied for policy
-             * reasons" seems the best fit.
-             */
-            throw new FTPCommandException(534, "Already authenticated");
-        }
+
+        /* From RFC 2228 Section 3. New FTP Commands, AUTH:
+         *
+         *    If the server does not understand the named security
+         *    mechanism, it should respond with reply code 504.
+         */
+        checkFTPCommand(arg.equals("GSSAPI"), 504, "Authenticating method not supported");
+
+        /* From RFC 2228 Section 3. New FTP Commands, AUTH:
+         *
+         *     Some servers will allow the AUTH command to be reissued in
+         *     order to establish new authentication.  [...]
+         *
+         * That dCache does not allow re-authentication is allowed by the
+         * RFC, but the RFC does not mention which return code is to be used
+         * when rejecting the command. "534 Request denied for policy
+         * reasons" seems the best fit.
+         */
+        checkFTPCommand(context == null || !context.isEstablished(), 534, "Already authenticated");
 
         try {
             context = dssContextFactory.create(_remoteSocketAddress, _localSocketAddress);
@@ -138,17 +139,11 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     @Help("ADAT <SP> <arg> - Supply context negotation data.")
     @Plaintext
-    public void ftp_adat(String arg)
+    public void ftp_adat(String arg) throws FTPCommandException
     {
-        if (arg == null || arg.length() <= 0) {
-            reply("501 ADAT must have data");
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 501, "ADAT must have data");
+        checkFTPCommand(context != null, 503, "Send AUTH first");
 
-        if (context == null) {
-            reply("503 Send AUTH first");
-            return;
-        }
         byte[] token = Base64.getDecoder().decode(arg);
 
         try {
@@ -160,38 +155,36 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             //debug("GssFtpDoorV1::ftp_adat: User principal: " + UserPrincipal);
         } catch (IOException e) {
             LOGGER.trace("Authentication failed", e);
-            reply("535 Authentication failed: " + e.getMessage());
-            return;
+            throw new FTPCommandException(535, "Authentication failed: " + e.getMessage());
         }
         if (token != null) {
-            if (!context.isEstablished()) {
-                reply("335 ADAT=" + Base64.getEncoder().encodeToString(token));
-            } else {
+            if (context.isEstablished()) {
                 reply("235 ADAT=" + Base64.getEncoder().encodeToString(token));
+            } else {
+                reply("335 ADAT=" + Base64.getEncoder().encodeToString(token));
             }
         } else {
-            if (!context.isEstablished()) {
-                reply("335 ADAT=");
-            } else {
+            if (context.isEstablished()) {
                 LOGGER.info("GssFtpDoorV1::ftp_adat: security context established with {}", subject);
                 reply("235 OK");
+            } else {
+                reply("335 ADAT=");
             }
         }
     }
 
     @Help("CCC - Switch control channel to cleartext.")
-    public void ftp_ccc(String arg)
+    public void ftp_ccc(String arg) throws FTPCommandException
     {
         // We should never received this, only through MIC, ENC or CONF,
         // in which case it will be intercepted by secure_command()
-        reply("533 CCC must be protected");
+        throw new FTPCommandException(533, "CCC must be protected");
     }
 
     @ConcurrentWithTransfer
     @Help("MIC <SP> <arg> - Integrity protected command.")
     @Plaintext
-    public void ftp_mic(String arg)
-            throws CommandExitException
+    public void ftp_mic(String arg) throws CommandExitException, FTPCommandException
     {
         secure_command(arg, ReplyType.MIC);
     }
@@ -199,8 +192,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     @ConcurrentWithTransfer
     @Help("ENC <SP> <arg> - Privacy protected command.")
     @Plaintext
-    public void ftp_enc(String arg)
-            throws CommandExitException
+    public void ftp_enc(String arg) throws CommandExitException, FTPCommandException
     {
         secure_command(arg, ReplyType.ENC);
     }
@@ -208,34 +200,26 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     @ConcurrentWithTransfer
     @Help("CONF <SP> <arg> - Confidentiality protection command.")
     @Plaintext
-    public void ftp_conf(String arg)
-            throws CommandExitException
+    public void ftp_conf(String arg) throws CommandExitException, FTPCommandException
     {
         secure_command(arg, ReplyType.CONF);
     }
 
     public void secure_command(String answer, ReplyType sectype)
-            throws CommandExitException
+            throws CommandExitException, FTPCommandException
     {
-        if (answer == null || answer.length() <= 0) {
-            reply("500 Wrong syntax of " + sectype + " command");
-            return;
-        }
-
-        if (context == null || !context.isEstablished()) {
-            reply("503 Security context is not established");
-            return;
-        }
-
+        checkFTPCommand(!isNullOrEmpty(answer),
+                500, "Wrong syntax of %s command", sectype);
+        checkFTPCommand(context != null && context.isEstablished(),
+                503, "Security context is not established");
 
         byte[] data = Base64.getDecoder().decode(answer);
         try {
             data = context.unwrap(data);
         } catch (IOException e) {
-            reply("500 Can not decrypt command: " + e);
             LOGGER.error("GssFtpDoorV1::secure_command: got IOException: {}",
                          e.getMessage());
-            return;
+            throw new FTPCommandException(500, "Cannot decrypt command: " + e);
         }
 
         // At least one C-based client sends a zero byte at the end
@@ -254,35 +238,26 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         } else {
             ftpcommand(msg, SECURE_COMMAND_CONTEXT, sectype);
         }
-
     }
 
     @Override
-    protected boolean isCommandAllowed(CommandRequest command, Object commandContext)
+    protected void checkCommandAllowed(CommandRequest command, Object commandContext) throws FTPCommandException
     {
         boolean isSecureCommand = commandContext == SECURE_COMMAND_CONTEXT;
+        boolean isPlaintextAllowed = _plaintextCommands.contains(command.getName());
 
-        if (!_hasControlPortCleared && !isSecureCommand &&
-                !_plaintextCommands.contains(command.getName())) {
-            reply("530 Command must be wrapped in MIC, ENC or CONF");
-            return false;
-        }
+        checkFTPCommand(_hasControlPortCleared || isSecureCommand || isPlaintextAllowed,
+                530, "Command must be wrapped in MIC, ENC or CONF");
 
-        return super.isCommandAllowed(command, commandContext);
+        super.checkCommandAllowed(command, commandContext);
     }
 
     @Override
-    public void ftp_user(String arg)
+    public void ftp_user(String arg) throws FTPCommandException
     {
-        if (arg.equals("")) {
-            reply(err("USER", arg));
-            return;
-        }
-
-        if (context == null || !context.isEstablished()) {
-            reply("530 Authentication required");
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 500, "Missing argument");
+        checkFTPCommand(context != null && context.isEstablished(),
+                530, "Authentication required");
 
         Subject subject = context.getSubject();
         subject.getPrincipals().add(_origin);
@@ -295,10 +270,10 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             reply("200 User " + arg + " logged in");
         } catch (PermissionDeniedCacheException e) {
             LOGGER.warn("Login denied for {}: {}", context.getPeerName(), e.getMessage());
-            println("530 Login denied");
+            throw new FTPCommandException(530, "Login denied");
         } catch (CacheException e) {
             LOGGER.error("Login failed for {}: {}", context.getPeerName(), e.getMessage());
-            println("530 Login failed: " + e.getMessage());
+            throw new FTPCommandException(530, "Login failed: " + e.getMessage());
         }
     }
 
@@ -308,14 +283,12 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // since nothing is actually done for this command.
     // Example = ubftp client
     @Override
-    public void ftp_pass(String arg)
+    public void ftp_pass(String arg) throws FTPCommandException
     {
         LOGGER.debug("GssFtpDoorV1::ftp_pass: PASS is a no-op with " +
                      "GSSAPI authentication.");
-        if (subject != null) {
-            reply(ok("PASS"));
-        } else {
-            reply("500 Send USER first");
-        }
+        checkFTPCommand(subject != null, 500, "Send USER first");
+
+        reply(ok("PASS"));
     }
 }

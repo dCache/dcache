@@ -38,12 +38,10 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    public void ftp_user(String arg)
+    public void ftp_user(String arg) throws FTPCommandException
     {
-        if (arg.equals("")){
-            reply(err("USER",arg));
-            return;
-        }
+        checkFTPCommand(!arg.isEmpty(), 500, "Missing argument");
+
         _user = arg;
 
         reply("331 Password required for "+_user+".");

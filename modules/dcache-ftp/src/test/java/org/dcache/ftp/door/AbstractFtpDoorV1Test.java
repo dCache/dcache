@@ -65,7 +65,7 @@ public class AbstractFtpDoorV1Test {
     Subject subject;
 
     @Before
-    public void setUp()
+    public void setUp() throws Exception
     {
         MockitoAnnotations.initMocks(this);
         door._settings = OptionParser.injectDefaults(new FtpDoorSettings());
@@ -76,6 +76,7 @@ public class AbstractFtpDoorV1Test {
         subject = new Subject();
         door._subject = subject;
         door._authz = Restrictions.none();
+        doCallRealMethod().when(door).checkFTPCommand(anyBoolean(), anyInt(), anyString(), anyVararg());
     }
 
     @After
@@ -113,7 +114,7 @@ public class AbstractFtpDoorV1Test {
                             fail("Expected FTPCommandException '"+_code+"' not thrown.");
                     } catch (FTPCommandException commandException) {
                         if (checkCode) {
-                            assertEquals("Unexpected reply '"+commandException.getCode()+" "+commandException.getReply()+"'", _code, commandException.getCode());
+                            assertEquals("Unexpected reply '"+commandException.getCode()+" "+commandException.getMessage()+"'", _code, commandException.getCode());
                         } else {
                             fail("Caught unexpected exception FTPCommandException '" + _code + "':'"+commandException.getMessage()+"'.");
                         }
