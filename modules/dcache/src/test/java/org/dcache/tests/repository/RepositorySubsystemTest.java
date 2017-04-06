@@ -188,7 +188,7 @@ public class RepositorySubsystemTest
         FairQueueAllocation allocator = new FairQueueAllocation();
         FileStore fileStore = new FlatFileStore(dataRoot);
         replicaStore =
-            new FileMetaDataRepository(fileStore, metaRoot);
+            new FileMetaDataRepository(fileStore, metaRoot, "pool");
 
         account = new Account();
         sweeper = new SpaceSweeper2();

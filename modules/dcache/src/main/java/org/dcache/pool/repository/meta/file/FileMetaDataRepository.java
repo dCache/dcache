@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.net.URI;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -45,13 +44,13 @@ public class FileMetaDataRepository
     private final FileStore _fileStore;
     private final Path _metadir;
 
-    public FileMetaDataRepository(FileStore fileStore, Path baseDir)
+    public FileMetaDataRepository(FileStore fileStore, Path baseDir, String poolName)
             throws IOException
     {
-        this(fileStore, baseDir, false);
+        this(fileStore, baseDir, poolName, false);
     }
 
-    public FileMetaDataRepository(FileStore fileStore, Path baseDir, boolean readOnly)
+    public FileMetaDataRepository(FileStore fileStore, Path baseDir, String poolName, boolean readOnly)
             throws IOException
     {
     	_fileStore = fileStore;

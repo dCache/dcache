@@ -49,13 +49,13 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
      * does not exist yet, then it is created. If the 'meta' directory
      * does not exist, it is created.
      */
-    public BerkeleyDBMetaDataRepository(FileStore fileStore, Path directory)
+    public BerkeleyDBMetaDataRepository(FileStore fileStore, Path directory, String poolName)
             throws IOException, DatabaseException, CacheException
     {
-        this(fileStore, directory, false);
+        this(fileStore, directory, poolName, false);
     }
 
-    public BerkeleyDBMetaDataRepository(FileStore fileStore, Path directory, boolean readOnly)
+    public BerkeleyDBMetaDataRepository(FileStore fileStore, Path directory, String poolName, boolean readOnly)
             throws IOException, DatabaseException
     {
         super(directory, readOnly);

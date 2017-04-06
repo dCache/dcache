@@ -110,6 +110,7 @@
               <description>Store for pool meta data</description>
               <constructor-arg ref="file-store"/>
               <constructor-arg value="#{ T(java.nio.file.FileSystems).getDefault().getPath('${pool.path}') }"/>
+              <constructor-arg value="${pool.name}"/>
           </bean>
       </constructor-arg>
       <constructor-arg ref="replica-state-policy"/>

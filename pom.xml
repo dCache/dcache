@@ -848,6 +848,11 @@
                 <artifactId>mail</artifactId>
                 <version>1.4.7</version>
             </dependency>
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongo-java-driver</artifactId>
+                <version>3.4.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
