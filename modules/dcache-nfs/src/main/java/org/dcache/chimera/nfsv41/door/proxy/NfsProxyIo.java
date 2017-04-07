@@ -58,8 +58,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
      * How long we wait for an IO request. The typical NFS client will wait
      * 30 sec. We will use a shorter timeout to avoid retry.
      */
-    private static final int IO_TIMEOUT = 15;
-    private static final TimeUnit IO_TIMEOUT_UNIT = TimeUnit.SECONDS;
+    private static final int IO_TIMEOUT = (int)TimeUnit.SECONDS.toMillis(15);
 
     /**
      * Most up-to-date seqid for a given stateid as defined by rfc5661.
@@ -175,7 +174,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
         COMPOUND4res result = new COMPOUND4res();
 
         try {
-            client.call(nfs4_prot.NFSPROC4_COMPOUND_4, arg, result, IO_TIMEOUT, IO_TIMEOUT_UNIT);
+            client.call(nfs4_prot.NFSPROC4_COMPOUND_4, arg, result, IO_TIMEOUT);
         } catch (TimeoutException e) {
             throw new DelayException(e.getMessage(), e);
         }
