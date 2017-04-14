@@ -82,8 +82,8 @@ import org.dcache.services.billing.db.data.PoolToPoolTransfersHourly;
 import org.dcache.services.billing.db.data.SizeEntry;
 import org.dcache.services.billing.db.data.TransferredEntry;
 import org.dcache.services.billing.db.impl.HourlyAggregateDataHandler;
-import org.dcache.services.billing.histograms.TimeFrame;
-import org.dcache.services.billing.histograms.TimeFrame.BinType;
+import org.dcache.util.histograms.TimeFrame;
+import org.dcache.util.histograms.TimeFrame.BinType;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData.HistogramDataType;
 
 import static org.dcache.util.ByteUnit.GiB;

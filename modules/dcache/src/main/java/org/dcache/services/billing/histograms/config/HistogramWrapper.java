@@ -60,7 +60,7 @@ documents or software obtained from this server.
 package org.dcache.services.billing.histograms.config;
 
 import org.dcache.services.billing.histograms.ITimeFrameHistogramFactory.Style;
-import org.dcache.services.billing.histograms.TimeFrame;
+import org.dcache.util.histograms.TimeFrame;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData;
 
 /**

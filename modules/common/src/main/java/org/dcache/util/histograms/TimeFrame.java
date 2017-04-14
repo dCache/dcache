@@ -57,7 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms;
+package org.dcache.util.histograms;
 
 import java.io.Serializable;
 import java.util.Calendar;

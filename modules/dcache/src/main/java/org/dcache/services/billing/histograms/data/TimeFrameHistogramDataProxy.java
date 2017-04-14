@@ -64,7 +64,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
 import org.dcache.cells.CellStub;
-import org.dcache.services.billing.histograms.TimeFrame;
+import org.dcache.util.histograms.TimeFrame;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.billing.HistogramRequestMessage;
 

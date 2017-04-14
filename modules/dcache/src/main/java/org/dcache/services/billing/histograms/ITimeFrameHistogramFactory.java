@@ -63,6 +63,7 @@ import java.util.Properties;
 
 import org.dcache.services.billing.histograms.config.HistogramWrapper;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData;
+import org.dcache.util.histograms.TimeFrame;
 
 /**
  * Defines factory interface for generating implementation-specific

@@ -59,7 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.histograms.data;
 
-import org.dcache.services.billing.histograms.TimeFrame;
+import org.dcache.util.histograms.TimeFrame;
 
 /**
  * Defines factory interface for generating requests for

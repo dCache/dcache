@@ -2,7 +2,7 @@ package org.dcache.services.billing.plots.util;
 
 import java.util.List;
 
-import org.dcache.services.billing.histograms.TimeFrame;
+import org.dcache.util.histograms.TimeFrame;
 import org.dcache.services.billing.histograms.config.HistogramWrapper;
 
 /**

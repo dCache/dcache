@@ -61,7 +61,8 @@ package org.dcache.services.billing.histograms;
 
 import java.util.Properties;
 
-import org.dcache.services.billing.histograms.TimeFrame.BinType;
+import org.dcache.util.histograms.TimeFrame;
+import org.dcache.util.histograms.TimeFrame.BinType;
 import org.dcache.services.billing.histograms.config.HistogramWrapper;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData.HistogramDataType;
