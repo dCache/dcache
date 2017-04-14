@@ -294,6 +294,21 @@
         <groupId>org.glassfish.jersey.media</groupId>
         <artifactId>jersey-media-json-jackson</artifactId>
     </dependency>
+    <dependency>
+        <groupId>com.google.jimfs</groupId>
+        <artifactId>jimfs</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>rados4j</artifactId>
+    </dependency>
+
+    <!-- used by alarms, needs to be deployed -->
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
