@@ -837,6 +837,12 @@
                 <artifactId>ldap4testing</artifactId>
                 <version>1.0</version>
             </dependency>
+            <!-- used by alarms, needs to be deployed -->
+            <dependency>
+                <groupId>javax.mail</groupId>
+                <artifactId>mail</artifactId>
+                <version>1.4.7</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -311,6 +311,12 @@
         <groupId>org.dcache</groupId>
         <artifactId>rados4j</artifactId>
     </dependency>
+
+    <!-- used by alarms, needs to be deployed -->
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
