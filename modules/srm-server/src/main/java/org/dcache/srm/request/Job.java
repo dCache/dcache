@@ -676,25 +676,6 @@ public abstract class Job  {
         return getGenerator().nextLong();
     }
 
-    public void checkExpiration()
-    {
-        wlock();
-        try {
-            if (creationTime + lifetime < System.currentTimeMillis() && !state.isFinal()) {
-                logger.info("expiring job #{}", getId());
-                StringBuilder sb = new StringBuilder();
-                sb.append("Request lifetime (");
-                TimeUtils.appendDuration(sb, lifetime, MILLISECONDS, TimeUnitFormat.SHORT);
-                sb.append(") expired.");
-                setState(State.FAILED, sb.toString());
-            }
-        } catch (IllegalStateTransition e) {
-            logger.error("Illegal state transition while expiring job: {}", e.toString());
-        } finally {
-            wunlock();
-        }
-    }
-
     /**
      * Getter for property creationTime.
      * @return Value of property creationTime.
