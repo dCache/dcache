@@ -469,7 +469,7 @@ public abstract class AbstractFtpDoorV1
                     LOGGER.error("FTP command '{}' got exception", commandLine, te);
                     throw new FTPCommandException(500, "Operation failed due to internal error: " +
                           te.getMessage());
-                } catch (IllegalAccessException e) {
+                } catch (RuntimeException | IllegalAccessException e) {
                     LOGGER.error("This is a bug. Please report it.", e);
                     throw new FTPCommandException(500, "Operation failed due to internal error: " + e.getMessage());
                 } finally {
