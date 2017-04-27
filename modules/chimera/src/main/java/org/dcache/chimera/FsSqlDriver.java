@@ -1698,7 +1698,7 @@ public class FsSqlDriver {
              * ATIME only update. The CTIME must stay unchanged.
              */
             PreparedStatement preparedStatement = dbConnection.prepareStatement(
-                    "UPDATE t_inodes SET iatime=?,igeneration=igeneration+1 WHERE inumber=?");
+                    "UPDATE t_inodes SET iatime=? WHERE inumber=?");
             preparedStatement.setTimestamp(1, new Timestamp(stat.getATime()));
             preparedStatement.setLong(2, inode.ino());
             return preparedStatement;
