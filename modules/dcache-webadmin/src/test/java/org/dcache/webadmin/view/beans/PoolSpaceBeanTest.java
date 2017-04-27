@@ -4,8 +4,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import org.dcache.webadmin.model.dataaccess.impl.XMLDataGathererHelper;
-import org.dcache.webadmin.view.util.DiskSpaceUnit;
 
+import static org.dcache.util.ByteUnit.BYTES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -113,14 +113,10 @@ public class PoolSpaceBeanTest {
         PoolSpaceBean otherPool = new PoolSpaceBean();
         setToStartingValues(otherPool);
         otherPool.addPoolSpace(_poolBean);
-        assertEquals(DiskSpaceUnit.BYTES.convert(INITIAL_FREE_SPACE * 2,
-                DiskSpaceUnit.MIBIBYTES), otherPool.getFreeSpace(), 0);
-        assertEquals(DiskSpaceUnit.BYTES.convert(INITIAL_PRECIOUS_SPACE * 2,
-                DiskSpaceUnit.MIBIBYTES), otherPool.getPreciousSpace(), 0);
-        assertEquals(DiskSpaceUnit.BYTES.convert(INITIAL_USED_SPACE * 2,
-                DiskSpaceUnit.MIBIBYTES), otherPool.getUsedSpace(), 0);
-        assertEquals(DiskSpaceUnit.BYTES.convert(INITIAL_TOTAL_SPACE * 2,
-                DiskSpaceUnit.MIBIBYTES), otherPool.getTotalSpace(), 0);
+        assertEquals(BYTES.toMiB(INITIAL_FREE_SPACE * 2L), otherPool.getFreeSpace());
+        assertEquals(BYTES.toMiB(INITIAL_PRECIOUS_SPACE * 2L), otherPool.getPreciousSpace());
+        assertEquals(BYTES.toMiB(INITIAL_USED_SPACE * 2L), otherPool.getUsedSpace());
+        assertEquals(BYTES.toMiB(INITIAL_TOTAL_SPACE * 2L), otherPool.getTotalSpace());
     }
 
     @Test(expected = NullPointerException.class)

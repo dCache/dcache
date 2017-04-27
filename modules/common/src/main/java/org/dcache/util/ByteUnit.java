@@ -195,6 +195,30 @@ public enum ByteUnit
         }
 
         @Override
+        public long toEB(long d)
+        {
+            return divideKeepingSaturation(d, 1_000_000_000_000_000_000L);
+        }
+
+        @Override
+        public double toEB(double d)
+        {
+            return d / 1_000_000_000_000_000_000L;
+        }
+
+        @Override
+        public long toEiB(long d)
+        {
+            return divideKeepingSaturation(d, 1L << 60);
+        }
+
+        @Override
+        public double toEiB(double d)
+        {
+            return d / (1L << 60);
+        }
+
+        @Override
         public long convert(long value, ByteUnit units)
         {
             return units.toBytes(value);
@@ -260,6 +284,12 @@ public enum ByteUnit
         public long toPB(long d)
         {
             return divideKeepingSaturation(d, 1_000_000_000_000L);
+        }
+
+        @Override
+        public long toEB(long d)
+        {
+            return divideKeepingSaturation(d, 1_000_000_000_000_000L);
         }
 
         @Override
@@ -331,6 +361,12 @@ public enum ByteUnit
         }
 
         @Override
+        public long toEiB(long d)
+        {
+            return divideKeepingSaturation(d, 1L << 50);
+        }
+
+        @Override
         public long convert(long value, ByteUnit units)
         {
             return units.toKiB(value);
@@ -396,6 +432,12 @@ public enum ByteUnit
         public long toPB(long d)
         {
             return divideKeepingSaturation(d, 1_000_000_000L);
+        }
+
+        @Override
+        public long toEB(long d)
+        {
+            return divideKeepingSaturation(d, 1_000_000_000_000L);
         }
 
         @Override
@@ -467,6 +509,12 @@ public enum ByteUnit
         }
 
         @Override
+        public long toEiB(long d)
+        {
+            return divideKeepingSaturation(d, 1L << 40);
+        }
+
+        @Override
         public long convert(long value, ByteUnit units)
         {
             return units.toMiB(value);
@@ -532,6 +580,12 @@ public enum ByteUnit
         public long toPB(long d)
         {
             return divideKeepingSaturation(d, 1_000_000L);
+        }
+
+        @Override
+        public long toEB(long d)
+        {
+            return divideKeepingSaturation(d, 1_000_000_000L);
         }
 
         @Override
@@ -603,6 +657,12 @@ public enum ByteUnit
         }
 
         @Override
+        public long toEiB(long d)
+        {
+            return divideKeepingSaturation(d, 1L << 30);
+        }
+
+        @Override
         public long convert(long value, ByteUnit units)
         {
             return units.toGiB(value);
@@ -668,6 +728,12 @@ public enum ByteUnit
         public long toPB(long d)
         {
             return divideKeepingSaturation(d, 1_000L);
+        }
+
+        @Override
+        public long toEB(long d)
+        {
+            return divideKeepingSaturation(d, 1_000_000L);
         }
 
         @Override
@@ -739,6 +805,12 @@ public enum ByteUnit
         }
 
         @Override
+        public long toEiB(long d)
+        {
+            return divideKeepingSaturation(d, 1L << 20);
+        }
+
+        @Override
         public long convert(long value, ByteUnit units)
         {
             return units.toTiB(value);
@@ -804,6 +876,12 @@ public enum ByteUnit
         public double toPB(double d)
         {
             return d;
+        }
+
+        @Override
+        public long toEB(long d)
+        {
+            return divideKeepingSaturation(d, 1_000L);
         }
 
         @Override
@@ -875,6 +953,12 @@ public enum ByteUnit
         }
 
         @Override
+        public long toEiB(long d)
+        {
+            return divideKeepingSaturation(d, 1L << 10);
+        }
+
+        @Override
         public long convert(long value, ByteUnit units)
         {
             return units.toPiB(value);
@@ -884,6 +968,148 @@ public enum ByteUnit
         public double convert(double value, ByteUnit units)
         {
             return units.toPiB(value);
+        }
+    },
+
+    EB {
+        @Override
+        public boolean hasType(Type type)
+        {
+            return type == DECIMAL;
+        }
+
+        @Override
+        public long toBytes(long d)
+        {
+            return multiplyKeepingSaturation(d, 1_000_000_000_000_000_000L);
+        }
+
+        @Override
+        public double toBytes(double d)
+        {
+            return d * 1_000_000_000_000_000_000d;
+        }
+
+        @Override
+        public long toKB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1_000_000_000_000_000L);
+        }
+
+        @Override
+        public long toMB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1_000_000_000_000L);
+        }
+
+        @Override
+        public long toGB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1_000_000_000L);
+        }
+
+        @Override
+        public long toTB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1_000_000L);
+        }
+
+        @Override
+        public long toPB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1_000L);
+        }
+
+        @Override
+        public long toEB(long d)
+        {
+            return d;
+        }
+
+        @Override
+        public double toEB(double d)
+        {
+            return d;
+        }
+
+        @Override
+        public long convert(long value, ByteUnit units)
+        {
+            return units.toEB(value);
+        }
+
+        @Override
+        public double convert(double value, ByteUnit units)
+        {
+            return units.toEB(value);
+        }
+    },
+
+    EiB {
+        @Override
+        public boolean hasType(Type type)
+        {
+            return type == BINARY;
+        }
+
+        @Override
+        public long toBytes(long d)
+        {
+            return multiplyKeepingSaturation(d, 1L << 60);
+        }
+
+        @Override
+        public double toBytes(double d)
+        {
+            return d * (1L << 60);
+        }
+
+        @Override
+        public long toKiB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1L << 50);
+        }
+
+        @Override
+        public long toMiB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1L << 40);
+        }
+
+        @Override
+        public long toGiB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1L << 30);
+        }
+
+        @Override
+        public long toTiB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1L << 20);
+        }
+
+        @Override
+        public long toPiB(long d)
+        {
+            return multiplyKeepingSaturation(d, 1L << 10);
+        }
+
+        @Override
+        public double toEiB(double d)
+        {
+            return d;
+        }
+
+        @Override
+        public long convert(long value, ByteUnit units)
+        {
+            return units.toEiB(value);
+        }
+
+        @Override
+        public double convert(double value, ByteUnit units)
+        {
+            return units.toEiB(value);
         }
     };
 
@@ -919,7 +1145,10 @@ public enum ByteUnit
                 if (absValue < PB.toBytes(minValue)) {
                     return TB;
                 }
-                return PB;
+                if (absValue < EB.toBytes(minValue)) {
+                    return PB;
+                }
+                return EB;
             }
 
             @Override
@@ -941,13 +1170,19 @@ public enum ByteUnit
                 if (absValue < PB.toBytes(minValue)) {
                     return TB;
                 }
-                return PB;
+                if (absValue < EB.toBytes(minValue)) {
+                    return PB;
+                }
+                return EB;
             }
 
             @Override
             public ByteUnit exactUnitsOf(long value)
             {
                 long absValue = Math.abs(value);
+                if (absValue >= EB.toBytes(1L) && absValue % EB.toBytes(1L) == 0) {
+                    return EB;
+                }
                 if (absValue >= PB.toBytes(1L) && absValue % PB.toBytes(1L) == 0) {
                     return PB;
                 }
@@ -992,7 +1227,10 @@ public enum ByteUnit
                 if (absValue < PiB.toBytes(minValue)) {
                     return TiB;
                 }
-                return PiB;
+                if (absValue < EiB.toBytes(minValue)) {
+                    return PiB;
+                }
+                return EiB;
             }
 
             @Override
@@ -1014,13 +1252,19 @@ public enum ByteUnit
                 if (absValue < PiB.toBytes(minValue)) {
                     return TiB;
                 }
-                return PiB;
+                if (absValue < EiB.toBytes(minValue)) {
+                    return PiB;
+                }
+                return EiB;
             }
 
             @Override
             public ByteUnit exactUnitsOf(long value)
             {
                 long absValue = Math.abs(value);
+                if (absValue >= EiB.toBytes(1L) && absValue % EiB.toBytes(1L) == 0) {
+                    return EiB;
+                }
                 if (absValue >= PiB.toBytes(1L) && absValue % PiB.toBytes(1L) == 0) {
                     return PiB;
                 }
@@ -1400,5 +1644,51 @@ public enum ByteUnit
     public double toPiB(double d)
     {
         return BYTES.toPiB(toBytes(d));
+    }
+
+    public long toEB(long d)
+    {
+        return BYTES.toEB(toBytes(d));
+    }
+
+    public int toEB(int d)
+    {
+        if (d == Integer.MAX_VALUE) {
+            return d;
+        }
+        return checkedCast(toEB((long) d));
+    }
+
+    public float toEB(float d)
+    {
+        return (float) toEB((double) d);
+    }
+
+    public double toEB(double d)
+    {
+        return BYTES.toEB(toBytes(d));
+    }
+
+    public long toEiB(long d)
+    {
+        return BYTES.toEiB(toBytes(d));
+    }
+
+    public int toEiB(int d)
+    {
+        if (d == Integer.MAX_VALUE) {
+            return d;
+        }
+        return checkedCast(toEiB((long) d));
+    }
+
+    public float toEiB(float d)
+    {
+        return (float) toEiB((double) d);
+    }
+
+    public double toEiB(double d)
+    {
+        return BYTES.toEiB(toBytes(d));
     }
 }

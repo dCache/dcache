@@ -1,7 +1,5 @@
 package org.dcache.pool.p2p;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -27,9 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -63,7 +59,6 @@ import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.util.FireAndForgetTask;
@@ -72,6 +67,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.dcache.util.ByteUnit.KiB;
 
 /**
  * Encapsulates the tasks to be performed on the destination of a pool
@@ -88,7 +84,7 @@ class Companion
     private static final Logger _log = LoggerFactory.getLogger(Companion.class);
 
     private static final long PING_PERIOD = TimeUnit.MINUTES.toMillis(5);
-    private static final int BUFFER_SIZE = 65536;
+    private static final int BUFFER_SIZE = KiB.toBytes(64);
     private static final String PROTOCOL_INFO_NAME = "Http";
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
     private static final int PROTOCOL_INFO_MINOR_VERSION = 1;

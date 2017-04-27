@@ -39,6 +39,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 /**
  * A store of byte arrays.
  *
@@ -132,7 +134,7 @@ public final class CanonicalizingByteArrayStore
      * tokens will not be generated, nor will the database be modified without locking the
      * corresponding ID.
      */
-    private final Striped<Lock> locks = Striped.lazyWeakLock(4096);
+    private final Striped<Lock> locks = Striped.lazyWeakLock(KiB.toBytes(4));
 
     public CanonicalizingByteArrayStore(
             BiConsumer<Long, byte[]> create, Function<Long, byte[]> read, Consumer<Long> delete)

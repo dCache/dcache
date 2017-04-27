@@ -41,6 +41,8 @@ import org.dcache.ftp.client.vanilla.Reply;
 import org.dcache.util.PortRange;
 import org.dcache.util.Version;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 
 /**
  * This is the main user interface for GridFTP operations.
@@ -969,7 +971,7 @@ public class GridFTPClient extends FTPClient
     {
 
         private final MlsxEntryWriter writer;
-        private final byte[] buf = new byte[4096];
+        private final byte[] buf = new byte[KiB.toBytes(4)];
         private int pos = 0;
 
         public MlsxParserDataSink(MlsxEntryWriter w)

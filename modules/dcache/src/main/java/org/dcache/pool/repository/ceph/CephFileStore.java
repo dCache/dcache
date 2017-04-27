@@ -19,7 +19,9 @@
 package org.dcache.pool.repository.ceph;
 
 import com.google.common.primitives.Longs;
+
 import diskCacheV111.util.PnfsId;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,6 +42,8 @@ import org.dcache.rados4j.RadosException;
 import org.dcache.rados4j.Rbd;
 import org.dcache.rados4j.RbdImage;
 import org.dcache.rados4j.RbdImageInfo;
+
+import static org.dcache.util.ByteUnit.KiB;
 
 /**
  * A CEPH based implementation of {@link FileStore}.
@@ -232,13 +236,13 @@ public class CephFileStore implements FileStore {
     @Override
     public long getFreeSpace() throws IOException {
         RadosClusterInfo clusterInfo = rados.statCluster();
-        return clusterInfo.kb_avail.get() * 1024;
+        return KiB.toBytes(clusterInfo.kb_avail.get());
     }
 
     @Override
     public long getTotalSpace() throws IOException {
         RadosClusterInfo clusterInfo = rados.statCluster();
-        return clusterInfo.kb.get()*1024;
+        return KiB.toBytes(clusterInfo.kb.get());
     }
 
     @Override

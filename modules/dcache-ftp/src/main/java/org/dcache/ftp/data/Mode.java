@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 
 import org.dcache.pool.repository.RepositoryChannel;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 /**
  * Base class for FTP transfer mode implementations.
  *
@@ -48,7 +50,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     private   long              _fileSize;
 
     /** Buffer for transferTo and transferFrom. */
-    private final ByteBuffer        _buffer = ByteBuffer.allocate(8192);
+    private final ByteBuffer        _buffer = ByteBuffer.allocate(KiB.toBytes(8));
 
     /** The address to connect to for outgoing connections. */
     private   InetSocketAddress     _address;

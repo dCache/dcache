@@ -294,4 +294,53 @@ public class ByteUnitsTests
         assertThat(ByteUnits.jedecSymbol().of(ByteUnit.PiB), equalTo("PB"));
     }
 
+
+    @Test
+    public void shouldHaveCorrectExiIsoPrefix()
+    {
+        assertThat(ByteUnits.isoPrefix().of(ByteUnit.EB), equalTo("E"));
+    }
+
+    @Test(expected=UnsupportedOperationException.class)
+    public void shouldThrowExceptionOnExiJedecPrefix()
+    {
+        ByteUnits.jedecPrefix().of(ByteUnit.EB);
+    }
+
+    @Test
+    public void shouldHaveCorrectExiIsoSymbol()
+    {
+        assertThat(ByteUnits.isoSymbol().of(ByteUnit.EB), equalTo("EB"));
+    }
+
+    @Test(expected=UnsupportedOperationException.class)
+    public void shouldThrowExceptionOnExiJedecSymbol()
+    {
+        ByteUnits.jedecSymbol().of(ByteUnit.EB);
+    }
+
+
+    @Test
+    public void shouldHaveCorrectExbiIsoPrefix()
+    {
+        assertThat(ByteUnits.isoPrefix().of(ByteUnit.EiB), equalTo("Ei"));
+    }
+
+    @Test
+    public void shouldHaveCorrectExbiJedecPrefix()
+    {
+        assertThat(ByteUnits.jedecPrefix().of(ByteUnit.EiB), equalTo("E"));
+    }
+
+    @Test
+    public void shouldHaveCorrectExbiIsoSymbol()
+    {
+        assertThat(ByteUnits.isoSymbol().of(ByteUnit.EiB), equalTo("EiB"));
+    }
+
+    @Test
+    public void shouldHaveCorrectExbiJedecSymbol()
+    {
+        assertThat(ByteUnits.jedecSymbol().of(ByteUnit.EiB), equalTo("EB"));
+    }
 }

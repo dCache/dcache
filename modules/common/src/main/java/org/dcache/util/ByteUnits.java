@@ -68,6 +68,9 @@ public class ByteUnits
             case PiB:
                 return "Pi";
 
+            case EiB:
+                return "Ei";
+
             case KB:
                 return "k";
 
@@ -82,6 +85,9 @@ public class ByteUnits
 
             case PB:
                 return "P";
+
+            case EB:
+                return "E";
 
             default:
                 throw new UnsupportedOperationException("no ISO prefix for " + unit.name());
@@ -117,6 +123,9 @@ public class ByteUnits
             case PiB:
                 return "PiB";
 
+            case EiB:
+                return "EiB";
+
             case KB:
                 return "kB";
 
@@ -131,6 +140,9 @@ public class ByteUnits
 
             case PB:
                 return "PB";
+
+            case EB:
+                return "EB";
 
             default:
                 throw new UnsupportedOperationException("no ISO unit for " + unit.name());
@@ -166,6 +178,9 @@ public class ByteUnits
             case PiB:
                 return "P";
 
+            case EiB:
+                return "E";
+
             default:
                 throw new UnsupportedOperationException("no JEDEC prefix for " + unit.name());
             }
@@ -199,6 +214,9 @@ public class ByteUnits
 
             case PiB:
                 return "PB";
+
+            case EiB:
+                return "EB";
 
             default:
                 throw new UnsupportedOperationException("no JEDEC unit for " + unit.name());

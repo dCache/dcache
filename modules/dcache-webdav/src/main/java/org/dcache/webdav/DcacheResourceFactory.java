@@ -95,7 +95,6 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.RedirectedTransfer;
-import org.dcache.util.Slf4jSTErrorListener;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicies;
 import org.dcache.util.TransferRetryPolicy;
@@ -112,6 +111,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
+import static org.dcache.util.ByteUnit.KiB;
 
 /**
  * This ResourceFactory exposes the dCache name space through the
@@ -172,7 +172,7 @@ public class DcacheResourceFactory
     private TimeUnit _killTimeoutUnit = MILLISECONDS;
     private long _transferConfirmationTimeout = 60000;
     private TimeUnit _transferConfirmationTimeoutUnit = MILLISECONDS;
-    private int _bufferSize = 65536;
+    private int _bufferSize = KiB.toBytes(64);
     private CellStub _poolStub;
     private PoolManagerStub _poolManagerStub;
     private CellStub _billingStub;
@@ -1441,7 +1441,7 @@ public class DcacheResourceFactory
                     if (getFileAttributes().isDefined(SIZE)) {
                         connection.setFixedLengthStreamingMode(getFileAttributes().getSize());
                     } else {
-                        connection.setChunkedStreamingMode(8192);
+                        connection.setChunkedStreamingMode(KiB.toBytes(8));
                     }
                     connection.connect();
                     try (OutputStream outputStream = connection.getOutputStream()) {

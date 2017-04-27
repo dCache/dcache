@@ -60,6 +60,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.acl.enums.AceFlags.*;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
+import static org.dcache.util.ByteUnit.EiB;
 import static org.dcache.util.SqlHelper.tryToClose;
 
 /**
@@ -151,9 +152,9 @@ public class JdbcFs implements FileSystemProvider {
      */
     private final int _fsId;
     /**
-     * available space (1 Exabyte)
+     * available space
      */
-    static final long AVAILABLE_SPACE = 1152921504606846976L;
+    static final long AVAILABLE_SPACE = EiB.toBytes(1L);
     /**
      * total files
      */

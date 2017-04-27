@@ -62,6 +62,8 @@ import org.dcache.util.BoundedExecutor;
 import org.dcache.util.SequentialExecutor;
 import org.dcache.util.Transfer;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 /**
  * Login cell for line based protocols.
  *
@@ -367,7 +369,7 @@ public class NettyLineBasedDoor
         }
 
         // Decoders
-        pipeline.addBefore(self, "frameDecoder", new LineBasedFrameDecoder(65536));
+        pipeline.addBefore(self, "frameDecoder", new LineBasedFrameDecoder(KiB.toBytes(64)));
         pipeline.addBefore(self, "stringDecoder", new StringDecoder(charset));
 
         // Encoder

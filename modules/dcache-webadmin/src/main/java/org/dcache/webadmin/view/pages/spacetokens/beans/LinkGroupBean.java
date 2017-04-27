@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.dcache.webadmin.view.util.DiskSpaceUnit;
+import org.dcache.util.ByteUnit;
+
+import static org.dcache.util.ByteUnit.BYTES;
 
 /**
  *
@@ -24,7 +26,7 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
     private long _free;
     private long _total;
     private List<SpaceReservationBean> _reservations = new ArrayList<>();
-    private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
+    private ByteUnit _displayUnit = ByteUnit.MiB;
 
     public List<SpaceReservationBean> getReservations() {
         return Collections.unmodifiableList(_reservations);
@@ -51,7 +53,7 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
     }
 
     public long getAvailable() {
-        return DiskSpaceUnit.BYTES.convert(_available, _displayUnit);
+        return _displayUnit.convert(_available, BYTES);
     }
 
     public void setAvailable(long available) {
@@ -60,7 +62,7 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
     }
 
     public long getFree() {
-        return DiskSpaceUnit.BYTES.convert(_free, _displayUnit);
+        return _displayUnit.convert(_free, BYTES);
     }
 
     public void setFree(long free) {
@@ -80,7 +82,7 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
     }
 
     public long getReserved() {
-        return DiskSpaceUnit.BYTES.convert(_reserved, _displayUnit);
+        return _displayUnit.convert(_reserved, BYTES);
     }
 
     public void setReserved(long reserved) {
@@ -89,7 +91,7 @@ public class LinkGroupBean implements Serializable, Comparable<LinkGroupBean> {
     }
 
     public long getTotal() {
-        return DiskSpaceUnit.BYTES.convert(_total, _displayUnit);
+        return _displayUnit.convert(_total, BYTES);
     }
 
     public String getVos() {

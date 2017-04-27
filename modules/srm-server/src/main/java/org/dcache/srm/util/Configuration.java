@@ -87,6 +87,7 @@ import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.client.Transport;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.util.ByteUnit.KiB;
 
 public class Configuration {
 
@@ -110,7 +111,7 @@ public class Configuration {
     protected boolean gsissl = true;
 
 
-    protected int buffer_size=2048;
+    protected int buffer_size=KiB.toBytes(2);
     protected int tcp_buffer_size;
     private int parallel_streams=10;
 

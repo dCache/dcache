@@ -82,6 +82,8 @@ import org.dcache.util.histograms.TimeFrame.Type;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
+import static org.dcache.util.ByteUnit.GiB;
+import static org.dcache.util.ByteUnit.KiB;
 import static org.junit.Assert.assertTrue;
 
 public class HistogramModelTest {
@@ -520,11 +522,10 @@ public class HistogramModelTest {
 
     private List<Double> getRawBytesFor(int units) {
         List<Double> bytes = new ArrayList<>();
-        int radix = 1024;
+        long radix = KiB.toBytes(1L);
 
         for (int i = 0; i < units; ++i) {
-            long size = FastMath.abs(RANDOM.nextLong()) % radix;
-            size *= 1024 * 1024 * 1024;
+            long size = GiB.toBytes(FastMath.abs(RANDOM.nextLong()) % radix);
             bytes.add((double) size);
         }
 

@@ -10,7 +10,9 @@ import java.io.Serializable;
 
 import diskCacheV111.pools.PoolV2Mode;
 
-import org.dcache.webadmin.view.util.DiskSpaceUnit;
+import org.dcache.util.ByteUnit;
+
+import static org.dcache.util.ByteUnit.BYTES;
 
 /**
  * Bean for the PoolUsage Page. Contains information concerning pools like
@@ -36,7 +38,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     private float _percentageFree;
     private float _percentagePinned;
     private float _percentageRemovable;
-    private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
+    private ByteUnit _displayUnit = ByteUnit.MiB;
     private boolean pending = false;
 
     public PoolSpaceBean() {
@@ -128,7 +130,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     }
 
     public long getUsedSpace() {
-        return DiskSpaceUnit.BYTES.convert(_usedSpace, _displayUnit);
+        return _displayUnit.convert(_usedSpace, BYTES);
     }
 
     public void setUsedSpace(long usedSpace) {
@@ -137,7 +139,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     }
 
     public long getTotalSpace() {
-        return DiskSpaceUnit.BYTES.convert(_totalSpace, _displayUnit);
+        return _displayUnit.convert(_totalSpace, BYTES);
     }
 
     public void setTotalSpace(long totalSpace) {
@@ -146,7 +148,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     }
 
     public long getPreciousSpace() {
-        return DiskSpaceUnit.BYTES.convert(_preciousSpace, _displayUnit);
+        return _displayUnit.convert(_preciousSpace, BYTES);
     }
 
     public void setPreciousSpace(long preciousSpace) {
@@ -155,7 +157,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     }
 
     public long getFreeSpace() {
-        return DiskSpaceUnit.BYTES.convert(_freeSpace, _displayUnit);
+        return _displayUnit.convert(_freeSpace, BYTES);
     }
 
     public void setFreeSpace(long freeSpace) {
@@ -164,7 +166,7 @@ public class PoolSpaceBean implements Comparable<PoolSpaceBean>, Serializable {
     }
 
     public long getRemovableSpace() {
-        return DiskSpaceUnit.BYTES.convert(_removableSpace, _displayUnit);
+        return _displayUnit.convert(_removableSpace, BYTES);
     }
 
     public void setRemovableSpace(long removableSpace) {

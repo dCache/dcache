@@ -149,7 +149,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      * Size of the largest block allocated in mode E. Blocks larger
      * than this are divided into smaller blocks.
      */
-    private int _maxBlockSize = 131072;
+    private int _maxBlockSize = KiB.toBytes(128);
 
     /**
      * A thread driving the adapter

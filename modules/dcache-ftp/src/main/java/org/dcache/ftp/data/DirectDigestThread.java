@@ -7,9 +7,11 @@ import java.util.Map;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.ChecksumType;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 public class DirectDigestThread extends DigestThread
 {
-    public static final int BLOCK_SIZE = 4096;  // 4 kb
+    public static final int BLOCK_SIZE = KiB.toBytes(4);
 
     public DirectDigestThread(RepositoryChannel channel, BlockLog log, Map<ChecksumType, MessageDigest> digests)
     {

@@ -21,6 +21,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 /**
   *
   *
@@ -298,7 +300,7 @@ public class      Snmp
    }else if( Thread.currentThread() == _receiverThread ){
       while( true ){
         try{
-           byte [] b = new byte[2048] ;
+           byte [] b = new byte[KiB.toBytes(2)] ;
            DatagramPacket p =  new DatagramPacket( b , b.length ) ;
            _socket.receive( p ) ;
            synchronized( _receiveLock ){

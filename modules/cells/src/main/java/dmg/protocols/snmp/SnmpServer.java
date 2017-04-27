@@ -6,6 +6,8 @@ import java.net.SocketException;
 import java.util.Iterator;
 import java.util.Vector;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 /**
   *
   *
@@ -33,7 +35,7 @@ public class SnmpServer implements Runnable {
 
         while(true){
            try{
-              byte  []       b = new byte[2048] ;
+              byte  []       b = new byte[KiB.toBytes(2)] ;
               DatagramPacket p = new DatagramPacket( b , b.length ) ;
 
               _socket.receive( p ) ;

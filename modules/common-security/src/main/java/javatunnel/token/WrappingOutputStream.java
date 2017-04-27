@@ -22,9 +22,11 @@ import org.dcache.dss.DssContext;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 public class WrappingOutputStream extends OutputStream
 {
-    private static final int ARRAYMAXLEN = 4096;
+    private static final int ARRAYMAXLEN = KiB.toBytes(4);
 
     private final TokenWriter out;
     private final DssContext context;

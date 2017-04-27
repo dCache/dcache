@@ -35,8 +35,10 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
+
 import gov.fnal.srm.util.ConnectionConfiguration;
 import gov.fnal.srm.util.OptionParser;
+
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 
@@ -134,12 +136,15 @@ import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.commons.stats.MonitoringProxy.decorateWithMonitoringProxy;
+import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.TimeUtils.TimeUnitFormat.SHORT;
 import static org.dcache.util.TimeUtils.duration;
 
 public class SrmShell extends ShellApplication
 {
+    private static final long LS_BLOCK_SIZE = KiB.toBytes(4);
+
     @VisibleForTesting
     static final Pattern DN_WITH_CAPTURED_CN = Pattern.compile("^(?:/.+?=.+?)+?/CN=(?<cn>[^/=]+)(?:/.+?=[^/]*)*$");
 
@@ -920,7 +925,7 @@ public class SrmShell extends ShellApplication
                     long size = size(attrs);
 
                     if (!isDirectory(attrs) && size > 0) {
-                        total += 1 + (size - 1)/4096;
+                        total += 1 + (size - 1) / LS_BLOCK_SIZE;
                     }
 
                     acceptRow(writer, item.getPath(), item.getAttributes(), isDirectory);

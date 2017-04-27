@@ -72,6 +72,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.io.Files.isFile;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.dcache.util.ByteUnit.KiB;
 
 public class Indexer
 {
@@ -83,7 +84,7 @@ public class Indexer
     private static final String BILLING_TEXT_DIR = "billing.text.dir";
     private static final String BILLING_TEXT_FORMAT_PREFIX = "billing.parser.format!";
     private static final String BZ2 = "bz2";
-    private static final int PIPE_SIZE = 2048;
+    private static final int PIPE_SIZE = KiB.toBytes(2);
 
     private static final DateTimeFormatter CLI_DATE_FORMAT =
             DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM);

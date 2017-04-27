@@ -119,6 +119,12 @@ public class ByteUnitTests
         ByteUnit.BYTES.convert(1, ByteUnit.PiB);
     }
 
+    @Test(expected=ArithmeticException.class)
+    public void shouldThrowArithmeticExceptionWhenCannotConvertToBytes5()
+    {
+        ByteUnit.BYTES.convert(1, ByteUnit.EiB);
+    }
+
     @Test
     public void shouldConvertToBytes()
     {
@@ -128,12 +134,14 @@ public class ByteUnitTests
         assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.GB), equalTo(1_000_000_000L));
         assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.TB), equalTo(1_000_000_000_000L));
         assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.PB), equalTo(1_000_000_000_000_000L));
+        assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.EB), equalTo(1_000_000_000_000_000_000L));
 
         assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.KiB), equalTo(1024L));
         assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.MiB), equalTo(1048576L));
         assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.GiB), equalTo(1073741824L));
         assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.TiB), equalTo(1099511627776L));
         assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.PiB), equalTo(1125899906842624L));
+        assertThat(ByteUnit.BYTES.convert(1L, ByteUnit.EiB), equalTo(1152921504606846976L));
 
         assertThat(ByteUnit.BYTES.convert(5, ByteUnit.BYTES), equalTo(5));
         assertThat(ByteUnit.BYTES.convert(1, ByteUnit.KB), equalTo(1_000));
@@ -150,12 +158,14 @@ public class ByteUnitTests
         assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.GB), equalTo(1_000_000_000d));
         assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.TB), equalTo(1_000_000_000_000d));
         assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.PB), equalTo(1_000_000_000_000_000d));
+        assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.EB), equalTo(1_000_000_000_000_000_000d));
 
         assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.KiB), equalTo(1024d));
         assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.MiB), equalTo(1048576d));
         assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.GiB), equalTo(1073741824d));
         assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.TiB), equalTo(1099511627776d));
         assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.PiB), equalTo(1125899906842624d));
+        assertThat(ByteUnit.BYTES.convert(1d, ByteUnit.EiB), equalTo(1152921504606846976d));
     }
 
     @Test
@@ -561,6 +571,70 @@ public class ByteUnitTests
         assertThat(ByteUnit.BYTES.toPiB(1d), equalTo(8.881784197001252e-16d));
         assertThat(ByteUnit.BYTES.toPiB(1_125_899_906_842_623d), equalTo(0.9999999999999991d));
         assertThat(ByteUnit.BYTES.toPiB(1_125_899_906_842_624d), equalTo(1d));
+    }
+
+    @Test
+    public void shouldConvertFromBytesToExi()
+    {
+        assertThat(ByteUnit.BYTES.toEB(Integer.MIN_VALUE), equalTo(0));
+        assertThat(ByteUnit.BYTES.toEB(Integer.MIN_VALUE+1), equalTo(0));
+        assertThat(ByteUnit.BYTES.toEB(0), equalTo(0));
+        assertThat(ByteUnit.BYTES.toEB(Integer.MAX_VALUE-1), equalTo(0));
+        assertThat(ByteUnit.BYTES.toEB(Integer.MAX_VALUE), equalTo(Integer.MAX_VALUE));
+
+        assertThat(ByteUnit.BYTES.toEB(Long.MIN_VALUE), equalTo(-9L));
+        assertThat(ByteUnit.BYTES.toEB(-1_000_000_000_000_000_000L), equalTo(-1L));
+        assertThat(ByteUnit.BYTES.toEB(-999_999_999_999_999_999L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEB(-1L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEB(0L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEB(1L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEB(999_999_999_999_999_999L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEB(1_000_000_000_000_000_000L), equalTo(1L));
+        assertThat(ByteUnit.BYTES.toEB(Long.MAX_VALUE), equalTo(Long.MAX_VALUE));
+
+        assertThat(ByteUnit.BYTES.toEB(-1_000_000_000_000_000_000f), equalTo(-1f));
+        assertThat(ByteUnit.BYTES.toEB(-999_999_999_999_999_999f), equalTo(-1f)); // Limits of single precision
+        assertThat(ByteUnit.BYTES.toEB(-1f), equalTo(-0.000_000_000_000_000_001f));
+        assertThat(ByteUnit.BYTES.toEB(0f), equalTo(0f));
+        assertThat(ByteUnit.BYTES.toEB(1f), equalTo(0.000_000_000_000_000_001f));
+        assertThat(ByteUnit.BYTES.toEB(999_999_999_999_999_999f), equalTo(1f));
+        assertThat(ByteUnit.BYTES.toEB(1_000_000_000_000_000_000f), equalTo(1f));
+
+        assertThat(ByteUnit.BYTES.toEB(-1_000_000_000_000_000_000d), equalTo(-1d));
+        assertThat(ByteUnit.BYTES.toEB(-999_999_999_999_999_999d), equalTo(-0.999_999_999_999_999_999d));
+        assertThat(ByteUnit.BYTES.toEB(-1d), equalTo(-0.000_000_000_000_000_001d));
+        assertThat(ByteUnit.BYTES.toEB(0d), equalTo(0d));
+        assertThat(ByteUnit.BYTES.toEB(1d), equalTo(0.000_000_000_000_000_001d));
+        assertThat(ByteUnit.BYTES.toEB(999_999_999_999_999_999d), equalTo(0.999_999_999_999_999_999d));
+        assertThat(ByteUnit.BYTES.toEB(1_000_000_000_000_000_000d), equalTo(1d));
+    }
+
+    @Test
+    public void shouldConvertFromBytesToExbi()
+    {
+        assertThat(ByteUnit.BYTES.toEiB(Integer.MIN_VALUE), equalTo(0));
+        assertThat(ByteUnit.BYTES.toEiB(Integer.MIN_VALUE+1), equalTo(0));
+        assertThat(ByteUnit.BYTES.toEiB(0), equalTo(0));
+        assertThat(ByteUnit.BYTES.toEiB(Integer.MAX_VALUE-1), equalTo(0));
+        assertThat(ByteUnit.BYTES.toEiB(Integer.MAX_VALUE), equalTo(Integer.MAX_VALUE));
+
+        assertThat(ByteUnit.BYTES.toEiB(Long.MIN_VALUE), equalTo(-8L));
+        assertThat(ByteUnit.BYTES.toEiB(-1152921504606846976L), equalTo(-1L));
+        assertThat(ByteUnit.BYTES.toEiB(-1152921504606846975L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEiB(-1L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEiB(0L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEiB(1L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEiB(1152921504606846975L), equalTo(0L));
+        assertThat(ByteUnit.BYTES.toEiB(1152921504606846976L), equalTo(1L));
+        assertThat(ByteUnit.BYTES.toEiB(Long.MAX_VALUE), equalTo(Long.MAX_VALUE));
+
+        assertThat(ByteUnit.BYTES.toEiB(-1152921504606846976f), equalTo(-1f));
+        assertThat(ByteUnit.BYTES.toEiB(0f), equalTo(0f));
+        assertThat(ByteUnit.BYTES.toEiB(1152921504606846976f), equalTo(1f));
+
+        assertThat(ByteUnit.BYTES.toEiB(-1152921504606846976d), equalTo(-1d));
+        assertThat(ByteUnit.BYTES.toEiB(0d), equalTo(0d));
+        assertThat(ByteUnit.BYTES.toEiB(1152921504606846976d), equalTo(1d));
     }
 
     @Test
@@ -3654,10 +3728,8 @@ public class ByteUnitTests
     @Test
     public void shouldYieldPrefixOfPeta()
     {
-        assertThat(ByteUnit.Type.DECIMAL.unitsOf(Long.MIN_VALUE), is(ByteUnit.PB));
         assertThat(ByteUnit.Type.DECIMAL.unitsOf(-1_000_000_000_000_000L), is(ByteUnit.PB));
         assertThat(ByteUnit.Type.DECIMAL.unitsOf(1_000_000_000_000_000L), is(ByteUnit.PB));
-        assertThat(ByteUnit.Type.DECIMAL.unitsOf(Long.MAX_VALUE), is(ByteUnit.PB));
     }
 
     @Test
@@ -4173,10 +4245,8 @@ public class ByteUnitTests
     @Test
     public void shouldYieldPrefixOfPebi()
     {
-        assertThat(ByteUnit.Type.BINARY.unitsOf(Long.MIN_VALUE), is(ByteUnit.PiB));
         assertThat(ByteUnit.Type.BINARY.unitsOf(-1125899906842624L), is(ByteUnit.PiB));
         assertThat(ByteUnit.Type.BINARY.unitsOf(1125899906842624L), is(ByteUnit.PiB));
-        assertThat(ByteUnit.Type.BINARY.unitsOf(Long.MAX_VALUE), is(ByteUnit.PiB));
     }
 
     @Test
@@ -4660,5 +4730,198 @@ public class ByteUnitTests
         assertThat(ByteUnit.PiB.toPiB(-1d), equalTo(-1d));
         assertThat(ByteUnit.PiB.toPiB(0d), equalTo(0d));
         assertThat(ByteUnit.PiB.toPiB(1d), equalTo(1d));
+    }
+
+    @Test
+    public void shouldYieldPrefixOfExa()
+    {
+        assertThat(ByteUnit.Type.DECIMAL.unitsOf(Long.MIN_VALUE), is(ByteUnit.EB));
+        assertThat(ByteUnit.Type.DECIMAL.unitsOf(-1_000_000_000_000_000_000L), is(ByteUnit.EB));
+        assertThat(ByteUnit.Type.DECIMAL.unitsOf(1_000_000_000_000_000_000L), is(ByteUnit.EB));
+        assertThat(ByteUnit.Type.DECIMAL.unitsOf(Long.MAX_VALUE), is(ByteUnit.EB));
+    }
+
+    @Test
+    public void shouldYieldExactUnitsOfExa()
+    {
+        assertThat(ByteUnit.Type.DECIMAL.exactUnitsOf(-2_000_000_000_000_000_000L), is(ByteUnit.EB));
+        assertThat(ByteUnit.Type.DECIMAL.exactUnitsOf(-1_000_000_000_000_000_000L), is(ByteUnit.EB));
+        assertThat(ByteUnit.Type.DECIMAL.exactUnitsOf(1_000_000_000_000_000_000L), is(ByteUnit.EB));
+        assertThat(ByteUnit.Type.DECIMAL.exactUnitsOf(2_000_000_000_000_000_000L), is(ByteUnit.EB));
+    }
+
+    @Test
+    public void shouldClaimExaType()
+    {
+        assertThat(ByteUnit.EB.hasType(ByteUnit.Type.BINARY), equalTo(false));
+        assertThat(ByteUnit.EB.hasType(ByteUnit.Type.DECIMAL), equalTo(true));
+    }
+
+    @Test
+    public void shouldConvertToExa()
+    {
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.BYTES), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.KB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.KiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.MB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.MiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.GB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.GiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.TB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.TiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.PB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.PiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.EB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Long.MAX_VALUE, ByteUnit.EiB), equalTo(Long.MAX_VALUE));
+
+        assertThat(ByteUnit.EB.convert(5_000_000_000_000_000_000L, ByteUnit.BYTES), equalTo(5L));
+        assertThat(ByteUnit.EB.convert(5_000_000_000_000_000L, ByteUnit.KB), equalTo(5L));
+        assertThat(ByteUnit.EB.convert(5_000_000_000_000L, ByteUnit.MB), equalTo(5L));
+        assertThat(ByteUnit.EB.convert(5_000_000_000L, ByteUnit.GB), equalTo(5L));
+        assertThat(ByteUnit.EB.convert(5_000_000L, ByteUnit.TB), equalTo(5L));
+        assertThat(ByteUnit.EB.convert(5_000L, ByteUnit.PB), equalTo(5L));
+        assertThat(ByteUnit.EB.convert(5L, ByteUnit.EB), equalTo(5L));
+
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.BYTES), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.KB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.KiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.MB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.MiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.GB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.GiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.TB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.TiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.EB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EB.convert(Integer.MAX_VALUE, ByteUnit.EiB), equalTo(Integer.MAX_VALUE));
+
+        assertThat(ByteUnit.EB.convert(2_000_000_000, ByteUnit.GB), equalTo(2));
+        assertThat(ByteUnit.EB.convert(5_000_000, ByteUnit.TB), equalTo(5));
+        assertThat(ByteUnit.EB.convert(5_000, ByteUnit.PB), equalTo(5));
+        assertThat(ByteUnit.EB.convert(5, ByteUnit.EB), equalTo(5));
+
+        assertThat(ByteUnit.EB.convert(1_000_000_000_000_000_000d, ByteUnit.BYTES), equalTo(1d));
+        assertThat(ByteUnit.EB.convert(1_000_000_000_000_000d, ByteUnit.KB), equalTo(1d));
+        assertThat(ByteUnit.EB.convert(1_000_000_000_000d, ByteUnit.MB), equalTo(1d));
+        assertThat(ByteUnit.EB.convert(1_000_000_000d, ByteUnit.GB), equalTo(1d));
+        assertThat(ByteUnit.EB.convert(1_000_000d, ByteUnit.TB), equalTo(1d));
+        assertThat(ByteUnit.EB.convert(1_000d, ByteUnit.PB), equalTo(1d));
+        assertThat(ByteUnit.EB.convert(1d, ByteUnit.EB), equalTo(1d));
+    }
+
+    @Test
+    public void shouldConvertExiToBytes()
+    {
+        assertThat(ByteUnit.EB.toBytes(0), equalTo(0));
+        assertThat(ByteUnit.EB.toBytes(Integer.MAX_VALUE), equalTo(Integer.MAX_VALUE));
+
+        assertThat(ByteUnit.EB.toBytes(-1L), equalTo(-1_000_000_000_000_000_000L));
+        assertThat(ByteUnit.EB.toBytes(0L), equalTo(0L));
+        assertThat(ByteUnit.EB.toBytes(1L), equalTo(1_000_000_000_000_000_000L));
+        assertThat(ByteUnit.EB.toBytes(Long.MAX_VALUE), equalTo(Long.MAX_VALUE));
+
+        assertThat(ByteUnit.EB.toBytes(-1f), equalTo(-1e18f));
+        assertThat(ByteUnit.EB.toBytes(0f), equalTo(0f));
+        assertThat(ByteUnit.EB.toBytes(1f), equalTo(1e18f));
+
+        assertThat(ByteUnit.EB.toBytes(-1d), equalTo(-1e18d));
+        assertThat(ByteUnit.EB.toBytes(0d), equalTo(0d));
+        assertThat(ByteUnit.EB.toBytes(1d), equalTo(1e18d));
+    }
+
+    @Test
+    public void shouldYieldPrefixOfExbi()
+    {
+        assertThat(ByteUnit.Type.BINARY.unitsOf(Long.MIN_VALUE), is(ByteUnit.EiB));
+        assertThat(ByteUnit.Type.BINARY.unitsOf(-1152921504606846976L), is(ByteUnit.EiB));
+        assertThat(ByteUnit.Type.BINARY.unitsOf(1152921504606846976L), is(ByteUnit.EiB));
+        assertThat(ByteUnit.Type.BINARY.unitsOf(Long.MAX_VALUE), is(ByteUnit.EiB));
+    }
+
+    @Test
+    public void shouldYieldExactUnitsOfExbi()
+    {
+        assertThat(ByteUnit.Type.BINARY.exactUnitsOf(-2*1152921504606846976L), is(ByteUnit.EiB));
+        assertThat(ByteUnit.Type.BINARY.exactUnitsOf(-1152921504606846976L), is(ByteUnit.EiB));
+        assertThat(ByteUnit.Type.BINARY.exactUnitsOf(1152921504606846976L), is(ByteUnit.EiB));
+        assertThat(ByteUnit.Type.BINARY.exactUnitsOf(2*1152921504606846976L), is(ByteUnit.EiB));
+    }
+
+    @Test
+    public void shouldClaimExbiType()
+    {
+        assertThat(ByteUnit.EiB.hasType(ByteUnit.Type.BINARY), equalTo(true));
+        assertThat(ByteUnit.EiB.hasType(ByteUnit.Type.DECIMAL), equalTo(false));
+    }
+
+    @Test
+    public void shouldConvertToExbi()
+    {
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.BYTES), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.KB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.KiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.MB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.MiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.GB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.GiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.TB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.TiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.PB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.PiB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.EB), equalTo(Long.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Long.MAX_VALUE, ByteUnit.EiB), equalTo(Long.MAX_VALUE));
+
+        assertThat(ByteUnit.EiB.convert(5L * 1152921504606846976L, ByteUnit.BYTES), equalTo(5L));
+        assertThat(ByteUnit.EiB.convert(5L * 1125899906842624L, ByteUnit.KiB), equalTo(5L));
+        assertThat(ByteUnit.EiB.convert(5L * 1099511627776L, ByteUnit.MiB), equalTo(5L));
+        assertThat(ByteUnit.EiB.convert(5L * 1073741824L, ByteUnit.GiB), equalTo(5L));
+        assertThat(ByteUnit.EiB.convert(5L * 1048576L, ByteUnit.TiB), equalTo(5L));
+        assertThat(ByteUnit.EiB.convert(5L * 1024L, ByteUnit.PiB), equalTo(5L));
+        assertThat(ByteUnit.EiB.convert(5L, ByteUnit.EiB), equalTo(5L));
+
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.BYTES), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.KB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.KiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.MB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.MiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.GB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.GiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.TB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.TiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.PB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.PiB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.EB), equalTo(Integer.MAX_VALUE));
+        assertThat(ByteUnit.EiB.convert(Integer.MAX_VALUE, ByteUnit.EiB), equalTo(Integer.MAX_VALUE));
+
+        assertThat(ByteUnit.EiB.convert(5 * 1048576, ByteUnit.TiB), equalTo(5));
+        assertThat(ByteUnit.EiB.convert(5 * 1024, ByteUnit.PiB), equalTo(5));
+        assertThat(ByteUnit.EiB.convert(5, ByteUnit.EiB), equalTo(5));
+
+        assertThat(ByteUnit.EiB.convert(1152921504606846976d, ByteUnit.BYTES), equalTo(1d));
+        assertThat(ByteUnit.EiB.convert(1125899906842624d, ByteUnit.KiB), equalTo(1d));
+        assertThat(ByteUnit.EiB.convert(1099511627776d, ByteUnit.MiB), equalTo(1d));
+        assertThat(ByteUnit.EiB.convert(1073741824d, ByteUnit.GiB), equalTo(1d));
+        assertThat(ByteUnit.EiB.convert(1048576d, ByteUnit.TiB), equalTo(1d));
+        assertThat(ByteUnit.EiB.convert(1024d, ByteUnit.PiB), equalTo(1d));
+        assertThat(ByteUnit.EiB.convert(1d, ByteUnit.EiB), equalTo(1d));
+    }
+
+    @Test
+    public void shouldConvertExbiToBytes()
+    {
+        assertThat(ByteUnit.EiB.toBytes(0), equalTo(0));
+        assertThat(ByteUnit.EiB.toBytes(Integer.MAX_VALUE), equalTo(Integer.MAX_VALUE));
+
+        assertThat(ByteUnit.EiB.toBytes(-1L), equalTo(-1152921504606846976L));
+        assertThat(ByteUnit.EiB.toBytes(0L), equalTo(0L));
+        assertThat(ByteUnit.EiB.toBytes(1L), equalTo(1152921504606846976L));
+        assertThat(ByteUnit.EiB.toBytes(Long.MAX_VALUE), equalTo(Long.MAX_VALUE));
+
+        assertThat(ByteUnit.EiB.toBytes(-1f), equalTo(-1152921504606846976f));
+        assertThat(ByteUnit.EiB.toBytes(0f), equalTo(0f));
+        assertThat(ByteUnit.EiB.toBytes(1f), equalTo(1152921504606846976f));
+
+        assertThat(ByteUnit.EiB.toBytes(-1d), equalTo(-1152921504606846976d));
+        assertThat(ByteUnit.EiB.toBytes(0d), equalTo(0d));
+        assertThat(ByteUnit.EiB.toBytes(1d), equalTo(1152921504606846976d));
     }
 }

@@ -48,6 +48,7 @@ import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.PortRange;
 import org.dcache.util.URIs;
 
+import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.ByteUnit.MiB;
 
 /**
@@ -167,7 +168,7 @@ public class GridftpClient
         throws IOException
     {
         Adler32 java_addler = new Adler32();
-        byte [] buffer = new byte[4096] ;
+        byte [] buffer = new byte[KiB.toBytes(4)];
         ByteBuffer bb = ByteBuffer.wrap(buffer);
 
         while(true){
@@ -190,7 +191,7 @@ public class GridftpClient
         }
 
         MessageDigest md = MessageDigest.getInstance(type);
-        ByteBuffer bb = ByteBuffer.allocate(4096);
+        ByteBuffer bb = ByteBuffer.allocate(KiB.toBytes(4));
 
         while(true){
             bb.clear();
@@ -715,7 +716,7 @@ public class GridftpClient
                                "                     <use emode(true or false)> [ <send checksum (true or false)>] [ <server-mode(active or passive)> ] \n"+
                                "                     [--checksumType=<value>] [--checksumValue=<value>] [--checksumPrint=true|false]\n" +
                                "  example:" +
-                               "       gridftpcopy gsiftp://host1:2811//file1 file://localhost//tmp/file1 4194304 4194304 11 true false");
+                               "       gridftpcopy gsiftp://host1:2811//file1 file://localhost//tmp/file1 " + MiB.toBytes(4) + " " + MiB.toBytes(4) + " 11 true false");
             System.exit(1);
             return;
         }

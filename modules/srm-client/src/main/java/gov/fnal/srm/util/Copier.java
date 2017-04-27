@@ -98,6 +98,7 @@ import org.dcache.srm.Logger;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.util.PortRange;
 
+import static org.dcache.util.ByteUnit.KiB;
 import static org.dcache.util.URIs.portWithDefault;
 
 
@@ -696,7 +697,7 @@ public class Copier implements Runnable {
         }
         int buffer_size = configuration.getBuffer_size();
         if(buffer_size <=0) {
-            buffer_size = 4096;
+            buffer_size = KiB.toBytes(4);
         }
         byte[] bytes = new byte[buffer_size];
         long total = 0;

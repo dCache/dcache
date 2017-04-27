@@ -82,6 +82,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import static org.dcache.util.ByteUnit.KiB;
+
 public class ActiveAdapter implements Runnable, ProxyAdapter
 {
     private static final Logger _log =
@@ -97,7 +99,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private String _tgtHost; // The remote host to connect
     private int _tgtPort; // The remote port to connect
     private String _laddr; // Local IP address
-    private int _maxBlockSize = 32768; // Size of the buffers for transfers
+    private int _maxBlockSize = KiB.toBytes(32); // Size of the buffers for transfers
     private int _expectedStreams = 1; // The number of streams expected
     private Selector _selector;
     private final LinkedList<SocketChannel> _pending = new LinkedList<>();

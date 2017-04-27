@@ -60,10 +60,13 @@ documents or software obtained from this server.
 package diskCacheV111.util;
 
 import javax.security.auth.Subject;
+
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.util.TimeUtils.DurationParser;
+
+import static org.dcache.util.ByteUnit.BYTES;
 
 /**
  * <p>Encapsulates the representation of active transfer data.</p>
@@ -201,9 +204,8 @@ public class TransferInfo implements Serializable {
             return 0L;
         }
 
-        long kB = bytesTransferred / 1024;
         long secs = transferTime / 1000;
-        return secs > 0.0 ? kB / secs : 0L;
+        return secs > 0.0 ? BYTES.toKiB(bytesTransferred) / secs : 0L;
     }
 
     public Long getTransferTime() {

@@ -4,7 +4,9 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.webadmin.view.util.DiskSpaceUnit;
+import org.dcache.util.ByteUnit;
+
+import static org.dcache.util.ByteUnit.BYTES;
 
 /**
  *
@@ -26,10 +28,10 @@ public class SpaceReservationBean implements Serializable {
     private String _created = "";
     private long _lifetime;
     private Long _expiration;
-    private DiskSpaceUnit _displayUnit = DiskSpaceUnit.MIBIBYTES;
+    private ByteUnit _displayUnit = ByteUnit.MiB;
 
     public long getAllocatedSpace() {
-        return DiskSpaceUnit.BYTES.convert(_allocatedSpace, _displayUnit);
+        return _displayUnit.convert(_allocatedSpace, BYTES);
     }
 
     public void setAllocatedSpace(long allocated) {
@@ -100,7 +102,7 @@ public class SpaceReservationBean implements Serializable {
     }
 
     public long getSize() {
-        return DiskSpaceUnit.BYTES.convert(_size, _displayUnit);
+        return _displayUnit.convert(_size, BYTES);
     }
 
     public void setSize(long size) {
@@ -124,7 +126,7 @@ public class SpaceReservationBean implements Serializable {
     }
 
     public long getUsedSpace() {
-        return DiskSpaceUnit.BYTES.convert(_usedSpace, _displayUnit);
+        return _displayUnit.convert(_usedSpace, BYTES);
     }
 
     public void setUsedSpace(long used) {
