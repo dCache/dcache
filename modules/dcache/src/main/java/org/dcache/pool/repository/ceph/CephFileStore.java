@@ -19,6 +19,8 @@
 package org.dcache.pool.repository.ceph;
 
 import com.google.common.primitives.Longs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.PnfsId;
 
@@ -49,6 +51,8 @@ import static org.dcache.util.ByteUnit.KiB;
  * A CEPH based implementation of {@link FileStore}.
  */
 public class CephFileStore implements FileStore {
+
+    protected static final Logger LOGGER = LoggerFactory.getLogger(CephFileStore.class);
 
     /**
      * RADOS objects extended attribute name to store creation time.
@@ -250,6 +254,7 @@ public class CephFileStore implements FileStore {
         try {
             rados.statPool(ctx);
         } catch (RadosException e) {
+            LOGGER.error("Repository health check failed: {}", e.toString());
             return false;
         }
         return true;
