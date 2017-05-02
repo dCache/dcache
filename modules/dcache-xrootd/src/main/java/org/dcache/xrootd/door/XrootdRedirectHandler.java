@@ -201,7 +201,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         } catch (FileNotFoundCacheException e) {
             return withError(req, kXR_NotFound, "No such file");
         } catch (FileExistsCacheException e) {
-            return withError(req, kXR_Unsupported, "File already exists");
+            return withError(req, kXR_NotAuthorized, "File already exists");
         } catch (TimeoutCacheException e) {
             return withError(req, kXR_ServerError, "Internal timeout");
         } catch (PermissionDeniedCacheException e) {
