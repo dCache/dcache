@@ -49,7 +49,10 @@ public class ProxyIoMdsOpFactory implements NFSv4OperationFactory {
             public void process(CompoundContext context, nfs_resop4 result) throws ChimeraNFSException, IOException, OncRpcException {
                 Optional<IOException> optionalException = Subject.doAs(context.getSubject(), (PrivilegedAction<Optional<IOException>>) () -> {
                     try {
-                        context.getSubject().getPrincipals().add( new Origin(context.getRemoteSocketAddress().getAddress()));
+                        Subject subject = context.getSubject();
+                        if (!subject.isReadOnly()) {
+                            context.getSubject().getPrincipals().add(new Origin(context.getRemoteSocketAddress().getAddress()));
+                        }
                         operation.process(context, result);
                     } catch (IOException e) {
                         return Optional.of(e);
