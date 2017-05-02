@@ -296,9 +296,10 @@ public class SRM implements CellLifeCycleAware
          */
         for (JobStorage<?> jobStorage : databaseFactory.getJobStorages().values()) {
             tasks.add(executor.scheduleWithFixedDelay(() -> {
-                for (Job job : jobStorage.getActiveJobs()) {
-                    job.checkExpiration();
-                }
+                jobStorage.getActiveJobs().stream()
+                        .filter(Request.class::isInstance)
+                        .map(Request.class::cast)
+                        .forEach(Request::checkExpiration);
             }, expiryPeriod, expiryPeriod, TimeUnit.MILLISECONDS));
         }
     }

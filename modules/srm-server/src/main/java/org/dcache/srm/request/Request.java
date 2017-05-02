@@ -90,8 +90,11 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.util.TimeUtils;
+import org.dcache.util.TimeUtils.TimeUnitFormat;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * A Request object represents an individual SOAP operation, as defined by the
@@ -318,14 +321,15 @@ public abstract class Request extends Job {
         return client_host;
     }
 
-    @Override
     public void checkExpiration()
     {
         wlock();
         try {
             if (creationTime + lifetime < System.currentTimeMillis() && !getState().isFinal()) {
-                logger.info("expiring job #{}", getId());
-                setStateAndStatusCode(State.FAILED, "Total request time exceeded.", TStatusCode.SRM_REQUEST_TIMED_OUT);
+                logger.info("expiring request #{}", getId());
+                StringBuilder sb = new StringBuilder().append("Request lifetime (");
+                TimeUtils.appendDuration(sb, lifetime, MILLISECONDS, TimeUnitFormat.SHORT).append(") expired.");
+                setStateAndStatusCode(State.FAILED, sb.toString(), TStatusCode.SRM_REQUEST_TIMED_OUT);
             }
         } catch (IllegalStateTransition e) {
             logger.error("Illegal state transition while expiring job: {}", e.toString());
