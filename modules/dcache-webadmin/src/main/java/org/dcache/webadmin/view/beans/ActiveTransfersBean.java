@@ -61,8 +61,4 @@ public class ActiveTransfersBean extends TransferInfo {
     public String getUid() {
         return userInfo.getUid();
     }
-
-    public String getTimeWaiting() {
-        return timeWaiting(System.currentTimeMillis(), true);
-    }
 }

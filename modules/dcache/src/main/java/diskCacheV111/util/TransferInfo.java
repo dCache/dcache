@@ -220,6 +220,11 @@ public class TransferInfo implements Serializable {
         return waitingSince;
     }
 
+    public String getTimeSinceSubmitted() {
+        return timeElapsedSinceSubmitted(System.currentTimeMillis(),
+                                         true);
+    }
+
     public void setBytesTransferred(Long bytesTransferred) {
         this.bytesTransferred = bytesTransferred;
     }
@@ -304,13 +309,11 @@ public class TransferInfo implements Serializable {
 
     public String toFormattedString() {
         String state = "";
-        String elapsed = "";
         String size = "";
         String speed = "";
 
         if (moverStatus != null) {
             state = moverStatus.name();
-            elapsed= timeElapsedSinceSubmitted(System.currentTimeMillis(), true);
             size = String.valueOf(bytesTransferred);
             speed = transferTime > 0 ?
                             String.valueOf((1000 * bytesTransferred)/(1024 * transferTime))
@@ -331,7 +334,7 @@ public class TransferInfo implements Serializable {
                              replyHost,
                              sessionStatus,
                              state,
-                             elapsed,
+                             getTimeSinceSubmitted(),
                              size,
                              speed);
     }
