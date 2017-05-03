@@ -2177,7 +2177,7 @@ public abstract class AbstractFtpDoorV1
     public void ftp_pwd(String arg) throws FTPCommandException
     {
         checkLoggedIn(ALLOW_ANONYMOUS_USER);
-        checkFTPCommand(!arg.isEmpty(), 500, "Missing path");
+        checkFTPCommand(arg.isEmpty(), 500, "No argument expected");
         reply("257 \"" + _cwd + "\" is current directory");
     }
 
@@ -2640,7 +2640,7 @@ public abstract class AbstractFtpDoorV1
             checkFTPCommand(args.length == 3, 500, "command must be in the form 'SITE CHMOD <octal perms> <file/dir>'");
             doChmod(args[1], args[2]);
         } else if (args[0].equalsIgnoreCase("CLIENTINFO")) {
-            checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE CLIENTINFO <info>'");
+            checkFTPCommand(args.length >= 2, 500, "command must be in the form 'SITE CLIENTINFO <info>'");
             doClientinfo(arg.substring(11));
         } else if (args[0].equalsIgnoreCase("SYMLINKFROM")) {
             checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE SYMLINKFROM <path>'");
@@ -2649,7 +2649,7 @@ public abstract class AbstractFtpDoorV1
             checkFTPCommand(args.length == 2, 500, "command must be in the form 'SITE SYMLINKTO <path>'");
             doSymlinkTo(args[1]);
         } else if (args[0].equalsIgnoreCase("TASKID")) {
-            checkFTPCommand(args.length == 1, 501, "Syntax error in parameters or arguments.");
+            checkFTPCommand(args.length >= 2, 501, "Syntax error in parameters or arguments.");
             doTaskid(arg.substring(6));
         } else if (args[0].equalsIgnoreCase("WHOAMI")) {
             checkFTPCommand(args.length == 1, 501, "Invalid command arguments.");
