@@ -110,8 +110,7 @@ public interface StorageInfo
     void setHsm(String newHsm);
     /**
       * Determines whether the file exists somewhere (cache or HSM)
-      * or not. Currently isCreatedOnly returns true is the
-      * size of the level-0 file is not zero.
+      * or not. Basically getIsNew()
       */
     boolean isCreatedOnly() ;
     void setIsNew(boolean isNew);
