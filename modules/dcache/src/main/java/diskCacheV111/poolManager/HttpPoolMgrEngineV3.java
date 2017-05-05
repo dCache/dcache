@@ -65,6 +65,11 @@ public class HttpPoolMgrEngineV3 implements
     private static final long TIMEOUT = 20000;
 
     private final Thread _restoreCollector;
+
+    private final String _poolManagerAddress;
+
+    private final String _pnfsManagerAddress;
+
     private CellStub _poolManager;
     private CellStub _pnfsManager;
     private CellStub _hsmController;
@@ -95,6 +100,10 @@ public class HttpPoolMgrEngineV3 implements
 
     public HttpPoolMgrEngineV3(String[] argsString)
     {
+        Args arguments = new Args(argsString);
+        _poolManagerAddress = arguments.getOption("poolmanager");
+        _pnfsManagerAddress = arguments.getOption("pnfsmanager");
+
         for (int i = 0; i < argsString.length; i++) {
             _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
             if (argsString[i].equals("addStorageInfo")) {
@@ -117,9 +126,8 @@ public class HttpPoolMgrEngineV3 implements
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
-        // FIXME: Do not hardcode cell addresses
-        _poolManager = new CellStub(endpoint, new CellPath("PoolManager"), TIMEOUT, SECONDS);
-        _pnfsManager = new CellStub(endpoint, new CellPath("PnfsManager"), TIMEOUT, SECONDS);
+        _poolManager = new CellStub(endpoint, new CellPath(_poolManagerAddress), TIMEOUT, SECONDS);
+        _pnfsManager = new CellStub(endpoint, new CellPath(_pnfsManagerAddress), TIMEOUT, SECONDS);
         _hsmController = new CellStub(endpoint, new CellPath("HsmManager"), TIMEOUT, SECONDS);
     }
 

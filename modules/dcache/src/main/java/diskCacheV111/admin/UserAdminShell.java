@@ -116,16 +116,6 @@ public class UserAdminShell
                                  "\\sp", "\\timeout", "\\q", "\\h", "\\?");
 
     /**
-     * jline completer for pool manager cell commands.
-     */
-    private final Completer POOL_MANAGER_COMPLETER = createRemoteCompleter("PoolManager");
-
-    /**
-     * jline completer for pnfs manager cell commands.
-     */
-    private final Completer PNFS_MANAGER_COMPLETER = createRemoteCompleter("PnfsManager");
-
-    /**
      * Communication endpoint of the admin cell.
      */
     private CellEndpoint _cellEndpoint;
@@ -149,6 +139,16 @@ public class UserAdminShell
      * Generic communication stub not bound to a particular cell.
      */
     private CellStub _cellStub;
+
+    /**
+     * jline completer for pool manager cell commands.
+     */
+    private Completer _poolManagerCompleter;
+
+    /**
+     * jline completer for pnfs manager cell commands.
+     */
+    private Completer _pnfsManagerCompleter;
 
     /**
      * Client handler for listing directories in the dCache name space.
@@ -225,11 +225,13 @@ public class UserAdminShell
     public void setPoolManager(CellStub stub)
     {
         _poolManager = stub;
+        _poolManagerCompleter = createRemoteCompleter(_poolManager.getDestinationPath());
     }
 
     public void setPnfsManager(CellStub stub)
     {
         _pnfsManager = stub;
+        _pnfsManagerCompleter = createRemoteCompleter(_pnfsManager.getDestinationPath());
     }
 
     public void setListHandler(ListDirectoryHandler list)
@@ -946,7 +948,7 @@ public class UserAdminShell
             int i = completeCellWildcard(lastDestination, lastDestination.length(), candidates);
             return (i == -1) ? -1 : lastDestinationStart + i;
         } else if (!arguments.head.contains(",") && !isExpandable(arguments.head)) {
-            return arguments.completeTail(createRemoteCompleter(arguments.head));
+            return arguments.completeTail(createRemoteCompleter(new CellPath(arguments.head)));
         }
         return -1;
     }
@@ -998,7 +1000,7 @@ public class UserAdminShell
                 Collection<String> locations = getFileAttributes(arguments.head).getLocations();
                 if (!locations.isEmpty()) {
                     /* Assume all pools have the same commands. */
-                    return arguments.completeTail(createRemoteCompleter(Iterables.get(locations, 0)));
+                    return arguments.completeTail(createRemoteCompleter(new CellPath(Iterables.get(locations, 0))));
                 }
             } catch (CacheException e) {
                 _log.info("Completion failed: {}", e.toString());
@@ -1063,9 +1065,9 @@ public class UserAdminShell
         case "\\sl":
             return command.completeTail(this::completeSendLocationsCommand);
         case "\\sp":
-            return command.completeTail(POOL_MANAGER_COMPLETER);
+            return command.completeTail(_poolManagerCompleter);
         case "\\sn":
-            return command.completeTail(PNFS_MANAGER_COMPLETER);
+            return command.completeTail(_pnfsManagerCompleter);
         }
         return -1;
     }
@@ -1073,7 +1075,7 @@ public class UserAdminShell
     /**
      * Factory method to constructor a jline completer for commands of the given cell.
      */
-    private Completer createRemoteCompleter(String cell)
+    private Completer createRemoteCompleter(CellPath cell)
     {
         return (buffer, cursor, candidates) -> completeRemote(cell, buffer, cursor, candidates);
     }
@@ -1081,7 +1083,7 @@ public class UserAdminShell
     /**
      * Completes remote commands using a particular cell as a source for completion candidates.
      */
-    private int completeRemote(String cell, String buffer, int cursor, List<CharSequence> candidates)
+    private int completeRemote(CellPath cell, String buffer, int cursor, List<CharSequence> candidates)
     {
         try {
             Serializable help = sendObject(cell, "help");
