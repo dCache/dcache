@@ -1,7 +1,9 @@
 package org.dcache.services.ssh2;
 
 import org.apache.sshd.common.Factory;
+import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.common.PropertyResolverUtils;
 import org.apache.sshd.common.keyprovider.AbstractFileKeyPairProvider;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
@@ -175,11 +177,9 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     }
 
     private void startServer() {
-        // MINA SSH uses int to store timeout. Strip the long valued to max int if required.
-        int effectiveTimeout = (int)Math.min((long)Integer.MAX_VALUE,
-                _idleTimeoutUnit.toMillis(_idleTimeout > 0? _idleTimeout : Long.MAX_VALUE));
+        long effectiveTimeout = _idleTimeoutUnit.toMillis(_idleTimeout);
+        PropertyResolverUtils.updateProperty(_server, FactoryManager.IDLE_TIMEOUT, effectiveTimeout);
 
-        _server.getProperties().put(SshServer.IDLE_TIMEOUT, Integer.toString(effectiveTimeout));
         _server.setPort(_port);
         _server.setHost(_host);
 
