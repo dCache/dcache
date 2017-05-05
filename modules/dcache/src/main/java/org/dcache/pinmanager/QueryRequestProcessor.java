@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Required;
 
 import diskCacheV111.util.CacheException;
 
+import static org.dcache.pinmanager.model.Pin.State.UNPINNING;
+
 
 /**
  * Process request to get the count of pins.
@@ -26,7 +28,7 @@ public class QueryRequestProcessor
     public PinManagerCountPinsMessage
     messageArrived(PinManagerCountPinsMessage message)
             throws CacheException {
-        message.setCount(_dao.count(_dao.where().pnfsId(message.getPnfsId())));
+        message.setCount(_dao.count(_dao.where().pnfsId(message.getPnfsId()).stateIsNot(UNPINNING)));
         return message;
     }
 
