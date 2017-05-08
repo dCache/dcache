@@ -63,6 +63,8 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
+import static diskCacheV111.util.FileLocality.NEARLINE;
+import static diskCacheV111.util.FileLocality.ONLINE_AND_NEARLINE;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 import static org.dcache.restful.util.Preconditions.checkRequest;
 
@@ -281,14 +283,14 @@ public class FileResources {
 
                     switch (targetQos) {
                     case QosManagement.DISK_TAPE:
-                        PinManagerPinMessage message =
-                                new PinManagerPinMessage(attributes, info,
-                                        QOS_PIN_REQUEST_ID, -1);
-
-                        migrationPolicyEngine.adjust();
-                        pinmanager.notify(message);
+                        if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
+                            migrationPolicyEngine.adjust();
+                        }
+                        boolean isPinned = pinmanager.sendAndWait(new PinManagerCountPinsMessage(attributes.getPnfsId())).getCount() != 0;
+                        if (!isPinned) {
+                            pinmanager.notify(new PinManagerPinMessage(attributes, info, QOS_PIN_REQUEST_ID, -1));
+                        }
                         break;
-
                     case QosManagement.DISK:
                         switch (locality) {
                         case ONLINE:
@@ -298,12 +300,13 @@ public class FileResources {
                         default:
                             throw new BadRequestException("Unsupported QoS transition");
                         }
-
+                        break;
                     case QosManagement.TAPE:
+                        if (locality != NEARLINE && locality != ONLINE_AND_NEARLINE) {
+                            migrationPolicyEngine.adjust();
+                        }
                         PinManagerUnpinMessage messageUnpin = new PinManagerUnpinMessage(attributes.getPnfsId());
                         messageUnpin.setRequestId(QOS_PIN_REQUEST_ID);
-
-                        migrationPolicyEngine.adjust();
                         pinmanager.notify(messageUnpin);
                         break;
 

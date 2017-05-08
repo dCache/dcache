@@ -20,7 +20,12 @@ package org.dcache.restful.policyengine;
 
 import com.google.common.util.concurrent.MoreExecutors;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -100,6 +105,13 @@ public class MigrationPolicyEngine {
 
         Collection<String> targetPools = getTargetPolls(fileAttributes, cellStub);
         Collection<String> sourcePools = getSourcePools(fileAttributes);
+
+        if (sourcePools.isEmpty()) {
+            throw new CacheException("No file locations found");
+        }
+        if (targetPools.isEmpty()) {
+            throw new InternalError("No HSM pool found");
+        }
 
         List<String> samePools = targetPools.stream().filter(n->
                 sourcePools.contains(n)).collect(Collectors.toList());
