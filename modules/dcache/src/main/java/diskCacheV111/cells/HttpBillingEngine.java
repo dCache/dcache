@@ -40,18 +40,6 @@ public class HttpBillingEngine
     }
 
     @Override
-    public void startup()
-    {
-        // No background activity to start
-    }
-
-    @Override
-    public void shutdown()
-    {
-        // No background activity to shutdown
-    }
-
-    @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         _billing = new CellStub(endpoint, new CellPath(_billingAddress), 5, SECONDS);

@@ -18,12 +18,16 @@
  */
 package org.dcache.poolmanager;
 
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+
+import java.io.Serializable;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerMessage;
+import diskCacheV111.vehicles.RestoreHandlerInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
@@ -33,6 +37,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.cells.FutureCellMessageAnswerable;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -49,9 +54,14 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler
         this.destination = requireNonNull(destination);
     }
 
-    @Override
+    @Override @SuppressWarnings("unchecked")
     public <T extends PoolManagerMessage> ListenableFuture<T> sendAsync(CellEndpoint endpoint, T msg, long timeout)
     {
+        if (msg instanceof PoolManagerGetRestoreHandlerInfo) {
+            return (ListenableFuture<T>) Futures.transform(
+                    submit(endpoint, new CellPath(destination), "xrc ls", RestoreHandlerInfo[].class, timeout),
+                    a -> new PoolManagerGetRestoreHandlerInfo(asList(a)));
+        }
         return submit(endpoint, new CellPath(destination), msg, timeout);
     }
 
@@ -88,7 +98,12 @@ public class RemotePoolManagerHandler implements SerializablePoolManagerHandler
     @SuppressWarnings("unchecked")
     protected <T extends Message> ListenableFuture<T> submit(CellEndpoint endpoint, CellPath path, T msg, long timeout)
     {
-        FutureCellMessageAnswerable<T> callback = new FutureCellMessageAnswerable<>((Class<T>) msg.getClass());
+        return submit(endpoint, path, msg, (Class<T>) msg.getClass(), timeout);
+    }
+
+    protected <T extends Serializable> ListenableFuture<T> submit(CellEndpoint endpoint, CellPath path, Serializable msg, Class<T> reply, long timeout)
+    {
+        FutureCellMessageAnswerable<T> callback = new FutureCellMessageAnswerable<>(reply);
         endpoint.sendMessage(new CellMessage(path, msg), callback, MoreExecutors.directExecutor(), timeout);
         return callback;
     }

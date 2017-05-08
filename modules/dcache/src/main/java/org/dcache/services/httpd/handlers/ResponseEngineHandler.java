@@ -47,18 +47,4 @@ public class ResponseEngineHandler extends AbstractHandler
                     e.getMessage());
         }
     }
-
-    @Override
-    protected void doStart() throws Exception
-    {
-        engine.startup();
-        super.doStart();
-    }
-
-    @Override
-    protected void doStop() throws Exception
-    {
-        super.doStop();
-        engine.shutdown();
-    }
 }

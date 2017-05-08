@@ -11,18 +11,5 @@ package dmg.util ;
   *   - <init>()
   */
 public interface HttpResponseEngine {
-
-    void queryUrl(HttpRequest request)
-           throws HttpException ;
-
-    /**
-     * This method is called from the http thread when the engine
-     * should start activity.
-     */
-    void startup();
-
-    /**
-     * Method called to indicate that the http engine should shutdown
-     */
-    void shutdown();
+    void queryUrl(HttpRequest request) throws HttpException;
 }

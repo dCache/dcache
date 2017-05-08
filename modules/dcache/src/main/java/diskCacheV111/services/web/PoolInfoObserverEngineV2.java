@@ -53,18 +53,6 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine, DomainConte
     }
 
     @Override
-    public void startup()
-    {
-          // No background activity to start
-    }
-
-    @Override
-    public void shutdown()
-    {
-        // No background activity to shutdown
-    }
-
-    @Override
     public void queryUrl(HttpRequest request)
         throws HttpException
     {
