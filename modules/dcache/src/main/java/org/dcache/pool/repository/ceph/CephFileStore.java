@@ -33,6 +33,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jnr.constants.platform.Errno;
 
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.FileStore;
@@ -200,11 +201,7 @@ public class CephFileStore implements FileStore {
                 }
             };
         } catch (RadosException e) {
-            // try to map CEPH errors to dCache/java.io alternatives
-            // the errcodes are negative numbers :)
-            if ( Math.abs(e.getErrorCode()) == jnr.constants.platform.Errno.ENOENT.intValue()) {
-                throw new NoSuchFileException(imageName);
-            }
+            throwIfMappable(e, "Failed to get file's attribute: " + imageName);
             throw e;
         }
     }
@@ -212,41 +209,73 @@ public class CephFileStore implements FileStore {
     @Override
     public URI create(PnfsId id) throws IOException {
         String imageName = toImageName(id);
-        rbd.create(imageName, 0);
-        ctx.setXattr(toObjName(imageName),
-                CREATION_TIME_ATTR,
-                Longs.toByteArray(System.currentTimeMillis()));
+        try {
+            rbd.create(imageName, 0);
+            ctx.setXattr(toObjName(imageName),
+                    CREATION_TIME_ATTR,
+                    Longs.toByteArray(System.currentTimeMillis()));
+        } catch (RadosException e) {
+            throwIfMappable(e, "Failed to create file: " + imageName);
+            throw e;
+        }
         return toUri(imageName);
     }
 
     @Override
     public void remove(PnfsId id) throws IOException {
-        rbd.remove(toImageName(id));
+        String imageName = toImageName(id);
+        try {
+            rbd.remove(imageName);
+        } catch (RadosException e) {
+            throwIfMappable(e, "Failed to remove file: " + imageName);
+            throw e;
+        }
     }
 
     @Override
     public RepositoryChannel openDataChannel(PnfsId id, IoMode ioMode) throws IOException {
-        return new CephRepositoryChannel(rbd, toImageName(id), ioMode.toOpenString());
+        String imageName = toImageName(id);
+        try {
+            return new CephRepositoryChannel(rbd, imageName, ioMode.toOpenString());
+        } catch (RadosException e) {
+            throwIfMappable(e, "Failed to open file: " + imageName);
+            throw e;
+        }
     }
 
     @Override
     public Set<PnfsId> index() throws IOException {
-        return rbd.list()
-                .stream()
-                .map(this::toPnfsId)
-                .collect(Collectors.toSet());
+        try {
+            return rbd.list()
+                    .stream()
+                    .map(this::toPnfsId)
+                    .collect(Collectors.toSet());
+        } catch (RadosException e) {
+            throwIfMappable(e, "Failed to get list of images");
+            throw e;
+        }
     }
 
     @Override
     public long getFreeSpace() throws IOException {
-        RadosClusterInfo clusterInfo = rados.statCluster();
-        return KiB.toBytes(clusterInfo.kb_avail.get());
+        try {
+            RadosClusterInfo clusterInfo = rados.statCluster();
+            return KiB.toBytes(clusterInfo.kb_avail.get());
+        } catch (RadosException e) {
+            throwIfMappable(e, "Failed to get cluster info");
+            throw e;
+        }
     }
 
     @Override
     public long getTotalSpace() throws IOException {
-        RadosClusterInfo clusterInfo = rados.statCluster();
-        return KiB.toBytes(clusterInfo.kb.get());
+        try {
+            RadosClusterInfo clusterInfo = rados.statCluster();
+            return KiB.toBytes(clusterInfo.kb.get());
+        } catch (RadosException e) {
+            throwIfMappable(e, "Failed to get cluster info");
+            throw e;
+        }
     }
 
     @Override
@@ -290,6 +319,18 @@ public class CephFileStore implements FileStore {
             ctx.destroy();
         } finally {
             rados.shutdown();
+        }
+    }
+
+    private void throwIfMappable(RadosException e, String msg) throws IOException {
+        // try to map CEPH errors to dCache/java.io alternatives
+        // the errcodes are negative numbers :)
+
+        Errno err = Errno.valueOf(Math.abs(e.getErrorCode()));
+
+        switch(err) {
+            case ENOENT:
+                throw new NoSuchFileException(msg + " : " + e.getMessage());
         }
     }
 }
