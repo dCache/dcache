@@ -72,16 +72,4 @@ public class ProbeResponseEngine implements HttpResponseEngine, CellMessageSende
             throw new HttpException(503, "Received interrupt whilst processing data. Please try again later.");
         }
     }
-
-    @Override
-    public void startup()
-    {
-
-    }
-
-    @Override
-    public void shutdown()
-    {
-
-    }
 }

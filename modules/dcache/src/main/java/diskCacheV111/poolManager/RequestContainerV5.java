@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -67,11 +68,14 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.SelectedPool;
 import org.dcache.util.Args;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
+
+import static java.util.stream.Collectors.toList;
 
 public class RequestContainerV5
     extends AbstractCellComponent
@@ -608,6 +612,18 @@ public class RequestContainerV5
         }
        return sb.toString();
     }
+
+    public PoolManagerGetRestoreHandlerInfo messageArrived(PoolManagerGetRestoreHandlerInfo msg) {
+        List<RestoreHandlerInfo> requests;
+        Map<String, PoolRequestHandler> handlerHash = _handlerHash;
+        synchronized (handlerHash) {
+            requests = handlerHash.values().stream().filter(Objects::nonNull).map(
+                    PoolRequestHandler::getRestoreHandlerInfo).collect(toList());
+        }
+        msg.setResult(requests);
+        return msg;
+    }
+
     public static final String hh_xrc_ls = " # lists pending requests (binary)" ;
     public Object ac_xrc_ls( Args args ){
 
