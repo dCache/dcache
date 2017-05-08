@@ -262,7 +262,7 @@ def httpNoAnonymous(source, dest, *args)
 end
 
 def https(source, dest, *args)
-  args << "--capath" << "/etc/grid-security/certificates" << "-s"
+  args << "--capath" << File.expand_path("../../dcache/etc/grid-security/certificates", __FILE__) << "-s"
   tmp1 = makeTempName
   runExpectingStatus(401, @curl, args, "-L", "-T", source,
                      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
