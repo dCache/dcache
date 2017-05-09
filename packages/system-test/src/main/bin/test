@@ -29,6 +29,7 @@ include ANSI::Code
 
 @unique = Time.now.to_i
 @count = 0
+@truststore = File.expand_path("../../dcache/etc/grid-security/certificates", __FILE__)
 
 def makeTempName
   "test-#{@unique}-#{@count += 1}"
@@ -263,7 +264,7 @@ def httpNoAnonymous(source, dest, *args)
 end
 
 def https(source, dest, *args)
-  args << "--capath" << File.expand_path("../../dcache/etc/grid-security/certificates", __FILE__) << "-s"
+  args << "--capath" << @truststore << "-s"
   tmp1 = makeTempName
   runExpectingStatus(401, @curl, args, "-L", "-T", source,
                      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
@@ -435,6 +436,7 @@ def OptionParser.parse(args)
   options
 end
 
+ENV["X509_CERT_DIR"] = @truststore  # tell Globus library to use
 @options = OptionParser.parse(ARGV)
 @options.tests.values.flatten(1).each do |method, *args|
   test(method, *(args + ARGV))
