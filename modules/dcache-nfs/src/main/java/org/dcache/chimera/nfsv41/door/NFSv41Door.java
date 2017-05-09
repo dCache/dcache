@@ -172,12 +172,11 @@ public class NFSv41Door extends AbstractCellComponent implements
     private final Map<stateid4, NfsTransfer> _ioMessages = new ConcurrentHashMap<>();
 
     /**
-     * The usual timeout for NFS operations is 30s. Nevertheless, as client
-     * will block, we try to block as short as we can. The rule for interactive users:
-     * never block longer than 10s.
+     * Maximal time the NFS request will blocked before we reply with
+     * NFSERR_DELAY. The usual timeout for NFS operations is 30s. Nevertheless,
+     * as client's other requests will blocked as well, we try to block as short
+     * as we can. The rule for interactive users: never block longer than 10s.
      */
-    private static final long NFS_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
-
     private static final long NFS_REQUEST_BLOCKING = TimeUnit.SECONDS.toMillis(3);
 
     /**
@@ -239,15 +238,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     private ProxyIoFactory _proxyIoFactory;
 
     /**
-     * retry policy used for accessing online files.
+     * Retry policy used for accessing files.
      */
-    private static final TransferRetryPolicy RETRY_POLICY =
-        new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, NFS_REPLY_TIMEOUT);
-
-    /**
-     * Retry policy used for accessing off-line files.
-     */
-    private static final TransferRetryPolicy RETRY_POLICY_WITH_STAGE =
+    private static final TransferRetryPolicy POOL_SELECTION_RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, STAGE_REQUEST_TIMEOUT);
 
     private VfsCacheConfig _vfsCacheConfig;
@@ -990,7 +983,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                  */
                 setOnlineFilesOnly(true);
                 _log.debug("looking for {} pool for {}", (isWrite() ? "write" : "read"), getPnfsId());
-                _redirectFuture = selectPoolAndStartMoverAsync(RETRY_POLICY);
+                _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
             }
 
             /*
@@ -1027,7 +1020,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 // kick stage/ p2p
                 setOnlineFilesOnly(false);
-                _redirectFuture = selectPoolAndStartMoverAsync(RETRY_POLICY_WITH_STAGE);
+                _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
                 throw new LayoutTryLaterException("File is not online: stage or p2p required");
             }
             _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
