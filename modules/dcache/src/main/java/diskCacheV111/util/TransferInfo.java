@@ -125,7 +125,7 @@ public class TransferInfo implements Serializable {
     protected String pool          = "";
     protected String replyHost     = "";
     protected String sessionStatus = "";
-    protected Long waitingSince;
+    protected long waitingSince;
     protected MoverState moverStatus = MoverState.NOTFOUND;
     protected Long     transferTime;
     protected Long     bytesTransferred;
@@ -216,13 +216,12 @@ public class TransferInfo implements Serializable {
         return userInfo;
     }
 
-    public Long getWaitingSince() {
+    public long getWaitingSince() {
         return waitingSince;
     }
 
-    public String getTimeSinceSubmitted() {
-        return timeElapsedSinceSubmitted(System.currentTimeMillis(),
-                                         true);
+    public String getTimeWaiting() {
+        return timeWaiting(System.currentTimeMillis(),true);
     }
 
     public void setBytesTransferred(Long bytesTransferred) {
@@ -303,7 +302,7 @@ public class TransferInfo implements Serializable {
         this.userInfo = userInfo;
     }
 
-    public void setWaitingSince(Long waitingSince) {
+    public void setWaitingSince(long waitingSince) {
         this.waitingSince = waitingSince;
     }
 
@@ -334,16 +333,22 @@ public class TransferInfo implements Serializable {
                              replyHost,
                              sessionStatus,
                              state,
-                             getTimeSinceSubmitted(),
+                             getTimeWaiting(),
                              size,
                              speed);
     }
 
     protected String timeRunning(long now, boolean display) {
+        if (moverStart == null) {
+            return "unknown";
+        }
         return getTimeString(now - moverStart, display);
     }
 
     protected String timeElapsedSinceSubmitted(long now, boolean display) {
+        if (moverSubmit == null) {
+            return "unknown";
+        }
         return getTimeString(now - moverSubmit, display);
     }
 
