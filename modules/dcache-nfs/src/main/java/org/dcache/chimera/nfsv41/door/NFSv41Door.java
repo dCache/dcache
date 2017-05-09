@@ -847,13 +847,20 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String toString() {
-            return String.format("    %s : %s %s@%s, OS=%s,cl=[%s]",
+
+            String status = getStatus();
+            if (status == null) {
+                status = "idle";
+            }
+
+            return String.format("    %s : %s %s@%s, OS=%s, cl=[%s], status=[%s]",
                     getPnfsId(),
                     isWrite() ? "WRITE" : "READ",
                     getMoverId(),
                     getPool(),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
-                    ((NFS4ProtocolInfo)getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress());
+                    ((NFS4ProtocolInfo)getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress(),
+                    status);
         }
 
         Inode getInode() {
