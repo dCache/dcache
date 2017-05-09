@@ -57,6 +57,7 @@ public class UserResource
         } else {
             user.setStatus(UserAttributes.AuthenticationStatus.AUTHENTICATED);
             user.setUid(Subjects.getUid(subject));
+            user.setUsername(Subjects.getUserName(subject));
             List<Long> gids = Arrays.stream(Subjects.getGids(subject))
                     .boxed()
                     .collect(Collectors.toList());
