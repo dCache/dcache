@@ -905,7 +905,12 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             ZoneId timeZone = ZoneId.systemDefault();
 
-            return String.format("    %s : %s : %s %s@%s, OS=%s,cl=[%s]",
+            String status = getStatus();
+            if (status == null) {
+                status = "idle";
+            }
+
+            return String.format("    %s : %s : %s %s@%s, OS=%s, cl=[%s], status=[%s]",
                     DateTimeFormatter.ISO_OFFSET_DATE_TIME
                             .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(getCreationTime()), timeZone)),
                     getPnfsId(),
@@ -913,7 +918,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                     getMoverId(),
                     getPool(),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
-                    ((NFS4ProtocolInfo)getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress());
+                    ((NFS4ProtocolInfo)getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress(),
+                    status);
         }
 
         Inode getInode() {
