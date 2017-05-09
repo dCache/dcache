@@ -91,6 +91,7 @@ import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.util.FileStatus;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import diskCacheV111.util.FileExistsCacheException;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
@@ -416,10 +417,20 @@ public class XrootdDoor
         _transfers.put(handle, transfer);
         String explanation = "problem within door";
         try {
-            if (createDir) {
-                transfer.createNameSpaceEntryWithParents();
-            } else {
-                transfer.createNameSpaceEntry();
+            try {
+                if (createDir) {
+                    transfer.createNameSpaceEntryWithParents();
+                } else {
+                    transfer.createNameSpaceEntry();
+                }
+            } catch (FileExistsCacheException e) {
+                transfer.readNameSpaceEntry(true);
+                if (transfer.getFileAttributes().getStorageInfo().isCreatedOnly()) {
+                    transfer.setOverwriteAllowed(true);
+                    transfer.createNameSpaceEntry();
+                } else {
+                    throw e;
+                }
             }
             if (size != null) {
                 transfer.setLength(size);

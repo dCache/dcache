@@ -177,7 +177,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             XrootdTransfer transfer;
             if (neededPerm == FilePerm.WRITE) {
                 boolean createDir = req.isMkPath();
-                boolean overwrite = req.isDelete();
+                boolean overwrite = req.isDelete() && !req.isNew();
 
                 transfer =
                     _door.write(remoteAddress, createFullPath(req.getPath()), ioQueue,
