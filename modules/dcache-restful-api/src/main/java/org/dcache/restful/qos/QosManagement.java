@@ -15,7 +15,6 @@ import javax.ws.rs.ForbiddenException;
 
 import javax.ws.rs.core.MediaType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -133,20 +132,20 @@ public class QosManagement {
             if (DISK.equals(qosValue)) {
 
                 QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "100");
-                setBackendCapability(backendCapability, DISK, "", qoSMetadata);
+                setBackendCapability(backendCapability, DISK, Arrays.asList(TAPE, DISK_TAPE), qoSMetadata);
             }
             // Set data and metadata for "TAPE" QoS
             else if (TAPE.equals(qosValue)) {
 
                 QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "600000");
-                setBackendCapability(backendCapability, TAPE, DISK_TAPE, qoSMetadata);
+                setBackendCapability(backendCapability, TAPE, Arrays.asList(DISK_TAPE), qoSMetadata);
 
             }
             // Set data and metadata for "Disk & TAPE" QoS
             else if (DISK_TAPE.equals(qosValue)) {
 
                 QoSMetadata qoSMetadata = new QoSMetadata("2", cdmi_geographic_placement_provided, "100");
-                setBackendCapability(backendCapability, DISK_TAPE, TAPE, qoSMetadata);
+                setBackendCapability(backendCapability, DISK_TAPE, Arrays.asList(TAPE), qoSMetadata);
 
             }
             // The QoS is not known or supported.
@@ -201,13 +200,13 @@ public class QosManagement {
             if (DISK.equals(qosValue)) {
 
                 QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "100");
-                setBackendCapability(backendCapability, DISK, TAPE, qoSMetadata);
+                setBackendCapability(backendCapability, DISK, Arrays.asList(TAPE), qoSMetadata);
             }
             // Set data and metadata for "TAPE" QoS
             else if (TAPE.equals(qosValue)) {
 
                 QoSMetadata qoSMetadata = new QoSMetadata("1", cdmi_geographic_placement_provided, "600000");
-                setBackendCapability(backendCapability, TAPE, DISK, qoSMetadata);
+                setBackendCapability(backendCapability, TAPE, Arrays.asList(DISK), qoSMetadata);
             }
             // The QoS is not known or supported.
             else {
@@ -231,17 +230,10 @@ public class QosManagement {
 
     public void setBackendCapability(BackendCapability backendCapability,
                                      String name,
-                                     String transition,
+                                     List<String> transitions,
                                      QoSMetadata qoSMetadata) {
 
         backendCapability.setName(name);
-        List<String> transitions = new ArrayList<>();
-
-        //TODO optimise
-        if (!"".equals(transition)) {
-            transitions.add(transition);
-        }
-
         backendCapability.setTransition(transitions);
         backendCapability.setMetadata(qoSMetadata);
     }
