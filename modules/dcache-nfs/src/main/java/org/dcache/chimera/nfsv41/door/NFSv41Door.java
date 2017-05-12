@@ -423,8 +423,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                  * the transfer to fail. The cleanup will happen with open-state
                  * disposal on close.
                  */
-                _vfs.invalidateStatCache(transfer.getInode());
-                // ensure that transfer is not re-used. File close will remove it
                 transfer.enforceErrorIfRunning(POISON);
             } else {
                 // it's ok to remove read mover as it's safe to re-create it again.
@@ -638,6 +636,13 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout.lo_content = layoutDriver.getLayoutContent(deviceid, stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh);
 
             layoutStateId.bumpSeqid();
+            if (ioMode == layoutiomode4.LAYOUTIOMODE4_RW) {
+                // in case of WRITE, invalidate vfs cache on close
+                layoutStateId.addDisposeListener(state -> {
+                    _vfs.invalidateStatCache(nfsInode);
+                });
+            }
+
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
         } catch (CacheException | TimeoutException | ExecutionException e) {
