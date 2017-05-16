@@ -23,11 +23,11 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="behrmann" id="1">
+    <changeSet author="behrmann" id="1.1">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="pinsv3"/>
         </preConditions>
-        <dropTable tableName="pinsv3"/>
+        <dropTable cascadeConstraints="true" tableName="pinsv3"/>
         <rollback/>
     </changeSet>
 
