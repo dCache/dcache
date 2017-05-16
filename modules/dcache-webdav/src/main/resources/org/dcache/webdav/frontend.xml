@@ -149,9 +149,16 @@
         <description>List of handlers for HTTP requests</description>
         <property name="handlers">
             <list>
-                <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
-                    <property name="directoriesListed" value="true"/>
-                    <property name="resourceBase" value="${frontend.dcache-view.dir}"/>
+                <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                    <property name="contextPath" value="/"/>
+                    <property name="allowNullPathInfo" value="true"/>
+                    <property name="handler">
+                        <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
+                            <property name="directoriesListed" value="true"/>
+                            <property name="redirectWelcome" value="false" />
+                            <property name="resourceBase" value="${frontend.dcache-view.dir}"/>
+                        </bean>
+                    </property>
                 </bean>
                 <bean class="org.eclipse.jetty.server.handler.ContextHandler">
                     <property name="contextPath" value="/scripts/config.js"/>
