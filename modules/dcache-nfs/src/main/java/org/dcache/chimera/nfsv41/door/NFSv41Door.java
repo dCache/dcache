@@ -129,7 +129,10 @@ import org.dcache.xdr.gss.GssSessionManager;
 import static java.util.stream.Collectors.toList;
 
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.annotation.concurrent.GuardedBy;
+import javax.cache.Cache;
+import javax.cache.Caching;
 
 import org.dcache.auth.attributes.Restrictions;
 
