@@ -120,7 +120,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Timer;
@@ -227,6 +226,7 @@ import static org.dcache.ftp.door.AnonymousPermission.FORBID_ANONYMOUS_USER;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.LINK;
 import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.Exceptions.genericCheck;
 import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 
 @Inherited
@@ -1290,9 +1290,7 @@ public abstract class AbstractFtpDoorV1
 
     protected void checkFTPCommand(boolean isOK, int code, String format, Object... arguments) throws FTPCommandException
     {
-        if (!isOK) {
-            throw new FTPCommandException(code, String.format(format, arguments));
-        }
+        genericCheck(isOK, m -> new FTPCommandException(code, m), format, arguments);
     }
 
     /**

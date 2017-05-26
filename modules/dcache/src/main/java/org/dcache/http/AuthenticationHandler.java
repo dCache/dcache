@@ -44,6 +44,7 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.util.CertificateFactories;
@@ -76,6 +77,10 @@ public class AuthenticationHandler extends HandlerWrapper {
     private LoginStrategy _loginStrategy;
 
     private CertificateFactory _cf = CertificateFactories.newX509CertificateFactory();
+
+    public static Set<LoginAttribute> getLoginAttributes(HttpServletRequest request) {
+        return (Set<LoginAttribute>) request.getAttribute(DCACHE_LOGIN_ATTRIBUTES);
+    }
 
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse servletResponse)

@@ -60,6 +60,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static org.dcache.srm.shell.TStatusCodes.checkSuccess;
+import static org.dcache.util.Exceptions.genericCheck;
 
 /**
  *  Support for transferring a file using SRM.
@@ -773,8 +774,6 @@ public class SrmTransferAgent extends AbstractFileTransferAgent
 
     private void checkForFailure(boolean isOk, String message) throws SRMException
     {
-        if (!isOk) {
-            throw new SRMException(message);
-        }
+        genericCheck(isOk, SRMException::new, message);
     }
 }

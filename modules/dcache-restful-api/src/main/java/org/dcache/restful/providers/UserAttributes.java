@@ -47,6 +47,8 @@ public class UserAttributes
 
     private String home;
 
+    private String root;
+
     private String username;
 
     public AuthenticationStatus getStatus()
@@ -87,6 +89,16 @@ public class UserAttributes
     public void setHomeDirectory(String dir)
     {
         home = dir;
+    }
+
+    public String getRootDirectory()
+    {
+        return root;
+    }
+
+    public void setRootDirectory(String dir)
+    {
+        root = dir;
     }
 
     public String getUsername()

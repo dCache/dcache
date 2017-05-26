@@ -29,6 +29,11 @@ if [ ! -f etc/dcache.kpwd ]; then
         bin/dcache kpwd dcmapadd "$DN" "$username"
     fi
 
+    bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r /users-root \
+            -w read-write -p password usersroot
+    bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r /door-root/users-root \
+            -w read-write -p password doorrootusersroot
+
     echo "version 2.1" > etc/grid-security/storage-authzdb
     if which htpasswd; then
       htpasswd -b -c etc/htpasswd admin dickerelch
@@ -91,6 +96,15 @@ mkdir /private
 chmod 700 /private
 writetag /private sGroup "private"
 chown $uid:$gid /private
+
+mkdir /users-root
+chmod 777 /users-root
+mkdir /users-root/door-root
+chmod 777 /users-root/door-root
+mkdir /door-root
+chmod 777 /door-root
+mkdir /door-root/users-root
+chmod 777 /door-root/users-root
 EOF
 }
 # Apply liquibase change sets in parallel

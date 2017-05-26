@@ -15,7 +15,6 @@ import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
 import io.milton.resource.Resource;
-import io.milton.servlet.MiltonServlet;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -111,6 +110,7 @@ import static com.google.common.collect.Iterables.cycle;
 import static com.google.common.collect.Iterables.limit;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.auth.attributes.LoginAttributes.getUserRoot;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.*;
 import static org.dcache.util.ByteUnit.KiB;
@@ -557,7 +557,7 @@ public class DcacheResourceFactory
         }
 
         FsPath dCachePath = _pathMapper.asDcachePath(ServletRequest.getRequest(),
-                requestPath);
+                requestPath, m -> new ForbiddenException(m, null));
         return getResource(dCachePath);
     }
 

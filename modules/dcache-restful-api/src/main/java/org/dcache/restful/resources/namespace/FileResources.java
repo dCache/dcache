@@ -66,7 +66,6 @@ import org.dcache.vehicles.FileAttributes;
 import static diskCacheV111.util.FileLocality.NEARLINE;
 import static diskCacheV111.util.FileLocality.ONLINE_AND_NEARLINE;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
-import static org.dcache.restful.util.Preconditions.checkRequest;
 
 /**
  * RestFul API to  provide files/folders manipulation operations
@@ -141,7 +140,7 @@ public class FileResources {
     @GET
     @Path("{value : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonFileAttributes getFileAttributes(@PathParam("value") String value,
+    public JsonFileAttributes getFileAttributes(@PathParam("value") String requestPath,
                                                 @DefaultValue("false")
                                                 @QueryParam("children") boolean isList,
                                                 @DefaultValue("false")
@@ -156,17 +155,17 @@ public class FileResources {
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
         PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
-        FsPath path = pathMapper.asDcachePath(request, value);
+        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
         try {
 
-            FileAttributes namespaceAttrributes = handler.getFileAttributes(path, attributes);
-            chimeraToJsonAttributes(fileAttributes, namespaceAttrributes, isLocality, path.name(), isLocations);
+            FileAttributes namespaceAttributes = handler.getFileAttributes(path, attributes);
+            chimeraToJsonAttributes(fileAttributes, namespaceAttributes, isLocality, path.name(), isLocations);
             if (isQos) {
-                addQoSAttributes(fileAttributes, namespaceAttrributes);
+                addQoSAttributes(fileAttributes, namespaceAttributes);
             }
 
             // fill children list id it's a directory and listing is requested
-            if (namespaceAttrributes.getFileType() == FileType.DIR && isList) {
+            if (namespaceAttributes.getFileType() == FileType.DIR && isList) {
                 Range<Integer> range;
                 try {
                     int lower = (offset == null) ? 0 : Integer.parseInt(offset);
@@ -226,37 +225,29 @@ public class FileResources {
     @Path("{value : .*}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response cmrResources (@PathParam("value") String path, String requestPayload)
+    public Response cmrResources(@PathParam("value") String requestPath, String requestPayload)
     {
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
             PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+            PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
+            FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
+
             // FIXME: which attributes do we actually need?
-            FileAttributes attributes =
-                    handler.getFileAttributes(FsPath.ROOT.resolve(path), EnumSet.allOf(FileAttribute.class));
+            FileAttributes attributes = handler.getFileAttributes(path, EnumSet.allOf(FileAttribute.class));
 
             switch (action) {
                 case "mkdir":
-                    String folderName = (String) reqPayload.get("name");
-                    checkRequest(!folderName.contains("/"), "The folderName cannot contain forward slash.");
-                    checkRequest(!folderName.isEmpty(), "The folderName cannot be empty.");
-
-                    String newPath;
-                    if (path == null || path.isEmpty()) {
-                        newPath = "/" + folderName;
-                    } else {
-                        newPath = "/" + path + "/" + folderName;
-                    }
-
-                    handler.createPnfsDirectory(newPath);
+                    String name = (String) reqPayload.get("name");
+                    FsPath.checkChildName(name, BadRequestException::new);
+                    handler.createPnfsDirectory(path.child(name).toString());
                     break;
 
                 case "mv":
                     String dest = (String) reqPayload.get("destination");
-                    FsPath source = FsPath.ROOT.resolve(path);
-                    FsPath target = source.parent().resolve(dest);
-                    handler.renameEntry(source.toString(), target.toString(), true);
+                    FsPath target = pathMapper.resolve(request, path, dest);
+                    handler.renameEntry(path.toString(), target.toString(), true);
                     break;
 
                 case "qos":
@@ -335,11 +326,11 @@ public class FileResources {
     @DELETE
     @Path("{value : .*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteFileEntry(@PathParam("value") String value) throws CacheException {
+    public Response deleteFileEntry(@PathParam("value") String requestPath) throws CacheException {
 
         PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
         PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
-        FsPath path = pathMapper.asDcachePath(request, value);
+        FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 
         try {
             handler.deletePnfsEntry(path.toString());

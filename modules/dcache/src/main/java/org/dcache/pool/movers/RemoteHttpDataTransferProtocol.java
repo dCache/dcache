@@ -26,9 +26,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.Channels;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +52,7 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.Exceptions.genericCheck;
 
 /**
  * This class implements transfers of data between a pool and some remote
@@ -186,9 +185,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     private static void checkThat(boolean isOk, String message) throws CacheException
     {
-        if (!isOk) {
-            throw new CacheException(message);
-        }
+        genericCheck(isOk, CacheException::new, message);
     }
 
     @Override

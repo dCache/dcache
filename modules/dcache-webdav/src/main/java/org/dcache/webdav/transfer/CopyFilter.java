@@ -72,6 +72,8 @@ import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.dcache.auth.attributes.LoginAttributes.getUserRoot;
+import static org.dcache.http.AuthenticationHandler.getLoginAttributes;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.TYPE;
 
@@ -346,7 +348,7 @@ public class CopyFilter implements Filter
         }
 
         FsPath path = _pathMapper.asDcachePath(ServletRequest.getRequest(),
-                request.getAbsolutePath());
+                request.getAbsolutePath(), m -> new ErrorResponseException(Status.SC_FORBIDDEN, m));
         checkPath(path, direction);
 
         CredentialSource source = getCredentialSource(request, type);

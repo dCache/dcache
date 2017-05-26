@@ -15,24 +15,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.restful.util;
+package org.dcache.util;
 
-import javax.ws.rs.BadRequestException;
+import java.util.function.Function;
 
 /**
- * Utility methods for throwing JAX-WS exceptions
+ * Utility class for handling exceptions.
  */
-public class Preconditions
+public class Exceptions
 {
-    private Preconditions()
+    private Exceptions()
     {
-        // It's a utility class!
+        // prevent instantiation.
     }
 
-    public static void checkRequest(boolean isOk, String message) throws BadRequestException
+    public static <E extends Exception> void genericCheck(boolean isOK, Function <String,E> asException,  String format, Object... arguments) throws E
     {
-        if (!isOk) {
-            throw new BadRequestException(message);
+        if (!isOK) {
+            throw asException.apply(String.format(format, arguments));
         }
     }
 }

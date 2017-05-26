@@ -2,14 +2,11 @@ package org.dcache.restful.util;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
 
 import java.security.AccessController;
-import java.util.Set;
 
 import diskCacheV111.util.PnfsHandler;
 
-import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
@@ -17,8 +14,6 @@ import org.dcache.http.PathMapper;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.util.list.ListDirectoryHandler;
-
-import static org.dcache.http.AuthenticationHandler.DCACHE_LOGIN_ATTRIBUTES;
 
 public class ServletContextHandlerAttributes {
     public final static String DL = "org.dcache.restful";
@@ -34,11 +29,6 @@ public class ServletContextHandlerAttributes {
     public static Subject getSubject()
     {
         return Subject.getSubject(AccessController.getContext());
-    }
-
-    public static Set<LoginAttribute> getLoginAttributes(HttpServletRequest request)
-    {
-        return (Set<LoginAttribute>) request.getAttribute(DCACHE_LOGIN_ATTRIBUTES);
     }
 
     public static Restriction getRestriction()

@@ -11,8 +11,10 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.util.Exceptions.genericCheck;
 
 /**
  * Immutable absolute abstract path in the dCache name space.
@@ -39,6 +41,14 @@ public abstract class FsPath implements Serializable
      * FsPath representing the file system root. This is the only instance.
      */
     public static final FsPath ROOT = new Root();
+
+    public static <E extends Exception> void checkChildName(String name, Function<String,E> toException) throws E
+    {
+        genericCheck(!name.isEmpty(), toException, "Name must be non-empty.");
+        genericCheck(!name.contains("/"), toException, "Name must not contain '/'.");
+        genericCheck(!name.equals("."), toException, "Name must not be '.'.");
+        genericCheck(!name.equals(".."), toException, "Name must not be '..'.");
+    }
 
     public static FsPath create(String path)
     {
@@ -219,10 +229,7 @@ public abstract class FsPath implements Serializable
      */
     public FsPath child(String name)
     {
-        checkArgument(!name.isEmpty(), "Name must be non-empty.");
-        checkArgument(!name.contains("/"), "Name must not contain '/'.");
-        checkArgument(!name.equals("."), "Name must not be '.'.");
-        checkArgument(!name.equals(".."), "Name must not be '..'.");
+        checkChildName(name, IllegalArgumentException::new);
         return new Child(this, name);
     }
 

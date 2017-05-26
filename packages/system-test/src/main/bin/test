@@ -50,7 +50,7 @@ def runExpectingStatus(expectedCode, *args)
     end
     actualCode = result.scan(/[0-9]{3}/)[0].to_i
     if actualCode != expectedCode
-      raise "Wrong status code: #{actualCode}"
+      raise "Wrong status code: #{actualCode} != #{expectedCode}"
     end
   ensure
     print reset
@@ -263,6 +263,65 @@ def httpNoAnonymous(source, dest, *args)
       "http://#{@options.host}:2882/#{@options.dir}/#{tmp1}")
 end
 
+def httpUserRootUpload(source, dest, *args)
+  args << "--capath" << @truststore << "-s" << "-L" << "-f"
+  tmp = makeTempName
+  run(@curl, args, "-u", "usersroot:password", "-T", source, "https://#{@options.host}:2881/#{tmp}")
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-o", dest, "https://#{@options.host}:2881/users-root/#{tmp}")
+end
+
+def httpUserRootDownload(source, dest, *args)
+  args << "--capath" << @truststore << "-s" << "-L" << "-f"
+  tmp = makeTempName
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-T", source, "https://#{@options.host}:2881/users-root/#{tmp}")
+  run(@curl, args, "-u", "usersroot:password", "-o", dest, "https://#{@options.host}:2881/#{tmp}")
+end
+
+def httpDoorRootUpload(source, dest, *args)
+  args << "--capath" << @truststore << "-s" << "-L"
+  tmp = makeTempName
+  runExpectingStatus(403, @curl, args, "-u", "usersroot:password", "-T", source, "https://#{@options.host}:2883/#{tmp}")
+  run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-T", source, "https://#{@options.host}:2883/#{tmp}")
+  run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-o", dest, "https://#{@options.host}:2881/door-root/#{tmp}")
+end
+
+def httpDoorRootDownload(source, dest, *args)
+  args << "--capath" << @truststore << "-s" << "-L"
+  tmp = makeTempName
+  run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-T", source, "https://#{@options.host}:2881/door-root/#{tmp}")
+  runExpectingStatus(403, @curl, args, "-u", "usersroot:password", "-T", source, "https://#{@options.host}:2883/#{tmp}")
+  run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-o", dest, "https://#{@options.host}:2883/#{tmp}")
+end
+
+def httpUsersRootDoorRootUpload(source, dest, *args)
+  args << "--capath" << @truststore << "-s" << "-L" << "-f"
+  tmp = makeTempName
+  run(@curl, args, "-u", "usersroot:password", "-T", source, "https://#{@options.host}:2884/#{tmp}")
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-o", dest, "https://#{@options.host}:2881/users-root/door-root/#{tmp}")
+end
+
+def httpUsersRootDoorRootDownload(source, dest, *args)
+  args << "--capath" << @truststore << "-s" << "-L" << "-f"
+  tmp = makeTempName
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-T", source, "https://#{@options.host}:2881/users-root/door-root/#{tmp}")
+  run(@curl, args, "-u", "usersroot:password", "-o", dest, "https://#{@options.host}:2884/#{tmp}")
+end
+
+
+def httpDoorRootUsersRootUpload(source, dest, *args)
+  args << "--capath" << @truststore << "-s" << "-L" << "-f"
+  tmp = makeTempName
+  run(@curl, args, "-u", "doorrootusersroot:password", "-T", source, "https://#{@options.host}:2883/#{tmp}")
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-o", dest, "https://#{@options.host}:2881/door-root/users-root/#{tmp}")
+end
+
+def httpDoorRootUsersRootDownload(source, dest, *args)
+  args << "--capath" << @truststore << "-s" << "-L" << "-f"
+  tmp = makeTempName
+  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-T", source, "https://#{@options.host}:2881/door-root/users-root/#{tmp}")
+  run(@curl, args, "-u", "doorrootusersroot:password", "-o", dest, "https://#{@options.host}:2883/#{tmp}")
+end
+
 def https(source, dest, *args)
   args << "--capath" << @truststore << "-s"
   tmp1 = makeTempName
@@ -366,7 +425,12 @@ def OptionParser.parse(args)
     :arc => [ [ :arcSrm ],
               [ :arcHttps ] ],
     :uberftp => [ [ :uberftp ] ],
-    :http => [ [ :http ], [ :https ], [ :httpNoAnonymous ] ]
+    :http => [ [ :http ], [ :https ], [ :httpNoAnonymous ],
+               [ :httpUserRootUpload ], [ :httpUserRootDownload ],
+               [ :httpDoorRootUpload ], [ :httpDoorRootDownload ],
+               [ :httpUsersRootDoorRootUpload ], [ :httpUsersRootDoorRootDownload ],
+               [ :httpDoorRootUsersRootUpload ], [ :httpDoorRootUsersRootDownload ]
+             ]
   }
 
   parser = OptionParser.new do |opts|

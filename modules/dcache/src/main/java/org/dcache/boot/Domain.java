@@ -36,8 +36,10 @@ import dmg.util.CommandException;
 
 import org.dcache.util.Args;
 import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.Exceptions;
 
 import static org.dcache.boot.Properties.*;
+import static org.dcache.util.Exceptions.genericCheck;
 
 /**
  * Domain encapsulates the configuration of a domain and its
@@ -106,9 +108,7 @@ public class Domain
 
     private void checkExists(Resource resource) throws IOException
     {
-        if (!resource.exists()) {
-            throw new IOException(resource.getDescription() + " (no such resource)");
-        }
+        genericCheck(resource.exists(), IOException::new, "%s (no such resource)", resource.getDescription());
     }
 
     public String getName()

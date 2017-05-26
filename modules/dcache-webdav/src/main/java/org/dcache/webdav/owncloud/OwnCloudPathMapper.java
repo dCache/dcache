@@ -19,6 +19,8 @@ package org.dcache.webdav.owncloud;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.function.Function;
+
 import diskCacheV111.util.FsPath;
 
 import org.dcache.http.PathMapper;
@@ -38,8 +40,7 @@ public class OwnCloudPathMapper extends PathMapper
         _prefix = owncloudWebDAVPath;
     }
 
-    @Override
-    public FsPath asDcachePath(HttpServletRequest request, String path)
+    private String removePrefix(HttpServletRequest request, String path)
     {
         if (OwncloudClients.isSyncClient(request)) {
             checkArgument(!path.isEmpty(), "empty path");
@@ -53,6 +54,18 @@ public class OwnCloudPathMapper extends PathMapper
             }
         }
 
-        return super.asDcachePath(request, path);
+        return path;
+    }
+
+    @Override
+    public FsPath asDcachePath(HttpServletRequest request, String path)
+    {
+        return super.asDcachePath(request, removePrefix(request, path));
+    }
+
+    @Override
+    public <E extends Exception> FsPath asDcachePath(HttpServletRequest request, String path, Function<String,E> asException) throws E
+    {
+        return super.asDcachePath(request, removePrefix(request, path), asException);
     }
 }

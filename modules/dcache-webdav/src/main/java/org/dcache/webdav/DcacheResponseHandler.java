@@ -40,11 +40,11 @@ import diskCacheV111.util.FsPath;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.milton.http.Response.Status.*;
-import static org.dcache.http.AuthenticationHandler.DCACHE_LOGIN_ATTRIBUTES;
 
 /**
  * This class controls how Milton responds under different circumstances by
@@ -136,7 +136,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         // If GET on the root results in an authorization failure, we redirect to the users
         // home directory for convenience.
         if (request.getAbsolutePath().equals("/") && request.getMethod() == Request.Method.GET) {
-            Set<LoginAttribute> login = (Set<LoginAttribute>) ServletRequest.getRequest().getAttribute(DCACHE_LOGIN_ATTRIBUTES);
+            Set<LoginAttribute> login = AuthenticationHandler.getLoginAttributes(ServletRequest.getRequest());
             FsPath userRoot = FsPath.ROOT;
             String userHome = "/";
             for (LoginAttribute attribute : login) {
@@ -148,7 +148,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
             }
             try {
                 FsPath redirectFullPath = userRoot.chroot(userHome);
-                String redirectPath = pathMapper.asRequestPath(redirectFullPath);
+                String redirectPath = pathMapper.asRequestPath(ServletRequest.getRequest(), redirectFullPath);
                 if (!redirectPath.equals("/")) {
                     respondRedirect(response, request, redirectPath);
                 }

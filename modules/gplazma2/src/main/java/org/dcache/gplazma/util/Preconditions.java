@@ -2,6 +2,8 @@ package org.dcache.gplazma.util;
 
 import org.dcache.gplazma.AuthenticationException;
 
+import static org.dcache.util.Exceptions.genericCheck;
+
 /**
  * A collection of utility methods for checking something and throwing the
  * appropriate exception.  These may be useful to gPlazma core or gPlazma
@@ -18,9 +20,6 @@ public class Preconditions
     public static void checkAuthentication(boolean isAuthenticated,
             String message) throws AuthenticationException
     {
-        if(!isAuthenticated) {
-            throw new AuthenticationException(message);
-        }
+        genericCheck(isAuthenticated, AuthenticationException::new, message);
     }
-
 }
