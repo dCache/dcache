@@ -17,6 +17,7 @@ import io.milton.resource.LockingCollectionResource;
 import io.milton.resource.MakeCollectionableResource;
 import io.milton.resource.PutableResource;
 import io.milton.resource.Resource;
+import io.milton.servlet.ServletRequest;
 import org.eclipse.jetty.io.EofException;
 
 import java.io.IOException;
@@ -59,7 +60,8 @@ public class DcacheDirectoryResource
     {
         String url = request.getAbsoluteUrl();
         if (request.getMethod() == Request.Method.GET && !url.endsWith("/")) {
-            return url + "/";
+            String query = ServletRequest.getRequest().getQueryString();
+            return query == null ? (url + "/") : (url + "/?" + query);
         }
         return null;
     }

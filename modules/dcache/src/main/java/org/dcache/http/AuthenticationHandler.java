@@ -28,9 +28,11 @@ import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -63,6 +65,7 @@ public class AuthenticationHandler extends HandlerWrapper {
             "org.dcache.restriction";
     public static final String DCACHE_LOGIN_ATTRIBUTES =
             "org.dcache.login";
+    public static final String BEARER_TOKEN_QUERY_KEY = "authz";
 
     private static final InetAddress UNKNOWN_ADDRESS = InetAddresses.forString("0.0.0.0");
 
@@ -85,6 +88,7 @@ public class AuthenticationHandler extends HandlerWrapper {
                 addOriginToSubject(request, subject);
                 addAuthCredentialsToSubject(request, subject);
                 addSpnegoCredentialsToSubject(baseRequest, request, subject);
+                addQueryBearerTokenToSubject(request, subject);
 
                 LoginReply login = _loginStrategy.login(subject);
                 subject = login.getSubject();
@@ -147,6 +151,17 @@ public class AuthenticationHandler extends HandlerWrapper {
             } catch (CertificateException e) {
                 throw new CacheException("Failed to generate X.509 certificate path: " + e.getMessage(), e);
             }
+        }
+    }
+
+    private void addQueryBearerTokenToSubject(HttpServletRequest request, Subject subject)
+    {
+        String[] bearerTokens = request.getParameterMap().get(BEARER_TOKEN_QUERY_KEY);
+        if (bearerTokens != null) {
+            Set<Object> credentials = subject.getPrivateCredentials();
+            Arrays.stream(bearerTokens)
+                    .map(BearerTokenCredential::new)
+                    .forEach(credentials::add);
         }
     }
 

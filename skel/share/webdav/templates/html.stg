@@ -11,13 +11,15 @@
  * point to the copy.
  */
 
-page(static,subject,path,files,base,config,root) ::= <<
+page(static,subject,path,files,base,config,root,query) ::= <<
   $render(list(files))$
 >>
 
-errorpage(static,subject,path,errorcode,errormessage,base,config,root) ::= <<
+errorpage(static,subject,path,errorcode,errormessage,base,config,root,query) ::= <<
   $render(error(errorcode,errormessage))$
 >>
+
+queryWithPrefix(prefix) ::= <<$if(query)$$prefix$$query$$endif$>>
 
 list(files) ::= <<
   <table class="table table-condensed sortable">
@@ -44,7 +46,7 @@ file(f) ::= <<
         <span class="glyphicon glyphicon-folder-close"></span>
     </td>
     <td>
-        <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$/">$f.name.unencoded$</a>
+        <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$/$queryWithPrefix("?")$">$f.name.unencoded$</a>
     </td>
     <td></td>
     <td>
@@ -64,8 +66,8 @@ file(f) ::= <<
         $localityIcon(f.locality)$
     </td>
     <td>
-        <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$?action=show" title="Show $f.name.unencoded$">$f.name.unencoded$</a>
-        <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$" title="Download $f.name.unencoded$" download="$f.name.encoded$">
+        <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$?action=show$queryWithPrefix("&amp;")$" title="Show $f.name.unencoded$">$f.name.unencoded$</a>
+        <a href="$root$/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$$queryWithPrefix("?")$" title="Download $f.name.unencoded$" download="$f.name.encoded$">
             <span class="glyphicon glyphicon-cloud-download"></span>
         </a>
     </td>
@@ -174,7 +176,7 @@ render(body) ::= <<
   </html>
 >>
 
-url(path) ::= <<$path:{item|$item.encoded$/}$>>
+url(path) ::= <<$path:{item|$item.encoded$/}$$queryWithPrefix("?")$>>
 
 /* Recursively renders the path as a breadcrumb trail.
  */

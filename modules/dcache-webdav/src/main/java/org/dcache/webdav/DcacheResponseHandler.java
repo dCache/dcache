@@ -226,6 +226,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         template.add("errorcode", status.toString());
         template.add("errormessage", ERRORS.get(status));
         template.add("config", _templateConfig);
+        template.add("query", ServletRequest.getRequest().getQueryString());
 
         Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject != null) {

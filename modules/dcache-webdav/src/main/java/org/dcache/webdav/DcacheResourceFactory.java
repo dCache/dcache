@@ -15,6 +15,7 @@ import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
 import io.milton.resource.Resource;
+import io.milton.servlet.MiltonServlet;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -853,6 +854,11 @@ public class DcacheResourceFactory
         return URI.create(request.getAbsoluteUrl()).getPath();
     }
 
+    private String getQueryString()
+    {
+        return ServletRequest.getRequest().getQueryString();
+    }
+
     private String getRemoteAddr()
     {
         return HttpManager.request().getRemoteAddr();
@@ -872,6 +878,7 @@ public class DcacheResourceFactory
         template.add("base", UrlPathWrapper.forEmptyPath());
         template.add("config", _templateConfig);
         template.add("root", relPathOfRoot);
+        template.add("query", getQueryString());
     }
 
     /**
