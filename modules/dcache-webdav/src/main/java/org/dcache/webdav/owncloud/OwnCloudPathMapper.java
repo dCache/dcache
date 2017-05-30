@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import diskCacheV111.util.FsPath;
 
-import org.dcache.webdav.PathMapper;
+import org.dcache.http.PathMapper;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

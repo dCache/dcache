@@ -40,7 +40,7 @@ import diskCacheV111.util.FsPath;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.util.Slf4jSTErrorListener;
+import org.dcache.http.PathMapper;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static io.milton.http.Response.Status.*;

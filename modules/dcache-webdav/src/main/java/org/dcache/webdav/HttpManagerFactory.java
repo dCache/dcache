@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Date;
 
+import org.dcache.http.PathMapper;
 import org.dcache.webdav.federation.FederationResponseHandler;
 
 import static com.google.common.base.Preconditions.checkNotNull;

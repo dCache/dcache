@@ -3,14 +3,17 @@ package org.dcache.restful.util;
 import javax.security.auth.Subject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+
 import java.security.AccessController;
 import java.util.Set;
 
 import diskCacheV111.util.PnfsHandler;
+
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
+import org.dcache.http.PathMapper;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.util.list.ListDirectoryHandler;
@@ -71,9 +74,7 @@ public class ServletContextHandlerAttributes {
 
     public static PathMapper getPathMapper(ServletContext ctx)
     {
-        PathMapper pathMapper = (PathMapper) (ctx.getAttribute(PathMapper));
-        return pathMapper;
-
+        return (PathMapper) (ctx.getAttribute(PathMapper));
     }
 
     public static TransferInfoService getTransferInfoService(ServletContext ctx)

@@ -517,7 +517,7 @@
     </beans>
 
     <beans profile="owncloud-false">
-        <bean id="path-mapper" class="org.dcache.webdav.PathMapper">
+        <bean id="path-mapper" class="org.dcache.http.PathMapper">
             <description>Mapping between request paths and dCache paths</description>
             <property name="rootPath" value="${webdav.root}"/>
         </bean>

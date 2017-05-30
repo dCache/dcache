@@ -46,6 +46,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
@@ -56,7 +57,6 @@ import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.policyengine.MigrationPolicyEngine;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
-import org.dcache.restful.util.PathMapper;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
