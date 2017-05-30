@@ -150,6 +150,7 @@ public class Transfer implements Comparable<Transfer>
      *
      * @param pnfs             PnfsHandler used for pnfs communication
      * @param namespaceSubject The subject performing the namespace operations
+     * @param namespaceRestriction Any additional restrictions from this users session
      * @param ioSubject        The subject performing the transfer
      * @param path             The path of the file to transfer
      */
@@ -170,6 +171,7 @@ public class Transfer implements Comparable<Transfer>
      *
      * @param pnfs    PnfsHandler used for pnfs communication
      * @param subject The subject performing the transfer and namespace operations
+     * @param restriction Any additional restrictions from this users session
      * @param path    The path of the file to transfer
      */
     public Transfer(PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path)
@@ -797,6 +799,10 @@ public class Transfer implements Comparable<Transfer>
         PnfsGetFileAttributes request;
         if (pnfsId != null) {
             request = new PnfsGetFileAttributes(pnfsId, attr);
+            if (_path != null) {
+                // Needed for restriction check.
+                request.setPnfsPath(_path.toString());
+            }
         } else {
             request = new PnfsGetFileAttributes(_path.toString(), attr);
         }
