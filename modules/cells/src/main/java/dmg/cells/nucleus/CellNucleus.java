@@ -516,7 +516,7 @@ public class CellNucleus implements ThreadFactory
                             long timeout)
         throws SerializationException
     {
-        checkState(_state.isSendWithCallbackAllowed);
+        checkState(_state.isSendWithCallbackAllowed, "Cannot send message with callback in state {}", _state);
         checkArgument(!msg.isFinalDestination(), "Message has no next destination: %s", msg.getDestinationPath());
 
         if (shouldAddSource) {

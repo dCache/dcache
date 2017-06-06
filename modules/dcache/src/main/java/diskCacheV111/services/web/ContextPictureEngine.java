@@ -41,18 +41,6 @@ public class ContextPictureEngine implements HttpResponseEngine, DomainContextAw
     public ContextPictureEngine(String [] args) {
     }
 
-   @Override
-   public void startup()
-   {
-       // No background activity to start
-   }
-
-   @Override
-   public void shutdown()
-   {
-       // No background activity to shutdown
-   }
-
     @Override
     public void setDomainContext(Map<String, Object> context)
     {
