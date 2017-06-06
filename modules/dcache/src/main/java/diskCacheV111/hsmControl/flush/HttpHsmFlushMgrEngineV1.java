@@ -178,18 +178,6 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageS
        }
    }
 
-   @Override
-   public void startup()
-   {
-       // No background activity to start
-   }
-
-   @Override
-   public void shutdown()
-   {
-       // No background activity to shutdown
-   }
-
    private void printUpdateThis( PrintWriter pw , String thisManager ){
      pw.println("<center><a class=\"big-link\" href=\"");
      pw.println(thisManager);

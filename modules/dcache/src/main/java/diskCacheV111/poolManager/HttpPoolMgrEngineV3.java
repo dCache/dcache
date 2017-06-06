@@ -1,5 +1,6 @@
 package diskCacheV111.poolManager;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.DomainContextAware;
@@ -41,6 +43,8 @@ import dmg.util.HttpResponseEngine;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.Partition;
+import org.dcache.poolmanager.PoolManagerGetRestoreHandlerInfo;
+import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -49,7 +53,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpPoolMgrEngineV3 implements
         HttpResponseEngine, Runnable, CellInfoProvider, CellMessageSender, DomainContextAware,
-        CellCommandListener
+        CellCommandListener, CellLifeCycleAware
 {
     private static final String PARAMETER_DCACHE = "dcache";
     private static final String PARAMETER_GREP = "grep";
@@ -74,6 +78,8 @@ public class HttpPoolMgrEngineV3 implements
     private CellStub _pnfsManager;
     private CellStub _hsmController;
 
+    private PoolManagerHandlerSubscriber _pm;
+
     private final AgingHash   _pnfsPathMap     = new AgingHash(500);
     private final AgingHash _fileAttributesMap = new AgingHash(500);
     private final boolean     _takeAll         = true;
@@ -97,6 +103,8 @@ public class HttpPoolMgrEngineV3 implements
     private String[]    _siDetails;
     private String      _cssFile         = "/poolInfo/css/default.css";
     private Map<String, Object> _context;
+
+    private CellEndpoint _endpoint;
 
     public HttpPoolMgrEngineV3(String[] argsString)
     {
@@ -126,9 +134,12 @@ public class HttpPoolMgrEngineV3 implements
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
+        _endpoint = endpoint;
         _poolManager = new CellStub(endpoint, new CellPath(_poolManagerAddress), TIMEOUT, SECONDS);
         _pnfsManager = new CellStub(endpoint, new CellPath(_pnfsManagerAddress), TIMEOUT, SECONDS);
         _hsmController = new CellStub(endpoint, new CellPath("HsmManager"), TIMEOUT, SECONDS);
+        _pm = new PoolManagerHandlerSubscriber();
+        _pm.setPoolManager(_poolManager);
     }
 
     @Override
@@ -138,13 +149,15 @@ public class HttpPoolMgrEngineV3 implements
     }
 
     @Override
-    public void startup()
+    public void afterStart()
     {
+        _pm.start();
+        _pm.afterStart();
         _restoreCollector.start();
     }
 
     @Override
-    public void shutdown()
+    public void beforeStop()
     {
         _restoreCollector.interrupt();
         try {
@@ -152,6 +165,7 @@ public class HttpPoolMgrEngineV3 implements
         } catch (InterruptedException e) {
             _log.warn("Interrupted while waiting for restore-collector to terminate");
         }
+        _pm.beforeStop();
     }
 
     private void decodeCss(String cssDetails)
@@ -226,9 +240,11 @@ public class HttpPoolMgrEngineV3 implements
     private void runRestoreCollector()
         throws NoRouteToCellException, InterruptedException
     {
-        RestoreHandlerInfo[] infos;
+        List<RestoreHandlerInfo> infos;
         try {
-            infos = _poolManager.sendAndWait("xrc ls", RestoreHandlerInfo[].class);
+            ListenableFuture<PoolManagerGetRestoreHandlerInfo> future =
+                    _pm.sendAsync(_endpoint, new PoolManagerGetRestoreHandlerInfo(), _poolManager.getTimeoutInMillis());
+            infos = CellStub.getMessage(future).getResult();
         } catch (CacheException | NoRouteToCellException e) {
             _log.warn("runRestoreCollector : failure reply from PoolManager : " + e.getMessage());
             return;

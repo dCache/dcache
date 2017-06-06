@@ -261,16 +261,4 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
 
         return bestHandler;
     }
-
-    @Override
-    public void startup()
-    {
-        // This class has no background activity.
-    }
-
-    @Override
-    public void shutdown()
-    {
-        // No background activity to shutdown.
-    }
 }
