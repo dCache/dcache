@@ -2332,6 +2332,8 @@ public class PnfsManagerV3
             if (path != null) {
                 checkRestriction(message.getRestriction(), message.getAccessMask(),
                         activity, path);
+            } else {
+                _log.warn("Restriction check by-passed due to missing path; please report this to <support@dCache.org>");
             }
         }
     }
