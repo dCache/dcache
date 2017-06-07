@@ -987,6 +987,7 @@ public class NearlineStorageHandler
     {
         private final StorageInfoMessage infoMsg;
         private final ReplicaDescriptor descriptor;
+        private ListenableFuture<Void> allocationFuture;
 
         public StageRequestImpl(NearlineStorage storage, FileAttributes fileAttributes) throws CacheException
         {
@@ -1006,15 +1007,18 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public ListenableFuture<Void> allocate()
+        public synchronized ListenableFuture<Void> allocate()
         {
             LOGGER.debug("Allocating space for stage of {}.", getFileAttributes().getPnfsId());
-            return register(executor.submit(
-                    () -> {
-                        descriptor.allocate(descriptor.getFileAttributes().getSize());
-                        return null;
-                    }
-            ));
+            if (allocationFuture == null) {
+                allocationFuture = register(executor.submit(
+                        () -> {
+                            descriptor.allocate(descriptor.getFileAttributes().getSize());
+                            return null;
+                        }
+                ));
+            }
+            return allocationFuture;
         }
 
         @Override
