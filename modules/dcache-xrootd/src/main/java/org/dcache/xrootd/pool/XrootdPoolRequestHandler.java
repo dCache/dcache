@@ -251,9 +251,9 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 FileDescriptor descriptor;
                 IoMode mode = file.getIoMode();
                 if (msg.isNew() && mode != IoMode.WRITE) {
-                    throw new XrootdException(kXR_ArgInvalid, "File exists.");
+                    throw new XrootdException(kXR_ArgInvalid, "Open without write mode but isNew.");
                 } else if (msg.isDelete() && mode != IoMode.WRITE) {
-                    throw new XrootdException(kXR_Unsupported, "File exists.");
+                    throw new XrootdException(kXR_ArgInvalid, "Open without write mode but isDelete.");
                 } else if ((msg.isNew() || msg.isReadWrite()) && mode == IoMode.WRITE) {
                     descriptor = new WriteDescriptor(file, (msg.getOptions() & kXR_posc) == kXR_posc ||
                             file.getProtocolInfo().getFlags().contains(XrootdProtocolInfo.Flags.POSC));
