@@ -35,4 +35,16 @@ public class Exceptions
             throw asException.apply(String.format(format, arguments));
         }
     }
+
+    /**
+     * Return an Exception's message, if it was constructed with one, otherwise
+     * return the Exception's class name.  This method is intended to handle
+     * describing problems (e.g., for logging) identified by an Exception that
+     * was created outside dCache's control.
+     */
+    public static String messageOrClassName(Exception e)
+    {
+        String message = e.getMessage();
+        return message == null ? e.getClass().getName() : message;
+    }
 }
