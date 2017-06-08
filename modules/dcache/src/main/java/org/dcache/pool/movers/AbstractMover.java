@@ -221,8 +221,11 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                     LOGGER.error("Transfer failed: {}", e.getMessage());
                     setTransferStatus(e.getRc(), e.getMessage());
                 } catch (InterruptedIOException | InterruptedException e) {
-                    LOGGER.error("Transfer was forcefully killed");
-                    setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer was forcefully killed");
+                    String message = e.getMessage() != null
+                            ? ("Transfer forcefully killed: " + e.getMessage())
+                            : "Transfer was forcefully killed";
+                    LOGGER.error(message);
+                    setTransferStatus(CacheException.DEFAULT_ERROR_CODE, message);
                 } catch (RuntimeException e) {
                     LOGGER.error("Transfer failed due to a bug", e);
                     setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, "Bug detected (please report): " + e.getMessage());
