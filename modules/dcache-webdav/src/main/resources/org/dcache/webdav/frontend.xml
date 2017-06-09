@@ -310,7 +310,6 @@
                               '${frontend.limits.low-resource-idle-time.unit}')}" />
                     <property name="maxLowResourcesTime" value="180000"/>
                 </bean>
-                <bean class="org.dcache.restful.errorHandling.RestAPIExceptionHandler"/>
             </list>
         </property>
     </bean>
