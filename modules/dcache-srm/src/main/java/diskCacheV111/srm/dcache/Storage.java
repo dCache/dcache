@@ -79,7 +79,6 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.UnsignedLong;
@@ -103,11 +102,9 @@ import java.net.ProtocolFamily;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -125,12 +122,15 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
+
+import org.dcache.space.ReservationCaches;
+import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
+
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceState;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
-import diskCacheV111.services.space.message.GetSpaceTokens;
 import diskCacheV111.services.space.message.Release;
 import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.util.AccessLatency;
@@ -218,7 +218,6 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.NetworkUtils.InetAddressScope;
 import org.dcache.util.URIs;
@@ -230,7 +229,6 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Maps.filterKeys;
@@ -301,8 +299,6 @@ public final class Storage
     private int numDoorInRanSelection = 3;
 
     /**
-     * A loading cache for looking up space reservations by space token.
-     *
      * Used during  uploads to verify the availability of a space reservation. In case
      * of stale data, a TURL may be handed out to the client even though the reservation
      * doesn't exist or is full. In that case the upload to the TURL will fail. This is
@@ -310,109 +306,13 @@ public final class Storage
      * after handing out the TURL.
      */
     private final LoadingCache<String,Optional<Space>> spaces =
-            CacheBuilder.newBuilder()
-                    .maximumSize(1000)
-                    .expireAfterWrite(10, MINUTES)
-                    .refreshAfterWrite(30, SECONDS)
-                    .recordStats()
-                    .build(
-                            new CacheLoader<String, Optional<Space>>()
-                            {
-                                @Override
-                                public Optional<Space> load(String token)
-                                        throws CacheException, NoRouteToCellException, InterruptedException
-                                {
-                                    Space space =
-                                            _spaceManagerStub.sendAndWait(new GetSpaceMetaData(token)).getSpaces()[0];
-                                    return Optional.fromNullable(space);
-                                }
-
-                                @Override
-                                public ListenableFuture<Optional<Space>> reload(String token, Optional<Space> oldValue)
-                                {
-                                    final SettableFuture<Optional<Space>> future = SettableFuture.create();
-                                    CellStub.addCallback(
-                                            _spaceManagerStub.send(new GetSpaceMetaData(token)),
-                                            new AbstractMessageCallback<GetSpaceMetaData>()
-                                            {
-                                                @Override
-                                                public void success(GetSpaceMetaData message)
-                                                {
-                                                    future.set(Optional.fromNullable(message.getSpaces()[0]));
-                                                }
-
-                                                @Override
-                                                public void failure(int rc, Object error)
-                                                {
-                                                    CacheException exception = CacheExceptionFactory.exceptionOf(
-                                                            rc, Objects.toString(error, null));
-                                                    future.setException(exception);
-                                                }
-                                            }, _executor);
-                                    return future;
-                                }
-                            });
+            ReservationCaches.buildSpaceLookupCache(_spaceManagerStub, _executor);
 
     /**
      * A loading cache for looking up space tokens by owner and description.
      */
     private final LoadingCache<GetSpaceTokensKey, long[]> spaceTokens =
-            CacheBuilder.newBuilder()
-                    .maximumSize(1000)
-                    .expireAfterWrite(30, SECONDS)
-                    .refreshAfterWrite(10, SECONDS)
-                    .recordStats()
-                    .build(new CacheLoader<GetSpaceTokensKey, long[]>()
-                    {
-                        @Override
-                        public long[] load(GetSpaceTokensKey key) throws Exception
-                        {
-                            try {
-                                return _spaceManagerStub.sendAndWait(createRequest(key)).getSpaceTokens();
-                            } catch (TimeoutCacheException e) {
-                                throw new SRMInternalErrorException("Space manager timeout", e);
-                            } catch (InterruptedException e) {
-                                throw new SRMInternalErrorException("Operation interrupted", e);
-                            } catch (CacheException e) {
-                                _log.warn("GetSpaceTokens failed with rc={} error={}", e.getRc(), e.getMessage());
-                                throw new SRMException("GetSpaceTokens failed with rc=" + e.getRc() +
-                                                       " error=" + e.getMessage(), e);
-                            }
-                        }
-
-                        private GetSpaceTokens createRequest(GetSpaceTokensKey key)
-                        {
-                            GetSpaceTokens message = new GetSpaceTokens(key.description);
-                            message.setSubject(new Subject(true, key.principals,
-                                                           Collections.emptySet(), Collections.emptySet()));
-                            return message;
-                        }
-
-                        @Override
-                        public ListenableFuture<long[]> reload(GetSpaceTokensKey key, long[] oldValue) throws Exception
-                        {
-                            final SettableFuture<long[]> future = SettableFuture.create();
-                            CellStub.addCallback(
-                                    _spaceManagerStub.send(createRequest(key)),
-                                    new AbstractMessageCallback<GetSpaceTokens>()
-                                    {
-                                        @Override
-                                        public void success(GetSpaceTokens message)
-                                        {
-                                            future.set(message.getSpaceTokens());
-                                        }
-
-                                        @Override
-                                        public void failure(int rc, Object error)
-                                        {
-                                            CacheException exception = CacheExceptionFactory.exceptionOf(
-                                                    rc, Objects.toString(error, null));
-                                            future.setException(exception);
-                                        }
-                                    }, _executor);
-                            return future;
-                        }
-                    });
+            ReservationCaches.buildOwnerDescriptionLookupCache(_spaceManagerStub, _executor);
 
     public Storage()
     {
@@ -2518,39 +2418,4 @@ public final class Storage
         }
     }
 
-    private static class GetSpaceTokensKey
-    {
-        private final Set<Principal> principals;
-        private final String description;
-
-        public GetSpaceTokensKey(Set<Principal> principals, String description)
-        {
-            this.principals = checkNotNull(principals);
-            this.description = description;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            GetSpaceTokensKey that = (GetSpaceTokensKey) o;
-            return principals.equals(that.principals) &&
-                   (description == null ? that.description == null : description.equals(that.description));
-
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = principals.hashCode();
-            result = 31 * result + (description != null ? description.hashCode() : 0);
-            return result;
-        }
-    }
 }

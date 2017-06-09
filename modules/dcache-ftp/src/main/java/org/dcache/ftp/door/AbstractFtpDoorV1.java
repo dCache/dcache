@@ -67,9 +67,11 @@ COPYRIGHT STATUS:
 package org.dcache.ftp.door;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
@@ -112,6 +114,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -124,13 +128,16 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.doors.LineBasedInterpreter;
+import diskCacheV111.services.space.Space;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.ChecksumFactory;
@@ -199,6 +206,7 @@ import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.services.login.IdentityResolverFactory.IdentityResolver;
 import org.dcache.services.login.RemoteLoginStrategy;
+import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 import org.dcache.util.Args;
 import org.dcache.util.AsynchronousRedirectedTransfer;
 import org.dcache.util.CDCExecutorDecorator;
@@ -307,9 +315,75 @@ public abstract class AbstractFtpDoorV1
     protected InetSocketAddress _remoteSocketAddress;
     protected CellAddressCore _cellAddress;
     protected CellEndpoint _cellEndpoint;
+    private LoadingCache<GetSpaceTokensKey, long[]> _spaceDescriptionCache;
+    private LoadingCache<String,Optional<Space>> _spaceLookupCache;
     protected Executor _executor;
     private IdentityResolverFactory _identityResolverFactory;
     private IdentityResolver _identityResolver;
+
+    /**
+     * Simple class to allow easy accumulation of space usage.
+     */
+    private class SpaceAccount
+    {
+        private final long used;
+        private final long available;
+        private final long allocated;
+        private final long total;
+
+        public SpaceAccount(Space space)
+        {
+            used = space.getUsedSizeInBytes();
+            available = space.getAvailableSpaceInBytes();
+            allocated = space.getAllocatedSpaceInBytes();
+            total = space.getSizeInBytes();
+        }
+
+        public SpaceAccount(long used, long available, long allocated, long total)
+        {
+            this.used = used;
+            this.available = available;
+            this.allocated = allocated;
+            this.total = total;
+        }
+
+        public SpaceAccount()
+        {
+            used = 0L;
+            available = 0L;
+            allocated = 0L;
+            total = 0L;
+        }
+
+        public SpaceAccount plus(SpaceAccount other)
+        {
+            long combinedUsed = used + other.used;
+            long combinedAvailable = available + other.available;
+            long combinedAllocated = allocated + other.allocated;
+            long combinedTotal = total + other.total;
+            return new SpaceAccount(combinedUsed, combinedAvailable, combinedAllocated, combinedTotal);
+        }
+
+        public long getUsed()
+        {
+            return used;
+        }
+
+        public long getAvailable()
+        {
+            return available;
+        }
+
+        public long getAllocated()
+        {
+            return allocated;
+        }
+
+        public long getTotal()
+        {
+            return total;
+        }
+    }
 
     public enum ReplyType
     {
@@ -1341,6 +1415,16 @@ public abstract class AbstractFtpDoorV1
     public void setExecutor(Executor executor)
     {
         _executor = new CDCExecutorDecorator<>(executor);
+    }
+
+    public void setSpaceDescriptionCache(LoadingCache<GetSpaceTokensKey, long[]> cache)
+    {
+        _spaceDescriptionCache = cache;
+    }
+
+    public void setSpaceLookupCache(LoadingCache<String,Optional<Space>> cache)
+    {
+        _spaceLookupCache = cache;
     }
 
     public void setPoolManagerHandler(PoolManagerHandler poolManagerHandler)
@@ -2606,6 +2690,7 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> SYMLINKFROM <SP> <path> - Register symlink location; SYMLINKTO must follow\r\n" +
             "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command\r\n" +
             "SITE <SP> TASKID <SP> <id> - Provide server with an identifier\r\n" +
+            "SITE <SP> USAGE <SP> [TOKEN <SP> <token> <SP> ] <path>\r\n" +
             "SITE <SP> WHOAMI - Provides the username or uid of the user")
     public void ftp_site(String arg) throws FTPCommandException
     {
@@ -2649,6 +2734,10 @@ public abstract class AbstractFtpDoorV1
         } else if (args[0].equalsIgnoreCase("TASKID")) {
             checkFTPCommand(args.length >= 2, 501, "Syntax error in parameters or arguments.");
             doTaskid(arg.substring(6));
+        } else if (args[0].equalsIgnoreCase("USAGE")) {
+            checkFTPCommand(args.length >= 2, 501, "Missing arguments in command.");
+            boolean hasToken = args[1].equalsIgnoreCase("TOKEN");
+            doUsage(hasToken ? arg.substring(12) : arg.substring(6), hasToken);
         } else if (args[0].equalsIgnoreCase("WHOAMI")) {
             checkFTPCommand(args.length == 1, 501, "Invalid command arguments.");
             doWhoami();
@@ -2936,6 +3025,67 @@ public abstract class AbstractFtpDoorV1
         //     discoverable, provided this file still exists.  In future, we
         //     may want to record client-supplied identifiers in billing.
         reply("250 OK");
+    }
+
+    /**
+     * Process a "SITE USAGE" command.  The format is described here:
+     *
+     *     https://github.com/bbockelm/globus-gridftp-osg-extensions/
+     */
+    public void doUsage(String arg, boolean hasToken) throws FTPCommandException
+    {
+        String token;
+        String requestPath;
+
+        if (hasToken) {
+            List<String> args = Splitter.on(' ').limit(2).splitToList(arg);
+            checkFTPCommand(args.size() == 2, 501, "Missing path after TOKEN value");
+            token = args.get(0);
+            requestPath = args.get(1);
+        } else {
+            token = "default";
+            requestPath = arg;
+        }
+
+        try {
+            List<String> spaceIds;
+
+            if (token.equalsIgnoreCase("default")) {
+                FileAttributes attr = _pnfs.getFileAttributes(absolutePath(requestPath), EnumSet.of(FileAttribute.STORAGEINFO));
+                String id = attr.getStorageInfo().getMap().get("writeToken");
+                checkFTPCommand(id != null, 501, "Path is not under space management");
+                spaceIds = Collections.singletonList(id);
+            } else {
+                long[] ids = _spaceDescriptionCache.get(new GetSpaceTokensKey(_subject.getPrincipals(), token));
+                checkFTPCommand(ids.length > 0, 501, "Unknown TOKEN " + token);
+                spaceIds = Arrays.stream(ids).mapToObj(Long::toString).collect(Collectors.toList());
+            }
+
+            SpaceAccount combined = _spaceLookupCache.getAll(spaceIds).values().stream()
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(SpaceAccount::new)
+                    .reduce(new SpaceAccount(), (a,b) -> a.plus(b));
+
+            reply("250 USAGE " + (combined.getUsed() + combined.getAllocated()) +
+                    " FREE " + combined.getAvailable() +
+                    " TOTAL " + combined.getTotal());
+        } catch (CacheException e) {
+            switch (e.getRc()) {
+            case CacheException.FILE_NOT_FOUND:
+                throw new FTPCommandException(550, "File not found", e);
+            case CacheException.TIMEOUT:
+                throw new FTPCommandException(451, "Internal timeout", e);
+            case CacheException.NOT_DIR:
+                throw new FTPCommandException(550, "Not a directory", e);
+            default:
+                throw new FTPCommandException(451, "Operation failed: " + e.getMessage(), e);
+            }
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            Throwables.throwIfUnchecked(cause);
+            throw new FTPCommandException(451, "Failed to fetch space details: " + cause.getMessage(), e);
+        }
     }
 
     public void doWhoami()

@@ -99,6 +99,7 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -maxLogin=${ftp.limits.clients} \
    -maxRetries=${ftp.limits.retries} \
    -maxStreamsPerClient=${ftp.limits.streams-per-client} \
+   -spaceManager=${ftp.service.spacemanager} \
    -defaultStreamsPerClient=1 \
    -deleteOnConnectionClosed=${ftp.enable.delete-on-failure} \
    -io-queue=${ftp.mover.queue} \

@@ -18,9 +18,13 @@
  */
 package diskCacheV111.doors;
 
+import com.google.common.base.Optional;
+import com.google.common.cache.LoadingCache;
+
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 
+import diskCacheV111.services.space.Space;
 import diskCacheV111.util.ConfigurationException;
 
 import dmg.cells.nucleus.CellAddressCore;
@@ -30,6 +34,7 @@ import dmg.util.StreamEngine;
 
 import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.services.login.IdentityResolverFactory;
+import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 import org.dcache.util.Args;
 
 /**
@@ -64,12 +69,16 @@ public interface NettyLineBasedInterpreterFactory
      * @param executor Executor for background operations
      * @param poolManager Handler for pool manager communication
      * @param identityResolverFactory factory for creating an identity resolver
+     * @param spaceDescriptionCache cache for looking up reservations based on user and description
+     * @param spaceLookupCache cache for looking up current reservation values
      * @return Fully initialized interpreter
      * @throws Exception If the interpreter could not be initialized
      */
     LineBasedInterpreter create(CellEndpoint endpoint, CellAddressCore myAddress,
                                 InetSocketAddress remoteAddress, InetSocketAddress proxyAddress, InetSocketAddress localAddress,
                                 LineWriter writer, Executor executor, PoolManagerHandler poolManager,
-                                IdentityResolverFactory identityResolverFactory)
+                                IdentityResolverFactory identityResolverFactory,
+                                LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
+                                LoadingCache<String,Optional<Space>> spaceLookupCache)
             throws Exception;
 }

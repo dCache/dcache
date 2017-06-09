@@ -19,25 +19,22 @@
 
 package diskCacheV111.doors;
 
+import com.google.common.base.Optional;
+import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LineBasedFrameDecoder;
-import io.netty.handler.codec.string.LineEncoder;
-import io.netty.handler.codec.string.LineSeparator;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.logging.LoggingHandler;
 
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
-import java.nio.charset.Charset;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.services.space.Space;
 
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellEndpoint;
@@ -49,6 +46,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolManagerHandlerSubscriber;
 import org.dcache.services.login.IdentityResolverFactory;
 import org.dcache.services.login.RemoteLoginStrategy;
+import org.dcache.space.ReservationCaches;
+import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 import org.dcache.util.Args;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.Option;
@@ -60,10 +59,12 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     private final String parentCellName;
     private final Args args;
     private final NettyLineBasedInterpreterFactory factory;
+    private final IdentityResolverFactory idResolverFactory;
     private ExecutorService executor;
     private PoolManagerHandlerSubscriber poolManagerHandler;
     private NioEventLoopGroup socketGroup;
-    private IdentityResolverFactory idResolverFactory;
+    private LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache;
+    private LoadingCache<String,Optional<Space>> spaceLookupCache;
 
     @Option(name = "poolManager",
             description = "Well known name of the pool manager",
@@ -91,6 +92,11 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
             defaultValue = "gPlazma")
     protected CellPath gPlazma;
 
+    @Option(name = "spaceManager",
+            description = "Cell path to SpaceManager",
+            defaultValue = "SpaceManager")
+    protected CellPath spaceManagerPath;
+
     public NettyLineBasedDoorFactory(NettyLineBasedInterpreterFactory factory, Args args, CellEndpoint parentEndpoint,
                                      String parentCellName)
     {
@@ -114,7 +120,9 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     @Override
     public Cell newCell(Socket socket) throws InvocationTargetException
     {
-        NettyLineBasedDoor door = new NettyLineBasedDoor(parentCellName + "*", args, factory, executor, poolManagerHandler, idResolverFactory);
+        NettyLineBasedDoor door = new NettyLineBasedDoor(parentCellName + "*", args,
+                factory, executor, poolManagerHandler, idResolverFactory,
+                spaceDescriptionCache, spaceLookupCache);
 
         NioSocketChannel channel = new NioSocketChannel(socket.getChannel());
 
@@ -138,6 +146,10 @@ public class NettyLineBasedDoorFactory extends AbstractService implements LoginC
     {
         executor = Executors.newCachedThreadPool(
                 new ThreadFactoryBuilder().setNameFormat(parentCellName + "-%d").build());
+
+        CellStub spaceManager = new CellStub(parentEndpoint, spaceManagerPath, 30_000);
+        spaceDescriptionCache = ReservationCaches.buildOwnerDescriptionLookupCache(spaceManager, executor);
+        spaceLookupCache = ReservationCaches.buildSpaceLookupCache(spaceManager, executor);
 
         poolManagerHandler = new PoolManagerHandlerSubscriber();
         poolManagerHandler.setPoolManager(new CellStub(parentEndpoint, poolManager, poolManagerTimeout, poolManagerTimeoutUnit));

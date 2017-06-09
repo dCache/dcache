@@ -19,6 +19,8 @@
 
 package diskCacheV111.doors;
 
+import com.google.common.base.Optional;
+import com.google.common.cache.LoadingCache;
 import com.google.common.net.InetAddresses;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -46,6 +48,8 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
+import diskCacheV111.services.space.Space;
+
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
@@ -57,6 +61,7 @@ import dmg.util.LineWriter;
 import org.dcache.cells.AbstractCell;
 import org.dcache.poolmanager.PoolManagerHandler;
 import org.dcache.services.login.IdentityResolverFactory;
+import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 import org.dcache.util.Args;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.util.SequentialExecutor;
@@ -150,9 +155,22 @@ public class NettyLineBasedDoor
      */
     private final IdentityResolverFactory idResolverFactory;
 
+    /**
+     * A cache for looking up reservations based on user and description.
+     */
+    private final LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache;
+
+    /**
+     * A cache for looking up current reservation values.
+     */
+    private final LoadingCache<String,Optional<Space>> spaceLookupCache;
+
+
     public NettyLineBasedDoor(String cellName, Args args, NettyLineBasedInterpreterFactory factory,
                               ExecutorService executor, PoolManagerHandler poolManagerHandler,
-                              IdentityResolverFactory idResolverFactory)
+                              IdentityResolverFactory idResolverFactory,
+                              LoadingCache<GetSpaceTokensKey, long[]> spaceDescriptionCache,
+                              LoadingCache<String,Optional<Space>> spaceLookupCache)
     {
         super(cellName, args, executor);
 
@@ -176,6 +194,8 @@ public class NettyLineBasedDoor
 
         this.expectProxyProtocol = args.getBooleanOption("expectProxyProtocol");
         this.idResolverFactory = idResolverFactory;
+        this.spaceDescriptionCache = spaceDescriptionCache;
+        this.spaceLookupCache = spaceLookupCache;
     }
 
     public void messageArrived(NoRouteToCellException e)
@@ -192,7 +212,8 @@ public class NettyLineBasedDoor
 
         interpreter = factory.create(this, getNucleus().getThisAddress(),
                                      remoteAddress, proxyAddress, localAddress,
-                                     writer, executor, poolManager, idResolverFactory);
+                                     writer, executor, poolManager, idResolverFactory,
+                                     spaceDescriptionCache, spaceLookupCache);
         if (interpreter instanceof CellCommandListener) {
             addCommandListener(interpreter);
         }
