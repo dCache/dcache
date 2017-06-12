@@ -62,6 +62,8 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static diskCacheV111.util.FileLocality.NEARLINE;
 import static diskCacheV111.util.FileLocality.ONLINE_AND_NEARLINE;
@@ -76,6 +78,8 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 public class FileResources {
 
     private final String QOS_PIN_REQUEST_ID = "qos";
+    private static final Logger LOG = LoggerFactory.getLogger(FileResources.class);
+
 
     @Context
     ServletContext ctx;
@@ -252,10 +256,12 @@ public class FileResources {
 
                 case "qos":
                     String targetQos = reqPayload.getString("target");
-
+                    JsonFileAttributes fileAttributes = new JsonFileAttributes();
+                    addQoSAttributes(fileAttributes, attributes);
+                    LOG.debug("Request received to change current QoS from {} to: {} for {}", fileAttributes.currentQos, targetQos, path);
                     RemotePoolMonitor monitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
                     FileLocality locality = monitor.getFileLocality(attributes, request.getRemoteHost());
-
+                    LOG.debug("The Locality of the file: {}", locality);
                     if (locality == FileLocality.NONE) {
                         throw new BadRequestException("Transition for directories not supported");
                     }
