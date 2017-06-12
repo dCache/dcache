@@ -86,8 +86,7 @@ public class DcacheDirectoryResource
     @Override
     public Resource createNew(String newName, InputStream inputStream,
                               Long length, String contentType)
-        throws IOException, ConflictException, NotAuthorizedException,
-               BadRequestException
+        throws ConflictException, NotAuthorizedException, BadRequestException
     {
         try {
             FsPath path = new FsPath(_path, newName);
@@ -96,12 +95,16 @@ public class DcacheDirectoryResource
             } else {
                 return _factory.createFile(path, inputStream, length);
             }
-        } catch (EofException e) {
+        } catch (IOException e) {
             // Milton reacts badly to receiving any IOException and wraps the
-            // IOException in a RuntimeException.  Here, we translate this to
-            // a bad request, as the Content-Length didn't match the
-            // transferred entity's size.
-            throw new BadRequestException(this, "Connection closed prematurely, entity smaller than expected.");
+            // IOException in a RuntimeException, which dCache logs as a bug.
+            // Here, we translate this to a 500 Internal Server Error response.
+            //
+            // Note that a 400 Bad Request response indicates that "The client
+            //     SHOULD NOT repeat the request without modifications." --
+            //     RFC 2616.
+            //
+            throw new WebDavException("Problem with transferred data: " + e.getMessage(), e, this);
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (FileExistsCacheException e) {
