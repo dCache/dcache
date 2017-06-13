@@ -93,6 +93,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
+import org.dcache.util.Exceptions;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Slf4jSTErrorListener;
@@ -666,9 +667,28 @@ public class DcacheResourceFactory
                         throw new TimeoutCacheException("Server is busy (internal timeout)");
                     }
                     transfer.relayData(inputStream);
+                } catch (IOException e) {
+                    String message = Exceptions.messageOrClassName(e);
+                    transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                           "Error relaying data: " + message);
+                    transfer.killMover("door experienced error relaying data: " + message);
+                    throw e;
+                } catch (CacheException e) {
+                    transfer.notifyBilling(e.getRc(), e.getMessage());
+                    transfer.killMover("door experienced internal error: " + e.getMessage());
+                    throw e;
+                } catch (InterruptedException e) {
+                    transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                           "Shutting down");
+                    transfer.killMover("door shutting down");
+                    throw e;
+                } catch (RuntimeException e) {
+                    transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                           "Found bug: " + e);
+                    transfer.killMover("door encountered a bug");
+                    throw e;
                 } finally {
-                    transfer.killMover(_killTimeout, _killTimeoutUnit,
-                            "killed by door: proxy transfer complete");
+                    transfer.killMover("door found orphaned mover");
                 }
                 success = true;
             } finally {
@@ -676,17 +696,6 @@ public class DcacheResourceFactory
                     transfer.deleteNameSpaceEntry();
                 }
             }
-        } catch (CacheException e) {
-            transfer.notifyBilling(e.getRc(), e.getMessage());
-            throw e;
-        } catch (InterruptedException e) {
-            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   "Transfer interrupted");
-            throw e;
-        } catch (IOException | RuntimeException e) {
-            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.toString());
-            throw e;
         } finally {
             _transfers.remove((int) transfer.getId());
         }
@@ -716,24 +725,26 @@ public class DcacheResourceFactory
 
                 transfer.setStatus("Mover " + transfer.getPool() + "/" +
                         transfer.getMoverId() + ": Waiting for completion");
+            } catch (CacheException e) {
+                transfer.notifyBilling(e.getRc(), e.getMessage());
+                transfer.killMover("door experienced internal error: " + e.getMessage());
+                throw e;
+            } catch (InterruptedException e) {
+                transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                        "Shutting down");
+                transfer.killMover("door shutting down");
+                throw e;
+            } catch (RuntimeException e) {
+                transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                        e.toString());
+                transfer.killMover("door encountered a bug");
+                throw e;
             } finally {
                 if (uri == null) {
-                    transfer.killMover(_killTimeout, _killTimeoutUnit,
-                            "killed by door: problem creating file");
+                    transfer.killMover("door found orphaned mover");
                     transfer.deleteNameSpaceEntry();
                 }
             }
-        } catch (CacheException e) {
-            transfer.notifyBilling(e.getRc(), e.getMessage());
-            throw e;
-        } catch (InterruptedException e) {
-            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    "Transfer interrupted");
-            throw e;
-        } catch (RuntimeException e) {
-            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    e.toString());
-            throw e;
         } finally {
             if (uri == null) {
                 _transfers.remove((int) transfer.getId());
@@ -753,26 +764,31 @@ public class DcacheResourceFactory
                    URISyntaxException
     {
         ReadTransfer transfer = beginRead(path, pnfsid, true, null);
-        String explanation = "transfer completed";
+
         try {
             transfer.relayData(outputStream, range);
         } catch (CacheException e) {
             transfer.notifyBilling(e.getRc(), e.getMessage());
-            explanation = e.getMessage();
+            transfer.killMover("door experienced internal error: " + e.getMessage());
             throw e;
         } catch (InterruptedException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   "Transfer interrupted");
-            explanation = "transfer interrupted";
+                                   "Shutting down");
+            transfer.killMover("door shutting down");
             throw e;
-        } catch (IOException | RuntimeException e) {
+        } catch (IOException e) {
+            String message = Exceptions.messageOrClassName(e);
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.toString());
-            explanation = "bug detected: " + e.toString();
+                                   "Error relaying data: " + message);
+            transfer.killMover("door experienced error relaying data: " + message);
+            throw e;
+        } catch (RuntimeException e) {
+            transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                   "Found bug: " + e);
+            transfer.killMover("door encountered a bug");
             throw e;
         } finally {
-            transfer.killMover(_killTimeout, _killTimeoutUnit,
-                    "killed by door: " + explanation);
+            transfer.killMover("door found orphaned mover");
             _transfers.remove((int) transfer.getId());
         }
     }
@@ -1035,7 +1051,6 @@ public class DcacheResourceFactory
     {
         Subject subject = getSubject();
         Restriction restriction = getRestriction();
-        String explanation = "transfer complete";
 
         String uri = null;
         ReadTransfer transfer = new ReadTransfer(_pnfs, subject, restriction,
@@ -1058,22 +1073,21 @@ public class DcacheResourceFactory
                                transfer.getMoverId() + ": Waiting for completion");
         } catch (CacheException e) {
             transfer.notifyBilling(e.getRc(), e.getMessage());
-            explanation = e.getMessage();
+            transfer.killMover("door experienced internal error: " + e.getMessage());
             throw e;
         } catch (InterruptedException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   "Transfer interrupted");
-            explanation = "transfer interrupted";
+                    "Shutting down");
+            transfer.killMover("door shutting down");
             throw e;
         } catch (RuntimeException e) {
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.toString());
-            explanation = "bug detected: " + e.toString();
+                    e.toString());
+            transfer.killMover("door encountered a bug");
             throw e;
         } finally {
             if (uri == null) {
-                transfer.killMover(_killTimeout, _killTimeoutUnit,
-                        "killed by door: " + explanation);
+                transfer.killMover("door found orphaned mover");
                 _transfers.remove((int) transfer.getId());
             }
         }
@@ -1311,6 +1325,11 @@ public class DcacheResourceFactory
             } else {
                 _clientAddressForPool = getClientAddress();
             }
+        }
+
+        public void killMover(String explanation)
+        {
+            killMover(_killTimeout, _killTimeoutUnit, explanation);
         }
     }
 
