@@ -79,7 +79,7 @@ public class AuthenticationHandler extends HandlerWrapper {
             throws IOException, ServletException {
         if (isStarted() && !baseRequest.isHandled()) {
             Subject subject = new Subject();
-            AuthHandlerResponse response = new AuthHandlerResponse(servletResponse);
+            AuthHandlerResponse response = new AuthHandlerResponse(servletResponse, request);
             try {
                 addX509ChainToSubject(request, subject);
                 addOriginToSubject(request, subject);
@@ -262,8 +262,10 @@ public class AuthenticationHandler extends HandlerWrapper {
 
     private class AuthHandlerResponse extends HttpServletResponseWrapper {
 
-        public AuthHandlerResponse(HttpServletResponse response) {
+        private final boolean suppressWWWAuthenticate;
+        public AuthHandlerResponse(HttpServletResponse response, HttpServletRequest request) {
             super(response);
+            suppressWWWAuthenticate = request.getHeader("Suppress-WWW-Authenticate") != null;
         }
 
         @Override
@@ -298,7 +300,12 @@ public class AuthenticationHandler extends HandlerWrapper {
                     setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), HttpHeader.NEGOTIATE.asString());
                     addHeader(HttpHeader.WWW_AUTHENTICATE.asString(), "Basic realm=\"" + getRealm() + "\"");
                 } else {
-                    setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), "Basic realm=\"" + getRealm() + "\"");
+                    if (suppressWWWAuthenticate) {
+                        setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), null);
+                        addHeader("Suppress-WWW-Authenticate", "suppressed");
+                    } else {
+                        setHeader(HttpHeader.WWW_AUTHENTICATE.asString(), "Basic realm=\"" + getRealm() + "\"");
+                    }
                 }
             }
         }
