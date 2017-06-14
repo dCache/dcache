@@ -41,14 +41,21 @@ check -strong frontend.limits.threads.idle-time.unit
 check -strong frontend.limits.queue-length
 check -strong frontend.limits.graceful-shutdown
 check -strong frontend.limits.graceful-shutdown.unit
-
-check -strong frontend.dcache-view.endpoints.webapi
-check frontend.dcache-view.endpoints.webdav
-check frontend.dcache-view.org-name
-check frontend.dcache-view.oidc-provider-name-list
-check frontend.dcache-view.oidc-client-id-list
-check frontend.dcache-view.oidc-authz-endpoint-list
 check -strong frontend.dcache-view.dir
+
+check -strong frontend.static!webapiEndpoint
+check frontend.static!webdavEndpoint
+check frontend.static!orgName
+check frontend.static!oidcProviderName
+check frontend.static!oidcClientId
+check frontend.static!oidcAuthorizationEndpoint
+
+check -strong frontend.static!dcache-view.endpoints.webapi
+check frontend.static!dcache-view.endpoints.webdav
+check frontend.static!dcache-view.org-name
+check frontend.static!dcache-view.oidc-provider-name-list
+check frontend.static!dcache-view.oidc-client-id-list
+check frontend.static!dcache-view.oidc-authz-endpoint-list
 
 check frontend.authn.ciphers
 
@@ -73,18 +80,6 @@ define env verify-TLS.exe enddefine
 enddefine
 
 exec env verify-${frontend.authn.connector}.exe
-
-define context config-${frontend.cell.name}.js enddefine
-var CONFIG =
-{
-    "webapiEndpoint": "${frontend.dcache-view.endpoints.webapi}",
-    "webdavEndpoint": "${frontend.dcache-view.endpoints.webdav}",
-    "orgName": "${frontend.dcache-view.org-name}",
-    "oidcProviderName": "${frontend.dcache-view.oidc-provider-name-list}",
-    "oidcClientId": "${frontend.dcache-view.oidc-client-id-list}",
-    "oidcAuthorizationEndpoint": "${frontend.dcache-view.oidc-authz-endpoint-list}"
-};
-enddefine
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${frontend.cell.name} \
