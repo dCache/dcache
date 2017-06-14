@@ -690,9 +690,11 @@ public final class SpaceManagerService
         }
 
         Space space = db.selectSpaceForUpdate(spaceToken);
-        if (space.getState() == SpaceState.RELEASED) {
+        SpaceState state = space.getState();
+        if (state.isFinal()) {
             /* Stupid way to signal that it isn't found, but there is no other way at the moment. */
-            throw new EmptyResultDataAccessException("Space reservation " + spaceToken + " was already released.", 1);
+            throw new EmptyResultDataAccessException("Space reservation " + spaceToken
+                    + " is " + state.toString().toLowerCase() + ".", 1);
         }
         Subject subject = release.getSubject();
         authorizationPolicy.checkReleasePermission(subject, space);
