@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.nucleus.UOID;
 
@@ -30,7 +31,7 @@ import static com.google.common.base.Preconditions.checkState;
  * @author Paul Millar <paul.millar@desy.de>
  */
 
-public class DataGatheringScheduler implements Runnable, EnvironmentAware
+public class DataGatheringScheduler implements Runnable, EnvironmentAware, CellLifeCycleAware
 {
     private static final long FIVE_MINUTES = 5*60*1000;
     private static final Logger LOGGER_SCHED = LoggerFactory.getLogger(DataGatheringScheduler.class);
@@ -206,7 +207,8 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware
         }
     }
 
-    public synchronized void start()
+    @Override
+    public synchronized void afterStart()
     {
         checkState(_thread == null, "DataGatheringScheduler already started");
 
@@ -390,7 +392,8 @@ public class DataGatheringScheduler implements Runnable, EnvironmentAware
      * Request that this thread sends no more requests
      * for data.
      */
-    public void shutdown()
+    @Override
+    public void beforeStop()
     {
         LOGGER_SCHED.debug("Requesting DGA Scheduler to shutdown.");
         synchronized (_activity) {
