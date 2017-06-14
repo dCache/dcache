@@ -62,8 +62,7 @@
   </bean>
 
 
-  <bean id="data-gathering-scheduler" class="org.dcache.services.info.gathers.DataGatheringScheduler"
-        init-method="start" destroy-method="shutdown">
+  <bean id="data-gathering-scheduler" class="org.dcache.services.info.gathers.DataGatheringScheduler">
       <property name="stateUpdateManager" ref="state-update-manager"/>
       <property name="messageMetadataRepository" ref="message-handler-chain"/>
       <property name="messageSender" ref="message-handler-chain"/>
