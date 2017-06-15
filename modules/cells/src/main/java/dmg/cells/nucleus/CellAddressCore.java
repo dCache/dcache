@@ -119,4 +119,9 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
     {
         return _cell.equals("*");
     }
+
+    public boolean isLocalAddress()
+    {
+        return _domain.equals("local");
+    }
 }
