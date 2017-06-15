@@ -268,7 +268,9 @@
                               '${frontend.limits.low-resource-idle-time.unit}')}" />
                     <property name="maxLowResourcesTime" value="180000"/>
                 </bean>
-                <bean class="org.dcache.restful.errorHandling.RestAPIExceptionHandler"/>
+                <bean class="org.dcache.restful.errorHandling.RestAPIExceptionHandler">
+                    <property name="server" ref="jetty"/>
+                </bean>
             </list>
         </property>
     </bean>
