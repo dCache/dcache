@@ -337,7 +337,9 @@ public class FileResources {
                                          boolean isLocality) throws CacheException {
         fileAttributes.setMtime(namespaceAttrributes.getModificationTime());
         fileAttributes.setCreationTime(namespaceAttrributes.getCreationTime());
-        fileAttributes.setSize(namespaceAttrributes.getSize());
+        if (namespaceAttrributes.isDefined(FileAttribute.SIZE)) {
+            fileAttributes.setSize(namespaceAttrributes.getSize());
+        }
         fileAttributes.setFileType(namespaceAttrributes.getFileType());
 
         // when user set locality param. in the request, the locality should be returned only for directories
