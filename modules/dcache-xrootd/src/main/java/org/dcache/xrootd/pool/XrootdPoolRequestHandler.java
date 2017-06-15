@@ -250,15 +250,41 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             try {
                 FileDescriptor descriptor;
                 IoMode mode = file.getIoMode();
-                if (msg.isNew() && mode != IoMode.WRITE) {
-                    throw new XrootdException(kXR_ArgInvalid, "File exists.");
-                } else if (msg.isDelete() && mode != IoMode.WRITE) {
-                    throw new XrootdException(kXR_Unsupported, "File exists.");
-                } else if ((msg.isNew() || msg.isReadWrite()) && mode == IoMode.WRITE) {
-                    descriptor = new WriteDescriptor(file, (msg.getOptions() & kXR_posc) == kXR_posc ||
-                            file.getProtocolInfo().getFlags().contains(XrootdProtocolInfo.Flags.POSC));
+                if (mode == IoMode.WRITE) {
+                    // File is new, can write.
+                    if (msg.isNew() || msg.isReadWrite()) {
+                        // Client wants to write, can write, threfore write.
+                        descriptor = new WriteDescriptor(file, (msg.getOptions() & kXR_posc) == kXR_posc ||
+                                file.getProtocolInfo().getFlags().contains(XrootdProtocolInfo.Flags.POSC));
+                    } else if (msg.isDelete()) {
+                        // Client wants to "open a new file, deleting any existing file".
+                        // Is it possible to have isDelete without isReadWrite?
+                        // If it is possible, is this response correct?
+                        descriptor = new ReadDescriptor(file);
+                    } else {
+                        // Client only wants to read so we allow him.
+                        // Does this work? The file should be new and empty.
+                        descriptor = new ReadDescriptor(file);
+                    }
                 } else {
-                    descriptor = new ReadDescriptor(file);
+                    // File exists, can only read.
+                    if (msg.isNew()) {
+                        // Client wants to create file only if it does not exist.
+                        throw new XrootdException(kXR_ArgInvalid, "File exists.");
+                    } else if (msg.isDelete()) {
+                        // Client wants to "open a new file, deleting any existing file".
+                        // We don't support that on the pool level.
+                        // Should we redirect to the door instead?
+                        throw new XrootdException(kXR_Unsupported, "File exists.");
+                    } else if (msg.isReadWrite()){
+                        // Client wants to read/append, we don't support that.
+                        // Open for reading as a workaround for
+                        // clients that always open r/w, even when they will only read.
+                        descriptor = new ReadDescriptor(file);
+                    } else {
+                        // Client only wants to read.
+                        descriptor = new ReadDescriptor(file);
+                    }
                 }
 
                 FileStatus stat = msg.isRetStat() ? stat(file) : null;
