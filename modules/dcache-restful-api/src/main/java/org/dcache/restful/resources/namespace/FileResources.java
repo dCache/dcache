@@ -372,7 +372,9 @@ public class FileResources {
     {
         fileAttributes.setMtime(namespaceAttrributes.getModificationTime());
         fileAttributes.setCreationTime(namespaceAttrributes.getCreationTime());
-        fileAttributes.setSize(namespaceAttrributes.getSize());
+        if (namespaceAttrributes.isDefined(FileAttribute.SIZE)) {
+            fileAttributes.setSize(namespaceAttrributes.getSize());
+        }
         fileAttributes.setFileType(namespaceAttrributes.getFileType());
         fileAttributes.setFileMimeType(name);
 
