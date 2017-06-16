@@ -308,8 +308,10 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     {
         try {
             return checksumModule.getPreferredChecksumFactory(handle);
-        } catch (NoSuchAlgorithmException | CacheException e) {
-            LOGGER.error("Failed to instantiate mover due to unsupported checksum type: " + e.getMessage(), e);
+        } catch (NoSuchAlgorithmException e) {
+            LOGGER.error("Failed to instantiate mover due to unsupported checksum type: " + e.getMessage());
+        } catch (CacheException e) {
+            LOGGER.error("Failed to instantiate mover: " + e.getMessage());
         }
         return null;
     }
