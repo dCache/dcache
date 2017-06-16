@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.Channels;
+import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Map;
@@ -190,7 +191,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     @Override
     public void runIO(FileAttributes attributes, RepositoryChannel channel,
-            ProtocolInfo genericInfo, Allocator allocator, IoMode access)
+            ProtocolInfo genericInfo, Allocator allocator, Set<StandardOpenOption> access)
             throws CacheException, IOException, InterruptedException
     {
         _log.debug("info={}, attributes={},  access={}", genericInfo,
@@ -202,16 +203,12 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
         _client = createHttpClient();
         try {
-            switch (access) {
-            case WRITE:
+            if (access.contains(StandardOpenOption.WRITE)) {
                 receiveFile(info);
-                break;
-
-            case READ:
+            } else {
                 checkThat(!info.isVerificationRequired() || attributes.isDefined(CHECKSUM),
                         "checksum verification failed: file has no checksum");
                 sendAndCheckFile(info);
-                break;
             }
         } finally {
             _client.close();

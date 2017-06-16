@@ -14,8 +14,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -26,7 +28,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -228,7 +229,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
     }
 
     @Override
-    public RepositoryChannel openChannel(IoMode mode) throws IOException
+    public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException
     {
         return _repository.openChannel(_pnfsId, mode);
     }

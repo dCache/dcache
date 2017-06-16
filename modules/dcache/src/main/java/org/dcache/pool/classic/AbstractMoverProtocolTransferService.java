@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.SyncFailedException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.StandardOpenOption;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -127,8 +128,7 @@ public abstract class AbstractMoverProtocolTransferService
             try {
                 setThread();
                 try (RepositoryChannel fileIoChannel = _mover.openChannel()) {
-                    switch (_mover.getIoMode()) {
-                    case WRITE:
+                    if (_mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                         try {
                             runMover(fileIoChannel);
                         } finally {
@@ -139,10 +139,8 @@ public abstract class AbstractMoverProtocolTransferService
                                 LOGGER.info("First sync failed [" + e + "], but second sync suceeded");
                             }
                         }
-                        break;
-                    case READ:
+                    } else {
                         runMover(fileIoChannel);
-                        break;
                     }
                 } catch (Throwable t) {
                     _completionHandler.failed(t, null);

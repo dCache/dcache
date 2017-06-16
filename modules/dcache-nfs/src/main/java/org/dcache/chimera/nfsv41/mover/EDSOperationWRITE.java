@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.StandardOpenOption;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
@@ -18,7 +19,6 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stable_how4;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 
@@ -49,7 +49,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             }
 
             mover.attachSession(context.getSession());
-            if( mover.getIoMode() != IoMode.WRITE ) {
+            if(!mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new PermException("an attempt to write without IO mode enabled");
             }
 

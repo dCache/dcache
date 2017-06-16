@@ -1,7 +1,7 @@
 /*
  * dCache - http://www.dcache.org/
  *
- * Copyright (C) 2016 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2016 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,13 +21,13 @@ package org.dcache.pool.repository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 
 import diskCacheV111.util.PnfsId;
-import org.dcache.pool.movers.IoMode;
 
 /**
  * File store to be used with meta data utilities. Returns the same temporary file for
@@ -60,8 +60,8 @@ class DummyFileStore implements FileStore
     }
 
     @Override
-    public RepositoryChannel openDataChannel(PnfsId id, IoMode mode) throws IOException {
-        return new FileRepositoryChannel(file, mode.toOpenString());
+    public RepositoryChannel openDataChannel(PnfsId id, Set<StandardOpenOption> mode) throws IOException {
+        return new FileRepositoryChannel(file, mode);
     }
 
     @Override

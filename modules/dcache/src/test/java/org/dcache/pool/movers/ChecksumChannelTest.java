@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import diskCacheV111.util.ChecksumFactory;
 
 import org.dcache.pool.repository.FileRepositoryChannel;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -52,7 +53,7 @@ public class ChecksumChannelTest {
     @Before
     public void setUp() throws NoSuchAlgorithmException, IOException {
         testFile = Files.createTempFile("ChecksumChannelTest", ".tmp");
-        RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, "rw");
+        RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, FileStore.O_RW);
         ChecksumFactory checksumFactory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
         chksumChannel = new ChecksumChannel(mockRepositoryChannel, Sets.newHashSet(checksumFactory));
         chksumChannel._readBackBuffer = ByteBuffer.allocate(2);

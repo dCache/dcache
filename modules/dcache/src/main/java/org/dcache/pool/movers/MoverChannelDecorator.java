@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,8 +19,10 @@ package org.dcache.pool.movers;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.StandardOpenOption;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.Set;
 
 import diskCacheV111.vehicles.ProtocolInfo;
 
@@ -130,7 +132,7 @@ public class MoverChannelDecorator<T extends ProtocolInfo> implements Repository
         return channel.write(src);
     }
 
-    public IoMode getIoMode()
+    public Set<StandardOpenOption> getIoMode()
     {
         return channel.getIoMode();
     }

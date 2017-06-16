@@ -14,6 +14,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
@@ -316,7 +317,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                       RepositoryChannel  fileChannel,
                       ProtocolInfo protocol,
                       Allocator    allocator,
-                      IoMode          access  )
+                      Set<StandardOpenOption> access)
         throws Exception
     {
         configureBufferSizes();
@@ -331,6 +332,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         StorageInfo storage = fileAttributes.getStorageInfo();
         _pnfsId              = fileAttributes.getPnfsId();
         _spaceMonitorHandler = new SpaceMonitorHandler(allocator);
+        boolean isWrite = access.contains(StandardOpenOption.WRITE);
 
         ////////////////////////////////////////////////////////////////////////
         //                                                                    //
@@ -482,7 +484,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                         cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheException.ERROR_IO_DISK,errmsg);
                         socketChannel.write(cntOut.buffer());
 
-                    }else if(access == IoMode.WRITE){
+                    }else if(isWrite){
 
                         //
                         //   The 'REQUEST ACK'
@@ -564,7 +566,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     long offset = requestBlock.nextLong();
                     int  whence = requestBlock.nextInt();
 
-                    doTheSeek(fileChannel , whence, offset, (access == IoMode.WRITE) );
+                    doTheSeek(fileChannel , whence, offset, isWrite);
 
                     if(_io_ok){
 
@@ -598,7 +600,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ);
                         socketChannel.write(cntOut.buffer());
 
-                        doTheSeek(fileChannel, whence, offset, (access == IoMode.WRITE) );
+                        doTheSeek(fileChannel, whence, offset, isWrite);
 
                         if(_io_ok) {
                             doTheRead(fileChannel, cntOut, socketChannel, blockSize);
@@ -636,7 +638,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                         _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE, CacheException.ERROR_IO_DISK, errmsg);
                         socketChannel.write(cntOut.buffer());
-                    } else if (access != IoMode.WRITE) {
+                    } else if (!isWrite) {
                         String errmsg = "SEEK_AND_WRITE denied (not allowed)";
                         _log.error(errmsg);
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE, CacheException.ERROR_IO_DISK, errmsg);
@@ -646,7 +648,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                         cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE);
                         socketChannel.write(cntOut.buffer());
 
-                        doTheSeek(fileChannel, whence, offset, (access == IoMode.WRITE) );
+                        doTheSeek(fileChannel, whence, offset, isWrite);
 
                         if(_io_ok) {
                             doTheWrite(fileChannel,

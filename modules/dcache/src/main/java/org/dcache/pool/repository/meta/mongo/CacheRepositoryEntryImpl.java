@@ -23,14 +23,15 @@ import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 import java.net.URISyntaxException;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.bson.Document;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -132,7 +133,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public RepositoryChannel openChannel(IoMode mode) throws IOException {
+    public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException {
         return fileStore.openDataChannel(pnfsId, mode);
     }
 

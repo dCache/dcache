@@ -14,9 +14,11 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collection;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -25,7 +27,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -133,7 +134,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public RepositoryChannel openChannel(IoMode mode) throws IOException
+    public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException
     {
         return _fileStore.openDataChannel(_pnfsId, mode);
     }

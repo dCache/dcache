@@ -16,6 +16,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -74,7 +76,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
                        RepositoryChannel fileChannel,
                        ProtocolInfo protocol ,
                        Allocator    allocator ,
-                       IoMode         access) throws CacheException, IOException, InterruptedException
+                       Set<StandardOpenOption> access) throws CacheException, IOException, InterruptedException
     {
         PnfsId pnfsId = fileAttributes.getPnfsId();
         StorageInfo storage = StorageInfos.extractFrom(fileAttributes);
@@ -132,7 +134,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
 
 
 
-        if( access == IoMode.WRITE)
+        if( access.contains(StandardOpenOption.WRITE))
             {
                 dcapReadFile(dcap_socket,fileChannel,allocator);
             }

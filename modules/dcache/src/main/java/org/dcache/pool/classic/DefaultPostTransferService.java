@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,7 +42,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellInfoProvider;
 
 import org.dcache.cells.CellStub;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.CDCExecutorServiceDecorator;
@@ -87,7 +87,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             ReplicaDescriptor handle = mover.getIoHandle();
             try {
                 try {
-                    if (mover.getIoMode() == IoMode.WRITE) {
+                    if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                         handle.addChecksums(Optional.fromNullable(mover.getExpectedChecksums())
                                                     .or(Collections.emptySet()));
                         _checksumModule.enforcePostTransferPolicy(handle,
@@ -137,7 +137,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         MoverInfoMessage info = new MoverInfoMessage(getCellAddress(), fileAttributes.getPnfsId());
         info.setSubject(mover.getSubject());
         info.setInitiator(mover.getInitiator());
-        info.setFileCreated(mover.getIoMode() == IoMode.WRITE);
+        info.setFileCreated(mover.getIoMode().contains(StandardOpenOption.WRITE));
         info.setStorageInfo(fileAttributes.getStorageInfo());
         info.setP2P(mover.isPoolToPoolTransfer());
         info.setFileSize(fileSize);

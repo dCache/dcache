@@ -76,6 +76,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.StandardOpenOption;
 import java.nio.ByteBuffer;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
@@ -183,7 +184,7 @@ public class RemoteGsiftpTransferProtocol
                       RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
                       Allocator allocator,
-                      IoMode access)
+                      Set<StandardOpenOption> access)
             throws CacheException, IOException,
             ServerException, ClientException, KeyStoreException, URISyntaxException
     {
@@ -218,7 +219,7 @@ public class RemoteGsiftpTransferProtocol
 
         createFtpClient(remoteGsiftpProtocolInfo);
 
-        if ( access == IoMode.WRITE) {
+        if (access.contains(StandardOpenOption.WRITE)) {
             gridFTPRead(remoteGsiftpProtocolInfo, allocator);
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo);

@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -45,7 +46,6 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.util.HttpException;
 
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.vehicles.FileAttributes;
 
@@ -54,7 +54,6 @@ import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static io.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
-import static java.util.Arrays.asList;
 import static org.dcache.util.Checksums.TO_RFC3230;
 import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.StringMarkup.quotedString;
@@ -262,7 +261,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         try {
             file = open(request, false);
 
-            if (file.getIoMode() != IoMode.READ) {
+            if (file.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new HttpException(METHOD_NOT_ALLOWED.code(),
                         "Resource is not open for reading");
             }
@@ -342,7 +341,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
             file = open(request, true);
 
-            if (file.getIoMode() != IoMode.WRITE) {
+            if (!file.getIoMode().contains(StandardOpenOption.WRITE)) {
                 throw new HttpException(METHOD_NOT_ALLOWED.code(),
                         "Resource is not open for writing");
             }

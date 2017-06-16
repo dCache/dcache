@@ -16,8 +16,8 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -29,7 +29,6 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.*;
-import static java.util.Collections.singleton;
 import static org.dcache.namespace.FileAttribute.*;
 
 class WriteHandleImpl implements ReplicaDescriptor
@@ -122,7 +121,7 @@ class WriteHandleImpl implements ReplicaDescriptor
 
     @Override
     public RepositoryChannel createChannel() throws IOException {
-        return _entry.openChannel(IoMode.WRITE);
+        return _entry.openChannel(FileStore.O_RW);
     }
 
     /**

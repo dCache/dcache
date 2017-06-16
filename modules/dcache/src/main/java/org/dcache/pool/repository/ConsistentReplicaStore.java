@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -26,7 +27,6 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.ReplicaStatePolicy;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
@@ -231,7 +231,7 @@ public class ConsistentReplicaStore
                     (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_WRITE) ||
                             _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER) ||
                             _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_RESTORE))) {
-                try (RepositoryChannel channel = entry.openChannel(IoMode.READ)) {
+                try (RepositoryChannel channel = entry.openChannel(FileStore.O_READ)) {
                     actualChecksums = _checksumModule.verifyChecksum(channel, expectedChecksums);
                 }
             } else {

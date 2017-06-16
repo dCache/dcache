@@ -4,6 +4,7 @@ import javax.annotation.concurrent.GuardedBy;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -17,7 +18,6 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.v5.CacheEntryImpl;
 import org.dcache.vehicles.FileAttributes;
 
@@ -221,7 +221,7 @@ public class ReplicaStoreCache
         }
 
         @Override
-        public RepositoryChannel openChannel(IoMode mode) throws IOException
+        public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException
         {
             return _record.openChannel(mode);
         }

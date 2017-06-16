@@ -6,11 +6,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.SyncFailedException;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Set;
 
 import diskCacheV111.vehicles.ProtocolInfo;
 
@@ -47,9 +50,9 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     private final RepositoryChannel _channel;
 
     /**
-     * The IoMode of the mover that created this MoverChannel.
+     * The {@link OpenOption} of the mover that created this MoverChannel.
      */
-    private final IoMode _mode;
+    private final Set<StandardOpenOption> _mode;
 
     /**
      * Space allocator provided by the pool.
@@ -100,7 +103,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
         this(mover.getIoMode(), mover.getFileAttributes(), mover.getProtocolInfo(), channel, mover.getIoHandle(), allocatorMode);
     }
 
-    public MoverChannel(IoMode mode, FileAttributes attributes, T protocolInfo,
+    public MoverChannel(Set<StandardOpenOption> mode, FileAttributes attributes, T protocolInfo,
             RepositoryChannel channel, Allocator allocator, AllocatorMode allocatorMode)
     {
         _mode = mode;
@@ -287,7 +290,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
         }
     }
 
-    public IoMode getIoMode() {
+    public Set<StandardOpenOption> getIoMode() {
         return _mode;
     }
 

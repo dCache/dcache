@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,8 +28,10 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -44,6 +46,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.TransferService;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
@@ -67,7 +70,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     protected final P _protocolInfo;
     protected final Subject _subject;
     protected final ReplicaDescriptor _handle;
-    protected final IoMode _ioMode;
+    protected final Set<StandardOpenOption> _ioMode;
     protected final TransferService<M> _transferService;
     protected final String _billingPath;
     protected final String _transferPath;
@@ -87,7 +90,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         _protocolInfo = (P) message.getProtocolInfo();
         _initiator = message.getInitiator();
         _isPoolToPoolTransfer = message.isPool2Pool();
-        _ioMode = (message instanceof PoolAcceptFileMessage) ? IoMode.WRITE : IoMode.READ;
+        _ioMode = (message instanceof PoolAcceptFileMessage) ? FileStore.O_RW : FileStore.O_READ;
         _subject = message.getSubject();
         _id = message.getId();
         _billingPath = message.getBillingPath();
@@ -163,7 +166,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     @Override
-    public IoMode getIoMode()
+    public Set<StandardOpenOption> getIoMode()
     {
         return _ioMode;
     }
@@ -256,7 +259,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         RepositoryChannel channel;
         try {
             channel = _handle.createChannel();
-            if (getIoMode() == IoMode.WRITE) {
+            if (getIoMode().contains(StandardOpenOption.WRITE)) {
                 try {
                     channel = _checksumChannel = new ChecksumChannel(channel, _checksumFactories);
                 } catch (Throwable t) {

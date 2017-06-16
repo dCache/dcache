@@ -25,7 +25,6 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.tests.repository.ReplicaStoreHelper;
 import org.dcache.vehicles.FileAttributes;
 
@@ -74,7 +73,7 @@ public class ConsistentReplicaStoreTest
             throws IOException
     {
         _fileStore.create(pnfsId);
-        try (RepositoryChannel channel = _fileStore.openDataChannel(pnfsId, IoMode.WRITE)) {
+        try (RepositoryChannel channel = _fileStore.openDataChannel(pnfsId, FileStore.O_RW)) {
             ByteBuffer buf = ByteBuffer.allocate((int)size);
             buf.limit(buf.capacity());
             channel.write(buf);

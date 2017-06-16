@@ -11,12 +11,14 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import java.io.IOException;
+import java.nio.file.StandardOpenOption;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -49,7 +51,7 @@ public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProto
 
     @Override
     public void runIO(FileAttributes attributes, RepositoryChannel channel,
-                      ProtocolInfo genericInfo, Allocator allocator, IoMode access)
+                      ProtocolInfo genericInfo, Allocator allocator, Set<StandardOpenOption> access)
             throws CacheException, IOException, InterruptedException
     {
         RemoteHttpsDataTransferProtocolInfo info =

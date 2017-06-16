@@ -2,12 +2,13 @@ package org.dcache.pool.repository;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
 import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.pool.movers.IoMode;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -35,7 +36,7 @@ public interface ReplicaRecord
 
     URI getReplicaUri();
 
-    RepositoryChannel openChannel(IoMode mode) throws IOException;
+    RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException;
 
     long getCreationTime();
 

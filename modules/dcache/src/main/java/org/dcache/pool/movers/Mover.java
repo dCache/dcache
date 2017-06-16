@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,8 @@ import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
 import java.nio.channels.CompletionHandler;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
 import java.util.Set;
 
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -114,9 +116,11 @@ public interface Mover<T extends ProtocolInfo>
     ReplicaDescriptor getIoHandle();
 
     /**
-     * Indicates whether this is a WRITE or a READ
+     * Get set of options specifying how the file is opened. The READ
+     * and WRITE options determine if the file should be opened for
+     * reading and/or writing.
      */
-    IoMode getIoMode();
+    Set<StandardOpenOption> getIoMode();
 
     /**
      * Provides a path to the door that requested the mover.

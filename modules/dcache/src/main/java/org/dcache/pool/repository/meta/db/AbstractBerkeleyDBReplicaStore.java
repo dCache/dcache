@@ -32,8 +32,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -41,7 +43,6 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.EnvironmentAware;
 
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.ConfigurationMapFactoryBean;
@@ -188,5 +189,5 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
 
     public abstract URI getUri(PnfsId pnfsId);
 
-    public abstract RepositoryChannel openChannel(PnfsId pnfsId, IoMode mode) throws IOException;
+    public abstract RepositoryChannel openChannel(PnfsId pnfsId, Set<StandardOpenOption> mode) throws IOException;
 }

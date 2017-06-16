@@ -2,6 +2,7 @@ package org.dcache.tests.repository;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +18,6 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileStore;
@@ -153,7 +153,7 @@ public class ReplicaStoreHelper implements ReplicaStore
         }
 
         @Override
-        public RepositoryChannel openChannel(IoMode mode) throws IOException
+        public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException
         {
             return _repository.openDataChannel(_pnfsId, mode);
         }

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
@@ -20,7 +21,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
@@ -246,7 +246,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     }
 
     @Override
-    public RepositoryChannel openChannel(PnfsId pnfsId, IoMode mode) throws IOException
+    public RepositoryChannel openChannel(PnfsId pnfsId, Set<StandardOpenOption> mode) throws IOException
     {
         return _fileStore.openDataChannel(pnfsId, mode);
     }

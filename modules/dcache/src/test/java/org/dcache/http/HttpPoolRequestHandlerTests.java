@@ -45,8 +45,8 @@ import java.util.UUID;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
@@ -487,7 +487,7 @@ public class HttpPoolRequestHandlerTests
 
         given(channel.size()).willReturn(file.getSize());
 
-        given(channel.getIoMode()).willReturn(IoMode.READ);
+        given(channel.getIoMode()).willReturn(FileStore.O_READ);
         given(channel.getProtocolInfo())
             .willReturn(new HttpProtocolInfo("Http", 1, 1,
                                              new InetSocketAddress((InetAddress) null, 0),
@@ -505,7 +505,7 @@ public class HttpPoolRequestHandlerTests
 
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel channel =
                 mock(NettyTransferService.NettyMoverChannel.class);
-        given(channel.getIoMode()).willReturn(IoMode.WRITE);
+        given(channel.getIoMode()).willReturn(FileStore.O_RW);
         given(channel.getProtocolInfo())
                 .willReturn(new HttpProtocolInfo("Http", 1, 1,
                         new InetSocketAddress((InetAddress) null, 0),

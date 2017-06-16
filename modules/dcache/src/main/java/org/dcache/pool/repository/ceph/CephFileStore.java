@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -35,7 +36,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import jnr.constants.platform.Errno;
 
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.rados4j.IoCtx;
@@ -233,10 +233,10 @@ public class CephFileStore implements FileStore {
     }
 
     @Override
-    public RepositoryChannel openDataChannel(PnfsId id, IoMode ioMode) throws IOException {
+    public RepositoryChannel openDataChannel(PnfsId id, Set<StandardOpenOption> ioMode) throws IOException {
         String imageName = toImageName(id);
         try {
-            return new CephRepositoryChannel(rbd, imageName, ioMode.toOpenString());
+            return new CephRepositoryChannel(rbd, imageName, ioMode);
         } catch (RadosException e) {
             throwIfMappable(e, "Failed to open file: " + imageName);
             throw e;

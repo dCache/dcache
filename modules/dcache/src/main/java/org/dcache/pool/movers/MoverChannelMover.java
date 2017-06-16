@@ -30,6 +30,7 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
 import static com.google.common.base.Preconditions.checkState;
+import java.nio.file.StandardOpenOption;
 
 /**
  * A Mover implementation based on the MoverChannel class.
@@ -106,7 +107,7 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
     {
         StringBuilder s = new StringBuilder(_protocolInfo.getProtocol());
         try {
-            if (_wrappedChannel != null && getIoMode() == IoMode.WRITE) {
+            if (_wrappedChannel != null && getIoMode().contains(StandardOpenOption.WRITE)) {
                 long size = _wrappedChannel.size();
                 s.append(":SU=").append(size);
                 s.append(";SA=").append(_wrappedChannel.getAllocated());

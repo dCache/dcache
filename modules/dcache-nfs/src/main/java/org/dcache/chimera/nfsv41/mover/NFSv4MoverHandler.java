@@ -9,6 +9,7 @@ import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +52,6 @@ import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.Stat.Type;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.nfs.vfs.AclCheckable;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.util.PortRange;
 import org.dcache.util.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
@@ -268,7 +268,7 @@ public class NFSv4MoverHandler {
     public void add(NfsMover mover) {
         _log.debug("registering new mover {}", mover);
         _activeIO.put(mover.getStateId(), mover );
-        if (mover.getIoMode() == IoMode.WRITE) {
+        if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
             _activeWrites.put(mover.getFileAttributes().getPnfsId(), mover);
         }
     }
@@ -281,7 +281,7 @@ public class NFSv4MoverHandler {
     public void remove(NfsMover mover) {
         _log.debug("un-removing io handler for stateid {}", mover);
         _activeIO.remove(mover.getStateId());
-        if (mover.getIoMode() == IoMode.WRITE) {
+        if (mover.getIoMode().contains(StandardOpenOption.WRITE)) {
             _activeWrites.remove(mover.getFileAttributes().getPnfsId());
         }
     }

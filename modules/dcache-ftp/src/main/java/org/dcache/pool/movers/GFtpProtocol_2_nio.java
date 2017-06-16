@@ -18,6 +18,7 @@ import java.net.ProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.FileSystems;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -52,6 +53,7 @@ import org.dcache.ftp.data.ModeX;
 import org.dcache.ftp.data.Multiplexer;
 import org.dcache.ftp.data.Role;
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Args;
@@ -394,7 +396,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                       RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
                       Allocator    allocator,
-                      IoMode          access)
+                      Set<StandardOpenOption> access)
             throws Exception
     {
         if (!(protocol instanceof GFtpProtocolInfo)) {
@@ -402,7 +404,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
         GFtpProtocolInfo gftpProtocolInfo    = (GFtpProtocolInfo)protocol;
 
-        Role role = access == IoMode.WRITE ? Role.Receiver : Role.Sender;
+        Role role = access.contains(StandardOpenOption.WRITE) ? Role.Receiver : Role.Sender;
         int    version     = gftpProtocolInfo.getMajorVersion();
         InetSocketAddress address = gftpProtocolInfo.getSocketAddress();
         int    bufferSize  = gftpProtocolInfo.getBufferSize();
@@ -747,7 +749,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
             RepositoryChannel fileChannel =
                     new FileRepositoryChannel(FileSystems.getDefault().getPath(args.argv(0)),
-                                              role == Role.Sender ? "r" : "rw");
+                                              role == Role.Sender ? FileStore.O_READ : FileStore.O_RW);
 
             Mode mode =
                     mover.createMode(getOption(args, "mode", "S"), role, fileChannel);

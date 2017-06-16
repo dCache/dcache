@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +43,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
@@ -176,7 +176,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 if (descriptor.isPersistOnSuccessfulClose()) {
                     descriptor.getChannel().release(new FileCorruptedCacheException(
                             "File was opened with Persist On Successful Close and not closed."));
-                } else if (descriptor.getChannel().getIoMode() == IoMode.WRITE) {
+                } else if (descriptor.getChannel().getIoMode().contains(StandardOpenOption.WRITE)) {
                     descriptor.getChannel().release(new CacheException(
                             "Client disconnected without closing file."));
                 } else {
@@ -249,12 +249,12 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 
             try {
                 FileDescriptor descriptor;
-                IoMode mode = file.getIoMode();
-                if (msg.isNew() && mode != IoMode.WRITE) {
+                boolean isWrite = file.getIoMode().contains(StandardOpenOption.WRITE);
+                if (msg.isNew() && !isWrite) {
                     throw new XrootdException(kXR_ArgInvalid, "File exists.");
-                } else if (msg.isDelete() && mode != IoMode.WRITE) {
+                } else if (msg.isDelete() && !isWrite) {
                     throw new XrootdException(kXR_Unsupported, "File exists.");
-                } else if ((msg.isNew() || msg.isReadWrite()) && mode == IoMode.WRITE) {
+                } else if ((msg.isNew() || msg.isReadWrite()) && isWrite) {
                     descriptor = new WriteDescriptor(file, (msg.getOptions() & kXR_posc) == kXR_posc ||
                             file.getProtocolInfo().getFlags().contains(XrootdProtocolInfo.Flags.POSC));
                 } else {
