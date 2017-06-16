@@ -22,6 +22,7 @@ import org.apache.zookeeper.server.DatadirCleanupManager;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.SessionTrackerImpl;
+import org.apache.zookeeper.server.ZKDatabase;
 import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.ZooTrace;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
@@ -131,6 +132,9 @@ public class ZooKeeperCell extends AbstractCell
         zkServer.setTickTime((int) tickTimeUnit.toMillis(tickTime));
         zkServer.setMinSessionTimeout(minSessionTimeout == -1 ? -1 : (int) minSessionTimeoutUnit.toMillis(minSessionTimeout));
         zkServer.setMaxSessionTimeout(maxSessionTimeout == -1 ? -1 : (int) maxSessionTimeoutUnit.toMillis(maxSessionTimeout));
+
+        zkServer.setZKDatabase(new ZKDatabase(txnLog)); // Work-around https://issues.apache.org/jira/browse/ZOOKEEPER-2810
+
         ServerCnxnFactory cnxnFactory;
         cnxnFactory = new NIOServerCnxnFactory() {
             @Override
