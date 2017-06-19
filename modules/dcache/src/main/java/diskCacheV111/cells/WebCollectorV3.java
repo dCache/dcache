@@ -792,6 +792,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                         "precious", "Precious Space/MiB",
                         "layout",   "<span>Layout   " +
                           "(<span class=\"layout_precious\">precious/</span>" +
+                          "<span class=\"layout_rest\">rest/</span>" +
                           "<span class=\"layout_used\">used/</span>" +
                           "<span class=\"layout_free\">free</span>)</span>");
 
