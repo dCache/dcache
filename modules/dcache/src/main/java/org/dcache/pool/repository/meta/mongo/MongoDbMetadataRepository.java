@@ -21,6 +21,7 @@ import dmg.cells.nucleus.EnvironmentAware;
 import java.io.IOException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import org.bson.Document;
 
@@ -28,7 +29,6 @@ import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaStore;
-import org.dcache.pool.repository.Repository;
 import org.dcache.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,7 +199,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
         }
 
         try {
-            if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
+            if (flags.contains(StandardOpenOption.CREATE)) {
                 fileStore.create(id);
             }
             return new CacheRepositoryEntryImpl(pool, id, collection, fileStore);

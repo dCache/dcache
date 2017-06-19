@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.Channels;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -374,7 +375,7 @@ class Companion
                 ReplicaState.FROM_POOL,
                 _targetState,
                 _stickyRecords,
-                EnumSet.of(Repository.OpenFlags.CREATEFILE));
+                EnumSet.of(StandardOpenOption.CREATE));
     }
 
     //

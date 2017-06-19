@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -21,7 +22,6 @@ import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaStore;
-import org.dcache.pool.repository.Repository;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -134,7 +134,7 @@ public class FileMetaDataRepository
             Files.deleteIfExists(controlFile);
             Files.deleteIfExists(siFile);
 
-            if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
+            if (flags.contains(StandardOpenOption.CREATE)) {
                 _fileStore.create(id);
             }
 

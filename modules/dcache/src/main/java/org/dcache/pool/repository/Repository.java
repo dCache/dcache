@@ -22,11 +22,7 @@ public interface Repository
         /* Do not update the file last access time when the file is
          * read.
          */
-        NOATIME,
-
-        /* Create the data file when creating an entry.
-         */
-        CREATEFILE
+        NOATIME
     }
 
     /**

@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -753,7 +754,7 @@ public class PoolV4
                                                  ReplicaState.FROM_CLIENT,
                                                  targetState,
                                                  stickyRecords,
-                                                 EnumSet.of(Repository.OpenFlags.CREATEFILE));
+                                                 EnumSet.of(StandardOpenOption.CREATE));
             } else {
                 Set<? extends OpenOption> openFlags =
                         message.isPool2Pool()

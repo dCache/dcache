@@ -11,6 +11,7 @@ import java.net.URI;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
@@ -24,7 +25,6 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
-import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 
 import static java.util.Arrays.asList;
@@ -141,7 +141,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
             }
             views.getStorageInfoMap().remove(id.toString());
             views.getStateMap().remove(id.toString());
-            if (flags.contains(Repository.OpenFlags.CREATEFILE)) {
+            if (flags.contains(StandardOpenOption.CREATE)) {
                 _fileStore.create(id);
             }
             return new CacheRepositoryEntryImpl(this, id);
