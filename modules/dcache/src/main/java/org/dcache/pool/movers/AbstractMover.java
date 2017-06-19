@@ -29,9 +29,9 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -70,7 +70,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     protected final P _protocolInfo;
     protected final Subject _subject;
     protected final ReplicaDescriptor _handle;
-    protected final Set<StandardOpenOption> _ioMode;
+    protected final Set<? extends OpenOption> _ioMode;
     protected final TransferService<M> _transferService;
     protected final String _billingPath;
     protected final String _transferPath;
@@ -166,7 +166,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     @Override
-    public Set<StandardOpenOption> getIoMode()
+    public Set<? extends OpenOption> getIoMode()
     {
         return _ioMode;
     }

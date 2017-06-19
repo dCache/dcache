@@ -11,7 +11,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import java.io.IOException;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -51,7 +51,7 @@ public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProto
 
     @Override
     public void runIO(FileAttributes attributes, RepositoryChannel channel,
-                      ProtocolInfo genericInfo, Allocator allocator, Set<StandardOpenOption> access)
+                      ProtocolInfo genericInfo, Allocator allocator, Set<? extends OpenOption> access)
             throws CacheException, IOException, InterruptedException
     {
         RemoteHttpsDataTransferProtocolInfo info =

@@ -14,7 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Collection;
@@ -134,7 +134,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException
+    public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException
     {
         return _fileStore.openDataChannel(_pnfsId, mode);
     }

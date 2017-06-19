@@ -76,6 +76,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.ByteBuffer;
 import java.security.KeyStoreException;
@@ -184,7 +185,7 @@ public class RemoteGsiftpTransferProtocol
                       RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
                       Allocator allocator,
-                      Set<StandardOpenOption> access)
+                      Set<? extends OpenOption> access)
             throws CacheException, IOException,
             ServerException, ClientException, KeyStoreException, URISyntaxException
     {

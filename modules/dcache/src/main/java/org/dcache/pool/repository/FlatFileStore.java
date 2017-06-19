@@ -3,11 +3,10 @@ package org.dcache.pool.repository;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.net.URI;
-import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -75,7 +74,7 @@ public class FlatFileStore implements FileStore
     }
 
     @Override
-    public RepositoryChannel openDataChannel(PnfsId id, Set<StandardOpenOption> mode) throws IOException {
+    public RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> mode) throws IOException {
         return new FileRepositoryChannel(getPath(id), mode);
     }
 

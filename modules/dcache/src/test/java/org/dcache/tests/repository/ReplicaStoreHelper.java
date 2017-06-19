@@ -2,7 +2,7 @@ package org.dcache.tests.repository;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -153,7 +153,7 @@ public class ReplicaStoreHelper implements ReplicaStore
         }
 
         @Override
-        public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException
+        public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException
         {
             return _repository.openDataChannel(_pnfsId, mode);
         }

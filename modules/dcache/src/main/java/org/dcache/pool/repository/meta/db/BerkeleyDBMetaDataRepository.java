@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
@@ -246,7 +246,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
     }
 
     @Override
-    public RepositoryChannel openChannel(PnfsId pnfsId, Set<StandardOpenOption> mode) throws IOException
+    public RepositoryChannel openChannel(PnfsId pnfsId, Set<? extends OpenOption> mode) throws IOException
     {
         return _fileStore.openDataChannel(pnfsId, mode);
     }

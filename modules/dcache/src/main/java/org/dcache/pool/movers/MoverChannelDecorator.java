@@ -19,7 +19,7 @@ package org.dcache.pool.movers;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Set;
@@ -132,7 +132,7 @@ public class MoverChannelDecorator<T extends ProtocolInfo> implements Repository
         return channel.write(src);
     }
 
-    public Set<StandardOpenOption> getIoMode()
+    public Set<? extends OpenOption> getIoMode()
     {
         return channel.getIoMode();
     }

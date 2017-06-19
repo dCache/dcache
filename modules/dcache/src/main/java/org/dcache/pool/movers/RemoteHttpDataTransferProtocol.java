@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.Channels;
+import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
@@ -191,7 +192,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
 
     @Override
     public void runIO(FileAttributes attributes, RepositoryChannel channel,
-            ProtocolInfo genericInfo, Allocator allocator, Set<StandardOpenOption> access)
+            ProtocolInfo genericInfo, Allocator allocator, Set<? extends OpenOption> access)
             throws CacheException, IOException, InterruptedException
     {
         _log.debug("info={}, attributes={},  access={}", genericInfo,

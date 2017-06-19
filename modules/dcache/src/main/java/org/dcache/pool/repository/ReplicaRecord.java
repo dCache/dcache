@@ -2,7 +2,7 @@ package org.dcache.pool.repository;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.util.Set;
 import java.util.Collection;
 
@@ -36,7 +36,7 @@ public interface ReplicaRecord
 
     URI getReplicaUri();
 
-    RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException;
+    RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException;
 
     long getCreationTime();
 

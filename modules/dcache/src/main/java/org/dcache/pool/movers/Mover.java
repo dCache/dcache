@@ -21,8 +21,7 @@ import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
 import java.nio.channels.CompletionHandler;
-import java.nio.file.StandardOpenOption;
-import java.util.Set;
+import java.nio.file.OpenOption;
 import java.util.Set;
 
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -120,7 +119,7 @@ public interface Mover<T extends ProtocolInfo>
      * and WRITE options determine if the file should be opened for
      * reading and/or writing.
      */
-    Set<StandardOpenOption> getIoMode();
+    Set<? extends OpenOption> getIoMode();
 
     /**
      * Provides a path to the door that requested the mover.

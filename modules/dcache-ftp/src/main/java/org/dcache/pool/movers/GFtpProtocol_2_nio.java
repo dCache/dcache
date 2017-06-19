@@ -18,6 +18,7 @@ import java.net.ProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.FileSystems;
 import java.security.MessageDigest;
@@ -396,7 +397,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                       RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
                       Allocator    allocator,
-                      Set<StandardOpenOption> access)
+                      Set<? extends OpenOption> access)
             throws Exception
     {
         if (!(protocol instanceof GFtpProtocolInfo)) {

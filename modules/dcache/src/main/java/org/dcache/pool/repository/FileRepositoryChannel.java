@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.OpenOption;
 
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -41,7 +42,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
      *            that name cannot be created, or if some other error occurs
      *            while opening or creating the file
      */
-    public FileRepositoryChannel(Path path, Set<StandardOpenOption> openOptions) throws FileNotFoundException, IOException {
+    public FileRepositoryChannel(Path path, Set<? extends OpenOption> openOptions) throws FileNotFoundException, IOException {
         _path = path;
         _fileChannel = FileChannel.open(path, openOptions, NO_ATTRIBUTES);
         _fileSize = !openOptions.contains(StandardOpenOption.WRITE) ? _fileChannel.size() : -1;

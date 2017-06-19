@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
@@ -233,7 +233,7 @@ public class CephFileStore implements FileStore {
     }
 
     @Override
-    public RepositoryChannel openDataChannel(PnfsId id, Set<StandardOpenOption> ioMode) throws IOException {
+    public RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> ioMode) throws IOException {
         String imageName = toImageName(id);
         try {
             return new CephRepositoryChannel(rbd, imageName, ioMode);

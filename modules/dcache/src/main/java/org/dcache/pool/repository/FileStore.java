@@ -4,17 +4,15 @@ import com.google.common.collect.Sets;
 
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.net.URI;
-import java.util.EnumSet;
 import java.util.Set;
 
 import diskCacheV111.util.PnfsId;
 
 import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.DSYNC;
 import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.SYNC;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 /**
@@ -60,7 +58,7 @@ public interface FileStore
      * Get {@link RepositoryChannel} to a data file for a given PNFS id.
      * The caller is responsible to close the channel when not used.
      */
-    RepositoryChannel openDataChannel(PnfsId id, Set<StandardOpenOption> mode) throws IOException;
+    RepositoryChannel openDataChannel(PnfsId id, Set<? extends OpenOption> mode) throws IOException;
 
     /**
      * Returns the PNFS-IDs of available data files.

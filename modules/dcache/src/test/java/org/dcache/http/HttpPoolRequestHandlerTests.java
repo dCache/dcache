@@ -35,11 +35,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import diskCacheV111.util.FsPath;
@@ -487,7 +489,7 @@ public class HttpPoolRequestHandlerTests
 
         given(channel.size()).willReturn(file.getSize());
 
-        given(channel.getIoMode()).willReturn(FileStore.O_READ);
+        given((Set<StandardOpenOption>)channel.getIoMode()).willReturn(FileStore.O_READ);
         given(channel.getProtocolInfo())
             .willReturn(new HttpProtocolInfo("Http", 1, 1,
                                              new InetSocketAddress((InetAddress) null, 0),
@@ -505,7 +507,7 @@ public class HttpPoolRequestHandlerTests
 
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel channel =
                 mock(NettyTransferService.NettyMoverChannel.class);
-        given(channel.getIoMode()).willReturn(FileStore.O_RW);
+        given((Set<StandardOpenOption>)channel.getIoMode()).willReturn(FileStore.O_RW);
         given(channel.getProtocolInfo())
                 .willReturn(new HttpProtocolInfo("Http", 1, 1,
                         new InetSocketAddress((InetAddress) null, 0),

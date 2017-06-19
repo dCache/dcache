@@ -23,7 +23,7 @@ import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 import java.net.URISyntaxException;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -133,7 +133,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
     }
 
     @Override
-    public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException {
+    public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException {
         return fileStore.openDataChannel(pnfsId, mode);
     }
 

@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Set;
 
@@ -76,7 +77,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
                        RepositoryChannel fileChannel,
                        ProtocolInfo protocol ,
                        Allocator    allocator ,
-                       Set<StandardOpenOption> access) throws CacheException, IOException, InterruptedException
+                       Set<? extends OpenOption> access) throws CacheException, IOException, InterruptedException
     {
         PnfsId pnfsId = fileAttributes.getPnfsId();
         StorageInfo storage = StorageInfos.extractFrom(fileAttributes);

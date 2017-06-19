@@ -1,6 +1,6 @@
 package org.dcache.pool.movers;
 
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.util.Set;
 
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -20,7 +20,7 @@ public interface MoverProtocol
                RepositoryChannel diskFile,
                ProtocolInfo protocol,
                Allocator allocator,
-               Set<StandardOpenOption> access)
+               Set<? extends OpenOption> access)
         throws Exception;
 
     /**

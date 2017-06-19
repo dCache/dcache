@@ -26,6 +26,7 @@ import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Set;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -42,7 +43,7 @@ public class CephRepositoryChannel implements RepositoryChannel {
     private long size;
     private long offset = 0;
 
-    public CephRepositoryChannel(Rbd rbd, String name, Set<StandardOpenOption> mode) throws RadosException {
+    public CephRepositoryChannel(Rbd rbd, String name, Set<? extends OpenOption> mode) throws RadosException {
         if(mode.contains(StandardOpenOption.WRITE)) {
                 // REVISIT: we do not create image here as it already created by CephFileStore.
                 //rbd.create(name, 0);

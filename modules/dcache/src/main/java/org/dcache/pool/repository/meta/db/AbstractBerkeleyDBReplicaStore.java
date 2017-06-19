@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -189,5 +189,5 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
 
     public abstract URI getUri(PnfsId pnfsId);
 
-    public abstract RepositoryChannel openChannel(PnfsId pnfsId, Set<StandardOpenOption> mode) throws IOException;
+    public abstract RepositoryChannel openChannel(PnfsId pnfsId, Set<? extends OpenOption> mode) throws IOException;
 }

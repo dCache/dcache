@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.SyncFailedException;
 import java.nio.file.OpenOption;
-import java.nio.file.StandardOpenOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
@@ -52,7 +51,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     /**
      * The {@link OpenOption} of the mover that created this MoverChannel.
      */
-    private final Set<StandardOpenOption> _mode;
+    private final Set<? extends OpenOption> _mode;
 
     /**
      * Space allocator provided by the pool.
@@ -103,7 +102,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
         this(mover.getIoMode(), mover.getFileAttributes(), mover.getProtocolInfo(), channel, mover.getIoHandle(), allocatorMode);
     }
 
-    public MoverChannel(Set<StandardOpenOption> mode, FileAttributes attributes, T protocolInfo,
+    public MoverChannel(Set<? extends OpenOption> mode, FileAttributes attributes, T protocolInfo,
             RepositoryChannel channel, Allocator allocator, AllocatorMode allocatorMode)
     {
         _mode = mode;
@@ -290,7 +289,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
         }
     }
 
-    public Set<StandardOpenOption> getIoMode() {
+    public Set<? extends OpenOption> getIoMode() {
         return _mode;
     }
 

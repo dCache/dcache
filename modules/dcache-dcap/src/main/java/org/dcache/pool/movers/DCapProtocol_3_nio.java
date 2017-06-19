@@ -14,6 +14,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
+import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -317,7 +318,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                       RepositoryChannel  fileChannel,
                       ProtocolInfo protocol,
                       Allocator    allocator,
-                      Set<StandardOpenOption> access)
+                      Set<? extends OpenOption> access)
         throws Exception
     {
         configureBufferSizes();

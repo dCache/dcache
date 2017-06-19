@@ -4,7 +4,7 @@ import javax.annotation.concurrent.GuardedBy;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -221,7 +221,7 @@ public class ReplicaStoreCache
         }
 
         @Override
-        public RepositoryChannel openChannel(Set<StandardOpenOption> mode) throws IOException
+        public RepositoryChannel openChannel(Set<? extends OpenOption> mode) throws IOException
         {
             return _record.openChannel(mode);
         }
