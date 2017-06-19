@@ -78,7 +78,7 @@ public interface Repository
                                   ReplicaState transferState,
                                   ReplicaState targetState,
                                   List<StickyRecord> sticky,
-                                  Set<OpenFlags> flags)
+                                  Set<? extends OpenOption> flags)
         throws CacheException;
 
     /**
@@ -98,7 +98,7 @@ public interface Repository
      * @throws LockedCacheException if in a state in which it cannot be opened
      * @throws CacheException in case of other errors
      */
-    ReplicaDescriptor openEntry(PnfsId id, Set<OpenFlags> flags)
+    ReplicaDescriptor openEntry(PnfsId id, Set<? extends OpenOption> flags)
         throws CacheException,
                InterruptedException;
 

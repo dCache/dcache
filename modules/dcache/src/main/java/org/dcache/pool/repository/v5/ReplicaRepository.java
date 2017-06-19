@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
 
 import java.io.PrintWriter;
+import java.nio.file.OpenOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -575,7 +576,7 @@ public class ReplicaRepository
                                    ReplicaState transferState,
                                    ReplicaState targetState,
                                    List<StickyRecord> stickyRecords,
-                                   Set<OpenFlags> flags)
+                                   Set<? extends OpenOption> flags)
         throws CacheException
     {
         if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO))) {
@@ -628,7 +629,7 @@ public class ReplicaRepository
     }
 
     @Override
-    public ReplicaDescriptor openEntry(PnfsId id, Set<OpenFlags> flags)
+    public ReplicaDescriptor openEntry(PnfsId id, Set<? extends OpenOption> flags)
         throws CacheException, InterruptedException
     {
         _stateLock.readLock().lock();

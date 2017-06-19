@@ -39,6 +39,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.URI;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -116,7 +117,7 @@ public class NearlineStorageHandler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NearlineStorageHandler.class);
 
-    private static final Set<Repository.OpenFlags> NO_FLAGS = Collections.emptySet();
+    private static final Set<? extends OpenOption> NO_FLAGS = Collections.emptySet();
 
     private final FlushRequestContainer flushRequests = new FlushRequestContainer();
     private final StageRequestContainer stageRequests = new StageRequestContainer();

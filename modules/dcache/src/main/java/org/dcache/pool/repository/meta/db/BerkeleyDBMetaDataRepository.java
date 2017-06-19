@@ -131,7 +131,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
      * TODO: The entry is not persistent yet!
      */
     @Override
-    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
+    public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags)
             throws CacheException
     {
         try {

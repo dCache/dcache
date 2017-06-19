@@ -1,6 +1,7 @@
 package org.dcache.pool.repository;
 
 import java.io.Closeable;
+import java.nio.file.OpenOption;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -53,7 +54,7 @@ public interface ReplicaStore extends Closeable
      * @throws DuplicateEntryException if entry already exists
      * @throws CacheException if entry creation fails
      */
-    ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
+    ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags)
         throws DuplicateEntryException, CacheException;
 
     /**

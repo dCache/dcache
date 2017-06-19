@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.channels.CompletionHandler;
+import java.nio.file.OpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -754,7 +755,7 @@ public class PoolV4
                                                  stickyRecords,
                                                  EnumSet.of(Repository.OpenFlags.CREATEFILE));
             } else {
-                Set<Repository.OpenFlags> openFlags =
+                Set<? extends OpenOption> openFlags =
                         message.isPool2Pool()
                                 ? EnumSet.of(Repository.OpenFlags.NOATIME)
                                 : EnumSet.noneOf(Repository.OpenFlags.class);

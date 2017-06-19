@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.OpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -334,7 +334,7 @@ public class ConsistentReplicaStore
      * it is overwritten.
      */
     @Override
-    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
+    public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags)
         throws DuplicateEntryException, CacheException
     {
         return _replicaStore.create(id, flags);

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -116,7 +117,7 @@ public class FileMetaDataRepository
     }
 
     @Override
-    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags)
+    public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags)
         throws DuplicateEntryException, CacheException
     {
         try {

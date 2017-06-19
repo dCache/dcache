@@ -122,7 +122,7 @@ public class ReplicaStoreCache
             return this;
         }
 
-        private synchronized ReplicaRecord create(Set<Repository.OpenFlags> flags)
+        private synchronized ReplicaRecord create(Set<? extends OpenOption> flags)
                 throws CacheException
         {
             if (_entries.get(_id) != this || _record != null) {
@@ -427,7 +427,7 @@ public class ReplicaStoreCache
     }
 
     @Override
-    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws CacheException
+    public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags) throws CacheException
     {
         try {
             return _entries.computeIfAbsent(id, Monitor::new).create(flags);

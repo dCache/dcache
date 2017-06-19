@@ -19,6 +19,7 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import dmg.cells.nucleus.EnvironmentAware;
 import java.io.IOException;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.List;
 import org.bson.Document;
@@ -192,7 +193,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     }
 
     @Override
-    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws DuplicateEntryException, CacheException {
+    public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags) throws DuplicateEntryException, CacheException {
         if (fileStore.contains(id)) {
             throw new DuplicateEntryException(id);
         }

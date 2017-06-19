@@ -23,7 +23,6 @@ import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaStore;
-import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.RepositoryException;
@@ -223,7 +222,7 @@ public class ReplicaStoreHelper implements ReplicaStore
     }
 
     @Override
-    public ReplicaRecord create(PnfsId id, Set<Repository.OpenFlags> flags) throws DuplicateEntryException, RepositoryException {
+    public ReplicaRecord create(PnfsId id, Set<? extends OpenOption> flags) throws DuplicateEntryException, RepositoryException {
         try {
             ReplicaRecord entry = new CacheRepositoryEntryImpl(_repository, id);
             _entryList.put(id, entry);
