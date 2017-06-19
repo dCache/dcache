@@ -305,14 +305,12 @@ public final class Storage
      * however a failure path that would exist in any case, as the reservation may expire
      * after handing out the TURL.
      */
-    private final LoadingCache<String,Optional<Space>> spaces =
-            ReservationCaches.buildSpaceLookupCache(_spaceManagerStub, _executor);
+    private LoadingCache<String,Optional<Space>> spaces;
 
     /**
      * A loading cache for looking up space tokens by owner and description.
      */
-    private final LoadingCache<GetSpaceTokensKey, long[]> spaceTokens =
-            ReservationCaches.buildOwnerDescriptionLookupCache(_spaceManagerStub, _executor);
+    private LoadingCache<GetSpaceTokensKey, long[]> spaceTokens;
 
     public Storage()
     {
@@ -324,6 +322,18 @@ public final class Storage
     public void setExecutor(Executor executor)
     {
         _executor = executor;
+    }
+
+    @Required
+    public void setSpaceLookupCache(LoadingCache<String,Optional<Space>> cache)
+    {
+        spaces = cache;
+    }
+
+    @Required
+    public void setOwnerDescriptionLookupCache(LoadingCache<GetSpaceTokensKey, long[]> cache)
+    {
+        spaceTokens = cache;
     }
 
     @Required
