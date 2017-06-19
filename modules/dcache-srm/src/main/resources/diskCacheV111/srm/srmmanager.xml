@@ -189,17 +189,17 @@
          =====================================================================================
       -->
 
+    <bean id="storage-executor" class="org.dcache.util.CDCExecutorServiceDecorator"
+          destroy-method="shutdown">
+        <constructor-arg>
+            <bean class="java.util.concurrent.Executors"
+                  factory-method="newCachedThreadPool"/>
+        </constructor-arg>
+    </bean>
+
     <bean id="storage" class="diskCacheV111.srm.dcache.Storage">
         <description>dCache plugin for SRM</description>
-        <property name="executor">
-            <bean class="org.dcache.util.CDCExecutorServiceDecorator"
-                  destroy-method="shutdown">
-                <constructor-arg>
-                    <bean class="java.util.concurrent.Executors"
-                          factory-method="newCachedThreadPool"/>
-                </constructor-arg>
-            </bean>
-        </property>
+        <property name="executor" ref="storage-executor"/>
         <property name="directoryListSource" ref="list-handler"/>
         <property name="loginBrokerSource" ref="login-broker-source"/>
         <property name="pnfsStub" ref="pnfs-stub"/>
@@ -222,6 +222,18 @@
         <property name="srmGetNotSupportedProtocols" value="${srmmanager.protocols.disallowed.get}"/>
         <property name="srmPreferredProtocols" value="${srmmanager.protocols.preferred}"/>
         <property name="verificationRequired" value="${srmmanager.enable.third-party.requiring-verification-by-default}"/>
+        <property name="spaceLookupCache">
+            <bean class="org.dcache.space.ReservationCaches" factory-method="buildSpaceLookupCache">
+                <constructor-arg index="0" ref="space-manager-stub"/>
+                <constructor-arg index="1" ref="storage-executor"/>
+            </bean>
+        </property>
+        <property name="ownerDescriptionLookupCache">
+            <bean class="org.dcache.space.ReservationCaches" factory-method="buildOwnerDescriptionLookupCache">
+                <constructor-arg index="0" ref="space-manager-stub"/>
+                <constructor-arg index="1" ref="storage-executor"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="config" class="diskCacheV111.srm.dcache.Configuration" depends-on="liquibase">
