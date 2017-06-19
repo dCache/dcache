@@ -1,6 +1,7 @@
 package org.dcache.pool.repository;
 
 import java.io.IOException;
+import java.nio.file.OpenOption;
 import java.util.List;
 import java.util.Set;
 
@@ -16,7 +17,7 @@ import org.dcache.vehicles.FileAttributes;
 public interface Repository
     extends Iterable<PnfsId>
 {
-    enum OpenFlags
+    enum OpenFlags implements OpenOption
     {
         /* Do not update the file last access time when the file is
          * read.
