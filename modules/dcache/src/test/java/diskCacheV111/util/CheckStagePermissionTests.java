@@ -499,7 +499,11 @@ public class CheckStagePermissionTests
 
         public FileStateAssertion withDifferentMtime() throws InterruptedException
         {
-            _mtime = _file.lastModified();
+            // CheckStagePermission uses current time (rather than file's mtime)
+            // when checking if the file has been modified.  Not only is this
+            // wrong (racy), it also means the testing code must also use
+            // currentTimeMillis to avoid race-conditions when testing.
+            _mtime = System.currentTimeMillis();
             return this;
         }
 
