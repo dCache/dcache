@@ -1260,10 +1260,11 @@ public final class Storage
     }
 
     @Override
-    public void setFileMetaData(SRMUser abstractUser, FileMetaData fmd)
+    public void setFileMetaData(SRMUser abstractUser, URI surl, FileMetaData fmd)
         throws SRMException
     {
         DcacheUser user = asDcacheUser(abstractUser);
+        FsPath path = config.getPath(surl);
         PnfsHandler handler =
             new PnfsHandler(_pnfs, user.getSubject(), user.getRestriction());
 
@@ -1275,7 +1276,7 @@ public final class Storage
             DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
             FileAttributes updatedAttributes = new FileAttributes();
             updatedAttributes.setMode(dfmd.permMode);
-            handler.setFileAttributes(dfmd.getPnfsId(), updatedAttributes);
+            handler.setFileAttributes(path, updatedAttributes);
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("PnfsManager is unavailable: "
                                                 + e.getMessage(), e);
