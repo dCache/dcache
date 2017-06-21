@@ -1,7 +1,6 @@
 package org.dcache.restful.resources.namespace;
 
 import com.google.common.collect.Range;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -9,8 +8,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -24,7 +23,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
@@ -32,7 +30,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -41,9 +38,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 import dmg.cells.nucleus.NoRouteToCellException;
-
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
@@ -58,6 +53,7 @@ import org.dcache.restful.policyengine.MigrationPolicyEngine;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
+import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
@@ -163,9 +159,15 @@ public class FileResources {
         try {
 
             FileAttributes namespaceAttributes = handler.getFileAttributes(path, attributes);
-            chimeraToJsonAttributes(fileAttributes, namespaceAttributes, isLocality, path.name(), isLocations);
+            NamespaceUtils.chimeraToJsonAttributes(path.name(), fileAttributes,
+                                                   namespaceAttributes,
+                                                   isLocality, isLocations,
+                                                   false,
+                                                   request, ctx);
             if (isQos) {
-                addQoSAttributes(fileAttributes, namespaceAttributes);
+                NamespaceUtils.addQoSAttributes(fileAttributes,
+                                                namespaceAttributes,
+                                                request, ctx);
             }
 
             // fill children list id it's a directory and listing is requested
@@ -200,10 +202,17 @@ public class FileResources {
 
                     JsonFileAttributes childrenAttributes = new JsonFileAttributes();
 
-                    chimeraToJsonAttributes(childrenAttributes, entry.getFileAttributes(), isLocality, fName, isLocations);
+                    NamespaceUtils.chimeraToJsonAttributes(fName,
+                                                           childrenAttributes,
+                                                           entry.getFileAttributes(),
+                                                           isLocality, isLocations,
+                                                           false,
+                                                           request, ctx);
                     childrenAttributes.setFileName(fName);
                     if (isQos) {
-                        addQoSAttributes(childrenAttributes, entry.getFileAttributes());
+                        NamespaceUtils.addQoSAttributes(childrenAttributes,
+                                                        entry.getFileAttributes(),
+                                                        request, ctx);
                     }
                     children.add(childrenAttributes);
                 }
@@ -257,7 +266,7 @@ public class FileResources {
                 case "qos":
                     String targetQos = reqPayload.getString("target");
                     JsonFileAttributes fileAttributes = new JsonFileAttributes();
-                    addQoSAttributes(fileAttributes, attributes);
+                    NamespaceUtils.addQoSAttributes(fileAttributes, attributes, request, ctx);
                     LOG.debug("Request received to change current QoS from {} to: {} for {}", fileAttributes.currentQos, targetQos, path);
                     RemotePoolMonitor monitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
                     FileLocality locality = monitor.getFileLocality(attributes, request.getRemoteHost());
@@ -355,89 +364,5 @@ public class FileResources {
             throw new InternalServerErrorException(e);
         }
         return successfulResponse(Response.Status.OK);
-    }
-
-    /**
-     * Map  returned fileAttributes to JsonFileAttributes object.
-     *
-     * @param fileAttributes       will be mapped to the FileAttributes
-     * @param namespaceAttrributes FileAttributes returned by the request
-     * @param isLocality           used to check weather user queried  locality to the file
-     */
-    private void chimeraToJsonAttributes(JsonFileAttributes fileAttributes,
-                                         FileAttributes namespaceAttrributes,
-                                         boolean isLocality,
-                                         String name,
-                                         boolean isLocations) throws CacheException {
-        fileAttributes.setPnfsId(namespaceAttrributes.getPnfsId());
-        // TODO it is safer to check if these attributes are defined
-        // TODO this will be done in a subsequent patch where this method
-        // TODO is transferred to a utility class ...
-        fileAttributes.setNlink(namespaceAttrributes.getNlink());
-        fileAttributes.setMtime(namespaceAttrributes.getModificationTime());
-        fileAttributes.setCreationTime(namespaceAttrributes.getCreationTime());
-        if (namespaceAttrributes.isDefined(FileAttribute.SIZE)) {
-            fileAttributes.setSize(namespaceAttrributes.getSize());
-        }
-        fileAttributes.setFileType(namespaceAttrributes.getFileType());
-        fileAttributes.setFileMimeType(name);
-
-        RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-
-        // when user set locality param. in the request, the locality should be returned only for directories
-        if (isLocality && namespaceAttrributes.getFileType() != FileType.DIR) {
-
-            String client = request.getRemoteHost();
-            FileLocality fileLocality = remotePoolMonitor.getFileLocality(namespaceAttrributes, client);
-            fileAttributes.setFileLocality(fileLocality);
-        }
-        //TODO could be removed latter
-        if (isLocations){
-            fileAttributes.setLocations(namespaceAttrributes.getLocations());
-        }
-    }
-
-    private void addQoSAttributes(JsonFileAttributes json, FileAttributes attributes)
-            throws CacheException, NoRouteToCellException, InterruptedException
-    {
-        if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
-            throw new PermissionDeniedCacheException("Permission denied");
-        }
-
-        CellStub pinmanager = ServletContextHandlerAttributes.getPinManager(ctx);
-        boolean isPinned = pinmanager.sendAndWait(new PinManagerCountPinsMessage(attributes.getPnfsId())).getCount() != 0;
-
-        RemotePoolMonitor monitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-        FileLocality locality = monitor.getFileLocality(attributes, request.getRemoteHost());
-        switch (locality) {
-        case NEARLINE:
-            json.setCurrentQos(QosManagement.TAPE);
-            if (isPinned) {
-                json.setTargetQos(QosManagement.DISK_TAPE);
-            }
-            break;
-
-        case ONLINE:
-            json.setCurrentQos(QosManagement.DISK);
-            break;
-
-        case ONLINE_AND_NEARLINE:
-            json.setCurrentQos(isPinned ? QosManagement.DISK_TAPE : QosManagement.TAPE);
-            break;
-
-        case NONE: // NONE implies the target is a directory.
-            json.setCurrentQos(attributes.getAccessLatency() == AccessLatency.ONLINE ? QosManagement.DISK : QosManagement.TAPE);
-            break;
-
-        case UNAVAILABLE:
-            json.setCurrentQos(QosManagement.UNAVAILABLE);
-            break;
-
-        // LOST is currently not used by dCache
-        case LOST:
-        default:
-            // error cases
-            throw new InternalServerErrorException("Unexpected file locality: " + locality);
-        }
     }
 }
