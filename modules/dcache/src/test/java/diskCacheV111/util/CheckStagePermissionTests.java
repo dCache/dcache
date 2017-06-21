@@ -516,7 +516,7 @@ public class CheckStagePermissionTests
                 _file.delete();
             } else {
                 updateContent();
-                while (_mtime != 0 && _mtime == _file.lastModified()) {
+                while (_mtime != 0 && _mtime >= _file.lastModified()) {
                     Thread.sleep(10);
                     updateContent();
                 }
