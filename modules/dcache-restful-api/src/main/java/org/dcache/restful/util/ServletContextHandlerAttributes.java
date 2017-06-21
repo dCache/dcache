@@ -5,10 +5,6 @@ import javax.servlet.ServletContext;
 
 import java.security.AccessController;
 
-import diskCacheV111.util.PnfsHandler;
-
-import org.dcache.auth.attributes.Restriction;
-import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.poolmanager.RemotePoolMonitor;
@@ -31,23 +27,14 @@ public class ServletContextHandlerAttributes {
         return Subject.getSubject(AccessController.getContext());
     }
 
-    public static Restriction getRestriction()
-    {
-        return Restrictions.readOnly();
-    }
-
     public static ListDirectoryHandler getListDirectoryHandler(ServletContext ctx)
     {
         return (ListDirectoryHandler) (ctx.getAttribute(DL));
     }
 
-    public static PnfsHandler getPnfsHandler(ServletContext ctx)
+    public static CellStub getCellStub(ServletContext ctx)
     {
-        CellStub cellStub = (CellStub) (ctx.getAttribute(CS));
-        PnfsHandler handler = new PnfsHandler(cellStub);
-        handler.setSubject(getSubject());
-
-        return handler;
+        return (CellStub) (ctx.getAttribute(CS));
     }
 
     public static RemotePoolMonitor getRemotePoolMonitor(ServletContext ctx)

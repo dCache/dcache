@@ -3,6 +3,8 @@ package org.dcache.restful.resources.namespace;
 import com.google.common.collect.Range;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -52,14 +54,14 @@ import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.policyengine.MigrationPolicyEngine;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
+import org.dcache.restful.util.HandlerBuilders;
+import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static diskCacheV111.util.FileLocality.NEARLINE;
 import static diskCacheV111.util.FileLocality.ONLINE_AND_NEARLINE;
@@ -153,7 +155,7 @@ public class FileResources {
     {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
-        PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+        PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
         PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
         try {
@@ -191,7 +193,7 @@ public class FileResources {
 
                 DirectoryStream stream = listDirectoryHandler.list(
                         ServletContextHandlerAttributes.getSubject(),
-                        ServletContextHandlerAttributes.getRestriction(),
+                        HttpServletRequests.getRestriction(request),
                         path,
                         null,
                         range,
@@ -243,7 +245,7 @@ public class FileResources {
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
-            PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+            PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
             PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
             FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 
@@ -343,7 +345,7 @@ public class FileResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteFileEntry(@PathParam("value") String requestPath) throws CacheException {
 
-        PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+        PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
         PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 
