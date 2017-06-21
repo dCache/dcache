@@ -106,6 +106,11 @@ public class JsonFileAttributes
     private Map<String, String> _flags;
 
     /**
+     * Number of links/
+     */
+    private Integer _nlink;
+
+    /**
      * The unique PNFS ID of a file.
      */
     private PnfsId _pnfsId;
@@ -176,6 +181,10 @@ public class JsonFileAttributes
     public void setAcl(ACL _acl) {
         this._acl = _acl;
     }
+
+    public Integer getNlink() { return _nlink; }
+
+    public void setNlink(Integer nlink) { _nlink = nlink; }
 
     public Long getSize() {
         return _size;

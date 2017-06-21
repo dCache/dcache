@@ -369,11 +369,6 @@ public class FileResources {
                                          boolean isLocality,
                                          String name,
                                          boolean isLocations) throws CacheException {
-        fileAttributes.setPnfsId(namespaceAttrributes.getPnfsId());
-        // TODO it is safer to check if these attributes are defined
-        // TODO this will be done in a subsequent patch where this method
-        // TODO is transferred to a utility class ...
-        fileAttributes.setNlink(namespaceAttrributes.getNlink());
         fileAttributes.setMtime(namespaceAttrributes.getModificationTime());
         fileAttributes.setCreationTime(namespaceAttrributes.getCreationTime());
         if (namespaceAttrributes.isDefined(FileAttribute.SIZE)) {
