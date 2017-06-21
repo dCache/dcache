@@ -89,7 +89,11 @@ import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
+import org.dcache.auth.attributes.Role;
 import org.dcache.cells.CellStub;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
@@ -602,7 +606,7 @@ public class DcacheResourceFactory
         try {
             while(true) {
                 try {
-                    PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, getRestriction());
+                    PnfsHandler pnfs = roleAwarePnfsHandler();
                     Set<FileAttribute> requestedAttributes =
                             buildRequestedAttributes();
                     FileAttributes attributes =
@@ -1001,7 +1005,7 @@ public class DcacheResourceFactory
     public void deleteFile(FileAttributes attributes, FsPath path)
         throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
+        PnfsHandler pnfs = roleAwarePnfsHandler();
         pnfs.deletePnfsEntry(attributes.getPnfsId(), path.toString(),
                 EnumSet.of(REGULAR, LINK), EnumSet.noneOf(FileAttribute.class));
         sendRemoveInfoToBilling(attributes, path);
@@ -1026,7 +1030,7 @@ public class DcacheResourceFactory
     public void deleteDirectory(PnfsId pnfsid, FsPath path)
         throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
+        PnfsHandler pnfs = roleAwarePnfsHandler();
         pnfs.deletePnfsEntry(pnfsid, path.toString(), EnumSet.of(DIR),
                 EnumSet.noneOf(FileAttribute.class));
     }
@@ -1048,7 +1052,7 @@ public class DcacheResourceFactory
     public void move(FsPath sourcePath, PnfsId pnfsId, FsPath newPath)
         throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
+        PnfsHandler pnfs = roleAwarePnfsHandler();
         pnfs.renameEntry(pnfsId, sourcePath.toString(), newPath.toString(), true);
     }
 
@@ -1079,8 +1083,8 @@ public class DcacheResourceFactory
             HttpProtocolInfo.Disposition disposition) throws CacheException,
             InterruptedException, URISyntaxException
     {
-        Subject subject = getSubject();
-        Restriction restriction = getRestriction();
+        Subject subject = roleAwareSubject();
+        Restriction restriction = roleAwareRestriction();
 
         String uri = null;
         ReadTransfer transfer = new ReadTransfer(_pnfs, subject, restriction,
@@ -1187,6 +1191,30 @@ public class DcacheResourceFactory
     {
         HttpServletRequest servletRequest = ServletRequest.getRequest();
         return (Restriction) servletRequest.getAttribute(AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
+    }
+
+    private boolean isAdmin()
+    {
+        Set<LoginAttribute> attributes = AuthenticationHandler.getLoginAttributes(ServletRequest.getRequest());
+        return LoginAttributes.hasAdminRole(attributes);
+    }
+
+    private PnfsHandler roleAwarePnfsHandler()
+    {
+        boolean isAdmin = isAdmin();
+        Subject user = isAdmin ? Subjects.ROOT : getSubject();
+        Restriction restriction = isAdmin ? Restrictions.none() : getRestriction();
+        return new PnfsHandler(_pnfs, user, restriction);
+    }
+
+    private Subject roleAwareSubject()
+    {
+        return isAdmin() ? Subjects.ROOT : getSubject();
+    }
+
+    private Restriction roleAwareRestriction()
+    {
+        return isAdmin() ? Restrictions.none() : getRestriction();
     }
 
     /**

@@ -26,6 +26,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,10 +34,12 @@ import java.util.stream.Collectors;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.Role;
 import org.dcache.auth.attributes.RootDirectory;
-import org.dcache.http.AuthenticationHandler;
 import org.dcache.restful.providers.UserAttributes;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
+
+import static org.dcache.restful.util.HttpServletRequests.getLoginAttributes;
 
 /**
  * Provide services related to the identity the user is currently
@@ -56,6 +59,7 @@ public class UserResource
             user.setStatus(UserAttributes.AuthenticationStatus.ANONYMOUS);
             user.setUid(null);
             user.setGids(null);
+            user.setRoles(null);
         } else {
             user.setStatus(UserAttributes.AuthenticationStatus.AUTHENTICATED);
             user.setUid(Subjects.getUid(subject));
@@ -65,11 +69,16 @@ public class UserResource
                     .collect(Collectors.toList());
             user.setGids(gids);
 
-            for (LoginAttribute attribute : AuthenticationHandler.getLoginAttributes(request)) {
+            for (LoginAttribute attribute : getLoginAttributes(request)) {
                 if (attribute instanceof HomeDirectory) {
                     user.setHomeDirectory(((HomeDirectory)attribute).getHome());
                 } else if (attribute instanceof RootDirectory) {
                     user.setRootDirectory(((RootDirectory)attribute).getRoot());
+                } else if (attribute instanceof Role) {
+                    if (user.getRoles() == null) {
+                        user.setRoles(new ArrayList<>());
+                    }
+                    user.getRoles().add(((Role)attribute).getRole());
                 }
             }
         }

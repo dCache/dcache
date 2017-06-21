@@ -45,6 +45,8 @@ public class UserAttributes
 
     private List<Long> gids;
 
+    private List<String> roles;
+
     private String home;
 
     private String root;
@@ -109,5 +111,15 @@ public class UserAttributes
     public void setUsername(String name)
     {
         username = name;
+    }
+
+    public List<String> getRoles()
+    {
+        return roles;
+    }
+
+    public void setRoles(List<String> roles)
+    {
+        this.roles = roles;
     }
 }

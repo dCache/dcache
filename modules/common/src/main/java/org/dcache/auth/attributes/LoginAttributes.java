@@ -18,6 +18,7 @@
 package org.dcache.auth.attributes;
 
 import java.util.Collection;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.FsPath;
 
@@ -26,20 +27,42 @@ import diskCacheV111.util.FsPath;
  */
 public class LoginAttributes
 {
+    public static final String ADMIN_ROLE_NAME = "admin";
+    private static final Role ADMIN_ROLE = new Role(ADMIN_ROLE_NAME);
 
     private LoginAttributes()
     {
         // prevent instantiation
     }
 
+    /**
+     * Provide the root directory for this user.  The value takes into account
+     * any Role attributes that may adjust the user's root directory.
+     */
     public static FsPath getUserRoot(Collection<LoginAttribute> attributes)
     {
+        FsPath root = FsPath.ROOT;
+        for (LoginAttribute attribute : attributes) {
+            if (attribute.equals(ADMIN_ROLE)) {
+                return FsPath.ROOT;
+            }
+            if (attribute instanceof RootDirectory) {
+                root = FsPath.create(((RootDirectory)attribute).getRoot());
+            }
+        }
+        return root;
+    }
+
+    public static Role adminRole()
+    {
+        return ADMIN_ROLE;
+    }
+
+    public static boolean hasAdminRole(Collection<LoginAttribute> attributes)
+    {
         return attributes.stream()
-                .filter(RootDirectory.class::isInstance)
-                .map(RootDirectory.class::cast)
-                .map(RootDirectory::getRoot)
-                .map(FsPath::create)
-                .findFirst()
-                .orElse(FsPath.ROOT);
+                .filter(Role.class::isInstance)
+                .map(Role.class::cast)
+                .anyMatch(r -> r.equals(ADMIN_ROLE));
     }
 }

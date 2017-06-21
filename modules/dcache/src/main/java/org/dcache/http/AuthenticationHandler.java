@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -33,11 +34,13 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.BearerTokenCredential;
+import org.dcache.auth.DesiredRole;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -45,6 +48,7 @@ import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
 import org.dcache.util.CertificateFactories;
@@ -226,6 +230,15 @@ public class AuthenticationHandler extends HandlerWrapper {
                         int colon = credential.indexOf(":");
                         if (colon >= 0) {
                             String user = credential.substring(0, colon);
+                            int lastHash = user.lastIndexOf('#');
+                            if (lastHash != -1 && lastHash < (user.length()-1)) {
+                                Splitter.on(',')
+                                        .trimResults()
+                                        .omitEmptyStrings()
+                                        .split(user.substring(lastHash+1))
+                                        .forEach(r -> subject.getPrincipals().add(new DesiredRole(r)));
+                                user = user.substring(0, lastHash);
+                            }
                             String password = credential.substring(colon + 1);
                             subject.getPrivateCredentials().add(new PasswordCredential(user, password));
                         } else {

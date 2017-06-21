@@ -7,6 +7,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
 
+import org.dcache.auth.DesiredRole;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UidPrincipal;
@@ -110,6 +111,16 @@ public class PrincipalSetMaker
     public PrincipalSetMaker withFqan(String name)
     {
         _principals.add(new FQANPrincipal(name));
+        return this;
+    }
+
+    /**
+     * Add a DesiredRole to the set.
+     * @param name the role the user is requesting.
+     */
+    public PrincipalSetMaker withDesiredRole(String name)
+    {
+        _principals.add(new DesiredRole(name));
         return this;
     }
 

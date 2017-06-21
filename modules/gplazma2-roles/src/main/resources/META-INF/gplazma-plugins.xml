@@ -1,0 +1,6 @@
+<plugins>
+    <plugin>
+        <name>roles</name>
+        <class>org.dcache.gplazma.roles.RolesPlugin</class>
+    </plugin>
+</plugins>

@@ -70,6 +70,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -78,7 +79,9 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.providers.JsonFileAttributes;
@@ -113,7 +116,7 @@ public class IdResources {
     public JsonFileAttributes getAttributes(@PathParam("value") String value) {
         Set<FileAttribute> attributeSet = EnumSet.allOf(FileAttribute.class);
         JsonFileAttributes result = new JsonFileAttributes();
-        PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(ctx, request);
 
         try {
             PnfsId id = new PnfsId(value);

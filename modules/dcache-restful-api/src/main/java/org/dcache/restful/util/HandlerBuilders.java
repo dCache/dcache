@@ -23,6 +23,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import diskCacheV111.util.PnfsHandler;
 
+import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 
 /**
@@ -36,6 +38,18 @@ public class HandlerBuilders
         PnfsHandler handler = new PnfsHandler(cellStub);
         handler.setSubject(ServletContextHandlerAttributes.getSubject());
         handler.setRestriction(HttpServletRequests.getRestriction(request));
+        return handler;
+    }
+
+    public static PnfsHandler roleAwarePnfsHandler(ServletContext ctx, HttpServletRequest request)
+    {
+        PnfsHandler handler = pnfsHandler(ctx, request);
+
+        if (HttpServletRequests.isAdmin(request)) {
+            handler.setSubject(Subjects.ROOT);
+            handler.setRestriction(Restrictions.none());
+        }
+
         return handler;
     }
 }

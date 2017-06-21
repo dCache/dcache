@@ -20,6 +20,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.BadRequestException;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -27,12 +29,25 @@ import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.Set;
 
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
+import org.dcache.pinmanager.PinManagerCountPinsMessage;
+
+import org.dcache.auth.Subjects;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.restful.util.ServletContextHandlerAttributes;
+import org.dcache.vehicles.FileAttributes;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+
+import org.dcache.cells.CellStub;
+import org.dcache.poolmanager.RemotePoolMonitor;
+
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -47,6 +62,7 @@ import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * Query current QoS for a file or  change the current QoS
@@ -200,7 +216,7 @@ public class QosManagementNamespace {
 
     public FileAttributes getFileAttributes(String requestPath) throws CacheException {
 
-        PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(ctx, request);
         FsPath path;
         if (requestPath == null || requestPath.isEmpty()) {
             path = FsPath.ROOT;
