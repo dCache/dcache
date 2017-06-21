@@ -25,7 +25,6 @@ import javax.ws.rs.core.Response;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -53,13 +52,14 @@ import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
+import org.dcache.restful.util.HandlerBuilders;
+import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 import static org.dcache.restful.util.Preconditions.checkRequest;
 
@@ -146,7 +146,7 @@ public class FileResources {
     {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
-        PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+        PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
 
         FsPath path;
         if (value == null || value.isEmpty()) {
@@ -174,7 +174,7 @@ public class FileResources {
 
                 DirectoryStream stream = listDirectoryHandler.list(
                         ServletContextHandlerAttributes.getSubject(),
-                        ServletContextHandlerAttributes.getRestriction(),
+                        HttpServletRequests.getRestriction(request),
                         path,
                         null,
                         Range.<Integer>all(),
@@ -220,7 +220,7 @@ public class FileResources {
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
-            PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+            PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
             switch (action) {
                 case "mkdir":
                     String folderName = (String) reqPayload.get("name");
