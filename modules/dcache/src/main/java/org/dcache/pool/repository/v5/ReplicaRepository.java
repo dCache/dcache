@@ -614,7 +614,9 @@ public class ReplicaRepository
 
             LOGGER.info("Creating new entry for {}", id);
 
-            ReplicaRecord entry = _store.create(id, flags);
+            ReplicaRecord entry = fileAttributes.getStorageInfo().isCreatedOnly()
+                    ? _store.create(id, flags) : _store.get(id);
+
             return entry.update(r -> {
                 r.setFileAttributes(fileAttributes);
                 r.setState(transferState);
