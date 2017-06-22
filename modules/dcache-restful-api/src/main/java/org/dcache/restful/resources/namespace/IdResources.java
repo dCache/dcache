@@ -82,6 +82,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.providers.JsonFileAttributes;
+import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.vehicles.FileAttributes;
@@ -112,7 +113,7 @@ public class IdResources {
     public JsonFileAttributes getAttributes(@PathParam("value") String value) {
         Set<FileAttribute> attributeSet = EnumSet.allOf(FileAttribute.class);
         JsonFileAttributes result = new JsonFileAttributes();
-        PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+        PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
 
         try {
             PnfsId id = new PnfsId(value);
