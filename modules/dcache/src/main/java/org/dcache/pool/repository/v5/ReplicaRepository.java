@@ -630,7 +630,7 @@ public class ReplicaRepository
 
     @Override
     public ReplicaDescriptor openEntry(PnfsId id, Set<? extends OpenOption> flags)
-        throws CacheException, InterruptedException
+        throws CacheException
     {
         _stateLock.readLock().lock();
         try {
@@ -970,7 +970,7 @@ public class ReplicaRepository
      *        repository
      */
     private ReplicaRecord getReplicaRecord(PnfsId pnfsId)
-        throws CacheException, InterruptedException
+        throws CacheException
     {
         ReplicaRecord entry = _store.get(pnfsId);
         if (entry == null) {
@@ -1093,8 +1093,6 @@ public class ReplicaRepository
                         _executor.schedule(this, EXPIRATION_CLOCKSHIFT_EXTRA_TIME,
                                            TimeUnit.MILLISECONDS);
                 _tasks.put(_id, future);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
         }
     }

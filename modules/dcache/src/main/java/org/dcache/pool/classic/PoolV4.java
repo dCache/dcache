@@ -766,8 +766,6 @@ public class PoolV4
             throw new FileNotInCacheException("File " + pnfsId + " does not exist in " + _poolName, e);
         } catch (FileInCacheException e) {
             throw new FileInCacheException("File " + pnfsId + " already exists in " + _poolName, e);
-        } catch (InterruptedException e) {
-            throw new CacheException("Pool is shutting down", e);
         }
         try {
             return moverFactory.createMover(handle, message, source);

@@ -103,7 +103,7 @@ public class ReplicaStoreCache
         }
 
         private synchronized ReplicaRecord get()
-                throws InterruptedException, CacheException
+                throws CacheException
         {
             if (_entries.get(_id) != this) {
                 return null;
@@ -415,7 +415,7 @@ public class ReplicaStoreCache
     }
 
     public ReplicaRecord get(PnfsId id)
-            throws CacheException, InterruptedException
+            throws CacheException
     {
         try {
             return _entries.computeIfAbsent(id, Monitor::new).get();

@@ -180,7 +180,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
     }
 
     @Override
-    public ReplicaRecord get(PnfsId id) throws CacheException, InterruptedException {
+    public ReplicaRecord get(PnfsId id) throws CacheException {
         if (!fileStore.contains(id)) {
             return null;
         }

@@ -89,14 +89,12 @@ public interface Repository
      * @param id the PNFS ID of the entry to open
      * @param flags options that influence how the entry is opened
      * @return IO descriptor
-     * @throws InterruptedException if thread was interrupted
      * @throws FileNotInCacheException if file not found
      * @throws LockedCacheException if in a state in which it cannot be opened
      * @throws CacheException in case of other errors
      */
     ReplicaDescriptor openEntry(PnfsId id, Set<? extends OpenOption> flags)
-        throws CacheException,
-               InterruptedException;
+        throws CacheException;
 
     /**
      * Returns information about an entry. Equivalent to calling

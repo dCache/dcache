@@ -131,7 +131,7 @@ public class ConsistentReplicaStore
      */
     @Override
     public ReplicaRecord get(PnfsId id)
-        throws IllegalArgumentException, CacheException, InterruptedException
+        throws IllegalArgumentException, CacheException
     {
         ReplicaRecord entry = _replicaStore.get(id);
         if (entry != null && isBroken(entry)) {
@@ -166,6 +166,9 @@ public class ConsistentReplicaStore
                 return null;
             } catch (TimeoutCacheException e) {
                 throw e;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CacheException("Pool is shutting down", e);
             } catch (CacheException | NoSuchAlgorithmException e) {
                 entry.update(r -> r.setState(ReplicaState.BROKEN));
                 _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
