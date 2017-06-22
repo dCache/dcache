@@ -456,17 +456,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         // Ensure that we do not kill re-started transfer
         if(transfer.getId() == transferFinishedMessage.getId()) {
-            if (transfer.isWrite()) {
-                /*
-                 * Inject poison to ensure that any other attempt to re-use
-                 * the transfer to fail. The cleanup will happen with open-state
-                 * disposal on close.
-                 */
-                transfer.enforceErrorIfRunning(POISON);
-            } else {
-                // it's ok to remove read mover as it's safe to re-create it again.
-                _ioMessages.remove(openStateId);
-            }
+            _ioMessages.remove(openStateId);
         }
     }
 
@@ -622,7 +612,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                         }
                     });
 
-                     _ioMessages.put(openStateId.stateid(), transfer);
+                    _ioMessages.put(openStateId.stateid(), transfer);
                 }
 
                 layoutStateId = transfer.getStateid();

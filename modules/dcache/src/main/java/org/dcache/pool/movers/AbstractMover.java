@@ -281,7 +281,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         RepositoryChannel channel;
         try {
             channel = _handle.createChannel();
-            if (getIoMode().contains(StandardOpenOption.WRITE)) {
+            // FIXME: for permannent files only
+            if (false && getIoMode().contains(StandardOpenOption.WRITE)) {
                 try {
                     synchronized (_checksumTypes) {
                         channel = _checksumChannel = new ChecksumChannel(channel, _checksumTypes);

@@ -508,11 +508,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     }
 
     private boolean shouldRejectUpdates(FsInode fsInode) throws ChimeraFsException {
-        return fsInode.type() == FsInodeType.INODE
-                && fsInode.getLevel() == 0
-                && !fsInode.isDirectory()
-                && (!_fs.getInodeLocations(fsInode, StorageGenericLocation.TAPE).isEmpty()
-                    || !_fs.getInodeLocations(fsInode, StorageGenericLocation.DISK).isEmpty());
+        return false;
     }
 
     @Override

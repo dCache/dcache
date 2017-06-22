@@ -852,13 +852,10 @@ public class Transfer implements Comparable<Transfer>
 
                                            /* I/O mode must match completeness of the file.
                                             */
-                                           if (!attributes.getStorageInfo().isCreatedOnly()) {
-                                               setWrite(false);
-                                           } else if (allowWrite) {
-                                               setWrite(true);
-                                           } else {
+                                           if (attributes.getStorageInfo().isCreatedOnly() && !allowWrite) {
                                                throw new FileIsNewCacheException();
                                            }
+                                           setWrite(allowWrite);
 
                                            setFileAttributes(attributes);
                                            return immediateFuture(null);
