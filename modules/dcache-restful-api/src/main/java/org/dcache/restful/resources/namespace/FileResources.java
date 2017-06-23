@@ -17,6 +17,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -34,6 +36,9 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
+import org.dcache.restful.qos.QosManagement;
+import org.dcache.restful.util.HandlerBuilders;
+import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
@@ -119,7 +124,7 @@ public class FileResources {
                                                 @QueryParam("locality") boolean isLocality) throws CacheException {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
-        PnfsHandler handler = ServletContextHandlerAttributes.getPnfsHandler(ctx);
+        PnfsHandler handler = HandlerBuilders.pnfsHandler(ctx, request);
 
         FsPath path;
         if (value == null || value.isEmpty()) {
@@ -144,7 +149,7 @@ public class FileResources {
 
                 DirectoryStream stream = listDirectoryHandler.list(
                         ServletContextHandlerAttributes.getSubject(),
-                        ServletContextHandlerAttributes.getRestriction(),
+                        HttpServletRequests.getRestriction(request),
                         path,
                         null,
                         Range.<Integer>all(),
