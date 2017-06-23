@@ -69,13 +69,27 @@ import java.util.ArrayList;
  * time value bins; the window is maintained by rotating a circular
  * buffer.</p>
  */
-public class TimeseriesHistogram extends HistogramModel {
+public class TimeseriesHistogram extends HistogramModel
+                implements UpdatableHistogramModel {
+    enum UpdateOperation {
+        SUM, AVERAGE, REPLACE
+    }
 
     public TimeseriesHistogram() {
     }
 
     public TimeseriesHistogram(TimeseriesHistogram copy) {
         super(copy);
+    }
+
+    @Override
+    public void add(Double value, Long timestamp) {
+        update(value, UpdateOperation.SUM, timestamp);
+    }
+
+    @Override
+    public void average(Double value, Long timestamp) {
+        update(value, UpdateOperation.AVERAGE, timestamp);
     }
 
     @Override
@@ -93,8 +107,7 @@ public class TimeseriesHistogram extends HistogramModel {
         Preconditions.checkNotNull(highestBin,
                                    "highest bin must be defined.");
 
-        setBinWidth();
-        setBinSize();
+        computeBinSizeFromWidthAndUnit();
 
         setLowestFromHighest();
 
@@ -131,43 +144,9 @@ public class TimeseriesHistogram extends HistogramModel {
         }
     }
 
-    /**
-     * <p>Find from the timestamp where to insert the data (which bin).
-     * If the bin index exceeds the last bin, rotate buffer.
-     * If the bin index is less than the first bin, discard the update.
-     * The operation type determines how to insert the value.</p>
-     */
     @Override
-    public void update(Double value,
-                       UpdateOperation operation,
-                       Long timestamp) {
-        int binIndex = findTimebinIndex(timestamp);
-
-        if (binIndex < 0) {
-            return;
-        }
-
-        if (binIndex >= binCount) {
-            binIndex = rotateBuffer(binIndex);
-        }
-
-        int count = metadata.updateCountForBin(binIndex, timestamp);
-
-        switch (operation) {
-            case REPLACE:
-                data.set(binIndex, value);
-                break;
-            case SUM:
-                Double d = data.get(binIndex);
-                data.set(binIndex, d == null ? value : d + value);
-                break;
-            case AVERAGE:
-                d = data.get(binIndex);
-                data.set(binIndex, d == null ? value : (d + value) / count);
-                break;
-        }
-
-        metadata.updateStatistics(value, System.currentTimeMillis());
+    public void replace(Double value, Long timestamp) {
+        update(value, UpdateOperation.REPLACE, timestamp);
     }
 
     /**
@@ -216,5 +195,43 @@ public class TimeseriesHistogram extends HistogramModel {
         highestBin += (binSize * units);
 
         return binCount - 1;
+    }
+
+    /**
+     * <p>Find from the timestamp where to insert the data (which bin).
+     * If the bin index exceeds the last bin, rotate buffer.
+     * If the bin index is less than the first bin, discard the update.
+     * The operation type determines how to insert the value.</p>
+     */
+    private void update(Double value,
+                        UpdateOperation operation,
+                        Long timestamp) {
+        int binIndex = findTimebinIndex(timestamp);
+
+        if (binIndex < 0) {
+            return;
+        }
+
+        if (binIndex >= binCount) {
+            binIndex = rotateBuffer(binIndex);
+        }
+
+        int count = metadata.updateCountForBin(binIndex, timestamp);
+
+        switch (operation) {
+            case REPLACE:
+                data.set(binIndex, value);
+                break;
+            case SUM:
+                Double d = data.get(binIndex);
+                data.set(binIndex, d == null ? value : d + value);
+                break;
+            case AVERAGE:
+                d = data.get(binIndex);
+                data.set(binIndex, d == null ? value : (d + value) / count);
+                break;
+        }
+
+        metadata.updateStatistics(value, System.currentTimeMillis());
     }
 }

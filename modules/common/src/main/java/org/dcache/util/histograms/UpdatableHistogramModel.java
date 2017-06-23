@@ -42,7 +42,7 @@ Liabilities of the Government:
 
 This software is provided by URA, independent from its Prime Contract
 with the U.S. Department of Energy. URA is acting independently from
-the Government and in its own protected capacity and is not acting on
+the Government and in its own private capacity and is not acting on
 behalf of the U.S. Government, nor as its contractor nor its agent.
 Correspondingly, it is understood and agreed that the U.S. Government
 has no connection to this software and in no manner whatsoever shall
@@ -59,69 +59,37 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
-import com.google.gson.GsonBuilder;
-import org.junit.After;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+/**
+ * <p>Defines a histogram model which can be modified.</p>
+ */
+public interface UpdatableHistogramModel {
+    /**
+     * <p>Add new value to  the corresponding bin's value.
+     *    This should use the timestamp if the bins are time-based.</p>
+     *
+     * @param value     to be used in update.
+     *                  average the value into the bin's value,
+     *                  or replace the current value with this one.
+     * @param timestamp associated with this data value.
+     */
+    void add(Double value, Long timestamp);
 
-import java.util.Random;
+    /**
+     * <p>Average the value into the bin's value.
+     *    This should use the timestamp if the bins are time-based.</p>
+     *
+     * @param value     to be used in update.
+     *                  or replace the current value with this one.
+     * @param timestamp associated with this data value.
+     */
+    void average(Double value, Long timestamp);
 
-import static junit.framework.TestCase.assertNull;
-
-abstract class HistogramModelTest {
-    protected static final Logger LOGGER = LoggerFactory.getLogger(
-                    HistogramModelTest.class);
-    protected static final Random RANDOM = new Random(
-                    System.currentTimeMillis());
-
-    protected HistogramModel model;
-    protected Exception      error;
-    protected String         serialized1;
-    protected String         serialized2;
-
-    @After
-    public void printDiagnostics() {
-        if (model != null) {
-            LOGGER.info(new GsonBuilder().setPrettyPrinting()
-                                         .disableHtmlEscaping()
-                                         .create().toJson(model));
-            LOGGER.info(new GsonBuilder().setPrettyPrinting()
-                                         .disableHtmlEscaping()
-                                         .create().toJson(model.toHistogram()));
-        }
-    }
-
-    protected void assertThatBuildSucceeded() {
-        String msg = error == null ? null : error.getMessage();
-        assertNull(msg, error);
-    }
-
-    protected void givenBinCountOf(int count) {
-        model.setBinCount(count);
-    }
-
-    protected void givenBinLabelOf(String binType) {
-        model.setBinUnitLabel(binType);
-    }
-
-    protected void givenBinUnitOf(double unit) {
-        model.setBinUnit(unit);
-    }
-
-    protected void givenDataLabelOf(String label) {
-        model.setDataUnitLabel(label);
-    }
-
-    protected void givenHistogramTypeOf(String type) {
-        model.setIdentifier(type);
-    }
-
-    protected void whenConfigureIsCalled() {
-        try {
-            model.setIdentifier("test-histogram");
-            model.configure();
-        } catch (Exception e) {
-            error = e;
-        }
-    }
+    /**
+     * <p>Replace the current bin's value with the new one.
+     *    This should use the timestamp if the bins are time-based.</p>
+     *
+     * @param value     to be used in update.
+     * @param timestamp associated with this data value.
+     */
+    void replace(Double value, Long timestamp);
 }

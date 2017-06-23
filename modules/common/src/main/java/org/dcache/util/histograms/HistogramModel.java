@@ -78,10 +78,6 @@ public abstract class HistogramModel implements Serializable {
                     "Template was not properly configured: "
                                     + "bin count %s does not match data size %s.";
 
-    public enum UpdateOperation {
-        SUM, AVERAGE, REPLACE
-    }
-
     protected Integer binCount;
     protected Integer binWidth;
     protected Double  binUnit;
@@ -256,23 +252,15 @@ public abstract class HistogramModel implements Serializable {
      */
     public abstract void configure();
 
-    /**
-     * <p>This method should honor the operation type and should use the
-     * timestamp if the bins are time-based.</p>
-     *
-     * <p>Usually the updating will also maintain update metadata in
-     * the provided <code>updates</code> field.  This becomes necessary
-     * when the update method requires averaging of updated values.</p>
-     *
-     * @param value     to be used in update.
-     * @param operation either add the value to the corresponding bin's value,
-     *                  average the value into the bin's value,
-     *                  or replace the current value with this one.
-     * @param timestamp associated with this data value.
-     */
-    public abstract void update(Double value,
-                                UpdateOperation operation,
-                                Long timestamp);
+    protected void computeBinSizeFromWidthAndUnit() {
+        if (binWidth == null) {
+            binWidth = 1;
+        }
+
+        binSize = binWidth == 0 ?
+                        binUnit :
+                        binUnit * binWidth;
+    }
 
     protected double getHighestFromLowest() {
         return lowestBin + (binCount - 1) * binSize;
@@ -280,18 +268,6 @@ public abstract class HistogramModel implements Serializable {
 
     protected double getLowestFromHighest() {
         return highestBin - (binCount - 1) * binSize;
-    }
-
-    protected void setBinSize() {
-        binSize = binWidth == null || binWidth == 0 ?
-                        binUnit :
-                        binUnit * binWidth;
-    }
-
-    protected void setBinWidth() {
-        if (binWidth == null) {
-            binWidth = 1;
-        }
     }
 
     protected void setHighestFromLowest() {

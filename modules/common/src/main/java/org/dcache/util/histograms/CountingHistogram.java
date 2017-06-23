@@ -95,8 +95,7 @@ public class CountingHistogram extends HistogramModel {
         Preconditions.checkArgument(binUnit > 0,
                                     "bin unit must be > 0.");
 
-        setBinWidth();
-        setBinSize();
+        computeBinSizeFromWidthAndUnit();
 
         metadata = new HistogramMetadata();
 
@@ -115,7 +114,11 @@ public class CountingHistogram extends HistogramModel {
         Double max = metadata.getMaxValue().orElse(Double.MAX_VALUE);
         double maxValueIndex = FastMath.floor(max / binSize);
         binWidth = (int) FastMath.ceil(maxValueIndex / (binCount - 1));
-        setBinSize();
+
+        /**
+         * Re-adjust size on the basis of the adjusted width.
+         */
+        computeBinSizeFromWidthAndUnit();
 
         /*
          *  Construct the histogram from the raw data
@@ -139,19 +142,14 @@ public class CountingHistogram extends HistogramModel {
                         binCount :
                         (int) FastMath.ceil((highestBin - lowestBin) / binSize);
 
-        Preconditions.checkArgument(computedCount <= binCount,
-                                    "bin count " + binCount
-                                                    + " is less than "
-                                                    + computedCount
-                                                    + ", computed from bin "
-                                                    + "width, highest and "
-                                                    + "lowest bin values.");
-
-    }
-
-    @Override
-    public void update(Double value, UpdateOperation operation,
-                       Long timestamp) {
-        throw new UnsupportedOperationException(UNSUPPORTED_UPDATE);
+        if (computedCount > binCount) {
+            throw new RuntimeException("bin count " + binCount
+                                                       + " is less than "
+                                                       + computedCount
+                                                       + ", computed from bin "
+                                                       + "width, highest and "
+                                                       + "lowest bin values; "
+                                                       + "this is a bug.");
+        }
     }
 }
