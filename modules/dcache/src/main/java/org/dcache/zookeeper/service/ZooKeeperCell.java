@@ -24,7 +24,6 @@ import org.apache.zookeeper.server.ServerCnxnFactory;
 import org.apache.zookeeper.server.SessionTrackerImpl;
 import org.apache.zookeeper.server.ZKDatabase;
 import org.apache.zookeeper.server.ZooKeeperServer;
-import org.apache.zookeeper.server.ZooTrace;
 import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +46,27 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class ZooKeeperCell extends AbstractCell
 {
     private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperCell.class);
+
+    private class PatchedZooKeeperServer extends ZooKeeperServer
+    {
+        // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2515
+        // and https://issues.apache.org/jira/browse/ZOOKEEPER-2812
+        @Override
+        public void createSessionTracker() {
+            sessionTracker = new SessionTrackerImpl(this,
+                    getZKDatabase().getSessionWithTimeOuts(), tickTime, 1)
+            {
+                @Override
+                public void shutdown() {
+                    synchronized (this) {
+                        running = false;
+                        notifyAll();
+                    }
+                    super.shutdown();
+                }
+            };
+        }
+    }
 
     @Option(name = "data-log-dir", required = true)
     protected File dataLogDir;
@@ -92,7 +112,7 @@ public class ZooKeeperCell extends AbstractCell
 
     private ServerCnxnFactory cnxnFactory;
     private FileTxnSnapLog txnLog;
-    private ZooKeeperServer zkServer;
+    private PatchedZooKeeperServer zkServer;
 
     public ZooKeeperCell(String cellName, String arguments)
     {
@@ -108,24 +128,7 @@ public class ZooKeeperCell extends AbstractCell
                 Strings.isNullOrEmpty(address) ? new InetSocketAddress(port) : new InetSocketAddress(address, port);
 
         checkArgument(autoPurgeInterval > 0, "zookeeper.auto-purge.purge-interval must be non-negative.");
-        zkServer = new ZooKeeperServer() {
-            // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2515
-            @Override
-            protected void createSessionTracker() {
-                sessionTracker = new SessionTrackerImpl(this,
-                        getZKDatabase().getSessionWithTimeOuts(), tickTime, 1)
-                {
-                    @Override
-                    public void shutdown() {
-                        synchronized (this) {
-                            running = false;
-                            notifyAll();
-                        }
-                        super.shutdown();
-                    }
-                };
-            }
-        };
+        zkServer = new PatchedZooKeeperServer();
 
         txnLog = new FileTxnSnapLog(dataLogDir, dataDir);
         zkServer.setTxnLogFactory(txnLog);
@@ -134,6 +137,7 @@ public class ZooKeeperCell extends AbstractCell
         zkServer.setMaxSessionTimeout(maxSessionTimeout == -1 ? -1 : (int) maxSessionTimeoutUnit.toMillis(maxSessionTimeout));
 
         zkServer.setZKDatabase(new ZKDatabase(txnLog)); // Work-around https://issues.apache.org/jira/browse/ZOOKEEPER-2810
+        zkServer.createSessionTracker(); // Work around https://issues.apache.org/jira/browse/ZOOKEEPER-2812
 
         ServerCnxnFactory cnxnFactory;
         cnxnFactory = new NIOServerCnxnFactory() {
