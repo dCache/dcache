@@ -34,6 +34,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.restful.providers.UserAttributes;
+import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 
 /**
@@ -63,7 +64,7 @@ public class UserResource
                     .collect(Collectors.toList());
             user.setGids(gids);
 
-            for (LoginAttribute attribute : ServletContextHandlerAttributes.getLoginAttributes(request)) {
+            for (LoginAttribute attribute : HttpServletRequests.getLoginAttributes(request)) {
                 if (attribute instanceof HomeDirectory) {
                     user.setHomeDirectory(((HomeDirectory)attribute).getHome());
                 }
