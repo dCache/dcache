@@ -65,10 +65,16 @@ import org.apache.commons.math3.util.FastMath;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * <p>Composed into {@link HistogramModel} to provide for statistics
  *    and for running average updating.</p>
+ *
+ * <p>This class now relies on the ability of the JSON parser to
+ *    handle {@link Optional} values correctly.  This means that
+ *    all JSON parsing of the {@link HistogramModel} object hierarchy
+ *    must also handle them.</p>
  */
 public final class HistogramMetadata implements Serializable {
     /**
@@ -81,8 +87,8 @@ public final class HistogramMetadata implements Serializable {
      */
     private long lastUpdateInMillis;
     private long   count    = 0L;
-    private double maxValue = Double.MIN_VALUE;
-    private double minValue = Double.MAX_VALUE;
+    private Double maxValue;
+    private Double minValue;
     private double sum      = 0.0D;
     private double sumOfSquares = 0.0D;
 
@@ -139,12 +145,12 @@ public final class HistogramMetadata implements Serializable {
         return lastUpdateInMillis;
     }
 
-    public double getMaxValue() {
-        return maxValue;
+    public Optional<Double> getMaxValue() {
+        return Optional.ofNullable(maxValue);
     }
 
-    public double getMinValue() {
-        return minValue;
+    public Optional<Double> getMinValue() {
+        return Optional.ofNullable(minValue);
     }
 
     public int getNumBins() {
@@ -174,8 +180,10 @@ public final class HistogramMetadata implements Serializable {
         count += metadata.count;
         sum += metadata.sum;
         sumOfSquares += metadata.sumOfSquares;
-        maxValue = FastMath.max(maxValue, metadata.maxValue);
-        minValue = FastMath.max(minValue, metadata.minValue);
+        maxValue = maxValue == null ? metadata.maxValue :
+                        FastMath.max(maxValue, metadata.maxValue);
+        minValue = minValue == null ? metadata.minValue :
+                        FastMath.max(minValue, metadata.minValue);
         return this;
     }
 
@@ -208,12 +216,12 @@ public final class HistogramMetadata implements Serializable {
         this.lastUpdateInMillis = lastUpdateInMillis;
     }
 
-    public void setMaxValue(double maxValue) {
-        this.maxValue = maxValue;
+    public void setMaxValue(Optional<Double> maxValue) {
+        this.maxValue = maxValue.orElse(null);
     }
 
-    public void setMinValue(double minValue) {
-        this.minValue = minValue;
+    public void setMinValue(Optional<Double>  minValue) {
+        this.minValue = minValue.orElse(null);
     }
 
     public void setNumBins(int numBins) {
@@ -274,8 +282,10 @@ public final class HistogramMetadata implements Serializable {
         ++count;
         sum += lastValue;
         sumOfSquares += FastMath.pow(lastValue, 2L);
-        maxValue = FastMath.max(lastValue, maxValue);
-        minValue = FastMath.min(lastValue, minValue);
+        maxValue = maxValue == null ? lastValue :
+                        FastMath.max(lastValue, maxValue);
+        minValue = minValue == null ? lastValue :
+                        FastMath.min(lastValue, minValue);
         lastUpdateInMillis = now;
         return this;
     }

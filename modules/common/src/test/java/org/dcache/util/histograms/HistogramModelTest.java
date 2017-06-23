@@ -59,15 +59,13 @@ documents or software obtained from this server.
  */
 package org.dcache.util.histograms;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.GsonBuilder;
 import org.apache.commons.math3.util.FastMath;
 import org.junit.After;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -92,16 +90,15 @@ public class HistogramModelTest {
 
     private static final Random RANDOM = new Random(System.currentTimeMillis());
 
-    private HistogramModel   model;
-    private HistogramModel   originalModel;
-    private Exception        error;
-    private String           serialized1;
-    private String           serialized2;
+    private HistogramModel model;
+    private HistogramModel originalModel;
+    private Exception      error;
+    private String         serialized1;
+    private String         serialized2;
 
     @Test
     public void binUnitShouldBe1ForMaxValue50Days()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(50);
         givenBinCountOf(51);
@@ -116,8 +113,7 @@ public class HistogramModelTest {
 
     @Test
     public void binUnitShouldBe2ForMaxValue100Days()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(100);
         givenBinCountOf(51);
@@ -132,8 +128,7 @@ public class HistogramModelTest {
 
     @Test
     public void binUnitShouldBe3ForMaxValue101Days()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(101);
         givenBinCountOf(51);
@@ -148,8 +143,7 @@ public class HistogramModelTest {
 
     @Test
     public void buildShouldFailWhenNoCountGivenToCounting()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(150);
         givenBinUnitOf((double) TimeUnit.DAYS.toMillis(1));
@@ -162,8 +156,7 @@ public class HistogramModelTest {
 
     @Test
     public void buildShouldFailWhenNoDataGivenToCountingHistogram()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenCountingHistogram();
         whenConfigureIsCalled();
         assertThatBuildFailed();
@@ -171,8 +164,7 @@ public class HistogramModelTest {
 
     @Test
     public void buildShouldFailWhenNoUnitGivenToCountingHistogram()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(150);
         givenBinCountOf(51);
@@ -184,9 +176,18 @@ public class HistogramModelTest {
     }
 
     @Test
+    public void buildShouldSucceedForTimeframeHistogramWithFileSizeValues()
+                    throws Exception {
+        givenTimeframeHistogram();
+        givenFileSizeValuesFor(24);
+        givenValidTimeframeSpecification();
+        whenConfigureIsCalled();
+        assertThatBuildSucceeded();
+    }
+
+    @Test
     public void buildShouldSucceedForTimeframeHistogramWithoutData()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
         givenBinCountOf(48);
@@ -200,41 +201,28 @@ public class HistogramModelTest {
 
     @Test
     public void buildShouldSucceedForTimeframeHistogramWithoutFileSizeValues()
-                    throws JsonProcessingException, NoSuchMethodException,
-                    InstantiationException, IllegalAccessException,
-                    InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
-        givenValidTimeframeSpecification();
-        whenConfigureIsCalled();
-        assertThatBuildSucceeded();
-    }
-
-    @Test
-    public void buildShouldSucceedForTimeframeHistogramWithFileSizeValues()
-                    throws JsonProcessingException, NoSuchMethodException,
-                    InstantiationException, IllegalAccessException,
-                    InvocationTargetException {
-        givenTimeframeHistogram();
-        givenFileSizeValuesFor(24);
         givenValidTimeframeSpecification();
         whenConfigureIsCalled();
         assertThatBuildSucceeded();
     }
 
     @After
-    public void printDiagnostics() throws JsonProcessingException {
+    public void printDiagnostics() {
         if (model != null) {
-            LOGGER.info(new ObjectMapper().writerWithDefaultPrettyPrinter()
-                                          .writeValueAsString(model));
-            LOGGER.info(new ObjectMapper().writerWithDefaultPrettyPrinter()
-                                          .writeValueAsString(model.toHistogram()));
+            LOGGER.info(new GsonBuilder().setPrettyPrinting()
+                                         .disableHtmlEscaping()
+                                         .create().toJson(model));
+            LOGGER.info(new GsonBuilder().setPrettyPrinting()
+                                         .disableHtmlEscaping()
+                                         .create().toJson(model.toHistogram()));
         }
     }
 
     @Test
     public void rebuiltTimeframeHistogramShouldBeTheSameAsOriginal()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -252,8 +240,7 @@ public class HistogramModelTest {
 
     @Test
     public void serializedTimeframeHistogramShouldDeserializeCorrectly()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -271,8 +258,7 @@ public class HistogramModelTest {
 
     @Test
     public void updateOnTimeframeHistogramShouldAverageLastValue()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -287,8 +273,7 @@ public class HistogramModelTest {
 
     @Test
     public void updateOnTimeframeHistogramShouldReplaceLastValue()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -303,8 +288,7 @@ public class HistogramModelTest {
 
     @Test
     public void updateOnTimeframeHistogramShouldRotateBuffer()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -319,8 +303,7 @@ public class HistogramModelTest {
 
     @Test
     public void updateOnTimeframeHistogramShouldRotateBufferToMaximum()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -335,8 +318,7 @@ public class HistogramModelTest {
 
     @Test
     public void updateOnTimeframeHistogramShouldSumLastValue()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenTimeframeHistogram();
         givenQueueCountValuesFor(48);
         givenBinUnitOf((double) TimeUnit.HOURS.toMillis(1));
@@ -351,8 +333,7 @@ public class HistogramModelTest {
 
     @Test
     public void updateShouldFailOnCountingHistogram()
-                    throws NoSuchMethodException, InstantiationException,
-                    IllegalAccessException, InvocationTargetException {
+                    throws Exception {
         givenCountingHistogram();
         givenFilelifetimeValuesFor(150);
         givenBinCountOf(51);
@@ -382,19 +363,17 @@ public class HistogramModelTest {
     }
 
     private void assertThatOriginalHistogramEqualsStored() {
-        try {
-            assertTrue(model.getClass().equals(
-                            originalModel.getClass()));
-            String original = new ObjectMapper()
-                            .writeValueAsString(originalModel);
-            String restored = new ObjectMapper()
-                            .writeValueAsString(model);
-            assertEquals("object strings are not the same",
-                         original,
-                         restored);
-        } catch (JsonProcessingException e) {
-            assertNull(e.getMessage(), e);
-        }
+        assertTrue(model.getClass().equals(
+                        originalModel.getClass()));
+        String original = new GsonBuilder().setPrettyPrinting()
+                                           .disableHtmlEscaping()
+                                           .create().toJson(originalModel);
+        String restored = new GsonBuilder().setPrettyPrinting()
+                                           .disableHtmlEscaping()
+                                           .create().toJson(model);
+        assertEquals("object strings are not the same",
+                     original,
+                     restored);
     }
 
     private void assertThatSerializationsAreEqual() {
@@ -478,7 +457,7 @@ public class HistogramModelTest {
                    rotated[rotated.length - 1][1] == 4.12);
 
         HistogramMetadata metadata = model.metadata;
-        int [] counts = metadata.getBinCounts();
+        int[] counts = metadata.getBinCounts();
         assertTrue("last rotated count is incorrect",
                    counts[metadata.rotatedIndex(rotated.length - 1)] == 2);
     }
@@ -560,12 +539,6 @@ public class HistogramModelTest {
         model.setBinUnit(unit);
     }
 
-    private void givenTimeframeHistogram()
-                    throws InvocationTargetException, NoSuchMethodException,
-                    InstantiationException, IllegalAccessException {
-        withHistogramModel(TimeseriesHistogram.class);
-    }
-
     private void givenCountingHistogram()
                     throws InvocationTargetException, NoSuchMethodException,
                     InstantiationException, IllegalAccessException {
@@ -596,12 +569,18 @@ public class HistogramModelTest {
         model.setData(getQueueCountsFor(units));
     }
 
+    private void givenTimeframeHistogram()
+                    throws InvocationTargetException, NoSuchMethodException,
+                    InstantiationException, IllegalAccessException {
+        withHistogramModel(TimeseriesHistogram.class);
+    }
+
     private void givenValidTimeframeSpecification() {
         Calendar high = TimeFrame.computeHighTimeFromNow(BinType.HOUR);
         TimeFrame timeFrame = new TimeFrame(high.getTimeInMillis());
         timeFrame.setTimebin(BinType.HOUR);
         timeFrame.setTimeframe(Type.DAY);
-        ((TimeseriesHistogram)model).withTimeFrame(timeFrame);
+        ((TimeseriesHistogram) model).withTimeFrame(timeFrame);
         model.setDataUnitLabel("BYTES");
     }
 
@@ -620,30 +599,24 @@ public class HistogramModelTest {
     }
 
     private void whenHistogramIsDeserialized() {
-        try {
-            model = new ObjectMapper().readValue(serialized1,
-                                                 model.getClass());
-        } catch (IOException e) {
-            assertNull(e.toString(), e);
-        }
+        model = new GsonBuilder().setPrettyPrinting()
+                                 .disableHtmlEscaping()
+                                 .create()
+                                 .fromJson(serialized1, model.getClass());
     }
 
     private void whenHistogramIsSerialized() {
-        try {
-            serialized1 = new ObjectMapper().writerWithDefaultPrettyPrinter()
-                                            .writeValueAsString(model);
-        } catch (JsonProcessingException e) {
-            assertNull(e.toString(), e);
-        }
+        serialized1 = new GsonBuilder().setPrettyPrinting()
+                                       .disableHtmlEscaping()
+                                       .create()
+                                       .toJson(model);
     }
 
     private void whenHistogramIsSerializedAgain() {
-        try {
-            serialized2 = new ObjectMapper().writerWithDefaultPrettyPrinter()
-                                            .writeValueAsString(model);
-        } catch (JsonProcessingException e) {
-            assertNull(e.toString(), e);
-        }
+        serialized2 = new GsonBuilder().setPrettyPrinting()
+                                       .disableHtmlEscaping()
+                                       .create()
+                                       .toJson(model);
     }
 
     private void whenHistogramIsStored()
@@ -662,4 +635,5 @@ public class HistogramModelTest {
             model = clzz.getConstructor(clzz).newInstance(clzz.cast(model));
         }
     }
+
 }

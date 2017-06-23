@@ -112,8 +112,8 @@ public class CountingHistogram extends HistogramModel {
          *  Lowest value is always 0.  Bin width can only have integer
          *  values that are multiples of the bin unit.
          */
-        double maxValueIndex = FastMath.round(
-                        (metadata.getMaxValue()) / binSize);
+        Double max = metadata.getMaxValue().orElse(Double.MAX_VALUE);
+        double maxValueIndex = FastMath.floor(max / binSize);
         binWidth = (int) FastMath.ceil(maxValueIndex / (binCount - 1));
         setBinSize();
 
