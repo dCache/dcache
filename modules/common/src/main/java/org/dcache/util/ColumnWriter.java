@@ -31,6 +31,7 @@ public class ColumnWriter
     private final List<Column> columns = new ArrayList<>();
     private final List<Row> rows = new ArrayList<>();
     private boolean abbrev;
+    private boolean headersAffectRowWidth;
 
     public enum DateStyle {
          /** ISO 8601. */
@@ -60,6 +61,12 @@ public class ColumnWriter
         return this;
     }
 
+    public ColumnWriter centre(String name)
+    {
+        addColumn(new CentreColumn(name));
+        return this;
+    }
+
     public ColumnWriter right(String name)
     {
         addColumn(new RightColumn(name));
@@ -82,6 +89,14 @@ public class ColumnWriter
     {
         int last = spaces.size() - 1;
         spaces.set(last, spaces.get(last) + 1);
+        return this;
+    }
+
+    // This is disabled by default since existing code depends on headers
+    // not affecting column with to implement a poor man's grouped heading.
+    public ColumnWriter headersInColumns()
+    {
+        headersAffectRowWidth = true;
         return this;
     }
 
@@ -129,6 +144,12 @@ public class ColumnWriter
     {
         int columnCount = columns.size();
         int[] widths = new int[columnCount];
+        if (headersAffectRowWidth) {
+            for (int i = 0; i < columnCount; i++) {
+                String header = headers.get(i);
+                widths[i] = header == null ? 0 : header.length();
+            }
+        }
         for (Row row : rows) {
             for (int i = 0; i < columnCount; i++) {
                 widths[i] = Math.max(widths[i], row.width(columns.get(i)));
@@ -146,11 +167,8 @@ public class ColumnWriter
             String header = headers.get(i);
             if (header != null) {
                 int headerStart;
-                if (columns.get(i).isLeftJustified()) {
-                    headerStart = columnEnd + spaces.get(i);
-                } else {
-                    headerStart = columnEnd + spaces.get(i) + widths.get(i) - header.length();
-                }
+                headerStart = columnEnd + spaces.get(i)
+                        + columns.get(i).headerIndentation(header.length(), widths.get(i));
                 if (line.length() >= headerStart) {
                     int newHeaderStart = (line.length() > 0) ? line.length() + 1 : 0;
                     spaces.set(i, spaces.get(i) + newHeaderStart - headerStart);
@@ -187,7 +205,7 @@ public class ColumnWriter
     private interface Column
     {
         String name();
-        boolean isLeftJustified();
+        int headerIndentation(int headerWidth, int columnWidth);
         int width(Object value);
         void render(Object value, int actualWidth, PrintWriter writer);
     }
@@ -230,9 +248,9 @@ public class ColumnWriter
         }
 
         @Override
-        public boolean isLeftJustified()
+        public int headerIndentation(int headerWidth, int columnWidth)
         {
-            return true;
+            return 0;
         }
 
         @Override
@@ -240,6 +258,27 @@ public class ColumnWriter
         {
             out.append(Strings.padEnd(Objects.toString(value, ""), actualWidth, ' '));
         }
+    }
+
+    private static class CentreColumn extends RegularColumn
+    {
+        private CentreColumn(String name)
+        {
+            super(name);
+        }
+
+        @Override
+        public int headerIndentation(int headerWidth, int columnWidth)
+        {
+            return Math.max(columnWidth - headerWidth, 0)/2;
+        }
+
+        @Override
+        public void render(Object value, int actualWidth, PrintWriter out)
+        {
+            String text = Objects.toString(value, "");
+            out.append(Strings.padEnd(Strings.padStart(text, (actualWidth + text.length())/2, ' '), actualWidth, ' '));
+         }
     }
 
     private static class RightColumn extends RegularColumn
@@ -250,9 +289,9 @@ public class ColumnWriter
         }
 
         @Override
-        public boolean isLeftJustified()
+        public int headerIndentation(int headerWidth, int columnWidth)
         {
-            return false;
+            return Math.max(columnWidth - headerWidth, 0);
         }
 
         @Override
@@ -275,9 +314,9 @@ public class ColumnWriter
         }
 
         @Override
-        public boolean isLeftJustified()
+        public int headerIndentation(int headerWidth, int columnWidth)
         {
-            return false;
+            return Math.max(columnWidth - headerWidth, 0);
         }
 
         @Override
@@ -345,9 +384,9 @@ public class ColumnWriter
         }
 
         @Override
-        public boolean isLeftJustified()
+        public int headerIndentation(int headerWidth, int columnWidth)
         {
-            return true;
+            return 0;
         }
 
         @Override
@@ -398,9 +437,9 @@ public class ColumnWriter
         }
 
         @Override
-        public boolean isLeftJustified()
+        public int headerIndentation(int headerWidth, int columnWidth)
         {
-            return false;
+            return Math.max(columnWidth - headerWidth, 0);
         }
 
         @Override

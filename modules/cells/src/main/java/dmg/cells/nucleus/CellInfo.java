@@ -15,6 +15,7 @@ public class CellInfo implements Serializable {
   private String _cellName     = "Unknown" ;
   private String _cellType     = "Unknown" ;
   private String _cellClass    = "Unknown" ;
+  private String _cellSimpleClass = "Unknown";
   private String _domainName   = "Unknown" ;
   private Date   _creationTime;
   private String _shortInfo    = "NA" ;
@@ -39,6 +40,7 @@ public class CellInfo implements Serializable {
      _cellName       = info._cellName ;
      _cellType       = info._cellType ;
      _cellClass      = info._cellClass ;
+     _cellSimpleClass = info._cellSimpleClass;
      _domainName     = info._domainName ;
      _creationTime   = info._creationTime ;
      _shortInfo      = info._shortInfo ;
@@ -53,6 +55,7 @@ public class CellInfo implements Serializable {
   public void setCellName(String name ){     _cellName     = name ; }
   public void setCellType( String type ){    _cellType     = type ; }
   public void setCellClass( String info ){   _cellClass    = info ; }
+  public void setCellSimpleClass( String info ){ _cellSimpleClass = info ; }
   public void setCellVersion( CellVersion version ){ _version = version ; }
   public void setDomainName( String name ){  _domainName   = name ; }
   public void setCreationTime( Date date ){  _creationTime = date ; }
@@ -91,6 +94,7 @@ public class CellInfo implements Serializable {
   public String getCellName(){ return _cellName ; }
   public String getCellType(){ return _cellType ; }
   public String getCellClass(){ return _cellClass ; }
+  public String getCellSimpleClass(){ return _cellSimpleClass ; }
   public String getShortInfo(){ return _shortInfo ; }
   public Date   getCreationTime(){ return _creationTime ; }
   public String getDomainName(){ return _domainName ; }

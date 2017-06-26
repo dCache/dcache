@@ -1,5 +1,6 @@
 package dmg.cells.nucleus ;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -70,6 +71,7 @@ import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.util.Args;
+import org.dcache.util.ColumnWriter;
 
 /**
   *
@@ -669,7 +671,8 @@ public class CellShell extends CommandInterpreter
                    "can be in one of these following states: Initial, " +
                    "Active, Removing, Dead and Unknown state which " +
                    "are denoted by I, A, R, D and U respectively), " +
-                   "the number of message queues, the thread count, " +
+                   "the number of message queues, an estimate of how " +
+                   "long a message stays on the queue, the thread count, " +
                    "the class name of the cell and lastly, a short " +
                    "description of the cell itself." +
                    "\n\n" +
@@ -679,66 +682,116 @@ public class CellShell extends CommandInterpreter
                    "comprehensive and detailed manner.")
    public class PsCommand implements Callable<String>
    {
+       private static final String INDENTATION = "   ";
+
        @Argument(usage = "specify a cell or list of cell names", required = false)
-       String[] cellName;
+       String[] names;
 
        @Option(name="f",
                usage = "display with the full attributes" )
        boolean full;
 
+       private final StringBuilder sb = new StringBuilder();
+
+       private void appendWithIndentation(String indentation, String value)
+       {
+            for (String line : Splitter.on('\n').split(value.trim())) {
+               sb.append(indentation).append(line).append('\n');
+            }
+       }
+
        @Override
        public String call()
        {
-           StringBuilder sb = new StringBuilder() ;
-           if( cellName == null ){
+            if (names == null) {
                List<String> list = _nucleus.getCellNames();
                if (full) {
+                   ColumnWriter table = new ColumnWriter().headersInColumns()
+                           .header("Name").left("name").space()
+                           .header("State").centre("state").space()
+                           .header("Queue").right("queue-length").space()
+                           .header("Q-time/ms").right("queue-time").space()
+                           .header("Threads").right("thread").space()
+                           .header("Class").left("class").space()
+                           .header("Additional info").left("short-info");
                    for (String name: list) {
                        CellInfo info = _nucleus.getCellInfo(name);
-                       if (info == null){
-                           sb.append(name).append(" (defunc)\n" ) ;
+                       if (info == null) {
+                           table.row("name " + name);
                        } else {
-                           sb.append(info).append('\n') ;
+                           // Work around cells where toString shows only
+                           // the cell name.
+                           String shortInfo = info.getShortInfo().equals(name) ? "" : info.getShortInfo();
+                           table.row().value("name", name)
+                                   .value("state", info.getStateName().substring(0,1))
+                                   .value("queue-length", info.getEventQueueSize())
+                                   .value("queue-time", info.getExpectedQueueTime())
+                                   .value("thread", info.getThreadCount())
+                                   .value("class", info.getCellSimpleClass())
+                                   .value("short-info", shortInfo);
                        }
                    }
+                   sb.append(table);
                } else {
                    for (String name: list) {
                        sb.append(name).append('\n');
                    }
                }
-           } else {
-               for (String aCellName : cellName) {
-                   CellInfo info = _nucleus.getCellInfo(aCellName);
+            } else {
+               boolean isMultiple = names.length > 1;
+               String secondIndentation = isMultiple ? (INDENTATION + INDENTATION) : INDENTATION;
+               String firstIndentation = isMultiple ? INDENTATION : "";
+               boolean isFirst = true;
+
+               for (String name : names) {
+                   if (isFirst) {
+                       isFirst = false;
+                   } else {
+                       sb.append('\n');
+                   }
+                   CellInfo info = _nucleus.getCellInfo(name);
                    if (info == null) {
-                       sb.append(aCellName).append(" Not found\n");
+                       sb.append(name).append(" Not found\n");
                        continue;
                    }
-                   if (full) {
-                       sb.append("-- Info --\n");
-                       sb.append("   Cell         : ").append(info.getCellName()).append('@').append(info.getDomainName()).append('\n');
-                       sb.append("   Class        : ").append(info.getCellClass()).append('\n');
-                       sb.append("   State        : ").append(info.getStateName()).append('\n');
-                       sb.append("   Queue length : ").append(info.getEventQueueSize()).append('\n');
-                       sb.append("   Queue time   : ").append(info.getExpectedQueueTime()).append(" ms \n");
-                       CellVersion version = info.getCellVersion();
-                       if (version != null) {
-                           sb.append("   Version      : ").append(version).append('\n');
-                       }
-                       sb.append("-- Threads --\n");
-                       Thread[] threads = _nucleus.getThreads(aCellName);
-                       for (int j = 0;
-                            (j < threads.length) && (threads[j] != null); j++) {
-                           boolean isAlive = threads[j].isAlive();
-                           sb.append(CellInfo.f(threads[j].getName(), 20))
-                                   .append(CellInfo
-                                           .f(String.valueOf(threads[j].getPriority()), 2))
-                                   .append(isAlive ? "  Alive" : "  Dead")
-                                   .append('\n');
-                       }
-                       sb.append("-- Private Infos --\n");
-                   }
-                   sb.append(info.getPrivatInfo()).append('\n');
-               }
+                    if (isMultiple) {
+                        sb.append("=== ").append(name).append(" ===\n");
+                    }
+                    if (full) {
+                        ColumnWriter generalInfo = new ColumnWriter().fixed(secondIndentation)
+                                .left("name").fixed(" : ").left("value");
+                        generalInfo.row().value("name", "Cell").value("value", info.getCellName() + "@" + info.getDomainName());
+                        generalInfo.row().value("name", "Class").value("value", info.getCellClass());
+                        generalInfo.row().value("name", "State").value("value", info.getStateName());
+                        generalInfo.row().value("name", "Queue length").value("value", info.getEventQueueSize());
+                        generalInfo.row().value("name", "Queue time").value("value", info.getExpectedQueueTime() + " ms");
+                        CellVersion version = info.getCellVersion();
+                        if (version != null) {
+                            generalInfo.row().value("name", "Version").value("value", version);
+                        }
+                        sb.append(firstIndentation).append("-- Generic information --\n").append(generalInfo);
+
+                        ColumnWriter threadsInfo = new ColumnWriter().headersInColumns()
+                                .fixed(secondIndentation)
+                                .header("Name").left("name").space()
+                                .header("Priority").right("priority").space()
+                                .header("State").left("state");
+                        Thread[] threads = _nucleus.getThreads(name);
+                        for (int j = 0; j < threads.length && threads[j] != null; j++) {
+                            Thread t = threads [j];
+                            threadsInfo.row().value("name", t.getName())
+                                    .value("priority", t.getPriority())
+                                    .value("state", (t.isAlive() ? "A" : "-") + (t.isDaemon() ? "D" : "-") + (t.isInterrupted() ? "I" : "-"));
+                        }
+
+                        sb.append('\n').append(firstIndentation).append("-- Threads --\n").append(threadsInfo);
+
+                        sb.append('\n').append(firstIndentation).append("-- Cell-specific Information --\n");
+                        appendWithIndentation(secondIndentation, info.getPrivatInfo());
+                    } else {
+                        appendWithIndentation(firstIndentation, info.getPrivatInfo());
+                    }
+                }
            }
            return sb.toString() ;
        }

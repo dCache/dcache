@@ -124,6 +124,7 @@ public class CellNucleus implements ThreadFactory
 
     private final ConcurrentMap<UOID, CellLock> _waitHash = new ConcurrentHashMap<>();
     private String _cellClass;
+    private String _cellSimpleClass;
 
     private final BoundedExecutor _messageExecutor;
     private final AtomicInteger _eventQueueSize = new AtomicInteger();
@@ -190,7 +191,14 @@ public class CellNucleus implements ThreadFactory
         _cellType    = type;
 
         _cell = cell;
-        _cellClass = _cell.getClass().getName();
+        Class<? extends Cell> clazz = _cell.getClass();
+        _cellClass = clazz.getName();
+        if (clazz.isAnonymousClass()) {
+            int dot = _cellClass.lastIndexOf('.');
+            _cellSimpleClass = dot == -1 ? _cellClass : _cellClass.substring(dot+1);
+        } else {
+            _cellSimpleClass = clazz.getSimpleName();
+        }
 
         setPinboard(new Pinboard(PINBOARD_DEFAULT_SIZE));
 
@@ -330,11 +338,15 @@ public class CellNucleus implements ThreadFactory
             info.setPrivateInfo("Not yet/No more available\n");
         }
         try {
+            // REVISIT -- many cells simply return their cell-name.  Since
+            // this is already represented, in CellInfo, this is unnecessary
+            // duplication.
             info.setShortInfo(_cell.toString());
         } catch(Exception e) {
             info.setShortInfo("Not yet/No more available");
         }
         info.setCellClass(_cellClass);
+        info.setCellSimpleClass(_cellSimpleClass);
         try {
             int eventQueueSize = getEventQueueSize();
             info.setEventQueueSize(eventQueueSize);
