@@ -73,23 +73,6 @@ public class HsqlDBFsSqlDriver extends FsSqlDriver {
         }
     }
 
-    /**
-     *
-     * copy all directory tags from origin directory to destination. New copy marked as inherited.
-     *
-     * @param orign
-     * @param destination
-     */
-    @Override
-    void copyTags(FsInode orign, FsInode destination) {
-        int n = _jdbc.update("INSERT INTO t_tags (inumber,itagid,isorign,itagname) (SELECT ?,itagid,0,itagname from t_tags WHERE inumber=?)",
-                     destination.ino(), orign.ino());
-        if (n > 0) {
-            // if tags was copied, then bump the reference counts.
-            _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid IN (SELECT itagid from t_tags where inumber=?)", destination.ino());
-        }
-    }
-
     @Override
     void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags) {
         int msk = mask.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
