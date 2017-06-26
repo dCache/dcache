@@ -129,12 +129,11 @@
                     <property name="directoriesListed" value="true"/>
                     <property name="resourceBase" value="${frontend.dcache-view.dir}"/>
                 </bean>
-                <bean class="org.eclipse.jetty.server.handler.ContextHandler">
-                    <property name="contextPath" value="/scripts/config.js"/>
-                    <property name="allowNullPathInfo" value="true"/>
-                    <property name="handler">
-                        <bean class="org.dcache.services.httpd.handlers.ContextHandler">
-                            <constructor-arg value="config-${frontend.cell.name}.js"/>
+                <bean class="org.dcache.restful.util.StaticDataHandler">
+                    <property name="path" value="${frontend.static.path}" />
+                    <property name="data">
+                        <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+                            <property name="prefix" value="frontend.static"/>
                         </bean>
                     </property>
                 </bean>
