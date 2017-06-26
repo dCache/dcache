@@ -16,6 +16,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -1202,4 +1205,35 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals("incorrect number of bytes", moreData.length, n);
 
     }
+
+    @Test
+    public void testTagDeletionOnDirectoryRemove() throws ChimeraFsException, SQLException {
+
+        FsInode top = _rootInode.mkdir("top");
+        _fs.createTag(top, "aTag");
+
+        FsInode tagInode = new FsInode_TAG(_fs, top.ino(), "aTag");
+        byte[] data = "data".getBytes(StandardCharsets.UTF_8);
+        tagInode.write(0, data, 0, data.length);
+
+        long tagid = tagInode.stat().getIno();
+        assertEquals("Tag ref count mismatch", 1, tagInode.stat().getNlink());
+
+        FsInode sub = top.mkdir("sub");
+        assertEquals("Tag ref count not incremented on create", 2, tagInode.stat().getNlink());
+
+        _fs.remove(top, "sub", sub);
+        assertEquals("Tag ref count decremented on remove", 1, tagInode.stat().getNlink());
+
+        // remove last reference
+        _fs.remove(_rootInode, "top", top);
+
+        // as we don't have a way to access tags, use direct SQL
+        try(Connection c = _dataSource.getConnection()) {
+            ResultSet rs = c.createStatement().executeQuery("SELECT * from t_tags where itagid=" + tagid);
+            // on last remove tag must be gone
+            assertFalse("Tag is not garbage collected on last remove", rs.next());
+        }
+    }
+
 }

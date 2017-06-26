@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="26" author="tigran">
+        <comment>Adjust tags link count</comment>
+
+        <sql>
+            UPDATE t_tags_inodes SET inlink = (SELECT count(*) FROM t_tags WHERE t_tags_inodes.itagid = t_tags.itagid)
+        </sql>
+
+        <rollback />
+    </changeSet>
+</databaseChangeLog>

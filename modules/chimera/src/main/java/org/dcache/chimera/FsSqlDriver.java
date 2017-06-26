@@ -1044,7 +1044,7 @@ public class FsSqlDriver {
      */
     void createTag(FsInode inode, String name, int uid, int gid, int mode) {
         long id = createTagInode(uid, gid, mode);
-        assignTagToDir(id, name, inode, false, true);
+        assignTagToDir(id, name, inode, false);
     }
 
     /**
@@ -1142,14 +1142,13 @@ public class FsSqlDriver {
      * @param isUpdate
      * @param isOrign
      */
-    void assignTagToDir(long tagId, String tagName, FsInode dir, boolean isUpdate, boolean isOrign) {
+    void assignTagToDir(long tagId, String tagName, FsInode dir, boolean isUpdate) {
         if (isUpdate) {
-            _jdbc.update("UPDATE t_tags SET itagid=?,isorign=? WHERE inumber=? AND itagname=?",
+            _jdbc.update("UPDATE t_tags SET itagid=?,isorign=1 WHERE inumber=? AND itagname=?",
                          ps -> {
                              ps.setLong(1, tagId);
-                             ps.setInt(2, isOrign ? 1 : 0);
-                             ps.setLong(3, dir.ino());
-                             ps.setString(4, tagName);
+                             ps.setLong(2, dir.ino());
+                             ps.setString(3, tagName);
                          });
         } else {
             _jdbc.update("INSERT INTO t_tags (inumber, itagid, isorign, itagname) VALUES(?,?,1,?)",
@@ -1165,10 +1164,13 @@ public class FsSqlDriver {
         long tagId;
 
         if (!isTagOwner(inode, tagName)) {
-            // tag bunching
+            // tag branching
             Stat tagStat = statTag(inode, tagName);
             tagId = createTagInode(tagStat.getUid(), tagStat.getGid(), tagStat.getMode());
-            assignTagToDir(tagId, tagName, inode, true, true);
+            assignTagToDir(tagId, tagName, inode, true);
+
+            // decrease reference on old tag
+            decTagNlinkOrRemove(tagStat.getIno());
         } else {
             tagId = getTagId(inode, tagName);
         }
@@ -1180,56 +1182,36 @@ public class FsSqlDriver {
                          ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
                          ps.setLong(4, tagId);
                      });
+
         return len;
 
     }
 
+    void incTagNlink(long tagId) {
+        _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid=?", tagId);
+    }
+
+    void decTagNlinkOrRemove(long tagId) {
+        // shortcut: delete right away, if there is only one reference left
+        int n = _jdbc.update("DELETE FROM t_tags_inodes WHERE itagid=? AND inlink = 1", tagId);
+        // if delete didn't happen, then just indicate that one reference in gone
+        if (n == 0) {
+            _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink - 1 WHERE itagid=?", tagId);
+        }
+    }
     void removeTag(FsInode dir, String tag) {
-        _jdbc.update("DELETE FROM t_tags WHERE inumber=? AND itagname=?", dir.ino(), tag);
+        long tagId = getTagId(dir, tag);
+        int n = _jdbc.update("DELETE FROM t_tags WHERE inumber=? AND itagname=?", dir.ino(), tag);
+        if (n > 0) {
+            decTagNlinkOrRemove(tagId);
+        }
     }
 
     void removeTag(FsInode dir) {
-        /* Get the tag IDs of the tag links to be removed.
+        /* Get the name of the tags to be removed.
          */
-        List<Long> ids = _jdbc.queryForList("SELECT itagid FROM t_tags WHERE inumber=?", Long.class, dir.ino());
-        if (!ids.isEmpty()) {
-            /* Remove the links.
-             */
-            _jdbc.update("DELETE FROM t_tags WHERE inumber=?", dir.ino());
-
-            /* Remove any tag inode of of the tag links removed above, which are
-             * not referenced by any other links either.
-             *
-             * We ought to maintain the link count in the inode, but Chimera has
-             * not done so in the past. In the interest of avoiding costly schema
-             * corrections in patch level releases, the current solution queries
-             * for the existence of other links instead.
-             *
-             * The statement below relies on concurrent transactions not deleting
-             * other links to affected tag inodes. Otherwise we could come into a
-             * situation in which two concurrent transactions remove two links to
-             * the same inode, yet none of them realize that the inode is left
-             * without links (as there is another link).
-             *
-             * One way to ensure this would be to use repeatable read transaction
-             * isolation, but PostgreSQL doesn't support changing the isolation level
-             * in the middle of a transaction. Always running any operation that
-             * might call this method with repeatable read was deemed unacceptable.
-             * Another solution would be to lock the tag inode at the beginning of
-             * this method using SELECT FOR UPDATE. This would be fairly expensive
-             * way of solving this race.
-             *
-             * For now we decide to ignore the race: It seems unlikely to run into
-             * and even if one does, the consequence is merely an orphaned inode.
-             */
-            _jdbc.batchUpdate("DELETE FROM t_tags_inodes i WHERE itagid=? " +
-                              "AND NOT EXISTS (SELECT 1 FROM t_tags WHERE itagid=?)",
-                              ids, ids.size(),
-                              (ps, tagid) -> {
-                                  ps.setLong(1, tagid);
-                                  ps.setLong(2, tagid);
-                              });
-        }
+        _jdbc.queryForList("SELECT itagname FROM t_tags WHERE inumber=?", String.class, dir.ino())
+                .forEach(tag -> removeTag(dir, tag));
     }
 
     /**
@@ -1284,7 +1266,7 @@ public class FsSqlDriver {
                                             ret.setGid(rs.getInt("igid"));
                                             ret.setMode(rs.getInt("imode"));
                                             ret.setNlink(rs.getInt("inlink"));
-                                            ret.setIno(dir.ino());
+                                            ret.setIno(tagId);
                                             ret.setGeneration(rs.getTimestamp("imtime").getTime());
                                             ret.setDev(17);
                                             ret.setRdev(13);
@@ -1328,14 +1310,19 @@ public class FsSqlDriver {
     }
 
     /**
-     * copy all directory tags from origin directory to destination. New copy marked as inherited.
+     * Copy all directory tags from origin directory to destination. New copy marked as inherited.
+     * Notice, that this MUST be called for newly created directory only.
      *
      * @param orign
      * @param destination
      */
     void copyTags(FsInode orign, FsInode destination) {
-        _jdbc.update("INSERT INTO t_tags (inumber,itagid,isorign,itagname) (SELECT ?,itagid,0,itagname from t_tags WHERE inumber=?)",
+        int n = _jdbc.update("INSERT INTO t_tags (inumber,itagid,isorign,itagname) (SELECT ?,itagid,0,itagname from t_tags WHERE inumber=?)",
                      destination.ino(), orign.ino());
+        if (n > 0) {
+            // if tags was copied, then bump the reference counts.
+            _jdbc.update("UPDATE t_tags_inodes SET inlink = inlink + 1 WHERE itagid IN (SELECT itagid from t_tags where inumber=?)", destination.ino());
+        }
     }
 
     void setTagOwner(FsInode_TAG tagInode, int newOwner) throws FileNotFoundHimeraFsException {
