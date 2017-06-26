@@ -117,7 +117,7 @@ public class SrmSetPermission
         }
 
         fmd.permMode = toNewPermissions(fmd.permMode, permissionType, ownerMode, groupMode, otherMode);
-        storage.setFileMetaData(user, fmd);
+        storage.setFileMetaData(user, surl, fmd);
 
         return new SrmSetPermissionResponse(new TReturnStatus(TStatusCode.SRM_SUCCESS, null));
     }

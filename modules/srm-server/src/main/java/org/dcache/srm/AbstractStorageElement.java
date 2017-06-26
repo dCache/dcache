@@ -347,11 +347,14 @@ public interface AbstractStorageElement {
 
     /**
      * @param user User ID
-     * @param path
-     * @return
+     * @param surl The requested SURL to modify
+     * @param fmd The modified file attributes.
+     * @throws SRMInternalErrorException if PnfsManager is unavailable.
+     * @throws SRMInvalidPathException if SURL is unknown.
+     * @throws SRMAuthorizationException if user is not allowed to modify file.
+     * @throws SRMException for any other error.
      */
-
-    void setFileMetaData(SRMUser user, FileMetaData fmd) throws SRMException;
+    void setFileMetaData(SRMUser user, URI surl, FileMetaData fmd) throws SRMException;
 
     /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the request to have the file in "fast access state"
