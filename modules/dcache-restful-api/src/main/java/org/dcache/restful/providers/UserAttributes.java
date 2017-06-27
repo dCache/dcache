@@ -47,6 +47,8 @@ public class UserAttributes
 
     private List<String> roles;
 
+    private List<String> unassertedRoles;
+
     private String home;
 
     private String root;
@@ -121,5 +123,15 @@ public class UserAttributes
     public void setRoles(List<String> roles)
     {
         this.roles = roles;
+    }
+
+    public List<String> getUnassertedRoles()
+    {
+        return unassertedRoles;
+    }
+
+    public void setUnassertedRoles(List<String> roles)
+    {
+        this.unassertedRoles = roles;
     }
 }

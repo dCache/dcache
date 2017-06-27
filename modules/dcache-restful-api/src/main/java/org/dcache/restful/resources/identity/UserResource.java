@@ -36,6 +36,7 @@ import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.Role;
 import org.dcache.auth.attributes.RootDirectory;
+import org.dcache.auth.attributes.UnassertedRole;
 import org.dcache.restful.providers.UserAttributes;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 
@@ -79,6 +80,11 @@ public class UserResource
                         user.setRoles(new ArrayList<>());
                     }
                     user.getRoles().add(((Role)attribute).getRole());
+                } else if (attribute instanceof UnassertedRole) {
+                    if (user.getUnassertedRoles() == null) {
+                        user.setUnassertedRoles(new ArrayList<>());
+                    }
+                    user.getUnassertedRoles().add(((UnassertedRole)attribute).getRole());
                 }
             }
         }

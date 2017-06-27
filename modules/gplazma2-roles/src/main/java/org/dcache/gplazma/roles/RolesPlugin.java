@@ -19,16 +19,21 @@
 package org.dcache.gplazma.roles;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 
 import java.security.Principal;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.dcache.auth.DesiredRole;
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Role;
+import org.dcache.auth.attributes.UnassertedRole;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
@@ -61,36 +66,41 @@ public class RolesPlugin implements GPlazmaSessionPlugin
     public void session(Set<Principal> principals, Set<Object> attributes)
             throws AuthenticationException
     {
-        List<String> desiredRoles = principals.stream()
+        Set<Role> allowedRoles = allAuthorizedRoles(principals);
+        Set<Role> desiredRoles = principals.stream()
                 .filter(DesiredRole.class::isInstance)
                 .map(DesiredRole.class::cast)
                 .map(DesiredRole::getName)
-                .collect(Collectors.toList());
+                .map(Role::new)
+                .collect(Collectors.toSet());
 
-        List<String> unauthorizedRoles = desiredRoles.stream()
-                .filter(r -> !isAuthorized(r, principals))
-                .collect(Collectors.toList());
+        Set<Role> unauthorizedRoles = Sets.difference(desiredRoles, allowedRoles)
+                .copyInto(new HashSet<>());
 
         if (!unauthorizedRoles.isEmpty()) {
             String description = unauthorizedRoles.size() == 1
-                    ? unauthorizedRoles.get(0)
-                    : unauthorizedRoles.stream().collect(Collectors.joining(",", "[", "]"));
+                    ? unauthorizedRoles.iterator().next().toString()
+                    : unauthorizedRoles.stream().map(LoginAttribute::toString)
+                            .collect(Collectors.joining(",", "[", "]"));
             throw new AuthenticationException("unauthorized for " + description);
         }
 
-        desiredRoles.stream().map(Role::new).forEach(attributes::add);
+        attributes.addAll(desiredRoles);
+        Sets.difference(allowedRoles, desiredRoles).stream()
+                .map(Role::getRole)
+                .map(UnassertedRole::new)
+                .forEach(attributes::add);
     }
 
-    private boolean isAuthorized(String role, Set<Principal> principals)
+    private Set<Role> allAuthorizedRoles(Set<Principal> principals)
     {
-        switch (role) {
-        case "admin":
-            return principals.stream()
+        if (principals.stream()
                     .filter(GidPrincipal.class::isInstance)
                     .map(GidPrincipal.class::cast)
                     .mapToLong(GidPrincipal::getGid)
-                    .anyMatch(gid -> gid == adminGid);
+                    .anyMatch(gid -> gid == adminGid)) {
+            return Collections.singleton(LoginAttributes.adminRole());
         }
-        return false;
+        return Collections.emptySet();
     }
 }

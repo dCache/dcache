@@ -25,6 +25,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.auth.attributes.Role;
+import org.dcache.auth.attributes.UnassertedRole;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.util.PrincipalSetMaker;
 
@@ -63,6 +64,7 @@ public class RolesPluginTest
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000));
 
         assertThat(attributes, not(hasItem(new Role("admin"))));
+        assertThat(attributes, not(hasItem(new UnassertedRole("admin"))));
     }
 
     @Test
@@ -73,6 +75,7 @@ public class RolesPluginTest
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(10));
 
         assertThat(attributes, not(hasItem(new Role("admin"))));
+        assertThat(attributes, hasItem(new UnassertedRole("admin")));
     }
 
     @Test
@@ -83,6 +86,7 @@ public class RolesPluginTest
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000).withGid(10));
 
         assertThat(attributes, not(hasItem(new Role("admin"))));
+        assertThat(attributes, hasItem(new UnassertedRole("admin")));
     }
 
     @Test(expected=AuthenticationException.class)
@@ -101,6 +105,7 @@ public class RolesPluginTest
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(10).withDesiredRole("admin"));
 
         assertThat(attributes, hasItem(new Role("admin")));
+        assertThat(attributes, not(hasItem(new UnassertedRole("admin"))));
     }
 
     @Test
@@ -111,6 +116,7 @@ public class RolesPluginTest
         whenInvokingSessionWith(aSetOfPrincipals().withPrimaryGid(1000).withGid(10).withDesiredRole("admin"));
 
         assertThat(attributes, hasItem(new Role("admin")));
+        assertThat(attributes, not(hasItem(new UnassertedRole("admin"))));
     }
 
     private void whenInvokingSessionWith(PrincipalSetMaker principals)
