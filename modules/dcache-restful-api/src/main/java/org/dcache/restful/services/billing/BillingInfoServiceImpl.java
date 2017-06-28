@@ -97,10 +97,10 @@ public class BillingInfoServiceImpl
                                                   BillingInfoCollector>
                 implements BillingInfoService {
     @Command(name = "billing ls",
-                    hint = "list billing records",
+                    hint = "List billing records",
                     description = "returns a list of billing records for "
                                     + "a given file.")
-    class LsCommand implements Callable<String> {
+    class BillingLsCommand implements Callable<String> {
         @Argument(required = true,
                         usage = "The pnfsid of the file for which to "
                                         + "list the billing records.")
@@ -165,18 +165,18 @@ public class BillingInfoServiceImpl
         }
     }
 
-    @Command(name = "billing update",
-                    hint = "set the update interval",
+    @Command(name = "billing set timeout",
+                    hint = "Set the timeout interval between refreshes",
                     description = "Changes the interval between "
                                     + "collections of billing data.")
-    class BillingSetUpdateCommand extends SetUpdateCommand {
+    class BillingSetTimeoutCommand extends SetTimeoutCommand {
     }
 
-    @Command(name = "billing run",
-                    hint = "Run the update",
-                    description = "Interrupts current wait to run update "
+    @Command(name = "billing refresh",
+                    hint = "Query for billing histogram data",
+                    description = "Interrupts current wait to run query "
                                     + "immediately.")
-    class BillingRunUpdateCommand extends RunUpdateCommand {
+    class BillingRefreshCommand extends RefreshCommand {
     }
 
     /**

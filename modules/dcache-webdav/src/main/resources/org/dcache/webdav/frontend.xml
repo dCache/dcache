@@ -116,7 +116,7 @@
   <bean id="scheduling-service" class="java.util.concurrent.ScheduledThreadPoolExecutor"
           destroy-method="shutdownNow">
         <description>Used to execute periodic data collection (admin services)</description>
-        <constructor-arg value="3"/>
+        <constructor-arg value="4"/>
   </bean>
 
   <bean id="transfer-collector" class="org.dcache.restful.util.transfers.TransferCollector">
@@ -162,6 +162,33 @@
         <property name="timeout" value="${frontend.service.billing.collection.timeout}"/>
         <property name="timeoutUnit" value="${frontend.service.billing.collection.timeout.unit}"/>
         <property name="executorService" ref="scheduling-service"/>
+  </bean>
+
+  <bean id="cell-update-executor" class="org.dcache.util.BoundedCachedExecutor"
+        destroy-method="shutdownNow">
+    <constructor-arg value="${frontend.service.cell-info.update-threads}"/>
+  </bean>
+
+  <bean id="cell-info-collector" class="org.dcache.restful.util.cells.CellInfoCollector">
+    <description>Collects cell info from from domains.</description>
+  </bean>
+
+  <bean id="cell-info-processor" class="org.dcache.restful.util.cells.CellInfoFutureProcessor">
+    <description>Handles update futures and processes them for persistence.</description>
+    <property name="storageDir" value="${frontend.service.cell-info.storage-dir}"/>
+    <property name="executor" ref="cell-update-executor"/>
+  </bean>
+
+  <bean id="cell-info-service" class="org.dcache.restful.services.cells.CellInfoServiceImpl"
+        init-method="initialize" destroy-method="shutdown">
+    <description>Caches and serves information on cell services.</description>
+    <property name="maxCacheSize" value="${frontend.service.cell-info.maxCacheSize}"/>
+    <property name="timeout" value="${frontend.service.cell-info.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.cell-info.timeout.unit}"/>
+    <property name="collector" ref="cell-info-collector"/>
+    <property name="executorService" ref="scheduling-service"/>
+    <property name="storageDir" value="${frontend.service.cell-info.storage-dir}"/>
+    <property name="processor" ref="cell-info-processor"/>
   </bean>
 
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
@@ -233,13 +260,15 @@
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).CS}"
                                                                value-ref="pnfs-stub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).POOL_MANAGER}"
-                                                               value-ref= "pool-manager-stub"/>
+                                                               value-ref="pool-manager-stub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PM}"
                                                                value-ref="pool-monitor"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).TF}"
                                                                value-ref="transfer-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).BL}"
                                                                value-ref="billing-info-service"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).CI}"
+                                                               value-ref="cell-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
                                                                value-ref= "pinManagerStub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PathMapper}"

@@ -25,6 +25,11 @@ check -strong frontend.service.gplazma.timeout.unit
 check -strong frontend.service.transfers.timeout
 check -strong frontend.service.transfers.timeout.unit
 check -strong frontend.service.transfers.maxCacheSize
+check -strong frontend.service.cell-info.update-threads
+check -strong frontend.service.cell-info.maxCacheSize
+check -strong frontend.service.cell-info.timeout
+check -strong frontend.service.cell-info.timeout.unit
+check -strong frontend.service.cell-info.storage-dir
 check -strong frontend.authn.accept-client-cert
 check -strong frontend.authn.require-client-cert
 check -strong frontend.authn.basic

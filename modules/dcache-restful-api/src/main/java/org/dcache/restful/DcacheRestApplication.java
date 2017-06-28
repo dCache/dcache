@@ -12,6 +12,7 @@ import org.dcache.restful.providers.ErrorResponseProvider;
 import org.dcache.restful.providers.ObjectMapperProvider;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.resources.billing.BillingResources;
+import org.dcache.restful.resources.cells.CellInfoResources;
 import org.dcache.restful.resources.namespace.FileResources;
 import org.dcache.restful.resources.transfers.TransferResources;
 
@@ -31,6 +32,7 @@ public class DcacheRestApplication extends ResourceConfig
         register(QosManagement.class);
         register(TransferResources.class);
         register(BillingResources.class);
+        register(CellInfoResources.class);
 
         //register filters
         register(ResponseHeaderFilter.class);

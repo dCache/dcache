@@ -123,7 +123,7 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
      *
      * <p>Interrupts thread to run update immediately.</p>
      */
-    protected abstract class RunUpdateCommand implements Callable<String> {
+    protected abstract class RefreshCommand implements Callable<String> {
         @Override
         public String call() {
             CellDataCollectingService.this.interrupt();
@@ -137,7 +137,7 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
      * correct command annotation and to distinguish it from
      * other similar commands in the same domain.</p>
      */
-    protected abstract class SetUpdateCommand implements Callable<String> {
+    protected abstract class SetTimeoutCommand implements Callable<String> {
         @Option(name = "timeout",
                         usage = "Length of timeout interval; must be >= 10 seconds.")
         Long timeout;

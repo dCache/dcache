@@ -110,12 +110,12 @@ import static org.dcache.restful.util.transfers.TransferCollectionUtils.transfer
  */
 public class TransferInfoServiceImpl extends CellDataCollectingService<Map<String, TransferInfo>, TransferCollector>
                 implements TransferInfoService {
-    @Command(name = "transfer ls",
-                    hint = "list active transfers",
+    @Command(name = "transfers ls",
+                    hint = "List active transfers",
                     description = "returns a list of transfer paths according "
                                     + "to the filtering specified; "
                                     + "default is all paths")
-    class LsCommand implements Callable<String> {
+    class TransfersLsCommand implements Callable<String> {
 
         @Option(name = "door",
                         separator = ",",
@@ -273,18 +273,18 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
         }
     }
 
-    @Command(name = "transfer update",
-                    hint = "set the update interval",
+    @Command(name = "transfers set timeout",
+                    hint = "Set the timeout interval between refreshes",
                     description = "Changes the interval between "
                                     + "collections of transfer information")
-    class TransferSetUpdateCommand extends SetUpdateCommand {
+    class TransfersSetTimeoutCommand extends SetTimeoutCommand {
     }
 
-    @Command(name = "transfer run",
-                    hint = "run the update",
-                    description = "Interrupts current wait to run update "
+    @Command(name = "transfers refresh",
+                    hint = "Query pools and doors for transfer data",
+                    description = "Interrupts current wait to run query "
                                     + "immediately.")
-    class TransferRunUpdateCommand extends RunUpdateCommand {
+    class TransfersRefreshCommand extends RefreshCommand {
     }
 
     /**
