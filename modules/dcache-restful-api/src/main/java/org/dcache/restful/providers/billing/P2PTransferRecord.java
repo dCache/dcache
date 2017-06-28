@@ -57,75 +57,53 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.providers.billing;
 
-import java.io.Serializable;
-import java.util.Collection;
-
-import org.dcache.services.billing.db.data.IHistogramData;
+import org.dcache.services.billing.db.data.TransferRecord;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Attributes pertinent to Pool-to-pool transfers.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public final class P2PTransferRecord extends DiskTransferRecord {
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+    private static final String MAINFORMAT = "%s (from %s)(to %s)(%s)(transferred %s) %s\n";
+
+    private String serverPool;
+    private String clientPool;
+
+    public String getServerPool() {
+        return serverPool;
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    public void setServerPool(String serverPool) {
+        this.serverPool = serverPool;
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public String getClientPool() {
+        return clientPool;
     }
 
-    public String getField() {
-        return field;
+    public void setClientPool(String clientPool) {
+        this.clientPool = clientPool;
     }
 
-    public HistogramDataType getType() {
-        return type;
+    public P2PTransferRecord() {
+
     }
 
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
+    public P2PTransferRecord(TransferRecord record) {
+        super(record);
+        this.serverPool = record.getCellName();
+        this.clientPool = record.getInitiator();
     }
 
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
-    }
-
-    public void setField(String field) {
-        this.field = field;
-    }
-
-    public void setType(HistogramDataType type) {
-        this.type = type;
+    public String toDisplayString() {
+        return String.format(MAINFORMAT,
+                             datestamp,
+                             serverPool,
+                             clientPool,
+                             client,
+                             transfersize,
+                             errormessage);
     }
 }

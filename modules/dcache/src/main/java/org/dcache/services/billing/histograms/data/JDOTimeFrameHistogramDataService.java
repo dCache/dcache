@@ -76,6 +76,7 @@ import org.dcache.services.billing.db.data.HSMReadsHourly;
 import org.dcache.services.billing.db.data.HSMWritesDaily;
 import org.dcache.services.billing.db.data.HSMWritesHourly;
 import org.dcache.services.billing.db.data.HitsDaily;
+import org.dcache.services.billing.db.data.IHistogramData;
 import org.dcache.services.billing.db.data.PoolHitsHourly;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersDaily;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersHourly;

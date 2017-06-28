@@ -57,75 +57,94 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.providers.billing;
 
-import java.io.Serializable;
-import java.util.Collection;
+import com.google.common.base.Preconditions;
 
-import org.dcache.services.billing.db.data.IHistogramData;
+import org.dcache.util.histograms.TimeFrame;
+import org.dcache.util.histograms.TimeFrame.BinType;
+import org.dcache.util.histograms.TimeFrame.Type;
+import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesDataType;
+import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Defines a possible grid entry based on three enum types.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public final class BillingDataGridEntry {
+    private SeriesType     type;
+    private SeriesDataType dataType;
+    private BinType        binType;
+    private Type           range;
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+    public BillingDataGridEntry() {
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
+    public BillingDataGridEntry(String toParse) {
+        Preconditions.checkNotNull(toParse,
+                                   "String value cannot be null.");
 
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
+        String[] parts = toParse.split("_");
 
-    public Collection<IHistogramData> getData() {
-        return data;
+        Preconditions.checkArgument(parts.length == 4,
+                                    "String value must have 4 parts.");
+
+        type = SeriesType.valueOf(parts[0].toUpperCase());
+        dataType = SeriesDataType.valueOf(parts[1].toUpperCase());
+        binType = BinType.valueOf(parts[2].toUpperCase());
+        range = Type.valueOf(parts[3].toUpperCase());
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public BillingDataGridEntry(SeriesType type,
+                                SeriesDataType dataType,
+                                TimeFrame timeFrame) {
+        Preconditions.checkNotNull(type, "Series type cannot be null.");
+        Preconditions.checkNotNull(dataType,
+                                   "Series data type cannot be null.");
+        Preconditions.checkNotNull(timeFrame,
+                                   "TimeFrame cannot be null.");
+        Preconditions.checkNotNull(timeFrame.getTimebin(),
+                                   "Bin type  cannot be null.");
+        Preconditions.checkNotNull(timeFrame.getTimeframe(),
+                                   "Range type cannot be null.");
+        this.type = type;
+        this.dataType = dataType;
+        this.binType = timeFrame.getTimebin();
+        this.range = timeFrame.getTimeframe();
     }
 
-    public String getField() {
-        return field;
+    public BinType getBinType() {
+        return binType;
     }
 
-    public HistogramDataType getType() {
+    public SeriesDataType getDataType() {
+        return dataType;
+    }
+
+    public Type getRange() {
+        return range;
+    }
+
+    public SeriesType getType() {
         return type;
     }
 
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
+    public void setBinType(BinType binType) {
+        this.binType = binType;
     }
 
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
+    public void setDataType(SeriesDataType dataType) {
+        this.dataType = dataType;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public void setRange(Type range) {
+        this.range = range;
     }
 
-    public void setType(HistogramDataType type) {
+    public void setType(SeriesType type) {
         this.type = type;
+    }
+
+    public String toString() {
+        return type + "_" + dataType + "_" + binType + "_" + range;
     }
 }

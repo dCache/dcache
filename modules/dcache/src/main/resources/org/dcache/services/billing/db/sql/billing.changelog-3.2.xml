@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+				       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+  <changeSet id="10.0" author="arossi" context="billing">
+    <comment>record views for consolidated billing and storage info</comment>
+    <sql splitStatements="false">
+      CREATE OR REPLACE VIEW transfer_record
+      AS
+      SELECT
+      CASE
+        WHEN b.p2p=true THEN 'P2P'
+        WHEN b.isnew=true THEN 'WRITE'
+          ELSE 'READ'
+      END AS type,
+      b.datestamp,
+      b.cellname,
+      b.initiator,
+      b.client,
+      d.connectiontime,
+      d.queuedtime,
+      b.transfersize,
+      b.errorcode,
+      b.errormessage,
+      d.mappeduid,
+      d.mappedgid,
+      d.fqan,
+      d.owner,
+      b.pnfsid
+      FROM billinginfo b
+      LEFT OUTER JOIN doorinfo d
+      ON d.transaction = b.initiator
+      AND b.pnfsid = d.pnfsid
+      ORDER BY type, b.datestamp;
+    </sql>
+    <sql splitStatements="false">
+      CREATE or REPLACE VIEW storage_record
+      AS
+      SELECT
+      CASE
+        WHEN action='restore' THEN 'RESTORE'
+        ELSE 'STORE'
+      END as type,
+      datestamp,
+      cellname,
+      connectiontime,
+      queuedtime,
+      errorcode,
+      errormessage,
+      pnfsid
+      FROM storageinfo
+      ORDER BY type, datestamp;
+    </sql>
+  </changeSet>
+</databaseChangeLog>

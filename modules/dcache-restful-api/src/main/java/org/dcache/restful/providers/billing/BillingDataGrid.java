@@ -57,75 +57,29 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.providers.billing;
 
-import java.io.Serializable;
-import java.util.Collection;
-
-import org.dcache.services.billing.db.data.IHistogramData;
+import java.util.Map;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Provides a listing of available time series
+ *      data according to types.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public final class BillingDataGrid {
+    private Map<String, BillingDataGridEntry> dataGrid;
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+    public BillingDataGrid() {
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    public Map<String, BillingDataGridEntry> getDataGrid() {
+        return dataGrid;
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public void setDataGrid(Map<String, BillingDataGridEntry> dataGrid) {
+        this.dataGrid = dataGrid;
     }
 
-    public String getField() {
-        return field;
-    }
-
-    public HistogramDataType getType() {
-        return type;
-    }
-
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
-    }
-
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
-    }
-
-    public void setField(String field) {
-        this.field = field;
-    }
-
-    public void setType(HistogramDataType type) {
-        this.type = type;
+    public BillingDataGrid(Map<String, BillingDataGridEntry> dataGrid) {
+        this.dataGrid = dataGrid;
     }
 }

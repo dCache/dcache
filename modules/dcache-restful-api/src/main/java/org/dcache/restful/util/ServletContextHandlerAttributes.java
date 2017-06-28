@@ -8,10 +8,12 @@ import java.security.AccessController;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.poolmanager.RemotePoolMonitor;
+import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.util.list.ListDirectoryHandler;
 
 public class ServletContextHandlerAttributes {
+    public final static String BL = "org.dcache.restful.BL";
     public final static String DL = "org.dcache.restful";
     public final static String CS = "org.dcache.restful.CS";
     public final static String POOL_MANAGER = "org.dcache.restful.PoolManager";
@@ -19,8 +21,6 @@ public class ServletContextHandlerAttributes {
     public final static String TF = "org.dcache.restful.TF";
     public final static String PinMngStub = "org.dcache.restful.PinMngStub";
     public final static String PathMapper = "org.dcache.restful.PathMapper";
-
-
 
     public static Subject getSubject()
     {
@@ -58,12 +58,15 @@ public class ServletContextHandlerAttributes {
     {
         return (TransferInfoService) ctx.getAttribute(TF);
     }
+
     public static CellStub getPoolManger(ServletContext ctx)
     {
         CellStub cellStub = (CellStub) ctx.getAttribute(POOL_MANAGER);
         return cellStub;
-
     }
 
-
+    public static BillingInfoService getBillingInfoService(ServletContext ctx)
+    {
+        return (BillingInfoService) ctx.getAttribute(BL);
+    }
 }

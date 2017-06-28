@@ -115,7 +115,7 @@
 
   <bean id="scheduling-service" class="java.util.concurrent.ScheduledThreadPoolExecutor"
           destroy-method="shutdownNow">
-        <description>Used in conjunction with system initialization and pool monitor refresh timeouts</description>
+        <description>Used to execute periodic data collection (admin services)</description>
         <constructor-arg value="3"/>
   </bean>
 
@@ -135,15 +135,34 @@
   </bean>
 
   <bean id="custom-headers"
-	class="org.dcache.util.ConfigurationMapFactoryBean">
-      <property name="prefix" value="frontend.custom-response-header"/>
+        class="org.dcache.util.ConfigurationMapFactoryBean">
+    <property name="prefix" value="frontend.custom-response-header"/>
   </bean>
-    <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
-        <description>Pin manager cell stub</description>
-        <property name="timeout" value="${frontend.service.pinmanager.timeout}"/>
-        <property name="timeoutUnit" value="${frontend.service.pinmanager.timeout.unit}"/>
-        <property name="destination" value="${frontend.service.pinmanager}"/>
-    </bean>
+
+  <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
+    <description>Pin manager cell stub</description>
+    <property name="timeout" value="${frontend.service.pinmanager.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.pinmanager.timeout.unit}"/>
+    <property name="destination" value="${frontend.service.pinmanager}"/>
+  </bean>
+
+  <bean id="billing-info-collector" class="org.dcache.restful.util.billing.BillingInfoCollector">
+        <description>Collects information from billing backend (database).</description>
+        <property name="billingPath">
+            <bean class="dmg.cells.nucleus.CellPath">
+                <constructor-arg value="${frontend.service.billing}"/>
+            </bean>
+        </property>
+  </bean>
+
+  <bean id="billing-info-service" class="org.dcache.restful.services.billing.BillingInfoServiceImpl"
+          init-method="initialize">
+        <description>Caches and serves billing records and histogram data.</description>
+        <property name="collector" ref="billing-info-collector"/>
+        <property name="timeout" value="${frontend.service.billing.collection.timeout}"/>
+        <property name="timeoutUnit" value="${frontend.service.billing.collection.timeout.unit}"/>
+        <property name="executorService" ref="scheduling-service"/>
+  </bean>
 
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
         <description>List of handlers for HTTP requests</description>
@@ -219,6 +238,8 @@
                                                                value-ref="pool-monitor"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).TF}"
                                                                value-ref="transfer-info-service"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).BL}"
+                                                               value-ref="billing-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
                                                                value-ref= "pinManagerStub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PathMapper}"

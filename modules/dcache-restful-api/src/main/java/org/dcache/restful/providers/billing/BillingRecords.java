@@ -57,75 +57,74 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.providers.billing;
 
 import java.io.Serializable;
 import java.util.Collection;
 
-import org.dcache.services.billing.db.data.IHistogramData;
-
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Encapsulates the lists of billing records associated with a given file.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public final class BillingRecords implements Serializable {
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+    private String pnfsid;
+
+    private Collection<DoorTransferRecord> writes;
+
+    private Collection<DoorTransferRecord> reads;
+
+    private Collection<HSMTransferRecord> stores;
+
+    private Collection<HSMTransferRecord> restores;
+
+    private Collection<P2PTransferRecord> p2ps;
+
+    public Collection<P2PTransferRecord> getP2ps() {
+        return p2ps;
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    public String getPnfsid() {
+        return pnfsid;
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public Collection<DoorTransferRecord> getReads() {
+        return reads;
     }
 
-    public String getField() {
-        return field;
+    public Collection<HSMTransferRecord> getRestores() {
+        return restores;
     }
 
-    public HistogramDataType getType() {
-        return type;
+    public Collection<HSMTransferRecord> getStores() {
+        return stores;
     }
 
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
+    public Collection<DoorTransferRecord> getWrites() {
+        return writes;
     }
 
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
+    public void setP2ps(Collection<P2PTransferRecord> p2ps) {
+        this.p2ps = p2ps;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public void setPnfsid(String pnfsid) {
+        this.pnfsid = pnfsid;
     }
 
-    public void setType(HistogramDataType type) {
-        this.type = type;
+    public void setReads(Collection<DoorTransferRecord> reads) {
+        this.reads = reads;
+    }
+
+    public void setRestores(
+                    Collection<HSMTransferRecord> restores) {
+        this.restores = restores;
+    }
+
+    public void setStores(Collection<HSMTransferRecord> stores) {
+        this.stores = stores;
+    }
+
+    public void setWrites(Collection<DoorTransferRecord> writes) {
+        this.writes = writes;
     }
 }

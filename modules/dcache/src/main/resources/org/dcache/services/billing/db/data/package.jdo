@@ -51,5 +51,16 @@
         <class name="PoolToPoolTransfersDaily" table="billinginfo_p2p_daily"/>
         <class name="HSMReadsDaily" table="storageinfo_rd_daily"/>
         <class name="HSMWritesDaily" table="storageinfo_wr_daily"/>
+        <class name="RecordEntry" identity-type="nondurable">
+            <inheritance strategy="complete-table"/>
+            <field name="pnfsid">
+                <column name="pnfsid"  length="36" jdbc-type="VARCHAR" />
+            </field>
+            <field name="errormessage">
+                 <column name="errormessage" length="8000" jdbc-type="VARCHAR" />
+            </field>
+        </class>
+        <class name="TransferRecord" table="transfer_record"/>
+        <class name="StorageRecord" table="storage_record"/>
     </package>
 </jdo>

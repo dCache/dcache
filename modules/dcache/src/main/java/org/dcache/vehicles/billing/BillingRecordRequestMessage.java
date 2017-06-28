@@ -57,75 +57,66 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.vehicles.billing;
 
-import java.io.Serializable;
 import java.util.Collection;
+import java.util.Date;
 
-import org.dcache.services.billing.db.data.IHistogramData;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+import org.dcache.services.billing.db.data.StorageRecord;
+import org.dcache.services.billing.db.data.TransferRecord;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Requests consolidated billing and storage records for
+ * a given pnfsId.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public final class BillingRecordRequestMessage extends Message {
+    private Collection<TransferRecord> transferRecords;
+    private Collection<StorageRecord>  storageRecords;
+    private PnfsId                     pnfsId;
+    private Date                       before;
+    private Date                       after;
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+    public Date getAfter() {
+        return after;
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    public Date getBefore() {
+        return before;
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public PnfsId getPnfsId() {
+        return pnfsId;
     }
 
-    public String getField() {
-        return field;
+    public Collection<StorageRecord> getStorageRecords() {
+        return storageRecords;
     }
 
-    public HistogramDataType getType() {
-        return type;
+    public Collection<TransferRecord> getTransferRecords() {
+        return transferRecords;
     }
 
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
+    public void setAfter(Date after) {
+        this.after = after;
     }
 
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
+    public void setBefore(Date before) {
+        this.before = before;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public void setPnfsId(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
     }
 
-    public void setType(HistogramDataType type) {
-        this.type = type;
+    public void setStorageRecords(
+                    Collection<StorageRecord> storageRecords) {
+        this.storageRecords = storageRecords;
+    }
+
+    public void setTransferRecords(
+                    Collection<TransferRecord> transferRecords) {
+        this.transferRecords = transferRecords;
     }
 }

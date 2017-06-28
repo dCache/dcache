@@ -57,75 +57,51 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.providers.billing;
 
-import java.io.Serializable;
-import java.util.Collection;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import org.dcache.services.billing.db.data.IHistogramData;
+import org.dcache.services.billing.db.data.TransferRecord;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Attributes pertinent to DOOR and P2P transfers.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY)
+@JsonSubTypes({
+                @JsonSubTypes.Type(value = DoorTransferRecord.class, name = "Door"),
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+                @JsonSubTypes.Type(value = P2PTransferRecord.class, name = "P2P") }
+)
+public abstract class DiskTransferRecord extends BillingTransferRecord {
+    protected String client;
+    protected Long   transfersize;
+
+    protected DiskTransferRecord() {
+
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    protected DiskTransferRecord(TransferRecord record) {
+        super(record);
+        this.client = record.getClient();
+        this.transfersize = record.getTransferSize();
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public String getClient() {
+        return client;
     }
 
-    public String getField() {
-        return field;
+    public Long getTransfersize() {
+        return transfersize;
     }
 
-    public HistogramDataType getType() {
-        return type;
+    public void setClient(String client) {
+        this.client = client;
     }
 
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
-    }
-
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
-    }
-
-    public void setField(String field) {
-        this.field = field;
-    }
-
-    public void setType(HistogramDataType type) {
-        this.type = type;
+    public void setTransfersize(Long transfersize) {
+        this.transfersize = transfersize;
     }
 }

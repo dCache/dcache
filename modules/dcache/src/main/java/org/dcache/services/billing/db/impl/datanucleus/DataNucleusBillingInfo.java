@@ -61,19 +61,19 @@ package org.dcache.services.billing.db.impl.datanucleus;
 
 import org.datanucleus.FetchPlan;
 
-import java.util.Arrays;
-import java.util.Collection;
 import javax.jdo.JDOCanRetryException;
 import javax.jdo.JDODataStoreException;
 import javax.jdo.PersistenceManager;
 import javax.jdo.PersistenceManagerFactory;
 import javax.jdo.Query;
 import javax.jdo.Transaction;
+import java.util.Arrays;
+import java.util.Collection;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
+import org.dcache.services.billing.db.data.IHistogramData;
 import org.dcache.services.billing.db.exceptions.RetryException;
 import org.dcache.services.billing.db.impl.AbstractBillingInfoAccess;
-import org.dcache.services.billing.histograms.data.IHistogramData;
 
 /**
  * Implements {@link IBillingInfoAccess} using <href

@@ -67,8 +67,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.dcache.services.billing.histograms.data.IHistogramData;
-
 import diskCacheV111.vehicles.PnfsFileInfoMessage;
 
 /**

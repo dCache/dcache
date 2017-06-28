@@ -61,8 +61,6 @@ package org.dcache.services.billing.db.data;
 
 import java.util.Map;
 
-import org.dcache.services.billing.histograms.data.IHistogramData;
-
 /**
  * @author arossi
  */

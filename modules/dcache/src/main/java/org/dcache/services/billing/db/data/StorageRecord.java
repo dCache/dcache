@@ -57,75 +57,11 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
-
-import java.io.Serializable;
-import java.util.Collection;
-
-import org.dcache.services.billing.db.data.IHistogramData;
+package org.dcache.services.billing.db.data;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Consolidated view information from storage info.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public final class StorageRecord extends RecordEntry {
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
-    }
-
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
-    }
-
-    public Double getDfactor() {
-        return dfactor;
-    }
-
-    public String getField() {
-        return field;
-    }
-
-    public HistogramDataType getType() {
-        return type;
-    }
-
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
-    }
-
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
-    }
-
-    public void setField(String field) {
-        this.field = field;
-    }
-
-    public void setType(HistogramDataType type) {
-        this.type = type;
-    }
 }

@@ -57,75 +57,48 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.services.billing;
 
-import java.io.Serializable;
-import java.util.Collection;
-
-import org.dcache.services.billing.db.data.IHistogramData;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import org.dcache.restful.providers.billing.BillingDataGrid;
+import org.dcache.restful.providers.billing.BillingRecords;
+import org.dcache.util.histograms.Histogram;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Defines the internal API for service providing collected/extracted
+ *      billing data.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public interface BillingInfoService {
+    /**
+     * <p>Request for histogram data relating to a
+     *      particular data specification.</p>
+     *
+     * <p>The range upper bound is determined by the service implementation,
+     *      but will generally coincide with the most recent information.</p>
+     *
+     * @param key referencing the time series data.
+     * @return the corresponding Histogram.  Note that this histogram
+     *          is generic (i.e., simply the JSON wrapper).
+     */
+    Histogram getHistogram(String key) throws CacheException;
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
-    }
+    /**
+     * <p>Request for billing records relating to a given file.</p>
+     *
+     * @param pnfsId of the file
+     * @param before optional upper bound on date of record
+     * @param after optional lower bound on date of record
+     * @return object encapsulating the various lists of records according to
+     *          transfer type (STORE, RESTORE, WRITE, READ, P2P)
+     */
+    BillingRecords getRecords(PnfsId pnfsId, String before, String after) throws
+                    CacheException;
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
-    }
-
-    public Double getDfactor() {
-        return dfactor;
-    }
-
-    public String getField() {
-        return field;
-    }
-
-    public HistogramDataType getType() {
-        return type;
-    }
-
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
-    }
-
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
-    }
-
-    public void setField(String field) {
-        this.field = field;
-    }
-
-    public void setType(HistogramDataType type) {
-        this.type = type;
-    }
+    /**
+     * <p>Request for the layout of the full grid for time series data.</p>
+     *
+     * @return grid description object.
+     */
+    BillingDataGrid getGrid() throws CacheException;
 }

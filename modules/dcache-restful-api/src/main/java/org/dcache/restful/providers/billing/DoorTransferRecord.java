@@ -57,75 +57,106 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.providers.billing;
 
-import java.io.Serializable;
-import java.util.Collection;
+import com.google.common.base.Strings;
 
-import org.dcache.services.billing.db.data.IHistogramData;
+import org.dcache.services.billing.db.data.TransferRecord;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Attributes pertinent to READs and WRITEs initiated by external clients
+ * through a door/protocol.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public final class DoorTransferRecord extends DiskTransferRecord {
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+    private static final String MAINFORMAT = "%s (pool %s)(door %s)(%s)(connect %s)(queued %s)(transferred %s)%s %s\n";
+    private static final String USERFORMAT = "(fqan %s)(uid %s)(gid %s)(owner %s)";
+
+    private String  pool;
+    private String  door;
+    private Integer mappedUID;
+    private Integer mappedGID;
+    private String  owner;
+    private String fqan;
+
+    public DoorTransferRecord() {
+
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    public DoorTransferRecord(TransferRecord record) {
+        super(record);
+        this.pool = record.getCellName();
+        this.door = record.getInitiator();
+        this.mappedGID = record.getMappedgid();
+        this.mappedUID = record.getMappedUid();
+        this.owner = record.getOwner();
+        this.fqan = Strings.emptyToNull(record.getFqan());
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public String getDoor() {
+        return door;
     }
 
-    public String getField() {
-        return field;
+    public String getFqan() {
+        return fqan;
     }
 
-    public HistogramDataType getType() {
-        return type;
+    public Integer getMappedGID() {
+        return mappedGID;
     }
 
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
+    public Integer getMappedUID() {
+        return mappedUID;
     }
 
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
+    public String getOwner() {
+        return owner;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public String getPool() {
+        return pool;
     }
 
-    public void setType(HistogramDataType type) {
-        this.type = type;
+    public void setDoor(String door) {
+        this.door = door;
+    }
+
+    public void setFqan(String fqan) {
+        this.fqan = fqan;
+    }
+
+    public void setMappedGID(Integer mappedGID) {
+        this.mappedGID = mappedGID;
+    }
+
+    public void setMappedUID(Integer mappedUID) {
+        this.mappedUID = mappedUID;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
+
+    public String toDisplayString() {
+        String user = String.format(USERFORMAT,
+                                    fqan,
+                                    mappedUID,
+                                    mappedGID,
+                                    owner);
+
+        return String.format(MAINFORMAT,
+                             datestamp,
+                             pool,
+                             door,
+                             client,
+                             connectiontime,
+                             queuedtime,
+                             transfersize,
+                             user,
+                             errormessage);
     }
 }

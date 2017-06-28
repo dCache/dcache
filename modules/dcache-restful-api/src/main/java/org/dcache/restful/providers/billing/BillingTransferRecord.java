@@ -57,75 +57,97 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.providers.billing;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.io.Serializable;
-import java.util.Collection;
+import java.util.Date;
 
-import org.dcache.services.billing.db.data.IHistogramData;
+import org.dcache.services.billing.db.data.RecordEntry;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Attributes shared by all billing transfer records.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY)
+@JsonSubTypes({
+                @JsonSubTypes.Type(value = DoorTransferRecord.class, name = "Door"),
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+                @JsonSubTypes.Type(value = P2PTransferRecord.class, name = "P2P"),
+
+                @JsonSubTypes.Type(value = HSMTransferRecord.class, name = "HSM") }
+)
+public abstract class BillingTransferRecord implements Serializable {
+    protected Date    datestamp;
+    protected Long    connectiontime;
+    protected Long    queuedtime;
+    protected Integer errorcode;
+    protected String  errormessage;
+    protected String  pnfsid;
+
+    protected BillingTransferRecord() {
+
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    protected BillingTransferRecord(RecordEntry record) {
+        datestamp = record.getDateStamp();
+        connectiontime = record.getConnectionTime();
+        pnfsid = record.getPnfsId();
+        queuedtime = record.getQueuedTime();
+        errorcode = record.getErrorCode();
+        errormessage = record.getErrorMessage();
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public Long getConnectiontime() {
+        return connectiontime;
     }
 
-    public String getField() {
-        return field;
+    public Date getDatestamp() {
+        return datestamp;
     }
 
-    public HistogramDataType getType() {
-        return type;
+    public Integer getErrorcode() {
+        return errorcode;
     }
 
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
+    public String getErrormessage() {
+        return errormessage;
     }
 
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
+    public String getPnfsid() {
+        return pnfsid;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public Long getQueuedtime() {
+        return queuedtime;
     }
 
-    public void setType(HistogramDataType type) {
-        this.type = type;
+    public void setConnectiontime(Long connectiontime) {
+        this.connectiontime = connectiontime;
     }
+
+    public void setDatestamp(Date datestamp) {
+        this.datestamp = datestamp;
+    }
+
+    public void setErrorcode(Integer errorcode) {
+        this.errorcode = errorcode;
+    }
+
+    public void setErrormessage(String errormessage) {
+        this.errormessage = errormessage;
+    }
+
+    public void setPnfsid(String pnfsid) {
+        this.pnfsid = pnfsid;
+    }
+
+    public void setQueuedtime(Long queuedtime) {
+        this.queuedtime = queuedtime;
+    }
+
+    public abstract String toDisplayString();
 }

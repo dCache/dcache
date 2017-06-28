@@ -57,75 +57,90 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.vehicles.billing;
 
-import java.io.Serializable;
-import java.util.Collection;
-
-import org.dcache.services.billing.db.data.IHistogramData;
+import diskCacheV111.vehicles.Message;
+import org.dcache.util.histograms.TimeFrame;
+import org.dcache.util.histograms.TimeseriesHistogram;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
+ * <p>The purpose of this message is to facilitate interaction
+ * in support of RESTful interfaces.</p>
  *
- * @author arossi
+ * <p>Unlike previous APIs, which were somewhat more coupled with the
+ * actual plotting requirements (JAIDA), there are no presuppositions
+ * here as to what will be done with the histogram data.  Plotting will now
+ * be completely a client-side prerogative.</p>
+ *
+ * <p>This class is part of an API which will eventually replace the
+ * previous, JAIDA-based one.</p>
+ *
+ * <p>The type specifications are mapped to the underlying DAO classes in the
+ * {@link org.dcache.services.billing.cells.receivers.BillingDataRequestReceiver}.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
-
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+public final class BillingDataRequestMessage extends Message {
+    public enum SeriesType {
+        READ, WRITE, P2P, STORE, RESTORE, CONNECTION, CACHED
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    public enum SeriesDataType {
+        BYTES, COUNT, AVGSECS, MAXSECS, MINSECS, HITS, MISSES
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    /**
+     * <p>Specifies the type of billing data: for a specific kind of transfers,
+     * for an aggregated connection time, or for disk cache statistics.</p>
+     */
+    private SeriesType type;
+
+    /**
+     * <p>Specifies the subtype of data: for transfers, whether the amount of
+     * data transferred or the number of transfers; for connections, whether
+     * average, minimum or maximum values; and for disk cache,
+     * whether hits or misses.</p>
+     */
+    private SeriesDataType dataType;
+
+    /**
+     * <p>Specifies the time series to which this data corresponds.</p>
+     */
+    private TimeFrame timeFrame;
+
+    /**
+     * <p>The histogram constructed from the series, bin and timeFrame.</p>
+     */
+    private TimeseriesHistogram histogram;
+
+    public SeriesDataType getDataType() {
+        return dataType;
     }
 
-    public String getField() {
-        return field;
+    public TimeseriesHistogram getHistogram() {
+        return histogram;
     }
 
-    public HistogramDataType getType() {
+    public TimeFrame getTimeFrame() {
+        return timeFrame;
+    }
+
+    public SeriesType getType() {
         return type;
     }
 
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
+    public void setDataType(
+                    SeriesDataType dataType) {
+        this.dataType = dataType;
     }
 
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
+    public void setHistogram(TimeseriesHistogram histogram) {
+        this.histogram = histogram;
     }
 
-    public void setField(String field) {
-        this.field = field;
+    public void setTimeFrame(TimeFrame timeFrame) {
+        this.timeFrame = timeFrame;
     }
 
-    public void setType(HistogramDataType type) {
+    public void setType(SeriesType type) {
         this.type = type;
     }
 }

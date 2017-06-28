@@ -47,6 +47,12 @@
     <bean id="histogram-request-receiver" class="org.dcache.services.billing.cells.receivers.NOPHistogramRequestReceiver">
         <!-- no connection to database; returns failure on request -->
     </bean>
+    <bean id="billing-record-request-receiver" class="org.dcache.services.billing.cells.receivers.BillingRecordRequestReceiver">
+        <!-- no connection to database; returns failure on request -->
+    </bean>
+    <bean id="billing-data-request-receiver" class="org.dcache.services.billing.cells.receivers.BillingDataRequestReceiver">
+      <!-- no connection to database; returns failure on request -->
+    </bean>
   </beans>
 
   <!-- Set of beans instantiated if database is enabled -->
@@ -98,6 +104,26 @@
 
     <bean id="histogram-request-receiver" class="org.dcache.services.billing.cells.receivers.HistogramRequestReceiver">
       <property name="service" ref="histogram-service"/>
+    </bean>
+
+    <bean id="billing-record-request-receiver" class="org.dcache.services.billing.cells.receivers.BillingRecordRequestReceiver">
+      <property name="access" ref="jdbc-billing-info-access"/>
+    </bean>
+
+    <bean id="data-request-executor" class="org.dcache.util.CDCExecutorServiceDecorator">
+      <description>Thread pool service for executing operation submissions</description>
+      <constructor-arg>
+        <bean class="org.dcache.util.BoundedCachedExecutor"
+              destroy-method="shutdownNow">
+          <constructor-arg value="${billing.limits.data-request-threads}"/>
+        </bean>
+      </constructor-arg>
+    </bean>
+
+    <bean id="billing-data-request-receiver" class="org.dcache.services.billing.cells.receivers.BillingDataRequestReceiver">
+      <property name="access" ref="jdbc-billing-info-access"/>
+      <property name="executionService" ref="data-request-executor"/>
+      <property name="hourlyAggregateDataHandler" ref="hourly-aggregata-data-handler"/>
     </bean>
 
     <bean id="billing-info-message-receiver" class="org.dcache.services.billing.cells.receivers.BillingInfoMessageReceiver">

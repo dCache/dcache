@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.services.billing.histograms.AbstractTimeFrameHistogramFactory;
 import org.dcache.util.histograms.TimeFrame;
 import org.dcache.services.billing.histograms.config.HistogramWrapper;
-import org.dcache.services.billing.histograms.data.IHistogramData;
+import org.dcache.services.billing.db.data.IHistogramData;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData;
 import org.dcache.services.billing.plots.util.ITimeFramePlot;
 import org.dcache.services.billing.plots.util.ITimeFramePlotGenerator;

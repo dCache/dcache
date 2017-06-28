@@ -57,23 +57,88 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.services.billing.db.data;
 
 import java.io.Serializable;
-import java.util.Map;
-
-import org.dcache.commons.ITimestamped;
+import java.util.Date;
 
 /**
- * Implemented by all beans storing data to be used in 1-D Histograms.
- *
- * @author arossi
+ * <p>Common fields for both transfer and storage records.</p>
  */
-public interface IHistogramData extends ITimestamped, Serializable {
+public abstract class RecordEntry implements Serializable {
 
-    /**
-     * The contract is that the data which can be plotted on the Y-axis of a 1-D
-     * time histogram will be made available as a Map of name:value pairs.
-     */
-    Map<String, Double> data();
+    private static final long serialVersionUID = 2136965649327543618L;
+
+    private String type;
+    private Date datestamp;
+    private String cellname;
+    private Long connectiontime;
+    private Long queuedtime;
+    private Integer errorcode;
+    private String errormessage;
+    private String pnfsid;
+
+    public String getCellName() {
+        return cellname;
+    }
+
+    public Long getConnectionTime() {
+        return connectiontime;
+    }
+
+    public Date getDateStamp() {
+        return datestamp;
+    }
+
+    public Integer getErrorCode() {
+        return errorcode;
+    }
+
+    public String getErrorMessage() {
+        return errormessage;
+    }
+
+    public String getPnfsId() {
+        return pnfsid;
+    }
+
+    public Long getQueuedTime() {
+        return queuedtime;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setCellName(String cellname) {
+        this.cellname = cellname;
+    }
+
+    public void setConnectionTime(Long connectiontime) {
+        this.connectiontime = connectiontime;
+    }
+
+    public void setDateStamp(Date datestamp) {
+        this.datestamp = datestamp;
+    }
+
+    public void setErrorCode(Integer errorcode) {
+        this.errorcode = errorcode;
+    }
+
+    public void setErrorMessage(String errormessage) {
+        this.errormessage = errormessage;
+    }
+
+    public void setPnfsId(String pnfsid) {
+        this.pnfsid = pnfsid;
+    }
+
+    public void setQueuedTime(Long queuedtime) {
+        this.queuedtime = queuedtime;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }

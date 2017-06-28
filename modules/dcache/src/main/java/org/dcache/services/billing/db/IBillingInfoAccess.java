@@ -61,7 +61,7 @@ package org.dcache.services.billing.db;
 
 import java.util.Collection;
 
-import org.dcache.services.billing.histograms.data.IHistogramData;
+import org.dcache.services.billing.db.data.IHistogramData;
 
 /**
  * Defines DAO API for interacting with billing information.

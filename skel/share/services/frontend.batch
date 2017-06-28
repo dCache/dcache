@@ -14,6 +14,11 @@ check -strong frontend.service.pnfsmanager.timeout.unit
 check -strong frontend.service.poolmanager
 check -strong frontend.service.poolmanager.timeout
 check -strong frontend.service.poolmanager.timeout.unit
+check -strong frontend.service.billing
+check -strong frontend.service.billing.timeout
+check -strong frontend.service.billing.timeout.unit
+check -strong frontend.service.billing.collection.timeout
+check -strong frontend.service.billing.collection.timeout.unit
 check -strong frontend.service.gplazma
 check -strong frontend.service.gplazma.timeout
 check -strong frontend.service.gplazma.timeout.unit

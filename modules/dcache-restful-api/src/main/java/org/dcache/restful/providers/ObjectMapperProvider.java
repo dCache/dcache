@@ -1,6 +1,5 @@
 package org.dcache.restful.providers;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -14,7 +13,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
-
 
 /**
  * Fine-tuning how JSON we be presented by redefine the default Jackson behaviour.

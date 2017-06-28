@@ -86,7 +86,7 @@ import org.dcache.services.billing.db.data.PoolHitData;
 import org.dcache.services.billing.db.data.PoolHitsHourly;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersHourly;
 import org.dcache.services.billing.db.data.StorageData;
-import org.dcache.services.billing.histograms.data.IHistogramData;
+import org.dcache.services.billing.db.data.IHistogramData;
 
 /**
  * <p>Stores hourly billing data in memory in a circular buffer (linked deque)

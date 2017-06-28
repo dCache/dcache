@@ -71,7 +71,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.dcache.services.billing.db.IBillingInfoAccess;
 import org.dcache.services.billing.db.exceptions.RetryException;
-import org.dcache.services.billing.histograms.data.IHistogramData;
+import org.dcache.services.billing.db.data.IHistogramData;
 
 /**
  * Framework for database access; uses a blocking queue and N consumer

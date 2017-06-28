@@ -65,8 +65,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.dcache.services.billing.histograms.data.IHistogramData;
-
 /**
  * Base class for all objects carrying daily aggregated data.
  *

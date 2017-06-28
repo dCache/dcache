@@ -57,75 +57,42 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.services.billing.histograms.data;
+package org.dcache.restful.providers.billing;
 
-import java.io.Serializable;
-import java.util.Collection;
-
-import org.dcache.services.billing.db.data.IHistogramData;
+import org.dcache.services.billing.db.data.StorageRecord;
 
 /**
- * A thin abstraction over {@link IHistogramData}, the latter being implemented
- * by DAO beans that provide a map of Y-axis double values.
- *
- * @author arossi
+ * <p>Attributes pertinent to flushing and restoring operations.</p>
  */
-public final class TimeFrameHistogramData implements Serializable {
+public final class HSMTransferRecord extends BillingTransferRecord {
 
-    public enum HistogramDataType {
-        BYTES_DOWNLOADED,
-        BYTES_UPLOADED,
-        BYTES_STORED,
-        BYTES_RESTORED,
-        BYTES_P2P,
-        TRANSFERS_UPLOADED,
-        TRANSFERS_DOWNLOADED,
-        TRANSFERS_STORED,
-        TRANSFERS_RESTORED,
-        TRANSFERS_P2P,
-        TIME_MAX,
-        TIME_MIN,
-        TIME_AVG,
-        CACHED,
-        NOT_CACHED
+    private static final String MAINFORMAT = "%s (pool %s)(connect %s)(queued %s) %s\n";
+
+    private String pool;
+
+    public HSMTransferRecord() {
+
     }
 
-    private static final long serialVersionUID = -8093447914768924552L;
-
-    private HistogramDataType type;
-    private Collection<IHistogramData> data;
-    private String field;
-    private Double dfactor;
-
-    public Collection<IHistogramData> getData() {
-        return data;
+    public HSMTransferRecord(StorageRecord record) {
+        super(record);
+        this.pool = record.getCellName();
     }
 
-    public Double getDfactor() {
-        return dfactor;
+    public String getPool() {
+        return pool;
     }
 
-    public String getField() {
-        return field;
+    public void setPool(String pool) {
+        this.pool = pool;
     }
 
-    public HistogramDataType getType() {
-        return type;
-    }
-
-    public void setData(Collection<IHistogramData> data) {
-        this.data = data;
-    }
-
-    public void setDfactor(Double dfactor) {
-        this.dfactor = dfactor;
-    }
-
-    public void setField(String field) {
-        this.field = field;
-    }
-
-    public void setType(HistogramDataType type) {
-        this.type = type;
+    public String toDisplayString() {
+        return String.format(MAINFORMAT,
+                             datestamp,
+                             pool,
+                             connectiontime,
+                             queuedtime,
+                             errormessage);
     }
 }
