@@ -179,6 +179,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private void startServer() {
         long effectiveTimeout = _idleTimeoutUnit.toMillis(_idleTimeout);
         PropertyResolverUtils.updateProperty(_server, FactoryManager.IDLE_TIMEOUT, effectiveTimeout);
+        // esure, that read timeout is longer than idle timeout
+        PropertyResolverUtils.updateProperty(_server, FactoryManager.NIO2_READ_TIMEOUT, effectiveTimeout*2);
 
         _server.setPort(_port);
         _server.setHost(_host);
