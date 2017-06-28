@@ -82,8 +82,22 @@ public final class RetentionPolicy implements Serializable {
     private final String _name;
     private final int _id;
 
+    /**
+     * A {@code RetentionPolicy} with highest probability of loss, but is appropriate
+     * for data that can be replaced because other copies can be accessed in a
+     * timely fashion.
+     */
     public static final RetentionPolicy REPLICA    = new RetentionPolicy("REPLICA", 2);
+
+    /**
+     * A {@code RetentionPolicy} for an intermediate level and refers to the data which can
+     * be replaced by lengthy or effort-full processes.
+     */
     public static final RetentionPolicy OUTPUT     = new RetentionPolicy("OUTPUT", 1);
+
+    /**
+     * A {@code RetentionPolicy} with  low probability of loss.
+     */
     public static final RetentionPolicy CUSTODIAL  = new RetentionPolicy("CUSTODIAL", 0);
 
     private final static RetentionPolicy[] ALL_POLICIES = {

@@ -84,7 +84,15 @@ public final class AccessLatency implements Serializable {
     private final String _name;
     private final int _id;
 
+    /**
+     * An {@code AccessLatency} with lowest possible latency for given system.
+     */
     public static final AccessLatency ONLINE        = new AccessLatency("ONLINE",    1);
+
+    /**
+     * An {@code AccessLatency} which indicates that file's access latency
+     * can be improved by changing to {@link ONLINE} state.
+     */
     public static final AccessLatency NEARLINE     = new AccessLatency("NEARLINE", 0);
 
     private final static AccessLatency[] ALL_LATENCIES = {
