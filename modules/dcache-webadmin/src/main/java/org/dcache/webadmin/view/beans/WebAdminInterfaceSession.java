@@ -7,6 +7,10 @@ import org.apache.wicket.request.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * The session-Object to store Session-Data like User-Credentials, and page
  * options.
@@ -22,6 +26,7 @@ public class WebAdminInterfaceSession extends WebSession {
     private final PoolPlotOptionBean poolPlotBean = new PoolPlotOptionBean();
 
     private UserBean user;
+
 
     public static WebAdminInterfaceSession get() {
         return (WebAdminInterfaceSession) Session.get();
@@ -61,6 +66,45 @@ public class WebAdminInterfaceSession extends WebSession {
 
     public boolean isSignedIn() {
         return user != null;
+    }
+
+    public boolean hasAnyPossibleRole() {
+        return user != null && !(user.getRoles().isEmpty() && user.getInactiveRoles().isEmpty());
+    }
+
+    public Roles getRoles() {
+        return user == null ? new Roles() : user.getRoles();
+    }
+
+    private List<String> sorted(Roles roles)
+    {
+        List<String> list = new ArrayList<>(roles);
+        Collections.sort(list);
+        return list;
+    }
+
+    public List<String> getSortedRoles() {
+        return user == null ? Collections.emptyList() : sorted(user.getRoles());
+    }
+
+    public Roles getUnassertedRoles() {
+        return user == null ? new Roles() : user.getInactiveRoles();
+    }
+
+    public List<String> getSortedUnassertedRoles() {
+        return user == null ? Collections.emptyList() : sorted(user.getInactiveRoles());
+    }
+
+    public void assertRole(String role) {
+        if (user != null) {
+            user.activateRole(role);
+        }
+    }
+
+    public void unassertRole(String role) {
+        if (user != null) {
+            user.deactivateRole(role);
+        }
     }
 
     public void logoutUser() {

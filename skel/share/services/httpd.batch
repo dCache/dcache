@@ -72,7 +72,6 @@ check -strong httpd.service.restorehandler-collector.period.unit
 
 define env checkSecurityProperties end
      check -strong httpd.net.https-port
-     check -strong httpd.authz.admin-gid
      check -strong httpd.authn.ciphers
      check -strong httpd.authn.hostcert.cert
      check -strong httpd.authn.hostcert.key

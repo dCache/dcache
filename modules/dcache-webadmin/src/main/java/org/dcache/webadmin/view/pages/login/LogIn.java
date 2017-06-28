@@ -112,11 +112,13 @@ public class LogIn extends BasePage {
         }
 
         private static final long serialVersionUID = -1800491058587279179L;
-        private TextField _username;
-        private PasswordTextField _password;
-        private CheckBox _rememberMe;
-        private WebMarkupContainer _rememberMeRow;
-        private LogInBean _logInModel;
+        private final TextField _username;
+        private final PasswordTextField _password;
+        private final CheckBox _rememberMe;
+        private final WebMarkupContainer _rememberMeRow;
+        private final CheckBox _activateRoles;
+        private final WebMarkupContainer _activateRolesRow;
+        private final LogInBean _logInModel;
 
         LogInForm(final String id) {
             super(id, new CompoundPropertyModel<>(new LogInBean()));
@@ -133,6 +135,10 @@ public class LogIn extends BasePage {
             add(_rememberMeRow);
             _rememberMe = new CheckBox("remembering");
             _rememberMeRow.add(_rememberMe);
+            _activateRolesRow = new WebMarkupContainer("activateRolesRow");
+            add(_activateRolesRow);
+            _activateRoles = new CheckBox("activateRoles");
+            _activateRolesRow.add(_activateRoles);
             Button certButton = new CertSignInButton("certsignin");
             certButton.add(new DefaultFocusBehaviour());
             add(certButton);
@@ -168,6 +174,9 @@ public class LogIn extends BasePage {
             UserBean user = getLogInService().authenticate(username,
                             password.toCharArray());
             getWebadminSession().setUser(user);
+            if (model != null && model.isActivateRoles()) {
+                user.activateAllRoles();
+            }
             if (model != null && model.isRemembering()) {
                 strategy.save(username, password);
             } else {

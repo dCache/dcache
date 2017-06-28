@@ -32,12 +32,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.exceptions.ActiveTransfersServiceException;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.CheckBoxColumn;
-import org.dcache.webadmin.view.util.Role;
 
 import static java.util.stream.Collectors.toList;
 
@@ -52,7 +52,7 @@ public class ActiveTransfersPage extends BasePage
 
     public ActiveTransfersPage()
     {
-        isAdmin = getWebadminSession().hasAnyRole(new Roles(Role.ADMIN));
+        isAdmin = getWebadminSession().getRoles().contains(LoginAttributes.ADMIN_ROLE_NAME);
 
         add(new FeedbackPanel("feedback"));
 
@@ -94,7 +94,7 @@ public class ActiveTransfersPage extends BasePage
         DataTable<ActiveTransfersBean, ColumnComparator> transfers = new DefaultDataTable<>("transfers", columns, provider, 1000);
 
         Button submit = new Button("submit");
-        MetaDataRoleAuthorizationStrategy.authorize(submit, RENDER, Role.ADMIN);
+        MetaDataRoleAuthorizationStrategy.authorize(submit, RENDER, LoginAttributes.ADMIN_ROLE_NAME);
 
         Form<?> form = new Form<Void>("transfersForm") {
             @Override

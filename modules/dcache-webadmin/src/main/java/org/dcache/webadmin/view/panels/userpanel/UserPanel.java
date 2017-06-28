@@ -1,8 +1,12 @@
 package org.dcache.webadmin.view.panels.userpanel;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Session;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
+import org.apache.wicket.markup.html.list.ListItem;
+import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
@@ -25,6 +29,8 @@ public class UserPanel extends BasePanel {
     public UserPanel(String id) {
         super(id);
 
+        WebAdminInterfaceSession session = (WebAdminInterfaceSession) Session.get();
+
         add(new Label("username", new PropertyModel(this, "session.userName")));
         add(new Link("logout") {
 
@@ -32,7 +38,7 @@ public class UserPanel extends BasePanel {
 
             @Override
             public void onClick() {
-                if (((WebAdminInterfaceSession) Session.get()).isSignedIn()) {
+                if (session.isSignedIn()) {
                     getSession().invalidate();
                     setResponsePage(DCacheServices.class);
                 }
@@ -40,7 +46,37 @@ public class UserPanel extends BasePanel {
 
             @Override
             public boolean isVisible() {
-                return ((WebAdminInterfaceSession) Session.get()).isSignedIn();
+                return session.isSignedIn();
+            }
+        });
+
+        add(new ListView("activeRoles", new PropertyModel(this, "session.sortedRoles")) {
+            @Override
+            protected void populateItem(ListItem item) {
+                Link role = new Link("role", item.getModel()){
+                    @Override
+                    public void onClick() {
+                        session.unassertRole((String)getModelObject());
+                    }
+                };
+                role.setBody(item.getModel());
+                role.add(new AttributeModifier("title", Model.of("Active role (click to deactivate).")));
+                item.add(role);
+            }
+        });
+
+        add(new ListView("inactiveRoles", new PropertyModel(this, "session.sortedUnassertedRoles")) {
+            @Override
+            protected void populateItem(ListItem item) {
+                Link role = new Link("role", item.getModel()) {
+                    @Override
+                    public void onClick() {
+                        session.assertRole((String)getModelObject());
+                    }
+                };
+                role.setBody(item.getModel());
+                role.add(new AttributeModifier("title", Model.of("Inactive role (click to activate).")));
+                item.add(role);
             }
         });
 
@@ -50,7 +86,7 @@ public class UserPanel extends BasePanel {
 
             @Override
             public boolean isVisible() {
-                return !((WebAdminInterfaceSession) Session.get()).isSignedIn();
+                return !session.isSignedIn();
             }
         });
     }

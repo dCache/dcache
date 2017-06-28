@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.List;
 
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
 import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfersPage;
@@ -35,7 +36,6 @@ import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.spacetokens.SpaceTokens;
 import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
-import org.dcache.webadmin.view.util.Role;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -201,7 +201,7 @@ public class BasicNavigationPanel extends BasePanel {
                 link.setVisible(false);
             }
 
-            if (navLink.isAdminPage() && !WebAdminInterfaceSession.hasUserRole(Role.ADMIN)) {
+            if (navLink.isAdminPage() && !WebAdminInterfaceSession.hasUserRole(LoginAttributes.ADMIN_ROLE_NAME)) {
                 item.add(new AttributeModifier("title", getStringResource("tooltip.AdminOnly")));
                 item.add(appendCssClass("unauthorized"));
             }

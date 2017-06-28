@@ -12,6 +12,7 @@ public class LogInBean implements Serializable {
     private String _username = "";
     private String _password = "";
     private boolean _remembering = true;
+    private boolean _activateRoles = true;
 
     public String getPassword() {
         return _password;
@@ -35,5 +36,15 @@ public class LogInBean implements Serializable {
 
     public void setUsername(String username) {
         _username = username;
+    }
+
+    public boolean isActivateRoles()
+    {
+        return _activateRoles;
+    }
+
+    public void setActivateRoles(boolean value)
+    {
+        _activateRoles = value;
     }
 }

@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import diskCacheV111.pools.PoolV2Mode;
+
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.webadmin.controller.PoolSpaceService;
 import org.dcache.webadmin.controller.exceptions.PoolSpaceServiceException;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
@@ -24,7 +26,6 @@ import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
 import org.dcache.webadmin.view.panels.poollist.PoolListPanel;
 import org.dcache.webadmin.view.panels.selectall.SelectAllPanel;
-import org.dcache.webadmin.view.util.Role;
 
 /**
  * The PoolUsage Webpage
@@ -100,7 +101,7 @@ public class PoolList extends SortableBasePage {
                 dropDownChoices, new ChoiceRenderer<SelectOption>("value"));
         setDefaultChoice(dropDownChoices);
         MetaDataRoleAuthorizationStrategy.authorize(dropDownChoice,
-                RENDER, Role.ADMIN);
+                RENDER, LoginAttributes.ADMIN_ROLE_NAME);
         return dropDownChoice;
     }
 

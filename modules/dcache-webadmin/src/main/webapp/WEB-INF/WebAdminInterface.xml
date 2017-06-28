@@ -318,7 +318,6 @@
         <property name="billingService" ref="BillingService"/>
         <property name="thumbnailPanelProvider" ref="ThumbnailPanelProvider"/>
         <property name="authenticatedMode" value="${httpd.enable.authn}"/>
-        <property name="adminGid" value="${httpd.authz.admin-gid}"/>
         <property name="dcacheName" value="${httpd.html.dcache-instance-name}"/>
         <property name="dcacheDescription" value="${httpd.html.dcache-instance-description}"/>
         <property name="authDestination" value="${httpd.service.gplazma}"/>

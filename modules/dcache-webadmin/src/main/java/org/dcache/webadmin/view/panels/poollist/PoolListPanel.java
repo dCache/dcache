@@ -12,13 +12,13 @@ import org.apache.wicket.model.PropertyModel;
 
 import java.util.List;
 
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
 import org.dcache.webadmin.view.panels.layout.LayoutHeaderPanel;
 import org.dcache.webadmin.view.panels.layout.LayoutItemPanel;
 import org.dcache.webadmin.view.util.EvenOddListView;
-import org.dcache.webadmin.view.util.Role;
 
 /**
  * Reusable Panel for the Listview on Poolspaces
@@ -39,7 +39,7 @@ public class PoolListPanel extends BasePanel {
                 getStringResource("PoolPanel.selected.header"));
         selectBoxHeaderLabel.setVisibilityAllowed(_showCheckbox);
         MetaDataRoleAuthorizationStrategy.authorize(selectBoxHeaderLabel,
-                RENDER, Role.ADMIN);
+                RENDER, LoginAttributes.ADMIN_ROLE_NAME);
         add(selectBoxHeaderLabel);
         add(new LayoutHeaderPanel("PoolPanel.layoutHeaderPanel"));
         add(new PoolBeanListView("poolPanelListview", model));
@@ -77,7 +77,7 @@ public class PoolListPanel extends BasePanel {
             WebMarkupContainer checkboxColumn = new WebMarkupContainer("PoolPanel.checkboxRow");
             checkboxColumn.setVisibilityAllowed(_showCheckbox);
             MetaDataRoleAuthorizationStrategy.authorize(checkboxColumn,
-                    RENDER, Role.ADMIN);
+                    RENDER, LoginAttributes.ADMIN_ROLE_NAME);
             CheckBox checkbox = new CheckBox("PoolPanel.selected",
                     new PropertyModel<Boolean>(poolBean, "selected"));
             checkboxColumn.add(checkbox);

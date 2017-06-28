@@ -27,7 +27,9 @@ import java.util.List;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.cells.CellStub;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.webadmin.controller.ActiveTransfersService;
@@ -65,7 +67,6 @@ import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
 import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
 import org.dcache.webadmin.view.panels.navigation.BasicNavigationPanel;
-import org.dcache.webadmin.view.util.Role;
 
 /**
  * This is the main application object for the whole Webadmin-Interface
@@ -102,7 +103,6 @@ public class WebAdminInterface extends WebApplication implements CellMessageSend
     private String _dcacheName;
     private String _dcacheDescription;
     private String _authDestination;
-    private int _adminGid;
     private int _httpsPort;
     private int _httpPort;
     private boolean _generatePlots = false;
@@ -199,11 +199,6 @@ public class WebAdminInterface extends WebApplication implements CellMessageSend
     public void setActiveTransfersService(
                     ActiveTransfersService activeTransfersService) {
         _activeTransfersService = activeTransfersService;
-    }
-
-    @Required
-    public void setAdminGid(int adminGid) {
-        _adminGid = adminGid;
     }
 
     @Required
@@ -344,7 +339,7 @@ public class WebAdminInterface extends WebApplication implements CellMessageSend
 
     private void markAdminOnlyPages() {
         for (final Class<? extends Component> adminPage : ADMIN_PAGES) {
-            MetaDataRoleAuthorizationStrategy.authorize(adminPage, Role.ADMIN);
+            MetaDataRoleAuthorizationStrategy.authorize(adminPage, LoginAttributes.ADMIN_ROLE_NAME);
         }
     }
 
@@ -389,7 +384,6 @@ public class WebAdminInterface extends WebApplication implements CellMessageSend
             LoginStrategyLogInService loginService
                 = new LoginStrategyLogInService();
             loginService.setLoginStrategy(loginStrategy);
-            loginService.setAdminGid(_adminGid);
             _logInService = loginService;
         }
 

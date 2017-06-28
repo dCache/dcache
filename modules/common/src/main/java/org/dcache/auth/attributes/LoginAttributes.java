@@ -65,4 +65,20 @@ public class LoginAttributes
                 .map(Role.class::cast)
                 .anyMatch(r -> r.equals(ADMIN_ROLE));
     }
+
+    public static Stream<String> assertedRoles(Collection<LoginAttribute> attributes)
+    {
+        return attributes.stream()
+                .filter(Role.class::isInstance)
+                .map(Role.class::cast)
+                .map(Role::getRole);
+    }
+
+    public static Stream<String> unassertedRoles(Collection<LoginAttribute> attributes)
+    {
+        return attributes.stream()
+                .filter(UnassertedRole.class::isInstance)
+                .map(UnassertedRole.class::cast)
+                .map(UnassertedRole::getRole);
+    }
 }

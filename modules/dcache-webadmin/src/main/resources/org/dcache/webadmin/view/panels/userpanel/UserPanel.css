@@ -8,6 +8,14 @@ span.userLogin {
     color: #8ae234;
 }
 
+span.roles {
+    color: #000;
+}
+
+span.inactive {
+    color: #ccc;
+}
+
 span.userLogin a {
     text-decoration: none;
 }

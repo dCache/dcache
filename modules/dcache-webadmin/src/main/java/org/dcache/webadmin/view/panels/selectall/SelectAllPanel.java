@@ -78,10 +78,10 @@ import org.slf4j.LoggerFactory;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.webadmin.view.beans.PoolCommandBean;
 import org.dcache.webadmin.view.beans.PoolSpaceBean;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
-import org.dcache.webadmin.view.util.Role;
 
 import static org.dcache.webadmin.view.pages.basepage.SortableBasePage.FILTER_EVENT;
 
@@ -226,9 +226,9 @@ public abstract class SelectAllPanel extends BasePanel {
         this.tableId = tableId;
         Button selectAll = new SelectAllButton("selectAllButton");
         Button deselectAll = new DeselectAllButton("deselectAllButton");
-        MetaDataRoleAuthorizationStrategy.authorize(submit, RENDER, Role.ADMIN);
-        MetaDataRoleAuthorizationStrategy.authorize(selectAll, RENDER, Role.ADMIN);
-        MetaDataRoleAuthorizationStrategy.authorize(deselectAll, RENDER, Role.ADMIN);
+        MetaDataRoleAuthorizationStrategy.authorize(submit, RENDER, LoginAttributes.ADMIN_ROLE_NAME);
+        MetaDataRoleAuthorizationStrategy.authorize(selectAll, RENDER, LoginAttributes.ADMIN_ROLE_NAME);
+        MetaDataRoleAuthorizationStrategy.authorize(deselectAll, RENDER, LoginAttributes.ADMIN_ROLE_NAME);
         add(submit);
         add(selectAll);
         add(deselectAll);
