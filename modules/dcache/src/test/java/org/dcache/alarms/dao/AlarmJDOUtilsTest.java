@@ -150,8 +150,9 @@ public class AlarmJDOUtilsTest {
     }
 
     private void givenFilterParametersAre(Date after, Date before, String type) {
-        filter = AlarmJDOUtils.getFilter(after, before, type,
-                        null, null, null);
+        Long lafter = after == null ? null : after.getTime();
+        Long lbefore = before == null ? null: before.getTime();
+        filter = AlarmJDOUtils.getFilter(lafter, lbefore, type);
     }
 
     private void givenSizeOfLogEntryListIs(int size) {

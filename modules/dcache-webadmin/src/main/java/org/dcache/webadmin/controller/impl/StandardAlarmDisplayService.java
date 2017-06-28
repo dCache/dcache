@@ -67,20 +67,18 @@ import java.util.Date;
 import java.util.Map;
 
 import diskCacheV111.util.CacheException;
-
 import dmg.cells.nucleus.NoRouteToCellException;
-
 import org.dcache.alarms.AlarmPriority;
-import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.LogEntry;
+import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
+import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.cells.CellStub;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.alarms.AlarmPriorityMapRequestMessage;
 import org.dcache.webadmin.controller.AlarmDisplayService;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -97,8 +95,8 @@ public class StandardAlarmDisplayService implements AlarmDisplayService {
     private static final long serialVersionUID = 6949169602783225125L;
 
     private final AlarmTableProvider alarmTableProvider;
-    private final LogEntryDAO access;
-    private final CellStub alarmService;
+    private final LogEntryDAO        access;
+    private final CellStub           alarmService;
 
     public StandardAlarmDisplayService(DAOFactory factory, CellStub alarmService) {
         access = checkNotNull(factory.getLogEntryDAO());

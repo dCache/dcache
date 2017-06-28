@@ -73,8 +73,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.LogEntry;
+import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.model.exceptions.DAOException;
 
@@ -90,10 +90,10 @@ import static org.mockito.Mockito.inOrder;
  */
 public class StandardAlarmDisplayServiceTest {
 
-    private LogEntryDAO mocked;
+    private LogEntryDAO                 mocked;
     private StandardAlarmDisplayService service;
-    private AlarmTableProvider provider;
-    private DAOFactoryImplHelper helper;
+    private AlarmTableProvider          provider;
+    private DAOFactoryImplHelper        helper;
 
     @Before
     public void setup() throws Exception {

@@ -77,6 +77,7 @@ import java.util.Collections;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.LogEntry;
+import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
 import org.dcache.alarms.spi.LogEntryListenerFactory;
@@ -122,11 +123,31 @@ public class LogEntryAppenderTest {
         }
 
         @Override
+        public long remove(Collection<LogEntry> selected) {
+            return 0;
+        }
+
+        @Override
+        public Collection<LogEntry> get(AlarmDAOFilter filter) {
+            return null;
+        }
+
+        @Override
         public void initialize() {
         }
 
         @Override
+        public boolean isConnected() {
+            return false;
+        }
+
+        @Override
         public void shutdown() {
+        }
+
+        @Override
+        public long update(Collection<LogEntry> selected) {
+            return 0;
         }
     };
 

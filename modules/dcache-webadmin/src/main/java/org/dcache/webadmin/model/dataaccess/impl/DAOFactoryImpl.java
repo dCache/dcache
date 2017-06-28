@@ -3,9 +3,9 @@ package org.dcache.webadmin.model.dataaccess.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
@@ -22,8 +22,8 @@ import org.dcache.webadmin.model.dataaccess.communication.impl.PageInfoCache;
 public class DAOFactoryImpl implements DAOFactory {
     private Logger _log = LoggerFactory.getLogger(DAOFactory.class);
     private CommandSenderFactory _defaultCommandSenderFactory;
-    private PageInfoCache _pageCache;
-    private LogEntryDAO _logEntryDAO;
+    private PageInfoCache        _pageCache;
+    private LogEntryDAO          _logEntryDAO;
 
     @Override
     public synchronized LogEntryDAO getLogEntryDAO() {

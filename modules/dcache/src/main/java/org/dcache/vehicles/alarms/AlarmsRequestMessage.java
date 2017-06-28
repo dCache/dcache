@@ -57,46 +57,51 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.dataaccess;
+package org.dcache.vehicles.alarms;
 
-import java.util.Collection;
+import java.util.List;
 
+import diskCacheV111.vehicles.Message;
 import org.dcache.alarms.LogEntry;
-import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 
 /**
- * API for the persistent storage to be used in connection with
- * {@link LogEntry} -based HTML pages. The {{@link #update(Collection)} and
- * {@link #remove(Collection)} methods assume in-memory selection of alarm
- * entries to be deleted or modified.
- *
- * @author arossi
+ * <p>Request for list of alarms filtered by date range and/or type.</p>
  */
-public interface LogEntryDAO {
-    /**
-     * It is assumed that any filtering beyond what the DAO filter takes
-     * will be done in memory.
-     */
-    Collection<LogEntry> get(AlarmDAOFilter filter);
+public class AlarmsRequestMessage extends Message {
+    private Long before;
+    private Long after;
+    private String type;
+    private List<LogEntry> alarms;
 
-    /**
-     * @return number of entries removed
-     */
-    long remove(Collection<LogEntry> selected);
+    public Long getAfter() {
+        return after;
+    }
 
-    /**
-     * The only properties which can be updated through this method are
-     * {@link LogEntry#setClosed()} and {@link LogEntry#setNotes(String)}.
-     * {@link LogEntry#setCount()} should only be called by an initializer
-     * (e.g., upon object dehydration).
-     *
-     * @return number of entries updated
-     */
-    long update(Collection<LogEntry> selected);
+    public List<LogEntry> getAlarms() {
+        return alarms;
+    }
 
-    /**
-     * Indicate whether the DAO layer is actually "live" (that is, connected
-     * to a real data store).
-     */
-    boolean isConnected();
+    public Long getBefore() {
+        return before;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setAfter(Long after) {
+        this.after = after;
+    }
+
+    public void setAlarms(List<LogEntry> alarms) {
+        this.alarms = alarms;
+    }
+
+    public void setBefore(Long before) {
+        this.before = before;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }

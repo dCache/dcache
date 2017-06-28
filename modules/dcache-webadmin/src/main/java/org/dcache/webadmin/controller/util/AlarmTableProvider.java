@@ -71,7 +71,7 @@ import java.util.Map;
 
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.LogEntry;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
+import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
 import org.dcache.webadmin.view.beans.AlarmQueryBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;

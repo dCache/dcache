@@ -351,14 +351,15 @@
             <description>Database persistence manager</description>
             <constructor-arg>
                 <map>
-                    <entry key="datanucleus.PersistenceUnitName" value="WebAlarmsRDBMS"/>
+                    <entry key="datanucleus.PersistenceUnitName" value="AlarmsRDBMS"/>
                 </map>
             </constructor-arg>
             <property name="connectionFactory" ref="dataSource"/>
         </bean>
 
-        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore">
-            <property name="persistenceManagerFactory" ref="pmf"/>
+        <bean id="alarmStore" class="org.dcache.alarms.dao.impl.DataNucleusLogEntryStore">
+            <constructor-arg><ref bean="pmf"/></constructor-arg>
+            <property name="cleanerEnabled" value="false"/>
         </bean>
     </beans>
 
@@ -368,19 +369,20 @@
             <description>Database persistence manager</description>
             <constructor-arg>
                 <map>
-                    <entry key="datanucleus.PersistenceUnitName" value="WebAlarmsXML"/>
+                    <entry key="datanucleus.PersistenceUnitName" value="AlarmsXML"/>
                     <entry key="datanucleus.ConnectionURL" value="${httpd.alarms.db.url}"/>
                 </map>
             </constructor-arg>
         </bean>
 
-        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore">
-            <property name="persistenceManagerFactory" ref="pmf"/>
+        <bean id="alarmStore" class="org.dcache.alarms.dao.impl.DataNucleusLogEntryStore">
+            <constructor-arg><ref bean="pmf"/></constructor-arg>
+            <property name="cleanerEnabled" value="false"/>
         </bean>
     </beans>
 
     <beans profile="alarms-off">
-        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.NOPAlarmStore">
+        <bean id="alarmStore" class="org.dcache.alarms.dao.impl.NOPLogEntryStore">
         </bean>
     </beans>
 </beans>

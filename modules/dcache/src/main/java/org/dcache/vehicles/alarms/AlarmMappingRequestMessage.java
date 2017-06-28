@@ -57,36 +57,25 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.dataaccess.impl;
+package org.dcache.vehicles.alarms;
 
-import java.util.Collection;
+import java.util.Map;
 
-import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
-import org.dcache.alarms.LogEntry;
-import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
+import diskCacheV111.vehicles.Message;
+import org.dcache.alarms.AlarmPriority;
 
 /**
- * For use with the 'off' Spring profile.
- * Should never be called, but just in case,
- * this avoids NPEs.
- *
- * @author arossi
+ * <p>For retrieval of alarm mappings.</p>
  */
-public class NOPAlarmStore implements LogEntryDAO {
+public class AlarmMappingRequestMessage extends Message {
 
-    public Collection<LogEntry> get(AlarmDAOFilter filter) {
-        return null;
+    private Map<String, AlarmPriority> map;
+
+    public Map<String, AlarmPriority> getMap() {
+        return map;
     }
 
-    public long remove(Collection<LogEntry> selected) {
-        return 0;
-    }
-
-    public long update(Collection<LogEntry> selected) {
-        return 0;
-    }
-
-    public boolean isConnected() {
-        return false;
+    public void setMap(Map<String, AlarmPriority> map) {
+        this.map = map;
     }
 }

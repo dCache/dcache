@@ -178,6 +178,24 @@ public class AlarmJDOUtils {
         return filter;
     }
 
+    public static AlarmDAOFilter getFilter(Long after, Long before, String type) {
+        return getFilter(after, before, type, null, null, null);
+    }
+
+    public static AlarmDAOFilter getFilter(Date after,
+                                           Date before,
+                                           String type,
+                                           boolean isAlarm,
+                                           Integer rangeStart,
+                                           Integer rangeEnd) {
+        return getFilter(after == null ? null : after.getTime(),
+                         before == null ? null : before.getTime(),
+                         type,
+                         isAlarm,
+                         rangeStart,
+                         rangeEnd);
+    }
+
     /**
      * Construct filter based on values for the parameter fields (AND'd).
      * <br>
@@ -199,8 +217,8 @@ public class AlarmJDOUtils {
      *            range ending
      *            may be <code>null</code>.
      */
-    public static AlarmDAOFilter getFilter(Date after,
-                                           Date before,
+    public static AlarmDAOFilter getFilter(Long after,
+                                           Long before,
                                            String type,
                                            Boolean isAlarm,
                                            Integer rangeStart,
@@ -212,7 +230,7 @@ public class AlarmJDOUtils {
         if (after != null) {
             f.append("lastUpdate>=a");
             p.append("java.lang.Long a");
-            values.add(after.getTime());
+            values.add(after);
         }
 
         if (before != null) {
@@ -222,7 +240,7 @@ public class AlarmJDOUtils {
             }
             f.append("lastUpdate<=b");
             p.append("java.lang.Long b");
-            values.add(before.getTime());
+            values.add(before);
         }
 
         if (type != null) {

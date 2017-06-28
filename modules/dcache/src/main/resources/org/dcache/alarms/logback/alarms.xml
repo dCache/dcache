@@ -52,6 +52,16 @@
         <property name="store" ref="alarmStore"/>
     </bean>
 
+    <bean id="alarms-request-handler" class="org.dcache.alarms.messages.AlarmsRequestHandler">
+        <property name="access" ref="alarmStore"/>
+        <property name="map" ref="priorityMap"/>
+        <property name="executor">
+            <bean class="org.dcache.util.BoundedCachedExecutor">
+                <constructor-arg value="${alarms.limits.message-threads}"/>
+            </bean>
+        </property>
+    </bean>
+
     <bean id="server" class="org.dcache.alarms.logback.LogEntryServer"
         init-method="start" destroy-method="stop">
         <property name="port" value="${alarms.net.port}"/>

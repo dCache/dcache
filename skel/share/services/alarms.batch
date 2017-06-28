@@ -25,6 +25,7 @@ check alarms.email.threshold
 check alarms.email.encoding-pattern
 check alarms.enable.cleaner
 check alarms.limits.workers
+check alarms.limits.message-threads
 check alarms.limits.queue-size
 
 define env checkAlarmCleanerProperites end

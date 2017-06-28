@@ -57,137 +57,27 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.view.beans;
+package org.dcache.vehicles.alarms;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
-import org.dcache.alarms.AlarmPriority;
+import diskCacheV111.vehicles.Message;
 import org.dcache.alarms.LogEntry;
-import org.dcache.alarms.dao.LogEntryDAO;
 
 /**
- * Session data bean.
+ * <p>Request to update alarms.</p>
  *
- * @author arossi
+ * <p>The alarms list contains the alarms with the appropriate fields
+ *    already updated.</p>
  */
-public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
+public class AlarmsUpdateMessage extends Message {
+    private List<LogEntry> toUpdate;
 
-    private static final long serialVersionUID = -2905791637912613314L;
-    private final Set<LogEntry> updated = new HashSet<>();
-    private final Set<LogEntry> deleted = new HashSet<>();
-
-    private Date after;
-    private Date before;
-
-    /*
-     * give this a default value so that the drop-down box displays this instead
-     * of the "SELECT ONE" message
-     */
-    private AlarmPriority priority = AlarmPriority.HIGH;
-    private String type;
-    private boolean showClosed;
-    private Integer from;
-    private Integer to;
-
-    public void addToDeleted(LogEntry toDelete) {
-        deleted.add(toDelete);
+    public List<LogEntry> getToUpdate() {
+        return toUpdate;
     }
 
-    public void addToUpdated(LogEntry toUpdate) {
-        updated.add(toUpdate);
-    }
-
-    public void delete(LogEntryDAO access) {
-        if (!deleted.isEmpty()) {
-            access.remove(deleted);
-            deleted.clear();
-        }
-    }
-
-    public Date getAfter() {
-        if (after == null) {
-            return null;
-        }
-        return new Date(after.getTime());
-    }
-
-    public Date getBefore() {
-        if (before == null) {
-            return null;
-        }
-        return new Date(before.getTime());
-    }
-
-    public Integer getFrom() {
-        return from;
-    }
-
-    public AlarmPriority getPriority() {
-        return priority;
-    }
-
-    public Integer getTo() {
-        return to;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public boolean isShowClosed() {
-        return showClosed;
-    }
-
-    public void removeFromDeleted(LogEntry toDelete) {
-        deleted.remove(toDelete);
-    }
-
-    public void setAfter(Date after) {
-        if (after == null) {
-            this.after = null;
-        } else {
-            this.after = new Date(after.getTime());
-        }
-    }
-
-    public void setBefore(Date before) {
-        if (before == null) {
-            this.before = null;
-        } else {
-            this.before = new Date(before.getTime());
-        }
-    }
-
-    public void setFrom(Integer from) {
-        this.from = from;
-    }
-
-    public void setPriority(AlarmPriority priority) {
-        this.priority = priority;
-    }
-
-    public void setShowClosed(boolean showClosed) {
-        this.showClosed = showClosed;
-    }
-
-    public void setTo(Integer to) {
-        this.to = to;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public boolean shouldDelete(LogEntry entry) {
-        return deleted.contains(entry);
-    }
-
-    public void update(LogEntryDAO access) {
-        if (!updated.isEmpty()) {
-            access.update(updated);
-            updated.clear();
-        }
+    public void setToUpdate(List<LogEntry> toUpdate) {
+        this.toUpdate = toUpdate;
     }
 }

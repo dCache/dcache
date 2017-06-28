@@ -1,5 +1,6 @@
 package org.dcache.webadmin.model.dataaccess;
 
+import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSenderFactory;
 
 /**
