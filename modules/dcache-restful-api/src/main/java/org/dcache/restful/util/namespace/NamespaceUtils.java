@@ -125,7 +125,7 @@ public final class NamespaceUtils {
         }
 
         if (attributes.isDefined(FileAttribute.CREATION_TIME)) {
-            json.setMtime(attributes.getCreationTime());
+            json.setCreationTime(attributes.getCreationTime());
         }
 
         if (attributes.isDefined(FileAttribute.SIZE)) {
