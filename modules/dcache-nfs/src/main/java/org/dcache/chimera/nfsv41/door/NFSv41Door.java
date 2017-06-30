@@ -556,7 +556,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     NfsTransfer transfer = _ioMessages.get(openStateId.stateid());
                     if (transfer == null) {
                         transfer = new NfsTransfer(_pnfsHandler, client, openStateId, nfsInode,
-                                context.getRpcCall().getCredential().getSubject());
+                                context.getRpcCall().getCredential().getSubject(), ioMode);
 
                         transfer.setProtocolInfo(protocolInfo);
                         transfer.setCellAddress(getCellAddress());
@@ -589,32 +589,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     }
 
                     layoutStateId = transfer.getStateid();
-
-                    if (!transfer.getFileAttributes().isDefined(FileAttribute.LOCATIONS)) {
-                        // REVISIT: ideally we want location update only, if other attributes are available
-                        transfer.readNameSpaceEntry(ioMode != layoutiomode4.LAYOUTIOMODE4_READ);
-                    }
-
-                    /*
-                     * If file is on a tape only, tell the client right away
-                     * that it will take some time.
-                     */
-                    FileAttributes attr = transfer.getFileAttributes();
-                    if ((ioMode == layoutiomode4.LAYOUTIOMODE4_READ) && attr.getLocations().isEmpty()) {
-
-                        if (attr.getStorageInfo().isStored()) {
-                            transfer.setOnlineFilesOnly(false);
-                            transfer.selectPoolAsync(TimeUnit.SECONDS.toMillis(90));
-
-                            // clear file location to enforce re-fetcing from the namespace
-                            // REVISIT: ideally we want to subscribe for location update on this file
-                            transfer.getFileAttributes().undefine(FileAttribute.LOCATIONS);
-
-                            throw new LayoutTryLaterException("Triggering stage for " + inode.getId());
-                        }
-
-                        throw new NfsIoException("lost file " + inode.getId());
-                    }
 
                     PoolDS ds = transfer.getPoolDataServer(NFS_REQUEST_BLOCKING);
                     deviceid = ds.getDeviceId();
@@ -926,8 +900,10 @@ public class NFSv41Door extends AbstractCellComponent implements
         private ListenableFuture<Void> _redirectFuture;
         private AtomicReference<ChimeraNFSException> _errorHolder = new AtomicReference<>();
         private final NFS4Client _client;
+        private final int _ioMode;
 
-        NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId, Inode nfsInode, Subject ioSubject) throws ChimeraNFSException {
+        NfsTransfer(PnfsHandler pnfs, NFS4Client client, NFS4State openStateId, Inode nfsInode, Subject ioSubject, int ioMode)
+                throws ChimeraNFSException {
             super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  FsPath.ROOT);
 
             _nfsInode = nfsInode;
@@ -935,6 +911,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             // layout, or a transfer in dCache language, must have a unique stateid
             _stateid = client.createState(openStateId.getStateOwner(), openStateId);
             _client = client;
+            _ioMode = ioMode;
         }
 
         @Override
@@ -974,6 +951,15 @@ public class NFSv41Door extends AbstractCellComponent implements
             }
 
             if (_redirectFuture == null) {
+
+                readNameSpaceEntry(_ioMode == layoutiomode4.LAYOUTIOMODE4_RW);
+
+                FileAttributes attr = getFileAttributes();
+                if (!isWrite() && attr.getLocations().isEmpty()
+                        && !attr.getStorageInfo().isStored()) {
+                    throw new NfsIoException("lost file " + getPnfsId());
+                }
+
                 /*
                  * We start new request with an assumption, that file is available
                  * and can be directly accessed by the client, e.q. no stage
