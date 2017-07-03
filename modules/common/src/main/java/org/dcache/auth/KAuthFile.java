@@ -67,6 +67,7 @@ COPYRIGHT STATUS:
 package org.dcache.auth;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -78,6 +79,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -85,6 +87,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 // WARNING THIS CLASS IS NOT THREAD SAFE
 // Format of : authentication file:
@@ -637,6 +641,13 @@ public class KAuthFile {
         return new UserAuthRecord(Username, false, UID, GID, Home, Root, FsRoot, Principals);
     }
 
+    private void checkGidValues(int[] gids) {
+        for (int gid : gids) {
+            checkArgument(gid >= 0 && gid <= 0xFFFF, "gid values %s not in range "
+                + "[1,65535]", gid);
+        }
+    }
+
     public void dcuseradd(Arguments arguments) {
         if( arguments.uid == null  ) {
             throw new IllegalArgumentException(" uid is not specified ");
@@ -646,14 +657,9 @@ public class KAuthFile {
             throw new IllegalArgumentException(" uid value "+uid+
             " is not in the range [0,65535]");
         }
-        if( arguments.gid == null  ) {
-            throw new IllegalArgumentException(" gid is not specified ");
-        }
-        int gid = arguments.gid;
-        if(gid < 0 || gid > 0xFFFF ) {
-            throw new IllegalArgumentException(" gid value "+gid+
-            " is not in the range [0,65535]");
-        }
+        checkArgument(arguments.gids != null, "gid is not specified");
+        checkGidValues(arguments.gids);
+        int[] gids = arguments.gids;
 
         if(arguments.readOnly == null) {
             throw new IllegalArgumentException(" write flag (read-only|read-write) not specified");
@@ -678,7 +684,7 @@ public class KAuthFile {
         if(debug) {
             System.out.println(" adding user = "+user+
             " with uid = "+uid+
-            ", gid = "+gid+
+            ", gid = "+Arrays.toString(gids)+
             ", home = "+arguments.home+
             ", root = "+arguments.root+
             ", fsroot = "+arguments.fsroot);
@@ -703,7 +709,7 @@ public class KAuthFile {
                 " already  has a password based authentication record");
             }
             UserPwdRecord pwd_record = new UserPwdRecord(user,arguments.passwd,readOnly,
-            uid,gid,arguments.home, arguments.root,arguments.fsroot,true);
+            uid,gids,arguments.home, arguments.root,arguments.fsroot,true);
             pwd_records.put(user,pwd_record);
         }
 
@@ -712,7 +718,7 @@ public class KAuthFile {
                 throw new IllegalArgumentException(" User "+ user +
                 " already  has an authentication record");
             }
-            UserAuthRecord record = new UserAuthRecord(user,readOnly,uid,gid,arguments.home,
+            UserAuthRecord record = new UserAuthRecord(user,readOnly,uid,gids,arguments.home,
             arguments.root,arguments.fsroot,arguments.secureIds);
             auth_records.put(user,record);
         }
@@ -739,19 +745,15 @@ public class KAuthFile {
                 auth_record.UID = uid;
             }
         }
-        if( arguments.gid != null  ) {
-            int gid = arguments.gid;
-            if(gid < 0 || gid > 0xFFFF ) {
-                throw new IllegalArgumentException(" gid value "+gid+
-                " is not in the range [1,65535]");
-            }
+        if( arguments.gids != null  ) {
+            checkGidValues(arguments.gids);
             if(pwd_record != null) {
                 pwd_record.GIDs.clear();
-                pwd_record.GIDs.add(gid);
+                Arrays.stream(arguments.gids).boxed().forEach(pwd_record.GIDs::add);
             }
             if(auth_record != null) {
                 auth_record.GIDs.clear();
-                auth_record.GIDs.add(gid);
+                Arrays.stream(arguments.gids).boxed().forEach(auth_record.GIDs::add);
             }
         }
 
@@ -833,7 +835,7 @@ public class KAuthFile {
         if(debug) {
             System.out.println(" modifying user = "+user+
             " with uid = "+arguments.uid+
-            ", gid = "+arguments.gid+
+            ", gid = "+Arrays.toString(arguments.gids)+
             ", home = "+arguments.home+
             ", root = "+arguments.root+
             ", fsroot = "+arguments.fsroot);
@@ -1001,7 +1003,7 @@ public class KAuthFile {
         String arg2;
         String readOnly;
         Integer uid;
-        Integer gid;
+        int[] gids;
         String home;
         String root;
         String fsroot;
@@ -1034,7 +1036,9 @@ public class KAuthFile {
                 arguments.uid =  Integer.valueOf(args[++i]);
             }
             else if( args[i].equals("-g") ) {
-                arguments.gid = Integer.valueOf(args[++i]);
+                arguments.gids = Splitter.on(',').trimResults().splitToList(args[++i]).stream()
+                        .mapToInt(Integer::parseInt)
+                        .toArray();
             }
             else if( args[i].equals("-h") ) {
                 arguments.home = args[++i];
