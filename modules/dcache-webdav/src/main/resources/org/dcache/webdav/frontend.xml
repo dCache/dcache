@@ -114,8 +114,7 @@
       <property name="loginBrokerSource" ref="login-broker-source"/>
   </bean>
 
-  <bean id="transfer-info-service" class="org.dcache.restful.services.transfers.TransferInfoServiceImpl"
-        init-method="initialize" destroy-method="shutdown">
+  <bean id="transfer-info-service" class="org.dcache.restful.services.transfers.TransferInfoServiceImpl">
       <description>Caches and serves information on active transfers.</description>
       <property name="maxCacheSize" value="${frontend.service.transfers.maxCacheSize}"/>
       <property name="timeout" value="${frontend.service.transfers.timeout}"/>
@@ -145,8 +144,7 @@
         </property>
   </bean>
 
-  <bean id="billing-info-service" class="org.dcache.restful.services.billing.BillingInfoServiceImpl"
-          init-method="initialize">
+  <bean id="billing-info-service" class="org.dcache.restful.services.billing.BillingInfoServiceImpl">
         <description>Caches and serves billing records and histogram data.</description>
         <property name="collector" ref="billing-info-collector"/>
         <property name="timeout" value="${frontend.service.billing.collection.timeout}"/>
@@ -169,8 +167,7 @@
     <property name="executor" ref="cell-update-executor"/>
   </bean>
 
-  <bean id="cell-info-service" class="org.dcache.restful.services.cells.CellInfoServiceImpl"
-        init-method="initialize" destroy-method="shutdown">
+  <bean id="cell-info-service" class="org.dcache.restful.services.cells.CellInfoServiceImpl">
     <description>Caches and serves information on cell services.</description>
     <property name="maxCacheSize" value="${frontend.service.cell-info.maxCacheSize}"/>
     <property name="timeout" value="${frontend.service.cell-info.timeout}"/>

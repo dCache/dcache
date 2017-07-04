@@ -134,18 +134,8 @@ public class TransferCollector extends CellMessagingCollector<Map<String, Transf
         }
     }
 
-    public void initialize(Long timeout, TimeUnit timeUnit) {
-        super.initialize(timeout, timeUnit);
-        loginBrokerSource.afterStart();
-    }
-
-    public void setLoginBrokerSource(
-                    LoginBrokerSubscriber loginBrokerSource) {
+    public void setLoginBrokerSource(LoginBrokerSubscriber loginBrokerSource) {
         this.loginBrokerSource = loginBrokerSource;
-    }
-
-    public void shutdown() {
-        loginBrokerSource.beforeStop();
     }
 
     private ListenableFuture<Collection<IoDoorInfo>>

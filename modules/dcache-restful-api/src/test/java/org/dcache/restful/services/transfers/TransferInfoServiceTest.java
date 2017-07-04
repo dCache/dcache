@@ -257,7 +257,7 @@ public class TransferInfoServiceTest {
 
     @After
     public void shutDown() {
-        service.shutdown();
+        service.beforeStop();
     }
 
     @Test

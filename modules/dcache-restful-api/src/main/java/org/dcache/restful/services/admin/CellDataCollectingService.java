@@ -64,6 +64,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -78,7 +79,9 @@ import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.util.command.Option;
+
 import org.dcache.restful.util.admin.CellMessagingCollector;
 
 /**
@@ -91,7 +94,8 @@ import org.dcache.restful.util.admin.CellMessagingCollector;
  * for checking current status and for resetting the timeout.</p>
  */
 public abstract class CellDataCollectingService<D, C extends CellMessagingCollector<D>>
-                implements Runnable, CellCommandListener, CellInfoProvider {
+                implements Runnable, CellCommandListener, CellInfoProvider, CellLifeCycleAware
+{
     protected static final Logger LOGGER
                     = LoggerFactory.getLogger(CellDataCollectingService.class);
 
@@ -199,7 +203,8 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
         pw.println(" milliseconds");
     }
 
-    public void initialize() {
+    @Override
+    public void afterStart() {
         configure();
         collector.initialize(timeout, timeoutUnit);
         scheduleNext(0, timeoutUnit); // run immediately
@@ -246,7 +251,8 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
         this.timeoutUnit = timeoutUnit;
     }
 
-    public void shutdown() {
+    @Override
+    public void beforeStop() {
         collector.shutdown();
     }
 
