@@ -4,12 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.AccessDeniedException;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.BadStateidException;
-import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.xdr.WRITE4res;
@@ -49,10 +48,6 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             }
 
             mover.attachSession(context.getSession());
-            if(!mover.getIoMode().contains(StandardOpenOption.WRITE)) {
-                throw new PermException("an attempt to write without IO mode enabled");
-            }
-
             long offset = _args.opwrite.offset.value;
 
             RepositoryChannel fc = mover.getMoverChannel();
@@ -101,6 +96,9 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
         }catch (OutOfDiskException e) {
             _log.error("DSWRITE: no allocatable space left on the pool");
             res.status = nfsstat.NFSERR_NOSPC;
+        } catch (AccessDeniedException e) {
+            _log.warn("Write denied: {}", e.getMessage());
+            res.status = nfsstat.NFSERR_PERM;
         }catch(IOException ioe) {
             _log.error("DSWRITE: ", ioe);
             res.status = nfsstat.NFSERR_IO;

@@ -1,6 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
@@ -27,19 +28,23 @@ public class EDSOperationCOMMIT extends AbstractNFSv4Operation {
 
         final COMMIT4res res = result.opcommit;
         Inode inode = cc.currentInode();
-        /**
-         * The nfs commit operation comes without a stateid. The assumption, is
-         * that for now we have only one writer and, as a result, pnfsid will
-         * point only to a single mover.
-         */
-        NfsMover mover = _moverHandler.getPnfsIdByHandle(inode.toNfsHandle());
+        try {
+            /**
+             * The nfs commit operation comes without a stateid. The assumption,
+             * is that for now we have only one writer and, as a result, pnfsid
+             * will point only to a single mover.
+             */
+            NfsMover mover = _moverHandler.getPnfsIdByHandle(inode.toNfsHandle());
 
-        RepositoryChannel fc = mover.getMoverChannel();
-        fc.sync();
-        mover.commitFileSize(fc.size());
+            RepositoryChannel fc = mover.getMoverChannel();
+            fc.sync();
+            mover.commitFileSize(fc.size());
 
-        res.status = nfsstat.NFS_OK;
-        res.resok4 = new COMMIT4resok();
-        res.resok4.writeverf = cc.getRebootVerifier();
+            res.status = nfsstat.NFS_OK;
+            res.resok4 = new COMMIT4resok();
+            res.resok4.writeverf = cc.getRebootVerifier();
+        } catch (AccessDeniedException e) {
+            res.status = nfsstat.NFSERR_PERM;
+        }
     }
 }

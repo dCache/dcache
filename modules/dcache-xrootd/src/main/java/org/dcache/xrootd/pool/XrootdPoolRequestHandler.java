@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
+import java.nio.file.AccessDeniedException;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.NettyTransferService;
@@ -483,18 +484,16 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         }
 
         FileDescriptor descriptor = _descriptors.get(fd);
-        if (!(descriptor instanceof WriteDescriptor)) {
-            _log.warn("File descriptor for handle {} is read-only, user " +
-                              "tried to write.", fd);
-            throw new XrootdException(kXR_IOError,
-                                      "Tried to write on read only file.");
-        }
-
         try {
             descriptor.write(msg);
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
                     "The file was forcefully closed by the server.");
+        } catch (AccessDeniedException e) {
+            _log.warn("File descriptor for handle {} is read-only, user "
+                    + "tried to write.", fd);
+            throw new XrootdException(kXR_IOError,
+                    "Tried to write on read only file.");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
@@ -526,6 +525,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
                     "The file was forcefully closed by the server.");
+        } catch (AccessDeniedException e) {
+            _log.warn("File descriptor for handle {} is read-only, user "
+                    + "tried to write.", fd);
+            throw new XrootdException(kXR_IOError,
+                    "Tried to write on read only file.");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
