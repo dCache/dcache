@@ -187,6 +187,15 @@
         <level>error</level>
     </threshold>
     <threshold>
+        <!-- ZK currently contains a race-condition that triggers a
+             CancelledKeyException on shutdown; if triggered, a
+             stack-trace is logged at WARN level. See
+             https://issues.apache.org/jira/browse/ZOOKEEPER-2838
+             Adjusting log-level as a work-around. -->
+        <logger>org.apache.zookeeper.server.NIOServerCnxnFactory</logger>
+        <level>error</level>
+    </threshold>
+    <threshold>
       <logger>liquibase</logger>
       <level>warn</level>
     </threshold>
