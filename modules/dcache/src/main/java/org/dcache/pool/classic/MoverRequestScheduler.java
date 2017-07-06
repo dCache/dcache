@@ -213,7 +213,8 @@ public class MoverRequestScheduler
 
             return request.getId();
         } catch (RuntimeException e) {
-            Throwables.throwIfInstanceOf(e.getCause(), CacheException.class);
+            Throwable t = Throwables.getRootCause(e);
+            Throwables.throwIfInstanceOf(t, CacheException.class);
             throw e;
         }
     }
