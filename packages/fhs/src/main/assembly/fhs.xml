@@ -158,15 +158,5 @@
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
         </fileSet>
-
-        <fileSet>
-            <directory>${filtered-skel}/lib/systemd/system-generators</directory>
-            <outputDirectory>lib/systemd/system-generators</outputDirectory>
-            <excludes>
-                <exclude>**/.empty-dir</exclude>
-            </excludes>
-            <fileMode>755</fileMode>
-            <directoryMode>755</directoryMode>
-        </fileSet>
     </fileSets>
 </assembly>
