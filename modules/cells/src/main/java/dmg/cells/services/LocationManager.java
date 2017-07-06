@@ -20,6 +20,7 @@
 package dmg.cells.services;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.net.HostAndPort;
@@ -31,7 +32,7 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +106,27 @@ public class LocationManager extends CellAdapter
     {
         BRING_UP,
         TEAR_DOWN
+    }
+
+    public enum ConnectionType
+    {
+        PLAIN("none"),
+        TLS("tls");
+
+        private static final ImmutableMap<String,ConnectionType> CONFIG_TO_VALUE =
+                ImmutableMap.of(PLAIN._config, PLAIN, TLS._config, TLS);
+
+        private final String _config;
+
+        ConnectionType(String config)
+        {
+            _config = config;
+        }
+
+        public static Optional<ConnectionType> fromConfig(String value)
+        {
+            return Optional.ofNullable(CONFIG_TO_VALUE.get(value));
+        }
     }
 
     enum Mode
@@ -360,14 +382,15 @@ public class LocationManager extends CellAdapter
                 throws BadConfigException
         {
             LOGGER.error("Creating CoreDomains: {}, {}", domainName, mode);
-            switch (Mode.fromString(mode)) {
-                case PLAIN:
-                    return new CoreDomainsPlain(domainName, client);
-                case PLAIN_TLS:
-                case TLS:
-                    return new CoreDomainsTls(domainName, client);
-                default:
-                    throw new BadConfigException("Failed Initialized CoreDomain because of invalid mode provide: " + mode);
+            ConnectionType type = ConnectionType.fromConfig(mode).orElseThrow(() -> new BadConfigException("Bad mode " + mode));
+
+            switch (type) {
+            case PLAIN:
+                return new CoreDomainsPlain(domainName, client);
+            case TLS:
+                return new CoreDomainsTls(domainName, client);
+            default:
+                throw new BadConfigException("Unexpected mode " + mode);
             }
         }
 
@@ -476,14 +499,9 @@ public class LocationManager extends CellAdapter
         private final CuratorFramework _curator;
 
         /**
-         * Current config for CoreDomain.
-         */
-        private String _config;
-
-        /**
          * Current modes extracted from the CoreDomain configuration.
          */
-        private Mode _mode;
+        private Mode _mode = Mode.PLAIN;
 
         /**
          * Cache of the ZooKeeper node identified by {@code _node}.
@@ -498,14 +516,12 @@ public class LocationManager extends CellAdapter
         /**
          * Callable to reset the CoreDomains when a change in config is detected
          */
-        private BiConsumer<Mode, State> _reset;
+        private final BiConsumer<Mode, State> _reset;
 
-        CoreConfig(CuratorFramework curator, String config, BiConsumer<Mode, State> f)
+        CoreConfig(CuratorFramework curator, BiConsumer<Mode, State> f)
         {
             _curator = curator;
-            _config = config;
             _cache = new NodeCache(_curator, ZK_CORE_CONFIG);
-            _cache.getListenable().addListener(this);
             _reset = f;
         }
 
@@ -516,60 +532,35 @@ public class LocationManager extends CellAdapter
 
         synchronized void start() throws Exception
         {
-            byte[] data = _config.getBytes(UTF_8);
-
-            // Seed core config in Zookeeper
+            _cache.getListenable().addListener(this);
             try {
-                _curator.create()
-                        .creatingParentContainersIfNeeded()
-                        .withMode(CreateMode.PERSISTENT)
-                        .forPath(ZK_CORE_CONFIG, data);
-            } catch (KeeperException.NodeExistsException e) {
-                LOGGER.info("Not seeding CoreDomain config in ZooKeeper, because it already exists.");
-            } catch (Exception e) {
-                throw e;
+                _cache.start(true);
+                apply(_cache.getCurrentData());
+            } catch (ConnectionLossException e) {
+                LOGGER.warn("Failed to connect to zookeeper, using mode {} until connection reestablished", _mode);
             }
-
-            // Blocking start of the core config node cache
-            _cache.start(true);
-
-            // Load initial setup from zookeeper
-            ChildData currentData = _cache.getCurrentData();
-            if (currentData == null) {
-                LOGGER.warn("CoreDomain config reload in ZooKeeper failed.");
-                throw new Exception("CoreDomain config reload failed because " + ZK_CORE_CONFIG + " in ZooKeeper disappeared. " +
-                                    "CoreDomain must be restarted.");
-            }
-            apply(currentData);
         }
 
-        private Set<Mode> apply(ChildData currentData) {
-            _current = currentData.getStat();
-            _mode = Mode.fromString(new String(currentData.getData(), UTF_8));
-            _config = _mode.toString();
-            return _mode.getModeAsSet();
+        private void apply(ChildData currentData) {
+            if (currentData == null) {
+                _current = null;
+                _mode = Mode.PLAIN;
+                LOGGER.info("CoreDomain config node " + ZK_CORE_CONFIG + " not present; assuming mode {}", _mode);
+            } else if (_current == null || currentData.getStat().getVersion() > _current.getVersion()) {
+                _mode = Mode.fromString(new String(currentData.getData(), UTF_8));
+                LOGGER.info("CoreDomain config node " + ZK_CORE_CONFIG + " switching to mode {}", _mode);
+                _current = currentData.getStat();
+            } else {
+                LOGGER.info("Ignoring spurious CoreDomain config node " + ZK_CORE_CONFIG + " updated");
+            }
         }
 
         @Override
         public synchronized void nodeChanged() throws Exception
         {
             Set<Mode> oldModes = _mode.getModeAsSet();
-            Set<Mode> curModes;
-
-            ChildData newData = _cache.getCurrentData();
-            LOGGER.info("Core-Config Changed {}", new String(newData.getData(), UTF_8));
-
-            if (newData == null) {
-                LOGGER.warn("CoreDomain config node " + ZK_CORE_CONFIG +
-                            " in ZooKeeper disappeared. Treating as plain-only mode.");
-                curModes = Mode.PLAIN.getModeAsSet();
-            } else if (newData.getStat().getVersion() > _current.getVersion()) {
-                curModes = apply(newData);
-                LOGGER.debug("CoreDomain config at {} changed from {} to {}. CoreDomain must be reset.",
-                                ZK_CORE_CONFIG, Joiner.on(',').join(oldModes), Joiner.on(',').join(curModes));
-            } else {
-                return;
-            }
+            apply(_cache.getCurrentData());
+            Set<Mode> curModes = _mode.getModeAsSet();
 
             // old           cur        down     up
             // none,tls   -  tls    =   none
@@ -855,7 +846,7 @@ public class LocationManager extends CellAdapter
     }
 
     /**
-     * Usage : ... [-legacy=<port>] [-role=satellite|core] -- [<port>] <client options>
+     * Usage : ... [-legacy=<port>] [-role=satellite|core] -mode=none|tls -- [<port>] <client options>
      */
     public LocationManager(String name, String args) throws CommandException, IOException, BadConfigException
     {
@@ -871,7 +862,7 @@ public class LocationManager extends CellAdapter
                 checkArgument(this.args.argc() >= 1, "Listening port is required.");
                 client = new CoreClient();
                 coreDomains.onChange(client::update);
-                coreConfig = new CoreConfig(getCuratorFramework(), this.args.getOption("mode"), client::reset);
+                coreConfig = new CoreConfig(getCuratorFramework(), client::reset);
                 break;
             default:
                 client = new Client();
@@ -899,9 +890,6 @@ public class LocationManager extends CellAdapter
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            LOGGER.error("Failed to start location manager: {}", e.getCause().toString());
-            kill();
         } catch (RuntimeException e) {
             LOGGER.error("Failed to start location manager", e);
             kill();
@@ -945,13 +933,7 @@ public class LocationManager extends CellAdapter
 
         HostAndPort where;
         SocketFactory socketFactory;
-        Mode mode;
-
-        if (role.equals(CORE) && args.hasOption("clientmode")) {
-            mode = Mode.fromString(args.getOption("clientmode"));
-        } else {
-            mode = Mode.fromString(args.getOption("mode"));
-        }
+        Mode mode = Mode.fromString(args.getOption("mode"));
 
         switch(mode) {
         case PLAIN:
