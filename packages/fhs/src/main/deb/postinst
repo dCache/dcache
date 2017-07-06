@@ -64,7 +64,7 @@ Please fix this and reinstall this package." >&2
     fi
 
     if type "systemctl" > /dev/null 2>&1; then
-        sed -i /usr/share/dcache/defaults/dcache.properties -e 's/(not-for-services)dcache.log.format.file=.*/(not-for-services)dcache.log.format.file=%-5level %-20([%X{cells.cell}]) %m \\\\(%X{org.dcache.ndc}\\\\)%n/'
+        sed -i /usr/share/dcache/defaults/dcache.properties -e "s/(not-for-services)dcache.log.format.file=.*/(not-for-services)dcache.log.format.file=%-5level %-20([%X{cells.cell}]) %m %replace(<%X{org.dcache.ndc}>){'^<>\$',''}%n/"
         rm -f /etc/init.d/dcache
         update-rc.d dcache remove
         systemctl daemon-reload
