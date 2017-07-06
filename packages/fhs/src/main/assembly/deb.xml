@@ -18,6 +18,11 @@
             <source>src/main/scripts/dcache-limits.conf</source>
             <outputDirectory>etc/security/limits.d</outputDirectory>
             <destName>92-dcache.conf</destName>
-      </file>
+        </file>
+        <file>
+            <source>src/main/scripts/dcache.rsyslog</source>
+            <outputDirectory>etc/rsyslog.d</outputDirectory>
+            <destName>30-dcache.conf</destName>
+        </file>
     </files>
 </assembly>

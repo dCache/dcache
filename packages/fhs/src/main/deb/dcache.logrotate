@@ -5,3 +5,9 @@
     missingok
     copytruncate
 }
+/var/log/dcache@*.log {
+    compress
+    weekly
+    rotate 52
+    missingok
+}

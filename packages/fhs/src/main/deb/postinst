@@ -58,6 +58,8 @@ Please fix this and reinstall this package." >&2
         update-rc.d dcache remove
         systemctl daemon-reload
     fi
+
+    service rsyslog restart
 fi
 
 #DEBHELPER#
