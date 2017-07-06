@@ -81,7 +81,8 @@ public class Version {
     private static String specVersion= "2.2";
     private static String specVendor = "SRM Working Group http://sdm.lbl.gov/srm-wg";
     private static String specTitle  = "Storage Resource Manager (SRM)";
-    private static String copyRight  = "Copyright (c) 2002-2009";
+    private static String implVendor;
+    private static String implVersion;
 
     static {
         Package p = Package.getPackage("gov.fnal.srm.util");
@@ -97,6 +98,8 @@ public class Version {
             if( ( tmp =  p.getSpecificationVendor() ) != null  ) {
                 specVendor = tmp;
             }
+            implVendor = p.getImplementationVendor();
+            implVersion = p.getImplementationVersion();
         }
     }
 
@@ -106,8 +109,17 @@ public class Version {
 
     @Override
     public String toString() {
-        String s =  specTitle + " Client version "+specVersion+'\n';
-        s+= copyRight + " "+specVendor+'\n';
-        return s;
+        StringBuilder sb = new StringBuilder();
+        sb.append("srmclient");
+        if (implVersion != null) {
+            sb.append(" v").append(implVersion);
+        }
+        if (implVendor != null) {
+            sb.append(" from ").append(implVendor);
+        }
+        sb.append("\n");
+        sb.append("This client is for any ").append(specTitle).append(" v").append(specVersion).append(" server.\n");
+        sb.append("For more details on SRM contact ").append(specVendor);
+        return sb.toString();
     }
 }
