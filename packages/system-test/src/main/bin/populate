@@ -7,6 +7,8 @@ gid=1000
 username=$(id -u -n)
 adminRoleGid=0
 
+ln -s services-daemon.sh @TARGET@/dcache/share/lib/services.sh
+
 @DCACHE_LOAD_CONFIG@
 lib="$(getProperty dcache.paths.share.lib)"
 . ${lib}/utils.sh
