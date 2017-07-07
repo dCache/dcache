@@ -53,59 +53,10 @@ public class CacheRepositoryEntryState {
 
     public void setState(ReplicaState state)
             throws IOException {
-        if (state == _state) {
-            return;
+        if (state != _state) {
+            _state = state;
+            makeStatePersistent();
         }
-
-        switch (state) {
-            case NEW:
-                throw new IllegalStateException("Entry is " + _state);
-            case FROM_CLIENT:
-                if (_state != ReplicaState.NEW) {
-                    throw new IllegalStateException("Entry is " + _state);
-                }
-                break;
-            case FROM_STORE:
-                if (_state != ReplicaState.NEW) {
-                    throw new IllegalStateException("Entry is " + _state);
-                }
-                break;
-            case FROM_POOL:
-                if (_state != ReplicaState.NEW) {
-                    throw new IllegalStateException("Entry is " + _state);
-                }
-                break;
-            case CACHED:
-                if (_state == ReplicaState.REMOVED
-                        || _state == ReplicaState.DESTROYED) {
-                    throw new IllegalStateException("Entry is " + _state);
-                }
-                break;
-            case PRECIOUS:
-                if (_state == ReplicaState.REMOVED
-                        || _state == ReplicaState.DESTROYED) {
-                    throw new IllegalStateException("Entry is " + _state);
-                }
-                break;
-            case BROKEN:
-                if (_state == ReplicaState.REMOVED
-                        || _state == ReplicaState.DESTROYED) {
-                    throw new IllegalStateException("Entry is " + _state);
-                }
-                break;
-            case REMOVED:
-                if (_state == ReplicaState.DESTROYED) {
-                    throw new IllegalStateException("Entry is " + _state);
-                }
-                break;
-            case DESTROYED:
-                if (_state != ReplicaState.REMOVED) {
-                    throw new IllegalStateException("Entry is " + _state);
-                }
-        }
-
-        _state = state;
-        makeStatePersistent();
     }
 
     public ReplicaState getState() {
