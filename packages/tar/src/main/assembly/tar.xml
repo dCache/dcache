@@ -78,7 +78,6 @@
                 <include>etc/**</include>
                 <include>man/**</include>
                 <include>share/**</include>
-                <include>var/**</include>
             </includes>
             <excludes>
                 <exclude>**/.empty-dir</exclude>
@@ -89,6 +88,71 @@
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
         </fileSet>
+
+	<!-- Directories that only dCache should have access -->
+	<fileSet>
+            <directory>${skel}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>var/alarms/**</include>
+                <include>var/cell-info/**</include>
+                <include>var/credentials/**</include>
+                <include>var/httpd/**</include>
+                <include>var/log/**</include>
+                <include>var/plots/**</include>
+                <include>var/resilience/**</include>
+                <include>var/run/**</include>
+                <include>var/statistics/**</include>
+            </includes>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
+            </excludes>
+            <fileMode>600</fileMode>
+            <directoryMode>700</directoryMode>
+	</fileSet>
+
+	<!-- Directories that need group read access -->
+	<fileSet>
+            <directory>${skel}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>var/billing/**</include>
+            </includes>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
+            </excludes>
+            <fileMode>640</fileMode>
+            <directoryMode>750</directoryMode>
+	</fileSet>
+
+	<!-- Directories that need group read/write access -->
+	<fileSet>
+            <directory>${skel}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>var/star/**</include>
+            </includes>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
+            </excludes>
+            <fileMode>660</fileMode>
+            <directoryMode>770</directoryMode>
+	</fileSet>
+
+	<!-- Directories that must be world-readable -->
+	<fileSet>
+            <directory>${skel}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>var/config/**</include>
+                <include>var/spool/**</include>
+            </includes>
+            <excludes>
+                <exclude>**/.empty-dir</exclude>
+            </excludes>
+            <fileMode>644</fileMode>
+            <directoryMode>755</directoryMode>
+	</fileSet>
 
         <fileSet>
             <directory>${project.build.directory}/chimera-sql/org/dcache/chimera</directory>

@@ -101,17 +101,17 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man8/dcache.8
 
 %attr(-,dcache,dcache) /var/log/dcache
-%attr(-,dcache,dcache) /var/lib/dcache/alarms
-%attr(-,dcache,dcache) /var/lib/dcache/cell-info
 %attr(-,dcache,dcache) /var/lib/dcache/config
-%attr(-,dcache,dcache) /var/lib/dcache/billing
-%attr(-,dcache,dcache) /var/lib/dcache/httpd
-%attr(-,dcache,dcache) /var/lib/dcache/plots
-%attr(-,dcache,dcache) /var/lib/dcache/resilience
-%attr(-,dcache,dcache) /var/lib/dcache/statistics
-%attr(-,dcache,dcache) /var/lib/dcache/star
-%attr(-,dcache,dcache) /var/spool/dcache/star
+%attr(700,dcache,dcache) /var/lib/dcache/alarms
+%attr(700,dcache,dcache) /var/lib/dcache/cell-info
 %attr(700,dcache,dcache) /var/lib/dcache/credentials
+%attr(700,dcache,dcache) /var/lib/dcache/httpd
+%attr(700,dcache,dcache) /var/lib/dcache/plots
+%attr(700,dcache,dcache) /var/lib/dcache/resilience
+%attr(700,dcache,dcache) /var/lib/dcache/statistics
+%attr(750,dcache,dcache) /var/lib/dcache/billing
+%attr(770,dcache,dcache) /var/lib/dcache/star
+%attr(755,dcache,dcache) /var/spool/dcache/star
 
 %attr(0755,root,root) /etc/rc.d/init.d/dcache-server
 %attr(0755,root,root) /etc/bash_completion.d/dcache
