@@ -439,11 +439,6 @@
                   value="${srmmanager.persistence.reserve-space.enable.clean-pending-on-restart}"/>
         <property name="databaseParametersForReserve.storeCompletedRequestsOnly"
                   value="#{ '${srmmanager.persistence.reserve-space.enable.store-transient-state}'.equals('false') ? true : false }"/>
-        <property name="pingExtraInfo">
-            <bean class="org.dcache.util.ConfigurationMapFactoryBean">
-                <property name="prefix" value="srm.ping-extra-info"/>
-            </bean>
-        </property>
         <property name="maximumClientAssumedBandwidth" value="${srmmanager.request.maximum-client-assumed-bandwidth}"/>
     </bean>
 

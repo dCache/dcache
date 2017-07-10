@@ -195,8 +195,6 @@ public class Configuration {
         new HashMap<>();
     private String caCertificatePath;
 
-    private ImmutableMap<String,String> pingExtraInfo = ImmutableMap.of();
-
     /** Creates a new instance of Configuration */
     public Configuration() {
         databaseParameters.put(PUT_PARAMETERS, new DatabaseParameters("Put"));
@@ -205,16 +203,6 @@ public class Configuration {
         databaseParameters.put(COPY_PARAMETERS, new DatabaseParameters("Copy"));
         databaseParameters.put(BRINGONLINE_PARAMETERS, new DatabaseParameters("Bring Online"));
         databaseParameters.put(RESERVE_PARAMETERS, new DatabaseParameters("Reserve Space"));
-    }
-
-    public ImmutableMap<String,String> getPingExtraInfo()
-    {
-        return pingExtraInfo;
-    }
-
-    public void setPingExtraInfo(Map<String,String> additionalInfo)
-    {
-        pingExtraInfo = ImmutableMap.copyOf(additionalInfo);
     }
 
     /** Getter for property urlcopy.
