@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
@@ -21,8 +22,10 @@ import java.net.InetAddress;
 import java.security.Principal;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -30,7 +33,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.dcache.auth.EmailAddressPrincipal;
 import org.dcache.auth.EntityDefinitionPrincipal;
 import org.dcache.auth.LoAPrincipal;
 import org.dcache.auth.Origin;
@@ -101,22 +106,12 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
                         continue;
                     }
 
-                    identifiedPrincipals.add(asGlobusPrincipal(eec.getSubjectX500Principal()));
+                    identifiedPrincipals.addAll(identifyPrincipalsFromEEC(eec));
 
-                    listPolicies(eec).stream()
-                            .map(PolicyInformation::getInstance)
-                            .map(PolicyInformation::getPolicyIdentifier)
-                            .map(DERObjectIdentifier::getId)
-                            .map(X509Plugin::asPrincipal)
-                            .filter(Objects::nonNull)
-                            .forEach(identifiedPrincipals::add);
-
-                    if (infoDirectory != null) {
-                        // REVISIT: this assumes that issuer of EEC is the CA.  This
-                        //          is currently true for all IGTF CAs.
-                        GlobusPrincipal issuer = asGlobusPrincipal(eec.getIssuerX500Principal());
-                        identifiedPrincipals.addAll(infoDirectory.getPrincipals(issuer));
-                    }
+                    // REVISIT: this assumes that issuer of EEC is the CA.  This
+                    //          is currently true for all IGTF CAs.
+                    X500Principal ca = eec.getIssuerX500Principal();
+                    identifiedPrincipals.addAll(identifyPrincipalsFromCA(ca));
 
                     found = true;
                 }
@@ -125,6 +120,36 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             }
         }
         checkAuthentication(found, message);
+    }
+
+    private List<Principal> identifyPrincipalsFromEEC(X509Certificate eec)
+            throws AuthenticationException, CertificateParsingException
+    {
+        List<Principal> principals = new ArrayList<>();
+
+        principals.add(asGlobusPrincipal(eec.getSubjectX500Principal()));
+
+        listPolicies(eec).stream()
+                .map(PolicyInformation::getInstance)
+                .map(PolicyInformation::getPolicyIdentifier)
+                .map(DERObjectIdentifier::getId)
+                .map(X509Plugin::asPrincipal)
+                .filter(Objects::nonNull)
+                .forEach(principals::add);
+
+        listSubjectAlternativeNames(eec).stream()
+                .map(X509Plugin::asPrincipal)
+                .filter(Objects::nonNull)
+                .forEach(principals::add);
+
+        return principals;
+    }
+
+    private Set<Principal> identifyPrincipalsFromCA(X500Principal ca)
+    {
+        return infoDirectory == null
+                ? Collections.emptySet()
+                : infoDirectory.getPrincipals(asGlobusPrincipal(ca));
     }
 
     private GlobusPrincipal asGlobusPrincipal(X500Principal p)
@@ -157,6 +182,38 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
             }
         }
         return policies;
+    }
+
+    private Collection<List<?>> listSubjectAlternativeNames(X509Certificate certificate)
+            throws CertificateParsingException
+    {
+        Collection<List<?>> names = certificate.getSubjectAlternativeNames();
+        return names == null ? Collections.emptyList() : names;
+    }
+
+    private static Principal asPrincipal(List<?> name)
+    {
+        int tag = (Integer) name.get(0);
+        Object object = name.get(1);
+
+        switch (tag) {
+        case GeneralName.rfc822Name:
+            if (object == null) {
+                LOG.debug("Certificate has SubjectAlternativeName with missing email address");
+                break;
+            }
+
+            String address = String.valueOf(object);
+            if (EmailAddressPrincipal.isValid(address)) {
+                return new EmailAddressPrincipal(address);
+            } else {
+                LOG.debug("Certificate has SubjectAlternativeName with invalid email address '{}'",
+                        address);
+            }
+            break;
+        }
+
+        return null;
     }
 
 

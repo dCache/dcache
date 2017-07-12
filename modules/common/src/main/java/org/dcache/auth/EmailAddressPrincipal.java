@@ -16,6 +16,11 @@ public class EmailAddressPrincipal implements Principal, Serializable
 
     private final String _email;
 
+    public static boolean isValid(String email)
+    {
+        return EMAIL_PATTERN.matcher(email).matches();
+    }
+
     public EmailAddressPrincipal(String email)
     {
         checkArgument(EMAIL_PATTERN.matcher(email).matches(), "Not a valid email address");
