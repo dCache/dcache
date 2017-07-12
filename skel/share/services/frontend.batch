@@ -57,13 +57,6 @@ check -strong frontend.limits.graceful-shutdown.unit
 check -strong frontend.loginbroker.request-topic
 check -strong frontend.dcache-view.dir
 
-check -strong frontend.static!webapiEndpoint
-check frontend.static!webdavEndpoint
-check frontend.static!orgName
-check frontend.static!oidcProviderName
-check frontend.static!oidcClientId
-check frontend.static!oidcAuthorizationEndpoint
-
 check -strong frontend.static!dcache-view.endpoints.webapi
 check frontend.static!dcache-view.endpoints.webdav
 check frontend.static!dcache-view.org-name
