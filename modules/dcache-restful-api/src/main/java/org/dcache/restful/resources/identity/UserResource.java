@@ -69,6 +69,8 @@ public class UserResource
                     .boxed()
                     .collect(Collectors.toList());
             user.setGids(gids);
+            List<String> emails = Subjects.getEmailAddresses(subject);
+            user.setEmail(emails.isEmpty() ? null : emails);
 
             for (LoginAttribute attribute : getLoginAttributes(request)) {
                 if (attribute instanceof HomeDirectory) {

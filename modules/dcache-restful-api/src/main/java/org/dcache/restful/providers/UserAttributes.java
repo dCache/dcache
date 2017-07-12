@@ -55,6 +55,8 @@ public class UserAttributes
 
     private String username;
 
+    private List<String> email;
+
     public AuthenticationStatus getStatus()
     {
         return status;
@@ -133,5 +135,15 @@ public class UserAttributes
     public void setUnassertedRoles(List<String> roles)
     {
         this.unassertedRoles = roles;
+    }
+
+    public List<String> getEmail()
+    {
+        return email;
+    }
+
+    public void setEmail(List<String> email)
+    {
+        this.email = email;
     }
 }

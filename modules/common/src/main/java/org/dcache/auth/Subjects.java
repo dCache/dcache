@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -338,6 +339,14 @@ public class Subjects
         KerberosPrincipal principal =
                 getUniquePrincipal(subject, KerberosPrincipal.class);
         return (principal == null) ? null : principal.getName();
+    }
+
+    public static List<String> getEmailAddresses(Subject subject)
+    {
+        return subject.getPrincipals(EmailAddressPrincipal.class).stream()
+                .map(EmailAddressPrincipal::getName)
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     /**
