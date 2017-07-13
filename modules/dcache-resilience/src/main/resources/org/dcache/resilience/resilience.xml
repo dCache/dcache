@@ -70,7 +70,6 @@
     <bean id="name-space-provider"
           class="org.dcache.chimera.namespace.ChimeraNameSpaceProvider">
       <description>Name space provider</description>
-      <property name="allowMoveToDirectoryWithDifferentStorageClass" value="${pnfsmanager.enable.move-to-directory-with-different-storageclass}"/>
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
       <property name="permissionHandler" ref="permission-handler"/>
@@ -79,6 +78,7 @@
       <property name="inheritFileOwnership" value="false"/>
       <property name="verifyAllLookups" value="true"/>
       <property name="aclEnabled" value="false"/>
+      <property name="allowMoveToDirectoryWithDifferentStorageClass" value="true"/>
     </bean>
 
     <bean id="NamespaceAccess" class="org.dcache.resilience.db.LocalNamespaceAccess">
