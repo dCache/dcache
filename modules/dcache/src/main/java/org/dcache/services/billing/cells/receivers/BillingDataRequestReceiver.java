@@ -163,7 +163,7 @@ import org.dcache.vehicles.billing.BillingDataRequestMessage.SeriesType;
  * data types to the underlying classes is fixed here.</p>
  *
  * <p>Message handling is asynchronous via executor; method returns a future.</p>
- * 
+ *
  * <p>The data is returned as a {@link Histogram} added to
  * the original request object.</p>
  */
@@ -284,16 +284,16 @@ public final class BillingDataRequestReceiver implements CellMessageReceiver {
             reply.fail(request, -1,
                        "No database connection; cannot "
                                        + "provide histogram data.");
+        } else {
+            executor.execute(() -> {
+                try {
+                    getHistogram(request);
+                    reply.reply(request);
+                } catch (Exception e) {
+                    reply.fail(request, e);
+                }
+            });
         }
-
-        executor.execute(() -> {
-            try {
-                getHistogram(request);
-                reply.reply(request);
-            } catch (Exception e) {
-                reply.fail(request, e);
-            }
-        });
 
         return reply;
 
