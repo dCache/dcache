@@ -14,13 +14,23 @@ import org.codehaus.jackson.map.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class JsonHttpClient
-{
+public class JsonHttpClient {
     private HttpClient httpclient;
 
     public JsonHttpClient()
     {
         this.httpclient = HttpClients.createDefault();
+    }
+
+    private static JsonNode responseAsJson(HttpEntity response) throws IOException
+    {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        response.writeTo(os);
+        String responseAsJson = new String(os.toByteArray(), Charsets.UTF_8);
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode json = mapper.readValue(responseAsJson, JsonNode.class);
+        return json;
     }
 
     public JsonNode doGet(String url) throws IOException
@@ -51,16 +61,5 @@ public class JsonHttpClient
         } else {
             return null;
         }
-    }
-
-    private static JsonNode responseAsJson(HttpEntity response) throws IOException
-    {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        response.writeTo(os);
-        String responseAsJson =  new String(os.toByteArray(), Charsets.UTF_8);
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode json = mapper.readValue(responseAsJson, JsonNode.class);
-        return json;
     }
 }

@@ -45,9 +45,9 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     private final static String OIDC_HOSTNAMES = "gplazma.oidc.hostnames";
 
     private final LoadingCache<String, JsonNode> cache;
+    private final Random random = new Random();
     private Set<String> discoveryDocs;
     private JsonHttpClient jsonHttpClient;
-    private final Random random = new Random();
 
     public OidcAuthPlugin(Properties properties)
     {
@@ -67,23 +67,53 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
 
         checkArgument(oidcHostnamesProperty != null, OIDC_HOSTNAMES + " not defined");
 
-        Map<Boolean, Set<String>> validHosts =  Arrays.stream(oidcHostnamesProperty.split("\\s+"))
-                                                      .filter(not(String::isEmpty))
-                                                      .collect(
-                                                          Collectors.groupingBy(InternetDomainName::isValid,
-                                                                        Collectors.toSet())
-                                                      );
+        Map<Boolean, Set<String>> validHosts = Arrays.stream(oidcHostnamesProperty.split("\\s+"))
+                                                     .filter(not(String::isEmpty))
+                                                     .collect(
+                                                             Collectors.groupingBy(InternetDomainName::isValid,
+                                                                     Collectors.toSet())
+                                                             );
 
         checkArgument(!validHosts.containsKey(Boolean.FALSE),
-                                    String.format("Invalid hosts in %s: %s", OIDC_HOSTNAMES,
-                                            Joiner.on(", ").join(nullToEmpty(validHosts.get(Boolean.FALSE)))));
+                String.format("Invalid hosts in %s: %s", OIDC_HOSTNAMES,
+                        Joiner.on(", ").join(nullToEmpty(validHosts.get(Boolean.FALSE)))));
 
         checkArgument(validHosts.containsKey(Boolean.TRUE),
-                                    String.format("No hosts specified in %s", OIDC_HOSTNAMES));
+                String.format("No hosts specified in %s", OIDC_HOSTNAMES));
 
         this.discoveryDocs = validHosts.get(Boolean.TRUE);
         this.jsonHttpClient = client;
         this.cache = cache;
+    }
+
+    private static LoadingCache<String, JsonNode> createLoadingCache(final JsonHttpClient client)
+    {
+        return CacheBuilder.newBuilder()
+                           .maximumSize(100)
+                           .expireAfterAccess(1, TimeUnit.HOURS)
+                           .build(
+                                   new CacheLoader<String, JsonNode>() {
+                                       @Override
+                                       public JsonNode load(String hostname) throws OidcException, IOException
+                                       {
+                                           JsonNode discoveryDoc = client.doGet("https://" +
+                                                   hostname +
+                                                   "/.well-known/openid-configuration");
+                                           if (discoveryDoc != null && discoveryDoc.has("userinfo_endpoint")) {
+                                               return discoveryDoc;
+                                           } else {
+                                               throw new OidcException(hostname,
+                                                       "Discovery Document at " + discoveryDoc +
+                                                               " does not contain userinfo endpoint url");
+                                           }
+                                       }
+                                   }
+                                 );
+    }
+
+    private static <T> Predicate<T> not(Predicate<T> t)
+    {
+        return t.negate();
     }
 
     @Override
@@ -95,7 +125,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         Set<String> failures = new HashSet<>();
         boolean foundBearerToken = false;
 
-        for (Object credential: privateCredentials) {
+        for (Object credential : privateCredentials) {
             if (credential instanceof BearerTokenCredential) {
                 BearerTokenCredential token = (BearerTokenCredential) credential;
                 foundBearerToken = true;
@@ -103,8 +133,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
                     try {
                         identifiedPrincipals.addAll(
                                 validateBearerTokenWithOpenIdProvider(token,
-                                                                      extractUserInfoEndPoint(cache.get(host)),
-                                                                      host));
+                                        extractUserInfoEndPoint(cache.get(host)),
+                                        host));
                         return;
                     } catch (OidcException oe) {
                         failures.add(oe.getMessage());
@@ -127,7 +157,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
     }
 
     private Set<Principal> validateBearerTokenWithOpenIdProvider
-            (BearerTokenCredential credential, String infoUrl, String host) throws OidcException {
+            (BearerTokenCredential credential, String infoUrl, String host) throws OidcException
+    {
         try {
             JsonNode userInfo = getUserInfo(infoUrl, credential.getToken());
             if (userInfo != null && userInfo.has("sub")) {
@@ -171,28 +202,6 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         }
     }
 
-    private static LoadingCache<String, JsonNode> createLoadingCache(final JsonHttpClient client) {
-        return CacheBuilder.newBuilder()
-                .maximumSize(100)
-                .expireAfterAccess(1, TimeUnit.HOURS)
-                .build(
-                        new CacheLoader<String, JsonNode>() {
-                            @Override
-                            public JsonNode load(String hostname) throws OidcException, IOException {
-                                JsonNode discoveryDoc = client.doGet("https://" +
-                                        hostname +
-                                        "/.well-known/openid-configuration");
-                                if ( discoveryDoc != null && discoveryDoc.has("userinfo_endpoint")) {
-                                    return discoveryDoc;
-                                } else {
-                                    throw new OidcException(hostname, "Discovery Document at " + discoveryDoc +
-                                                            " does not contain userinfo endpoint url");
-                                }
-                            }
-                        }
-                );
-    }
-
     private void addEmail(JsonNode userInfo, Set<Principal> principals)
     {
         if (userInfo.has("email")) {
@@ -210,7 +219,7 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
             principals.add(new FullNamePrincipal(fullName.asText()));
         } else {
             principals.add(new FullNamePrincipal(givenName == null ? null : givenName.asText(),
-                                                 familyName == null ? null : familyName.asText()));
+                    familyName == null ? null : familyName.asText()));
         }
     }
 
@@ -228,11 +237,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         }
     }
 
-    private static <T> Predicate<T> not(Predicate<T> t) {
-        return t.negate();
-    }
-
-    private <T> Collection<T> nullToEmpty(final Collection<T> collection) {
+    private <T> Collection<T> nullToEmpty(final Collection<T> collection)
+    {
         return collection == null ? Collections.emptySet() : collection;
     }
 
@@ -241,7 +247,8 @@ public class OidcAuthPlugin implements GPlazmaAuthenticationPlugin
         return errors.isEmpty() ? "(unknown)" : errors.stream().collect(Collectors.joining(", ", "[", "]"));
     }
 
-    private String randomId() {
+    private String randomId()
+    {
         byte[] rawId = new byte[6]; // a Base64 char represents 6 bits; 4 chars represent 3 bytes.
         random.nextBytes(rawId);
         return Base64.getEncoder().withoutPadding().encodeToString(rawId);

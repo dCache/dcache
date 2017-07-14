@@ -29,8 +29,7 @@ import org.dcache.gplazma.oidc.helpers.JsonHttpClient;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 
-public class OidcAuthPluginTest
-{
+public class OidcAuthPluginTest {
     private static final String OIDC_PROPERTY_NAME = "gplazma.oidc.hostnames";
     private Properties givenConfiguration = new Properties();
     private LoadingCache cache;
@@ -59,7 +58,6 @@ public class OidcAuthPluginTest
         givenConfig("   ");
         whenOidcPluginCreated();
     }
-
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldFailWithInvalidHostnames() throws Exception
@@ -136,19 +134,19 @@ public class OidcAuthPluginTest
         givenConfig("accounts.google.com  idc-iam.example.org");
 
         Set<Principal> principals =
-            whenOidcPluginCalledWith(
-                withDiscoveryDoc("{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo \"}"),
-                withUserInfo(new StringBuilder()
-                    .append("{\"sub\":\"214234823942934792371\",")
-                    .append("\"name\":\"Kermit The Frog\",  ")
-                    .append("\"given_name\": \"Kermit The\",  ")
-                    .append("\"family_name\": \"Frog\",  ")
-                    .append("\"groups\": [ \"Users\", \"Developers\" ], ")
-                    .append("\"picture\": \"https://lh3.googleusercontent.com/gjworasdfjasgjdlsjvlsjlv/photo.jpg\",  ")
-                    .append("\"email\": \"kermit.the.frog@email.com\",  ")
-                    .append("\"email_verified\": true } ")
-                    .toString()),
-                withBearerToken("validtoken"));
+                whenOidcPluginCalledWith(
+                        withDiscoveryDoc("{ \"userinfo_endpoint\":\"https://www.googleapis.com/oauth2/v3/userinfo \"}"),
+                        withUserInfo(new StringBuilder()
+                                .append("{\"sub\":\"214234823942934792371\",")
+                                .append("\"name\":\"Kermit The Frog\",  ")
+                                .append("\"given_name\": \"Kermit The\",  ")
+                                .append("\"family_name\": \"Frog\",  ")
+                                .append("\"groups\": [ \"Users\", \"Developers\" ], ")
+                                .append("\"picture\": \"https://lh3.googleusercontent.com/gjworasdfjasgjdlsjvlsjlv/photo.jpg\",  ")
+                                .append("\"email\": \"kermit.the.frog@email.com\",  ")
+                                .append("\"email_verified\": true } ")
+                                .toString()),
+                        withBearerToken("validtoken"));
 
         assertThat(principals, hasSubject("214234823942934792371"));
         assertThat(principals, hasFullName("Kermit The", "Frog", "Kermit The Frog"));
@@ -177,17 +175,21 @@ public class OidcAuthPluginTest
 
         Set<Object> priv = new HashSet<>();
         Set<Principal> principals = new HashSet<>();
-        if (token != null) priv.add(token);
+        if (token != null) {
+            priv.add(token);
+        }
 
         plugin.authenticate(new HashSet<>(), priv, principals);
         return principals;
     }
 
-    private void whenOidcPluginCreated() {
+    private void whenOidcPluginCreated()
+    {
         OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient, cache);
     }
 
-    private void whenOidcPluginCalledWithNoCredentials() throws AuthenticationException {
+    private void whenOidcPluginCalledWithNoCredentials() throws AuthenticationException
+    {
         whenPluginCreated();
     }
 
@@ -214,40 +216,48 @@ public class OidcAuthPluginTest
         return whenPluginCreated(token);
     }
 
-    private Set<Principal> whenPluginCreated() throws AuthenticationException {
+    private Set<Principal> whenPluginCreated() throws AuthenticationException
+    {
         return this.whenPluginCreated(null);
     }
 
-    private Set<Principal> whenPluginCreated(BearerTokenCredential token) throws AuthenticationException {
+    private Set<Principal> whenPluginCreated(BearerTokenCredential token) throws AuthenticationException
+    {
         OidcAuthPlugin plugin = new OidcAuthPlugin(givenConfiguration, httpClient, cache);
         Set<Object> priv = new HashSet<>();
         Set<Principal> principals = new HashSet<>();
-        if (token != null) priv.add(token);
+        if (token != null) {
+            priv.add(token);
+        }
 
         plugin.authenticate(new HashSet<>(), priv, principals);
         return principals;
     }
 
-    private IOException withIOException() {
+    private IOException withIOException()
+    {
         return Mockito.mock(IOException.class);
     }
 
-    private ExecutionException withExecutionException() {
+    private ExecutionException withExecutionException()
+    {
         return Mockito.mock(ExecutionException.class);
     }
 
-    private JsonNode withDiscoveryDoc(String json) throws IOException {
+    private JsonNode withDiscoveryDoc(String json) throws IOException
+    {
         return new ObjectMapper().readTree(json);
     }
 
-    private JsonNode withUserInfo(String json) throws IOException {
+    private JsonNode withUserInfo(String json) throws IOException
+    {
         return new ObjectMapper().readTree(json);
     }
 
-    private BearerTokenCredential withBearerToken(String token) throws IOException {
-        return  (token == null) ? null : new BearerTokenCredential(token);
+    private BearerTokenCredential withBearerToken(String token) throws IOException
+    {
+        return (token == null) ? null : new BearerTokenCredential(token);
     }
-
 
     public static Matcher<Iterable<? super OidcSubjectPrincipal>> hasSubject(String dn)
     {
@@ -263,7 +273,6 @@ public class OidcAuthPluginTest
     {
         return hasItem(new OpenIdGroupPrincipal(group));
     }
-
 
     public static Matcher<Iterable<? super FullNamePrincipal>> hasFullName(String givenName,
                                                                            String familyName, String fullName)
