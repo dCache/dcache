@@ -128,6 +128,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -1339,6 +1340,10 @@ public abstract class AbstractFtpDoorV1
     {
         _ftpDoorName = ftpDoorName;
         _tlogName = tlogName;
+        /**
+         * RFC 3659 requires GMT
+         */
+        TIMESTAMP_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
 
         visitFtpCommands(new CommandMethodVisitor() {
             @Override
