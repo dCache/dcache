@@ -120,8 +120,21 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     @Override
-    public RepositoryChannel createChannel() throws IOException {
-        return _entry.openChannel(FileStore.O_RW);
+    public synchronized RepositoryChannel createChannel() throws IOException {
+        RepositoryChannel channel = _entry.openChannel(FileStore.O_RW);
+        /*
+         * initial allocation matches file size. For new files it zero any way,
+         * for existing file allocation was already performed during initial write.
+         */
+         long currentSize = channel.size();
+        _allocated = currentSize;
+        if (_fileAttributes.isDefined(SIZE)) {
+            if (currentSize > _fileAttributes.getSize()) {
+                channel.truncate(_fileAttributes.getSize());
+                free(currentSize - _fileAttributes.getSize());
+            }
+        }
+        return channel;
     }
 
     /**
@@ -227,14 +240,16 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     /**
-     * Freeing space through a write handle is not supported. This
-     * method always throws IllegalStateException.
+     * Freeing allocated space.
+     *
+     * @param size number of bytes to free.
      */
     @Override
-    public void free(long size)
-        throws IllegalStateException
+    public synchronized void free(long size)
     {
-        throw new IllegalStateException("Space cannot be freed through a write handle");
+        checkState(size <= _allocated, "Can't free more space than allocated.");
+        _allocator.free(size);
+        _allocated -= size;
     }
 
     /**
