@@ -184,8 +184,7 @@
     <property name="poolManagerPath" value="${frontend.service.poolmanager}"/>
   </bean>
 
-  <bean id="restore-info-service" class="org.dcache.restful.services.restores.RestoresInfoServiceImpl"
-        init-method="initialize" destroy-method="shutdown">
+  <bean id="restore-info-service" class="org.dcache.restful.services.restores.RestoresInfoServiceImpl">
     <description>Caches and serves information on staging requests.</description>
     <property name="maxCacheSize" value="${frontend.service.restores.maxCacheSize}"/>
     <property name="timeout" value="${frontend.service.restores.timeout}"/>
