@@ -57,14 +57,65 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.transfers;
+package org.dcache.restful.resources.restores;
 
-import diskCacheV111.util.TransferInfo;
-import org.dcache.restful.providers.SnapshotList;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import java.util.UUID;
+
+import diskCacheV111.util.PnfsId;
+import org.dcache.restful.providers.restores.RestoresList;
+import org.dcache.restful.services.restores.RestoresInfoService;
+import org.dcache.restful.util.HttpServletRequests;
+import org.dcache.restful.util.ServletContextHandlerAttributes;
 
 /**
- * <p>JSON wrapper for returning list of transfer info objects.</p>
+ * <p>RESTful API to the {@link RestoresInfoService} service.</p>
+ *
+ * @version v1.0
  */
-public final class TransferList extends SnapshotList<TransferInfo> {
+@Path("/restores")
+public final class RestoreResources {
+    @Context
+    ServletContext ctx;
 
+    @Context
+    HttpServletRequest request;
+
+    /**
+     * <p>Restores.</p>
+     *
+     * <p>The Restores endpoint returns current staging operations.</p>
+     *
+     * @param token Use the snapshot corresponding to this UUID.
+     *              A <code>null</code> value indicates a request for
+     *              refreshed (i.e., current) restores.
+     * @param offset Return restores beginning at this index.
+     * @param limit Return at most this number of items.
+     * @param pnfsid Return only restores for this file.
+     * @return object containing list of restores, along with token and
+     *          offset information.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public RestoresList getRestores(@QueryParam("token") UUID token,
+                                    @QueryParam("offset") Integer offset,
+                                    @QueryParam("limit") Integer limit,
+                                    @QueryParam("pnfsid") PnfsId pnfsid) {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Restores service only accessible to admin users.");
+        }
+
+        RestoresInfoService service
+                        = ServletContextHandlerAttributes.getRestoresInfoService(ctx);
+        return service.get(token, offset, limit, pnfsid);
+    }
 }

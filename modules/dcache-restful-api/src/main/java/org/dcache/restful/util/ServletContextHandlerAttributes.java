@@ -9,6 +9,7 @@ import org.dcache.http.PathMapper;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.restful.services.cells.CellInfoService;
+import org.dcache.restful.services.restores.RestoresInfoService;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.util.list.ListDirectoryHandler;
 
@@ -19,6 +20,7 @@ public class ServletContextHandlerAttributes {
     public final static String CS = "org.dcache.restful.CS";
     public final static String POOL_MANAGER = "org.dcache.restful.PoolManager";
     public final static String PM = "org.dcache.restful.PM";
+    public final static String RS = "org.dcache.restful.RS";
     public final static String TF = "org.dcache.restful.TF";
     public final static String PinMngStub = "org.dcache.restful.PinMngStub";
     public final static String PathMapper = "org.dcache.restful.PathMapper";
@@ -47,7 +49,6 @@ public class ServletContextHandlerAttributes {
     {
         CellStub cellStub = (CellStub) (ctx.getAttribute(PinMngStub));
         return cellStub;
-
     }
 
     public static PathMapper getPathMapper(ServletContext ctx)
@@ -74,5 +75,10 @@ public class ServletContextHandlerAttributes {
     public static CellInfoService getCellInfoService(ServletContext ctx)
     {
         return (CellInfoService) (ctx.getAttribute(CI));
+    }
+
+    public static RestoresInfoService getRestoresInfoService(ServletContext ctx)
+    {
+        return (RestoresInfoService) ctx.getAttribute(RS);
     }
 }

@@ -57,14 +57,76 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.transfers;
+package org.dcache.restful.providers;
 
-import diskCacheV111.util.TransferInfo;
-import org.dcache.restful.providers.SnapshotList;
+import javax.validation.constraints.NotNull;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 /**
- * <p>JSON wrapper for returning list of transfer info objects.</p>
+ * <p>JSON wrapper for returning list of serializable
+ *    objects.  The wrapper supports requests based on
+ *    token identifiers of snapshots, with an offset and limit into
+ *    the underlying snapshot.</p>
  */
-public final class TransferList extends SnapshotList<TransferInfo> {
+public abstract class SnapshotList<T extends Serializable>
+                implements Serializable {
+    /**
+     * <p>The returned data.</p>
+     */
+    @NotNull
+    private List<T> items = Collections.EMPTY_LIST;
 
+    /**
+     * <p>The original offset requested.  The first element in the
+     * returned list should correspond to this index in the
+     * underlying complete list.</p>
+     */
+    private int currentOffset = 0;
+
+    /**
+     * <p>Should be the currentOffset plus the size of the returned list
+     * if the list has more elements; otherwise -1.</p>
+     */
+    private int nextOffset = 0;
+
+    /**
+     * <p>Identifies the snapshot used to service this request.</p>
+     * <p>May be <code>null</code> only if transfers is empty.</p>
+     */
+    private UUID currentToken;
+
+    public int getCurrentOffset() {
+        return currentOffset;
+    }
+
+    public UUID getCurrentToken() {
+        return currentToken;
+    }
+
+    public int getNextOffset() {
+        return nextOffset;
+    }
+
+    public List<T> getItems() {
+        return items;
+    }
+
+    public void setCurrentOffset(int currentOffset) {
+        this.currentOffset = currentOffset;
+    }
+
+    public void setCurrentToken(UUID currentToken) {
+        this.currentToken = currentToken;
+    }
+
+    public void setNextOffset(int nextOffset) {
+        this.nextOffset = nextOffset;
+    }
+
+    public void setItems(List<T> items) {
+        this.items = items;
+    }
 }

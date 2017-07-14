@@ -57,14 +57,13 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.transfers;
+package org.dcache.restful.providers.restores;
 
-import diskCacheV111.util.TransferInfo;
 import org.dcache.restful.providers.SnapshotList;
 
 /**
- * <p>JSON wrapper for returning list of transfer info objects.</p>
+ * <p>JSON wrapper for returning list of tape restore/stage requests.</p>
  */
-public final class TransferList extends SnapshotList<TransferInfo> {
+public class RestoresList extends SnapshotList<RestoreInfo> {
 
 }

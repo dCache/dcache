@@ -253,7 +253,7 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
             }
 
             TransferList result = get(null, 0, limit, null);
-            List<TransferInfo> snapshot = result.getTransfers();
+            List<TransferInfo> snapshot = result.getItems();
 
             StringBuilder builder = new StringBuilder();
             snapshot.stream()
@@ -321,11 +321,11 @@ public class TransferInfoServiceImpl extends CellDataCollectingService<Map<Strin
         }
 
         TransferList result = new TransferList();
-        result.setTransfers(getSnapshot(token, offset, limit, pnfsid));
+        result.setItems(getSnapshot(token, offset, limit, pnfsid));
         result.setCurrentToken(token);
         result.setCurrentOffset(offset);
 
-        int size = result.getTransfers().size();
+        int size = result.getItems().size();
 
         if (size < limit) {
             size = -1;

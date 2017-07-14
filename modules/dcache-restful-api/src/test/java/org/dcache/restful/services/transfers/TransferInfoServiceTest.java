@@ -266,21 +266,21 @@ public class TransferInfoServiceTest {
         int terminated = Math.min(799, allTransfers);
         doUpdate(terminated);
         list = service.get(list.getCurrentToken(), null, null, null);
-        assertEquals(allTransfers, list.getTransfers().size());
+        assertEquals(allTransfers, list.getItems().size());
         list = service.get(null, null, null, null);
-        assertEquals(allTransfers - terminated, list.getTransfers().size());
+        assertEquals(allTransfers - terminated, list.getItems().size());
     }
 
     @Test
     public void testGetAll() {
         TransferList result = service.get(null, null, null, null);
-        assertEquals(allTransfers, result.getTransfers().size());
+        assertEquals(allTransfers, result.getItems().size());
     }
 
     @Test
     public void testGetWithID() {
         TransferList result = service.get(null, null, null, TESTID);
-        assertEquals(TESTIDCOUNT, result.getTransfers().size());
+        assertEquals(TESTIDCOUNT, result.getItems().size());
     }
 
     @Test
@@ -292,8 +292,8 @@ public class TransferInfoServiceTest {
 
         for (int i = 0; i < allTransfers; i += 100) {
             TransferList next = service.get(token, i, 100, null);
-            lastCount += next.getTransfers().size();
-            for (TransferInfo info : next.getTransfers()) {
+            lastCount += next.getItems().size();
+            for (TransferInfo info : next.getItems()) {
                 String key = transferKey(info.getCellName(),
                                          info.getSerialId());
                 assertFalse(keys.contains(key));
@@ -309,7 +309,7 @@ public class TransferInfoServiceTest {
     @Test
     public void testPopulate() throws CacheException {
         TransferList list = service.get(null, 0, 1, null);
-        TransferInfo info = list.getTransfers().get(0);
+        TransferInfo info = list.getItems().get(0);
         TransferInfo query = new TransferInfo();
         query.setCellName(info.getCellName());
         query.setSerialId(info.getSerialId());

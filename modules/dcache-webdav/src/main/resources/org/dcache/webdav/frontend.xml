@@ -106,7 +106,7 @@
   <bean id="scheduling-service" class="java.util.concurrent.ScheduledThreadPoolExecutor"
           destroy-method="shutdownNow">
         <description>Used to execute periodic data collection (admin services)</description>
-        <constructor-arg value="4"/>
+        <constructor-arg value="5"/>
   </bean>
 
   <bean id="transfer-collector" class="org.dcache.restful.util.transfers.TransferCollector">
@@ -176,6 +176,22 @@
     <property name="executorService" ref="scheduling-service"/>
     <property name="storageDir" value="${frontend.service.cell-info.storage-dir}"/>
     <property name="processor" ref="cell-info-processor"/>
+  </bean>
+
+  <bean id="restores-collector" class="org.dcache.restful.util.restores.RestoreCollector">
+    <description>Collects staging request info from from pool manager.</description>
+    <property name="pnfsStub" ref="pnfs-stub"/>
+    <property name="poolManagerPath" value="${frontend.service.poolmanager}"/>
+  </bean>
+
+  <bean id="restore-info-service" class="org.dcache.restful.services.restores.RestoresInfoServiceImpl"
+        init-method="initialize" destroy-method="shutdown">
+    <description>Caches and serves information on staging requests.</description>
+    <property name="maxCacheSize" value="${frontend.service.restores.maxCacheSize}"/>
+    <property name="timeout" value="${frontend.service.restores.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.restores.timeout.unit}"/>
+    <property name="collector" ref="restores-collector"/>
+    <property name="executorService" ref="scheduling-service"/>
   </bean>
 
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
@@ -256,6 +272,8 @@
                                                                value-ref="billing-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).CI}"
                                                                value-ref="cell-info-service"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).RS}"
+                                                               value-ref="restore-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
                                                                value-ref= "pinManagerStub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PathMapper}"

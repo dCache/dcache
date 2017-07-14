@@ -228,6 +228,9 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
              * Do not reschedule here.
              */
             return;
+        } catch (IllegalStateException e) {
+            LOGGER.info("Could not run collection: {}, {}.",
+                        e.getMessage(), e.getCause());
         } catch (RuntimeException ee) {
             LOGGER.error(ee.toString(), ee);
         }

@@ -57,14 +57,58 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.transfers;
+package org.dcache.restful.util.restores;
 
-import diskCacheV111.util.TransferInfo;
-import org.dcache.restful.providers.SnapshotList;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import java.util.concurrent.TimeUnit;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.vehicles.RestoreHandlerInfo;
+import dmg.cells.nucleus.CellPath;
+import org.dcache.auth.Subjects;
+import org.dcache.cells.CellStub;
+import org.dcache.restful.providers.restores.RestoreInfo;
+import org.dcache.restful.util.admin.CellMessagingCollector;
 
 /**
- * <p>JSON wrapper for returning list of transfer info objects.</p>
+ * <p>Thin wrapper around cell messaging to pool manager pnfs manager endpoints.</p>
  */
-public final class TransferList extends SnapshotList<TransferInfo> {
+public class RestoreCollector extends
+                CellMessagingCollector<ListenableFuture<RestoreHandlerInfo[]>> {
+    private static final String RESTORE_INFO_CMD = "xrc ls";
 
+    private String      poolManagerPath;
+    private CellStub    pnfsStub;
+    private PnfsHandler pnfsHandler;
+
+    @Override
+    public void initialize(Long timeout, TimeUnit timeUnit) {
+        pnfsHandler = new PnfsHandler(pnfsStub);
+        pnfsHandler.setSubject(Subjects.ROOT);
+        super.initialize(timeout, timeUnit);
+    }
+
+    /**
+     * @return future containing array of restore metadata.
+     */
+    public ListenableFuture<RestoreHandlerInfo[]> collectData()
+                    throws InterruptedException {
+        return stub.send(new CellPath(poolManagerPath),
+                         RESTORE_INFO_CMD,
+                         RestoreHandlerInfo[].class);
+    }
+
+    public void setPath(RestoreInfo info) throws CacheException {
+        info.setPath(pnfsHandler.getPathByPnfsId(info.getPnfsId()).toString());
+    }
+
+    public void setPnfsStub(CellStub pnfsStub) {
+        this.pnfsStub = pnfsStub;
+    }
+
+    public void setPoolManagerPath(String poolManagerPath) {
+        this.poolManagerPath = poolManagerPath;
+    }
 }

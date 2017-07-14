@@ -57,14 +57,132 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.transfers;
+package org.dcache.restful.providers.restores;
 
-import diskCacheV111.util.TransferInfo;
-import org.dcache.restful.providers.SnapshotList;
+import java.io.Serializable;
+
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.RestoreHandlerInfo;
 
 /**
- * <p>JSON wrapper for returning list of transfer info objects.</p>
+ * <p>Restore/stage request metadata.</p>
  */
-public final class TransferList extends SnapshotList<TransferInfo> {
+public class RestoreInfo implements Serializable {
+    private String key;
+    private PnfsId pnfsId;
+    private String  path;
+    private String  subnet;
+    private String  poolCandidate;
+    private Long    started;
+    private Integer clients;
+    private Integer retries;
+    private String  status;
+    private Integer error;
+    private String  errorMessage;
 
+    public RestoreInfo() {
+
+    }
+
+    public RestoreInfo(RestoreHandlerInfo info) {
+        key = info.getName();
+        int atIndex = key.indexOf('@');
+        this.pnfsId = new PnfsId(key.substring(0, atIndex));
+        this.subnet = key.substring(atIndex);
+        poolCandidate = info.getPool();
+        started = info.getStartTime();
+        clients = info.getClientCount();
+        retries = info.getRetryCount();
+        status = info.getStatus();
+        error = info.getErrorCode();
+        errorMessage = info.getErrorMessage();
+    }
+
+    public Integer getClients() {
+        return clients;
+    }
+
+    public Integer getError() {
+        return error;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
+
+    public String getPoolCandidate() {
+        return poolCandidate;
+    }
+
+    public Integer getRetries() {
+        return retries;
+    }
+
+    public Long getStarted() {
+        return started;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getSubnet() {
+        return subnet;
+    }
+
+    public void setClients(Integer clients) {
+        this.clients = clients;
+    }
+
+    public void setError(Integer error) {
+        this.error = error;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public void setPnfsId(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public void setPoolCandidate(String poolCandidate) {
+        this.poolCandidate = poolCandidate;
+    }
+
+    public void setRetries(Integer retries) {
+        this.retries = retries;
+    }
+
+    public void setStarted(Long started) {
+        this.started = started;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setSubnet(String subnet) {
+        this.subnet = subnet;
+    }
 }
