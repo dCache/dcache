@@ -35,7 +35,7 @@ class WriteHandleImpl implements ReplicaDescriptor
 {
     enum HandleState
     {
-        OPEN, COMMITTED, CLOSED
+        INIT, OPEN, COMMITTED, CLOSED
     }
 
     private static final Logger _log =
@@ -99,7 +99,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         _initialState = entry.getState();
         _targetState = checkNotNull(targetState);
         _stickyRecords = checkNotNull(stickyRecords);
-        _state = HandleState.OPEN;
+        _state = HandleState.INIT;
         _allocated = 0;
 
         checkState(_initialState != ReplicaState.FROM_CLIENT || _fileAttributes.isDefined(EnumSet.of(RETENTION_POLICY, ACCESS_LATENCY)));
@@ -114,26 +114,34 @@ class WriteHandleImpl implements ReplicaDescriptor
         }
     }
 
-    private synchronized boolean isOpen()
+    private synchronized boolean isAllocatable()
     {
-        return _state == HandleState.OPEN;
+        return _state == HandleState.INIT || _state == HandleState.OPEN;
     }
 
     @Override
     public synchronized RepositoryChannel createChannel() throws IOException {
         RepositoryChannel channel = _entry.openChannel(FileStore.O_RW);
+
         /*
          * initial allocation matches file size. For new files it zero any way,
          * for existing file allocation was already performed during initial write.
+         *
+         * This must happen only once since currently the pool calls
+         * createChannel twice.
          */
-         long currentSize = channel.size();
-        _allocated = currentSize;
-        if (_fileAttributes.isDefined(SIZE)) {
-            if (currentSize > _fileAttributes.getSize()) {
-                channel.truncate(_fileAttributes.getSize());
-                free(currentSize - _fileAttributes.getSize());
+        if (_state == HandleState.INIT) {
+             long currentSize = channel.size();
+            _allocated = currentSize;
+            if (_fileAttributes.isDefined(SIZE)) {
+                if (currentSize > _fileAttributes.getSize()) {
+                    channel.truncate(_fileAttributes.getSize());
+                    free(currentSize - _fileAttributes.getSize());
+                }
             }
+            setState(HandleState.OPEN);
         }
+
         return channel;
     }
 
@@ -152,7 +160,7 @@ class WriteHandleImpl implements ReplicaDescriptor
             wait();
         }
 
-        if (!isOpen()) {
+        if (!isAllocatable()) {
             throw new IllegalStateException("Handle is closed");
         }
 
@@ -189,7 +197,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         try {
             _allocator.allocate(size);
         } catch (InterruptedException e) {
-            if (!isOpen()) {
+            if (!isAllocatable()) {
                 throw new IllegalStateException("Handle is closed");
             }
             throw e;
@@ -223,7 +231,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         try {
             isAllocated = _allocator.allocateNow(size);
         } catch (InterruptedException e) {
-            if (!isOpen()) {
+            if (!isAllocatable()) {
                 throw new IllegalStateException("Handle is closed");
             }
             throw e;
@@ -312,9 +320,8 @@ class WriteHandleImpl implements ReplicaDescriptor
     public synchronized void commit()
         throws IllegalStateException, InterruptedException, CacheException
     {
-        if (_state != HandleState.OPEN) {
-            throw new IllegalStateException("Handle is closed");
-        }
+        checkState(_state != HandleState.INIT, "Channel not created");
+        checkState(_state == HandleState.OPEN, "Handle is closed");
 
         try {
             _entry.setLastAccessTime((_atime == null) ? System.currentTimeMillis() : _atime);
@@ -441,6 +448,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         case CLOSED:
             throw new IllegalStateException("Handle is closed");
 
+        case INIT:
         case OPEN:
             fail();
             setState(HandleState.CLOSED);
