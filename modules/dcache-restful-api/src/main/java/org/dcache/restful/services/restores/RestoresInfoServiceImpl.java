@@ -105,7 +105,7 @@ public final class RestoresInfoServiceImpl extends
     class RestoresSetTimeoutCommand extends SetTimeoutCommand {
     }
 
-    @Command(name = "restores run",
+    @Command(name = "restores refresh",
                     hint = "Query for current tape restore queue info",
                     description = "Interrupts current wait to run query "
                                     + "immediately.")
