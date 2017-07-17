@@ -23,11 +23,6 @@ check -strong resilience.db.connections.max
 check -strong resilience.db.fetch-size
 
 check -strong resilience.plugins.storage-info-extractor
-check -strong resilience.default-access-latency
-check -strong resilience.default-retention-policy
-check -strong resilience.enable.inherit-file-ownership
-check -strong resilience.enable.full-path-permission-check
-check -strong resilience.enable.acl
 
 check -strong resilience.home
 check -strong resilience.enable.watchdog
