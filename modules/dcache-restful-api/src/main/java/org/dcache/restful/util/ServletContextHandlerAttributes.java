@@ -7,6 +7,7 @@ import java.security.AccessController;
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.poolmanager.RemotePoolMonitor;
+import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.restful.services.cells.CellInfoService;
 import org.dcache.restful.services.restores.RestoresInfoService;
@@ -14,6 +15,7 @@ import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.util.list.ListDirectoryHandler;
 
 public class ServletContextHandlerAttributes {
+    public final static String AL = "org.dcache.restful.AL";
     public final static String BL = "org.dcache.restful.BL";
     public final static String DL = "org.dcache.restful";
     public final static String CI = "org.dcache.restful.CI";
@@ -80,5 +82,10 @@ public class ServletContextHandlerAttributes {
     public static RestoresInfoService getRestoresInfoService(ServletContext ctx)
     {
         return (RestoresInfoService) ctx.getAttribute(RS);
+    }
+
+    public static AlarmsInfoService getAlarmsInfoService(ServletContext ctx)
+    {
+        return (AlarmsInfoService) ctx.getAttribute(AL);
     }
 }

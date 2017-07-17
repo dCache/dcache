@@ -76,8 +76,6 @@
         <property name="rootPath" value="${frontend.root}"/>
     </bean>
 
-
-
   <bean id="login-strategy" class="org.dcache.webdav.AnonymousUserLoginStrategy">
       <description>Processes login for user 'anonymous'</description>
       <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
@@ -121,6 +119,20 @@
       <property name="timeoutUnit" value="${frontend.service.transfers.timeout.unit}"/>
       <property name="collector" ref="transfer-collector"/>
       <property name="executorService" ref="scheduling-service"/>
+  </bean>
+
+  <bean id="alarms-collector" class="org.dcache.restful.util.alarms.AlarmsCollector">
+      <description>Communicates with alarms backend.</description>
+      <property name="alarmsPath" value="${frontend.service.alarms}"/>
+  </bean>
+
+  <bean id="alarms-info-service" class="org.dcache.restful.services.alarms.AlarmsInfoServiceImpl">
+      <description>Collects, updates and deletes alarms.</description>
+      <property name="collector" ref="alarms-collector"/>
+      <property name="executorService" ref="scheduling-service"/>
+      <property name="maxCacheSize" value="${frontend.service.alarms.maxCacheSize}"/>
+      <property name="timeout" value="${frontend.service.alarms.timeout}"/>
+      <property name="timeoutUnit" value="${frontend.service.alarms.timeout.unit}"/>
   </bean>
 
   <bean id="custom-headers"
@@ -273,6 +285,8 @@
                                                                value-ref="cell-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).RS}"
                                                                value-ref="restore-info-service"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).AL}"
+                                                               value-ref="alarms-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
                                                                value-ref= "pinManagerStub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PathMapper}"

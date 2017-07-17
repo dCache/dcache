@@ -8,6 +8,7 @@ check frontend.cell.consume
 check frontend.cell.subscribe
 check -strong frontend.net.port
 check -strong frontend.net.listen
+check -strong frontend.service.alarms
 check -strong frontend.service.pnfsmanager
 check -strong frontend.service.pnfsmanager.timeout
 check -strong frontend.service.pnfsmanager.timeout.unit
@@ -25,6 +26,9 @@ check -strong frontend.service.gplazma.timeout.unit
 check -strong frontend.service.restores.timeout
 check -strong frontend.service.restores.timeout.unit
 check -strong frontend.service.restores.maxCacheSize
+check -strong frontend.service.alarms.timeout
+check -strong frontend.service.alarms.timeout.unit
+check -strong frontend.service.alarms.maxCacheSize
 check -strong frontend.service.transfers.timeout
 check -strong frontend.service.transfers.timeout.unit
 check -strong frontend.service.transfers.maxCacheSize
