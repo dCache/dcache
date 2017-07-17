@@ -106,23 +106,33 @@
     </encoder>
   </appender>
 
-  <appender name="socket" class="ch.qos.logback.classic.net.SocketAppender">
-      <!-- Regardless of the level to which the remote appender is set,
-           only messages marked as ALARM are allowed through -->
-      <filter class="org.dcache.alarms.logback.AlarmFilter"/>
-      <remoteHost>${dcache.log.server.host}</remoteHost>
-      <port>${dcache.log.server.port}</port>
-      <reconnectionDelay>10000</reconnectionDelay>
-  </appender>
-
-  <appender name="remote" class="ch.qos.logback.classic.AsyncAppender">
-      <appender-ref ref="socket" />
-  </appender>
+  <!-- The conditional is to avoid an infinite retry of a non-existent connection
+       by the socket appender if an alarms service is not running, which,
+       for example, is the case when remote logging is left off system-wide. -->
+  <if condition='!"${dcache.log.level.remote}".equals("off")'>
+    <then>
+      <appender name="socket" class="ch.qos.logback.classic.net.SocketAppender">
+        <!-- Regardless of the level to which the remote appender is set,
+             only messages marked as ALARM are allowed through -->
+        <filter class="org.dcache.alarms.logback.AlarmFilter"/>
+        <remoteHost>${dcache.log.server.host}</remoteHost>
+        <port>${dcache.log.server.port}</port>
+        <reconnectionDelay>10000</reconnectionDelay>
+      </appender>
+      <appender name="remote" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="socket" />
+      </appender>
+    </then>
+  </if>
 
   <root>
     <appender-ref ref="stdout"/>
     <appender-ref ref="pinboard"/>
-    <appender-ref ref="remote"/>
+    <if condition='!"${dcache.log.level.remote}".equals("off")'>
+      <then>
+        <appender-ref ref="remote"/>
+      </then>
+    </if>
   </root>
 
   <logger name="org.dcache.events" additivity="false">
@@ -141,7 +151,11 @@
     <appender-ref ref="pinboard"/>
     <appender-ref ref="events"/>
     <appender-ref ref="access"/>
-    <appender-ref ref="remote"/>
+    <if condition='!"${dcache.log.level.remote}".equals("off")'>
+      <then>
+        <appender-ref ref="remote"/>
+      </then>
+    </if>
   </logger>
 
   <turboFilter class="dmg.util.logback.CellThresholdFilter">
@@ -206,11 +220,15 @@
       <level>${dcache.log.level.file}</level>
     </threshold>
 
-    <threshold>
-      <appender>remote</appender>
-      <logger>root</logger>
-      <level>${dcache.log.level.remote}</level>
-    </threshold>
+    <if condition='!"${dcache.log.level.remote}".equals("off")'>
+      <then>
+        <threshold>
+          <appender>remote</appender>
+          <logger>root</logger>
+          <level>${dcache.log.level.remote}</level>
+        </threshold>
+      </then>
+    </if>
 
     <threshold>
       <appender>pinboard</appender>
