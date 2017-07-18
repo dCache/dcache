@@ -54,8 +54,10 @@
 
     <bean id="extractor" class="${resilience.plugins.storage-info-extractor}">
       <description>Storage info extractor</description>
-      <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('${resilience.default-access-latency}') }"/>
-      <constructor-arg value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${resilience.default-retention-policy}') }"/>
+      <!-- these are placeholder values which do not effect how resilience works,
+           so the dcache defaults are fine -->
+      <constructor-arg value="#{ T(diskCacheV111.util.AccessLatency).getAccessLatency('NEARLINE') }"/>
+      <constructor-arg value="#{ T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('CUSTODIAL') }"/>
     </bean>
 
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
@@ -68,12 +70,14 @@
     <bean id="name-space-provider"
           class="org.dcache.chimera.namespace.ChimeraNameSpaceProvider">
       <description>Name space provider</description>
-      <property name="permissionHandler" ref="permission-handler"/>
-      <property name="inheritFileOwnership" value="${resilience.enable.inherit-file-ownership}"/>
-      <property name="verifyAllLookups" value="${resilience.enable.full-path-permission-check}"/>
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
-      <property name="aclEnabled" value="${resilience.enable.acl}"/>
+      <property name="permissionHandler" ref="permission-handler"/>
+      <!-- these are placeholder values which do not effect how resilience works,
+            so the dcache defaults are fine -->
+      <property name="inheritFileOwnership" value="false"/>
+      <property name="verifyAllLookups" value="true"/>
+      <property name="aclEnabled" value="false"/>
     </bean>
 
     <bean id="NamespaceAccess" class="org.dcache.resilience.db.LocalNamespaceAccess">
