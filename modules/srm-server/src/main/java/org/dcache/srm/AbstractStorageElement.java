@@ -305,6 +305,12 @@ public interface AbstractStorageElement {
     boolean isLocalTransferUrl(URI url) throws SRMException;
 
     /**
+     * Query whether the supplied SURL is local to the system.
+     * Throws SRMInvalidPathException if the supplied surl is not a valid SURL.
+     */
+    boolean isLocalSurl(URI surl) throws SRMInvalidPathException;
+
+    /**
      * Retrieves the FileMetaData of a file.
      *
      * An implementation may check whether the user sufficient

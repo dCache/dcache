@@ -67,22 +67,19 @@ COPYRIGHT STATUS:
 package org.dcache.srm.util;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.FsPath;
 
+import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.client.Transport;
 
@@ -115,7 +112,6 @@ public class Configuration {
     protected int tcp_buffer_size;
     private int parallel_streams=10;
 
-    protected int port=8443;
     protected long authzCacheLifetime = 180;
     protected String srm_root="/";
     protected String proxies_directory = "../proxies";
@@ -126,18 +122,6 @@ public class Configuration {
      * local file, when giving the info (metadata) to srm clients
      */
     private String srmHost;
-    /**
-     * A host part of the srm url (surl) is used to determine if the surl
-     * references file in this storage system.
-     * In case of the copy operation, srm needs to be able to tell the
-     * local surl from the remote one.
-     * Also SRM needs to  refuse to perform operations on non local srm urls
-     * This collection cosists of hosts that are cosidered local by this srm server.
-     * This parameter has to be a collection because in case of the multihomed
-     * or distributed server it may have more than one network name.
-     *
-     */
-    private final Set<String> localSrmHosts=new HashSet<>();
 
     // scheduler parameters
 
@@ -290,20 +274,6 @@ public class Configuration {
         this.tcp_buffer_size = tcp_buffer_size;
     }
 
-    /** Getter for property port.
-     * @return Value of property port.
-     */
-    public int getPort() {
-        return port;
-    }
-
-    /** Setter for property port.
-     * @param port New value of property port.
-     */
-    public void setPort(int port) {
-        this.port = port;
-    }
-
     /**
      * Getter for property authzCacheLifetime.
      * @return Value of property authzCacheLifetime.
@@ -375,54 +345,6 @@ public class Configuration {
         this.timeout_script = timeout_script;
     }
 
-    /**
-     * this method returns collection of the local srm hosts.
-     * A host part of the srm url (surl) is used to determine if the surl
-     * references file in this storage system.
-     * In case of the copy operation, srm needs to be able to tell the
-     * local surl from the remote one.
-     * Also SRM needs to  refuse to perform operations on non local srm urls
-     * This collection cosists of hosts that are cosidered local by this srm server.
-     * This parameter has to be a collection because in case of the multihomed
-     * or distributed server it may have more than one network name.
-     *
-     * @return set of local srmhosts.
-     */
-    public Set<String> getSrmHosts() {
-        synchronized(localSrmHosts) {
-            return new HashSet<>(localSrmHosts);
-        }
-    }
-
-    /**
-     * This method adds values to the collection of the local srm hosts.
-     * A host part of the srm url (surl) is used to determine if the surl
-     * references file in this storage system.
-     * In case of the copy operation, srm needs to be able to tell the
-     * local surl from the remote one.
-     * Also SRM needs to  refuse to perform operations on non local srm urls
-     * This collection cosists of hosts that are cosidered local by this srm server.
-     * This parameter has to be a collection because in case of the multihomed
-     * or distributed server it may have more than one network name.
-     *
-     * @param srmhost additional value of srmhost.
-     */
-    public void addSrmHost(String srmhost) {
-        synchronized(localSrmHosts) {
-            localSrmHosts.add(srmhost);
-        }
-    }
-
-    /**
-     * Sets the set of local srm hosts. See addSrmHost for details.
-     */
-    public void setSrmHostsAsArray(String[] hosts) {
-        synchronized(localSrmHosts) {
-            localSrmHosts.clear();
-            localSrmHosts.addAll(Arrays.asList(hosts));
-        }
-    }
-
     private String timeToString(long value)
     {
         return (value == Long.MAX_VALUE) ? INFINITY : String.valueOf(value);
@@ -447,12 +369,7 @@ public class Configuration {
         sb.append("\n\ttimeout_script=").append(this.timeout_script);
         sb.append("\n\turlcopy timeout in seconds=").append(this.timeout);
         sb.append("\n\tproxies directory=").append(this.proxies_directory);
-        sb.append("\n\tport=").append(this.port);
         sb.append("\n\tsrmHost=").append(getSrmHost());
-        sb.append("\n\tlocalSrmHosts=");
-        for(String host:this.getSrmHosts()) {
-            sb.append(host).append(", ");
-        }
         sb.append("\n\tuseUrlcopyScript=").append(this.useUrlcopyScript);
         sb.append("\n\tuseGsiftpForSrmCopy=").append(this.useGsiftpForSrmCopy);
         sb.append("\n\tuseHttpForSrmCopy=").append(this.useHttpForSrmCopy);
@@ -1110,15 +1027,7 @@ public class Configuration {
     @Nonnull
     public FsPath getPath(URI surl) throws SRMInvalidPathException
     {
-        String scheme = surl.getScheme();
-        if (scheme != null && !scheme.equalsIgnoreCase("srm")) {
-            throw new SRMInvalidPathException("Invalid scheme: " + scheme);
-        }
-
-        String host = surl.getHost();
-        int port = surl.getPort();
-        if (host != null && !getSrmHosts().stream().anyMatch(host::equalsIgnoreCase) ||
-                port != -1 && port != getPort()) {
+        if (!SRM.getSRM().getStorage().isLocalSurl(surl)) {
             throw new SRMInvalidPathException("SURL is not local: " + surl);
         }
 

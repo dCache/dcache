@@ -65,6 +65,7 @@ COPYRIGHT STATUS:
  */
 package diskCacheV111.srm.dcache;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -120,10 +121,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
 
-import org.dcache.space.ReservationCaches;
 import org.dcache.space.ReservationCaches.GetSpaceTokensKey;
 
 import diskCacheV111.services.space.Space;
@@ -229,6 +230,7 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Maps.filterKeys;
@@ -236,6 +238,7 @@ import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFu
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.*;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.util.Exceptions.genericCheck;
 import static org.dcache.util.NetworkUtils.isInetAddress;
 
 /**
@@ -298,6 +301,9 @@ public final class Storage
     private final Random rand = new Random();
     private int numDoorInRanSelection = 3;
 
+    // Protocol as advertised by srm services via LoginBroker.
+    private String srmProtocol;
+
     /**
      * Used during  uploads to verify the availability of a space reservation. In case
      * of stale data, a TURL may be handed out to the client even though the reservation
@@ -316,6 +322,12 @@ public final class Storage
     {
         attributesRequiredForRmdir = EnumSet.of(TYPE);
         attributesRequiredForRmdir.addAll(permissionHandler.getRequiredAttributes());
+    }
+
+    @Required
+    public void setSrmProtocol(String protocol)
+    {
+        srmProtocol = protocol;
     }
 
     @Required
@@ -807,6 +819,61 @@ public final class Storage
         } catch (UnknownHostException ignored) {
         }
         return false;
+    }
+
+    private void checkValidPath(boolean isOK, String format, Object... arguments) throws SRMInvalidPathException
+    {
+        genericCheck(isOK, m -> new SRMInvalidPathException(m), format, arguments);
+    }
+
+    @Override
+    public boolean isLocalSurl(URI surl) throws SRMInvalidPathException
+    {
+        // Non-absolute URI implies it is a relative URI, which has no schema,
+        // hostname or port number: a "Storage File Name" (stFN).
+        if (!surl.isAbsolute()) {
+            _log.debug("Identifying SURL {} as local: relative", surl);
+            return true;
+        }
+
+        // Opaque URI means no '//' after '<schema>:', e.g., 'email:support@dcache.org'
+        checkValidPath(!surl.isOpaque(), "surl is opaque");
+
+        if (!surl.getScheme().equalsIgnoreCase("srm")) {
+            // REVISIT: not throwing an exception is currently needed as we
+            //          support srmCOPY requests with non-SRM endpoints and
+            //          srmCOPY code calls isLocalSurl on all URIs.
+            return false;
+        }
+        checkValidPath(surl.getHost() != null, "missing host");
+        checkValidPath(!CharMatcher.whitespace().matchesAllOf(surl.getHost()), "empty host");
+
+        int port = surl.getPort();
+        boolean result = loginBrokerSource.anyMatch(i -> (port == -1 || port == i.getPort())
+                && i.getProtocolFamily().equals(srmProtocol)
+                && i.getAddresses().stream()
+                        .map(InetAddress::getHostName)
+                        .anyMatch(n -> n.equalsIgnoreCase(surl.getHost())));
+        if (_log.isDebugEnabled() && result == false) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Identifying SURL ").append(surl).append(" as non-local: no matching door:\n");
+            for (LoginBrokerInfo i : loginBrokerSource.doors()) {
+                sb.append("    ").append(i.toString()).append(" ");
+                if (port != -1 && port != i.getPort()) {
+                    sb.append("mismatch on port");
+                } else if (!i.getProtocolFamily().equals(srmProtocol)) {
+                    sb.append("mismatch on family");
+                } else if (!i.getAddresses().stream().map(InetAddress::getHostName).anyMatch(n -> n.equalsIgnoreCase(surl.getHost()))) {
+                    sb.append("mismatch on hostname: ");
+                    sb.append(i.getAddresses().stream().map(InetAddress::getHostName).collect(Collectors.joining(", ")));
+                } else {
+                    sb.append("unknown reason");
+                }
+                sb.append('\n');
+            }
+            _log.debug(sb.toString());
+        }
+        return result;
     }
 
     private String selectProtocol(Set<String> supportedProtocols, List<String> protocols)

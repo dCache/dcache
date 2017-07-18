@@ -142,7 +142,6 @@ public class SRM implements CellLifeCycleAware
 {
     private static final Logger logger = LoggerFactory.getLogger(SRM.class);
     private static final String SFN_STRING = "SFN=";
-    private final InetAddress host;
     private final Configuration configuration;
     private RequestCredentialStorage requestCredentialStorage;
     private final AbstractStorageElement storage;
@@ -221,9 +220,6 @@ public class SRM implements CellLifeCycleAware
             //already initialized
         }
 
-        host = InetAddress.getLocalHost();
-
-        configuration.addSrmHost(host.getCanonicalHostName());
         logger.debug("srm started :\n\t" + configuration.toString());
     }
 
@@ -327,20 +323,6 @@ public class SRM implements CellLifeCycleAware
     public long getExpiredJobCheckPeriod()
     {
         return expiryPeriod;
-    }
-
-    /**
-     * @return this host InetAddress
-     */
-    public InetAddress getHost() {
-        return host;
-    }
-
-    /**
-     * @return this srm Web Servises Interface port
-     */
-    public int getPort() {
-        return configuration.getPort();
     }
 
     /**
