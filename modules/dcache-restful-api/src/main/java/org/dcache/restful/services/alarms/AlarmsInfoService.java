@@ -92,7 +92,7 @@ public interface AlarmsInfoService {
                    Integer limit,
                    Long after,
                    Long before,
-                   String type) throws CacheException;
+                   String type) throws CacheException, InterruptedException;
 
     /**
      * @return the current mapping of alarm types to alarms priority level.
@@ -106,7 +106,7 @@ public interface AlarmsInfoService {
      * @param alarm index of the alarm in the snapshot
      * @throws CacheException if the indicated alarm does not exist
      */
-    void delete(UUID token, Integer alarm) throws CacheException;
+    void delete(UUID token, Integer alarm) throws CacheException, InterruptedException;
 
     /**
      * <p>Update the comment field of the alarm.</p>
@@ -117,7 +117,8 @@ public interface AlarmsInfoService {
      * @throws CacheException if the indicated alarm does not exist or if
      *                        update fails.
      */
-    void update(UUID token, Integer alarm, String comment) throws CacheException;
+    void update(UUID token, Integer alarm, String comment) throws CacheException,
+                    InterruptedException;
 
     /**
      * <p>Toggle the closed field of the alarm.</p>
@@ -128,5 +129,6 @@ public interface AlarmsInfoService {
      * @throws CacheException if the indicated alarm does not exist or if
      *                        update fails.
      */
-    void update(UUID token, Integer alarm, boolean close) throws CacheException;
+    void update(UUID token, Integer alarm, boolean close) throws CacheException,
+                    InterruptedException;
 }

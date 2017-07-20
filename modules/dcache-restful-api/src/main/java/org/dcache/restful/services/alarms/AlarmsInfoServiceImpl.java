@@ -61,7 +61,6 @@ package org.dcache.restful.services.alarms;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,8 +71,6 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -101,7 +98,7 @@ import org.dcache.vehicles.alarms.AlarmsUpdateMessage;
  *      allow the cache to be rebuilt.</p>
  */
 public final class AlarmsInfoServiceImpl extends
-                CellDataCollectingService<ListenableFuture<AlarmMappingRequestMessage>, AlarmsCollector>
+                CellDataCollectingService<AlarmMappingRequestMessage, AlarmsCollector>
                 implements AlarmsInfoService {
     @Command(name = "alarms set timeout",
                     hint = "Set the timeout interval between refreshes",
@@ -196,7 +193,7 @@ public final class AlarmsInfoServiceImpl extends
     private long maxCacheSize = 1000;
 
     @Override
-    public void delete(UUID token, Integer alarm) throws CacheException {
+    public void delete(UUID token, Integer alarm) throws CacheException, InterruptedException {
         LogEntry entry = getSnapshotEntry(token, alarm);
         if (entry == null) {
             LOGGER.info("Alarm {} of token {} was already deleted.",
@@ -211,21 +208,14 @@ public final class AlarmsInfoServiceImpl extends
         /*
          *  Wait for success, then remove the alarm locally.
          */
-        try {
-            collector.sendRequestToAlarmService(message).get();
-        } catch (ExecutionException e) {
-            throw new CacheException(e.getMessage(), e.getCause());
-        } catch (InterruptedException e) {
-            throw new CacheException("delete of alarm " + token + "-" + alarm
-                                                     + " was interrupted.");
-        }
-
+        collector.sendRequestToAlarmService(message);
         removeFromSnapshot(token, alarm);
     }
 
     @Override
     public AlarmsList get(UUID token, Integer offset, Integer limit, Long after,
-                          Long before, String type) throws CacheException {
+                          Long before, String type) throws CacheException,
+                    InterruptedException {
         if (offset == null) {
             offset = 0;
         }
@@ -235,16 +225,7 @@ public final class AlarmsInfoServiceImpl extends
         }
 
         if (token == null) {
-            try {
-                token = fetchAndStore(after, before, type);
-            } catch (ExecutionException e) {
-                throw new CacheException(e.getMessage(), e.getCause());
-            } catch (InterruptedException e) {
-                throw new CacheException("fetch of alarms (" + after + ", "
-                                                         + before + ", " + type
-                                                         + ") was "
-                                                         + "interrupted.");
-            }
+            token = fetchAndStore(after, before, type);
         }
 
         AlarmsList result = new AlarmsList();
@@ -273,7 +254,7 @@ public final class AlarmsInfoServiceImpl extends
 
     @Override
     public void update(UUID token, Integer alarm, boolean close)
-                    throws CacheException {
+                    throws CacheException, InterruptedException {
         LogEntry entry = getSnapshotEntry(token, alarm);
         if (entry == null) {
             LOGGER.info("Alarm {} of token {} was deleted; no update possible.",
@@ -287,7 +268,7 @@ public final class AlarmsInfoServiceImpl extends
 
     @Override
     public void update(UUID token, Integer alarm, String comment)
-                    throws CacheException {
+                    throws CacheException, InterruptedException {
         LogEntry entry = getSnapshotEntry(token, alarm);
         if (entry == null) {
             LOGGER.info("Alarm {} of token {} was deleted; no update possible.",
@@ -313,27 +294,21 @@ public final class AlarmsInfoServiceImpl extends
     }
 
     @Override
-    protected void update(ListenableFuture<AlarmMappingRequestMessage> data) {
-        try {
-            AlarmMappingRequestMessage message = data.get();
-            setPriorityMap(message.getMap());
-        } catch (InterruptedException e) {
-            LOGGER.trace("Update was interrupted.");
-        } catch (ExecutionException e) {
-            LOGGER.warn("Update could not complete: {}, {}.", e, e.getCause());
-        }
+    protected void update(AlarmMappingRequestMessage message) {
+        setPriorityMap(message.getMap());
     }
 
     private UUID fetchAndStore(Long after, Long before, String type)
-                    throws ExecutionException, InterruptedException {
+                    throws CacheException, InterruptedException {
         AlarmsRequestMessage message = new AlarmsRequestMessage();
         message.setAfter(after);
         message.setBefore(before);
         message.setType(type);
-
-        Future<AlarmsRequestMessage> future
-                        = collector.sendRequestToAlarmService(message);
-        return storeSnapshot(future.get().getAlarms());
+        message = collector.sendRequestToAlarmService(message);
+        /*
+         *  message should not be null at this point
+         */
+        return storeSnapshot(message.getAlarms());
     }
 
     private synchronized List<LogEntry> getSnapshot(UUID token,
@@ -410,19 +385,11 @@ public final class AlarmsInfoServiceImpl extends
         return uuid;
     }
 
-    private void update(LogEntry entry) throws CacheException {
+    private void update(LogEntry entry) throws CacheException, InterruptedException {
         AlarmsUpdateMessage message = new AlarmsUpdateMessage();
         List<LogEntry> entries = new ArrayList<>();
         entries.add(entry);
         message.setToUpdate(entries);
-
-        try {
-            collector.sendRequestToAlarmService(message).get();
-        } catch (ExecutionException e) {
-            throw new CacheException(e.getMessage(), e.getCause());
-        } catch (InterruptedException e) {
-            throw new CacheException("update of alarm " + entry
-                                                     + " was interrupted.");
-        }
+        collector.sendRequestToAlarmService(message);
     }
 }

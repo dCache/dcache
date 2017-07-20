@@ -64,7 +64,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
-
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -77,11 +76,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ServiceUnavailableException;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.util.command.Option;
-
 import org.dcache.restful.util.admin.CellMessagingCollector;
 
 /**
@@ -229,6 +229,12 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
              */
             return;
         } catch (IllegalStateException e) {
+            LOGGER.info("Could not run collection: {}, {}.",
+                        e.getMessage(), e.getCause());
+        } catch (ServiceUnavailableException e) {
+            LOGGER.debug("Could not run collection: {}, {}.",
+                            e.getMessage(), e.getCause());
+        } catch (CacheException e) {
             LOGGER.info("Could not run collection: {}, {}.",
                         e.getMessage(), e.getCause());
         } catch (RuntimeException ee) {
