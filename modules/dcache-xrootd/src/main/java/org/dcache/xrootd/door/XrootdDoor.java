@@ -52,6 +52,9 @@ import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.PnfsCancelUpload;
+import diskCacheV111.vehicles.PnfsCommitUpload;
+import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 
@@ -60,6 +63,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.acl.enums.AccessType;
@@ -71,6 +75,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
+import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
@@ -129,6 +134,7 @@ public class XrootdDoor
     private List<FsPath> _readPaths = Collections.singletonList(FsPath.ROOT);
     private List<FsPath> _writePaths = Collections.singletonList(FsPath.ROOT);
 
+    private CellStub _pnfsStub;
     private CellStub _poolStub;
     private PoolManagerStub _poolManagerStub;
     private CellStub _billingStub;
@@ -156,6 +162,11 @@ public class XrootdDoor
      */
     private final Map<Integer,XrootdTransfer> _transfers =
         new ConcurrentHashMap<>();
+
+    @Required
+    public void setPnfsStub(CellStub pnfsStub) {
+        _pnfsStub = pnfsStub;
+    }
 
     @Required
     public void setPoolStub(CellStub stub)
@@ -312,6 +323,97 @@ public class XrootdDoor
                                  XROOTD_PROTOCOL_MINOR_VERSION));
     }
 
+    private void uploadDone(Subject subject, Restriction restriction,
+            FsPath path, FsPath uploadPath, boolean createDir,
+            boolean overwrite)
+            throws CacheException {
+        try {
+            EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
+            if (overwrite) {
+                options.add(CreateOption.OVERWRITE_EXISTING);
+            }
+            PnfsCommitUpload msg
+                    = new PnfsCommitUpload(subject,
+                            restriction,
+                            uploadPath,
+                            path,
+                            options,
+                            EnumSet.of(PNFSID, SIZE, STORAGEINFO));
+            msg = _pnfsStub.sendAndWait(msg);
+        } catch (InterruptedException ex) {
+            throw new CacheException("Operation interrupted", ex);
+        } catch (NoRouteToCellException ex) {
+            throw new CacheException("Internal communication failure", ex);
+        }
+    }
+
+    private void abortUpload(Subject subject, Restriction restriction,
+            FsPath path, FsPath uploadPath, String reason)
+            throws CacheException {
+        try {
+            PnfsCancelUpload msg = new PnfsCancelUpload(subject, restriction,
+                    uploadPath, path,
+                    EnumSet.noneOf(FileAttribute.class),
+                    "XROOTD upload aborted: " + reason);
+            _pnfsStub.sendAndWait(msg);
+        } catch (InterruptedException ex) {
+            throw new CacheException("Operation interrupted", ex);
+        } catch (NoRouteToCellException ex) {
+            throw new CacheException("Internal communication failure", ex);
+        }
+    }
+
+    private XrootdTransfer
+            createUploadTransfer(InetSocketAddress client, FsPath path,
+                    String ioQueue, UUID uuid, InetSocketAddress local,
+                    Subject subject, Restriction restriction, boolean createDir,
+                    boolean overwrite, Long size, FsPath uploadPath)
+            throws CacheException, InterruptedException {
+
+        XrootdTransfer transfer
+                = new XrootdTransfer(_pnfs, subject, restriction, uploadPath) {
+            @Override
+            public synchronized void finished(CacheException error) {
+                try {
+                    super.finished(error);
+
+                    _transfers.remove(getFileHandle());
+                    if (error == null) {
+                        uploadDone(subject, restriction, path, uploadPath,
+                                createDir, overwrite);
+
+                        notifyBilling(0, "");
+                        _log.info("Transfer {}@{} finished",
+                                getPnfsId(), getPool());
+                    } else {
+                        int rc = error.getRc();
+                        String message = error.getMessage();
+                        abortUpload(subject, restriction, path, uploadPath, message);
+                        notifyBilling(rc, message);
+                        _log.warn("Transfer {}@{} failed: {} (error code={})",
+                                getPnfsId(), getPool(), message, rc);
+                    }
+                } catch (CacheException ex) {
+                    String message = ex.getMessage();
+                    int rc = ex.getRc();
+                    notifyBilling(rc, message);
+                    _log.warn("Post upload operation failed: {} (error code={})",
+                            message, rc);
+                }
+            }
+        };
+        transfer.setCellAddress(getCellAddress());
+        transfer.setPoolManagerStub(_poolManagerStub);
+        transfer.setPoolStub(_poolStub);
+        transfer.setBillingStub(_billingStub);
+        transfer.setClientAddress(client);
+        transfer.setUUID(uuid);
+        transfer.setDoorAddress(local);
+        transfer.setIoQueue(ioQueue == null ? _ioQueue : ioQueue);
+        transfer.setFileHandle(_handleCounter.getAndIncrement());
+        return transfer;
+    }
+
     private XrootdTransfer
         createTransfer(InetSocketAddress client, FsPath path,
                        String ioQueue, UUID uuid, InetSocketAddress local, Subject subject,
@@ -399,18 +501,50 @@ public class XrootdDoor
         return transfer;
     }
 
+    private FsPath getUploadPath(Subject subject, Restriction restriction,
+            boolean createDir, boolean overwrite, Long size, FsPath path,
+            FsPath rootPath)
+            throws CacheException, InterruptedException {
+        try {
+            EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
+            if (overwrite) {
+                options.add(CreateOption.OVERWRITE_EXISTING);
+            }
+            if (createDir) {
+                options.add(CreateOption.CREATE_PARENTS);
+            }
+            PnfsCreateUploadPath msg = new PnfsCreateUploadPath(subject,
+                    restriction, path, rootPath, size, null, null, null,
+                    options);
+            msg = _pnfsStub.sendAndWait(msg);
+            return msg.getUploadPath();
+        } catch (NoRouteToCellException ex) {
+            throw new CacheException("Internal communication failure", ex);
+        }
+    }
+
     public XrootdTransfer
-        write(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
-              boolean createDir, boolean overwrite, Long size,
-              InetSocketAddress local, Subject subject, Restriction restriction)
-        throws CacheException, InterruptedException
-    {
+            write(InetSocketAddress client, FsPath path, String ioQueue, UUID uuid,
+                    boolean createDir, boolean overwrite, Long size,
+                    InetSocketAddress local, Subject subject, Restriction restriction,
+                    boolean persistOnSuccessfulClose, FsPath rootPath)
+            throws CacheException, InterruptedException {
+
         if (!isWriteAllowed(path)) {
             throw new PermissionDeniedCacheException("Write permission denied");
         }
 
-        XrootdTransfer transfer =
-            createTransfer(client, path, ioQueue, uuid, local, subject, restriction);
+        XrootdTransfer transfer;
+        if (persistOnSuccessfulClose) {
+            FsPath uploadPath = getUploadPath(subject, restriction, createDir,
+                    overwrite, size, path, rootPath);
+            transfer = createUploadTransfer(client, path, ioQueue, uuid, local,
+                    subject, restriction, createDir, overwrite, size,
+                    uploadPath);
+        } else {
+            transfer = createTransfer(client, path, ioQueue, uuid, local,
+                    subject, restriction);
+        }
         transfer.setOverwriteAllowed(overwrite);
         int handle = transfer.getFileHandle();
         InetSocketAddress address = null;
@@ -443,8 +577,8 @@ public class XrootdDoor
                     throw new CacheException(transfer.getPool() + " failed to open TCP socket");
                 }
 
-                transfer.setStatus("Mover " + transfer.getPool() + "/" +
-                                   transfer.getMoverId() + ": Receiving");
+                transfer.setStatus("Mover " + transfer.getPool() + "/"
+                        + transfer.getMoverId() + ": Receiving");
             } finally {
                 if (address == null) {
                     transfer.deleteNameSpaceEntry();
@@ -457,12 +591,12 @@ public class XrootdDoor
         } catch (InterruptedException e) {
             explanation = "transfer interrupted";
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   "Transfer interrupted");
+                    "Transfer interrupted");
             throw e;
         } catch (RuntimeException e) {
             explanation = "bug found: " + e.toString();
             transfer.notifyBilling(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                   e.toString());
+                    e.toString());
             throw e;
         } finally {
             if (address == null) {
