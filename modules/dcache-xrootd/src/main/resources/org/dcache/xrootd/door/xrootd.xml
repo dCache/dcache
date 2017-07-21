@@ -27,6 +27,15 @@
       <property name="excludedDestinations" value="${xrootd.loginbroker.update-topic}"/>
   </bean>
 
+  <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
+    <description>PNFS manager communication stub</description>
+    <property name="destination" value="${xrootd.service.pnfsmanager}"/>
+    <property name="timeout" value="${xrootd.service.pnfsmanager.timeout}"/>
+    <property name="timeoutUnit" value="${xrootd.service.pnfsmanager.timeout.unit}"/>
+    <property name="flags" value="#{ T(dmg.cells.nucleus.CellEndpoint.SendFlag).RETRY_ON_NO_ROUTE_TO_CELL }"/>
+  </bean>
+
+
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool cell stub</description>
     <property name="timeout" value="${xrootd.service.pool.timeout}"/>
@@ -120,6 +129,7 @@
 
   <bean id="door" class="org.dcache.xrootd.door.XrootdDoor">
     <description>Gateway between xrootd protocol handler and dCache</description>
+    <property name="pnfsStub" ref="pnfs-stub"/>
     <property name="poolStub" ref="pool-stub"/>
     <property name="poolManagerStub">
       <bean class="org.dcache.poolmanager.PoolManagerStub">
