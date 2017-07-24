@@ -5,7 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-
+import org.dcache.pool.PoolDataBeanProvider;
+import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
@@ -23,7 +24,7 @@ import org.dcache.pool.repository.StateChangeEvent;
  */
 public class NoCachedFilesSpaceSweeper
     extends AbstractStateChangeListener
-    implements SpaceSweeperPolicy
+    implements SpaceSweeperPolicy, PoolDataBeanProvider<SweeperData>
 {
     private static final Logger _log =
         LoggerFactory.getLogger(NoCachedFilesSpaceSweeper.class);
@@ -55,6 +56,15 @@ public class NoCachedFilesSpaceSweeper
     public long getLru()
     {
         return 0;
+    }
+
+    @Override
+    public SweeperData getDataObject() {
+        SweeperData info = new SweeperData();
+        info.setLabel("No Cached Files Space Sweeper");
+        info.setLruQueueSize(0);
+        info.setLruTimestamp(0L);
+        return info;
     }
 
     @Override

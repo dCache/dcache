@@ -57,24 +57,20 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool;
 
-import org.dcache.cells.json.CellData;
+import java.io.Serializable;
+
+import org.dcache.pool.json.PoolData;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Implemented by various pool components in order to
+ * populate a {@link PoolData} request.</p>
  */
-public interface CellInfoService {
+public interface PoolDataBeanProvider<T extends Serializable> {
     /**
-     * @return array of all current known cell addresses (= cell@domain).
+     * @return the populated bean to be composed into a
+     * {@link PoolData} object.
      */
-    String[] getAddresses();
-
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    T getDataObject();
 }

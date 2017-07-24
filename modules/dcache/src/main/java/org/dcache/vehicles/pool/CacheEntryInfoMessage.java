@@ -57,24 +57,49 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.vehicles.pool;
 
-import org.dcache.cells.json.CellData;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>For retrieving info for a single pnfsid.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class CacheEntryInfoMessage extends Message {
+    private static final long serialVersionUID = 8646754291987332148L;
+    private CacheRepositoryEntryInfo info;
+    private String                   repositoryListing;
+    private PnfsId                   pnfsId;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public CacheEntryInfoMessage() {
+    }
+
+    public CacheEntryInfoMessage(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public CacheRepositoryEntryInfo getInfo() {
+        return info;
+    }
+
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
+
+    public String getRepositoryListing() {
+        return repositoryListing;
+    }
+
+    public void setInfo(CacheRepositoryEntryInfo info) {
+        this.info = info;
+    }
+
+    public void setPnfsId(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public void setRepositoryListing(String repositoryListing) {
+        this.repositoryListing = repositoryListing;
+    }
 }

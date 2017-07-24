@@ -57,24 +57,57 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool.migration.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.PrintWriter;
+import java.io.Serializable;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Corresponds to the information delivered
+ * from the {@link org.dcache.pool.migration.MigrationModule} using
+ * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}, with
+ * number of server requests added
+ * from {@link org.dcache.pool.migration.MigrationModuleServer}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class MigrationData implements Serializable {
+    private static final long serialVersionUID = 1926893050211983621L;
+    private String label;
+    private String[] jobInfo;
+    private Integer  serverRequests;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public MigrationData() {
+    }
+
+    public String[] getJobInfo() {
+        return jobInfo;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public Integer getServerRequests() {
+        return serverRequests;
+    }
+
+    public void print(PrintWriter pw) {
+        if (jobInfo != null) {
+            for (String job : jobInfo) {
+                pw.println(job);
+            }
+        }
+    }
+
+    public void setJobInfo(String[] jobInfo) {
+        this.jobInfo = jobInfo;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public void setServerRequests(Integer serverRequests) {
+        this.serverRequests = serverRequests;
+    }
+
 }

@@ -57,24 +57,71 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool.classic.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
+
+import org.dcache.util.histograms.CountingHistogram;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Information delivered
+ * from the {@link org.dcache.pool.classic.SpaceSweeper2} and
+ * {@link org.dcache.pool.classic.NoCachedFilesSpaceSweeper}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class SweeperData implements Serializable {
+    private static final long serialVersionUID = 4553699563017101472L;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    private static final double BIN_UNIT = (double) TimeUnit.DAYS.toMillis(1);
+    private static final String DATA_UNIT_LABEL = "Number of Files";
+    private static final String BIN_UNIT_LABEL = "DAYS";
+    private static final String IDENTIFIER = "Time Since Last Access";
+    private static final int BIN_COUNT = 61;
+
+    private CountingHistogram lastAccess;
+    private String label;
+    private Integer    lruQueueSize;
+    private Long       lruTimestamp;
+
+    public String getLabel() {
+        return label;
+    }
+
+    public Integer getLruQueueSize() {
+        return lruQueueSize;
+    }
+
+    public Long getLruTimestamp() {
+        return lruTimestamp;
+    }
+
+    public CountingHistogram getLastAccessHistogram() {
+        return lastAccess;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public void setLruQueueSize(Integer lruQueueSize) {
+        this.lruQueueSize = lruQueueSize;
+    }
+
+    public void setLruTimestamp(Long lruTimestamp) {
+        this.lruTimestamp = lruTimestamp;
+    }
+
+    public void setLastAccessHistogram(CountingHistogram lastAccess) {
+        this.lastAccess = lastAccess;
+    }
+
+    public static CountingHistogram createLastAccessHistogram() {
+        CountingHistogram histogram = new CountingHistogram();
+        histogram.setDataUnitLabel(SweeperData.DATA_UNIT_LABEL);
+        histogram.setBinCount(BIN_COUNT);
+        histogram.setBinUnit(BIN_UNIT);
+        histogram.setBinUnitLabel(SweeperData.BIN_UNIT_LABEL);
+        histogram.setIdentifier(IDENTIFIER);
+        return histogram;
+    }
 }

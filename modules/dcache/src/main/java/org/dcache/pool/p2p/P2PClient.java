@@ -2,7 +2,6 @@
 
 package org.dcache.pool.p2p;
 
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -20,28 +19,28 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
-
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import org.dcache.cells.CellStub;
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.pool.p2p.json.P2PData;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
 
 public class P2PClient
     extends AbstractCellComponent
-    implements CellMessageReceiver, CellCommandListener, CellSetupProvider, CellInfoProvider
+    implements CellMessageReceiver, CellCommandListener, CellSetupProvider, CellInfoProvider,
+                PoolDataBeanProvider<P2PData>
 {
     private final Map<Integer, Companion> _companions = new HashMap<>();
     private ScheduledExecutorService _executor;
@@ -278,9 +277,15 @@ public class P2PClient
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        if (_interface != null) {
-            pw.println("  Interface  : " + _interface);
-        }
+        getDataObject().print(pw);
+    }
+
+    @Override
+    public synchronized P2PData getDataObject() {
+        P2PData info = new P2PData();
+        info.setLabel("Pool to Pool");
+        info.setPpInterface(_interface);
+        return info;
     }
 
     @Override

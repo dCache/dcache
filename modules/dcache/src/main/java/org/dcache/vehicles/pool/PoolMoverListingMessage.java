@@ -57,24 +57,35 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.vehicles.pool;
 
-import org.dcache.cells.json.CellData;
+import java.util.List;
+
+import diskCacheV111.vehicles.Message;
+import org.dcache.pool.movers.json.MoverData;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Request for listings corresponding to mover ls, but excluding the
+ * p2p client queue.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class PoolMoverListingMessage extends Message {
+    private static final long serialVersionUID = -3586502361789998143L;
+    private List<MoverData> data;
+    private int limit = Integer.MAX_VALUE;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public List<MoverData> getData() {
+        return data;
+    }
+
+    public int getLimit() {
+        return limit;
+    }
+
+    public void setData(List<MoverData> data) {
+        this.data = data;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
 }

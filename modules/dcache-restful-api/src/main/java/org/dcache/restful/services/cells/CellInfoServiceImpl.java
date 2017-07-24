@@ -73,7 +73,7 @@ import org.dcache.restful.util.admin.ReadWriteData;
 import org.dcache.restful.util.cells.CellInfoCollector;
 import org.dcache.restful.util.cells.CellInfoFutureProcessor;
 import org.dcache.restful.util.cells.ListenableFutureWrapper;
-import org.dcache.vehicles.cells.json.CellData;
+import org.dcache.cells.json.CellData;
 
 /**
  * <p>Responsible for serving up data from the cache.</p>

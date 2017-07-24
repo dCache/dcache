@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -43,6 +42,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
@@ -59,6 +59,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -70,7 +71,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellIdentityAware;
@@ -81,11 +81,13 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.NopCompletionHandler;
+import org.dcache.pool.nearline.json.NearlineData;
+import org.dcache.pool.nearline.json.StorageHandlerData;
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.NearlineRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
@@ -107,13 +109,16 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.util.concurrent.Futures.transformAsync;
-import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.SIZE;
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 /**
  * Entry point to and management interface for the nearline storage subsystem.
  */
 public class NearlineStorageHandler
-        implements CellCommandListener, StateChangeListener, CellSetupProvider, CellLifeCycleAware, CellInfoProvider, CellIdentityAware
+        implements CellCommandListener, StateChangeListener, CellSetupProvider, CellLifeCycleAware, CellInfoProvider, CellIdentityAware,
+                PoolDataBeanProvider<StorageHandlerData>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NearlineStorageHandler.class);
 
@@ -125,11 +130,11 @@ public class NearlineStorageHandler
 
     private ScheduledExecutorService scheduledExecutor;
     private ListeningExecutorService executor;
-    private Repository repository;
-    private ChecksumModule checksumModule;
-    private PnfsHandler pnfs;
-    private CellStub billingStub;
-    private HsmSet hsmSet;
+    private Repository               repository;
+    private ChecksumModule           checksumModule;
+    private PnfsHandler              pnfs;
+    private CellStub                 billingStub;
+    private HsmSet                   hsmSet;
     private long stageTimeout = TimeUnit.HOURS.toMillis(4);
     private long flushTimeout = TimeUnit.HOURS.toMillis(4);
     private long removeTimeout = TimeUnit.HOURS.toMillis(4);
@@ -226,26 +231,26 @@ public class NearlineStorageHandler
         }
     }
 
-
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.append(" Restore Timeout  : ").print(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
-        pw.println(" seconds");
-        pw.append("   Store Timeout  : ").print(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
-        pw.println(" seconds");
-        pw.append("  Remove Timeout  : ").print(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
-        pw.println(" seconds");
-        pw.println("  Job Queues (active/queued)");
-        pw.append("    to store   ").print(getActiveStoreJobs());
-        pw.append("/").print(getStoreQueueSize());
-        pw.println();
-        pw.append("    from store ").print(getActiveFetchJobs());
-        pw.append("/").print(getFetchQueueSize());
-        pw.println();
-        pw.append("    delete     " + "").print(getActiveRemoveJobs());
-        pw.append("/").print(getRemoveQueueSize());
-        pw.println();
+        getDataObject().print(pw);
+    }
+
+    @Override
+    public StorageHandlerData getDataObject() {
+        StorageHandlerData info = new StorageHandlerData();
+        info.setLabel("Storage Handler");
+        info.setActiveRemoves(getActiveRemoveJobs());
+        info.setActiveRestores(getActiveFetchJobs());
+        info.setActiveStores(getActiveStoreJobs());
+        info.setQueuedRemoves(getRemoveQueueSize());
+        info.setQueuedRestores(getFetchQueueSize());
+        info.setQueuedStores(getStoreQueueSize());
+        info.setRemoveTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
+        info.setStoreTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
+        info.setRestoreTimeoutInSeconds(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
+        return info;
     }
 
     @Override
@@ -254,6 +259,39 @@ public class NearlineStorageHandler
         pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
         pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
         pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
+    }
+
+    /**
+     *  <p> In support of front-end information collection.</p>
+     */
+    public List<NearlineData> getFlushRequests(int limit) {
+        return Ordering.natural().sortedCopy(getRequests(flushRequests.requests.values(),
+                                                         limit))
+                                 .stream()
+                                 .map(AbstractRequest::toNearlineData)
+                                 .collect(Collectors.toList());
+    }
+
+    /**
+     *  <p> In support of front-end information collection.</p>
+     */
+    public List<NearlineData> getStageRequests(int limit) {
+        return Ordering.natural().sortedCopy(getRequests(stageRequests.requests.values(),
+                                                         limit))
+                                 .stream()
+                                 .map(AbstractRequest::toNearlineData)
+                                 .collect(Collectors.toList());
+    }
+
+    /**
+     *  <p> In support of front-end information collection.</p>
+     */
+    public List<NearlineData> getRemoveRequests(int limit) {
+        return Ordering.natural().sortedCopy(getRequests(removeRequests.requests.values(),
+                                                         limit))
+                                 .stream()
+                                 .map(AbstractRequest::toNearlineData)
+                                 .collect(Collectors.toList());
     }
 
     /**
@@ -372,6 +410,19 @@ public class NearlineStorageHandler
     {
     }
 
+    private <T extends AbstractRequest> List<T> getRequests(Collection<T> queue, int limit) {
+        List<T> requests = new ArrayList<>();
+        int i = 0;
+        for (T request: queue) {
+            if (i >= limit) {
+                break;
+            }
+            requests.add(request);
+            ++i;
+        }
+
+        return requests;
+    }
 
     /**
      * Abstract base class for request implementations.
@@ -463,6 +514,14 @@ public class NearlineStorageHandler
 
         public abstract void failed(Exception cause);
 
+        public NearlineData toNearlineData() {
+            NearlineData info = new NearlineData();
+            info.setActivated(activatedAt);
+            info.setCreated(createdAt);
+            info.setState(state.get().name());
+            return info;
+        }
+
         @Override
         public String toString()
         {
@@ -498,7 +557,7 @@ public class NearlineStorageHandler
      */
     private abstract static class AbstractRequestContainer<K, F, R extends AbstractRequest<K> & NearlineRequest<?>>
     {
-        private final ConcurrentHashMap<K, R> requests = new ConcurrentHashMap<>();
+        protected final ConcurrentHashMap<K, R> requests = new ConcurrentHashMap<>();
 
         private final ContainerState state = new ContainerState();
 
@@ -777,6 +836,14 @@ public class NearlineStorageHandler
         public String toString()
         {
             return super.toString() + ' ' + getFileAttributes().getPnfsId() + ' ' + getFileAttributes().getStorageClass();
+        }
+
+        public NearlineData toNearlineData() {
+            NearlineData info = super.toNearlineData();
+            info.setType("FLUSH");
+            info.setPnfsId(getFileAttributes().getPnfsId());
+            info.setStorageClass(getFileAttributes().getStorageClass());
+            return info;
         }
 
         @Override
@@ -1094,6 +1161,14 @@ public class NearlineStorageHandler
             stageRequests.removeAndCallback(pnfsId, cause);
         }
 
+        public NearlineData toNearlineData() {
+            NearlineData info = super.toNearlineData();
+            info.setType("STAGE");
+            info.setPnfsId(getFileAttributes().getPnfsId());
+            info.setStorageClass(getFileAttributes().getStorageClass());
+            return info;
+        }
+
         @Override
         public String toString()
         {
@@ -1143,6 +1218,13 @@ public class NearlineStorageHandler
         {
             LOGGER.info("Removed {} from nearline storage.", uri);
             removeRequests.removeAndCallback(uri, null);
+        }
+
+        public NearlineData toNearlineData() {
+            NearlineData info = super.toNearlineData();
+            info.setType("REMOVE");
+            info.setUri(uri.toString());
+            return info;
         }
 
         @Override

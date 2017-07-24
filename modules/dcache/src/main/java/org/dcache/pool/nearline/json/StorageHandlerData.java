@@ -57,152 +57,125 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.cells.json;
+package org.dcache.pool.nearline.json;
 
+import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  * <p>Corresponds to the information delivered
- * via the {@link dmg.cells.nucleus.CellInfo} object.</p>
+ * from the {@link org.dcache.pool.nearline.NearlineStorageHandler} using
+ * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
-public class CellData implements Serializable {
-    private static final long serialVersionUID = 1861008223543700303L;
-    private String  label;
-    private String  cellName;
-    private String  cellType;
-    private String  cellClass;
-    private String  domainName;
-    private Date    creationTime;
-    private Integer state;
-    private Integer eventQueueSize;
-    private Integer threadCount;
-    private Long    expectedQueueTime;
-    private String  version;
-    private String  release;
-    private String  revision;
-    private long    roundTripTime;
+public class StorageHandlerData implements Serializable {
+    private static final long serialVersionUID = -8358860515553038804L;
+    private String label;
+    private Long    restoreTimeoutInSeconds;
+    private Long    storeTimeoutInSeconds;
+    private Long    removeTimeoutInSeconds;
+    private Integer activeStores;
+    private Integer queuedStores;
+    private Integer activeRestores;
+    private Integer queuedRestores;
+    private Integer activeRemoves;
+    private Integer queuedRemoves;
 
-    public String toString() {
-        return "(" + cellName + "@" + domainName + ")("
-                        + creationTime + ")("
-                        + version + ")(state "
-                        + state + ")(event queue "
-                        + eventQueueSize + ")(threads "
-                        + threadCount + ")(ping (ms) "
-                        + roundTripTime + ")";
+    public Integer getActiveRemoves() {
+        return activeRemoves;
     }
 
-    public String getCellClass() {
-        return cellClass;
+    public Integer getActiveRestores() {
+        return activeRestores;
     }
 
-    public String getCellName() {
-        return cellName;
-    }
-
-    public String getCellType() {
-        return cellType;
-    }
-
-    public Date getCreationTime() {
-        return creationTime;
-    }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
-    public Integer getEventQueueSize() {
-        return eventQueueSize;
-    }
-
-    public Long getExpectedQueueTime() {
-        return expectedQueueTime;
+    public Integer getActiveStores() {
+        return activeStores;
     }
 
     public String getLabel() {
         return label;
     }
 
-    public String getRelease() {
-        return release;
+    public Integer getQueuedRemoves() {
+        return queuedRemoves;
     }
 
-    public String getRevision() {
-        return revision;
+    public Integer getQueuedRestores() {
+        return queuedRestores;
     }
 
-    public long getRoundTripTime() {
-        return roundTripTime;
+    public Integer getQueuedStores() {
+        return queuedStores;
     }
 
-    public Integer getState() {
-        return state;
+    public Long getRemoveTimeoutInSeconds() {
+        return removeTimeoutInSeconds;
     }
 
-    public Integer getThreadCount() {
-        return threadCount;
+    public Long getRestoreTimeoutInSeconds() {
+        return restoreTimeoutInSeconds;
     }
 
-    public String getVersion() {
-        return version;
+    public Long getStoreTimeoutInSeconds() {
+        return storeTimeoutInSeconds;
     }
 
-    public void setCellClass(String cellClass) {
-        this.cellClass = cellClass;
+    public void print(PrintWriter pw) {
+        pw.append(" Restore Timeout  : ").print(restoreTimeoutInSeconds);
+        pw.println(" seconds");
+        pw.append("   Store Timeout  : ").print(storeTimeoutInSeconds);
+        pw.println(" seconds");
+        pw.append("  Remove Timeout  : ").print(removeTimeoutInSeconds);
+        pw.println(" seconds");
+        pw.println("  Job Queues (active/queued)");
+        pw.append("    to store   ").print(activeStores);
+        pw.append("/").print(queuedStores);
+        pw.println();
+        pw.append("    from store ").print(activeRestores);
+        pw.append("/").print(queuedRestores);
+        pw.println();
+        pw.append("    delete     " + "").print(activeRemoves);
+        pw.append("/").print(queuedRemoves);
+        pw.println();
     }
 
-    public void setCellName(String cellName) {
-        this.cellName = cellName;
+    public void setActiveRemoves(Integer activeRemoves) {
+        this.activeRemoves = activeRemoves;
     }
 
-    public void setCellType(String cellType) {
-        this.cellType = cellType;
+    public void setActiveRestores(Integer activeRestores) {
+        this.activeRestores = activeRestores;
     }
 
-    public void setCreationTime(Date creationTime) {
-        this.creationTime = creationTime;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
-    }
-
-    public void setEventQueueSize(Integer eventQueueSize) {
-        this.eventQueueSize = eventQueueSize;
-    }
-
-    public void setExpectedQueueTime(Long expectedQueueTime) {
-        this.expectedQueueTime = expectedQueueTime;
+    public void setActiveStores(Integer activeStores) {
+        this.activeStores = activeStores;
     }
 
     public void setLabel(String label) {
         this.label = label;
     }
 
-    public void setRelease(String release) {
-        this.release = release;
+    public void setQueuedRemoves(Integer queuedRemoves) {
+        this.queuedRemoves = queuedRemoves;
     }
 
-    public void setRevision(String revision) {
-        this.revision = revision;
+    public void setQueuedRestores(Integer queuedRestores) {
+        this.queuedRestores = queuedRestores;
     }
 
-    public void setRoundTripTime(long roundTripTime) {
-        this.roundTripTime = roundTripTime;
+    public void setQueuedStores(Integer queuedStores) {
+        this.queuedStores = queuedStores;
     }
 
-    public void setState(Integer state) {
-        this.state = state;
+    public void setRemoveTimeoutInSeconds(Long removeTimeoutInSeconds) {
+        this.removeTimeoutInSeconds = removeTimeoutInSeconds;
     }
 
-    public void setThreadCount(Integer threadCount) {
-        this.threadCount = threadCount;
+    public void setRestoreTimeoutInSeconds(Long restoreTimeoutInSeconds) {
+        this.restoreTimeoutInSeconds = restoreTimeoutInSeconds;
     }
 
-    public void setVersion(String version) {
-        this.version = version;
+    public void setStoreTimeoutInSeconds(Long storeTimeoutInSeconds) {
+        this.storeTimeoutInSeconds = storeTimeoutInSeconds;
     }
-
 }

@@ -19,16 +19,39 @@ package org.dcache.pool.classic;
 
 import org.springframework.beans.factory.annotation.Required;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import diskCacheV111.vehicles.ProtocolInfo;
-
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.movers.MoverFactory;
+import org.dcache.pool.classic.json.TransferServicesData;
 
 public class TransferServices
-{
-    private MoverFactory _defaultMoverFactory;
+                implements PoolDataBeanProvider<TransferServicesData> {
+    private MoverFactory              _defaultMoverFactory;
     private Map<String, MoverFactory> _transferServices;
+
+    @Override
+    public TransferServicesData getDataObject() {
+        TransferServicesData info = new TransferServicesData();
+        info.setLabel("Transfer Services");
+        Map<String, String> map = new HashMap<>();
+        _transferServices.entrySet().stream()
+                         .forEach((e) -> map.put(e.getKey(),
+                                                 e.getValue().getClass().getSimpleName()));
+        info.setTransferServices(map);
+        return info;
+    }
+
+    public MoverFactory getMoverFactory(ProtocolInfo info) {
+        MoverFactory factory = _transferServices.get(
+                        info.getProtocol() + "-" + info.getMajorVersion());
+        if (factory != null) {
+            return factory;
+        }
+        return _defaultMoverFactory;
+    }
 
     @Required
     public void setDefaultFactory(MoverFactory defaultMoverFactory) {
@@ -38,13 +61,5 @@ public class TransferServices
     @Required
     public void setFactories(Map<String, MoverFactory> transferServices) {
         _transferServices = transferServices;
-    }
-
-    public MoverFactory getMoverFactory(ProtocolInfo info) {
-        MoverFactory factory = _transferServices.get(info.getProtocol() + "-" + info.getMajorVersion());
-        if (factory != null) {
-            return factory;
-        }
-        return _defaultMoverFactory;
     }
 }

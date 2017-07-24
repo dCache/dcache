@@ -7,7 +7,6 @@ import org.parboiled.parserunners.ReportingParseRunner;
 import org.parboiled.support.ParsingResult;
 
 import javax.annotation.concurrent.GuardedBy;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -24,13 +23,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -40,8 +39,8 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
-
 import org.dcache.cells.CellStub;
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.ReplicaState;
@@ -53,6 +52,7 @@ import org.dcache.util.expression.Token;
 import org.dcache.util.expression.Type;
 import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
+import org.dcache.pool.migration.json.MigrationData;
 
 import static java.util.Arrays.asList;
 import static org.parboiled.errors.ErrorUtils.printParseErrors;
@@ -110,7 +110,8 @@ import static org.parboiled.errors.ErrorUtils.printParseErrors;
  * asynchronously.
  */
 public class MigrationModule
-    implements CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider
+    implements CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider,
+                PoolDataBeanProvider<MigrationData>
 {
     private static final PoolManagerPoolInformation DUMMY_POOL =
         new PoolManagerPoolInformation("pool", new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE), 0);
@@ -1087,9 +1088,19 @@ public class MigrationModule
     @Override
     public void getInfo(PrintWriter pw)
     {
-        for (String id: _jobs.keySet()) {
-            pw.println(getJobSummary(id));
-        }
+        getDataObject().print(pw);
+    }
+
+    @Override
+    public MigrationData getDataObject() {
+        MigrationData info
+                        = new MigrationData();
+        info.setLabel("Migration");
+        info.setJobInfo(_jobs.keySet().stream()
+                                      .map(this::getJobSummary)
+                                      .collect(Collectors.toList())
+                                      .toArray(new String[0]));
+        return info;
     }
 
     @Override

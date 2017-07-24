@@ -471,6 +471,29 @@
     </property>
   </bean>
 
+  <bean id="pool-info-request-handler" class="org.dcache.pool.PoolInfoRequestHandler">
+    <description>Handles requests from frontend services for pool data.</description>
+    <property name="executor">
+      <bean class="java.util.concurrent.Executors" factory-method="newFixedThreadPool"
+            destroy-method="shutdownNow">
+        <constructor-arg value="${pool.info-request-handler.threads}"/>
+      </bean>
+    </property>
+    <property name="pool" ref="pool"/>
+    <property name="checksumModule" ref="csm"/>
+    <property name="flushController" ref="flush"/>
+    <property name="hsmFlushQueueManager" ref="queue"/>
+    <property name="jobTimeoutManager" ref="jtm"/>
+    <property name="migrationClient" ref="migration"/>
+    <property name="migrationServer" ref="migration-server"/>
+    <property name="p2pClient" ref="pp"/>
+    <property name="queueManager" ref="io-queue-manager"/>
+    <property name="repository" ref="rep"/>
+    <property name="storageHandler" ref="storagehandler"/>
+    <property name="sweeper" ref="sweeper"/>
+    <property name="transferServices" ref="transfer-services"/>
+  </bean>
+
   <beans profile="healthcheck-true">
     <bean id="healthcheck" class="org.dcache.pool.repository.v5.CheckHealthTask">
       <description>Periodic task for checking pool health</description>

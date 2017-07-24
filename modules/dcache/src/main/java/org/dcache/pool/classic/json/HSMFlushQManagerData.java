@@ -57,24 +57,48 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool.classic.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.PrintWriter;
+import java.io.Serializable;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Corresponds to the information delivered
+ * from the {@link org.dcache.pool.classic.StorageClassContainer} using
+ * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class HSMFlushQManagerData implements Serializable {
+    private static final long serialVersionUID = 3278346891748398694L;
+    private String label;
+    private Integer classCount;
+    private Integer requestCount;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public Integer getClassCount() {
+        return classCount;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public Integer getRequestCount() {
+        return requestCount;
+    }
+
+    public void print(PrintWriter pw) {
+        pw.println("   Classes  : " + classCount);
+        pw.println("   Requests : " + requestCount);
+    }
+
+    public void setClassCount(Integer classCount) {
+        this.classCount = classCount;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public void setRequestCount(Integer requestCount) {
+        this.requestCount = requestCount;
+    }
 }

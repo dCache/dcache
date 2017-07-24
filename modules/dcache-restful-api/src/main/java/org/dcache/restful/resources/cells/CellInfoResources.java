@@ -75,7 +75,7 @@ import diskCacheV111.util.CacheException;
 import org.dcache.restful.services.cells.CellInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
-import org.dcache.vehicles.cells.json.CellData;
+import org.dcache.cells.json.CellData;
 
 /**
  * <p>RESTful API to the {@link CellInfoService} service.</p>

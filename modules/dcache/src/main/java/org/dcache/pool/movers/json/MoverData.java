@@ -57,24 +57,122 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool.movers.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.Serializable;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Information derived from the
+ * {@link org.dcache.pool.classic.MoverRequestScheduler}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class MoverData implements Serializable {
+    private static final long serialVersionUID = 5130958721608671842L;
+    private String pnfsId;
+    private String queue;
+    private String mode;
+    private String door;
+    private String  storageClass;
+    private String  state;
+    private Long    bytes;
+    private Long    timeInSeconds;
+    private Long    startTime;
+    private Long    submitTime;
+    private Long    lastModified;
+    private Integer moverId;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public Long getBytes() {
+        return bytes;
+    }
+
+    public String getDoor() {
+        return door;
+    }
+
+    public Long getLastModified() {
+        return lastModified;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public Integer getMoverId() {
+        return moverId;
+    }
+
+    public String getPnfsId() {
+        return pnfsId;
+    }
+
+    public String getQueue() {
+        return queue;
+    }
+
+    public Long getStartTime() {
+        return startTime;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getStorageClass() {
+        return storageClass;
+    }
+
+    public Long getSubmitTime() {
+        return submitTime;
+    }
+
+    public Long getTimeInSeconds() {
+        return timeInSeconds;
+    }
+
+    public void setBytes(Long bytes) {
+        this.bytes = bytes;
+    }
+
+    public void setDoor(String door) {
+        this.door = door;
+    }
+
+    public void setLastModified(Long lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public void setMoverId(Integer moverId) {
+        this.moverId = moverId;
+    }
+
+    public void setPnfsId(String pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public void setQueue(String queue) {
+        this.queue = queue;
+    }
+
+    public void setStartTime(Long startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public void setStorageClass(String storageClass) {
+        this.storageClass = storageClass;
+    }
+
+    public void setSubmitTime(Long submitTime) {
+        this.submitTime = submitTime;
+    }
+
+    public void setTimeInSeconds(Long timeInSeconds) {
+        this.timeInSeconds = timeInSeconds;
+    }
 }

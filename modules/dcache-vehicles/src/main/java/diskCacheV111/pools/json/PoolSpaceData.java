@@ -57,24 +57,118 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package diskCacheV111.pools.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.Serializable;
+
+import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Bean analogous to {@link PoolSpaceInfo}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class PoolSpaceData implements Serializable {
+    private static final long serialVersionUID = 3883698337348311670L;
+    private Long total;
+    private Long free;
+    private Long precious;
+    private Long removable;
+    private Long lru;
+    private Long gap;
+    private Double breakEven;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public PoolSpaceData() {
+    }
+
+    public PoolSpaceData(PoolSpaceInfo info) {
+        total = info.getTotalSpace();
+        free = info.getFreeSpace();
+        precious = info.getPreciousSpace();
+        removable = info.getRemovableSpace();
+        lru = info.getLRUSeconds();
+        gap = info.getGap();
+        breakEven = info.getBreakEven();
+    }
+
+    public void aggregateData(PoolSpaceData using) {
+        if (total == null) {
+            total = using.total;
+        } else {
+            total += using.total;
+        }
+
+        if (free == null) {
+            free = using.free;
+        } else {
+            free += using.free;
+        }
+
+        if (precious == null) {
+            precious = using.precious;
+        } else {
+            precious += using.precious;
+        }
+
+        if (removable == null) {
+            removable = using.removable;
+        } else {
+            removable += using.removable;
+        }
+    }
+
+    public Double getBreakEven() {
+        return breakEven;
+    }
+
+    public Long getFree() {
+        return free;
+    }
+
+    public Long getGap() {
+        return gap;
+    }
+
+    public Long getLru() {
+        return lru;
+    }
+
+    public Long getPrecious() {
+        return precious;
+    }
+
+    public Long getRemovable() {
+        return removable;
+    }
+
+    public Long getTotal() {
+        return total;
+    }
+
+    public void setBreakEven(Double breakEven) {
+        this.breakEven = breakEven;
+    }
+
+    public void setFree(Long free) {
+        this.free = free;
+    }
+
+    public void setGap(Long gap) {
+        this.gap = gap;
+    }
+
+    public void setLru(Long lru) {
+        this.lru = lru;
+    }
+
+    public void setPrecious(Long precious) {
+        this.precious = precious;
+    }
+
+    public void setRemovable(Long removable) {
+        this.removable = removable;
+    }
+
+    public void setTotal(Long total) {
+        this.total = total;
+    }
+
 }

@@ -57,24 +57,86 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package diskCacheV111.pools.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.Serializable;
+
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
+import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Bean analogous to {@link PoolQueueInfo}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class PoolQueueData implements Serializable {
+    private static final long serialVersionUID = -9151237352985968435L;
+    private String name;
+    private Integer active;
+    private Integer maxActive;
+    private Integer queued;
+    private Integer readers;
+    private Integer writers;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public PoolQueueData() {
+    }
+
+    public PoolQueueData(PoolQueueInfo info) {
+        active = info.getActive();
+        maxActive = info.getMaxActive();
+        queued = info.getQueued();
+        readers = info.getReaders();
+        writers = info.getWriters();
+    }
+
+    public PoolQueueData(NamedPoolQueueInfo info) {
+        this((PoolQueueInfo) info);
+        name = info.getName();
+    }
+
+    public Integer getActive() {
+        return active;
+    }
+
+    public Integer getMaxActive() {
+        return maxActive;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Integer getQueued() {
+        return queued;
+    }
+
+    public Integer getReaders() {
+        return readers;
+    }
+
+    public Integer getWriters() {
+        return writers;
+    }
+
+    public void setActive(Integer active) {
+        this.active = active;
+    }
+
+    public void setMaxActive(Integer maxActive) {
+        this.maxActive = maxActive;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setQueued(Integer queued) {
+        this.queued = queued;
+    }
+
+    public void setReaders(Integer readers) {
+        this.readers = readers;
+    }
+
+    public void setWriters(Integer writers) {
+        this.writers = writers;
+    }
 }

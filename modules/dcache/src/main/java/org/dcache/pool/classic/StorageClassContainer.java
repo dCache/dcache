@@ -20,7 +20,6 @@ import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
@@ -28,11 +27,12 @@ import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.pool.classic.json.HSMFlushQManagerData;
 
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toCollection;
@@ -47,7 +47,8 @@ import static java.util.stream.Collectors.toCollection;
  * Each queue is represented by a StorageClassInfo object.
  */
 public class StorageClassContainer
-    implements CellCommandListener, CellSetupProvider, CellInfoProvider
+    implements CellCommandListener, CellSetupProvider, CellInfoProvider,
+                PoolDataBeanProvider<HSMFlushQManagerData>
 {
     private final Map<String, StorageClassInfo> _storageClasses = new HashMap<>();
     private final Map<PnfsId, StorageClassInfo> _pnfsIds = new HashMap<>();
@@ -250,8 +251,16 @@ public class StorageClassContainer
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("   Classes  : " + getStorageClassCount());
-        pw.println("   Requests : " + getRequestCount());
+        getDataObject().print(pw);
+    }
+
+    @Override
+    public synchronized HSMFlushQManagerData getDataObject() {
+        HSMFlushQManagerData info = new HSMFlushQManagerData();
+        info.setLabel("HSM Flush Queue Manager");
+        info.setClassCount(getStorageClassCount());
+        info.setRequestCount(getRequestCount());
+        return info;
     }
 
     @Override

@@ -1,11 +1,11 @@
 package org.dcache.pool.classic;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -28,13 +28,12 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
-
 import dmg.cells.nucleus.CDC;
-
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.movers.Mover;
+import org.dcache.pool.movers.json.MoverData;
 import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
@@ -42,7 +41,11 @@ import org.dcache.util.IoPriority;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
-import static org.dcache.pool.classic.IoRequestState.*;
+import static org.dcache.pool.classic.IoRequestState.CANCELED;
+import static org.dcache.pool.classic.IoRequestState.DONE;
+import static org.dcache.pool.classic.IoRequestState.NEW;
+import static org.dcache.pool.classic.IoRequestState.QUEUED;
+import static org.dcache.pool.classic.IoRequestState.RUNNING;
 
 public class MoverRequestScheduler
 {
@@ -311,11 +314,31 @@ public class MoverRequestScheduler
      */
     public List<IoJobInfo> getJobInfos()
     {
-
         return Collections.unmodifiableList(_jobs.values().stream()
                                                     .map(PrioritizedRequest::toJobInfo)
                                                     .collect(Collectors.toList())
         );
+    }
+
+    /**
+     * This method is necessary because IoJobInfo does not give all
+     * the info that the toString on the Mover class does.
+     */
+    public List<MoverData> getMoverData(int limit)
+    {
+        List<PrioritizedRequest> requests = new ArrayList<>();
+        int i = 0;
+        for (PrioritizedRequest request: _jobs.values()) {
+            if (i >= limit) {
+                break;
+            }
+            requests.add(request);
+            ++i;
+        }
+        return Ordering.natural().sortedCopy(requests)
+                                 .stream()
+                                 .map(PrioritizedRequest::toMoverData)
+                                 .collect(Collectors.toList());
     }
 
     /**
@@ -583,7 +606,7 @@ public class MoverRequestScheduler
         _total = total;
     }
 
-    static class PrioritizedRequest implements IoPrioritizable
+    static class PrioritizedRequest implements IoPrioritizable, Comparable<PrioritizedRequest>
     {
         private final Mover<?> _mover;
         private final IoPriority _priority;
@@ -617,6 +640,11 @@ public class MoverRequestScheduler
             _state = NEW;
             _doorUniqueId = doorUniqueId;
             _cdc = new CDC();
+        }
+
+        @Override
+        public int compareTo(PrioritizedRequest o) {
+            return Integer.compare(_id, o._id);
         }
 
         public Mover<?> getMover()
@@ -684,6 +712,24 @@ public class MoverRequestScheduler
                                  _mover.getPathToDoor().getDestinationAddress().toString(), _mover.getClientId(),
                                  _mover.getFileAttributes().getPnfsId(), _mover.getBytesTransferred(),
                                  _mover.getTransferTime(), _mover.getLastTransferred());
+        }
+
+        public synchronized MoverData toMoverData()
+        {
+            MoverData data = new MoverData();
+            data.setPnfsId( _mover.getFileAttributes().getPnfsId().toString());
+            data.setQueue(_mover.getQueueName());
+            data.setMode(_mover.getIoMode().toString());
+            data.setStorageClass(_mover.getFileAttributes().getStorageClass());
+            data.setDoor(_mover.getPathToDoor().getDestinationAddress().toString());
+            data.setState(_state.toString());
+            data.setBytes(_mover.getBytesTransferred());
+            data.setTimeInSeconds(_mover.getTransferTime());
+            data.setStartTime(_startTime);
+            data.setSubmitTime(_submitTime);
+            data.setLastModified(_mover.getLastTransferred());
+            data.setMoverId(_id);
+            return data;
         }
 
         public synchronized boolean queue()

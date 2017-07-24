@@ -57,24 +57,12 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
-
-import org.dcache.cells.json.CellData;
+package org.dcache.vehicles.pool;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Request for listings corresponding to both the p2p mover (client)
+ *      queue and the p2p source (server) queue.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
-
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+public final class PoolP2PListingMessage extends PoolMoverListingMessage {
+    private static final long serialVersionUID = 4186125637867588201L;
 }

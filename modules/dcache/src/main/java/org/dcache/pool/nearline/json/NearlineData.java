@@ -57,24 +57,88 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool.nearline.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.Serializable;
+
+import diskCacheV111.util.PnfsId;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Information derived from the
+ * {@link org.dcache.pool.nearline.NearlineStorageHandler}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class NearlineData implements Serializable {
+    private static final long serialVersionUID = -3519944641370737320L;
+    private String type;
+    private String state;
+    private String uuid;
+    private PnfsId pnfsId;
+    private String storageClass;
+    private String uri;
+    private long   created;
+    private long   activated;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public long getActivated() {
+        return activated;
+    }
+
+    public long getCreated() {
+        return created;
+    }
+
+    public PnfsId getPnfsId() {
+        return pnfsId;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getStorageClass() {
+        return storageClass;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getUri() {
+        return uri;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setActivated(long activated) {
+        this.activated = activated;
+    }
+
+    public void setCreated(long created) {
+        this.created = created;
+    }
+
+    public void setPnfsId(PnfsId pnfsId) {
+        this.pnfsId = pnfsId;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public void setStorageClass(String storageClass) {
+        this.storageClass = storageClass;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 }

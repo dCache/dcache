@@ -2,7 +2,6 @@
 
 package org.dcache.pool.classic;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
@@ -101,6 +100,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
@@ -120,8 +120,15 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v5.ReplicaRepository;
 import org.dcache.util.Args;
 import org.dcache.util.IoPriority;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
+import diskCacheV111.pools.json.PoolCostData;
+import org.dcache.pool.json.PoolDataDetails;
+import org.dcache.pool.json.PoolDataDetails.Duplicates;
+import org.dcache.pool.json.PoolDataDetails.Lsf;
+import org.dcache.pool.json.PoolDataDetails.OnOff;
+import org.dcache.pool.json.PoolDataDetails.P2PMode;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -130,7 +137,8 @@ import static org.dcache.namespace.FileAttribute.CHECKSUM;
 
 public class PoolV4
     extends AbstractCellComponent
-    implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider
+    implements FaultListener, CellCommandListener, CellMessageReceiver, CellSetupProvider, CellLifeCycleAware, CellInfoProvider,
+                PoolDataBeanProvider<PoolDataDetails>
 {
     private static final int DUP_REQ_NONE = 0;
     private static final int DUP_REQ_IGNORE = 1;
@@ -686,47 +694,63 @@ public class PoolV4
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("Base directory    : " + _baseDir);
-        pw.println("Version           : " + VERSION + " (Sub="
-                + _version + ")");
-        pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));
-        pw.println("Pool Mode         : " + _poolMode);
-        if (_poolMode.isDisabled()) {
-            pw.println("Detail            : [" + _poolStatusCode + "] "
-                       + _poolStatusMessage);
+        getDataObject().print(pw);
+    }
+
+    @Override
+    public PoolDataDetails getDataObject() {
+        PoolDataDetails info = new PoolDataDetails();
+        info.setLabel("Pool Details");
+
+        info.setBaseDir(_baseDir);
+        info.setBreakEven(getBreakEven());
+        info.setCleanPreciousFiles(_cleanPreciousFiles ? OnOff.ON : OnOff.OFF);
+
+        Duplicates duplicates;
+        switch (_dupRequest) {
+            case DUP_REQ_IGNORE: duplicates = Duplicates.IGNORED; break;
+            case DUP_REQ_REFRESH: duplicates = Duplicates.REFRESHED; break;
+            case DUP_REQ_NONE:
+            default:
+                duplicates = Duplicates.NONE; break;
         }
-        pw.println("Clean prec. files : "
-                   + (_cleanPreciousFiles ? "on" : "off"));
-        pw.println("Hsm Load Suppr.   : " + (_suppressHsmLoad ? "on" : "off"));
-        pw.println("Ping Heartbeat    : " + _pingThread.getHeartbeat()
-                   + " seconds");
-        pw.println("Breakeven         : " + getBreakEven());
-        pw.println("ReplicationMgr    : " + _replicationHandler);
-        if (_hasTapeBackend) {
-            pw.println("LargeFileStore    : None");
-        } else if (_isVolatile) {
-            pw.println("LargeFileStore    : Volatile");
-        } else {
-            pw.println("LargeFileStore    : Precious");
-        }
-        pw.println("DuplicateRequests : "
-                   + ((_dupRequest == DUP_REQ_NONE)
-                      ? "None"
-                      : (_dupRequest == DUP_REQ_IGNORE)
-                      ? "Ignored"
-                      : "Refreshed"));
-        pw.println("P2P File Mode     : "
-                   + ((_p2pFileMode == P2P_PRECIOUS) ? "Precious" : "Cached"));
+
+        info.setDuplicateRequests(duplicates);
 
         if (_hybridInventoryActive) {
-            pw.println("Inventory         : " + _hybridCurrent);
+            info.setHybridInventory(_hybridCurrent);
         }
 
-        for (MoverRequestScheduler js : _ioQueue.queues()) {
-            pw.println("Mover Queue (" + js.getName() + ") "
-                       + js.getActiveJobs() + "(" + js.getMaxActiveJobs()
-                       + ")/" + js.getQueueSize());
+        info.setInetAddresses(NetworkUtils.getLocalAddresses().toArray(new InetAddress[0]));
+
+        if (_hasTapeBackend) {
+            info.setLargeFileStore(Lsf.NONE);
+        } else if (_isVolatile) {
+            info.setLargeFileStore(Lsf.VOLATILE);
+        } else {
+            info.setLargeFileStore(Lsf.PRECIOUS);
         }
+
+        info.setPingHeartbeatInSecs( _pingThread.getHeartbeat());
+        info.setP2pFileMode(_p2pFileMode == P2P_PRECIOUS ?
+                                            P2PMode.PRECIOUS : P2PMode.CACHED);
+        info.setPoolMode(_poolMode.toString());
+        if (_poolMode.isDisabled()) {
+            info.setPoolStatusCode(_poolStatusCode);
+            info.setPoolStatusMessage(_poolStatusMessage);
+        }
+
+        info.setPoolVersion(VERSION + " (Sub=" + _version + ")");
+        info.setReportRemovals(_reportOnRemovals ? OnOff.ON : OnOff.OFF);
+        info.setSuppressHsmLoad(_suppressHsmLoad ? OnOff.ON : OnOff.OFF);
+        info.setTagMap(getTagMap());
+
+        info.setErrorCode(_poolStatusCode);
+        info.setErrorMessage(_poolStatusMessage);
+
+        info.setCostData(new PoolCostData(getPoolCostInfo()));
+
+        return info;
     }
 
     // //////////////////////////////////////////////////////////////
@@ -1370,7 +1394,7 @@ public class PoolV4
         return listing;
     }
 
-    private CacheRepositoryEntryInfo getCacheRepositoryEntryInfo(PnfsId pnfsid)
+    public CacheRepositoryEntryInfo getCacheRepositoryEntryInfo(PnfsId pnfsid)
             throws CacheException, InterruptedException
     {
         CacheEntry entry = _repository.getEntry(pnfsid);

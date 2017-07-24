@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,19 +39,19 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileCorruptedCacheException;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
+import org.dcache.pool.classic.json.ChecksumModuleData;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
@@ -61,7 +62,8 @@ import static org.dcache.util.ChecksumType.ADLER32;
 import static org.dcache.util.ChecksumType.getChecksumType;
 
 public class ChecksumModuleV1
-    implements CellCommandListener, ChecksumModule, CellSetupProvider, CellInfoProvider
+    implements CellCommandListener, ChecksumModule, CellSetupProvider, CellInfoProvider,
+                PoolDataBeanProvider<ChecksumModuleData>
 {
     private final EnumSet<PolicyFlag> _policy = EnumSet.of(ON_TRANSFER, ENFORCE_CRC);
 
@@ -121,37 +123,24 @@ public class ChecksumModuleV1
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("          Checksum type : " + _defaultChecksumType);
-        pw.print(" Checkum calculation on : transfer ");
-        for (PolicyFlag flag: _policy) {
-            switch (flag) {
-            case ON_READ:
-                pw.print("read ");
-                break;
-            case ON_WRITE:
-                pw.print("write ");
-                break;
-            case ON_FLUSH:
-                pw.print("flush ");
-                break;
-            case ON_RESTORE:
-                pw.print("restore ");
-                break;
-            case ENFORCE_CRC:
-                pw.print("enforceCRC ");
-                break;
-            case GET_CRC_FROM_HSM:
-                pw.print("getcrcfromhsm ");
-                break;
-            case SCRUB:
-                pw.print("scrub(");
-                pw.print("limit=" + (Double.isInfinite(_throughputLimit) ? "off" : BYTES.toMiB(_throughputLimit)));
-                pw.print(",");
-                pw.print("period=" + TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
-                pw.print(") ");
+        getDataObject().print(pw);
+    }
+
+    @Override
+    public synchronized ChecksumModuleData getDataObject() {
+        ChecksumModuleData info = new ChecksumModuleData();
+        info.setLabel("Checksum Module");
+        info.setType(_defaultChecksumType.getName());
+        Map<String, String> policies = new HashMap<>();
+        _policy.stream().forEach((p) -> policies.put(p.name(), getPolicy(p)));
+        policies.put(ON_TRANSFER.name(), "on");
+        if (hasPolicy(SCRUB)) {
+            if (!Double.isInfinite(_throughputLimit)) {
+                info.setThroughputLimitInMibPerSec(BYTES.toMiB(_throughputLimit));
             }
+            info.setPeriodInHours(TimeUnit.MILLISECONDS.toHours(_scrubPeriod));
         }
-        pw.println("");
+        return info;
     }
 
     private synchronized String getPolicies()

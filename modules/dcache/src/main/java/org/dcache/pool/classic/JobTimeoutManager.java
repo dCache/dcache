@@ -5,16 +5,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import diskCacheV111.vehicles.JobInfo;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.command.Command;
+import org.dcache.pool.PoolDataBeanProvider;
+import org.dcache.pool.classic.json.JobTimeoutManagerData;
 
 public class JobTimeoutManager
-        implements Runnable, CellCommandListener, CellInfoProvider
+        implements Runnable, CellCommandListener, CellInfoProvider,
+                PoolDataBeanProvider<JobTimeoutManagerData>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(JobTimeoutManager.class);
@@ -22,6 +26,11 @@ public class JobTimeoutManager
     private final Thread _worker;
 
     private IoQueueManager _ioQueues;
+
+    private static String schedulerEntryInfo(MoverRequestScheduler entry) {
+        return "(lastAccess=" + (entry.getLastAccessed() / 1000L) +
+                        ";total=" + (entry.getTotal() / 1000L) + ")";
+    }
 
     public JobTimeoutManager()
     {
@@ -50,11 +59,18 @@ public class JobTimeoutManager
     @Override
     public void getInfo(PrintWriter pw)
     {
-        for (MoverRequestScheduler entry : _ioQueues.queues()) {
-            pw.println("  " + entry.getName() +
-                       " (lastAccess=" + (entry.getLastAccessed() / 1000L) +
-                       ";total=" + (entry.getTotal() / 1000L) + ")");
-        }
+        getDataObject().print(pw);
+    }
+
+    @Override
+    public JobTimeoutManagerData getDataObject() {
+        JobTimeoutManagerData info = new JobTimeoutManagerData();
+        info.setLabel("Job Timeout Manager");
+        Map<String, String> queueInfo = new HashMap<>();
+        _ioQueues.queues().stream().forEach((e) -> queueInfo.put(e.getName(),
+                                                                 schedulerEntryInfo(e)));
+        info.setQueueInfo(queueInfo);
+        return info;
     }
 
     @Command(name = "jtm go",

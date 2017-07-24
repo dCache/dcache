@@ -19,32 +19,33 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfos;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
-
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.PoolDataBeanProvider;
+import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
+import org.dcache.util.histograms.CountingHistogram;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Comparator.naturalOrder;
 
 public class SpaceSweeper2
     implements Runnable, CellCommandListener, StateChangeListener,
-               SpaceSweeperPolicy
+               SpaceSweeperPolicy, PoolDataBeanProvider<SweeperData>
 {
     private static final Logger _log = LoggerFactory.getLogger(SpaceSweeper2.class);
 
@@ -286,6 +287,45 @@ public class SpaceSweeper2
             }
             return sb.toString();
         }
+    }
+
+    @Override
+    public SweeperData getDataObject() {
+        SweeperData info = new SweeperData();
+        info.setLabel("Space Sweeper v2");
+
+        List<PnfsId> list;
+
+        synchronized (this) {
+            list = _queue.values();
+            info.setLruQueueSize(_queue.values().size());
+            info.setLruTimestamp(System.currentTimeMillis() - getLru());
+        }
+
+        long now = System.currentTimeMillis();
+
+        List<Double> fileLifetime = new ArrayList<>();
+
+        for (PnfsId id : list) {
+            try {
+                CacheEntry entry = _repository.getEntry(id);
+                Long lvalue = now - entry.getLastAccessTime();
+                fileLifetime.add(lvalue.doubleValue());
+            } catch (FileNotInCacheException e) {
+                // Ignored
+            } catch (InterruptedException e) {
+                // should exit
+                return null;
+            } catch (CacheException e) {
+                // Continue trying
+            }
+        }
+
+        CountingHistogram histogram = SweeperData.createLastAccessHistogram();
+        histogram.setData(fileLifetime);
+        histogram.configure();
+        info.setLastAccessHistogram(histogram);
+        return info;
     }
 
     private String getTimeString(long secin)

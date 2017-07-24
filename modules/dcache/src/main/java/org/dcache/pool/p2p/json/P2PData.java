@@ -57,24 +57,41 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool.p2p.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.net.InetAddress;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Corresponds to the information delivered
+ * from the {@link org.dcache.pool.p2p.P2PClient} using
+ * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class P2PData implements Serializable {
+    private static final long serialVersionUID = -2748477589482721104L;
+    private String label;
+    private InetAddress ppInterface;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public String getLabel() {
+        return label;
+    }
+
+    public InetAddress getPpInterface() {
+        return ppInterface;
+    }
+
+    public void print(PrintWriter pw) {
+        if (ppInterface != null) {
+            pw.println("  Interface  : " + ppInterface);
+        }
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public void setPpInterface(InetAddress ppInterface) {
+        this.ppInterface = ppInterface;
+    }
 }

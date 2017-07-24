@@ -9,7 +9,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,7 +24,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
 import diskCacheV111.vehicles.PoolFlushGainControlMessage;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
@@ -38,8 +36,9 @@ import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.pool.classic.json.FlushControllerData;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -50,7 +49,8 @@ import static com.google.common.base.Preconditions.checkArgument;
  * on multiple pools.
  */
 public class HsmFlushController
-        implements CellMessageReceiver, CellCommandListener, CellInfoAware, CellSetupProvider, CellInfoProvider
+        implements CellMessageReceiver, CellCommandListener, CellInfoAware, CellSetupProvider, CellInfoProvider,
+                PoolDataBeanProvider<FlushControllerData>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(HsmFlushController.class);
@@ -198,12 +198,19 @@ public class HsmFlushController
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("   Flush interval                : " + _flushingInterval + " ms");
-        pw.println("   Maximum classes flushing      : " + _maxActive);
-        pw.println("   Minimum flush delay on error  : " + _retryDelayOnError + " ms");
-        if (_future != null) {
-            pw.println("   Next flush                    : " + new Date(System.currentTimeMillis() + _future.getDelay(TimeUnit.MILLISECONDS)));
-        }
+        getDataObject().print(pw);
+    }
+
+    @Override
+    public synchronized FlushControllerData getDataObject() {
+        FlushControllerData info = new FlushControllerData();
+        info.setLabel("HSM Flush Controller");
+        info.setFlushDelayOnError(_retryDelayOnError);
+        info.setFlushInterval(_flushingInterval);
+        info.setMaxActive(_maxActive);
+        info.setNextFlush(System.currentTimeMillis() +
+                                          _future.getDelay(TimeUnit.MILLISECONDS));
+        return info;
     }
 
     private class PrivateFlush extends DelayedReply implements Runnable, StorageClassInfoFlushable

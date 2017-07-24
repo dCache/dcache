@@ -57,24 +57,13 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.vehicles.pool;
 
-import org.dcache.cells.json.CellData;
+import org.dcache.vehicles.PoolNearlineListingMessage;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Request for listings corresponding to rh ls.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
-
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+public final class PoolStageListingMessage extends PoolNearlineListingMessage {
+    private static final long serialVersionUID = -4114100368908443917L;
 }

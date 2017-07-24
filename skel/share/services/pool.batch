@@ -65,6 +65,7 @@ check pool.destination.replicate
 check pool.destination.replicate.ip
 check pool.check-health-command
 check pool.resilience.request-threads
+check pool.info-request-handler.threads
 
 define context PoolDefaults endDefine
    set heartbeat 30

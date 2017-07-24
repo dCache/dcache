@@ -57,24 +57,34 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool.classic.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.Serializable;
+import java.util.Map;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Information delivered
+ * from the {@link org.dcache.pool.classic.TransferServices}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class TransferServicesData implements Serializable {
+    private static final long serialVersionUID = 7309943766140944031L;
+    private String label;
+    private Map<String, String> transferServices;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public String getLabel() {
+        return label;
+    }
+
+    public Map<String, String> getTransferServices() {
+        return transferServices;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public void setTransferServices(
+                    Map<String, String> transferServices) {
+        this.transferServices = transferServices;
+    }
 }

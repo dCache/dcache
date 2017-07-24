@@ -1,6 +1,5 @@
 package org.dcache.pool.repository.v5;
 
-import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +45,7 @@ import dmg.util.command.Command;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.CacheEntry;
@@ -66,11 +66,16 @@ import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.pool.repository.json.RepositoryData;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
-import static org.dcache.pool.repository.ReplicaState.*;
+import static org.dcache.pool.repository.ReplicaState.NEW;
+import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
+import static org.dcache.pool.repository.ReplicaState.REMOVED;
 import static org.dcache.util.ByteUnit.GiB;
 
 
@@ -82,7 +87,8 @@ import static org.dcache.util.ByteUnit.GiB;
  * interface will fail until load has completed.
  */
 public class ReplicaRepository
-    implements Repository, CellCommandListener, CellSetupProvider, CellInfoProvider, CellIdentityAware
+    implements Repository, CellCommandListener, CellSetupProvider, CellInfoProvider, CellIdentityAware,
+                PoolDataBeanProvider<RepositoryData>
 {
     /* Implementation note
      * -------------------
@@ -889,53 +895,60 @@ public class ReplicaRepository
     @Override
     public void getInfo(PrintWriter pw)
     {
+       getDataObject().print(pw);
+    }
+
+    @Override
+    public synchronized RepositoryData getDataObject() {
+        RepositoryData info = new RepositoryData();
+        info.setLabel("Repository");
+
         _stateLock.readLock().lock();
         try {
-            State state = _state;
-            pw.append("State : ").append(state.toString());
-            if (state == State.LOADING) {
-                pw.append(" (").append(String.valueOf((int) (_initializationProgress * 100))).append("% done)");
+            info.setState(_state.name());
+            if (_state == State.LOADING) {
+                info.setInitializationProgress((int) (_initializationProgress * 100));
             }
-            pw.println();
             try {
-                if (state == State.OPEN || state == State.LOADING || state == State.INITIALIZED) {
-                    pw.println("Files : " + _store.index().size());
+                if (_state == State.OPEN ||
+                                _state == State.LOADING ||
+                                _state == State.INITIALIZED) {
+                    info.setFiles(_store.index().size());
                 }
             } catch (CacheException e) {
-                pw.println("Files : " + e.getMessage());
+                info.setFilesException(e.getMessage());
             }
 
             SpaceRecord space = getSpaceRecord();
+
             long total = space.getTotalSpace();
             long used = total - space.getFreeSpace();
             long precious = space.getPreciousSpace();
+            long removable = space.getRemovableSpace();
             long fsFree = _store.getFreeSpace();
             long fsTotal = _store.getTotalSpace();
             long gap = space.getGap();
 
-            pw.println("Disk space");
-            pw.println("    Total    : " + DiskSpace.toUnitString(total));
-            pw.println("    Used     : " + used + "    ["
-                       + (((float) used) / ((float) total)) + "]");
-            pw.println("    Free     : " + (total - used) + "    Gap : " + gap);
-            pw.println("    Precious : " + precious + "    ["
-                       + (((float) precious) / ((float) total)) + "]");
-            pw.println("    Removable: "
-                       + space.getRemovableSpace()
-                       + "    ["
-                       + (((float) space.getRemovableSpace()) / ((float) total))
-                       + "]");
-            pw.println("File system");
-            pw.println("    Size : " + fsTotal);
-            pw.println("    Free : " + fsFree +
-                       "    [" + (((float) fsFree) / fsTotal) + "]");
-            pw.println("Limits for maximum disk space");
-            pw.println("    File system          : " + (fsFree + used));
-            pw.println("    Statically configured: " + _staticMaxSize);
-            pw.println("    Runtime configured   : " + _runtimeMaxSize);
+            info.setTotalDiskSpace(DiskSpace.toUnitString(total));
+            info.setUsedDiskSpace(used);
+            info.setUsedDiskSpaceRatio(((double) used) / ((double) total));
+            info.setFreeDiskSpace(total - used);
+            info.setGap(gap);
+            info.setPreciousDiskSpace(precious);
+            info.setPreciousDiskSpaceRatio(((double) precious) / ((double) total));
+            info.setRemovableDiskSpace(removable);
+            info.setRemovableDiskSpaceRatio(((double) space.getRemovableSpace()) / ((double) total));
+            info.setFileSystemSize(fsTotal);
+            info.setFileSystemFree(fsFree);
+            info.setFileSystemRatioFreeToTotal(((double) fsFree) / fsTotal);
+            info.setFileSystemMaxSpace(fsFree + used);
+            info.setStaticallyConfiguredMax(_staticMaxSize.longValue());
+            info.setRuntimeConfiguredMax(_runtimeMaxSize.longValue());
         } finally {
             _stateLock.readLock().unlock();
         }
+
+        return info;
     }
 
     public void shutdown()

@@ -20,22 +20,22 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
-
+import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.p2p.P2PClient;
-import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.pool.migration.json.MigrationData;
 
 import static org.dcache.pool.repository.ReplicaState.CACHED;
 import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
@@ -55,7 +55,7 @@ import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
  */
 public class MigrationModuleServer
     extends AbstractCellComponent
-    implements CellMessageReceiver, CellInfoProvider
+    implements CellMessageReceiver, CellInfoProvider, PoolDataBeanProvider<MigrationData>
 {
     private static final Logger _log =
         LoggerFactory.getLogger(MigrationModuleServer.class);
@@ -67,6 +67,13 @@ public class MigrationModuleServer
     private ChecksumModule _checksumModule;
     private MigrationModule _migration;
     private PoolV2Mode _poolMode;
+
+    @Override
+    public MigrationData getDataObject() {
+        MigrationData info = new MigrationData();
+        info.setServerRequests(_requests.size());
+        return info;
+    }
 
     public void setExecutor(ExecutorService executor)
     {

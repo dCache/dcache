@@ -57,24 +57,75 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.cells;
+package org.dcache.pool.classic.json;
 
-import org.dcache.cells.json.CellData;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.util.Date;
 
 /**
- * <p>Defines the internal API for service providing collected/extracted
- *      cell data.</p>
+ * <p>Corresponds to the information delivered
+ * from the {@link org.dcache.pool.classic.HsmFlushController} using
+ * {@link dmg.cells.nucleus.CellInfoProvider#getInfo(PrintWriter)}.</p>
  */
-public interface CellInfoService {
-    /**
-     * @return array of all current known cell addresses (= cell@domain).
-     */
-    String[] getAddresses();
+public class FlushControllerData implements Serializable {
+    private static final long serialVersionUID = 427562149930277435L;
+    private String label;
+    private Long    flushInterval;
+    private Integer maxActive;
+    private Long    flushDelayOnError;
+    private Long    nextFlush;
 
-    /**
-     * @param address of known cell (= cell@domain).
-     * @return JSON object containing cell data corresponding
-     *          to {@link dmg.cells.nucleus.CellInfo}.
-     */
-    CellData getCellData(String address);
+    public Long getFlushDelayOnError() {
+        return flushDelayOnError;
+    }
+
+    public Long getFlushInterval() {
+        return flushInterval;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public Integer getMaxActive() {
+        return maxActive;
+    }
+
+    public Long getNextFlush() {
+        return nextFlush;
+    }
+
+    public void print(PrintWriter pw) {
+        pw.println("   Flush interval                : " + flushInterval
+                                   + " ms");
+        pw.println("   Maximum classes flushing      : " + maxActive);
+        pw.println("   Minimum flush delay on error  : " + flushDelayOnError
+                                   + " ms");
+        if (nextFlush != null) {
+            pw.println("   Next flush                    : " + new Date(
+                            nextFlush));
+        }
+    }
+
+    public void setFlushDelayOnError(Long flushDelayOnError) {
+        this.flushDelayOnError = flushDelayOnError;
+    }
+
+    public void setFlushInterval(Long flushInterval) {
+        this.flushInterval = flushInterval;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public void setMaxActive(Integer maxActive) {
+        this.maxActive = maxActive;
+    }
+
+    public void setNextFlush(Long nextFlush) {
+        this.nextFlush = nextFlush;
+    }
+
 }

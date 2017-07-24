@@ -71,8 +71,8 @@ import java.util.concurrent.Executor;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
+import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoServiceImpl;
-import org.dcache.vehicles.cells.json.CellData;
 
 /**
  * <p>Used in conjunction with the {@link CellInfoCollector} as message
