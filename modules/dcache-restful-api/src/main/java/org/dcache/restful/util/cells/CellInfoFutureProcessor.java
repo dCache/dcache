@@ -59,18 +59,19 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.cells;
 
-import com.google.common.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
+import org.dcache.restful.services.cells.CellInfoServiceImpl;
 import org.dcache.vehicles.cells.json.CellData;
 
 /**
@@ -84,16 +85,14 @@ public final class CellInfoFutureProcessor {
     private final Map<String, ListenableFutureWrapper<CellInfo>> futureMap
                     = new HashMap<>();
 
+    private final Map<String, CellData> next
+                    = Collections.synchronizedMap(new HashMap<>());
+
     /**
      * <p>Injected</p>
      */
     private Executor executor;
-    private File     storageDir;
-
-    /**
-     * <p>Set by the service.</p>
-     */
-    private LoadingCache<String, CellData> cache;
+    private CellInfoServiceImpl service;
 
     /**
      * <p>Cancels all futures in map.</p>
@@ -137,23 +136,17 @@ public final class CellInfoFutureProcessor {
         futureMap.entrySet().stream().forEach(this::addListener);
     }
 
-    public void setCache(LoadingCache<String, CellData> cache) {
-        this.cache = cache;
-    }
-
     public void setExecutor(Executor executor) {
         this.executor = executor;
     }
 
-    public void setStorageDir(File storageDir) {
-        this.storageDir = storageDir;
+    public void setService(CellInfoServiceImpl service) {
+        this.service = service;
     }
 
     /**
      * <p>Adds listener which is responsible for transforming the cell info
-     * into the stored object.  Writes the product out to file,
-     * overwriting what was there previously.  Invalidates the cache entry
-     * and removes the future wrapper from the map.</p>
+     * into the stored object.</p>
      *
      * @param entry holding the listenable future for the cell info.
      */
@@ -176,10 +169,8 @@ public final class CellInfoFutureProcessor {
                                                               - wrapper.getSent());
                 }
 
-                CellInfoCollectorUtils.update(cellData, received);
-
-                CellInfoCollectorUtils.flushToDisk(key, storageDir, cellData);
-                cache.invalidate(key);
+                update(cellData, received);
+                next.put(key, cellData);
             } catch (InterruptedException e) {
                 LOGGER.trace("Listener runnable was interrupted; returning ...");
             } catch (ExecutionException e) {
@@ -198,5 +189,31 @@ public final class CellInfoFutureProcessor {
 
     private synchronized void remove(String key) {
         futureMap.remove(key);
+
+        /*
+         *  If future map is empty, swap current for next.
+         *  This is to avoid stale entries in the cache.
+         */
+        if (futureMap.isEmpty()) {
+            service.updateCache(next);
+            next.clear();
+        }
+    }
+
+    private static void update(CellData cellData, CellInfo received) {
+        cellData.setCreationTime(received.getCreationTime());
+        cellData.setDomainName(received.getDomainName());
+        cellData.setCellType(received.getCellType());
+        cellData.setCellName(received.getCellName());
+        cellData.setCellClass(received.getCellClass());
+        cellData.setEventQueueSize(received.getEventQueueSize());
+        cellData.setExpectedQueueTime(received.getExpectedQueueTime());
+        cellData.setLabel("Cell Info");
+        CellVersion version = received.getCellVersion();
+        cellData.setRelease(version.getRelease());
+        cellData.setRevision(version.getRevision());
+        cellData.setVersion(version.toString());
+        cellData.setState(received.getState());
+        cellData.setThreadCount(received.getThreadCount());
     }
 }

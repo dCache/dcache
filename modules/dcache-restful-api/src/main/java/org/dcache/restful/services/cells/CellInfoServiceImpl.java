@@ -59,25 +59,18 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.cells;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-
-import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.util.command.Command;
 import org.dcache.restful.services.admin.CellDataCollectingService;
+import org.dcache.restful.util.admin.ReadWriteData;
 import org.dcache.restful.util.cells.CellInfoCollector;
-import org.dcache.restful.util.cells.CellInfoCollectorUtils;
 import org.dcache.restful.util.cells.CellInfoFutureProcessor;
 import org.dcache.restful.util.cells.ListenableFutureWrapper;
 import org.dcache.vehicles.cells.json.CellData;
@@ -121,31 +114,8 @@ public class CellInfoServiceImpl extends
         }
     }
 
-    /**
-     * <p>Fetches from disk. Will return a new object for a file
-     * which does not exist.</p>
-     */
-    class CellInfoCacheLoader extends CacheLoader<String, CellData> {
-        @Override
-        public CellData load(String key) throws Exception {
-            return CellInfoCollectorUtils.fetch(key, storageDir);
-        }
-    }
-
-    /**
-     * <p>In-memory caching.</p>
-     *
-     * <p>The processor always reads through the cache, triggering a
-     * load if the object is not present.</p>
-     *
-     * <p>The cache is invalidated during the
-     * periodic collection-process cycle; lifetime is
-     * equal to the cycle period.</p>
-     */
-    private final CacheLoader<String, CellData> cacheLoader
-                    = new CellInfoCacheLoader();
-
-    private LoadingCache<String, CellData> cache;
+    private final ReadWriteData<String, CellData> cache
+                    = new ReadWriteData<>(true);
 
     private String[] currentKnownCells = new String[0];
 
@@ -155,18 +125,6 @@ public class CellInfoServiceImpl extends
      */
     private CellInfoFutureProcessor processor;
 
-    /**
-     * <p>Size is set fairly low.  There is no reason to maintain
-     * all the cells in memory if they are not being
-     * accessed between cyclical collection of data.</p>
-     */
-    private long maxCacheSize = 100;
-
-    /**
-     * <p>Location of persistent JSON files.</p>
-     */
-    private File storageDir;
-
     @Override
     public synchronized String[] getAddresses() {
         return currentKnownCells;
@@ -174,45 +132,30 @@ public class CellInfoServiceImpl extends
 
     @Override
     public CellData getCellData(String address) {
-        CellData cached = fetch(address);
+        CellData cached = cache.read(address);
         if (cached == null) {
             throw new NoSuchElementException(address);
         }
         return cached;
     }
 
-    public void setMaxCacheSize(long maxCacheSize) {
-        this.maxCacheSize = maxCacheSize;
-    }
-
     public void setProcessor(CellInfoFutureProcessor processor) {
         this.processor = processor;
     }
 
-    public void setStorageDir(File storageDir) {
-        this.storageDir = storageDir;
-    }
-
-    @Override
-    protected synchronized void configure() {
-        Map<String, CellData> current = cache == null ?
-                        Collections.EMPTY_MAP : cache.asMap();
-
-        cache = CacheBuilder.newBuilder()
-                            .maximumSize(maxCacheSize)
-                            .expireAfterWrite(timeout, timeoutUnit)
-                            .build(cacheLoader);
-
-        cache.putAll(current);
-
-        processor.setCache(cache);
+    /**
+     * <p>Callback invoked by processor when it has completed
+     *    the update.</p>
+     *
+     * @param next updated data.
+     */
+    public void updateCache(Map<String, CellData> next) {
+        cache.clearAndWrite(next);
     }
 
     /**
-     * <p>The processor refreshes/overwrites data on disk (the JSON
-     *      files representing the cell info).
-     *      It invalidates the cache entries so that the next read will
-     *      fetch and deserialize the object from file.</p>
+     * <p>Delegates processing to the processor.  Refreshes the list of
+     *    known cells.</p>
      */
     @Override
     protected void update(Map<String, ListenableFutureWrapper<CellInfo>> data) {
@@ -231,26 +174,6 @@ public class CellInfoServiceImpl extends
         } catch (IllegalArgumentException e) {
             LOGGER.warn("Processing failed for the current cycle: {}.",
                         e.getMessage());
-        }
-    }
-
-    /**
-     * <p>Wrapper around cache.get().</p>
-     *
-     * <p>Cache Loader uses read method which should not return <code>null</code>
-     *  if this is a new cell. If the get fails, there is a different issue.</p>
-     */
-    private CellData fetch(String key) {
-        try {
-            return cache.get(key);
-        } catch (ExecutionException e) {
-            LOGGER.error("Problem fetching info object for {} "
-                                         + "from cache: "
-                                         + "{}, cause: {}.",
-                         key,
-                         e.getMessage(),
-                         e.getCause());
-            return null;
         }
     }
 }

@@ -175,18 +175,16 @@
 
   <bean id="cell-info-processor" class="org.dcache.restful.util.cells.CellInfoFutureProcessor">
     <description>Handles update futures and processes them for persistence.</description>
-    <property name="storageDir" value="${frontend.service.cell-info.storage-dir}"/>
     <property name="executor" ref="cell-update-executor"/>
+    <property name="service" ref="cell-info-service"/>
   </bean>
 
   <bean id="cell-info-service" class="org.dcache.restful.services.cells.CellInfoServiceImpl">
     <description>Caches and serves information on cell services.</description>
-    <property name="maxCacheSize" value="${frontend.service.cell-info.maxCacheSize}"/>
     <property name="timeout" value="${frontend.service.cell-info.timeout}"/>
     <property name="timeoutUnit" value="${frontend.service.cell-info.timeout.unit}"/>
     <property name="collector" ref="cell-info-collector"/>
     <property name="executorService" ref="scheduling-service"/>
-    <property name="storageDir" value="${frontend.service.cell-info.storage-dir}"/>
     <property name="processor" ref="cell-info-processor"/>
   </bean>
 
