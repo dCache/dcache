@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.cells.CellStub;
@@ -123,5 +124,5 @@ public abstract class CellMessagingCollector<D> implements CellMessageSender {
     /**
      * <p>Should do the actual collection.</p>
      */
-    public abstract D collectData() throws InterruptedException;
+    public abstract D collectData() throws InterruptedException, CacheException;
 }

@@ -59,10 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.alarms;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ServiceUnavailableException;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.restful.util.admin.CellMessagingCollector;
 import org.dcache.vehicles.alarms.AlarmMappingRequestMessage;
 
@@ -70,7 +71,7 @@ import org.dcache.vehicles.alarms.AlarmMappingRequestMessage;
  * <p>Thin wrapper around cell messaging to alarms endpoint.</p>
  */
 public class AlarmsCollector extends
-                CellMessagingCollector<ListenableFuture<AlarmMappingRequestMessage>> {
+                CellMessagingCollector<AlarmMappingRequestMessage> {
 
     private String alarmsPath;
 
@@ -78,8 +79,8 @@ public class AlarmsCollector extends
      * @return message containing the alarms priority map.
      */
     @Override
-    public ListenableFuture<AlarmMappingRequestMessage> collectData()
-                    throws InterruptedException {
+    public AlarmMappingRequestMessage collectData()
+                    throws InterruptedException, CacheException {
         return sendRequestToAlarmService(new AlarmMappingRequestMessage());
     }
 
@@ -96,9 +97,14 @@ public class AlarmsCollector extends
      * @param message to send
      * @return Futures which can be used to wait for the returned message.
      */
-    public <T extends Message> ListenableFuture<T> sendRequestToAlarmService(
-                    T message) {
-        return stub.send(new CellPath(alarmsPath), message);
+    public <T extends Message> T sendRequestToAlarmService(T message)
+                    throws CacheException, InterruptedException {
+
+        try {
+            return stub.sendAndWait(new CellPath(alarmsPath), message);
+        } catch (NoRouteToCellException e) {
+           throw new ServiceUnavailableException("Could not send alarms request", e);
+        }
     }
 
     public void setAlarmsPath(String alarmsPath) {
