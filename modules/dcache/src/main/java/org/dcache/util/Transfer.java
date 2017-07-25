@@ -68,6 +68,7 @@ import dmg.util.TimebasedCounter;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -1182,7 +1183,14 @@ public class Transfer implements Comparable<Transfer>
         if (pnfsId != null) {
             setStatus("PnfsManager: Deleting name space entry");
             try {
-                _pnfs.deletePnfsEntry(pnfsId, _path.toString());
+                /*  A user may be authorised to upload data but not delete data.
+                 *  During error recovery, a door may attempt to delete the
+                 *  bad file, which (in general) such users are not authorised
+                 *  to do.  Therefore, this delete operation is done with no
+                 *  restriction.
+                 */
+                new PnfsHandler(_pnfs, Restrictions.none())
+                        .deletePnfsEntry(pnfsId, _path.toString());
             } catch (FileNotFoundCacheException e) {
                 _log.debug("Failed to delete file after failed upload: " +
                            _path + " (" + pnfsId + "): " + e.getMessage());

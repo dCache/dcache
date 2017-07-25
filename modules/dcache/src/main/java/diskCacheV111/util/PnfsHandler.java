@@ -104,6 +104,7 @@ public class PnfsHandler implements CellMessageSender
      *
      * @param handler The PnfsHandler to copy
      * @param subject The Subject to apply to the copy
+     * @param restriction The restriction to apply to the copy
      */
     public PnfsHandler(PnfsHandler handler, Subject subject, Restriction restriction)
     {
@@ -111,6 +112,18 @@ public class PnfsHandler implements CellMessageSender
         _cellStub = handler._cellStub;
         _subject = subject;
         _restriction = restriction;
+    }
+
+    /**
+     * Copy identity but not restriction.  The primary purpose is to provide a
+     * way to handle error-recovery where, through restrictions, the user is
+     * not allowed to recover from the problem.
+     * @param handler The PnfsHandler to copy
+     * @param restriction The restriction to apply to the copy
+     */
+    public PnfsHandler(PnfsHandler handler, Restriction restriction)
+    {
+        this(handler, handler._subject, restriction);
     }
 
     @Override
