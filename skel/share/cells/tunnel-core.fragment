@@ -16,6 +16,7 @@ create -- dmg.cells.services.CoreRoutingManager RoutingMgr "-role=core"
 create -- dmg.cells.services.LocationManager lm \
                     "-role=core \
                     -mode='${dcache.broker.core.client.channel.security}' \
+                    -netmask='${dcache.broker.core.allowed-subnets}' \
                     -socketfactory='org.dcache.ssl.CanlSslServerSocketCreator \
                                         -service_key="${dcache.broker.channel.credential.key}" \
                                         -service_cert="${dcache.broker.channel.credential.cert}" \
