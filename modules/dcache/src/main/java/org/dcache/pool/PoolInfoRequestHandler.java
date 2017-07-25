@@ -74,9 +74,19 @@ import dmg.cells.nucleus.Reply;
 import org.dcache.cells.MessageReply;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.classic.PoolV4;
+import org.dcache.pool.classic.json.ChecksumModuleData;
+import org.dcache.pool.classic.json.FlushControllerData;
+import org.dcache.pool.classic.json.HSMFlushQManagerData;
+import org.dcache.pool.classic.json.JobTimeoutManagerData;
+import org.dcache.pool.classic.json.SweeperData;
+import org.dcache.pool.classic.json.TransferServicesData;
+import org.dcache.pool.json.PoolData;
+import org.dcache.pool.migration.json.MigrationData;
+import org.dcache.pool.movers.json.MoverData;
 import org.dcache.pool.nearline.NearlineStorageHandler;
+import org.dcache.pool.p2p.json.P2PData;
 import org.dcache.pool.repository.Repository;
-import org.dcache.cells.json.CellData;
+import org.dcache.pool.repository.json.RepositoryData;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 import org.dcache.vehicles.pool.PoolDataRequestMessage;
 import org.dcache.vehicles.pool.PoolFlushListingMessage;
@@ -84,17 +94,6 @@ import org.dcache.vehicles.pool.PoolMoverListingMessage;
 import org.dcache.vehicles.pool.PoolP2PListingMessage;
 import org.dcache.vehicles.pool.PoolRemoveListingMessage;
 import org.dcache.vehicles.pool.PoolStageListingMessage;
-import org.dcache.pool.classic.json.ChecksumModuleData;
-import org.dcache.pool.classic.json.FlushControllerData;
-import org.dcache.pool.classic.json.HSMFlushQManagerData;
-import org.dcache.pool.classic.json.JobTimeoutManagerData;
-import org.dcache.pool.migration.json.MigrationData;
-import org.dcache.pool.movers.json.MoverData;
-import org.dcache.pool.p2p.json.P2PData;
-import org.dcache.pool.json.PoolData;
-import org.dcache.pool.repository.json.RepositoryData;
-import org.dcache.pool.classic.json.SweeperData;
-import org.dcache.pool.classic.json.TransferServicesData;
 
 /**
  * <p>Serves requests from frontend pool info service for info relating to the
@@ -355,8 +354,8 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         this.transferServices = transferServices;
     }
 
-    private CellData getCellInfoRequest() {
-        CellData request = new CellData();
+    private org.dcache.cells.json.CellData getCellInfoRequest() {
+        org.dcache.cells.json.CellData request = new org.dcache.cells.json.CellData();
         CellInfo info = supplier.get();
         request.setCreationTime(info.getCreationTime());
         request.setDomainName(info.getDomainName());

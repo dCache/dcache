@@ -130,7 +130,6 @@
       <description>Collects, updates and deletes alarms.</description>
       <property name="collector" ref="alarms-collector"/>
       <property name="executorService" ref="scheduling-service"/>
-      <property name="maxCacheSize" value="${frontend.service.alarms.maxCacheSize}"/>
       <property name="timeout" value="${frontend.service.alarms.timeout}"/>
       <property name="timeoutUnit" value="${frontend.service.alarms.timeout.unit}"/>
   </bean>

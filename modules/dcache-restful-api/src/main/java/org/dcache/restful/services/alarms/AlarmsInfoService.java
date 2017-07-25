@@ -59,40 +59,31 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.alarms;
 
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
 import org.dcache.alarms.LogEntry;
-import org.dcache.restful.providers.alarms.AlarmsList;
 
 /**
  * <p>Internal API for calling the alarms info service.</p>
  */
 public interface AlarmsInfoService {
     /**
-     * <p>Return the list of alarms.  If no token is provided,
-     * a snapshot of the most recent data should be returned; otherwise,
-     * a snapshot corresponding to the token should be returned.</p>
+     * <p>Return the list of alarms.</p>
      *
-     * <p>This method should fetch the snapshot synchronously
+     * <p>This method should fetch the list synchronously
      * and throw an exception if it fails.</p>
      *
-     * @param token  specifying which snapshot to use (can be <code>null</code>).
-     * @param offset specifying the index in the snapshot at which to begin.
-     * @param limit  maximum number of transfers to include.
      * @param after  no alarms before this datestamp
      * @param before no alarms after this datestamp
      * @param type   only alarms of this type
-     * @return {@link AlarmsList} containing list of {@link LogEntry} beans.
+     * @return list of {@link LogEntry} beans.
      * @throws CacheException if the fetch operation fails.
      */
-    AlarmsList get(UUID token,
-                   Integer offset,
-                   Integer limit,
-                   Long after,
-                   Long before,
-                   String type) throws CacheException, InterruptedException;
+    List<LogEntry> get(Long after,
+                       Long before,
+                       String type) throws CacheException, InterruptedException;
 
     /**
      * @return the current mapping of alarm types to alarms priority level.
@@ -102,33 +93,17 @@ public interface AlarmsInfoService {
     /**
      * <p>Delete the alarm from the underlying storage.</p>
      *
-     * @param token of the snapshot referenced
-     * @param alarm index of the alarm in the snapshot
+     * @param entry to delete.
      * @throws CacheException if the indicated alarm does not exist
      */
-    void delete(UUID token, Integer alarm) throws CacheException, InterruptedException;
+    void delete(LogEntry entry) throws CacheException, InterruptedException;
 
     /**
-     * <p>Update the comment field of the alarm.</p>
+     * <p>The service will only mutate the 'closed' and 'notes' fields.</p>
      *
-     * @param token of the snapshot referenced
-     * @param alarm index of the alarm in the snapshot
-     * @param comment overwrites the current comment field
+     * @param entry to update.
      * @throws CacheException if the indicated alarm does not exist or if
      *                        update fails.
      */
-    void update(UUID token, Integer alarm, String comment) throws CacheException,
-                    InterruptedException;
-
-    /**
-     * <p>Toggle the closed field of the alarm.</p>
-     *
-     * @param token of the snapshot referenced
-     * @param alarm index of the alarm in the snapshot
-     * @param close value of the closed field to be set
-     * @throws CacheException if the indicated alarm does not exist or if
-     *                        update fails.
-     */
-    void update(UUID token, Integer alarm, boolean close) throws CacheException,
-                    InterruptedException;
+    void update(LogEntry entry) throws CacheException, InterruptedException;
 }
