@@ -128,7 +128,17 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldRestrictUnrestrictedActivities() throws Exception
+    public void shouldRestrictToDownloadAndReaddMetadataUnrestrictedActivities() throws Exception
+    {
+        given(macaroonContext().withHome("/users/paul"));
+
+        _context.updateAllowedActivities(EnumSet.of(DOWNLOAD));
+
+        assertThat(_context.getAllowedActivities(), is(equalTo(Optional.of(EnumSet.of(DOWNLOAD,READ_METADATA)))));
+    }
+
+    @Test
+    public void shouldRestrictToDownloadListReaddmetadataUnrestrictedActivities() throws Exception
     {
         given(macaroonContext().withHome("/users/paul"));
 
@@ -138,7 +148,7 @@ public class MacaroonContextTests
     }
 
     @Test
-    public void shouldRestrictRestrictedActivities() throws Exception
+    public void shouldRestrictToListReadmetadataRestrictedActivities() throws Exception
     {
         given(macaroonContext().withHome("/users/paul").withAllowedActivities(DOWNLOAD, LIST));
 
