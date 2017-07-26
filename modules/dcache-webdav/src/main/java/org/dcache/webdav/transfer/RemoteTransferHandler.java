@@ -225,8 +225,10 @@ public class RemoteTransferHandler implements CellMessageReceiver
             Object credential, Direction direction)
             throws ErrorResponseException, InterruptedException
     {
-        checkArgument(credential instanceof X509Credential || credential instanceof OpenIdCredential,
-                                            "Credential not supported for Third-Party Transfer");
+        checkArgument(credential == null
+                || credential instanceof X509Credential
+                || credential instanceof OpenIdCredential,
+                "Credential not supported for Third-Party Transfer");
         EnumSet<TransferFlag> flags = EnumSet.noneOf(TransferFlag.class);
         flags = addVerificationFlag(flags, requestHeaders);
         ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
