@@ -332,7 +332,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         URI location = info.getUri();
 
         for (int attempt = 0; attempt < MAX_REDIRECTIONS; attempt++) {
-            HttpPut put = buildPutRequest(info, length);
+            HttpPut put = buildPutRequest(info, location, length);
 
             try (CloseableHttpResponse response = _client.execute(put)) {
                 StatusLine status = response.getStatusLine();
@@ -382,9 +382,10 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 "number of redirections; last location was " + location);
     }
 
-    private HttpPut buildPutRequest(RemoteHttpDataTransferProtocolInfo info, long length)
+    private HttpPut buildPutRequest(RemoteHttpDataTransferProtocolInfo info,
+            URI location, long length)
     {
-        HttpPut put = new HttpPut(info.getUri());
+        HttpPut put = new HttpPut(location);
         put.setConfig(RequestConfig.custom()
                                   .setConnectTimeout(CONNECTION_TIMEOUT)
                                   .setExpectContinueEnabled(true)
