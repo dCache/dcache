@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
 import diskCacheV111.util.CacheException;
@@ -76,7 +77,6 @@ import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
@@ -93,7 +93,6 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
@@ -102,6 +101,11 @@ import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.assumption.Assumption;
+import org.dcache.pool.json.PoolDataDetails;
+import org.dcache.pool.json.PoolDataDetails.Duplicates;
+import org.dcache.pool.json.PoolDataDetails.Lsf;
+import org.dcache.pool.json.PoolDataDetails.OnOff;
+import org.dcache.pool.json.PoolDataDetails.P2PMode;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.nearline.HsmSet;
@@ -123,12 +127,6 @@ import org.dcache.util.IoPriority;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
-import diskCacheV111.pools.json.PoolCostData;
-import org.dcache.pool.json.PoolDataDetails;
-import org.dcache.pool.json.PoolDataDetails.Duplicates;
-import org.dcache.pool.json.PoolDataDetails.Lsf;
-import org.dcache.pool.json.PoolDataDetails.OnOff;
-import org.dcache.pool.json.PoolDataDetails.P2PMode;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -1542,7 +1540,7 @@ public class PoolV4
         }
     }
 
-    private PoolCostInfo getPoolCostInfo()
+    public PoolCostInfo getPoolCostInfo()
     {
         return new PoolCostInfo(IoQueueManager.DEFAULT_QUEUE, _poolInfo);
     }

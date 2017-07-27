@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellInfo;
@@ -90,6 +91,7 @@ import org.dcache.pool.repository.json.RepositoryData;
 import org.dcache.vehicles.pool.CacheEntryInfoMessage;
 import org.dcache.vehicles.pool.PoolDataRequestMessage;
 import org.dcache.vehicles.pool.PoolFlushListingMessage;
+import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
 import org.dcache.vehicles.pool.PoolMoverListingMessage;
 import org.dcache.vehicles.pool.PoolP2PListingMessage;
 import org.dcache.vehicles.pool.PoolRemoveListingMessage;
@@ -151,6 +153,20 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 request.setTransferServicesData(transferServices.getDataObject());
 
                 message.setData(request);
+                reply.reply(message);
+            } catch (Exception e) {
+                reply.fail(message, e);
+            }
+        });
+        return reply;
+    }
+
+    public Reply messageArrived(PoolLiveDataForHistoriesMessage message) {
+        MessageReply<Message> reply = new MessageReply<>();
+        executor.execute(() -> {
+            try {
+                message.setPoolCostData(new PoolCostData(pool.getPoolCostInfo()));
+                message.setSweeperData(sweeper.getDataObject());
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
