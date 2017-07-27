@@ -351,7 +351,7 @@ public class CopyFilter implements Filter
 
         CredentialSource source = getCredentialSource(request, type);
         Object credential = fetchCredential(source);
-        if (credential == null) {
+        if (source != CredentialSource.NONE && credential == null) {
             if (source == CredentialSource.GRIDSITE) {
                 redirectWithDelegation(response);
             } else {
