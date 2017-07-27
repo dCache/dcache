@@ -129,7 +129,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
     public enum TransferType {
         GSIFTP("gsiftp", GRIDSITE, EnumSet.noneOf(CredentialSource.class)),
         HTTP(  "http",   NONE,     EnumSet.noneOf(CredentialSource.class)),
-        HTTPS( "https",  GRIDSITE, EnumSet.of(OIDC));
+        HTTPS( "https",  GRIDSITE, EnumSet.of(OIDC, NONE));
 
         private static final ImmutableMap<String,TransferType> BY_SCHEME =
             ImmutableMap.of("gsiftp", GSIFTP, "http", HTTP, "https", HTTPS);
