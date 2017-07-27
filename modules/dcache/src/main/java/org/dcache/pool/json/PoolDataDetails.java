@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.pool.json;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -66,6 +68,7 @@ import java.util.Map;
 
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolQueueData;
+
 import dmg.cells.nucleus.CellInfo;
 
 /**
@@ -97,12 +100,23 @@ public class PoolDataDetails implements Serializable {
     private InetAddress[] inetAddresses;
     private String      baseDir;
     private String      poolVersion;
+
+    @Deprecated // Remove reportRemovals after 4.2 is branched.
     private OnOff       reportRemovals;
+    private boolean     isRemovalReported;
+
     private String      poolMode;
     private Integer     poolStatusCode;
     private String      poolStatusMessage;
+
+    @Deprecated // Remove cleanPreciousFiles after 4.2 is branched.
     private OnOff       cleanPreciousFiles;
+    private boolean     isPreciousFileCleaned;
+
+    @Deprecated // Remove suppressHsmLoad after 4.2 is branched.
     private OnOff       suppressHsmLoad;
+    private boolean     isHsmLoadSuppressed;
+
     private Integer     pingHeartbeatInSecs;
     private Double      breakEven;
     private Lsf         largeFileStore;
@@ -123,8 +137,8 @@ public class PoolDataDetails implements Serializable {
         return breakEven;
     }
 
-    public OnOff getCleanPreciousFiles() {
-        return cleanPreciousFiles;
+    public boolean isPreciousFileCleaned() {
+        return isPreciousFileCleaned;
     }
 
     public PoolCostData getCostData() {
@@ -183,29 +197,34 @@ public class PoolDataDetails implements Serializable {
         return poolVersion;
     }
 
-    public OnOff getReportRemovals() {
-        return reportRemovals;
+    public boolean isRemovalReported() {
+        return isRemovalReported;
     }
 
-    public OnOff getSuppressHsmLoad() {
-        return suppressHsmLoad;
+    public boolean isHsmLoadSuppressed() {
+        return isHsmLoadSuppressed;
     }
 
     public Map<String, String> getTagMap() {
         return tagMap;
     }
 
+    private String asOnOff(boolean value)
+    {
+        return value ? "ON" : "OFF";
+    }
+
     public void print(PrintWriter pw) {
         pw.println("Base directory    : " + baseDir);
         pw.println("Version           : " + poolVersion);
-        pw.println("Report remove     : " + (reportRemovals));
+        pw.println("Report remove     : " + asOnOff(isRemovalReported));
         pw.println("Pool Mode         : " + poolMode);
         if (poolStatusCode != null) {
             pw.println("Detail            : [" + poolStatusCode + "] "
                                        + poolStatusMessage);
         }
-        pw.println("Clean prec. files : " + cleanPreciousFiles);
-        pw.println("Hsm Load Suppr.   : " + suppressHsmLoad);
+        pw.println("Clean prec. files : " + asOnOff(isPreciousFileCleaned));
+        pw.println("Hsm Load Suppr.   : " + asOnOff(isHsmLoadSuppressed));
         pw.println("Ping Heartbeat    : " + pingHeartbeatInSecs + " seconds");
         pw.println("Breakeven         : " + breakEven);
         pw.println("LargeFileStore    : " + largeFileStore);
@@ -237,9 +256,8 @@ public class PoolDataDetails implements Serializable {
         this.breakEven = breakEven;
     }
 
-    public void setCleanPreciousFiles(
-                    OnOff cleanPreciousFiles) {
-        this.cleanPreciousFiles = cleanPreciousFiles;
+    public void setPreciousFileCleaned(boolean isCleaned) {
+        isPreciousFileCleaned = isCleaned;
     }
 
     public void setCostData(PoolCostData costData) {
@@ -301,17 +319,29 @@ public class PoolDataDetails implements Serializable {
         this.poolVersion = poolVersion;
     }
 
-    public void setReportRemovals(
-                    OnOff reportRemovals) {
-        this.reportRemovals = reportRemovals;
+    public void setRemovalReported(boolean isReported) {
+        isRemovalReported = isReported;
     }
 
-    public void setSuppressHsmLoad(
-                    OnOff suppressHsmLoad) {
-        this.suppressHsmLoad = suppressHsmLoad;
+    public void setHsmLoadSuppressed(boolean isSuppressed) {
+        isHsmLoadSuppressed = isSuppressed;
     }
 
     public void setTagMap(Map<String, String> tagMap) {
         this.tagMap = tagMap;
+    }
+
+    private void readObject(ObjectInputStream aInputStream) throws ClassNotFoundException, IOException
+    {
+        aInputStream.defaultReadObject();
+        if (reportRemovals != null) {
+            isRemovalReported = reportRemovals == OnOff.ON;
+        }
+        if (cleanPreciousFiles != null) {
+            isPreciousFileCleaned = cleanPreciousFiles == OnOff.ON;
+        }
+        if (suppressHsmLoad != null) {
+            isHsmLoadSuppressed = suppressHsmLoad == OnOff.ON;
+        }
     }
 }

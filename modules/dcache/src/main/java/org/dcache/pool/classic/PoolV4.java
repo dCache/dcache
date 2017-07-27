@@ -105,7 +105,6 @@ import org.dcache.pool.assumption.Assumption;
 import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolDataDetails.Duplicates;
 import org.dcache.pool.json.PoolDataDetails.Lsf;
-import org.dcache.pool.json.PoolDataDetails.OnOff;
 import org.dcache.pool.json.PoolDataDetails.P2PMode;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
@@ -701,7 +700,7 @@ public class PoolV4
 
         info.setBaseDir(_baseDir);
         info.setBreakEven(getBreakEven());
-        info.setCleanPreciousFiles(_cleanPreciousFiles ? OnOff.ON : OnOff.OFF);
+        info.setPreciousFileCleaned(_cleanPreciousFiles);
 
         Duplicates duplicates;
         switch (_dupRequest) {
@@ -738,8 +737,8 @@ public class PoolV4
         }
 
         info.setPoolVersion(VERSION + " (Sub=" + _version + ")");
-        info.setReportRemovals(_reportOnRemovals ? OnOff.ON : OnOff.OFF);
-        info.setSuppressHsmLoad(_suppressHsmLoad ? OnOff.ON : OnOff.OFF);
+        info.setRemovalReported(_reportOnRemovals);
+        info.setHsmLoadSuppressed(_suppressHsmLoad);
         info.setTagMap(getTagMap());
 
         info.setErrorCode(_poolStatusCode);
