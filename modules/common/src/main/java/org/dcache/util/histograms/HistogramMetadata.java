@@ -81,15 +81,15 @@ public final class HistogramMetadata implements Serializable {
      * <p>Data statistics.</p>
      *
      * <p>These accumulate for the life of the histogram, regardless
-     * of whether values are reset or removed from the data buffer.
-     * These data are also accessible through public methods, and
-     * thus are part of the preservable state of the histogram.</p>
+     *    of whether values are reset or removed from the data buffer.
+     *    These data are also accessible through public methods, and
+     *    thus are part of the preservable state of the histogram.</p>
      */
     private long lastUpdateInMillis;
-    private long   count    = 0L;
+    private long count = 0L;
     private Double maxValue;
     private Double minValue;
-    private double sum      = 0.0D;
+    private double sum          = 0.0D;
     private double sumOfSquares = 0.0D;
 
     /**
@@ -124,7 +124,8 @@ public final class HistogramMetadata implements Serializable {
         sum = copy.sum;
         sumOfSquares = copy.sumOfSquares;
         binCounts = Arrays.copyOf(copy.binCounts, copy.binCounts.length);
-        binTimestamps = Arrays.copyOf(copy.binTimestamps, copy.binTimestamps.length);
+        binTimestamps = Arrays.copyOf(copy.binTimestamps,
+                                      copy.binTimestamps.length);
         numBins = copy.numBins;
         start = copy.start;
     }
@@ -180,10 +181,16 @@ public final class HistogramMetadata implements Serializable {
         count += metadata.count;
         sum += metadata.sum;
         sumOfSquares += metadata.sumOfSquares;
-        maxValue = maxValue == null ? metadata.maxValue :
-                        FastMath.max(maxValue, metadata.maxValue);
-        minValue = minValue == null ? metadata.minValue :
-                        FastMath.max(minValue, metadata.minValue);
+        if (metadata.maxValue != null) {
+            maxValue = maxValue == null ? metadata.maxValue :
+                            FastMath.max(maxValue, metadata.maxValue);
+        }
+
+        if (metadata.minValue != null) {
+            minValue = minValue == null ? metadata.minValue :
+                            FastMath.max(minValue, metadata.minValue);
+        }
+
         return this;
     }
 
@@ -193,8 +200,8 @@ public final class HistogramMetadata implements Serializable {
         long now = System.currentTimeMillis();
 
         for (int i = start; i < units; ++i) {
-            binCounts[i%numBins] = 0;
-            binTimestamps[i%numBins] = now;
+            binCounts[i % numBins] = 0;
+            binTimestamps[i % numBins] = now;
         }
 
         start = units == numBins ? 0 : (start + units) % numBins;
@@ -220,7 +227,7 @@ public final class HistogramMetadata implements Serializable {
         this.maxValue = maxValue.orElse(null);
     }
 
-    public void setMinValue(Optional<Double>  minValue) {
+    public void setMinValue(Optional<Double> minValue) {
         this.minValue = minValue.orElse(null);
     }
 
@@ -252,8 +259,8 @@ public final class HistogramMetadata implements Serializable {
     }
 
     /**
-     * @param index the actual index corresponding to the position in
-     *              the array of data comprising the histogram.
+     * @param index     the actual index corresponding to the position in
+     *                  the array of data comprising the histogram.
      * @param timestamp associated with the current update.
      * @return the updated count for the index
      */
@@ -273,12 +280,14 @@ public final class HistogramMetadata implements Serializable {
     }
 
     /**
-     * @param lastValue  used to increment counts and determine the new min
-     *                   and max
-     * @param now timestamp of the update
+     * @param lastValue used to increment counts and determine the new min
+     *                  and max
+     * @param now       timestamp of the update
      * @return this object updated
      */
     public HistogramMetadata updateStatistics(Double lastValue, long now) {
+        Preconditions.checkNotNull(lastValue, "Can only update "
+                        + "using nonnull value.");
         ++count;
         sum += lastValue;
         sumOfSquares += FastMath.pow(lastValue, 2L);

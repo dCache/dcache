@@ -202,6 +202,11 @@ public class TimeseriesHistogram extends HistogramModel
      * If the bin index exceeds the last bin, rotate buffer.
      * If the bin index is less than the first bin, discard the update.
      * The operation type determines how to insert the value.</p>
+     *
+     * @param value can be null; replace operations will substitute the null
+     *              for the current value.  Other operations, however, will
+     *              only rotate the buffer if necessary, but will ignore the
+     *              null value.
      */
     private void update(Double value,
                         UpdateOperation operation,
@@ -212,26 +217,41 @@ public class TimeseriesHistogram extends HistogramModel
             return;
         }
 
+        /**
+         * Update needs to rotate the buffer here regardless of
+         * what the value is.
+         *
+         * New slots have a null value.
+         */
         if (binIndex >= binCount) {
             binIndex = rotateBuffer(binIndex);
         }
 
         int count = metadata.updateCountForBin(binIndex, timestamp);
 
-        switch (operation) {
-            case REPLACE:
+        if (value == null) {
+            if (operation == UpdateOperation.REPLACE) {
                 data.set(binIndex, value);
-                break;
-            case SUM:
-                Double d = data.get(binIndex);
-                data.set(binIndex, d == null ? value : d + value);
-                break;
-            case AVERAGE:
-                d = data.get(binIndex);
-                data.set(binIndex, d == null ? value : (d + value) / count);
-                break;
-        }
+            }
+            /*
+             *  SUM and AVERAGE ignore null values
+             */
+        } else {
+            switch (operation) {
+                case REPLACE:
+                    data.set(binIndex, value);
+                    break;
+                case SUM:
+                    Double d = data.get(binIndex);
+                    data.set(binIndex, d == null ? value : d + value);
+                    break;
+                case AVERAGE:
+                    d = data.get(binIndex);
+                    data.set(binIndex, d == null ? value : (d + value) / count);
+                    break;
+            }
 
-        metadata.updateStatistics(value, System.currentTimeMillis());
+            metadata.updateStatistics(value, System.currentTimeMillis());
+        }
     }
 }
