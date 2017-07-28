@@ -49,6 +49,7 @@ import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
 import dmg.util.Releases;
+import dmg.util.Releases.BadVersionException;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -191,6 +192,8 @@ public class LocationMgrTunnel
             _allowForwardingOfRemoteMessages = (_remoteDomainInfo.getRole() != CellDomainRole.CORE);
 
             _log.info("Established connection with {}", _remoteDomainInfo);
+        } catch (BadVersionException e) {
+            throw new IOException("Invalid information presented during handshake: " + e.getMessage(), e);
         } catch (ClassNotFoundException e) {
             throw new IOException("Cannot deserialize object. This is most likely due to a version mismatch.", e);
         }
