@@ -151,13 +151,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     );
 
     /**
-     * Array if layout types supported by the door.
-     * Put 'default' one first
+     * An ordered array if layout types supported by the door.
      */
-    private final int[] SUPPORTED_LAYOUT_TYPES = new int[]{
-        layouttype4.LAYOUT4_NFSV4_1_FILES,
-        layouttype4.LAYOUT4_FLEX_FILES
-    };
+    private int[] supportedlayoutTypes ;
 
     /**
      * A mapping between pool name, nfs device id and pool's ip addresses.
@@ -313,6 +309,22 @@ public class NFSv41Door extends AbstractCellComponent implements
     @Required
     public void setVfsCacheConfig(VfsCacheConfig vfsCacheConfig) {
         _vfsCacheConfig = vfsCacheConfig;
+    }
+
+    @Required
+    public void setSupportedLayouts(String[] layouts) {
+        int[] maxPossible = new int[_supportedDrivers.size()];
+        int configured = 0;
+
+        for(String layout: layouts) {
+            int type = layoutTypeToValue(layout);
+
+            if (!_supportedDrivers.containsKey(type)) {
+                throw new IllegalArgumentException("Insupported layout type: " + layout);
+            }
+            maxPossible[configured++] = type;
+        }
+        supportedlayoutTypes = Arrays.copyOf(maxPossible, configured);
     }
 
     public void init() throws Exception {
@@ -667,7 +679,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      */
     @Override
     public int[] getLayoutTypes() {
-        return SUPPORTED_LAYOUT_TYPES;
+        return supportedlayoutTypes;
     }
 
     public void setBillingStub(CellStub stub) {
@@ -683,6 +695,9 @@ public class NFSv41Door extends AbstractCellComponent implements
         pw.println("NFS (" + _versions + ") door (MDS):");
         if (_nfs4 != null) {
             pw.printf("  IO queue                : %s\n", _ioQueue);
+            pw.printf("  Supported Layout types  : %s\n", Arrays.stream(supportedlayoutTypes)
+                .mapToObj(NFSv41Door::layoutTypeToString)
+                .collect(Collectors.joining(",", "[", "]")));
             pw.printf("  Number of NFSv4 clients : %d\n", _nfs4.getStateHandler().getClients().size());
             pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getEntries().stream().count());
             pw.printf("  Active transfers        : %d\n", _ioMessages.values().size());
@@ -1244,6 +1259,39 @@ public class NFSv41Door extends AbstractCellComponent implements
             } catch (IOException e) {
                 _log.error("Failed to send call-back to the client: {}", e.getMessage());
             }
+        }
+    }
+
+    // this must go into nfs4j code
+    private static String layoutTypeToString(int type) {
+
+        switch (type) {
+            case layouttype4.LAYOUT4_NFSV4_1_FILES:
+                return "NFSV41_FILES";
+            case layouttype4.LAYOUT4_BLOCK_VOLUME:
+                return "BLOCK_VOLUME";
+            case layouttype4.LAYOUT4_OSD2_OBJECTS:
+                return "OSD2_OBJECTS";
+            case layouttype4.LAYOUT4_FLEX_FILES:
+                return "FLEX_FILES";
+            default:
+                return "Unknown";
+        }
+    }
+
+    private static int layoutTypeToValue(String type) {
+
+        switch (type) {
+            case "NFSV41_FILES":
+                return layouttype4.LAYOUT4_NFSV4_1_FILES;
+            case "BLOCK_VOLUME":
+                return layouttype4.LAYOUT4_BLOCK_VOLUME;
+            case "OSD2_OBJECTS":
+                return layouttype4.LAYOUT4_OSD2_OBJECTS;
+            case "FLEX_FILES":
+                return layouttype4.LAYOUT4_FLEX_FILES;
+            default:
+                throw new IllegalArgumentException("Illegal layout type: " + type);
         }
     }
 }
