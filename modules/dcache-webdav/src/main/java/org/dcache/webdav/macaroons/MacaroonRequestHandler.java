@@ -78,7 +78,7 @@ import static org.dcache.macaroons.CaveatType.BEFORE;
 import static org.dcache.macaroons.InvalidCaveatException.checkCaveat;
 
 /**
- * Handle HTTP-based requests to create a macaroon.
+ * Handle basic HTTP-based requests to create a macaroon.
  */
 public class MacaroonRequestHandler extends AbstractHandler implements CellIdentityAware
 {
