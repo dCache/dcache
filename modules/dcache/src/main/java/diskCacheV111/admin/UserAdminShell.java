@@ -39,6 +39,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -327,7 +328,7 @@ public class UserAdminShell
     }
 
     private FileAttributes getFileLocations(String fileIdentifier)
-            throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException
+            throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException, AclException
     {
         Set<FileAttribute> request = EnumSet.of(FileAttribute.LOCATIONS, FileAttribute.PNFSID);
         PnfsGetFileAttributes msg;
@@ -497,7 +498,7 @@ public class UserAdminShell
         String[] command = {};
 
         @Override
-        public Serializable call() throws InterruptedException, CommandException, NoRouteToCellException
+        public Serializable call() throws InterruptedException, CommandException, NoRouteToCellException, AclException
         {
             if (_currentPosition == null) {
                 return "You are not connected to any cell. Use \\? to display shell commands.";
@@ -527,7 +528,7 @@ public class UserAdminShell
         Args args;
 
         @Override
-        public Serializable call() throws InterruptedException, CommandException, NoRouteToCellException
+        public Serializable call() throws InterruptedException, CommandException, NoRouteToCellException, AclException
         {
             return sendObject(_pnfsManager.getDestinationPath(), args.toString());
         }
@@ -545,7 +546,7 @@ public class UserAdminShell
         Args args;
 
         @Override
-        public Serializable call() throws InterruptedException, NoRouteToCellException, CommandException
+        public Serializable call() throws InterruptedException, NoRouteToCellException, CommandException, AclException
         {
             return sendObject(_poolManager.getDestinationPath(), args.toString());
         }
@@ -669,7 +670,7 @@ public class UserAdminShell
         } catch (CommandException | NoRouteToCellException e) {
             _log.info("Completion failed: {}", e.toString());
             return -1;
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | AclException e) {
             return -1;
         }
     }
@@ -887,7 +888,7 @@ public class UserAdminShell
             }
             HelpCompleter completer = new HelpCompleter(String.valueOf(help));
             return completer.complete(buffer, cursor, candidates);
-        } catch (NoRouteToCellException | CommandException e) {
+        } catch (NoRouteToCellException | CommandException | AclException e) {
             _log.info("Completion failed: {}", e.toString());
             return -1;
         } catch (InterruptedException e) {
@@ -895,7 +896,7 @@ public class UserAdminShell
         }
     }
 
-    public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
+    public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException, AclException
     {
         _log.info("String command (super) " + str);
 
@@ -933,14 +934,17 @@ public class UserAdminShell
     }
 
     private Serializable sendObject(String cellPath, Serializable object)
-            throws NoRouteToCellException, InterruptedException, CommandException
+            throws NoRouteToCellException, InterruptedException, CommandException, AclException
     {
         return sendObject(new CellPath(cellPath), object);
     }
 
     private Serializable sendObject(CellPath cellPath, Serializable object)
-            throws NoRouteToCellException, InterruptedException, CommandException
+            throws NoRouteToCellException, InterruptedException, CommandException, AclException
     {
+        CellAddressCore addr = cellPath.getCurrent();
+        checkCdPermission(addr.isLocalAddress() ? addr.getCellName() : addr.toString());
+
         try {
             return _cellStub.send(cellPath, object, Serializable.class, _timeout).get();
         } catch (ExecutionException e) {
