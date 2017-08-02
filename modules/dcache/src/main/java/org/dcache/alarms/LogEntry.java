@@ -116,11 +116,11 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
     }
 
     public Date getDateOfFirstArrival() {
-        return new Date(firstArrived);
+        return firstArrived == null ? null : new Date(firstArrived);
     }
 
     public Date getDateOfLastUpdate() {
-        return new Date(lastUpdate);
+        return lastUpdate == null ? null : new Date(lastUpdate);
     }
 
     public String getDomain() {
@@ -132,11 +132,13 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
     }
 
     public String getFormattedDateOfFirstArrival() {
-        return getFormattedDate(getDateOfFirstArrival());
+        return firstArrived == null ? "" :
+                        getFormattedDate(getDateOfFirstArrival());
     }
 
     public String getFormattedDateOfLastUpdate() {
-        return getFormattedDate(getDateOfLastUpdate());
+        return lastUpdate == null ? "" :
+                        getFormattedDate(getDateOfLastUpdate());
     }
 
     public String getHost() {
