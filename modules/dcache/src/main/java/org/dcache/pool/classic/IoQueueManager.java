@@ -162,12 +162,16 @@ public class IoQueueManager
         return getQueueByNameOrDefault(queueName).getOrCreateMover(moverSupplier, doorUniqueId, priority);
     }
 
+    @Override
     public void printSetup(PrintWriter pw)
     {
         queues().forEach(q -> pw.println("mover queue create " + q.getName() + " -order=" + q.getOrder()));
         queues().forEach(q -> pw.println("mover set max active -queue=" + q.getName() + " " + q.getMaxActiveJobs()));
-        queues().forEach(q -> pw.println("jtm set timeout -queue=" + q.getName() + " -lastAccess=" +
-                                         (q.getLastAccessed() / 1000L) + " -total=" + (q.getTotal() / 1000L)));
+        queues().stream()
+                .filter(q -> q.hasNonDefaultLastAccessed() || q.hasNonDefaultTotal())
+                .forEach(q -> pw.println("jtm set timeout -queue=" + q.getName()
+                        + " -lastAccess=" + (q.getLastAccessed() / 1000L)
+                        + " -total=" + (q.getTotal() / 1000L)));
     }
 
     public synchronized void shutdown() throws InterruptedException

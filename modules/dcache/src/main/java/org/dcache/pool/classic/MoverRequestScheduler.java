@@ -56,6 +56,9 @@ public class MoverRequestScheduler
     private static final Logger LOGGER =
             LoggerFactory.getLogger(MoverRequestScheduler.class);
 
+    private static final long DEFAULT_LAST_ACCESSED = 0;
+    private static final long DEFAULT_TOTAL = 0;
+
     /**
      * The name of IoScheduler.
      */
@@ -90,12 +93,12 @@ public class MoverRequestScheduler
     /**
      * JTM timeout since last activity.
      */
-    private long _lastAccessed;
+    private long _lastAccessed = DEFAULT_LAST_ACCESSED;
 
     /**
      * JTM timeout since transfer start.
      */
-    private long _total;
+    private long _total = DEFAULT_TOTAL;
 
     /**
      * Current queue order.
@@ -593,6 +596,11 @@ public class MoverRequestScheduler
         _lastAccessed = lastAccessed;
     }
 
+    public boolean hasNonDefaultLastAccessed()
+    {
+        return _lastAccessed != DEFAULT_LAST_ACCESSED;
+    }
+
     public synchronized long getTotal()
     {
         return _total;
@@ -602,6 +610,11 @@ public class MoverRequestScheduler
     {
         checkArgument(total >= 0L, "The total timeout must be greater than or equal to 0.");
         _total = total;
+    }
+
+    public boolean hasNonDefaultTotal()
+    {
+        return _total != DEFAULT_TOTAL;
     }
 
     static class PrioritizedRequest implements IoPrioritizable, Comparable<PrioritizedRequest>
