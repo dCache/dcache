@@ -1043,10 +1043,13 @@ public class PoolV4
 
         try {
             int id = kill.getMoverId();
-            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
+            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id)
+                    .orElseThrow(() -> new NoSuchElementException("Id doesn't belong to any known scheduler."));
             String explanation = kill.getExplanation();
             LOGGER.info("Killing mover {}: {}", id, explanation);
-            js.cancel(id, explanation);
+            if (!js.cancel(id, explanation)) {
+                throw new NoSuchElementException("Job " + id + " not found");
+            }
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
             LOGGER.info(e.toString());
