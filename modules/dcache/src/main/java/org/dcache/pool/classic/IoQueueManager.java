@@ -85,10 +85,24 @@ public class IoQueueManager
      */
     private final MoverRequestScheduler p2pQueue;
 
+    /**
+     * Queues, as supplied by the 'pool.queues' configuration property.
+     */
+    private String[] propertyQueues = new String[0];
+
+
     public IoQueueManager()
     {
         defaultQueue = createQueue(DEFAULT_QUEUE, Order.LIFO);
         p2pQueue = createQueue(P2P_QUEUE_NAME, Order.LIFO);
+    }
+
+    @Override
+    public CellSetupProvider mock()
+    {
+        IoQueueManager mock = new IoQueueManager();
+        mock.setQueues(propertyQueues);
+        return mock;
     }
 
     public void addFaultListener(FaultListener listener)
@@ -109,6 +123,7 @@ public class IoQueueManager
 
     public void setQueues(String[] queues)
     {
+        propertyQueues = queues.clone();
         for (String queue : queues) {
             queue = queue.trim();
             if (queue.startsWith("-")) {
