@@ -1,3 +1,3 @@
-Modul ftp-client
+Module: ftp-client
 
 author: Lotta Rüger
