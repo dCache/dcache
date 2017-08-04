@@ -2,9 +2,12 @@ package org.dcache.webdav;
 
 import com.google.common.collect.ImmutableList;
 import io.milton.http.Auth;
+import io.milton.http.FileItem;
 import io.milton.http.HttpManager;
+import io.milton.http.RequestParseException;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
+import org.apache.commons.fileupload.FileUploadException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -24,6 +27,7 @@ import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -166,6 +170,34 @@ public class MiltonHandler
         public DcacheServletRequest(HttpServletRequest request,
                                     ServletContext context) {
             super(request, context);
+        }
+
+        @Override
+        public void parseRequestParameters(Map<String, String> params, Map<String, FileItem> files)
+                throws RequestParseException
+        {
+            /*
+             * io.milton.http.ResourceHandlerHelper#process calls
+             * Request#parseRequestParameters and catches any
+             * RequestParseException thrown.  Unfortunately, it logs this
+             * with a stack-trace, but otherwise ignores such failures.
+             *
+             * See  https://github.com/miltonio/milton2/issues/93 for details.
+             *
+             * As a work-around, such exceptions are caught here and
+             * converted into an unchecked exception that results in
+             * the server responding with a 400 Bad Request.
+             */
+            try {
+                super.parseRequestParameters(params, files);
+            } catch (RequestParseException e) {
+                // Inexplicably, Milton wraps any FileUploadException with a
+                // RequestParseException containing a meaningless message.
+                String message = e.getCause() instanceof FileUploadException
+                    ? e.getCause().getMessage()
+                    : e.getMessage();
+                throw new UncheckedBadRequestException(message, e, null);
+            }
         }
 
         @Override
