@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package diskCacheV111.pools.json;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 import diskCacheV111.pools.PoolCostInfo.PoolSpaceInfo;
@@ -79,7 +80,7 @@ public class PoolSpaceData implements Serializable {
     public PoolSpaceData() {
     }
 
-    public PoolSpaceData(PoolSpaceInfo info) {
+    public PoolSpaceData(@Nonnull PoolSpaceInfo info) {
         total = info.getTotalSpace();
         free = info.getFreeSpace();
         precious = info.getPreciousSpace();
@@ -89,29 +90,29 @@ public class PoolSpaceData implements Serializable {
         breakEven = info.getBreakEven();
     }
 
-    public void aggregateData(PoolSpaceData using) {
+    public void aggregateData(@Nonnull PoolSpaceData using) {
         if (total == null) {
             total = using.total;
         } else {
-            total += using.total;
+            total += using.total == null ? 0L: using.total;
         }
 
         if (free == null) {
             free = using.free;
         } else {
-            free += using.free;
+            free += using.free == null ? 0L: using.free;
         }
 
         if (precious == null) {
             precious = using.precious;
         } else {
-            precious += using.precious;
+            precious += using.precious == null ? 0L: using.precious;
         }
 
         if (removable == null) {
             removable = using.removable;
         } else {
-            removable += using.removable;
+            removable += using.removable == null ? 0L: using.removable;
         }
     }
 

@@ -67,12 +67,15 @@ import java.util.function.Supplier;
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.Reply;
+
 import org.dcache.cells.MessageReply;
+import org.dcache.cells.json.CellData;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.classic.PoolV4;
 import org.dcache.pool.classic.json.ChecksumModuleData;
@@ -370,8 +373,8 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         this.transferServices = transferServices;
     }
 
-    private org.dcache.cells.json.CellData getCellInfoRequest() {
-        org.dcache.cells.json.CellData request = new org.dcache.cells.json.CellData();
+    private CellData getCellInfoRequest() {
+        CellData request = new CellData();
         CellInfo info = supplier.get();
         request.setCreationTime(info.getCreationTime());
         request.setDomainName(info.getDomainName());
