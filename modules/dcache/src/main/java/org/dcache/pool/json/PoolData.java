@@ -61,9 +61,10 @@ package org.dcache.pool.json;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
-import org.dcache.pool.PoolInfoRequestHandler;
 import org.dcache.cells.json.CellData;
+import org.dcache.pool.PoolInfoRequestHandler;
 import org.dcache.pool.classic.json.ChecksumModuleData;
 import org.dcache.pool.classic.json.FlushControllerData;
 import org.dcache.pool.classic.json.HSMFlushQManagerData;
@@ -83,7 +84,7 @@ public class PoolData implements Serializable {
     private static final long serialVersionUID = 7883809367201783768L;
 
     private List<String>          poolGroups;
-    private List<String>          links;
+    private Set<String>           links;
     private CellData              cellData;
     private ChecksumModuleData    csmData;
     private PoolDataDetails       detailsData;
@@ -121,7 +122,7 @@ public class PoolData implements Serializable {
         return jtmData;
     }
 
-    public List<String> getLinks() {
+    public Set<String> getLinks() {
         return links;
     }
 
@@ -178,7 +179,7 @@ public class PoolData implements Serializable {
         this.jtmData = jtmData;
     }
 
-    public void setLinks(List<String> links) {
+    public void setLinks(Set<String> links) {
         this.links = links;
     }
 

@@ -7,12 +7,15 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 
 import diskCacheV111.vehicles.JobInfo;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.util.command.Command;
+
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.json.JobTimeoutManagerData;
 
@@ -107,7 +110,9 @@ public class JobTimeoutManager
                         int jobId = (int) info.getJobId();
                         if (jobs.isExpired(info, now)) {
                             LOGGER.error("Trying to kill <{}> id={}", jobs.getName(), jobId);
-                            jobs.cancel(jobId, "killed by JTM");
+                            if (!jobs.cancel(jobId, "killed by JTM")) {
+                                throw new NoSuchElementException("Job " + jobId + " not found");
+                            }
                         }
                     }
                 }
