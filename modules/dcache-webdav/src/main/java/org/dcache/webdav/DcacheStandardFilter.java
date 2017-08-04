@@ -66,6 +66,9 @@ public class DcacheStandardFilter implements Filter
             }
         } catch (BadRequestException e) {
             responseHandler.respondBadRequest(e.getResource(), response, request);
+        } catch (UncheckedBadRequestException e) {
+            log.debug("Client supplied bad request parameters: {}", e.getMessage());
+            responseHandler.respondBadRequest(e.getResource(), response, request);
         } catch (ConflictException e) {
             responseHandler.respondConflict(e.getResource(), response, request, e.getMessage());
         } catch (NotAuthorizedException e) {
