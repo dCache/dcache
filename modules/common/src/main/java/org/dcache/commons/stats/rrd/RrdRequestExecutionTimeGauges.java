@@ -67,7 +67,7 @@ public class RrdRequestExecutionTimeGauges<T> {
     public RrdRequestExecutionTimeGauges(RequestExecutionTimeGauges<T> requestGauges,
             File rrdDir,long updatePeriodSecs,
             long graphPeriodSecs) throws IOException {
-        logger.debug("RrdRequestGauges("+requestGauges+", "+rrdDir);
+        logger.debug("RrdRequestGauges({}, {}", requestGauges, rrdDir);
         this.gauges = requestGauges;
         this.rrdDir = rrdDir;
         if(!rrdDir.exists()) {
@@ -108,13 +108,13 @@ public class RrdRequestExecutionTimeGauges<T> {
 
     private void updateRrds() throws IOException {
         boolean gaugesAdded = false;
-        logger.debug("updateRrds() for "+gauges);
+        logger.debug("updateRrds() for {}", gauges);
         synchronized (gauges) {
             for(T key:gauges.keySet()) {
-                logger.debug("updatePrds(): key is "+key);
+                logger.debug("updatePrds(): key is {}", key);
                 if(!rrdgauges.containsKey(key)) {
                     RequestExecutionTimeGauge requestGauges = gauges.getGauge(key);
-                    logger.debug("updatePrds(): creating RRDRequestExecutionTimeGauge for "+requestGauges);
+                    logger.debug("updatePrds(): creating RRDRequestExecutionTimeGauge for {}", requestGauges);
                     RRDRequestExecutionTimeGauge rrdRequestGauges =
                             new RRDRequestExecutionTimeGauge(rrdDir,requestGauges,updatePeriodSecs);
                     rrdgauges.put(key, rrdRequestGauges);

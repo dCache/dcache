@@ -9,7 +9,7 @@ import java.util.Objects;
 public class StaticOpenIdCredential implements OpenIdCredential, Serializable
 {
     private static final long serialVersionUID = 1L;
-    private static final Logger LOG =
+    private static final Logger logger =
             LoggerFactory.getLogger(StaticOpenIdCredential.class);
 
     private final String accessToken;

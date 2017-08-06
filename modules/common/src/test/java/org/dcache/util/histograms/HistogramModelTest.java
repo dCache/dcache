@@ -69,7 +69,7 @@ import java.util.Random;
 import static junit.framework.TestCase.assertNull;
 
 abstract class HistogramModelTest {
-    protected static final Logger LOGGER = LoggerFactory.getLogger(
+    protected static final Logger logger = LoggerFactory.getLogger(
                     HistogramModelTest.class);
     protected static final Random RANDOM = new Random(
                     System.currentTimeMillis());
@@ -82,10 +82,10 @@ abstract class HistogramModelTest {
     @After
     public void printDiagnostics() {
         if (model != null) {
-            LOGGER.info(new GsonBuilder().setPrettyPrinting()
+            logger.info(new GsonBuilder().setPrettyPrinting()
                                          .disableHtmlEscaping()
                                          .create().toJson(model));
-            LOGGER.info(new GsonBuilder().setPrettyPrinting()
+            logger.info(new GsonBuilder().setPrettyPrinting()
                                          .disableHtmlEscaping()
                                          .create().toJson(model.toHistogram()));
         }

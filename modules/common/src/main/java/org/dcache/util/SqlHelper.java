@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 public class SqlHelper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqlHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(SqlHelper.class);
 
     private SqlHelper() {
         // no instance allowed
@@ -28,7 +28,7 @@ public class SqlHelper {
                 o.close();
             }
         } catch (SQLException e) {
-            LOGGER.error("failed to close prepared statement: {}", e.getMessage());
+            logger.error("failed to close prepared statement: {}", e.getMessage());
         }
     }
 
@@ -43,7 +43,7 @@ public class SqlHelper {
                 o.close();
             }
         } catch (SQLException e) {
-            LOGGER.error("failed to close result statement: {}", e.getMessage());
+            logger.error("failed to close result statement: {}", e.getMessage());
         }
     }
 
@@ -58,7 +58,7 @@ public class SqlHelper {
                 o.close();
             }
         } catch (SQLException e) {
-            LOGGER.error("failed to close result set: {}", e.getMessage());
+            logger.error("failed to close result set: {}", e.getMessage());
         }
     }
 
@@ -73,7 +73,7 @@ public class SqlHelper {
                 o.close();
             }
         } catch (SQLException e) {
-            LOGGER.error("failed to close connection: {}", e.getMessage());
+            logger.error("failed to close connection: {}", e.getMessage());
         }
     }
 
@@ -81,7 +81,7 @@ public class SqlHelper {
         try {
             o.rollback();
         } catch (SQLException e) {
-            LOGGER.error("failed to rollback transaction: {}", e.getMessage());
+            logger.error("failed to rollback transaction: {}", e.getMessage());
         }
     }
 }
