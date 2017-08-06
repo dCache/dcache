@@ -9,16 +9,16 @@ import org.slf4j.Logger;
 public class Slf4jInfoWriter
     implements LineWriter
 {
-    private final Logger _logger;
+    private final Logger logger;
 
     public Slf4jInfoWriter(Logger logger)
     {
-        _logger = logger;
+        this.logger = logger;
     }
 
     @Override
     public void writeLine(String line)
     {
-        _logger.info(line);
+        this.logger.info(line);
     }
 }

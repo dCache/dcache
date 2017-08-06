@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class PathChildrenCache implements Closeable
 {
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final CuratorFramework client;
     private final String path;
@@ -91,7 +91,7 @@ public class PathChildrenCache implements Closeable
             } else if (event.getType() == Watcher.Event.EventType.NodeDataChanged) {
                 getDataAndStat(event.getPath());
             } else {
-                log.debug("Data watcher ignored {}", event);
+                logger.debug("Data watcher ignored {}", event);
             }
         } catch (Exception e) {
             handleException(e);
@@ -212,7 +212,7 @@ public class PathChildrenCache implements Closeable
                     ensurePathAndThenRefresh(mode);
                 } else if (event.getResultCode() == KeeperException.Code.CONNECTIONLOSS.intValue() ||
                         event.getResultCode() == KeeperException.Code.SESSIONEXPIRED.intValue()) {
-                    log.debug("Refresh callback ignored {}", event);
+                    logger.debug("Refresh callback ignored {}", event);
                 } else {
                     handleException(KeeperException.create(event.getResultCode()));
                 }
@@ -262,16 +262,16 @@ public class PathChildrenCache implements Closeable
     }
 
     /**
-     * Default behavior is just to log the exception
+     * Default behavior is just to logger the exception
      *
      * @param e the exception
      */
     protected void handleException(Throwable e)
     {
         if (e instanceof RuntimeException) {
-            log.error("", e);
+            logger.error("", e);
         } else {
-            log.error(e.getMessage());
+            logger.error(e.getMessage());
         }
         ThreadUtils.checkInterrupted(e);
     }
