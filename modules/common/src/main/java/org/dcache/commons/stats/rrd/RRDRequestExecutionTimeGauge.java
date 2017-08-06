@@ -96,7 +96,7 @@ public class RRDRequestExecutionTimeGauge {
             throw new IllegalArgumentException("updatePeriodSecs="+updatePeriodSecs+
                     ", should be greater than 0 and less than "+FIVEMIN+" secs");
         }
-        logger.debug("RRDRequestExecutionTimeGauge(" + rrdDirectory + ", " + gauge + ',' + updatePeriodSecs + ')');
+        logger.debug("RRDRequestExecutionTimeGauge({}, {}, {})", rrdDirectory, gauge, updatePeriodSecs);
         if(!rrdDirectory.exists() || !rrdDirectory.isDirectory() || !rrdDirectory.canWrite() ) {
             throw new AccessControlException("directory "+
                     rrdDirectory + " does not exists or is not accessable");
@@ -181,7 +181,7 @@ public class RRDRequestExecutionTimeGauge {
      */
     public void update() throws IOException {
 
-        logger.debug("RRDRequestExecutionTimeGauge.update() rrdFileName is "+rrdFileName);
+        logger.debug("RRDRequestExecutionTimeGauge.update() rrdFileName is {}", rrdFileName);
         RrdDb rrdDb = new RrdDb(rrdFileName);
         try {
             Sample sample = rrdDb.createSample();
@@ -189,7 +189,7 @@ public class RRDRequestExecutionTimeGauge {
             String update = Long.toString(currentTimeSecs) +':'+
                             (long) gauge.resetAndGetAverageExecutionTime()+':';
             sample.setAndUpdate(update);
-            logger.debug("RRDRequestExecutionTimeGauge.update() updated with : "+update);
+            logger.debug("RRDRequestExecutionTimeGauge.update() updated with : {}", update);
 
         } finally {
             rrdDb.close();
@@ -206,7 +206,7 @@ public class RRDRequestExecutionTimeGauge {
         RrdGraph graph = new RrdGraph(graphDef);
         BufferedImage bi = new BufferedImage(imageWidth,imageHeight,BufferedImage.TYPE_INT_RGB);
         graph.render(bi.getGraphics());
-        logger.debug("RRDRequestExecutionTimeGauge.graph() wrote "+filename);
+        logger.debug("RRDRequestExecutionTimeGauge.graph() wrote {}", filename);
     }
 
     /**
