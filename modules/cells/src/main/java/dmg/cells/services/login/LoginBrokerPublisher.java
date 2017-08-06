@@ -64,7 +64,7 @@ public class LoginBrokerPublisher
     extends AbstractCellComponent
     implements CellCommandListener, CellMessageReceiver, CellEventListener, CellLifeCycleAware, CellInfoProvider
 {
-    private static final Logger _log =
+    private static final Logger logger =
             LoggerFactory.getLogger(LoginBrokerPublisher.class);
 
     private enum LastEvent
@@ -586,14 +586,14 @@ public class LoginBrokerPublisher
                                 }
                             }
                         } catch (SocketException e) {
-                            _log.warn("Not publishing NIC {}: {}", i.getName(), e.getMessage());
+                            logger.warn("Not publishing NIC {}: {}", i.getName(), e.getMessage());
                         }
                     }
                 } catch (SocketException e) {
-                    _log.warn("Not publishing NICs: {}", e.getMessage());
+                    logger.warn("Not publishing NICs: {}", e.getMessage());
                 }
 
-                _log.debug("Scan took {}", stopwatch);
+                logger.debug("Scan took {}", stopwatch);
                 logChanges(addresses);
                 return addresses;
             } finally {
@@ -624,7 +624,7 @@ public class LoginBrokerPublisher
                         }
                         sb.append(describeList(added));
                     }
-                    _log.warn(sb.toString());
+                    logger.warn(sb.toString());
                 }
 
                 _previous = new ArrayList<>(addresses);

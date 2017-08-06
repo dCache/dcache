@@ -31,7 +31,7 @@ import static java.util.Arrays.asList;
 public class       AclCell
        extends     CellAdapter            {
 
-  private static final Logger _log =
+  private static final Logger logger =
       LoggerFactory.getLogger(AclCell.class);
 
   private AclDb            _aclDb;
@@ -67,11 +67,11 @@ public class       AclCell
         String tmp;
         if ((tmp = args.getOpt("syspassword")) != null) {
             _sysPassword = new UserPasswords(new File(tmp));
-            _log.info("using as SystemPasswordfile : " + tmp);
+            logger.info("using as SystemPasswordfile : {}", tmp);
         }
         if ((tmp = args.getOpt("egpassword")) != null) {
             _egPassword = new UserPasswords(new File(tmp));
-            _log.info("using as EgPasswordfile : " + tmp);
+            logger.info("using as EgPasswordfile : {}", tmp);
         }
     }
 
@@ -84,7 +84,7 @@ public class       AclCell
       Serializable answer;
 
       try{
-         _log.info( "Message type : "+obj.getClass() ) ;
+         logger.info( "Message type : {}", obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -94,7 +94,7 @@ public class       AclCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.info('>' + command + "< request from " + user ) ;
+            logger.info(">{}< request from {}",  command, user ) ;
             try{
                 switch (command) {
                 case "check-password":
@@ -115,7 +115,7 @@ public class       AclCell
          }else{
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             _log.warn( r ) ;
+             logger.warn( r ) ;
              throw new Exception( r ) ;
          }
       }catch(Exception iex ){
@@ -324,7 +324,7 @@ public class       AclCell
 
          }
       }catch( Throwable t ){
-         _log.warn( "Found : "+t ) ;
+         logger.warn( "Found : {}", t ) ;
       }
       return false ;
   }
@@ -334,14 +334,14 @@ public class       AclCell
             _sysPassword.update();
         }
      }catch(Exception ee ){
-        _log.warn( "Updating failed : "+_sysPassword ) ;
+        logger.warn( "Updating failed : {}", _sysPassword ) ;
      }
      try{
         if( _egPassword != null ) {
             _egPassword.update();
         }
      }catch(Exception ee ){
-        _log.warn( "Updating failed : "+_egPassword ) ;
+        logger.warn( "Updating failed : {}", _egPassword ) ;
      }
    }
 

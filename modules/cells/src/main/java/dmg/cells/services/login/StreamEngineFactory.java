@@ -20,7 +20,7 @@ import org.dcache.util.Args;
  */
 public abstract class StreamEngineFactory {
 
-    private static Logger _log = LoggerFactory.getLogger(StreamEngineFactory.class);
+    private static Logger logger = LoggerFactory.getLogger(StreamEngineFactory.class);
 
     public static StreamEngine newStreamEngine(Socket socket, String protocol,
                                                CellEndpoint endpoint, Args argsForAuth) throws Exception {
@@ -29,17 +29,17 @@ public abstract class StreamEngineFactory {
 
         switch (protocol) {
         case "raw":
-            _log.info("No authentication used");
+            logger.info("No authentication used");
             engine = new DummyStreamEngine(socket);
             break;
         case "telnet": {
             TelnetServerAuthentication auth = new TelnetSAuth_A(endpoint, argsForAuth);
-            _log.info("Using authentication Module : " + TelnetSAuth_A.class);
+            logger.info("Using authentication Module : {}", TelnetSAuth_A.class);
             engine = new TelnetStreamEngine(socket, auth);
             break;
         }
         default:
-            _log.error("can't instantiate corresponding streamengine {}", protocol);
+            logger.error("can't instantiate corresponding streamengine {}", protocol);
             break;
         }
 
@@ -53,17 +53,17 @@ public abstract class StreamEngineFactory {
 
         switch (protocol) {
         case "raw":
-            _log.info("No authentication used");
+            logger.info("No authentication used");
             engine = new DummyStreamEngine(socket);
             break;
         case "telnet": {
             TelnetServerAuthentication auth = null;
-            _log.info("No authentication used");
+            logger.info("No authentication used");
             engine = new TelnetStreamEngine(socket, auth);
             break;
         }
         default:
-            _log.error("can't instantiate corresponding streamengine {}", protocol);
+            logger.error("can't instantiate corresponding streamengine {}", protocol);
             break;
         }
 

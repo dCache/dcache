@@ -89,7 +89,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class LocationManager extends CellAdapter
 {
-    private static final Logger LOGGER =
+    private static final Logger logger =
             LoggerFactory.getLogger(LocationManager.class);
 
     private static final String ZK_CORES_PLAIN = "/dcache/lm/cores";
@@ -223,7 +223,7 @@ public class LocationManager extends CellAdapter
                 tcp = URI.create(String.format("%s://%s:%s", scheme, host, port));
                 break;
             default:
-                LOGGER.warn("Unknown Scheme {} for LocationManager Cores", scheme);
+                logger.warn("Unknown Scheme {} for LocationManager Cores", scheme);
             }
         }
 
@@ -247,7 +247,7 @@ public class LocationManager extends CellAdapter
                 }
                 return baos.toByteArray();
             } catch (IOException ie) {
-                LOGGER.warn("Failed to serialize CoreDomain Info {}", this);
+                logger.warn("Failed to serialize CoreDomain Info {}", this);
             }
             return new byte[0];
         }
@@ -325,7 +325,7 @@ public class LocationManager extends CellAdapter
                             tcp = entry;
                             break;
                         default:
-                            LOGGER.warn("Unknown Scheme for LocationManager Cores: {}; tried URI and HostAndPort", entry);
+                            logger.warn("Unknown Scheme for LocationManager Cores: {}; tried URI and HostAndPort", entry);
                             break;
                     }
                 }
@@ -381,7 +381,7 @@ public class LocationManager extends CellAdapter
         public static CoreDomains createWithMode(String domainName, CuratorFramework client, String mode)
                 throws BadConfigException
         {
-            LOGGER.error("Creating CoreDomains: {}, {}", domainName, mode);
+            logger.error("Creating CoreDomains: {}, {}", domainName, mode);
             ConnectionType type = ConnectionType.fromConfig(mode).orElseThrow(() -> new BadConfigException("Bad mode " + mode));
 
             switch (type) {
@@ -537,7 +537,7 @@ public class LocationManager extends CellAdapter
                 _cache.start(true);
                 apply(_cache.getCurrentData());
             } catch (ConnectionLossException e) {
-                LOGGER.warn("Failed to connect to zookeeper, using mode {} until connection reestablished", _mode);
+                logger.warn("Failed to connect to zookeeper, using mode {} until connection reestablished", _mode);
             }
         }
 
@@ -545,13 +545,13 @@ public class LocationManager extends CellAdapter
             if (currentData == null) {
                 _current = null;
                 _mode = Mode.PLAIN;
-                LOGGER.info("CoreDomain config node " + ZK_CORE_CONFIG + " not present; assuming mode {}", _mode);
+                logger.info("CoreDomain config node {} not present; assuming mode {}", ZK_CORE_CONFIG, _mode);
             } else if (_current == null || currentData.getStat().getVersion() > _current.getVersion()) {
                 _mode = Mode.fromString(new String(currentData.getData(), UTF_8));
-                LOGGER.info("CoreDomain config node " + ZK_CORE_CONFIG + " switching to mode {}", _mode);
+                logger.info("CoreDomain config node {} switching to mode {}", ZK_CORE_CONFIG, _mode);
                 _current = currentData.getStat();
             } else {
-                LOGGER.info("Ignoring spurious CoreDomain config node " + ZK_CORE_CONFIG + " updated");
+                logger.info("Ignoring spurious CoreDomain config node {} updated", ZK_CORE_CONFIG);
             }
         }
 
@@ -571,12 +571,12 @@ public class LocationManager extends CellAdapter
             // tls   -  none,tls    =            none
 
             Set<Mode> up = Sets.difference(curModes, oldModes).copyInto(new HashSet<>());
-            LOGGER.info("Following modes from CoreDomain are being brought up: [{}]",
+            logger.info("Following modes from CoreDomain are being brought up: [{}]",
                     Joiner.on(',').join(up));
             up.stream().forEach(u -> _reset.accept(u, State.BRING_UP));
 
             Set<Mode> down = Sets.difference(oldModes, curModes).copyInto(new HashSet<>());
-            LOGGER.info("Following modes from CoreDomain are being taken down: [{}]",
+            logger.info("Following modes from CoreDomain are being taken down: [{}]",
                             Joiner.on(',').join(down));
             down.stream().forEach(d -> _reset.accept(d, State.TEAR_DOWN));
         }
@@ -619,7 +619,7 @@ public class LocationManager extends CellAdapter
 
         public void update(PathChildrenCacheEvent event)
         {
-            LOGGER.info("{}", event);
+            logger.info("{}", event);
             String cell;
 
             switch (event.getType()) {
@@ -644,24 +644,24 @@ public class LocationManager extends CellAdapter
                     if (shouldConnectTo(domain)) {
                         cell = connectors.remove(domain);
                         if (cell != null) {
-                            LOGGER.error("About to create tunnel to core domain {}, but to my surprise " +
+                            logger.error("About to create tunnel to core domain {}, but to my surprise " +
                                          "a tunnel called {} already exists. Will kill it. Please contact " +
                                          "support@dcache.org.", domain, cell);
                             killConnector(cell);
                         }
                         cell = connectors.put(domain, startConnector(domain, info));
                         if (cell != null) {
-                            LOGGER.error("Created a tunnel to core domain {}, but to my surprise " +
+                            logger.error("Created a tunnel to core domain {}, but to my surprise " +
                                          "a tunnel called {} already exists. Will kill it. Please contact " +
                                          "support@dcache.org.", domain, cell);
                             killConnector(cell);
                         }
                     }
                 } catch (ExecutionException e) {
-                    LOGGER.error("Failed to start tunnel connector to {}: {}", domain, e.getCause());
+                    logger.error("Failed to start tunnel connector to {}: {}", domain, e.getCause());
                 } catch (InterruptedException ignored) {
                 } catch (BadConfigException be) {
-                    LOGGER.error("Invalid ports provided for starting connector in mode {}", args.getOpt("mode"));
+                    logger.error("Invalid ports provided for starting connector in mode {}", args.getOpt("mode"));
                 }
                 break;
             }
@@ -689,7 +689,7 @@ public class LocationManager extends CellAdapter
                 logCompatibilityCheck(event, info, plain);
                 break;
             default:
-                LOGGER.error("CoreDomainInfo can't be extracted from ZK Event");
+                logger.error("CoreDomainInfo can't be extracted from ZK Event");
                 info = new CoreDomainInfo();
             }
             return info;
@@ -700,7 +700,7 @@ public class LocationManager extends CellAdapter
                                            CoreDomainInfo existing)
         {
             if (existing != null && !received.isCompatible(existing)) {
-                LOGGER.warn("CoreDomainInfo received from ZK Node {} which is different from the previously " +
+                logger.warn("CoreDomainInfo received from ZK Node {} which is different from the previously " +
                             "received values, check core domain configuration", event.getData().getPath());
             }
         }
@@ -790,17 +790,17 @@ public class LocationManager extends CellAdapter
                 }
                 coreDomains.setCoreDomainInfo(info);
             } catch (PersistentNodeException e) {
-                LOGGER.error("Failed to reset location manager on CoreConfig update: {}", e.getMessage());
+                logger.error("Failed to reset location manager on CoreConfig update: {}", e.getMessage());
             }  catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (ExecutionException e) {
-                LOGGER.error("Failed to reset location manager on CoreConfig update: {}", e.getCause().toString());
+                logger.error("Failed to reset location manager on CoreConfig update: {}", e.getCause().toString());
                 kill();
             } catch (RuntimeException e) {
-                LOGGER.error("Failed to reset location manager on CoreConfig update", e);
+                logger.error("Failed to reset location manager on CoreConfig update", e);
                 kill();
             } catch (Exception e) {
-                LOGGER.error("Failed to reset location manager on CoreConfig update: {}", e.toString());
+                logger.error("Failed to reset location manager on CoreConfig update: {}", e.toString());
                 kill();
             }
         }
@@ -810,7 +810,7 @@ public class LocationManager extends CellAdapter
         {
             String cellArgs = args.argv(0);
             lmPlain = startListener(cellArgs);
-            LOGGER.info("lmPlain: {}; port; {} ", lmPlain, lmPlain.getListenPort());
+            logger.info("lmPlain: {}; port; {} ", lmPlain, lmPlain.getListenPort());
             info.addCore("tcp", InetAddress.getLocalHost().getCanonicalHostName(), lmPlain.getListenPort());
         }
 
@@ -824,7 +824,7 @@ public class LocationManager extends CellAdapter
                     Integer.parseInt((args.argc() == 1) ? args.argv(0) : args.argv(1)),
                     args.getOpt("socketfactory"));
             lmTls = startListener(cellArgs);
-            LOGGER.info("lmTls: {}; port; {} ", lmTls, lmTls.getListenPort());
+            logger.info("lmTls: {}; port; {} ", lmTls, lmTls.getListenPort());
             info.addCore("tls", InetAddress.getLocalHost().getCanonicalHostName(), lmTls.getListenPort());
         }
 
@@ -891,10 +891,10 @@ public class LocationManager extends CellAdapter
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (RuntimeException e) {
-            LOGGER.error("Failed to start location manager", e);
+            logger.error("Failed to start location manager", e);
             kill();
         } catch (Exception e) {
-            LOGGER.error("Failed to start location manager: {}", e.toString());
+            logger.error("Failed to start location manager: {}", e.toString());
             kill();
         }
     }
@@ -913,10 +913,10 @@ public class LocationManager extends CellAdapter
         String cellName = "l*";
         String cellClass = "dmg.cells.network.LocationMgrTunnel";
         String cellArgs = args + ' ' + cellClass + ' ' + "-prot=raw" + " -role=" + role;
-        LOGGER.info("Starting acceptor with arguments: {}", cellArgs);
+        logger.info("Starting acceptor with arguments: {}", cellArgs);
         LoginManager c = new LoginManager(cellName, "System", cellArgs);
         c.start().get();
-        LOGGER.info("Created : {}", c);
+        logger.info("Created : {}", c);
         return c;
     }
 
@@ -937,12 +937,12 @@ public class LocationManager extends CellAdapter
 
         switch(mode) {
         case PLAIN:
-            LOGGER.info("Starting Connection in mode: PLAIN with {}", args.getArguments());
+            logger.info("Starting Connection in mode: PLAIN with {}", args.getArguments());
             where = domainInfo.tcpPort().orElseThrow(BadConfigException::new);
             socketFactory = SocketFactory.getDefault();
             break;
         case TLS:
-            LOGGER.info("Starting Connection in mode: TLS with {}", args.getArguments());
+            logger.info("Starting Connection in mode: TLS with {}", args.getArguments());
             where = domainInfo.tlsPort().orElseThrow(BadConfigException::new);
             try {
                 switch (role) {
@@ -969,7 +969,7 @@ public class LocationManager extends CellAdapter
                 + clientKey + ' '
                 + clientName;
 
-        LOGGER.info("Starting connector with {}", cellArgs);
+        logger.info("Starting connector with {}", cellArgs);
         LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs, socketFactory);
         c.start().get();
         return c.getCellName();
@@ -977,13 +977,13 @@ public class LocationManager extends CellAdapter
 
     private void killConnector(String cell)
     {
-        LOGGER.info("Killing connector {}", cell);
+        logger.info("Killing connector {}", cell);
         getNucleus().kill(cell);
     }
 
     private void killListener(String cell)
     {
-        LOGGER.info("Killing listener {}", cell);
+        logger.info("Killing listener {}", cell);
         getNucleus().kill(cell);
     }
 

@@ -63,7 +63,7 @@ public class LoginManager
 {
     private static final Object DEAD_CELL = new Object();
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoginManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(LoginManager.class);
 
     private final CellNucleus _nucleus;
     private final Args _args;
@@ -150,16 +150,16 @@ public class LoginManager
         }
 
         if (_maxLogin < 0) {
-            LOGGER.info("Maximum login feature disabled");
+            logger.info("Maximum login feature disabled");
         } else {
-            LOGGER.info("Maximum logins set to: {}", _maxLogin);
+            logger.info("Maximum logins set to: {}", _maxLogin);
         }
 
         _scheduledExecutor = Executors.newSingleThreadScheduledExecutor(_nucleus);
 
         // keep alive
         long keepAlive = TimeUnit.SECONDS.toMillis(_args.getLongOption("keepAlive", 0L));
-        LOGGER.info("Keep alive set to {} ms", keepAlive);
+        logger.info("Keep alive set to {} ms", keepAlive);
         _keepAlive = new KeepAliveTask();
         _keepAlive.schedule(keepAlive);
 
@@ -289,7 +289,7 @@ public class LoginManager
             if (cell != null) {
                 _children.remove(removedCell, cell);
             }
-            LOGGER.info("LoginEventListener : removing : {}", removedCell);
+            logger.info("LoginEventListener : removing : {}", removedCell);
             loadChanged();
         }
     }
@@ -308,12 +308,12 @@ public class LoginManager
                         try {
                             ((KeepAliveListener) o).keepAlive();
                         } catch (Throwable t) {
-                            LOGGER.warn("Problem reported by : {} : {}", o, t);
+                            logger.warn("Problem reported by : {} : {}", o, t);
                         }
                     }
                 }
             } catch (Throwable t) {
-                LOGGER.warn("runKeepAlive reported : {}", t.toString());
+                logger.warn("runKeepAlive reported : {}", t.toString());
             }
         }
 
@@ -329,7 +329,7 @@ public class LoginManager
             } else {
                 _future = null;
             }
-            LOGGER.info("Keep Alive value changed to {}", _keepAlive);
+            logger.info("Keep Alive value changed to {}", _keepAlive);
         }
 
         public synchronized long getKeepAlive()
@@ -398,7 +398,7 @@ public class LoginManager
     @Override
     protected void stopping()
     {
-        LOGGER.info("cleanUp requested by nucleus, closing listen socket");
+        logger.info("cleanUp requested by nucleus, closing listen socket");
         if (_loginBrokerPublisher != null) {
             _loginBrokerPublisher.beforeStop();
         }
@@ -418,7 +418,7 @@ public class LoginManager
         if (_scheduledExecutor != null) {
             _scheduledExecutor.shutdown();
         }
-        LOGGER.info("Bye Bye");
+        logger.info("Bye Bye");
     }
 
     private class ListenThread implements Runnable
@@ -502,11 +502,11 @@ public class LoginManager
                     Method meth = obj.getClass().getMethod("createServerSocket");
                     _serverSocket = (ServerSocket) meth.invoke(obj);
                 } catch (NoSuchMethodException | SecurityException e) {
-                    LOGGER.info("Method createServerSocket not found {}", e.getCause());
+                    logger.info("Method createServerSocket not found {}", e.getCause());
                     Throwables.propagateIfPossible(e.getCause(), Exception.class);
                     throw new RuntimeException(e);
                 }
-                LOGGER.info("ListenThread : got serverSocket class : {}", _serverSocket.getClass().getName());
+                logger.info("ListenThread : got serverSocket class : {}", _serverSocket.getClass().getName());
             }
             _serverSocket.bind(_socketAddress);
 
@@ -525,8 +525,8 @@ public class LoginManager
                 }
             }
 
-            LOGGER.info("Listening on {}", _serverSocket.getLocalSocketAddress());
-            LOGGER.trace("Nio Socket Channel : {}", (_serverSocket.getChannel() != null));
+            logger.info("Listening on {}", _serverSocket.getLocalSocketAddress());
+            logger.trace("Nio Socket Channel : {}", (_serverSocket.getChannel() != null));
         }
 
         public int getListenPort()
@@ -545,29 +545,29 @@ public class LoginManager
                         Socket socket = _serverSocket.accept();
                         socket.setKeepAlive(true);
                         socket.setTcpNoDelay(true);
-                        LOGGER.debug("Socket OPEN (ACCEPT) remote = {} local = {}",
+                        logger.debug("Socket OPEN (ACCEPT) remote = {} local = {}",
                                 socket.getRemoteSocketAddress(), socket.getLocalSocketAddress());
-                        LOGGER.info("Nio Channel (accept) : {}", (socket.getChannel() != null));
+                        logger.info("Nio Channel (accept) : {}", (socket.getChannel() != null));
 
                         int currentChildCount = _children.size();
-                        LOGGER.info("New connection : {}", currentChildCount);
+                        logger.info("New connection : {}", currentChildCount);
                         if ((_maxLogin > -1) && (currentChildCount >= _maxLogin)) {
                             _connectionDeniedCounter.incrementAndGet();
-                            LOGGER.warn("Connection denied: Number of allowed logins exceeded ({} > {}).", currentChildCount, _maxLogin);
+                            logger.warn("Connection denied: Number of allowed logins exceeded ({} > {}).", currentChildCount, _maxLogin);
                             executor.execute(new ShutdownEngine(socket));
                         } else {
-                            LOGGER.info("Connection request from {}", socket.getInetAddress());
+                            logger.info("Connection request from {}", socket.getInetAddress());
                             executor.execute(new RunEngineThread(socket));
                         }
                     } catch (InterruptedIOException ioe) {
-                        LOGGER.debug("Listen thread interrupted");
+                        logger.debug("Listen thread interrupted");
                         try {
                             _serverSocket.close();
                         } catch (IOException ignored) {
                         }
                     } catch (IOException ioe) {
                         if (!_serverSocket.isClosed()) {
-                            LOGGER.error("I/O error: {}", ioe.toString());
+                            logger.error("I/O error: {}", ioe.toString());
                             try {
                                 _serverSocket.close();
                             } catch (IOException ignored) {
@@ -575,14 +575,14 @@ public class LoginManager
                             if (_acceptErrorTimeout > 0L) {
                                 synchronized (this) {
                                     while (!_shutdown && _serverSocket.isClosed()) {
-                                        LOGGER.warn("Sleeping {} ms before reopening server socket", _acceptErrorTimeout);
+                                        logger.warn("Sleeping {} ms before reopening server socket", _acceptErrorTimeout);
                                         wait(_acceptErrorTimeout);
                                         if (!_shutdown) {
                                             try {
                                                 openPort();
-                                                LOGGER.warn("Resuming operation");
+                                                logger.warn("Resuming operation");
                                             } catch (Exception ee) {
-                                                LOGGER.warn("Failed to open socket: {}", ee.toString());
+                                                logger.warn("Failed to open socket: {}", ee.toString());
                                             }
                                         }
                                     }
@@ -602,7 +602,7 @@ public class LoginManager
                 // Now that children should be terminated, we release any shared
                 // resources managed by the factory.
                 _loginCellFactory.stopAsync();
-                LOGGER.trace("Listen thread finished");
+                logger.trace("Listen thread finished");
             }
         }
 
@@ -640,7 +640,7 @@ public class LoginManager
 
         public void shutdown()
         {
-            LOGGER.info("Listen thread shutdown requested");
+            logger.info("Listen thread shutdown requested");
 
             synchronized (this) {
                 //
@@ -652,10 +652,10 @@ public class LoginManager
                 _shutdown = true;
 
                 try {
-                    LOGGER.debug("Socket SHUTDOWN local = {}", _serverSocket.getLocalSocketAddress());
+                    logger.debug("Socket SHUTDOWN local = {}", _serverSocket.getLocalSocketAddress());
                     _serverSocket.close();
                 } catch (IOException ee) {
-                    LOGGER.warn("ServerSocket close: {}", ee.toString());
+                    logger.warn("ServerSocket close: {}", ee.toString());
                 }
 
                 notifyAll();
@@ -663,7 +663,7 @@ public class LoginManager
 
             _loginCellFactory.awaitTerminated();
 
-            LOGGER.info("Shutdown sequence done");
+            logger.info("Shutdown sequence done");
         }
     }
 
@@ -698,10 +698,10 @@ public class LoginManager
                 }
                 inputStream.close();
             } catch (IOException ee) {
-                LOGGER.warn("Shutdown : {}", ee.getMessage());
+                logger.warn("Shutdown : {}", ee.getMessage());
             } finally {
                 try {
-                    LOGGER.debug("Socket CLOSE (ACCEPT) remote = {} local = {}",
+                    logger.debug("Socket CLOSE (ACCEPT) remote = {} local = {}",
                             _socket.getRemoteSocketAddress(), _socket.getLocalSocketAddress());
                     _socket.close();
                 } catch (IOException e) {
@@ -709,7 +709,7 @@ public class LoginManager
                 }
             }
 
-            LOGGER.info("Shutdown : done");
+            logger.info("Shutdown : done");
         }
     }
 
@@ -729,13 +729,13 @@ public class LoginManager
             InetSocketAddress remoteSocketAddress = (InetSocketAddress) _socket.getRemoteSocketAddress();
             NDC.push(toUriString(remoteSocketAddress.getAddress()) + ':' + remoteSocketAddress.getPort());
             try {
-                LOGGER.info("acceptThread ({}): creating protocol engine", t);
+                logger.info("acceptThread ({}): creating protocol engine", t);
 
                 Object cell = _loginCellFactory.newCell(_socket);
                 try {
                     Method m = cell.getClass().getMethod("getCellName");
                     String cellName = (String) m.invoke(cell);
-                    LOGGER.info("Invoked cell name : {}", cellName);
+                    logger.info("Invoked cell name : {}", cellName);
                     if (_children.putIfAbsent(cellName, cell) == DEAD_CELL) {
                         /*  while cell may be already gone do following trick:
                          *  if put return an old cell, then it's a dead cell and we
@@ -747,7 +747,7 @@ public class LoginManager
                     }
                     loadChanged();
                 } catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException | InvocationTargetException ee) {
-                    LOGGER.warn("Can't determine child name", ee);
+                    logger.warn("Can't determine child name", ee);
                 }
                 _loginCounter.incrementAndGet();
 
@@ -757,16 +757,16 @@ public class LoginManager
                     throw (Error) cause;
                 }
                 if (cause instanceof RuntimeException) {
-                    LOGGER.warn("Bug detected in dCache; please report this to <support@dcache.org>", cause);
+                    logger.warn("Bug detected in dCache; please report this to <support@dcache.org>", cause);
                 } else {
-                    LOGGER.warn("Exception (ITE) in secure protocol: {}", cause.getMessage());
+                    logger.warn("Exception (ITE) in secure protocol: {}", cause.getMessage());
                 }
                 try {
                     _socket.close();
                 } catch (IOException ee) {/* dead any way....*/}
                 _loginFailures.incrementAndGet();
             } catch (Exception e) {
-                LOGGER.warn("Exception in secure protocol : {}", e.toString());
+                logger.warn("Exception in secure protocol : {}", e.toString());
                 try {
                     _socket.close();
                 } catch (IOException ee) {/* dead any way....*/}
@@ -780,7 +780,7 @@ public class LoginManager
     private void loadChanged()
     {
         int children = _children.size();
-        LOGGER.info("New child count : {}", children);
+        logger.info("New child count : {}", children);
         if (_loginBrokerPublisher != null) {
             _loginBrokerPublisher.setLoad(children, _maxLogin);
         }
@@ -795,7 +795,7 @@ public class LoginManager
             CellMessage msg = new CellMessage(_authenticator, request);
             msg = getNucleus().sendAndWait(msg, (long) 10000);
             if (msg == null) {
-                LOGGER.warn("Pam request timed out {}", Thread.currentThread().getStackTrace());
+                logger.warn("Pam request timed out {}", Thread.currentThread().getStackTrace());
                 return false;
             }
 
@@ -804,13 +804,13 @@ public class LoginManager
             return (Boolean) r[5];
 
         } catch (NoRouteToCellException e) {
-            LOGGER.warn(e.getMessage());
+            logger.warn(e.getMessage());
             return false;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return false;
         } catch (ExecutionException e) {
-            LOGGER.warn(e.getCause().getMessage());
+            logger.warn(e.getCause().getMessage());
             return false;
         }
     }
