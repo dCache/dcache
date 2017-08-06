@@ -30,7 +30,7 @@ import static com.google.common.collect.Iterables.toArray;
 import static java.util.Arrays.asList;
 
 public class CanlSslSocketCreator extends SocketFactory {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CanlSslSocketCreator.class);
+    private static final Logger logger = LoggerFactory.getLogger(CanlSslSocketCreator.class);
 
     private static final String SERVICE_KEY = "service_key";
     private static final String SERVICE_CERT = "service_cert";
@@ -66,9 +66,9 @@ public class CanlSslSocketCreator extends SocketFactory {
                                 OCSPCheckingMode ocspMode) throws IOException
     {
         try {
-            LOGGER.info("service_key {}", keyPath);
-            LOGGER.info("service_certs {}", certPath);
-            LOGGER.info("service_trusted_certs {}", caPath);
+            logger.info("service_key {}", keyPath);
+            logger.info("service_certs {}", certPath);
+            logger.info("service_trusted_certs {}", caPath);
 
             this.bannedCiphers = ImmutableSet.copyOf(bannedCiphers);
 

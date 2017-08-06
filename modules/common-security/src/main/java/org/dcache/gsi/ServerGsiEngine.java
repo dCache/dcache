@@ -54,7 +54,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class ServerGsiEngine extends InterceptingSSLEngine
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServerGsiEngine.class);
+    private static final Logger logger = LoggerFactory.getLogger(ServerGsiEngine.class);
 
     public static final String X509_CREDENTIAL = "org.dcache.credential";
 
@@ -180,7 +180,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine
         try (InputStream in = source.openStream()) {
             certificate = (X509Certificate) cf.generateCertificate(in);
         }
-        LOGGER.trace("Received delegated cert: {}", certificate);
+        logger.trace("Received delegated cert: {}", certificate);
 
         /* Verify that it matches our certificate request.
          */

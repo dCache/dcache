@@ -64,7 +64,7 @@ import static org.dcache.util.Callables.memoizeWithExpiration;
  */
 public class CanlContextFactory implements SslContextFactory
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CanlContextFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(CanlContextFactory.class);
 
     private static final EnumSet<ValidationErrorCategory> VALIDATION_ERRORS_TO_LOG =
             EnumSet.of(NAMESPACE, X509_BASIC, X509_CHAIN, NAME_CONSTRAINT, CRL, OCSP);
@@ -241,20 +241,20 @@ public class CanlContextFactory implements SslContextFactory
                         switch (level) {
                         case ERROR:
                             if (cause != null) {
-                                LOGGER.error("Error loading {} from {}: {}", type, location, cause.getMessage());
+                                logger.error("Error loading {} from {}: {}", type, location, cause.getMessage());
                             } else {
-                                LOGGER.error("Error loading {} from {}.", type, location);
+                                logger.error("Error loading {} from {}.", type, location);
                             }
                             break;
                         case WARNING:
                             if (cause != null) {
-                                LOGGER.warn("Problem loading {} from {}: {}", type, location, cause.getMessage());
+                                logger.warn("Problem loading {} from {}: {}", type, location, cause.getMessage());
                             } else {
-                                LOGGER.warn("Problem loading {} from {}.", type, location);
+                                logger.warn("Problem loading {} from {}.", type, location);
                             }
                             break;
                         case NOTIFICATION:
-                            LOGGER.debug("Reloaded {} from {}.", type, location);
+                            logger.debug("Reloaded {} from {}.", type, location);
                             break;
                         }
                     } catch (Exception e) {
@@ -270,7 +270,7 @@ public class CanlContextFactory implements SslContextFactory
                     if (VALIDATION_ERRORS_TO_LOG.contains(error.getErrorCategory())) {
                         X509Certificate[] chain = error.getChain();
                         String subject = (chain != null && chain.length > 0) ? chain[0].getSubjectX500Principal().getName() : "";
-                        LOGGER.warn("The peer's certificate with DN {} was rejected: {}", subject, error);
+                        logger.warn("The peer's certificate with DN {} was rejected: {}", subject, error);
                     }
                     return false;
                 }

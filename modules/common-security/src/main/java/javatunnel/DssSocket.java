@@ -44,7 +44,7 @@ import java.net.UnknownHostException;
 
 public class DssSocket extends Socket implements TunnelSocket
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DssSocket.class);
+    private static final Logger logger = LoggerFactory.getLogger(DssSocket.class);
 
     private DssContext context;
     private final DssContextFactory factory;
@@ -209,7 +209,7 @@ public class DssSocket extends Socket implements TunnelSocket
             acceptSecurityContext();
             return true;
         } catch (IOException e) {
-            LOGGER.error("Failed to verify: {}", e.toString());
+            logger.error("Failed to verify: {}", e.toString());
             return false;
         }
     }
