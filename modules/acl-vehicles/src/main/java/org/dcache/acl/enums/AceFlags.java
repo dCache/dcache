@@ -104,14 +104,14 @@ public enum AceFlags {
 
             if ( INHERIT_ONLY_ACE.matches(flags) ) {
                 if ( res == 0 ) {
-                    logger.warn("Unsupported flags of directory: " + flags);
+                    logger.warn("Unsupported flags of directory: {}", flags);
                 } else {
                     res += INHERIT_ONLY_ACE._value;
                 }
             }
 
         } else if ( flags != 0 && flags != IDENTIFIER_GROUP._value ) {
-            logger.warn("Unsupported flags of file: " + flags);
+            logger.warn("Unsupported flags of file: {}", flags);
         }
 
         if ( IDENTIFIER_GROUP.matches(flags) ) {
