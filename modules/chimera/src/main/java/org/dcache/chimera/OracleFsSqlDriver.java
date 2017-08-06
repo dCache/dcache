@@ -33,7 +33,7 @@ import org.dcache.acl.enums.RsType;
  */
 class OracleFsSqlDriver extends FsSqlDriver {
 
-    private static final Logger _log = LoggerFactory.getLogger(OracleFsSqlDriver.class);
+    private static final Logger logger = LoggerFactory.getLogger(OracleFsSqlDriver.class);
 
     /**
      *  this is a utility class which is issues SQL queries on database
@@ -42,7 +42,7 @@ class OracleFsSqlDriver extends FsSqlDriver {
     protected OracleFsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
-        _log.info("Running Oracle specific Driver");
+        logger.info("Running Oracle specific Driver");
     }
 
     /**

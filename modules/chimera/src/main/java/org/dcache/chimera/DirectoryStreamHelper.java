@@ -25,7 +25,7 @@ import java.util.List;
 
 public class DirectoryStreamHelper {
 
-    private static final Logger _log = LoggerFactory.getLogger(DirectoryStreamHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(DirectoryStreamHelper.class);
 
     /**
      * Convert directory stream into a {@link List}.
