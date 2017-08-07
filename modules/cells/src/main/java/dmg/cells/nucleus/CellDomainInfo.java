@@ -20,6 +20,7 @@ package dmg.cells.nucleus;
 import java.io.Serializable;
 
 import dmg.util.Releases;
+import dmg.util.Releases.BadVersionException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -42,7 +43,7 @@ public class CellDomainInfo implements Serializable
         return _version;
     }
 
-    public short getRelease()
+    public short getRelease() throws BadVersionException
     {
         return _version == null ? Releases.PRE_2_6 : Releases.getRelease(_version);
     }
