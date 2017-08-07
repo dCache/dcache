@@ -1,0 +1,27 @@
+{
+  "$id": "http://dcache.org/frontend/events/metronomeSelectors#",
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "type": "object",
+  "required": [
+    "frequency"
+  ],
+  "properties": {
+    "frequency": {
+      "title": "The trigger frequency",
+      "description": "How often events are fired, in Hz.",
+      "type": "integer"
+    },
+    "message": {
+      "title": "The event payload",
+      "description": "The data sent with each event.",
+      "minLength": 1,
+      "type": "string"
+    },
+    "count": {
+      "title": "The number of events",
+      "description": "The number of events to generate before cancelling the subscription.  If not specified then the events are supplied until the subscription is explicitly cancelled by the client.",
+      "type": "number"
+    }
+  },
+  "additionalProperties": false
+}

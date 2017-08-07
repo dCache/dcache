@@ -22,13 +22,18 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:plugin="http://www.springframework.org/schema/plugin"
        xsi:schemaLocation="
            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/plugin http://www.springframework.org/schema/plugin/spring-plugin.xsd
            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
   <context:property-placeholder/>
   <context:annotation-config/>
+
+  <!-- Import additional configuration for spring-plugin -->
+  <import resource="classpath*:org/dcache/frontend/**/event-plugins.xml" />
 
   <bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
 
@@ -109,6 +114,24 @@
   <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
      <description>Maintains runtime information about all pools</description>
      <property name="poolManagerStub" ref="pool-manager-stub"/>
+  </bean>
+
+  <bean id="event-streams" class="org.dcache.restful.events.EventStreamRepository">
+    <description>Dispatcher for incoming events</description>
+    <property name="plugins">
+      <plugin:list class="org.dcache.restful.events.spi.EventStream"/>
+    </property>
+  </bean>
+
+  <bean id="event-registrar" class="org.dcache.restful.events.Registrar"
+	init-method="start" destroy-method="stop">
+    <description>Registrar for clients</description>
+    <property name="maximumChannelsPerUser"
+            value="${frontend.limit.events.channels-per-user}"/>
+    <property name="defaultDisconnectTimeout"
+            value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                    ${frontend.limit.events.disconnect-timeout.default},
+                    '${frontend.limit.events.disconnect-timeout.default.unit}')}" />
   </bean>
 
   <bean id="login-broker-source" class="dmg.cells.services.login.LoginBrokerSubscriber">
@@ -515,6 +538,12 @@
         <property name="spaceReservationEnabled" value="${frontend.enable.space-reservation}"/>
     </bean>
     <bean class="org.dcache.restful.resources.transfers.TransferResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.EventResources" scope="request">
+        <property name="maximumDisconnectTimeout"
+		  value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
+			 ${frontend.limit.events.disconnect-timeout.maximum},
+			 '${frontend.limit.events.disconnect-timeout.maximum.unit}')}" />
+    </bean>
 
     <beans profile="macaroons-true">
         <bean id="macaroon-processor" class="org.dcache.macaroons.MacaroonProcessor">

@@ -29,6 +29,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 
+import java.net.URI;
 import java.util.Collections;
 
 /**
@@ -70,7 +71,7 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception>
                     e.getMessage() == null ? "Internal error" : e.getMessage());
         } else if (e instanceof WebApplicationException) {
             Response r = ((WebApplicationException)e).getResponse();
-            return buildResponse(r.getStatus(), r.getStatusInfo().getReasonPhrase());
+            return buildResponse(r.getStatus(), r.getStatusInfo().getReasonPhrase(), r.getLocation());
         } else {
             // All other Exceptions are bug -- log them.
             Thread t = Thread.currentThread();
@@ -82,16 +83,16 @@ public class ErrorResponseProvider implements ExceptionMapper<Exception>
 
     private Response buildResponse(Status status, String jsonMessage)
     {
-        return buildResponse(status.getStatusCode(), jsonMessage);
+        return buildResponse(status.getStatusCode(), jsonMessage, null);
     }
 
-    private Response buildResponse(int status, String jsonMessage)
+    private Response buildResponse(int status, String jsonMessage, URI location)
     {
         JSONObject error = new JSONObject();
         error.put("status", String.valueOf(status));
         error.put("message", jsonMessage);
         JSONObject json = new JSONObject();
         json.put("errors", Collections.singletonList(error));
-        return Response.status(status).entity(json.toString()).build();
+        return Response.status(status).entity(json.toString()).location(location).build();
     }
 }

@@ -11,6 +11,7 @@ import org.dcache.restful.filters.ResponseHeaderFilter;
 import org.dcache.restful.providers.ErrorResponseProvider;
 import org.dcache.restful.providers.ObjectMapperProvider;
 import org.dcache.restful.qos.QosManagement;
+import org.dcache.restful.resources.EventResources;
 import org.dcache.restful.resources.alarms.AlarmsResources;
 import org.dcache.restful.resources.billing.BillingResources;
 import org.dcache.restful.resources.cells.CellInfoResources;
@@ -49,6 +50,7 @@ public class DcacheRestApplication extends ResourceConfig
         register(SpaceManagerResources.class);
         register(ApiListingResource.class);
         register(SwaggerSerializers.class);
+        register(EventResources.class);
 
         //register filters
         register(ResponseHeaderFilter.class);

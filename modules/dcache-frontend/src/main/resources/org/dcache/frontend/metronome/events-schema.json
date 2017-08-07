@@ -1,0 +1,5 @@
+{
+  "$id": "http://dcache.org/frontend/events/metronomeEvents#",
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "type": "string"
+}

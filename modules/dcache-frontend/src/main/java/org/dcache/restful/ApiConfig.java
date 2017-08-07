@@ -73,7 +73,8 @@ import javax.ws.rs.ext.Provider;
             @Tag(name = "pools", description = "File data storage"),
             @Tag(name = "qos", description = "Managing how data is stored and handled"),
             @Tag(name = "spacemanager", description = "Ensuring enough capacity for uploads"),
-            @Tag(name = "transfers", description = "The movement of data between dCache and clients")
+            @Tag(name = "transfers", description = "The movement of data between dCache and clients"),
+            @Tag(name = "events", description = "Support for SSE clients receiving dCache events")
         }
 )
 @Provider

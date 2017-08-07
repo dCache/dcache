@@ -18,10 +18,13 @@
 package org.dcache.restful.util;
 
 import javax.security.auth.Subject;
+import javax.ws.rs.NotAuthorizedException;
 
 import java.security.AccessController;
 
 import org.dcache.auth.Subjects;
+
+import static org.dcache.util.Exceptions.genericCheck;
 
 /**
  * Utility class to handle the identity of the user issuing the request.
@@ -41,5 +44,11 @@ public class RequestUser
     public static boolean isAnonymous()
     {
         return Subjects.isNobody(getSubject());
+    }
+
+    public static void checkAuthenticated() throws NotAuthorizedException
+    {
+        genericCheck(!isAnonymous(), NotAuthorizedException::new,
+                "anonymous access not allowed");
     }
 }
