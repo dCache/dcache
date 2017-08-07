@@ -69,6 +69,11 @@
         <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>dcache-history</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-info</artifactId>
         <version>${project.version}</version>
