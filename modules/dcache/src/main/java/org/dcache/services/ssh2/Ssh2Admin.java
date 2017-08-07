@@ -212,7 +212,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                              String method, boolean successful, String reason)
     {
         NetLoggerBuilder.Level logLevel = NetLoggerBuilder.Level.INFO;
-        if(!successful) {
+        if (!successful) {
             logLevel = NetLoggerBuilder.Level.WARN;
         }
 
@@ -226,7 +226,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 .toLogger(_accessLog);
 
         // set session parameter
-        if(successful) {
+        if (successful) {
             try {
                 session.setAuthenticated();
                 session.setUsername(username);
@@ -309,7 +309,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
             // the method gets called twice while pubkey authentication,
             // to avoid duplicate logging, check if already authenticated
-            if(!session.isAuthenticated()) {
+            if (!session.isAuthenticated()) {
                 String method = "PublicKey (" + key.getAlgorithm() + " "
                         + KeyUtils.getFingerPrint(key) + ")";
                 logLoginTry(userName, session, method, successful, null);
