@@ -19,7 +19,6 @@
  */
 package org.dcache.chimera.nfsv41.door;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
@@ -57,12 +56,12 @@ import org.dcache.chimera.FsInode_PSET;
 import org.dcache.chimera.FsInode_SURI;
 import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.FsInode_TAGS;
-import org.dcache.chimera.HimeraDirectoryEntry;
 import org.dcache.chimera.InvalidArgumentChimeraException;
 import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.PermissionDeniedChimeraFsException;
+import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
 import org.dcache.nfs.status.ExistException;
