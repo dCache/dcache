@@ -68,11 +68,11 @@ import java.util.stream.Collectors;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.util.command.Command;
-import org.dcache.restful.services.admin.CellDataCollectingService;
+import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.restful.util.admin.ReadWriteData;
 import org.dcache.restful.util.cells.CellInfoCollector;
 import org.dcache.restful.util.cells.CellInfoFutureProcessor;
-import org.dcache.restful.util.cells.ListenableFutureWrapper;
+import org.dcache.util.collector.ListenableFutureWrapper;
 import org.dcache.cells.json.CellData;
 
 /**

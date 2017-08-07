@@ -70,7 +70,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.restores.RestoreInfo;
-import org.dcache.restful.util.admin.CellMessagingCollector;
+import org.dcache.util.collector.CellMessagingCollector;
 
 /**
  * <p>Thin wrapper around cell messaging to pool manager pnfs manager endpoints.</p>

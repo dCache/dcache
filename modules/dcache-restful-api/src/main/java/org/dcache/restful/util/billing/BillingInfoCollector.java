@@ -71,7 +71,7 @@ import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.restful.services.billing.BillingInfoService;
-import org.dcache.restful.util.admin.CellMessagingCollector;
+import org.dcache.util.collector.CellMessagingCollector;
 import org.dcache.vehicles.billing.BillingDataRequestMessage;
 import org.dcache.vehicles.billing.BillingRecordRequestMessage;
 

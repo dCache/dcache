@@ -57,11 +57,12 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.services.admin;
+package org.dcache.services.collector;
 
 import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.PrintWriter;
@@ -83,10 +84,10 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.util.command.Option;
-import org.dcache.restful.util.admin.CellMessagingCollector;
+import org.dcache.util.collector.CellMessagingCollector;
 
 /**
- * <p>Services supporting restful admin resources should extend
+ * <p>Services which collect and cache data from other services should extend
  * this class and implement their specific service interface.</p>
  *
  * <p>Here is provided a common framework for initializing, resetting
@@ -245,10 +246,12 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
         scheduleNext(timeout, timeoutUnit);
     }
 
+    @Required
     public void setCollector(C collector) {
         this.collector = collector;
     }
 
+    @Required
     public void setExecutorService(ScheduledExecutorService service) {
         executorService = service;
     }

@@ -73,7 +73,7 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.LogEntry;
-import org.dcache.restful.services.admin.CellDataCollectingService;
+import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.restful.util.alarms.AlarmsCollector;
 import org.dcache.vehicles.alarms.AlarmMappingRequestMessage;
 import org.dcache.vehicles.alarms.AlarmsDeleteMessage;

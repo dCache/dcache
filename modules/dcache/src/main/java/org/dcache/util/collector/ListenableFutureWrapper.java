@@ -57,72 +57,39 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.admin;
+package org.dcache.util.collector;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.TimeUnit;
-
-import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessageSender;
-import org.dcache.cells.CellStub;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
- * <p>The primary function of the services in support of
- *    the RESTful admin resources is to gather information
- *    from other dCache cells via messaging, and to cache it.</p>
- *
- * <p>This class provides the common API for the collection of data.</p>
+ * <p>Wraps the future so that round-trip time can be computed.</p>
  */
-public abstract class CellMessagingCollector<D> implements CellMessageSender {
-    protected static final Logger LOGGER
-                    = LoggerFactory.getLogger(CellMessagingCollector.class);
+public class ListenableFutureWrapper<D> {
+    private String key;
+    private Long sent;
+    private ListenableFuture<D> future;
 
-    /**
-     * <p>For querying various endpoints during information collection.</p>
-     */
-    protected final CellStub stub = new CellStub();
-
-    /**
-     * <p>Should be overridden to do any special internal initialization.</p>
-     *
-     * @param timeout cell timeout value.
-     * @param timeUnit cell timeout unit.
-     */
-    public void initialize(Long timeout, TimeUnit timeUnit) {
-        reset(timeout, timeUnit);
+    public ListenableFuture<D> getFuture() {
+        return future;
     }
 
-    /**
-     * <p>Provides for dynamic changes to timeout period, e.g., from
-     *      an admin command.</p>
-     *
-     * <p>Should be called at least at initialization.</p>
-     *
-     * @param timeout cell timeout value.
-     * @param timeUnit cell timeout unit.
-     */
-    public void reset(Long timeout, TimeUnit timeUnit) {
-        stub.setTimeout(timeout);
-        stub.setTimeoutUnit(timeUnit);
+    public String getKey() {
+        return key;
     }
 
-    @Override
-    public void setCellEndpoint(CellEndpoint endpoint) {
-        stub.setCellEndpoint(endpoint);
+    public Long getSent() {
+        return sent;
     }
 
-    /**
-     * <p>Should be overridden to do any special internal cleanup.</p>
-     */
-    public void shutdown() {
-        //NOP
+    public void setFuture(ListenableFuture<D> future) {
+        this.future = future;
     }
 
-    /**
-     * <p>Should do the actual collection.</p>
-     */
-    public abstract D collectData() throws InterruptedException, CacheException;
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public void setSent(Long sent) {
+        this.sent = sent;
+    }
 }

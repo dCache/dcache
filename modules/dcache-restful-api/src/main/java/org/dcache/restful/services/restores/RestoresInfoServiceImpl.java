@@ -81,7 +81,7 @@ import diskCacheV111.vehicles.RestoreHandlerInfo;
 import dmg.util.command.Command;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.providers.restores.RestoresList;
-import org.dcache.restful.services.admin.CellDataCollectingService;
+import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.restful.util.restores.RestoreCollector;
 import org.dcache.restful.util.transfers.TransferCollector;
 

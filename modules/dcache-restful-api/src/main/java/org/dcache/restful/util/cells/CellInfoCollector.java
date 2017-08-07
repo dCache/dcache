@@ -76,7 +76,8 @@ import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.GetAllDomainsReply;
 import dmg.cells.services.GetAllDomainsRequest;
-import org.dcache.restful.util.admin.CellMessagingCollector;
+import org.dcache.util.collector.CellMessagingCollector;
+import org.dcache.util.collector.ListenableFutureWrapper;
 
 /**
  * <p>This collector provides a thin layer on top of cell adapter
