@@ -2,18 +2,20 @@
   "$id": "http://dcache.org/frontend/events/metronomeSelectors#",
   "$schema": "http://json-schema.org/draft-06/schema#",
   "type": "object",
-  "required": [
-    "frequency"
-  ],
   "properties": {
     "frequency": {
       "title": "The trigger frequency",
       "description": "How often events are fired, in Hz.",
-      "type": "integer"
+      "type": "number"
+    },
+    "delay": {
+      "title": "The delay between successive triggers",
+      "description": "The time between two triggers, in seconds.",
+      "type": "number"
     },
     "message": {
       "title": "The event payload",
-      "description": "The data sent with each event.",
+      "description": "The data sent with each event.  A ${username} is replaced by the user's username and ${count} is replaced by the message number.",
       "minLength": 1,
       "type": "string"
     },
@@ -23,5 +25,17 @@
       "type": "number"
     }
   },
+  "oneOf": [
+    {
+      "required": [
+        "frequency"
+      ]
+    },
+    {
+      "required": [
+        "delay"
+      ]
+    }
+  ],
   "additionalProperties": false
 }
