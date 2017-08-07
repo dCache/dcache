@@ -57,61 +57,34 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.cells;
+package org.dcache.services.history.pools;
 
-import org.springframework.beans.factory.annotation.Required;
+import java.util.Map;
+import java.util.Set;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellVersion;
-
-import org.dcache.cells.json.CellData;
-import org.dcache.restful.services.cells.CellInfoServiceImpl;
-import org.dcache.util.collector.RequestFutureProcessor;
+import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.NoRouteToCellException;
+import org.dcache.util.histograms.TimeseriesHistogram;
+import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
 
 /**
- * <p>Used in conjunction with the {@link CellInfoCollector} as message
- * post-processor.  Updates the cell data based on the info received.</p>
+ * <p>This service should respond to requests for historical (timeseries)
+ *      data concerning pools.  This includes statistical timelines for
+ *      file lifetime min, max and averages, as well as the counts
+ *      for active and queued requests over the period of a
+ *      predetermined window.</p>
  */
-public final class CellInfoFutureProcessor extends
-                RequestFutureProcessor<CellData, CellInfo> {
-    private static void update(CellData cellData, CellInfo received) {
-        cellData.setCreationTime(received.getCreationTime());
-        cellData.setDomainName(received.getDomainName());
-        cellData.setCellType(received.getCellType());
-        cellData.setCellName(received.getCellName());
-        cellData.setCellClass(received.getCellClass());
-        cellData.setEventQueueSize(received.getEventQueueSize());
-        cellData.setExpectedQueueTime(received.getExpectedQueueTime());
-        cellData.setLabel("Cell Info");
-        CellVersion version = received.getCellVersion();
-        cellData.setRelease(version.getRelease());
-        cellData.setRevision(version.getRevision());
-        cellData.setVersion(version.toString());
-        cellData.setState(received.getState());
-        cellData.setThreadCount(received.getThreadCount());
-    }
-
-    private CellInfoServiceImpl service;
-
-    @Required
-    public void setService(CellInfoServiceImpl service) {
-        this.service = service;
-    }
-
-    @Override
-    protected void postProcess() {
-        service.updateCache(next);
-    }
-
-    @Override
-    protected CellData process(String key,
-                               CellInfo received,
-                               long sent){
-        CellData cellData = new CellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
-        update(cellData, received);
-        return cellData;
-    }
+public interface PoolTimeseriesService {
+    /**
+     * <p>Retrieves the requested timeseries data.</p>
+     *
+     * @param pool for which data is requested.
+     * @param types of timeseries to return.
+     * @return histogram models for the requested types.
+     * @throws CacheException
+     */
+    Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String pool,
+                                                           Set<TimeseriesType> types)
+                    throws CacheException, InterruptedException,
+                    NoRouteToCellException;
 }

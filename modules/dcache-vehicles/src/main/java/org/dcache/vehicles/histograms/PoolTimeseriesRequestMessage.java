@@ -57,61 +57,73 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.cells;
+package org.dcache.vehicles.histograms;
 
-import org.springframework.beans.factory.annotation.Required;
+import com.google.common.collect.ImmutableSet;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellVersion;
+import java.util.Map;
+import java.util.Set;
 
-import org.dcache.cells.json.CellData;
-import org.dcache.restful.services.cells.CellInfoServiceImpl;
-import org.dcache.util.collector.RequestFutureProcessor;
+import diskCacheV111.vehicles.Message;
+import org.dcache.util.histograms.TimeseriesHistogram;
 
 /**
- * <p>Used in conjunction with the {@link CellInfoCollector} as message
- * post-processor.  Updates the cell data based on the info received.</p>
+ * <p>Requests for historical (timeseries) data concerning pools.
+ * This includes statistical timelines for
+ * file lifetime min, max and averages, as well as the counts
+ * for active and queued requests over the period of a
+ * predetermined window.</p>
  */
-public final class CellInfoFutureProcessor extends
-                RequestFutureProcessor<CellData, CellInfo> {
-    private static void update(CellData cellData, CellInfo received) {
-        cellData.setCreationTime(received.getCreationTime());
-        cellData.setDomainName(received.getDomainName());
-        cellData.setCellType(received.getCellType());
-        cellData.setCellName(received.getCellName());
-        cellData.setCellClass(received.getCellClass());
-        cellData.setEventQueueSize(received.getEventQueueSize());
-        cellData.setExpectedQueueTime(received.getExpectedQueueTime());
-        cellData.setLabel("Cell Info");
-        CellVersion version = received.getCellVersion();
-        cellData.setRelease(version.getRelease());
-        cellData.setRevision(version.getRevision());
-        cellData.setVersion(version.toString());
-        cellData.setState(received.getState());
-        cellData.setThreadCount(received.getThreadCount());
+public class PoolTimeseriesRequestMessage extends Message {
+    public static final Set<TimeseriesType> ALL = ImmutableSet.copyOf(
+                    TimeseriesType.values());
+
+    /**
+     * <p>Possible timeseries data types.</p>
+     */
+    public enum TimeseriesType {
+        FILE_LIFETIME_MAX,
+        FILE_LIFETIME_AVG,
+        FILE_LIFETIME_MIN,
+        FILE_LIFETIME_STDDEV,
+        ACTIVE_MOVERS,
+        QUEUED_MOVERS,
+        ACTIVE_P2P,
+        QUEUED_P2P,
+        ACTIVE_P2P_CLIENT,
+        QUEUED_P2P_CLIENT,
+        ACTIVE_FLUSH,
+        QUEUED_FLUSH,
+        ACTIVE_STAGE,
+        QUEUED_STAGE
     }
 
-    private CellInfoServiceImpl service;
+    private String              pool;
+    private Set<TimeseriesType> keys;
+    private Map<TimeseriesType, TimeseriesHistogram> histogramMap;
 
-    @Required
-    public void setService(CellInfoServiceImpl service) {
-        this.service = service;
+    public Map<TimeseriesType, TimeseriesHistogram> getHistogramMap() {
+        return histogramMap;
     }
 
-    @Override
-    protected void postProcess() {
-        service.updateCache(next);
+    public Set<TimeseriesType> getKeys() {
+        return keys;
     }
 
-    @Override
-    protected CellData process(String key,
-                               CellInfo received,
-                               long sent){
-        CellData cellData = new CellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
-        update(cellData, received);
-        return cellData;
+    public String getPool() {
+        return pool;
+    }
+
+    public void setHistogramMap(
+                    Map<TimeseriesType, TimeseriesHistogram> histogramMap) {
+        this.histogramMap = histogramMap;
+    }
+
+    public void setKeys(Set<TimeseriesType> keys) {
+        this.keys = keys;
+    }
+
+    public void setPool(String pool) {
+        this.pool = pool;
     }
 }

@@ -134,6 +134,46 @@
       <property name="timeoutUnit" value="${frontend.service.alarms.timeout.unit}"/>
   </bean>
 
+  <bean id="pool-history-service" class="org.dcache.cells.CellStub">
+    <description>Pool History service cell stub</description>
+    <property name="timeout" value="${frontend.service.pool-history.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.pool-history.timeout.unit}"/>
+    <property name="destination" value="${frontend.service.pool-history}"/>
+  </bean>
+
+  <bean id="pool-update-executor" class="org.dcache.util.BoundedCachedExecutor"
+        destroy-method="shutdownNow">
+     <constructor-arg value="${frontend.service.pool-info.update-threads}"/>
+  </bean>
+
+  <bean id="pool-histories-handler" class="org.dcache.restful.util.pool.PoolHistoriesHandler">
+    <property name="historyService" ref="pool-history-service"/>
+  </bean>
+
+  <bean id="pool-info-collector" class="org.dcache.restful.util.pool.PoolDiagnosticInfoCollector">
+        <description>Collects pool info from from pools.</description>
+        <property name="service" ref="pool-info-service"/>
+
+  </bean>
+
+  <bean id="pool-info-processor" class="org.dcache.restful.util.pool.PoolDataRequestProcessor">
+      <description>Handles update futures and processes them for persistence.</description>
+      <property name="executor" ref="pool-update-executor"/>
+      <property name="service" ref="pool-info-service"/>
+      <property name="handler" ref="pool-histories-handler"/>
+  </bean>
+
+  <bean id="pool-info-service" class="org.dcache.restful.services.pool.PoolInfoServiceImpl">
+        <description>Caches and serves information on pools and pool activity.</description>
+        <property name="maxPoolActivityListSize" value="${frontend.service.pool-info.maxPoolActivityListSize}"/>
+        <property name="timeout" value="${frontend.service.pool-info.timeout}"/>
+        <property name="timeoutUnit" value="${frontend.service.pool-info.timeout.unit}"/>
+        <property name="collector" ref="pool-info-collector"/>
+        <property name="executorService" ref="scheduling-service"/>
+        <property name="processor" ref="pool-info-processor"/>
+        <property name="poolMonitor" ref="pool-monitor"/>
+  </bean>
+
   <bean id="custom-headers"
         class="org.dcache.util.ConfigurationMapFactoryBean">
     <property name="prefix" value="frontend.custom-response-header"/>
@@ -284,6 +324,8 @@
                                                                value-ref="restore-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).AL}"
                                                                value-ref="alarms-info-service"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PI}"
+                                                              value-ref="pool-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
                                                                value-ref= "pinManagerStub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PathMapper}"

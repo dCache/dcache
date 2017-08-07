@@ -57,61 +57,82 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.cells;
+package org.dcache.restful.util.pool;
 
 import org.springframework.beans.factory.annotation.Required;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellVersion;
-
+import diskCacheV111.util.CacheException;
+import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.json.CellData;
-import org.dcache.restful.services.cells.CellInfoServiceImpl;
+import org.dcache.pool.json.PoolData;
+import org.dcache.pool.json.PoolInfoWrapper;
+import org.dcache.restful.services.pool.PoolInfoServiceImpl;
 import org.dcache.util.collector.RequestFutureProcessor;
+import org.dcache.vehicles.pool.PoolDataRequestMessage;
 
 /**
- * <p>Used in conjunction with the {@link CellInfoCollector} as message
- * post-processor.  Updates the cell data based on the info received.</p>
+ * <p>Handles the transformation of message content from pools into a cached
+ *    {@link PoolInfoWrapper}.  The data handled by this transformation are
+ *    the basic diagnostic information plus the precomputed LRU histogram
+ *    from the sweeper.</p>
+ *
+ * <p>Post-processing aggregates the data according to pool groups and adds
+ *    these to the cache as well.</p>
  */
-public final class CellInfoFutureProcessor extends
-                RequestFutureProcessor<CellData, CellInfo> {
-    private static void update(CellData cellData, CellInfo received) {
-        cellData.setCreationTime(received.getCreationTime());
-        cellData.setDomainName(received.getDomainName());
-        cellData.setCellType(received.getCellType());
-        cellData.setCellName(received.getCellName());
-        cellData.setCellClass(received.getCellClass());
-        cellData.setEventQueueSize(received.getEventQueueSize());
-        cellData.setExpectedQueueTime(received.getExpectedQueueTime());
-        cellData.setLabel("Cell Info");
-        CellVersion version = received.getCellVersion();
-        cellData.setRelease(version.getRelease());
-        cellData.setRevision(version.getRevision());
-        cellData.setVersion(version.toString());
-        cellData.setState(received.getState());
-        cellData.setThreadCount(received.getThreadCount());
-    }
-
-    private CellInfoServiceImpl service;
+public final class PoolDataRequestProcessor
+                extends RequestFutureProcessor<PoolInfoWrapper, PoolDataRequestMessage> {
+    private PoolInfoServiceImpl  service;
+    private PoolHistoriesHandler handler;
 
     @Required
-    public void setService(CellInfoServiceImpl service) {
+    public void setHandler(PoolHistoriesHandler handler) {
+        this.handler = handler;
+    }
+
+    @Required
+    public void setService(PoolInfoServiceImpl service) {
         this.service = service;
     }
 
     @Override
     protected void postProcess() {
-        service.updateCache(next);
+        try {
+            handler.aggregateDataForPoolGroups(next, service.getSelectionUnit());
+        } catch (CacheException e) {
+            LOGGER.warn("Aggregation of timeseries data failed: {} / {}.",
+                        e.getMessage(), e.getCause());
+        }
+
+        service.updateJsonData(next);
     }
 
     @Override
-    protected CellData process(String key,
-                               CellInfo received,
-                               long sent){
-        CellData cellData = new CellData();
+    protected PoolInfoWrapper process(String key,
+                                      PoolDataRequestMessage message,
+                                      long sent) {
+        PoolData poolData = message.getData();
+
+        CellData cellData = poolData.getCellData();
         if (cellData != null) {
             cellData.setRoundTripTime(System.currentTimeMillis() - sent);
         }
-        update(cellData, received);
-        return cellData;
+
+        PoolInfoWrapper info = new PoolInfoWrapper();
+        info.setKey(key);
+
+        /*
+         *  NB:  the counts histogram is already part of the sweeper
+         *  data object (data.getSweeperData().getLastAccessHistogram()).
+         */
+        info.setInfo(poolData);
+
+        try {
+            handler.addHistoricalData(info);
+        } catch (NoRouteToCellException | CacheException | InterruptedException e) {
+            LOGGER.debug("Could not add historical data for {}: {}/ {}.",
+                        key, e.getMessage(), e.getCause());
+        }
+
+        return info;
     }
 }
