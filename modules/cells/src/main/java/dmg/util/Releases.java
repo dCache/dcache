@@ -31,15 +31,28 @@ public abstract class Releases
     public static final short RELEASE_2_16 = 0x0210;
     public static final short RELEASE_3_0  = 0x0300;
 
-    public static short getRelease(String version)
+    public static short getRelease(String version) throws BadVersionException
     {
         int i = version.indexOf('.');
         if (i < 0) {
-            throw new NumberFormatException("Invalid dCache version: " + version);
+            throw new BadVersionException("Invalid dCache version '" + version + "'");
         }
         int j = version.indexOf('.', i + 1);
-        return j < 0
-               ? (short) (Short.parseShort(version.substring(0, i)) << 8)
-               : (short) ((Short.parseShort( version.substring(0, i)) << 8) | Short.parseShort(version.substring(i + 1, j)));
+        try {
+            return j < 0
+                   ? (short) (Short.parseShort(version.substring(0, i)) << 8)
+                   : (short) ((Short.parseShort( version.substring(0, i)) << 8) | Short.parseShort(version.substring(i + 1, j)));
+        } catch (NumberFormatException e) {
+            throw new BadVersionException("Invalid dCache version '" + version
+                    + "': " + e.getMessage());
+        }
+    }
+
+    public static class BadVersionException extends Exception
+    {
+        public BadVersionException(String message)
+        {
+            super(message);
+        }
     }
 }
