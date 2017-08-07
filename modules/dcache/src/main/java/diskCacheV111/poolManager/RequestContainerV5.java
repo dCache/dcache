@@ -716,6 +716,20 @@ public class RequestContainerV5
         return commandReply;
     }
 
+    /**
+     * Return Codes used in PoolRequestHandler
+     */
+    public enum RequestStatusCode {
+        OK,
+        FOUND,
+        NOT_FOUND,
+        ERROR,
+        OUT_OF_RESOURCES,
+        COST_EXCEEDED,
+        NOT_PERMITTED,
+        S_COST_EXCEEDED,
+        DELAY
+    }
     ///////////////////////////////////////////////////////////////
     //
     // the read io request handler
@@ -748,8 +762,8 @@ public class RequestContainerV5
         /**
          * The pool from which to read the file or the pool to which
          * to stage the file. Set by askIfAvailable() when it returns
-         * RT_FOUND, by exercisePool2PoolReply() when it returns
-         * RT_OK, and by askForStaging(). Also set in the
+         * RequestStatusCode.FOUND, by exercisePool2PoolReply() when it returns
+         * RequestStatusCode.OK, and by askForStaging(). Also set in the
          * stateEngine() at various points.
          */
         private   volatile SelectedPool _poolCandidate;
@@ -772,13 +786,13 @@ public class RequestContainerV5
 
         /**
          * The destination of a pool to pool transfer. Set by
-         * askForPoolToPool() when it returns RT_FOUND.
+         * askForPoolToPool() when it returns RequestStatusCode.FOUND.
          */
         private   volatile SelectedPool _p2pDestinationPool;
 
         /**
          * The source of a pool to pool transfer. Set by
-         * askForPoolToPool() when it return RT_FOUND.
+         * askForPoolToPool() when it return RequestStatusCode.FOUND.
          */
         private SelectedPool _p2pSourcePool;
 
@@ -1080,15 +1094,7 @@ public class RequestContainerV5
         //
         // and the heart ...
         //
-        private static final int RT_OK         = 1 ;
-        private static final int RT_FOUND      = 2 ;
-        private static final int RT_NOT_FOUND  = 3 ;
-        private static final int RT_ERROR      = 4 ;
-        private static final int RT_OUT_OF_RESOURCES = 5 ;
-        private static final int RT_COST_EXCEEDED    = 7 ;
-        private static final int RT_NOT_PERMITTED    = 8 ;
-        private static final int RT_S_COST_EXCEEDED  = 9 ;
-        private static final int RT_DELAY  = 10 ;
+
 
         private static final int CONTINUE        = 0 ;
         private static final int WAIT            = 1 ;
@@ -1257,13 +1263,13 @@ public class RequestContainerV5
         //
         //      default : (bestPool=set,overwriteCost=false) otherwise mentioned
         //
-        //      RT_FOUND :
+        //      RequestStatusCode.FOUND :
         //
         //         Because : file is on pool which is allowed and has reasonable cost.
         //
         //         -> DONE
         //
-        //      RT_NOT_FOUND :
+        //      RequestStatusCode.NOT_FOUND :
         //
         //         Because : file is not in cache at all
         //
@@ -1272,7 +1278,7 @@ public class RequestContainerV5
         //         -> _hasHsmBackend : STAGE
         //              else         : Suspended (1010, pool unavailable)
         //
-        //      RT_NOT_PERMITTED :
+        //      RequestStatusCode.NOT_PERMITTED :
         //
         //         Because : file not in an permitted pool but somewhere else
         //
@@ -1282,7 +1288,7 @@ public class RequestContainerV5
         //            ! _hasHsmBackend  : P2P
         //            else              : STAGE
         //
-        //      RT_COST_EXCEEDED :
+        //      RequestStatusCode.COST_EXCEEDED :
         //
         //         Because : file is in permitted pools but cost is too high.
         //
@@ -1291,7 +1297,7 @@ public class RequestContainerV5
         //            _stageOnCost        : STAGE
         //            else                : 127 , "Cost exceeded (st,p2p not allowed)"
         //
-        //      RT_ERROR :
+        //      RequestStatusCode.ERROR :
         //
         //         Because : - No entry in configuration Permission Matrix
         //                   - Code Exception
@@ -1304,13 +1310,13 @@ public class RequestContainerV5
         //
         //  askForPoolToPool( overwriteCost ) :
         //
-        //      RT_FOUND :
+        //      RequestStatusCode.FOUND :
         //
         //         Because : source and destination pool found and cost ok.
         //
         //         -> DONE
         //
-        //      RT_NOT_PERMITTED :
+        //      RequestStatusCode.NOT_PERMITTED :
         //
         //         Because : - already too many copies (_maxPnfsFileCopies)
         //                   - file already everywhere (no destination found)
@@ -1318,7 +1324,7 @@ public class RequestContainerV5
         //
         //         -> DONE 'using bestPool'
         //
-        //      RT_S_COST_EXCEEDED (only if ! overwriteCost ) :
+        //      RequestStatusCode.S_COST_EXCEEDED (only if ! overwriteCost ) :
         //
         //         Because : best source pool exceeds 'alert' cost.
         //
@@ -1327,7 +1333,7 @@ public class RequestContainerV5
         //            bestPool == 0   : 194,"File not present in any reasonable pool"
         //            else            : DONE 'using bestPool'
         //
-        //      RT_COST_EXCEEDED (only if ! overwriteCost )  :
+        //      RequestStatusCode.COST_EXCEEDED (only if ! overwriteCost )  :
         //
         //         Because : file is in permitted pools but cost of
         //                   best destination pool exceeds cost of best
@@ -1336,7 +1342,7 @@ public class RequestContainerV5
         //         -> _bestPool == 0 : 192,"File not present in any reasonable pool"
         //            else           : DONE 'using bestPool'
         //
-        //      RT_ERROR :
+        //      RequestStatusCode.ERROR :
         //
         //         Because : - no source pool (code problem)
         //                   - Code Exception
@@ -1346,23 +1352,23 @@ public class RequestContainerV5
         //
         //  askForStaging :
         //
-        //      RT_FOUND :
+        //      RequestStatusCode.FOUND :
         //
         //         Because : destination pool found and cost ok.
         //
         //         -> DONE
         //
-        //      RT_NOT_FOUND :
+        //      RequestStatusCode.NOT_FOUND :
         //
         //         -> 149 , "No pool candidates available or configured for 'staging'"
         //         -> 150 , "No cheap candidates available for 'staging'"
         //
-        //      RT_ERROR :
+        //      RequestStatusCode.ERROR :
         //
         //         Because : - Code Exception
         //
         private void stateEngine( Object inputObject ) {
-           int rc;
+           RequestStatusCode rc;
            switch( _state ){
 
               case ST_INIT :
@@ -1396,7 +1402,7 @@ public class RequestContainerV5
                         return ;
                     }
 
-                    if( ( rc = askIfAvailable() ) == RT_FOUND ){
+                    if( ( rc = askIfAvailable() ) == RequestStatusCode.FOUND ){
 
                        setError(0,"");
                        nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1405,10 +1411,10 @@ public class RequestContainerV5
                            sendHitMsg(_bestPool.info(), true);
                        }
 
-                    }else if( rc == RT_NOT_FOUND ){
+                    }else if( rc == RequestStatusCode.NOT_FOUND ){
                        //
                        //
-                        _log.debug(" stateEngine: RT_NOT_FOUND ");
+                        _log.debug(" stateEngine: RequestStatusCode.NOT_FOUND ");
                        if( _parameter._hasHsmBackend && _storageInfo.isStored()){
                            _log.debug(" stateEngine: parameter has HSM backend and the file is stored on tape ");
                           nextStep(RequestState.ST_STAGE , CONTINUE ) ;
@@ -1422,7 +1428,7 @@ public class RequestContainerV5
                            sendHitMsg(_bestPool.info(), false);   //VP
                        }
                        //
-                    }else if( rc == RT_NOT_PERMITTED ){
+                    }else if( rc == RequestStatusCode.NOT_PERMITTED ){
                        //
                        //  if we can't read the file because 'read is prohibited'
                        //  we at least must give dCache the chance to copy it
@@ -1435,7 +1441,7 @@ public class RequestContainerV5
                        nextStep( _parameter._p2pAllowed || ! _parameter._hasHsmBackend
                                 ? RequestState.ST_POOL_2_POOL : RequestState.ST_STAGE , CONTINUE ) ;
 
-                    }else if( rc == RT_COST_EXCEEDED ){
+                    }else if( rc == RequestStatusCode.COST_EXCEEDED ){
 
                        if( _parameter._p2pOnCost ){
 
@@ -1451,8 +1457,8 @@ public class RequestContainerV5
                            nextStep(RequestState.ST_DONE , CONTINUE ) ;
 
                        }
-                    }else if( rc == RT_ERROR ){
-                       _log.debug( " stateEngine: RT_ERROR");
+                    }else if( rc == RequestStatusCode.ERROR ){
+                       _log.debug( " stateEngine: RequestStatusCode.ERROR");
                        nextStep(RequestState.ST_STAGE , CONTINUE ) ;
                        _log.info("AskIfAvailable returned an error, will continue with Staging");
 
@@ -1471,7 +1477,7 @@ public class RequestContainerV5
                   _log.debug( "stateEngine: case ST_POOL_2_POOL");
                  if( inputObject == null ){
 
-                    if( ( rc = askForPoolToPool( _overwriteCost ) ) == RT_FOUND ){
+                    if( ( rc = askForPoolToPool( _overwriteCost ) ) == RequestStatusCode.FOUND ){
 
                        nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL , WAIT ) ;
                        _status = "Pool2Pool "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
@@ -1481,7 +1487,7 @@ public class RequestContainerV5
                            sendHitMsg(_p2pSourcePool.info(), true);   //VP
                        }
 
-                    }else if( rc == RT_NOT_PERMITTED ){
+                    }else if( rc == RequestStatusCode.NOT_PERMITTED ){
 
                         if( _bestPool == null) {
                             if( _enforceP2P ){
@@ -1501,9 +1507,9 @@ public class RequestContainerV5
                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
                         }
 
-                    }else if( rc == RT_S_COST_EXCEEDED ){
+                    }else if( rc == RequestStatusCode.S_COST_EXCEEDED ){
 
-                       _log.info("ST_POOL_2_POOL : RT_S_COST_EXCEEDED");
+                       _log.info("ST_POOL_2_POOL : RequestStatusCode.S_COST_EXCEEDED");
 
                        if( _parameter._hasHsmBackend && _parameter._stageOnCost && _storageInfo.isStored() ){
 
@@ -1531,7 +1537,7 @@ public class RequestContainerV5
                           }
 
                        }
-                    }else if( rc == RT_COST_EXCEEDED ){
+                    }else if( rc == RequestStatusCode.COST_EXCEEDED ){
                        //
                        //
                        if( _bestPool == null ){
@@ -1583,13 +1589,13 @@ public class RequestContainerV5
                          return ;
                     }
 
-                    if( ( rc = askForStaging() ) == RT_FOUND ){
+                    if( ( rc = askForStaging() ) == RequestStatusCode.FOUND ){
 
                        nextStep(RequestState.ST_WAITING_FOR_STAGING , WAIT ) ;
                        _status = "Staging "+ LocalDateTime.now().format(DATE_TIME_FORMAT);
                        setError(0, "");
 
-                    }else if( rc == RT_OUT_OF_RESOURCES ){
+                    }else if( rc == RequestStatusCode.OUT_OF_RESOURCES ){
 
                        _restoreExceeded ++ ;
                        outOfResources("Restore") ;
@@ -1607,7 +1613,7 @@ public class RequestContainerV5
                  _log.debug( "stateEngine: case ST_WAITING_FOR_POOL_2_POOL");
                  if( inputObject instanceof Message ){
 
-                    if( ( rc =  exercisePool2PoolReply((Message)inputObject) ) == RT_OK ){
+                    if( ( rc =  exercisePool2PoolReply((Message)inputObject) ) == RequestStatusCode.OK ){
                         if (_parameter._p2pForTransfer && ! _enforceP2P) {
                             setError(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to p2p transfer");
@@ -1644,7 +1650,7 @@ public class RequestContainerV5
                  _log.debug( "stateEngine: case ST_WAITING_FOR_STAGING" );
                  if( inputObject instanceof Message ){
 
-                    if( ( rc =  exerciseStageReply( (Message)inputObject ) ) == RT_OK ){
+                    if( ( rc =  exerciseStageReply( (Message)inputObject ) ) == RequestStatusCode.OK ){
                         if (_parameter._p2pForTransfer) {
                             setError(CacheException.OUT_OF_DATE,
                                      "Pool locations changed due to stage");
@@ -1652,7 +1658,7 @@ public class RequestContainerV5
                         } else {
                             nextStep(RequestState.ST_DONE, CONTINUE);
                         }
-                    }else if( rc == RT_DELAY ){
+                    }else if( rc == RequestStatusCode.DELAY ){
                         suspend("Suspended By HSM request");
                     }else{
 
@@ -1776,30 +1782,30 @@ public class RequestContainerV5
             }
         }
 
-        private int exerciseStageReply( Message messageArrived ){
+        private RequestStatusCode exerciseStageReply( Message messageArrived ){
            try{
 
               if( messageArrived instanceof PoolFetchFileMessage ){
                  PoolFetchFileMessage reply = (PoolFetchFileMessage)messageArrived ;
 
-                 int rc;
+                 RequestStatusCode rc;
                  _currentRc = reply.getReturnCode();
 
                  switch(_currentRc) {
                      case 0:
                          // best candidate is the right one
-                         rc = RT_OK;
+                         rc = RequestStatusCode.OK;
                          break;
                      case CacheException.HSM_DELAY_ERROR:
                          _currentRm = "Suspend by HSM request : " + reply.getErrorObject() == null ?
                                  "No info" : reply.getErrorObject().toString() ;
-                         rc = RT_DELAY;
+                         rc = RequestStatusCode.DELAY;
                          break;
                      default:
                          _currentRm = reply.getErrorObject() == null ?
                                  ( "Error="+_currentRc ) : reply.getErrorObject().toString() ;
 
-                         rc =  RT_ERROR ;
+                         rc =  RequestStatusCode.ERROR ;
                  }
 
                  return rc;
@@ -1814,16 +1820,16 @@ public class RequestContainerV5
               _currentRc = e.getRc();
               _currentRm = e.getMessage();
               _log.warn("exerciseStageReply: {} ", e.toString());
-              return RT_ERROR;
+              return RequestStatusCode.ERROR;
            } catch (RuntimeException e) {
               _currentRc = 102;
               _currentRm = e.getMessage();
               _log.error("exerciseStageReply", e) ;
-              return RT_ERROR;
+              return RequestStatusCode.ERROR;
            }
         }
 
-        private int exercisePool2PoolReply( Message messageArrived ){
+        private RequestStatusCode exercisePool2PoolReply( Message messageArrived ){
            try{
 
               if( messageArrived instanceof Pool2PoolTransferMsg ){
@@ -1831,14 +1837,14 @@ public class RequestContainerV5
                  _log.info("Pool2PoolTransferMsg replied with : "+reply);
                  if( ( _currentRc = reply.getReturnCode() ) == 0 ){
                      _poolCandidate = _p2pDestinationPool;
-                    return RT_OK ;
+                    return RequestStatusCode.OK ;
 
                  }else{
 
                     _currentRm = reply.getErrorObject() == null ?
                                  ( "Error="+_currentRc ) : reply.getErrorObject().toString() ;
 
-                    return RT_ERROR ;
+                    return RequestStatusCode.ERROR ;
 
                  }
               }else{
@@ -1852,12 +1858,12 @@ public class RequestContainerV5
                _currentRc = e.getRc();
                _currentRm = e.getMessage();
                _log.warn("exercisePool2PoolReply: {}", e.toString());
-               return RT_ERROR;
+               return RequestStatusCode.ERROR;
            } catch (RuntimeException e) {
                _currentRc = 102;
                _currentRm = e.getMessage();
                _log.error("exercisePool2PoolReply", e);
-               return RT_ERROR;
+               return RequestStatusCode.ERROR;
            }
         }
         //
@@ -1890,56 +1896,56 @@ public class RequestContainerV5
         //  return FOUND
         //
         //  RESULT :
-        //      RT_FOUND :
+        //      RequestStatusCode.FOUND :
         //         file is on pool which is allowed and has reasonable cost.
-        //      RT_NOT_FOUND :
+        //      RequestStatusCode.NOT_FOUND :
         //         file is not in cache at all
-        //      RT_NOT_PERMITTED :
+        //      RequestStatusCode.NOT_PERMITTED :
         //         file not in an permitted pool but somewhere else
-        //      RT_COST_EXCEEDED :
+        //      RequestStatusCode.COST_EXCEEDED :
         //         file is in permitted pools but cost is too high.
-        //      RT_ERROR :
+        //      RequestStatusCode.ERROR :
         //         - No entry in configuration Permission Matrix
         //         - Code Exception
         //
-        private int askIfAvailable()
+        private RequestStatusCode askIfAvailable()
         {
            try {
                _bestPool = _poolSelector.selectReadPool();
                _parameter = _poolSelector.getCurrentPartition();
            } catch (FileNotInCacheException e) {
                _log.info("[read] {}", e.getMessage());
-               return RT_NOT_FOUND;
+               return RequestStatusCode.NOT_FOUND;
            } catch (PermissionDeniedCacheException e) {
                _log.info("[read] {}", e.getMessage());
-               return RT_NOT_PERMITTED;
+               return RequestStatusCode.NOT_PERMITTED;
            } catch (CostException e) {
                if (e.getPool() == null) {
                    _log.info("[read] {}", e.getMessage());
                    setError(125, e.getMessage());
-                   return RT_ERROR;
+                   return RequestStatusCode.ERROR;
                }
 
                _bestPool = e.getPool();
                _parameter = _poolSelector.getCurrentPartition();
                if (e.shouldTryAlternatives()) {
                    _log.info("[read] {} ({})", e.getMessage(), _bestPool.name());
-                   return RT_COST_EXCEEDED;
+                   return RequestStatusCode.COST_EXCEEDED;
                }
            } catch (CacheException e) {
                String err = "Read pool selection failed: " + e.getMessage();
                _log.warn(err);
                setError(130, err);
-               return RT_ERROR;
+               return RequestStatusCode.ERROR;
            } catch (IllegalArgumentException e) {
                String err = "Read pool selection failed:" + e.getMessage();
                _log.error(err);
                setError(130, err);
-               return RT_ERROR;
+               return RequestStatusCode.ERROR;
            } catch (RuntimeException e) {
                _log.error("Read pool selection failed", e);
                setError(130, "Read pool selection failed: " + e.toString());
-               return RT_ERROR;
+               return RequestStatusCode.ERROR;
            } finally {
                _log.info("[read] Took  {} ms",
                          (System.currentTimeMillis() - _started));
@@ -1947,7 +1953,7 @@ public class RequestContainerV5
 
            _poolCandidate = _bestPool;
            setError(0,"");
-           return RT_FOUND;
+           return RequestStatusCode.FOUND;
         }
         //
         // Result :
@@ -1965,7 +1971,7 @@ public class RequestContainerV5
         //    ERROR
         //        - no source pool (code problem)
         //
-        private int askForPoolToPool(boolean overwriteCost)
+        private RequestStatusCode askForPoolToPool(boolean overwriteCost)
         {
             try {
                 Partition.P2pPair pools =
@@ -1977,31 +1983,31 @@ public class RequestContainerV5
                           _p2pSourcePool, _p2pDestinationPool);
                 sendPool2PoolRequest(_p2pSourcePool, _p2pDestinationPool);
 
-                return RT_FOUND;
+                return RequestStatusCode.FOUND;
             } catch (PermissionDeniedCacheException e) {
                 setError(e.getRc(), e.getMessage());
                 _log.info("[p2p] {}", e.toString());
-                return RT_NOT_PERMITTED;
+                return RequestStatusCode.NOT_PERMITTED;
             } catch (SourceCostException e) {
                 setError(e.getRc(), e.getMessage());
                 _log.info("[p2p] {}", e.getMessage());
-                return RT_S_COST_EXCEEDED;
+                return RequestStatusCode.S_COST_EXCEEDED;
             } catch (DestinationCostException e) {
                 setError(e.getRc(), e.getMessage());
                 _log.info("[p2p] {}", e.getMessage());
-                return RT_COST_EXCEEDED;
+                return RequestStatusCode.COST_EXCEEDED;
             } catch (CacheException e) {
                 setError(e.getRc(), e.getMessage());
                 _log.warn("[p2p] {}", e.getMessage());
-                return RT_ERROR;
+                return RequestStatusCode.ERROR;
             } catch (IllegalArgumentException e) {
                 setError(128, e.getMessage());
                 _log.error("[p2p] {}", e.getMessage());
-                return RT_ERROR;
+                return RequestStatusCode.ERROR;
             } catch (RuntimeException e) {
                 setError(128, e.getMessage());
                 _log.error("[p2p] contact support@dcache.org", e);
-                return RT_ERROR;
+                return RequestStatusCode.ERROR;
             } finally {
                 _log.info("[p2p] Selection took {} ms",
                           (System.currentTimeMillis() - _started));
@@ -2018,7 +2024,7 @@ public class RequestContainerV5
         //   OUT_OF_RESOURCES :
         //        - too many requests queued
         //
-        private int askForStaging()
+        private RequestStatusCode askForStaging()
         {
             try {
                 SelectedPool pool =
@@ -2029,34 +2035,34 @@ public class RequestContainerV5
 
                 _log.info("[staging] poolCandidate -> {}", _poolCandidate.info());
                 if (!sendFetchRequest(_poolCandidate)) {
-                    return RT_OUT_OF_RESOURCES;
+                    return RequestStatusCode.OUT_OF_RESOURCES;
                 }
 
                 setError(0,"");
 
-                return RT_FOUND;
+                return RequestStatusCode.FOUND;
             } catch (CostException e) {
                if (e.getPool() != null) {
                    _poolCandidate = e.getPool();
                    _stageCandidatePool = e.getPool().name();
                    _stageCandidateHost = e.getPool().hostName();
-                   return RT_FOUND;
+                   return RequestStatusCode.FOUND;
                }
                _log.info("[stage] {}", e.getMessage());
                setError(125, e.getMessage());
-               return RT_ERROR;
+               return RequestStatusCode.ERROR;
             } catch (CacheException e) {
                 setError(e.getRc(), e.getMessage());
                 _log.warn("[stage] {}", e.getMessage());
-                return RT_NOT_FOUND;
+                return RequestStatusCode.NOT_FOUND;
             } catch (IllegalArgumentException e) {
                 setError(128, e.getMessage());
                 _log.error("[stage] {}", e.getMessage());
-                return RT_ERROR;
+                return RequestStatusCode.ERROR;
             } catch (RuntimeException e) {
                 setError(128, e.getMessage());
                 _log.error("[stage] contact support@dcache.org", e);
-                return RT_ERROR;
+                return RequestStatusCode.ERROR;
             } finally {
                 _log.info("[stage] Selection took {} ms",
                           (System.currentTimeMillis() - _started));
