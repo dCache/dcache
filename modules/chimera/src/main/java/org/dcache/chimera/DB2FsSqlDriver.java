@@ -32,7 +32,7 @@ import org.dcache.acl.enums.RsType;
  */
 class DB2FsSqlDriver extends FsSqlDriver {
 
-    private static final Logger _log = LoggerFactory.getLogger(DB2FsSqlDriver.class);
+    private static final Logger logger = LoggerFactory.getLogger(DB2FsSqlDriver.class);
 
     /**
      *  this is a utility class which issues SQL queries on database
@@ -41,7 +41,7 @@ class DB2FsSqlDriver extends FsSqlDriver {
     protected DB2FsSqlDriver(DataSource dataSource) throws ChimeraFsException
     {
         super(dataSource);
-        _log.info("Running DB2 specific Driver");
+        logger.info("Running DB2 specific Driver");
     }
 
     @Override
