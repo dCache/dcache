@@ -612,7 +612,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout.lo_iomode = ioMode;
             layout.lo_offset = new offset4(0);
             layout.lo_length = new length4(nfs4_prot.NFS4_UINT64_MAX);
-            layout.lo_content = layoutDriver.getLayoutContent(deviceid, stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()));
+            layout.lo_content = layoutDriver.getLayoutContent(stateid, NFSv4Defaults.NFS4_STRIPE_SIZE, new nfs_fh4(nfsInode.toNfsHandle()), deviceid);
 
             layoutStateId.bumpSeqid();
             if (ioMode == layoutiomode4.LAYOUTIOMODE4_RW) {

@@ -52,6 +52,7 @@ import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.Stat.Type;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.nfs.vfs.AclCheckable;
+import org.dcache.nfs.vfs.DirectoryStream;
 import org.dcache.util.PortRange;
 import org.dcache.util.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
@@ -111,7 +112,12 @@ public class NFSv4MoverHandler {
         }
 
         @Override
-        public List<DirectoryEntry> list(Inode inode) throws IOException {
+        public DirectoryStream list(Inode inode, byte[] verifier, long cookie) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public byte[] directoryVerifier(Inode inode) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

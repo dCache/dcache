@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2017 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -63,7 +63,6 @@ import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.PermissionDeniedChimeraFsException;
-import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
 import org.dcache.nfs.status.ExistException;
@@ -83,9 +82,11 @@ import org.dcache.nfs.v4.xdr.acetype4;
 import org.dcache.nfs.v4.xdr.nfsace4;
 import org.dcache.nfs.v4.xdr.uint32_t;
 import org.dcache.nfs.v4.xdr.utf8str_mixed;
+import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.vfs.AclCheckable;
 import org.dcache.nfs.vfs.DirectoryEntry;
 import org.dcache.nfs.vfs.FsStat;
+import org.dcache.nfs.vfs.DirectoryStream;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.VirtualFileSystem;
@@ -252,10 +253,26 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     }
 
     @Override
-    public List<DirectoryEntry> list(Inode inode) throws IOException {
+    public DirectoryStream list(Inode inode, byte[] verifier, long cookie) throws IOException {
         FsInode parentFsInode = toFsInode(inode);
-        List<HimeraDirectoryEntry> list = DirectoryStreamHelper.listOf(parentFsInode);
-        return Lists.transform(list, new ChimeraDirectoryEntryToVfs());
+
+        // ignore whatever is sent by client
+        byte[] currentVerifier = directoryVerifier(inode);
+
+        List<DirectoryEntry> list = Lists.transform(
+                DirectoryStreamHelper.listOf(parentFsInode),
+                e -> new DirectoryEntry(e.getName(),
+                        toInode(e.getInode()),
+                        fromChimeraStat(e.getStat(), e.getInode().ino()),
+                        e.getStat().getIno()));
+
+        return new DirectoryStream(currentVerifier, list);
+    }
+
+    @Override
+    public byte[] directoryVerifier(Inode inode) throws IOException {
+        FsInode parentFsInode = toFsInode(inode);
+        return verifier4.valueOf(parentFsInode.stat().getGeneration()).value;
     }
 
     @Override
@@ -449,14 +466,6 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     @Override
     public NfsIdMapping getIdMapper() {
         return _idMapping;
-    }
-
-    private class ChimeraDirectoryEntryToVfs implements Function<HimeraDirectoryEntry, DirectoryEntry> {
-
-        @Override
-        public DirectoryEntry apply(HimeraDirectoryEntry e) {
-            return new DirectoryEntry(e.getName(), toInode(e.getInode()), fromChimeraStat(e.getStat(), e.getInode().ino()));
-        }
     }
 
     private int typeToChimera(Stat.Type type) {

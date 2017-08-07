@@ -201,6 +201,9 @@
         <property name="timeUnit" value="${nfs.namespace-cache.time.unit}" />
         <property name="fsStatLifeTime" value="${nfs.fs-stat-cache.time}" />
         <property name="fsStatTimeUnit" value="${nfs.fs-stat-cache.time.unit}" />
+        <property name="readdirMaxEntries" value="${nfs.readdir-cache.size}" />
+        <property name="readdirLifeTime" value="${nfs.readdir-cache.time}" />
+        <property name="readdirLifeTimeUnit" value="${nfs.readdir-cache.unit}" />
     </bean>
 
     <beans  profile="portmap-true">
