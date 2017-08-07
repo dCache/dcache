@@ -21,19 +21,29 @@ public class IoStatsChannel implements StatsChannel{
 
     private final Statistics statistics = new Statistics();
 
+    public IoStatsChannel(RepositoryChannel channel){
+        _channel = channel;
+    }
+
     @Override
     public Statistics getStats() {
-        return null;
+        return statistics;
     }
 
     @Override
     public int write(ByteBuffer buffer, long position) throws IOException {
-        return 0;
+        long startTime = System.currentTimeMillis();
+        int writtenBytes = _channel.write(buffer, position); // might be 0 if nothing has been written
+        long duration = startTime - System.currentTimeMillis();
+        return writtenBytes;
     }
 
     @Override
     public int read(ByteBuffer buffer, long position) throws IOException {
-        return 0;
+        long startTime = System.currentTimeMillis();
+        int readBytes = _channel.read(buffer, position); // -1 => position greater than file; 0 => if end of file
+        long duration = startTime - System.currentTimeMillis();
+        return readBytes;
     }
 
     @Override
@@ -58,17 +68,26 @@ public class IoStatsChannel implements StatsChannel{
 
     @Override
     public long write(ByteBuffer[] srcs) throws IOException {
-        return 0;
+        long startTime = System.currentTimeMillis();
+        long writtenBytes = _channel.write(srcs);
+        long duration = startTime - System.currentTimeMillis();
+        return writtenBytes;
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        return 0;
+        long startTime = System.currentTimeMillis();
+        long readBytes = _channel.read(dsts, offset, length);
+        long duration = startTime - System.currentTimeMillis();
+        return readBytes;
     }
 
     @Override
     public long read(ByteBuffer[] dsts) throws IOException {
-        return 0;
+        long startTime = System.currentTimeMillis();
+        long readBytes = _channel.read(dsts);
+        long duration = startTime - System.currentTimeMillis();
+        return readBytes;
     }
 
     @Override
@@ -93,12 +112,19 @@ public class IoStatsChannel implements StatsChannel{
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        return 0;
+        long startTime = System.currentTimeMillis();
+        int readBytes = _channel.read(dst);
+        long duration = startTime - System.currentTimeMillis();
+        return readBytes;
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        return 0;
+        long supposedBytes = src.limit() - src.position();
+        long startTime = System.currentTimeMillis();
+        int writtenBytes = _channel.write(src);
+        long duration = startTime - System.currentTimeMillis();
+        return writtenBytes;
     }
 
     @Override
