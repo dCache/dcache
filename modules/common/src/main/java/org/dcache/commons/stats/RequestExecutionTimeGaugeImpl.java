@@ -21,7 +21,7 @@ import org.dcache.util.TimeUtils;
  */
 public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeMXBean {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RequestExecutionTimeGaugeImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(RequestExecutionTimeGaugeImpl.class);
 
     private final String name;
 
@@ -48,11 +48,11 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
                 server.registerMBean(this, mxBeanName);
             }
         } catch (MalformedObjectNameException ex) {
-            LOG.warn("Failed to create a MXBean with name: {} : {}" , mxName, ex.toString());
+            logger.warn("Failed to create a MXBean with name: {} : {}" , mxName, ex.toString());
         } catch (InstanceAlreadyExistsException | MBeanRegistrationException ex) {
-            LOG.warn("Failed to register a MXBean: {}", ex.toString());
+            logger.warn("Failed to register a MXBean: {}", ex.toString());
         } catch (NotCompliantMBeanException ex) {
-            LOG.warn("Failed to create a MXBean: {}", ex.toString());
+            logger.warn("Failed to create a MXBean: {}", ex.toString());
         }
         startTime = System.currentTimeMillis();
     }
@@ -65,7 +65,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     public synchronized void update(long nextExecTime) {
 
         if (nextExecTime < 0) {
-            LOG.info("possible backwards time shift detected; discarding invalid data ({})", nextExecTime);
+            logger.info("possible backwards time shift detected; discarding invalid data ({})", nextExecTime);
             return;
         }
 

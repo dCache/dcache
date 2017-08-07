@@ -24,7 +24,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public final class Strings {
 
-    private static final Logger LOGGER =
+    private static final Logger logger =
         LoggerFactory.getLogger( Strings.class);
 
     private static final String ANSI_ESCAPE = "\u001b[";
@@ -48,7 +48,7 @@ public final class Strings {
      * zero length array of strings if the argument string is null
      */
     public static String[] splitArgumentString(String argumentString) {
-        LOGGER.debug("splitting argument string {}",argumentString);
+        logger.debug("splitting argument string {}",argumentString);
         if(argumentString == null) {
             return ZERO_LENGTH_STRING_ARRAY;
         }
@@ -67,17 +67,17 @@ public final class Strings {
          if (regexMatcher.group(1) != null) {
                 // Add double-quoted string without the quotes
                 String groupMatch=  regexMatcher.group(1);
-                LOGGER.debug("first group matched [{}]",groupMatch);
+                logger.debug("first group matched [{}]",groupMatch);
                 matchList.add(groupMatch);
             } else if (regexMatcher.group(2) != null) {
                 // Add single-quoted string without the quotes
                 String groupMatch=  regexMatcher.group(2);
-                LOGGER.debug("second group matched [{}]",groupMatch);
+                logger.debug("second group matched [{}]",groupMatch);
                 matchList.add(groupMatch);
             } else if (regexMatcher.group(3) != null) {
                 //everything else
                 String groupMatch=  regexMatcher.group(3);
-                LOGGER.debug("third group matched [{}]",groupMatch);
+                logger.debug("third group matched [{}]",groupMatch);
                 matchList.add(groupMatch);
             }
         }

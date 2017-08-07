@@ -11,7 +11,7 @@ import java.math.BigInteger;
 
 public class OptionParser
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OptionParser.class);
+    private static final Logger logger = LoggerFactory.getLogger(OptionParser.class);
     private final Args args;
 
     public OptionParser(Args args)
@@ -270,9 +270,9 @@ public class OptionParser
                                 description = option.name();
                             }
                             if (!unit.isEmpty()) {
-                                LOGGER.info("{} set to {} {}", description, value, unit);
+                                logger.info("{} set to {} {}", description, value, unit);
                             } else {
-                                LOGGER.info("{} set to {}", description, value);
+                                logger.info("{} set to {}", description, value);
                             }
                         }
                     }
