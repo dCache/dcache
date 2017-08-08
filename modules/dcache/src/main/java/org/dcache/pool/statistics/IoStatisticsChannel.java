@@ -13,6 +13,7 @@ import java.nio.channels.WritableByteChannel;
 
 /**
  * This class decorates any RepositoryChannel and adds the function of collecting data for the IoStatistics
+ * Hint: It might be interesting for further developments to have a closer look at return values from read and write methods, when they equal 0
  */
 public class IoStatisticsChannel implements RepositoryChannel {
 
@@ -22,142 +23,142 @@ public class IoStatisticsChannel implements RepositoryChannel {
     /**
      * Inner channel to which all operations are delegated.
      */
-    private RepositoryChannel _channel;
+    private RepositoryChannel channel;
 
-    private final IoStatistics _statistics = new IoStatistics();
+    private final IoStatistics statistics = new IoStatistics();
 
-    public IoStatisticsChannel(RepositoryChannel channel){ _channel = channel; }
+    public IoStatisticsChannel(RepositoryChannel channel){ channel = channel; }
 
     /**
      * Returns the object most central of this decorator
      * @return object with collected and evaluated statistics data
      */
     public IoStatistics getStatistics() {
-        return _statistics;
+        return statistics;
     }
 
     @Override
     public int write(ByteBuffer buffer, long position) throws IOException {
         long startTime = System.nanoTime();
-        int writtenBytes = _channel.write(buffer, position); // might be 0 if nothing has been written
+        int writtenBytes = channel.write(buffer, position); // might be 0 if nothing has been written
         long duration = System.nanoTime() - startTime;
-        _statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public int read(ByteBuffer buffer, long position) throws IOException {
         long startTime = System.nanoTime();
-        int readBytes = _channel.read(buffer, position); // -1 => position greater than file; 0 => if end of file
+        int readBytes = channel.read(buffer, position); // -1 => position greater than file; 0 => if end of file
         long duration = System.nanoTime() - startTime;
-        _statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public void sync() throws SyncFailedException, IOException {
-        _channel.sync();
+        channel.sync();
     }
 
     @Override
     public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
         long startTime = System.nanoTime();
-        long readBytes =  _channel.transferTo(position, count, target);
+        long readBytes =  channel.transferTo(position, count, target);
         long duration = System.nanoTime() - startTime;
-        _statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
         long startTime = System.nanoTime();
-        long writtenBytes =  _channel.transferFrom(src, position, count);
+        long writtenBytes =  channel.transferFrom(src, position, count);
         long duration = System.nanoTime() - startTime;
-        _statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         long startTime = System.nanoTime();
-        long writtenBytes = _channel.write(srcs, offset, length);
+        long writtenBytes = channel.write(srcs, offset, length);
         long duration = System.nanoTime() - startTime;
-        _statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public long write(ByteBuffer[] srcs) throws IOException {
         long startTime = System.nanoTime();
-        long writtenBytes = _channel.write(srcs);
+        long writtenBytes = channel.write(srcs);
         long duration = System.nanoTime() - startTime;
-        _statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         long startTime = System.nanoTime();
-        long readBytes = _channel.read(dsts, offset, length);
+        long readBytes = channel.read(dsts, offset, length);
         long duration = System.nanoTime() - startTime;
-        _statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public long read(ByteBuffer[] dsts) throws IOException {
         long startTime = System.nanoTime();
-        long readBytes = _channel.read(dsts);
+        long readBytes = channel.read(dsts);
         long duration = System.nanoTime() - startTime;
-        _statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public long position() throws IOException {
-        return _channel.position();
+        return channel.position();
     }
 
     @Override
     public SeekableByteChannel position(long newPosition) throws IOException {
-        return _channel.position(newPosition);
+        return channel.position(newPosition);
     }
 
     @Override
     public long size() throws IOException {
-        return _channel.size();
+        return channel.size();
     }
 
     @Override
     public SeekableByteChannel truncate(long size) throws IOException {
-        return _channel.truncate(size);
+        return channel.truncate(size);
     }
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
         long startTime = System.nanoTime();
-        int readBytes = _channel.read(dst);
+        int readBytes = channel.read(dst);
         long duration = System.nanoTime() - startTime;
-        _statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
         long startTime = System.nanoTime();
-        int writtenBytes = _channel.write(src);
+        int writtenBytes = channel.write(src);
         long duration = System.nanoTime() - startTime;
-        _statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public boolean isOpen() {
-        return _channel.isOpen();
+        return channel.isOpen();
     }
 
     @Override
     public void close() throws IOException {
-        _channel.close();
+        channel.close();
     }
 }
