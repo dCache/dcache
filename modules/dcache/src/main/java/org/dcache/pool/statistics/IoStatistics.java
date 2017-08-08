@@ -2,6 +2,7 @@ package org.dcache.pool.statistics;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * This class stores statistics about read an write processes
@@ -11,7 +12,7 @@ public class IoStatistics {
 
     private long _readRequestNum = 0;
     private long _readBytes;
-    private ArrayList<Double> _readSpeeds = new ArrayList<>();
+    private List<Double> _readSpeeds = new ArrayList<>();
     private double _minReadSpeed;
     private double _maxReadSpeed;
     private double _avgReadSpeed;
@@ -20,7 +21,7 @@ public class IoStatistics {
 
     private long _writeRequestNum = 0;
     private long _writtenBytes;
-    private ArrayList<Double> _writeSpeeds = new ArrayList<>();
+    private List<Double> _writeSpeeds = new ArrayList<>();
     private double _minWriteSpeed;
     private double _maxWriteSpeed;
     private double _avgWriteSpeed;
@@ -35,7 +36,7 @@ public class IoStatistics {
      *         The number of read bytes; must be non-negative
      *
      * @param  readTime
-     *         The duration of the read request in milliseconds; must be non-negative
+     *         The duration of the read request in nanoseconds; must be non-negative
      */
 
     public void updateRead(long readBytes, long readTime){
@@ -128,12 +129,12 @@ public class IoStatistics {
      * @return The calculated 95% percentile of the speed of all read or write requests.
      */
 
-    private double calculate95Percentile(long requestNum, ArrayList<Double> speeds){
+    private double calculate95Percentile(long requestNum, List<Double> speeds){
         Collections.sort(speeds);
-        double index = (double) 0.95 * (double) requestNum;
+        double index = 0.95 * (double) requestNum;
 
         if (Math.ceil(index) == index){
-            return (double) 0.5 * (speeds.get((int)index) + speeds.get((int) index + 1));
+            return 0.5 * (speeds.get((int)index) + speeds.get((int) index + 1));
         } else {
             return speeds.get((int)Math.ceil(index));
         }
@@ -147,7 +148,7 @@ public class IoStatistics {
         return _readBytes;
     }
 
-    public ArrayList<Double> getReadSpeeds() {
+    public List<Double> getReadSpeeds() {
         return _readSpeeds;
     }
 
@@ -179,7 +180,7 @@ public class IoStatistics {
         return _writtenBytes;
     }
 
-    public ArrayList<Double> getWriteSpeeds() {
+    public List<Double> getWriteSpeeds() {
         return _writeSpeeds;
     }
 
