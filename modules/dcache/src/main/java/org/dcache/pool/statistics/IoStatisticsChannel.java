@@ -1,7 +1,6 @@
 package org.dcache.pool.statistics;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,20 +12,29 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-public class IoStatsChannel implements StatsChannel{
+/**
+ * This class decorates any RepositoryChannel and adds the function of collecting data for the IoStatistics
+ */
+public class IoStatisticsChannel implements RepositoryChannel {
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(IoStatsChannel.class);
+            LoggerFactory.getLogger(IoStatisticsChannel.class);
 
+    /**
+     * Inner channel to which all operations are delegated.
+     */
     @VisibleForTesting
     private RepositoryChannel _channel;
 
     private final Statistics _statistics = new Statistics();
 
-    public IoStatsChannel(RepositoryChannel channel){ _channel = channel; }
+    public IoStatisticsChannel(RepositoryChannel channel){ _channel = channel; }
 
-    @Override
-    public Statistics getStats() {
+    /**
+     * Returns the object most central of this decorator
+     * @return object with collected and evaluated statistics data
+     */
+    public Statistics getStatistics() {
         return _statistics;
     }
 
