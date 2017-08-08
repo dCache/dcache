@@ -1,6 +1,5 @@
 package org.dcache.pool.statistics;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,18 +38,18 @@ public class IoStatisticsChannel implements RepositoryChannel {
 
     @Override
     public int write(ByteBuffer buffer, long position) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         int writtenBytes = _channel.write(buffer, position); // might be 0 if nothing has been written
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public int read(ByteBuffer buffer, long position) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         int readBytes = _channel.read(buffer, position); // -1 => position greater than file; 0 => if end of file
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
@@ -62,54 +61,54 @@ public class IoStatisticsChannel implements RepositoryChannel {
 
     @Override
     public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         long readBytes =  _channel.transferTo(position, count, target);
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         long writtenBytes =  _channel.transferFrom(src, position, count);
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         long writtenBytes = _channel.write(srcs, offset, length);
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public long write(ByteBuffer[] srcs) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         long writtenBytes = _channel.write(srcs);
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         long readBytes = _channel.read(dsts, offset, length);
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public long read(ByteBuffer[] dsts) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         long readBytes = _channel.read(dsts);
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
@@ -136,18 +135,18 @@ public class IoStatisticsChannel implements RepositoryChannel {
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         int readBytes = _channel.read(dst);
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
         int writtenBytes = _channel.write(src);
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.nanoTime() - startTime;
         _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
