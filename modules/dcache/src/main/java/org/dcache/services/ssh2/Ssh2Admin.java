@@ -14,6 +14,7 @@ import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
+import org.dcache.util.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -26,11 +27,15 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.AuthorizedKeyParser;
@@ -283,6 +288,11 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             return null;
         }
 
+        private boolean remoteHostIsPermitted(String keyLine, ServerSession session){
+            RemoteHostValidator validator = new RemoteHostValidator();
+            return validator.isValidHost(keyLine, session);
+        }
+
         @Override
         public boolean authenticate(String userName, PublicKey key,
                 ServerSession session) {
@@ -294,11 +304,10 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     successful =
                         fileStream
                         .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
+                        .filter(l -> remoteHostIsPermitted(l, session))
                         .map(this::toPublicKey)
-                        .filter(k -> k != null)
-                        .filter(key::equals)
-                        .findFirst()
-                        .isPresent();
+                        .filter(Objects::nonNull)
+                        .anyMatch(key::equals);
                 }
             } catch (FileNotFoundException e) {
                 _log.debug("File not found: {}", _authorizedKeyList);
@@ -315,6 +324,66 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 logLoginTry(userName, session, method, successful, null);
             }
             return successful;
+        }
+    }
+
+    private class RemoteHostValidator {
+
+        private boolean isValidHost(String line, ServerSession session) {
+            for (String linePart : line.split(" ")) {
+                if (linePart.startsWith("from=")) {
+                    for (String pattern : strip(linePart).split(",")){
+                        boolean patternIsNegated = pattern.startsWith("!");
+                        boolean patternMatchesHost = patternMatchesHost(pattern, session);
+                        if (patternIsNegated==patternMatchesHost){
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        private boolean patternMatchesHost(String pattern, ServerSession session){
+            SocketAddress remote = session.getClientAddress();
+            if (remote instanceof InetSocketAddress) {
+                String remoteAddress = ((InetSocketAddress) remote).getAddress().getHostAddress();
+                String remoteName = ((InetSocketAddress) remote).getHostName();
+                Pattern p = Pattern.compile(convertPatternToRegex(pattern));
+                Matcher addressMatcher = p.matcher(remoteAddress);
+                Matcher nameMatcher = p.matcher(remoteName);
+                return (addressMatcher.matches()
+                        || nameMatcher.matches()
+                        || addressInCidrRange(pattern, remoteAddress));
+            }
+            return false;
+        }
+
+        private boolean addressInCidrRange(String cidrAddress, String remoteAddress) {
+            cidrAddress = cidrAddress.replace("!","");
+            if (cidrAddress.contains("/")){
+                Subnet subnet = Subnet.create(cidrAddress);
+                try {
+                    return subnet.containsHost(remoteAddress);
+                } catch (UnknownHostException e) {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        private String convertPatternToRegex(String pattern){
+            pattern = pattern.replace("!","");
+            pattern = pattern.replace(".", "\\.");
+            pattern = pattern.replace("?", ".{1}");
+            pattern = pattern.replace("*", ".*");
+            return pattern;
+        }
+
+        private String strip(String linePart){
+            linePart = linePart.replace("from=", "");
+            linePart = linePart.replace("\"", "");
+            return linePart;
         }
     }
 
