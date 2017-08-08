@@ -11,20 +11,20 @@ public class IoStatistics {
 
     private long _readRequestNum = 0;
     private long _readBytes;
-    private ArrayList<Float> _readSpeeds = new ArrayList<Float>();
-    private float _minReadSpeed;
-    private float _maxReadSpeed;
-    private float _avgReadSpeed;
-    private float _95ReadSpeed;
+    private ArrayList<Double> _readSpeeds = new ArrayList<>();
+    private double _minReadSpeed;
+    private double _maxReadSpeed;
+    private double _avgReadSpeed;
+    private double _95ReadSpeed;
     private long _totalReadTime;
 
     private long _writeRequestNum = 0;
     private long _writtenBytes;
-    private ArrayList<Float> _writeSpeeds = new ArrayList<Float>();
-    private float _minWriteSpeed;
-    private float _maxWriteSpeed;
-    private float _avgWriteSpeed;
-    private float _95WriteSpeed;
+    private ArrayList<Double> _writeSpeeds = new ArrayList<>();
+    private double _minWriteSpeed;
+    private double _maxWriteSpeed;
+    private double _avgWriteSpeed;
+    private double _95WriteSpeed;
     private long _totalWriteTime;
 
     /**
@@ -40,7 +40,7 @@ public class IoStatistics {
 
     public void updateRead(long readBytes, long readTime){
 
-        float readSpeed = calculateSpeed(readBytes, readTime);
+        double readSpeed = calculateSpeed(readBytes, readTime);
         _readSpeeds.add(readSpeed);
 
         _minReadSpeed = (_readRequestNum == 0) ? readSpeed : Math.min(readSpeed, _minReadSpeed);
@@ -65,7 +65,7 @@ public class IoStatistics {
      */
 
     public void updateWrite(long writeBytes, long writeTime){
-        float writeSpeed = calculateSpeed(writeBytes, writeTime);
+        double writeSpeed = calculateSpeed(writeBytes, writeTime);
         _writeSpeeds.add(writeSpeed);
 
         _minWriteSpeed = (_writeRequestNum == 0) ? writeSpeed : Math.min(writeSpeed, _minWriteSpeed);
@@ -91,8 +91,8 @@ public class IoStatistics {
      * @return The speed of the process in bytes per millisecond.
      */
 
-    private float calculateSpeed(long bytes, long time){
-        return (float) bytes / (float) time;
+    private double calculateSpeed(long bytes, long time){
+        return (double) bytes / (double) time;
     }
 
     /**
@@ -111,7 +111,7 @@ public class IoStatistics {
      * @return The new average of the speed of all read or write requests.
      */
 
-    private float calculateNewAvg(long requestNum, float oldAvg, float newSpeed){
+    private double calculateNewAvg(long requestNum, double oldAvg, double newSpeed){
         return (requestNum * oldAvg + newSpeed) / (requestNum + 1);
     }
 
@@ -128,12 +128,12 @@ public class IoStatistics {
      * @return The calculated 95% percentile of the speed of all read or write requests.
      */
 
-    private float calculate95Percentile(long requestNum, ArrayList<Float> speeds){
+    private double calculate95Percentile(long requestNum, ArrayList<Double> speeds){
         Collections.sort(speeds);
-        float index = (float) 0.95 * (float) requestNum;
+        double index = (double) 0.95 * (double) requestNum;
 
         if (Math.ceil(index) == index){
-            return (float) 0.5 * (speeds.get((int)index) + speeds.get((int) index + 1));
+            return (double) 0.5 * (speeds.get((int)index) + speeds.get((int) index + 1));
         } else {
             return speeds.get((int)Math.ceil(index));
         }
@@ -147,23 +147,23 @@ public class IoStatistics {
         return _readBytes;
     }
 
-    public ArrayList<Float> getReadSpeeds() {
+    public ArrayList<Double> getReadSpeeds() {
         return _readSpeeds;
     }
 
-    public float getMinReadSpeed() {
+    public double getMinReadSpeed() {
         return _minReadSpeed;
     }
 
-    public float getMaxReadSpeed() {
+    public double getMaxReadSpeed() {
         return _maxReadSpeed;
     }
 
-    public float getAvgReadSpeed() {
+    public double getAvgReadSpeed() {
         return _avgReadSpeed;
     }
 
-    public float get95ReadSpeed() {
+    public double get95ReadSpeed() {
         return _95ReadSpeed;
     }
 
@@ -179,23 +179,23 @@ public class IoStatistics {
         return _writtenBytes;
     }
 
-    public ArrayList<Float> getWriteSpeeds() {
+    public ArrayList<Double> getWriteSpeeds() {
         return _writeSpeeds;
     }
 
-    public float getMinWriteSpeed() {
+    public double getMinWriteSpeed() {
         return _minWriteSpeed;
     }
 
-    public float getMaxWriteSpeed() {
+    public double getMaxWriteSpeed() {
         return _maxWriteSpeed;
     }
 
-    public float getAvgWriteSpeed() {
+    public double getAvgWriteSpeed() {
         return _avgWriteSpeed;
     }
 
-    public float get95WriteSpeed() {
+    public double get95WriteSpeed() {
         return _95WriteSpeed;
     }
 
