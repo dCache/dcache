@@ -60,7 +60,7 @@ public class Statistics {
     }
 
     private float calculate95Percentile(long requestNum, ArrayList<Float> speeds){
-        float index = (float) 0.9 * (float) requestNum;
+        float index = (float) 0.95 * (float) requestNum;
 
         if (Math.ceil(index) == index){
             return (float) 0.5 * (speeds.get((int)index) + speeds.get((int) index + 1));

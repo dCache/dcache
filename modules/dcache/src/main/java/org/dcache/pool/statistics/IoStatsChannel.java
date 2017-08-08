@@ -1,5 +1,6 @@
 package org.dcache.pool.statistics;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
@@ -17,7 +18,8 @@ public class IoStatsChannel implements StatsChannel{
     private static final Logger LOGGER =
             LoggerFactory.getLogger(IoStatsChannel.class);
 
-    RepositoryChannel _channel;
+    @VisibleForTesting
+    private RepositoryChannel _channel;
 
     private final Statistics _statistics = new Statistics();
 
