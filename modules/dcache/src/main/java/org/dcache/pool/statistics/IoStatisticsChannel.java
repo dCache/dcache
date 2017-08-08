@@ -26,7 +26,7 @@ public class IoStatisticsChannel implements RepositoryChannel {
     @VisibleForTesting
     private RepositoryChannel _channel;
 
-    private final Statistics _statistics = new Statistics();
+    private final IoStatistics _statistics = new IoStatistics();
 
     public IoStatisticsChannel(RepositoryChannel channel){ _channel = channel; }
 
@@ -34,7 +34,7 @@ public class IoStatisticsChannel implements RepositoryChannel {
      * Returns the object most central of this decorator
      * @return object with collected and evaluated statistics data
      */
-    public Statistics getStatistics() {
+    public IoStatistics getStatistics() {
         return _statistics;
     }
 
