@@ -4,7 +4,10 @@ import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.PropertyResolverUtils;
+import org.apache.sshd.common.config.keys.KeyUtils;
 import org.apache.sshd.common.keyprovider.AbstractFileKeyPairProvider;
+import org.apache.sshd.common.session.Session;
+import org.apache.sshd.common.session.SessionListener;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.SshServer;
@@ -43,6 +46,7 @@ import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
 import org.dcache.util.Files;
+import org.dcache.util.NetLoggerBuilder;
 
 import static java.util.stream.Collectors.toList;
 
@@ -57,6 +61,8 @@ import static java.util.stream.Collectors.toList;
 public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 {
     private static final Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
+    private static final Logger _accessLog =
+            LoggerFactory.getLogger("org.dcache.access.ssh2");
     private final SshServer _server;
     // UniversalSpringCell injected parameters
     private List<File> _hostKeys;
@@ -184,6 +190,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
         _server.setPort(_port);
         _server.setHost(_host);
+        _server.addSessionListener(new AdminConnectionLogger());
 
         try {
             _server.start();
@@ -201,11 +208,42 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         }
     }
 
+    private void logLoginTry(String username, ServerSession session,
+                             String method, boolean successful, String reason)
+    {
+        NetLoggerBuilder.Level logLevel = NetLoggerBuilder.Level.INFO;
+        if (!successful) {
+            logLevel = NetLoggerBuilder.Level.WARN;
+        }
+
+        new NetLoggerBuilder(logLevel, "org.dcache.services.ssh2.login")
+                .omitNullValues()
+                .add("username", username)
+                .add("remote.socket", session.getClientAddress())
+                .add("method", method)
+                .add("successful", successful)
+                .add("reason", reason)
+                .toLogger(_accessLog);
+
+        // set session parameter
+        if (successful) {
+            try {
+                session.setAuthenticated();
+                session.setUsername(username);
+            } catch (IOException e) {
+                _log.error("Failed to set Authenticated: {}",
+                        e.getMessage());
+            }
+        }
+    }
+
     private class AdminPasswordAuthenticator implements PasswordAuthenticator {
 
         @Override
         public boolean authenticate(String userName, String password,
                 ServerSession session) {
+            boolean successful = false;
+            String reason = null;
             Subject subject = new Subject();
             addOrigin(session, subject);
             subject.getPrivateCredentials().add(new PasswordCredential(userName,
@@ -216,16 +254,20 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
                 Subject authenticatedSubject = reply.getSubject();
                 if (!Subjects.hasGid(authenticatedSubject, _adminGroupId)) {
-                    throw new PermissionDeniedCacheException("not member of admin gid");
+                    reason = "not member of admin gid";
+                    throw new PermissionDeniedCacheException(reason);
                 }
 
-                return true;
+                successful = true;
             } catch (PermissionDeniedCacheException e) {
                 _log.warn("Login for {} denied: {}", userName, e.getMessage());
             } catch (CacheException e) {
+                reason = e.toString();
                 _log.warn("Login for {} failed: {}", userName, e.toString());
             }
-            return false;
+
+            logLoginTry(userName, session, "Password", successful, reason);
+            return successful;
         }
     }
 
@@ -244,11 +286,13 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         @Override
         public boolean authenticate(String userName, PublicKey key,
                 ServerSession session) {
+            boolean successful = false;
             _log.debug("Authentication username set to: {} publicKey: {}",
                     userName, key);
             try {
                 try(Stream<String> fileStream = java.nio.file.Files.lines(_authorizedKeyList.toPath())) {
-                    return fileStream
+                    successful =
+                        fileStream
                         .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
                         .map(this::toPublicKey)
                         .filter(k -> k != null)
@@ -262,7 +306,38 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 _log.error("Failed to read {}: {}", _authorizedKeyList,
                         e.getMessage());
             }
-            return false;
+
+            // the method gets called twice while pubkey authentication,
+            // to avoid duplicate logging, check if already authenticated
+            if (!session.isAuthenticated()) {
+                String method = "PublicKey (" + key.getAlgorithm() + " "
+                        + KeyUtils.getFingerPrint(key) + ")";
+                logLoginTry(userName, session, method, successful, null);
+            }
+            return successful;
         }
     }
+
+    private class AdminConnectionLogger implements SessionListener {
+
+        @Override
+        public void sessionCreated(Session session) {
+            logEvent("org.dcache.services.ssh2.connect", session);
+        }
+
+        @Override
+        public void sessionClosed(Session session) {
+            logEvent("org.dcache.services.ssh2.disconnect", session);
+        }
+
+        private void logEvent(String name, Session session) {
+            new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, name)
+                    .omitNullValues()
+                    .add("username", session.getUsername())
+                    .add("remote.socket", session.getIoSession()
+                            .getRemoteAddress())
+                    .toLogger(_accessLog);
+        }
+    }
+
 }
