@@ -8,7 +8,7 @@ public class Statistics {
 
     private long _readRequestNum = 0;
     private long _readBytes;
-    private ArrayList<Double> _readSpeeds;
+    private ArrayList<Long> _readSpeeds;
     private long _minReadSpeed;
     private long _maxReadSpeed;
     private long _avgReadSpeed;
@@ -17,7 +17,7 @@ public class Statistics {
 
     private long _writeRequestNum = 0;
     private long _writeBytes;
-    private ArrayList<Double> _writeSpeeds;
+    private ArrayList<Long> _writeSpeeds;
     private long _minWriteSpeed;
     private long _maxWriteSpeed;
     private long _avgWriteSpeed;
@@ -26,7 +26,7 @@ public class Statistics {
 
     public void updateRead(long readBytes, long readTime){
 
-        long readSpeed = calculateSpeed(readBytes, readTime)
+        long readSpeed = calculateSpeed(readBytes, readTime);
         _minReadSpeed = (_readRequestNum == 0) ? readSpeed : Math.min(readSpeed, _minReadSpeed);
         _maxReadSpeed = (_readRequestNum == 0) ? readSpeed : Math.max(readSpeed, _maxReadSpeed);
         _avgReadSpeed = (_readRequestNum == 0) ? readSpeed : (_readRequestNum * _avgReadSpeed + readSpeed) / (_readRequestNum + 1);
