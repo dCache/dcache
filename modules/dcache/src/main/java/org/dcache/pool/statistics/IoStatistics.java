@@ -1,6 +1,11 @@
 package org.dcache.pool.statistics;
 
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
+import com.google.common.base.MoreObjects;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class stores statistics about read an write processes
@@ -177,4 +182,26 @@ public class IoStatistics {
     public long getTotalWriteTime() {
         return _totalWriteTime;
     }
+
+    public String toString(){
+
+       return MoreObjects.toStringHelper(this)
+                .add("number of read requests:", _readRequestNum)
+                .add("total read bytes:", _readBytes)
+                .add("min readSpeed:", _minReadSpeed)
+                .add("max readSpeed:", _maxReadSpeed)
+                .add("avg readSpeed:", _avgReadSpeed)
+                .add("95percentile readSpeed:", _95ReadSpeed)
+                .add("total readTime:", _totalReadTime)
+                .add("number of write requests:", _writeRequestNum)
+                .add("total written bytes:", _writtenBytes)
+                .add("min writeSpeed:", _minWriteSpeed)
+                .add("max writeSpeed:", _maxWriteSpeed)
+                .add("avg writeSpeed:", _avgWriteSpeed)
+                .add("95percentile writeSpeed:", _95WriteSpeed)
+                .add("total writeTime:", _totalWriteTime)
+                .omitNullValues()
+                .toString();
+    }
+
 }
