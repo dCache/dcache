@@ -27,7 +27,7 @@ public class IoStatisticsChannel implements RepositoryChannel {
 
     private final IoStatistics statistics = new IoStatistics();
 
-    public IoStatisticsChannel(RepositoryChannel channel){ channel = channel; }
+    public IoStatisticsChannel(RepositoryChannel channel){ this.channel = channel; }
 
     /**
      * Returns the object most central of this decorator
@@ -39,19 +39,21 @@ public class IoStatisticsChannel implements RepositoryChannel {
 
     @Override
     public int write(ByteBuffer buffer, long position) throws IOException {
+        long requestedWriteBytes = buffer.limit() - buffer.position();
         long startTime = System.nanoTime();
-        int writtenBytes = channel.write(buffer, position); // might be 0 if nothing has been written
+        int writtenBytes = channel.write(buffer, position);
         long duration = System.nanoTime() - startTime;
-        statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration, requestedWriteBytes);
         return writtenBytes;
     }
 
     @Override
     public int read(ByteBuffer buffer, long position) throws IOException {
+        long requestedReadBytes = buffer.limit() - buffer.position();
         long startTime = System.nanoTime();
-        int readBytes = channel.read(buffer, position); // -1 => position greater than file; 0 => if end of file
+        int readBytes = channel.read(buffer, position);
         long duration = System.nanoTime() - startTime;
-        statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration, requestedReadBytes);
         return readBytes;
     }
 
@@ -65,7 +67,7 @@ public class IoStatisticsChannel implements RepositoryChannel {
         long startTime = System.nanoTime();
         long readBytes =  channel.transferTo(position, count, target);
         long duration = System.nanoTime() - startTime;
-        statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration, count);
         return readBytes;
     }
 
@@ -74,43 +76,59 @@ public class IoStatisticsChannel implements RepositoryChannel {
         long startTime = System.nanoTime();
         long writtenBytes =  channel.transferFrom(src, position, count);
         long duration = System.nanoTime() - startTime;
-        statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration, count);
         return writtenBytes;
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+        long requestedWriteBytes = 0;
+        for (int i = offset; i < (offset + length); i++){
+            requestedWriteBytes += srcs[i].limit() - srcs[i].position();
+        }
         long startTime = System.nanoTime();
         long writtenBytes = channel.write(srcs, offset, length);
         long duration = System.nanoTime() - startTime;
-        statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration, requestedWriteBytes);
         return writtenBytes;
     }
 
     @Override
     public long write(ByteBuffer[] srcs) throws IOException {
+        long requestedWriteBytes = 0;
+        for (int i = 0; i < srcs.length; i++){
+            requestedWriteBytes += srcs[i].limit() - srcs[i].position();
+        }
         long startTime = System.nanoTime();
         long writtenBytes = channel.write(srcs);
         long duration = System.nanoTime() - startTime;
-        statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration, requestedWriteBytes);
         return writtenBytes;
     }
 
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+        long requestedReadBytes = 0;
+        for (int i = offset; i < (offset + length); i++){
+            requestedReadBytes += dsts[i].limit() - dsts[i].position();
+        }
         long startTime = System.nanoTime();
         long readBytes = channel.read(dsts, offset, length);
         long duration = System.nanoTime() - startTime;
-        statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration, requestedReadBytes);
         return readBytes;
     }
 
     @Override
     public long read(ByteBuffer[] dsts) throws IOException {
+        long requestedReadBytes = 0;
+        for (int i = 0; i < dsts.length; i++){
+            requestedReadBytes += dsts[i].limit() - dsts[i].position();
+        }
         long startTime = System.nanoTime();
         long readBytes = channel.read(dsts);
         long duration = System.nanoTime() - startTime;
-        statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration, requestedReadBytes);
         return readBytes;
     }
 
@@ -136,19 +154,21 @@ public class IoStatisticsChannel implements RepositoryChannel {
 
     @Override
     public int read(ByteBuffer dst) throws IOException {
+        long requestedReadBytes = dst.limit() - dst.position();
         long startTime = System.nanoTime();
         int readBytes = channel.read(dst);
         long duration = System.nanoTime() - startTime;
-        statistics.updateRead(readBytes, duration);
+        statistics.updateRead(readBytes, duration, requestedReadBytes);
         return readBytes;
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
+        long requestedWriteBytes = src.limit() - src.position();
         long startTime = System.nanoTime();
         int writtenBytes = channel.write(src);
         long duration = System.nanoTime() - startTime;
-        statistics.updateWrite(writtenBytes, duration);
+        statistics.updateWrite(writtenBytes, duration, requestedWriteBytes);
         return writtenBytes;
     }
 
