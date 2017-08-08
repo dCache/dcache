@@ -62,7 +62,7 @@ public class IoStatistics {
      *         The number of written bytes; must be non-negative
      *
      * @param  writeTime
-     *         The duration of the write request in milliseconds; must be non-negative
+     *         The duration of the write request in nanoseconds; must be non-negative
      */
 
     public void updateWrite(long writeBytes, long writeTime){
@@ -89,7 +89,7 @@ public class IoStatistics {
      * @param  time
      *         The duration of the request in milliseconds; must be non-negative
      *
-     * @return The speed of the process in bytes per millisecond.
+     * @return The speed of the process in bytes per nanoseconds.
      */
 
     private double calculateSpeed(long bytes, long time){
