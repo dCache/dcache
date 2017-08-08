@@ -31,10 +31,12 @@ public class AclMapper {
     }
 
     public static Permission getPermission(Subject subject, Origin origin, Owner owner, ACL acl) {
+        // if ( logger.isDebugEnabled() )
         // logger.debug("Subject: {}", subject);
         // logger.debug("Origin: {}", origin);
         // logger.debug("Owner: {}", owner);
         // logger.debug("ACL: {}", acl);
+        // }
 
         Permission permACL = new Permission();
         RsType rsType = null;
@@ -65,6 +67,7 @@ public class AclMapper {
                     }
                 }
 
+                // if ( logger.isDebugEnabled() )
                 // logger.debug("Step {}) {}", ace.getOrder(), (new Permission(def_msk,
                 // allow_msk).asString(rsType)));
             }
@@ -75,9 +78,10 @@ public class AclMapper {
         } catch (ACLException e) {
             logger.error(e.getMessage());
         } finally {
-
-            logger.debug("Getted Permission: {}", (rsType == null ? permACL
+            if ( logger.isDebugEnabled() ) {
+                logger.debug("Getted Permission: {}", (rsType == null ? permACL
                         .toString() : permACL.asString(rsType)));
+            }
         }
         return permACL;
     }
@@ -93,11 +97,13 @@ public class AclMapper {
     }
 
     private static Permission getPermission(Subject subject, Origin origin, Owner owner, ACE ace, RsType rsType) throws ACLException {
+        // if ( logger.isDebugEnabled() ) {
         // logger.debug("Subject: {}", subject);
         // logger.debug("Origin: {}", origin);
         // logger.debug("Owner: {}", owner);
         // logger.debug("ACE: {}", ace.toNFSv4String(rsType));
         // logger.debug("rsType: {}", rsType);
+        // }
 
         Permission perm = null;
         // match this ace only if either recourse is not a directory or an INHERIT_ONLY_ACE bit is not set in ace.flags
