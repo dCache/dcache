@@ -1,8 +1,6 @@
 package org.dcache.pool.statistics;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 /**
  * This class stores statistics about read an write processes
@@ -12,7 +10,8 @@ public class IoStatistics {
 
     private long _readRequestNum = 0;
     private long _readBytes;
-    private List<Double> _readSpeeds = new ArrayList<>();
+    private double[] _readSpeeds = new double[8192];
+    private int _readSpeedsArrayIndex = 0;
     private double _minReadSpeed;
     private double _maxReadSpeed;
     private double _avgReadSpeed;
@@ -21,12 +20,15 @@ public class IoStatistics {
 
     private long _writeRequestNum = 0;
     private long _writtenBytes;
-    private List<Double> _writeSpeeds = new ArrayList<>();
+    private double[] _writeSpeeds = new double[8192];
+    private int _writeSpeedsArrayIndex = 0;
     private double _minWriteSpeed;
     private double _maxWriteSpeed;
     private double _avgWriteSpeed;
     private double _95WriteSpeed;
     private long _totalWriteTime;
+
+    private final Percentile percentile = new Percentile(0.95);
 
     /**
      *
@@ -39,15 +41,16 @@ public class IoStatistics {
      *         The duration of the read request in nanoseconds; must be non-negative
      */
 
-    public void updateRead(long readBytes, long readTime){
+    public void updateRead(long readBytes, long readTime) throws ArrayIndexOutOfBoundsException{
 
         double readSpeed = calculateSpeed(readBytes, readTime);
-        _readSpeeds.add(readSpeed);
+        _readSpeeds[_readSpeedsArrayIndex] = readSpeed;
+        _readSpeedsArrayIndex++;
 
         _minReadSpeed = (_readRequestNum == 0) ? readSpeed : Math.min(readSpeed, _minReadSpeed);
         _maxReadSpeed = (_readRequestNum == 0) ? readSpeed : Math.max(readSpeed, _maxReadSpeed);
         _avgReadSpeed = (_readRequestNum == 0) ? readSpeed : calculateNewAvg(_readRequestNum,_avgReadSpeed, readSpeed);
-        _95ReadSpeed = (_readRequestNum == 0) ? readSpeed : calculate95Percentile((_readRequestNum + 1), _readSpeeds);
+        _95ReadSpeed = (_readRequestNum == 0) ? readSpeed : percentile.evaluate(_readSpeeds, 0, (_readSpeedsArrayIndex - 1));
 
         _totalReadTime += readTime;
         _readRequestNum ++;
@@ -65,14 +68,17 @@ public class IoStatistics {
      *         The duration of the write request in nanoseconds; must be non-negative
      */
 
-    public void updateWrite(long writeBytes, long writeTime){
+    public void updateWrite(long writeBytes, long writeTime) throws ArrayIndexOutOfBoundsException{
+
         double writeSpeed = calculateSpeed(writeBytes, writeTime);
-        _writeSpeeds.add(writeSpeed);
+        _writeSpeeds[_writeSpeedsArrayIndex] = writeSpeed;
+        _writeSpeedsArrayIndex++;
+
 
         _minWriteSpeed = (_writeRequestNum == 0) ? writeSpeed : Math.min(writeSpeed, _minWriteSpeed);
         _maxWriteSpeed = (_writeRequestNum == 0) ? writeSpeed : Math.max(writeSpeed, _maxWriteSpeed);
         _avgWriteSpeed = (_writeRequestNum == 0) ? writeSpeed : calculateNewAvg(_writeRequestNum,_avgWriteSpeed, writeSpeed);
-        _95WriteSpeed = (_writeRequestNum == 0) ? writeSpeed : calculate95Percentile((_writeRequestNum + 1), _writeSpeeds);
+        _95WriteSpeed = (_writeRequestNum == 0) ? writeSpeed : percentile.evaluate(_writeSpeeds, 0, (_writeSpeedsArrayIndex - 1));
 
         _totalWriteTime += writeTime;
         _writeRequestNum ++;
@@ -116,40 +122,12 @@ public class IoStatistics {
         return (requestNum * oldAvg + newSpeed) / (requestNum + 1);
     }
 
-    /**
-     *
-     * Calculate the 95% percentile of the speed of all read or write requests.
-     *
-     * @param  requestNum
-     *         The number of read or write requests so far; must be non-negative
-     *
-     * @param  speeds
-     *         All speeds of all read or write requests so far.
-     *
-     * @return The calculated 95% percentile of the speed of all read or write requests.
-     */
-
-    private double calculate95Percentile(long requestNum, List<Double> speeds){
-        Collections.sort(speeds);
-        double index = 0.95 * (double) requestNum;
-
-        if (Math.ceil(index) == index){
-            return 0.5 * (speeds.get((int)index) + speeds.get((int) index + 1));
-        } else {
-            return speeds.get((int)Math.ceil(index));
-        }
-    }
-
     public long getReadRequestNum() {
         return _readRequestNum;
     }
 
     public long getReadBytes() {
         return _readBytes;
-    }
-
-    public List<Double> getReadSpeeds() {
-        return _readSpeeds;
     }
 
     public double getMinReadSpeed() {
@@ -178,10 +156,6 @@ public class IoStatistics {
 
     public long getWrittenBytes() {
         return _writtenBytes;
-    }
-
-    public List<Double> getWriteSpeeds() {
-        return _writeSpeeds;
     }
 
     public double getMinWriteSpeed() {
