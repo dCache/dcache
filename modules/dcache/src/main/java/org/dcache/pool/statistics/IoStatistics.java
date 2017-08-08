@@ -20,8 +20,8 @@ public class IoStatistics {
     private double _95ReadSpeed;
     private long _totalReadTime;
     private long _totalReadBytes;
-    private long _totalRequestedBytes;
-    private long _avgRequestedBytes;
+    private long _totalRequestedReadBytes;
+    private long _avgRequestedReadBytes;
 
     private long _writeRequestNum = 0;
     private double[] _writeSpeeds = new double[8192];
@@ -32,6 +32,8 @@ public class IoStatistics {
     private double _95WriteSpeed;
     private long _totalWriteTime;
     private long _totalWrittenBytes;
+    private long _totalRequestedWriteBytes;
+    private long _avgRequestedWriteBytes;
 
     private final Percentile percentile = new Percentile(0.95);
 
@@ -44,10 +46,12 @@ public class IoStatistics {
      *
      * @param  readTime
      *         The duration of the read request in nanoseconds; must be non-negative
+     *
+     * @param  requestedReadBytes
+     *         The number of requested read bytes; must be non-negative
      */
 
-    public void updateRead(long readBytes, long readTime, long requestedBytes) {
-
+    public void updateRead(long readBytes, long readTime, long requestedReadBytes) {
         if(readBytes >= 0) {
             double readSpeed = calculateSpeed(readBytes, readTime);
             _readSpeeds[_readSpeedsArrayIndex] = readSpeed;
@@ -63,8 +67,8 @@ public class IoStatistics {
         _totalReadTime += readTime;
         _readRequestNum ++;
 
-        _totalRequestedBytes += requestedBytes;
-        _avgRequestedBytes += (_readRequestNum == 0) ? _avgRequestedBytes : calculateNewAvg(_readRequestNum,_avgRequestedBytes, requestedBytes);
+        _totalRequestedReadBytes += requestedReadBytes;
+        _avgRequestedReadBytes += (_readRequestNum == 0) ? requestedReadBytes : calculateNewAvg(_readRequestNum, _avgRequestedReadBytes, requestedReadBytes);
     }
 
     /**
@@ -76,9 +80,12 @@ public class IoStatistics {
      *
      * @param  writeTime
      *         The duration of the write request in nanoseconds; must be non-negative
+     *
+     * @param  requestedWriteBytes
+     *         The number of requested write bytes; must be non-negative
      */
 
-    public void updateWrite(long writeBytes, long writeTime) {
+    public void updateWrite(long writeBytes, long writeTime, long requestedWriteBytes) {
 
         double writeSpeed = calculateSpeed(writeBytes, writeTime);
         _writeSpeeds[_writeSpeedsArrayIndex] = writeSpeed;
@@ -93,6 +100,9 @@ public class IoStatistics {
         _totalWriteTime += writeTime;
         _writeRequestNum ++;
         _totalWrittenBytes += writeBytes;
+
+        _totalRequestedWriteBytes += requestedWriteBytes;
+        _avgRequestedWriteBytes += (_writeRequestNum == 0) ? requestedWriteBytes : calculateNewAvg(_writeRequestNum, _avgRequestedWriteBytes, requestedWriteBytes);
     }
 
     /**
@@ -188,12 +198,20 @@ public class IoStatistics {
         return _totalWriteTime;
     }
 
-    public long getTotalRequestedBytes() {
-        return _totalRequestedBytes;
+    public long getTotalRequestedReadBytes() {
+        return _totalRequestedReadBytes;
     }
 
-    public long getAvgRequestedBytes() {
-        return _avgRequestedBytes;
+    public long getAvgRequestedReadBytes() {
+        return _avgRequestedReadBytes;
+    }
+
+    public long getTotalRequestedWriteBytes() {
+        return _totalRequestedWriteBytes;
+    }
+
+    public long getAvgRequestedWriteBytes() {
+        return _avgRequestedWriteBytes;
     }
 
     public String toString(){
@@ -206,8 +224,8 @@ public class IoStatistics {
                 .add("95percentile readSpeed:", _95ReadSpeed)
                 .add("total readTime:", _totalReadTime)
                 .add("total read bytes:", _totalReadBytes)
-                .add("total requested bytes:", _totalRequestedBytes)
-                .add("avg requested bytes:", _totalRequestedBytes)
+                .add("total requested read bytes:", _totalRequestedReadBytes)
+                .add("avg requested read bytes:", _totalRequestedReadBytes)
                 .add("number of write requests:", _writeRequestNum)
                 .add("total written bytes:", _totalWrittenBytes)
                 .add("min writeSpeed:", _minWriteSpeed)
@@ -215,6 +233,8 @@ public class IoStatistics {
                 .add("avg writeSpeed:", _avgWriteSpeed)
                 .add("95percentile writeSpeed:", _95WriteSpeed)
                 .add("total writeTime:", _totalWriteTime)
+                .add("total requested write bytes:", _totalRequestedWriteBytes)
+                .add("avg requested write bytes:", _totalRequestedWriteBytes)
                 .omitNullValues()
                 .toString();
     }
