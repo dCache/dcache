@@ -57,61 +57,81 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.cells;
+package org.dcache.util.collector.pools;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.springframework.beans.factory.annotation.Required;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellVersion;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.dcache.cells.json.CellData;
-import org.dcache.restful.services.cells.CellInfoServiceImpl;
-import org.dcache.util.collector.RequestFutureProcessor;
+import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellPath;
+import org.dcache.pool.json.PoolData;
+import org.dcache.services.history.pools.PoolListingService;
+import org.dcache.util.collector.CellMessagingCollector;
+import org.dcache.util.collector.ListenableFutureWrapper;
 
 /**
- * <p>Used in conjunction with the {@link CellInfoCollector} as message
- * post-processor.  Updates the cell data based on the info received.</p>
+ * <p>This collector provides a thin layer on top of cell adapter
+ *    functionality.  It is mainly responsible for sending messages and returning
+ *    message reply futures.  The principal collect method scatter/gathers
+ *    requests to all the pools.</p>
  */
-public final class CellInfoFutureProcessor extends
-                RequestFutureProcessor<CellData, CellInfo> {
-    private static void update(CellData cellData, CellInfo received) {
-        cellData.setCreationTime(received.getCreationTime());
-        cellData.setDomainName(received.getDomainName());
-        cellData.setCellType(received.getCellType());
-        cellData.setCellName(received.getCellName());
-        cellData.setCellClass(received.getCellClass());
-        cellData.setEventQueueSize(received.getEventQueueSize());
-        cellData.setExpectedQueueTime(received.getExpectedQueueTime());
-        cellData.setLabel("Cell Info");
-        CellVersion version = received.getCellVersion();
-        cellData.setRelease(version.getRelease());
-        cellData.setRevision(version.getRevision());
-        cellData.setVersion(version.toString());
-        cellData.setState(received.getState());
-        cellData.setThreadCount(received.getThreadCount());
+public abstract class PoolInfoCollector<T extends Message> extends
+                CellMessagingCollector<Map<String, ListenableFutureWrapper<T>>> {
+    private PoolListingService service;
+
+    /**
+     * <p>This is the method used to collect cachable data which
+     * the service will transform, update, cache and persist.</p>
+     *
+     * @return a map of Futures which can be used to
+     * fetch the {@link PoolData}.
+     * @throws InterruptedException
+     */
+    @Override
+    public Map<String, ListenableFutureWrapper<T>> collectData()
+                    throws InterruptedException {
+        if (service == null) {
+            return Collections.EMPTY_MAP;
+        }
+
+        String[] pools = service.listPools();
+
+        Map<String, ListenableFutureWrapper<T>> infoMap = new HashMap<>();
+
+        long now = System.currentTimeMillis();
+
+        for (String pool : pools) {
+            infoMap.put(pool, sendRequestToPool(pool, newMessage(now)));
+        }
+
+        return infoMap;
     }
 
-    private CellInfoServiceImpl service;
+    /**
+     * <p>Auxiliary utility.</p>
+     *
+     * @param pool    to which to send request
+     * @param message to send
+     * @return Futures which can be used to wait for the returned message.
+     */
+    public <T extends Message> ListenableFutureWrapper<T> sendRequestToPool(String pool,
+                                                                     T message) {
+        ListenableFuture<T> future = stub.send(new CellPath(pool), message);
+        ListenableFutureWrapper<T> wrapper = new ListenableFutureWrapper<>();
+        wrapper.setFuture(future);
+        wrapper.setKey(pool);
+        wrapper.setSent(System.currentTimeMillis());
+        return wrapper;
+    }
 
     @Required
-    public void setService(CellInfoServiceImpl service) {
+    public void setService(PoolListingService service) {
         this.service = service;
     }
 
-    @Override
-    protected void postProcess() {
-        service.updateCache(next);
-    }
-
-    @Override
-    protected CellData process(String key,
-                               CellInfo received,
-                               long sent){
-        CellData cellData = new CellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
-        update(cellData, received);
-        return cellData;
-    }
+    protected abstract T newMessage(long timestamp);
 }

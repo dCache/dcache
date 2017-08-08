@@ -34,6 +34,13 @@ check -strong frontend.service.transfers.maxCacheSize
 check -strong frontend.service.cell-info.update-threads
 check -strong frontend.service.cell-info.timeout
 check -strong frontend.service.cell-info.timeout.unit
+check -strong frontend.service.pool-info.update-threads
+check -strong frontend.service.pool-info.maxPoolActivityListSize
+check -strong frontend.service.pool-info.timeout
+check -strong frontend.service.pool-info.timeout.unit
+check -strong frontend.service.pool-history.timeout
+check -strong frontend.service.pool-history.timeout.unit
+check -strong frontend.service.pool-history
 check -strong frontend.authn.accept-client-cert
 check -strong frontend.authn.require-client-cert
 check -strong frontend.authn.basic

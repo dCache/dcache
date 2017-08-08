@@ -166,13 +166,9 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
             String key = entry.getKey();
             ListenableFutureWrapper<D> wrapper = entry.getValue();
             D received = null;
+
             try {
                 received = wrapper.getFuture().get();
-
-                if (received == null) {
-                    remove(key);
-                    return;
-                }
             } catch (InterruptedException e) {
                 LOGGER.trace("Listener runnable was interrupted; returning ...");
             } catch (ExecutionException e) {
@@ -185,8 +181,11 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
                 }
             }
 
-            T toStore = process(key, received, wrapper.getSent());
-            next.put(key, toStore);
+            if (received != null) {
+                T toStore = process(key, received, wrapper.getSent());
+                next.put(key, toStore);
+            }
+
             remove(key);
         }, executor);
     }
