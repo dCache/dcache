@@ -1,12 +1,16 @@
 package org.dcache.pool.statistics;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
-public class Statistics {
+/**
+ * This class stores statistics about read an write processes
+ */
+public class IoStatistics {
 
     private long _readRequestNum = 0;
     private long _readBytes;
-    private ArrayList<Float> _readSpeeds;
+    private ArrayList<Float> _readSpeeds = new ArrayList<Float>();
     private float _minReadSpeed;
     private float _maxReadSpeed;
     private float _avgReadSpeed;
@@ -14,13 +18,23 @@ public class Statistics {
     private long _totalReadTime;
 
     private long _writeRequestNum = 0;
-    private long _writeBytes;
-    private ArrayList<Float> _writeSpeeds;
+    private long _writtenBytes;
+    private ArrayList<Float> _writeSpeeds = new ArrayList<Float>();
     private float _minWriteSpeed;
     private float _maxWriteSpeed;
     private float _avgWriteSpeed;
     private float _95WriteSpeed;
     private long _totalWriteTime;
+
+    /**
+     *
+     * @param  readBytes
+     *         The number of read bytes
+     *
+     * @param  readTime
+     *         The maximum number of bytes to be transferred; must be
+     *         non-negative
+     */
 
     public void updateRead(long readBytes, long readTime){
 
@@ -48,7 +62,7 @@ public class Statistics {
 
         _totalWriteTime += writeTime;
         _writeRequestNum ++;
-        _writeBytes += writeBytes;
+        _writtenBytes += writeBytes;
     }
 
     private float calculateSpeed(long bytes, long time){
@@ -60,6 +74,7 @@ public class Statistics {
     }
 
     private float calculate95Percentile(long requestNum, ArrayList<Float> speeds){
+        Collections.sort(speeds);
         float index = (float) 0.95 * (float) requestNum;
 
         if (Math.ceil(index) == index){
@@ -105,8 +120,8 @@ public class Statistics {
         return _writeRequestNum;
     }
 
-    public long getWriteBytes() {
-        return _writeBytes;
+    public long getWrittenBytes() {
+        return _writtenBytes;
     }
 
     public ArrayList<Float> getWriteSpeeds() {
