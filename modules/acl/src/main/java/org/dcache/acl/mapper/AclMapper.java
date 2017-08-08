@@ -31,11 +31,11 @@ public class AclMapper {
     }
 
     public static Permission getPermission(Subject subject, Origin origin, Owner owner, ACL acl) {
-        // if ( logger.isDebugEnabled() ) {
-        // logger.debug("Subject: " + subject);
-        // logger.debug("Origin: " + origin);
-        // logger.debug("Owner: " + owner);
-        // logger.debug("ACL: " + acl);
+        // if ( logger.isDebugEnabled() )
+        // logger.debug("Subject: {}", subject);
+        // logger.debug("Origin: {}", origin);
+        // logger.debug("Owner: {}", owner);
+        // logger.debug("ACL: {}", acl);
         // }
 
         Permission permACL = new Permission();
@@ -68,7 +68,7 @@ public class AclMapper {
                 }
 
                 // if ( logger.isDebugEnabled() )
-                // logger.debug("Step " + ace.getOrder() + ") " + (new Permission(def_msk,
+                // logger.debug("Step {}) {}", ace.getOrder(), (new Permission(def_msk,
                 // allow_msk).asString(rsType)));
             }
 
@@ -79,7 +79,7 @@ public class AclMapper {
             logger.error(e.getMessage());
         } finally {
             if ( logger.isDebugEnabled() ) {
-                logger.debug("Getted Permission: " + (rsType == null ? permACL
+                logger.debug("Getted Permission: {}", (rsType == null ? permACL
                         .toString() : permACL.asString(rsType)));
             }
         }
@@ -98,11 +98,11 @@ public class AclMapper {
 
     private static Permission getPermission(Subject subject, Origin origin, Owner owner, ACE ace, RsType rsType) throws ACLException {
         // if ( logger.isDebugEnabled() ) {
-        // logger.debug("Subject: " + subject);
-        // logger.debug("Origin: " + origin);
-        // logger.debug("Owner: " + owner);
-        // logger.debug("ACE: " + ace.toNFSv4String(rsType));
-        // logger.debug("rsType: " + rsType);
+        // logger.debug("Subject: {}", subject);
+        // logger.debug("Origin: {}", origin);
+        // logger.debug("Owner: {}", owner);
+        // logger.debug("ACE: {}", ace.toNFSv4String(rsType));
+        // logger.debug("rsType: {}", rsType);
         // }
 
         Permission perm = null;
