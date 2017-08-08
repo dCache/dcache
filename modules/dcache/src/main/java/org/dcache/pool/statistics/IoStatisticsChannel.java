@@ -23,7 +23,6 @@ public class IoStatisticsChannel implements RepositoryChannel {
     /**
      * Inner channel to which all operations are delegated.
      */
-    @VisibleForTesting
     private RepositoryChannel _channel;
 
     private final IoStatistics _statistics = new IoStatistics();
@@ -67,7 +66,6 @@ public class IoStatisticsChannel implements RepositoryChannel {
         long readBytes =  _channel.transferTo(position, count, target);
         long duration = System.currentTimeMillis() - startTime;
         _statistics.updateRead(readBytes, duration);
-        // long discrepance = count - readBytes;
         return readBytes;
     }
 
@@ -77,14 +75,13 @@ public class IoStatisticsChannel implements RepositoryChannel {
         long writtenBytes =  _channel.transferFrom(src, position, count);
         long duration = System.currentTimeMillis() - startTime;
         _statistics.updateWrite(writtenBytes, duration);
-        // long discrepance = count - writtenBytes;
         return writtenBytes;
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         long startTime = System.currentTimeMillis();
-        long writtenBytes = _channel.write(srcs);
+        long writtenBytes = _channel.write(srcs, offset, length);
         long duration = System.currentTimeMillis() - startTime;
         _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
@@ -148,7 +145,6 @@ public class IoStatisticsChannel implements RepositoryChannel {
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        // long supposedBytes = src.limit() - src.position();
         long startTime = System.currentTimeMillis();
         int writtenBytes = _channel.write(src);
         long duration = System.currentTimeMillis() - startTime;
