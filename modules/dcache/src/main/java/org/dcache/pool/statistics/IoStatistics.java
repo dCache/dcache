@@ -3,10 +3,6 @@ package org.dcache.pool.statistics;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import com.google.common.base.MoreObjects;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * This class stores statistics about read an write processes
  */
@@ -46,11 +42,11 @@ public class IoStatistics {
      *         The duration of the read request in nanoseconds; must be non-negative
      */
 
-    public void updateRead(long readBytes, long readTime) throws ArrayIndexOutOfBoundsException{
+    public void updateRead(long readBytes, long readTime) {
 
         double readSpeed = calculateSpeed(readBytes, readTime);
         _readSpeeds[_readSpeedsArrayIndex] = readSpeed;
-        _readSpeedsArrayIndex++;
+        _readSpeedsArrayIndex = (_readSpeedsArrayIndex + 1) % _readSpeeds.length;
 
         _minReadSpeed = (_readRequestNum == 0) ? readSpeed : Math.min(readSpeed, _minReadSpeed);
         _maxReadSpeed = (_readRequestNum == 0) ? readSpeed : Math.max(readSpeed, _maxReadSpeed);
@@ -73,11 +69,11 @@ public class IoStatistics {
      *         The duration of the write request in nanoseconds; must be non-negative
      */
 
-    public void updateWrite(long writeBytes, long writeTime) throws ArrayIndexOutOfBoundsException{
+    public void updateWrite(long writeBytes, long writeTime) {
 
         double writeSpeed = calculateSpeed(writeBytes, writeTime);
         _writeSpeeds[_writeSpeedsArrayIndex] = writeSpeed;
-        _writeSpeedsArrayIndex++;
+        _writeSpeedsArrayIndex = (_writeSpeedsArrayIndex + 1) % _writeSpeeds.length;
 
 
         _minWriteSpeed = (_writeRequestNum == 0) ? writeSpeed : Math.min(writeSpeed, _minWriteSpeed);
@@ -100,11 +96,11 @@ public class IoStatistics {
      * @param  time
      *         The duration of the request in milliseconds; must be non-negative
      *
-     * @return The speed of the process in bytes per nanoseconds.
+     * @return The speed of the process in bytes per seconds.
      */
 
     private double calculateSpeed(long bytes, long time){
-        return (double) bytes / (double) time;
+        return (double) bytes / ((double) time / 1000000000);
     }
 
     /**
