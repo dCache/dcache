@@ -858,6 +858,34 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
+
+    @Command(name = "show transfers filtered", hint = "show active transfers filtered",
+            description = "Show active transfers excluding proxy-io filtered by pool, client or pnfsid.")
+    public class ShowTransfersFilteredCmd implements Callable<String> {
+
+        @Argument(required = false, metaVar = "pool")
+        String pool;
+
+        @Argument(required = false, metaVar = "client")
+        String client;
+
+        @Argument(required = false, metaVar = "pnfsid")
+        String pnfsid;
+
+        @Override
+        public String call() throws IOException {
+
+            return _ioMessages.values()
+                    .stream()
+                    .filter(d -> client == null ? true : d.getClient().toString().equals(client))
+                    .filter(d -> pnfsid == null ? true : d.getPnfsId().toString().equals(pnfsid))
+                    .filter(d -> pool == null ? true : d.getPool().equals(pool))
+                    .map(Object::toString)
+                    .collect(Collectors.joining("\n"));
+        }
+    }
+
+
     @Command(name = "show proxyio", hint = "show proxy-io transfers",
             description = "Show active proxy-io transfers.")
     public class ShowProxyIoTransfersCmd implements Callable<String> {
