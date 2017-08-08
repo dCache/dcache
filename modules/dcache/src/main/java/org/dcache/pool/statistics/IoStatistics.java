@@ -6,6 +6,7 @@ import java.util.Collections;
 /**
  * This class stores statistics about read an write processes
  */
+
 public class IoStatistics {
 
     private long _readRequestNum = 0;
@@ -28,12 +29,13 @@ public class IoStatistics {
 
     /**
      *
+     * Update all statistics depending on read requests.
+     *
      * @param  readBytes
-     *         The number of read bytes
+     *         The number of read bytes; must be non-negative
      *
      * @param  readTime
-     *         The maximum number of bytes to be transferred; must be
-     *         non-negative
+     *         The duration of the read request in milliseconds; must be non-negative
      */
 
     public void updateRead(long readBytes, long readTime){
@@ -51,6 +53,17 @@ public class IoStatistics {
         _readBytes += readBytes;
     }
 
+    /**
+     *
+     * Update all statistics depending on write requests.
+     *
+     * @param  writeBytes
+     *         The number of written bytes; must be non-negative
+     *
+     * @param  writeTime
+     *         The duration of the write request in milliseconds; must be non-negative
+     */
+
     public void updateWrite(long writeBytes, long writeTime){
         float writeSpeed = calculateSpeed(writeBytes, writeTime);
         _writeSpeeds.add(writeSpeed);
@@ -65,13 +78,55 @@ public class IoStatistics {
         _writtenBytes += writeBytes;
     }
 
+    /**
+     *
+     * Calculate the speed of a request.
+     *
+     * @param  bytes
+     *         The number of processed bytes; must be non-negative
+     *
+     * @param  time
+     *         The duration of the request in milliseconds; must be non-negative
+     *
+     * @return The speed of the process in bytes per millisecond.
+     */
+
     private float calculateSpeed(long bytes, long time){
         return (float) bytes / (float) time;
     }
 
+    /**
+     *
+     * Calculate the new average of the speed of all read or write requests.
+     *
+     * @param  requestNum
+     *         The number of read or write requests so far; must be non-negative
+     *
+     * @param  oldAvg
+     *         The old average of the speed of all read or write requests; must be non-negative
+     *
+     * @param  newSpeed
+     *         A new speed value of a read or write request; must be non-negative
+     *
+     * @return The new average of the speed of all read or write requests.
+     */
+
     private float calculateNewAvg(long requestNum, float oldAvg, float newSpeed){
         return (requestNum * oldAvg + newSpeed) / (requestNum + 1);
     }
+
+    /**
+     *
+     * Calculate the 95% percentile of the speed of all read or write requests.
+     *
+     * @param  requestNum
+     *         The number of read or write requests so far; must be non-negative
+     *
+     * @param  speeds
+     *         All speeds of all read or write requests so far.
+     *
+     * @return The calculated 95% percentile of the speed of all read or write requests.
+     */
 
     private float calculate95Percentile(long requestNum, ArrayList<Float> speeds){
         Collections.sort(speeds);
