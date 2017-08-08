@@ -79,7 +79,9 @@
       <property name="shouldUpdate" value="${pnfsmanager.db.schema.auto}"/>
   </bean>
 
-  <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
+  <bean id="hazelcast" class="org.dcache.hazelcast.HazelcastService" init-method="start" destroy-method="shutdown"/>
+
+  <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase,hazelcast">
       <description>Chimera</description>
       <constructor-arg ref="data-source"/>
       <constructor-arg ref="tx-manager"/>

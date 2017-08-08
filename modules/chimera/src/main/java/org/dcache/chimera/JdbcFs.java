@@ -17,7 +17,7 @@
 package org.dcache.chimera;
 
 import com.google.common.base.Throwables;
-import com.google.common.cache.Cache;
+import com.google.common.collect.Iterables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -38,6 +38,7 @@ import javax.sql.DataSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.EnumSet;
@@ -49,7 +50,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
+import javax.cache.Cache;
+import javax.cache.Caching;
+import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
+import javax.cache.event.CacheEntryEvent;
+import javax.cache.event.CacheEntryEventFilter;
+import javax.cache.event.CacheEntryListenerException;
+import javax.cache.event.CacheEntryRemovedListener;
+import javax.cache.event.EventType;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.FactoryBuilder;
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.posix.Stat;
@@ -133,19 +143,27 @@ public class JdbcFs implements FileSystemProvider {
                     }
             , _fsStatUpdateExecutor));
 
-    /* The PNFS ID to inode number mapping will never change while dCache is running.
+    /* The PNFS ID to inode number mapping.
      */
-    protected final Cache<String, Long> _inoCache =
+    protected final com.google.common.cache.Cache<String, Long> _inoCache =
             CacheBuilder.newBuilder()
-                    .maximumSize(100000)
+                    .maximumSize(100)
                     .build();
 
-    /* The inode number to PNFS ID mapping will never change while dCache is running.
+    /* The inode number to PNFS ID mapping.
      */
-    protected final Cache<Long, String> _idCache =
+    protected final com.google.common.cache.Cache<Long, String> _idCache =
             CacheBuilder.newBuilder()
-                    .maximumSize(100000)
+                    .maximumSize(100)
                     .build();
+
+    /* jcache based distributed backend
+     */
+    protected  Cache<String, Long> _inoCacheJC;
+
+    /* The inode number to PNFS ID mapping.
+     */
+    protected  Cache<Long, String> _idCacheJC;
 
     /**
      * current fs id
@@ -165,6 +183,75 @@ public class JdbcFs implements FileSystemProvider {
      */
     private static final int MAX_NAME_LEN = 255;
 
+    private static class RemoveEventFilterIno implements CacheEntryEventFilter<Long, String>, Serializable {
+
+        private static final long serialVersionUID = 4132516259614143954L;
+
+        @Override
+        public boolean evaluate(CacheEntryEvent<? extends Long, ? extends String> event) throws CacheEntryListenerException {
+            return event.getEventType() == EventType.REMOVED;
+        }
+    }
+
+    private static class RemoveEventFilterId implements CacheEntryEventFilter<String, Long>, Serializable {
+
+        private static final long serialVersionUID = 4132516259614143954L;
+
+        @Override
+        public boolean evaluate(CacheEntryEvent<? extends String, ? extends Long> event) throws CacheEntryListenerException {
+            return event.getEventType() == EventType.REMOVED;
+        }
+    }
+
+    private static class IdInvalidate implements CacheEntryRemovedListener<Long, String>, Serializable {
+
+        private static final long serialVersionUID = 3194017206816347049L;
+
+        // do not serialize when sending to other cache clients
+        private transient final com.google.common.cache.Cache<String, Long> cache;
+
+        public IdInvalidate(com.google.common.cache.Cache<String, Long> cache) {
+            this.cache = cache;
+        }
+
+        @Override
+        public void onRemoved(Iterable<CacheEntryEvent<? extends Long, ? extends String>> events) throws CacheEntryListenerException {
+            /**
+             * some cache implementation will send listeners over the wire.
+             * As we can't really send cache to other components they will receive
+             * listener with null (declared transient!).
+             */
+            if (cache != null) {
+                cache.invalidateAll(Iterables.transform(events, e -> e.getKey()));
+            }
+        }
+    };
+
+    private static class InoInvalidate implements CacheEntryRemovedListener<String, Long>, Serializable {
+
+        private static final long serialVersionUID = 8837035291052823234L;
+
+        // do not serialize when sending to other cache clients
+        private transient final com.google.common.cache.Cache<Long, String> cache;
+
+        public InoInvalidate(com.google.common.cache.Cache<Long, String> cache) {
+            this.cache = cache;
+        }
+
+        @Override
+        public void onRemoved(Iterable<CacheEntryEvent<? extends String, ? extends Long>> events) throws CacheEntryListenerException {
+            /**
+             * some cache implementation will send listeners over the wire. As
+             * we can't really send cache to other components they will receive
+             * listener with null (declared transient!).
+             */
+            if (cache != null) {
+                cache.invalidateAll(Iterables.transform(events, e -> e.getKey()));
+            }
+        }
+    };
+
+
     public JdbcFs(DataSource dataSource, PlatformTransactionManager txManager) throws SQLException, ChimeraFsException
     {
         this(dataSource, txManager, 0);
@@ -179,6 +266,29 @@ public class JdbcFs implements FileSystemProvider {
 
         // try to get database dialect specific query engine
         _sqlDriver = FsSqlDriver.getDriverInstance(dataSource);
+
+        // distributed copy of pnfsid <-> ino caches
+        _idCacheJC = Caching.getCache("inumber-pnfsid-mapping", Long.class, String.class);
+        _inoCacheJC = Caching.getCache("pnfsid-inumber-mapping", String.class, Long.class);
+
+        CacheEntryListenerConfiguration<Long, String> idInvalidateListenerConfig =
+                new MutableCacheEntryListenerConfiguration<>(
+                        FactoryBuilder.factoryOf(new IdInvalidate(_inoCache)),
+                        FactoryBuilder.factoryOf(new RemoveEventFilterIno()),
+                        false,
+                        false
+                );
+
+        CacheEntryListenerConfiguration<String, Long> inoInvalidateListenerConfig
+                = new MutableCacheEntryListenerConfiguration<>(
+                        FactoryBuilder.factoryOf( new InoInvalidate(_idCache)),
+                        FactoryBuilder.factoryOf( new RemoveEventFilterId()),
+                        false,
+                        false
+                );
+
+        _idCacheJC.registerCacheEntryListener(idInvalidateListenerConfig);
+        _inoCacheJC.registerCacheEntryListener(inoInvalidateListenerConfig);
     }
 
     private FsInode getWormID() throws ChimeraFsException {
@@ -538,6 +648,9 @@ public class JdbcFs implements FileSystemProvider {
         if (level == 0) {
             _inoCache.put(stat.getId(), stat.getIno());
             _idCache.put(stat.getIno(), stat.getId());
+            // and distributed cache as well
+            _inoCacheJC.put(stat.getId(), stat.getIno());
+            _idCacheJC.put(stat.getIno(), stat.getId());
         }
         return stat;
     }
@@ -593,6 +706,9 @@ public class JdbcFs implements FileSystemProvider {
         if (stat != null) {
             _inoCache.put(stat.getId(), stat.getIno());
             _idCache.put(stat.getIno(), stat.getId());
+            // and distributed cache as well
+            _inoCacheJC.put(stat.getId(), stat.getIno());
+            _idCacheJC.put(stat.getIno(), stat.getId());
         }
     }
 
@@ -647,9 +763,19 @@ public class JdbcFs implements FileSystemProvider {
     public String inode2id(FsInode inode) throws ChimeraFsException {
         try {
             return _idCache.get(inode.ino(), () -> {
-                String id = _sqlDriver.getId(inode);
+                // try distributed cache first
+                String id = _idCacheJC.get(inode.ino());
+
+                // REVISIT: idealy we want to read-through cache
+
                 if (id == null) {
-                    throw new FileNotFoundHimeraFsException(String.valueOf(inode.ino()));
+                    id = _sqlDriver.getId(inode);
+
+                    if (id == null) {
+                        throw new FileNotFoundHimeraFsException(String.valueOf(inode.ino()));
+                    }
+
+                    _idCacheJC.put(inode.ino(), id);
                 }
                 return id;
             });
@@ -666,9 +792,17 @@ public class JdbcFs implements FileSystemProvider {
         if (option == NO_STAT) {
             try {
                 return new FsInode(this, _inoCache.get(id, () -> {
-                    Long ino = _sqlDriver.getInumber(id);
+                    // try distributed cache first
+                    Long ino = _inoCacheJC.get(id);
+
+                    // REVISIT: idealy we want to read-through cache
+
                     if (ino == null) {
-                        throw new FileNotFoundHimeraFsException(id);
+                        ino = _sqlDriver.getInumber(id);
+
+                        if (ino == null) {
+                            throw new FileNotFoundHimeraFsException(id);
+                        }
                     }
                     return ino;
                 }));
@@ -685,6 +819,10 @@ public class JdbcFs implements FileSystemProvider {
             }
             _inoCache.put(stat.getId(), stat.getIno());
             _idCache.put(stat.getIno(), stat.getId());
+            // and distributed cache as well
+            _inoCacheJC.put(stat.getId(), stat.getIno());
+            _idCacheJC.put(stat.getIno(), stat.getId());
+
             return new FsInode(this, stat.getIno(), FsInodeType.INODE, 0, stat);
         }
     }
