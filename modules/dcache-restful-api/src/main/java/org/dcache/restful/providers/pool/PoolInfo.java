@@ -57,61 +57,115 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.cells;
+package org.dcache.restful.providers.pool;
 
-import org.springframework.beans.factory.annotation.Required;
+import java.io.Serializable;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellVersion;
-
-import org.dcache.cells.json.CellData;
-import org.dcache.restful.services.cells.CellInfoServiceImpl;
-import org.dcache.util.collector.RequestFutureProcessor;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
+import org.dcache.pool.json.PoolData;
+import org.dcache.pool.movers.json.MoverData;
+import org.dcache.pool.nearline.json.NearlineData;
+import org.dcache.util.histograms.Histogram;
 
 /**
- * <p>Used in conjunction with the {@link CellInfoCollector} as message
- * post-processor.  Updates the cell data based on the info received.</p>
+ * <p>Container for all metadata requests pertaining to a pool.</p>
+ * <p>
+ * <p>Some of the fields may be <code>null</code>, depending on the
+ * type of request this is used to respond to.</p>
+ * <p>
+ * <p>Part of the RESTful API.</p>
  */
-public final class CellInfoFutureProcessor extends
-                RequestFutureProcessor<CellData, CellInfo> {
-    private static void update(CellData cellData, CellInfo received) {
-        cellData.setCreationTime(received.getCreationTime());
-        cellData.setDomainName(received.getDomainName());
-        cellData.setCellType(received.getCellType());
-        cellData.setCellName(received.getCellName());
-        cellData.setCellClass(received.getCellClass());
-        cellData.setEventQueueSize(received.getEventQueueSize());
-        cellData.setExpectedQueueTime(received.getExpectedQueueTime());
-        cellData.setLabel("Cell Info");
-        CellVersion version = received.getCellVersion();
-        cellData.setRelease(version.getRelease());
-        cellData.setRevision(version.getRevision());
-        cellData.setVersion(version.toString());
-        cellData.setState(received.getState());
-        cellData.setThreadCount(received.getThreadCount());
+public class PoolInfo implements Serializable {
+    private static final long serialVersionUID = 5758816176471906326L;
+    private PoolData                 poolData;
+    private CacheRepositoryEntryInfo pnfsidInfo;
+    private String                   repositoryListing;
+    private Histogram[]              queueStat;
+    private Histogram[]              fileStat;
+    private MoverData[]              movers;
+    private MoverData[]              p2ps;
+    private NearlineData[]           flush;
+    private NearlineData[]           stage;
+    private NearlineData[]           remove;
+
+    public Histogram[] getFileStat() {
+        return fileStat;
     }
 
-    private CellInfoServiceImpl service;
-
-    @Required
-    public void setService(CellInfoServiceImpl service) {
-        this.service = service;
+    public NearlineData[] getFlush() {
+        return flush;
     }
 
-    @Override
-    protected void postProcess() {
-        service.updateCache(next);
+    public MoverData[] getMovers() {
+        return movers;
     }
 
-    @Override
-    protected CellData process(String key,
-                               CellInfo received,
-                               long sent){
-        CellData cellData = new CellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
-        update(cellData, received);
-        return cellData;
+    public MoverData[] getP2ps() {
+        return p2ps;
+    }
+
+    public CacheRepositoryEntryInfo getPnfsidInfo() {
+        return pnfsidInfo;
+    }
+
+    public PoolData getPoolData() {
+        return poolData;
+    }
+
+    public Histogram[] getQueueStat() {
+        return queueStat;
+    }
+
+    public NearlineData[] getRemove() {
+        return remove;
+    }
+
+    public String getRepositoryListing() {
+        return repositoryListing;
+    }
+
+    public NearlineData[] getStage() {
+        return stage;
+    }
+
+    public void setFileStat(Histogram[] fileStat) {
+        this.fileStat = fileStat;
+    }
+
+    public void setFlush(NearlineData[] flush) {
+        this.flush = flush;
+    }
+
+    public void setMovers(MoverData[] movers) {
+        this.movers = movers;
+    }
+
+    public void setP2ps(MoverData[] p2ps) {
+        this.p2ps = p2ps;
+    }
+
+    public void setPnfsidInfo(
+                    CacheRepositoryEntryInfo pnfsidInfo) {
+        this.pnfsidInfo = pnfsidInfo;
+    }
+
+    public void setPoolData(PoolData poolData) {
+        this.poolData = poolData;
+    }
+
+    public void setQueueStat(Histogram[] queueStat) {
+        this.queueStat = queueStat;
+    }
+
+    public void setRemove(NearlineData[] remove) {
+        this.remove = remove;
+    }
+
+    public void setRepositoryListing(String repositoryListing) {
+        this.repositoryListing = repositoryListing;
+    }
+
+    public void setStage(NearlineData[] stage) {
+        this.stage = stage;
     }
 }

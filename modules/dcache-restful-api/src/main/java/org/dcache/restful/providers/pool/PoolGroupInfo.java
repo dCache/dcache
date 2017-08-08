@@ -57,61 +57,72 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.cells;
+package org.dcache.restful.providers.pool;
 
-import org.springframework.beans.factory.annotation.Required;
+import java.io.Serializable;
+import java.util.Map;
 
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellVersion;
-
+import diskCacheV111.pools.json.PoolCostData;
+import diskCacheV111.pools.json.PoolSpaceData;
 import org.dcache.cells.json.CellData;
-import org.dcache.restful.services.cells.CellInfoServiceImpl;
-import org.dcache.util.collector.RequestFutureProcessor;
+import org.dcache.util.histograms.Histogram;
 
 /**
- * <p>Used in conjunction with the {@link CellInfoCollector} as message
- * post-processor.  Updates the cell data based on the info received.</p>
+ * <p>Container for all metadata requests pertaining to a pool group.</p>
+ *
+ * <p>Some of the fields may be <code>null</code>, depending on the
+ * type of request this is used to respond to.</p>
+ *
+ * <p>Part of the RESTful API.</p>
  */
-public final class CellInfoFutureProcessor extends
-                RequestFutureProcessor<CellData, CellInfo> {
-    private static void update(CellData cellData, CellInfo received) {
-        cellData.setCreationTime(received.getCreationTime());
-        cellData.setDomainName(received.getDomainName());
-        cellData.setCellType(received.getCellType());
-        cellData.setCellName(received.getCellName());
-        cellData.setCellClass(received.getCellClass());
-        cellData.setEventQueueSize(received.getEventQueueSize());
-        cellData.setExpectedQueueTime(received.getExpectedQueueTime());
-        cellData.setLabel("Cell Info");
-        CellVersion version = received.getCellVersion();
-        cellData.setRelease(version.getRelease());
-        cellData.setRevision(version.getRevision());
-        cellData.setVersion(version.toString());
-        cellData.setState(received.getState());
-        cellData.setThreadCount(received.getThreadCount());
+public class PoolGroupInfo implements Serializable {
+    private static final long serialVersionUID = 9147099707348977674L;
+    private Histogram[]               groupQueueStat;
+    private Histogram[]               groupFileStat;
+    private PoolSpaceData             groupSpaceData;
+    private Map<String, PoolCostData> costDataForPools;
+    private Map<String, CellData>     cellDataForPools;
+
+    public Map<String, CellData> getCellDataForPools() {
+        return cellDataForPools;
     }
 
-    private CellInfoServiceImpl service;
-
-    @Required
-    public void setService(CellInfoServiceImpl service) {
-        this.service = service;
+    public Map<String, PoolCostData> getCostDataForPools() {
+        return costDataForPools;
     }
 
-    @Override
-    protected void postProcess() {
-        service.updateCache(next);
+    public Histogram[] getGroupFileStat() {
+        return groupFileStat;
     }
 
-    @Override
-    protected CellData process(String key,
-                               CellInfo received,
-                               long sent){
-        CellData cellData = new CellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
-        update(cellData, received);
-        return cellData;
+    public Histogram[] getGroupQueueStat() {
+        return groupQueueStat;
+    }
+
+    public PoolSpaceData getGroupSpaceData() {
+        return groupSpaceData;
+    }
+
+    public void setCellDataForPools(
+                    Map<String, CellData> cellDataForPools) {
+        this.cellDataForPools = cellDataForPools;
+    }
+
+    public void setCostDataForPools(
+                    Map<String, PoolCostData> costDataForPools) {
+        this.costDataForPools = costDataForPools;
+    }
+
+    public void setGroupFileStat(Histogram[] groupFileStat) {
+        this.groupFileStat = groupFileStat;
+    }
+
+    public void setGroupQueueStat(Histogram[] groupQueueStat) {
+        this.groupQueueStat = groupQueueStat;
+    }
+
+    public void setGroupSpaceData(
+                    PoolSpaceData groupSpaceData) {
+        this.groupSpaceData = groupSpaceData;
     }
 }

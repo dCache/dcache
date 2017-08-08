@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--+
+    |  The components that serve up historical data from the dCache backend.
+    |  This excludes (for the moment) billing.
+    +-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/jee
+                        http://www.springframework.org/schema/jee/spring-jee.xsd
+                        http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context.xsd
+			http://www.springframework.org/schema/task
+			http://www.springframework.org/schema/task/spring-task.xsd
+                        http://www.springframework.org/schema/util
+                        http://www.springframework.org/schema/util/spring-util.xsd">
+
+  <context:property-placeholder/>
+  <context:annotation-config/>
+
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+    <description>Undeliverable message logger</description>
+  </bean>
+
+  <bean id="scheduling-service" class="java.util.concurrent.ScheduledThreadPoolExecutor"
+        destroy-method="shutdownNow">
+    <description>Used to execute periodic data collection</description>
+    <!-- should equal the number of service components -->
+    <constructor-arg value="1"/>
+  </bean>
+
+  <bean id="message-executor" class="org.dcache.util.BoundedCachedExecutor"
+        destroy-method="shutdownNow">
+    <description>Used to execute handling of incoming messages</description>
+    <constructor-arg value="${history.limits.message-threads}"/>
+  </bean>
+
+  <bean id="pool-listener-executor" class="org.dcache.util.BoundedCachedExecutor"
+        destroy-method="shutdownNow">
+    <description>Used to execute handling of future listeners</description>
+    <constructor-arg value="${history.service.pools.listener-threads}"/>
+  </bean>
+
+  <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
+    <description>PoolManager communication stub</description>
+    <property name="destination" value="${history.service.poolmanager}"/>
+    <property name="timeout" value="${history.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${history.service.poolmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitor">
+    <description>Maintains runtime information about all pools</description>
+    <property name="poolManagerStub" ref="pool-manager-stub"/>
+  </bean>
+
+  <bean id="pool-request-processor" class="org.dcache.services.history.pools.PoolHistoriesRequestProcessor">
+      <description>Processes, caches and stores the live data collected from the pools</description>
+      <property name="executor" ref="pool-listener-executor"/>
+      <property name="service" ref="pool-timeseries-service"/>
+      <property name="storageDir" value="${history.service.pools.storage-dir}"/>
+  </bean>
+
+  <bean id="pool-data-collector" class="org.dcache.util.collector.pools.PoolLiveDataCollector">
+      <description>Collect the live data from the pools</description>
+      <property name="service" ref="pool-timeseries-service"/>
+  </bean>
+
+  <bean id="pool-timeseries-service" class="org.dcache.services.history.pools.PoolTimeseriesServiceImpl">
+      <description>Service which delivers timeseries data for requests and file lifetime</description>
+      <property name="executor" ref="message-executor"/>
+      <property name="executorService" ref="scheduling-service"/>
+      <property name="poolMonitor" ref="pool-monitor"/>
+      <property name="processor" ref="pool-request-processor"/>
+      <property name="collector" ref="pool-data-collector"/>
+      <property name="timeout" value="${history.service.pools.timeout}"/>
+      <property name="timeoutUnit" value="${history.service.pools.timeout.unit}"/>
+  </bean>
+
+</beans>

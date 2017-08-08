@@ -1,0 +1,23 @@
+##
+# History service
+##
+
+onerror shutdown
+
+check -strong history.cell.name
+check -strong history.cell.consume
+check -strong history.cell.subscribe
+check -strong history.limits.message-threads
+check -strong history.pool-monitor.topic
+check -strong history.service.pools.listener-threads
+check -strong history.service.pools.storage-dir
+check -strong history.service.pools.timeout
+check -strong history.service.pools.timeout.unit
+check -strong history.service.poolmanager
+check -strong history.service.poolmanager.timeout
+check -strong history.service.poolmanager.timeout.unit
+
+create org.dcache.cells.UniversalSpringCell ${history.cell.name} \
+    "classpath:org/dcache/services/history/history.xml \
+    -consume=${history.cell.consume} \
+    -subscribe=${history.cell.subscribe}

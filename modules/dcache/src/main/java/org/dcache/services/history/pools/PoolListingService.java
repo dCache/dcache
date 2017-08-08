@@ -57,61 +57,30 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.cells;
-
-import org.springframework.beans.factory.annotation.Required;
-
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellVersion;
-
-import org.dcache.cells.json.CellData;
-import org.dcache.restful.services.cells.CellInfoServiceImpl;
-import org.dcache.util.collector.RequestFutureProcessor;
+package org.dcache.services.history.pools;
 
 /**
- * <p>Used in conjunction with the {@link CellInfoCollector} as message
- * post-processor.  Updates the cell data based on the info received.</p>
+ * <p>Defines service which can list the current pools and pool groups.</p>
  */
-public final class CellInfoFutureProcessor extends
-                RequestFutureProcessor<CellData, CellInfo> {
-    private static void update(CellData cellData, CellInfo received) {
-        cellData.setCreationTime(received.getCreationTime());
-        cellData.setDomainName(received.getDomainName());
-        cellData.setCellType(received.getCellType());
-        cellData.setCellName(received.getCellName());
-        cellData.setCellClass(received.getCellClass());
-        cellData.setEventQueueSize(received.getEventQueueSize());
-        cellData.setExpectedQueueTime(received.getExpectedQueueTime());
-        cellData.setLabel("Cell Info");
-        CellVersion version = received.getCellVersion();
-        cellData.setRelease(version.getRelease());
-        cellData.setRevision(version.getRevision());
-        cellData.setVersion(version.toString());
-        cellData.setState(received.getState());
-        cellData.setThreadCount(received.getThreadCount());
-    }
+public interface PoolListingService {
+    /**
+     * <p>Designation for pool group containing all pools.</p>
+     */
+    String ALL = "all-pools";
 
-    private CellInfoServiceImpl service;
+    /**
+     * @return list of all pool groups
+     */
+    String[] listGroups();
 
-    @Required
-    public void setService(CellInfoServiceImpl service) {
-        this.service = service;
-    }
+    /**
+     * @return list of all pools
+     */
+    String[] listPools();
 
-    @Override
-    protected void postProcess() {
-        service.updateCache(next);
-    }
-
-    @Override
-    protected CellData process(String key,
-                               CellInfo received,
-                               long sent){
-        CellData cellData = new CellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
-        update(cellData, received);
-        return cellData;
-    }
+    /**
+     * @param group pool group for which to list pools
+     * @return list of pools in the group
+     */
+    String[] listPools(String group);
 }

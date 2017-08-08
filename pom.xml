@@ -1285,6 +1285,7 @@
         <module>modules/dcache-restful-api</module>
         <module>modules/dcache-nfs</module>
         <module>modules/dcache-srm</module>
+        <module>modules/dcache-history</module>
         <module>modules/dcache-info</module>
         <module>modules/dcache-spacemanager</module>
         <module>modules/ftp-client</module>

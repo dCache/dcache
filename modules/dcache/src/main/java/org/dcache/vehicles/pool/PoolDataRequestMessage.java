@@ -68,26 +68,13 @@ import org.dcache.pool.json.PoolData;
  */
 public class PoolDataRequestMessage extends Message {
     private static final long serialVersionUID = -4821198021981241309L;
-    private long     sentAt;
-    private PoolData request;
+    private PoolData data;
 
     public PoolData getData() {
-        return request;
+        return data;
     }
 
-    public long getSentAt() {
-        return sentAt;
-    }
-
-    public void setData(PoolData request) {
-        this.request = request;
-    }
-
-    public void setRequest(PoolData request) {
-        this.request = request;
-    }
-
-    public void setSentAt(long sentAt) {
-        this.sentAt = sentAt;
+    public void setData(PoolData data) {
+        this.data = data;
     }
 }
