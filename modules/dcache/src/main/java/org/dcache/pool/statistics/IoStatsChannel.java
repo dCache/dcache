@@ -19,23 +19,21 @@ public class IoStatsChannel implements StatsChannel{
 
     RepositoryChannel _channel;
 
-    private final Statistics statistics = new Statistics();
+    private final Statistics _statistics = new Statistics();
 
-    public IoStatsChannel(RepositoryChannel channel){
-        _channel = channel;
-    }
+    public IoStatsChannel(RepositoryChannel channel){ _channel = channel; }
 
     @Override
     public Statistics getStats() {
-        return statistics;
+        return _statistics;
     }
 
     @Override
     public int write(ByteBuffer buffer, long position) throws IOException {
         long startTime = System.currentTimeMillis();
         int writtenBytes = _channel.write(buffer, position); // might be 0 if nothing has been written
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateWrite(writtenBytes, duration);
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
@@ -43,8 +41,8 @@ public class IoStatsChannel implements StatsChannel{
     public int read(ByteBuffer buffer, long position) throws IOException {
         long startTime = System.currentTimeMillis();
         int readBytes = _channel.read(buffer, position); // -1 => position greater than file; 0 => if end of file
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateRead(readBytes, duration);
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
@@ -57,9 +55,9 @@ public class IoStatsChannel implements StatsChannel{
     public long transferTo(long position, long count, WritableByteChannel target) throws IOException {
         long startTime = System.currentTimeMillis();
         long readBytes =  _channel.transferTo(position, count, target);
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateRead(readBytes, duration);
-        long discrepance = count - readBytes;
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateRead(readBytes, duration);
+        // long discrepance = count - readBytes;
         return readBytes;
     }
 
@@ -67,9 +65,9 @@ public class IoStatsChannel implements StatsChannel{
     public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
         long startTime = System.currentTimeMillis();
         long writtenBytes =  _channel.transferFrom(src, position, count);
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateWrite(writtenBytes, duration);
- //       long discrepance = count - writtenBytes;
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateWrite(writtenBytes, duration);
+        // long discrepance = count - writtenBytes;
         return writtenBytes;
     }
 
@@ -77,8 +75,8 @@ public class IoStatsChannel implements StatsChannel{
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         long startTime = System.currentTimeMillis();
         long writtenBytes = _channel.write(srcs);
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateWrite(writtenBytes, duration);
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
@@ -86,8 +84,8 @@ public class IoStatsChannel implements StatsChannel{
     public long write(ByteBuffer[] srcs) throws IOException {
         long startTime = System.currentTimeMillis();
         long writtenBytes = _channel.write(srcs);
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateWrite(writtenBytes, duration);
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
@@ -95,8 +93,8 @@ public class IoStatsChannel implements StatsChannel{
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
         long startTime = System.currentTimeMillis();
         long readBytes = _channel.read(dsts, offset, length);
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateRead(readBytes, duration);
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
@@ -104,8 +102,8 @@ public class IoStatsChannel implements StatsChannel{
     public long read(ByteBuffer[] dsts) throws IOException {
         long startTime = System.currentTimeMillis();
         long readBytes = _channel.read(dsts);
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateRead(readBytes, duration);
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
@@ -133,18 +131,18 @@ public class IoStatsChannel implements StatsChannel{
     public int read(ByteBuffer dst) throws IOException {
         long startTime = System.currentTimeMillis();
         int readBytes = _channel.read(dst);
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateRead(readBytes, duration);
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateRead(readBytes, duration);
         return readBytes;
     }
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-   //     long supposedBytes = src.limit() - src.position();
+        // long supposedBytes = src.limit() - src.position();
         long startTime = System.currentTimeMillis();
         int writtenBytes = _channel.write(src);
-        long duration = startTime - System.currentTimeMillis();
-        statistics.updateWrite(writtenBytes, duration);
+        long duration = System.currentTimeMillis() - startTime;
+        _statistics.updateWrite(writtenBytes, duration);
         return writtenBytes;
     }
 
