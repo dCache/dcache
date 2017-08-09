@@ -184,7 +184,7 @@ public class UnixPermissionHandler implements AclHandler {
 
         } // switch( userUid )
 
-        _log.debug("IsAllowed: " + isAllowed);
+        _log.debug("IsAllowed: {}", isAllowed);
         return isAllowed;
     }
 }
