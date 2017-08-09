@@ -24,7 +24,7 @@ public abstract class DelayedCommand<T extends Serializable>
         extends DelayedReply
         implements Callable<Reply>, Runnable
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DelayedCommand.class);
+    private static final Logger logger = LoggerFactory.getLogger(DelayedCommand.class);
 
     private final Executor executor;
 
@@ -57,7 +57,7 @@ public abstract class DelayedCommand<T extends Serializable>
             try {
                 Method method = ReflectionUtils.getAnyMethod(getClass(), "execute");
                 if (!ReflectionUtils.hasDeclaredException(method, e)) {
-                    LOGGER.error("Command failed due to a bug, please contact support@dcache.org.", e);
+                    logger.error("Command failed due to a bug, please contact support@dcache.org.", e);
                     e = new CommandPanicException("Command failed: " + e, e);
                 }
             } catch (NoSuchMethodException suppressed) {

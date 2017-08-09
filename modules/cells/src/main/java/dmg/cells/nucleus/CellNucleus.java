@@ -67,7 +67,7 @@ import static org.dcache.util.MathUtils.subWithInfinity;
  */
 public class CellNucleus implements ThreadFactory
 {
-    private static final Logger LOGGER =
+    private static final Logger logger =
             LoggerFactory.getLogger(CellNucleus.class);
 
     private enum State
@@ -226,7 +226,7 @@ public class CellNucleus implements ThreadFactory
             _curatorFramework = null;
         }
 
-        LOGGER.info("Created {}", cellName);
+        logger.info("Created {}", cellName);
     }
 
     /**
@@ -574,18 +574,18 @@ public class CellNucleus implements ThreadFactory
                             /* May happen when the callback itself tries to schedule the call
                              * on an executor. Put the request back and let it time out.
                              */
-                            LOGGER.error("Failed to invoke callback: {}", e1.toString());
+                            logger.error("Failed to invoke callback: {}", e1.toString());
                             reregisterCallback(uoid, lock);
                         }
                     });
                 } catch (RejectedExecutionException e1) {
                     /* Put it back and let it time out.
                      */
-                    LOGGER.error("Failed to invoke callback: {}", e1.toString());
+                    logger.error("Failed to invoke callback: {}", e1.toString());
                     reregisterCallback(uoid, lock);
                 }
             } else {
-                LOGGER.error("Failed to send message: {}", e.toString());
+                logger.error("Failed to send message: {}", e.toString());
             }
         }
     }
@@ -602,7 +602,7 @@ public class CellNucleus implements ThreadFactory
             _messageExecutor.execute(new CellEventTask(ce));
         } catch (RejectedExecutionException e) {
             _eventQueueSize.decrementAndGet();
-            LOGGER.error("Dropping event: {}", e.getMessage());
+            logger.error("Dropping event: {}", e.getMessage());
         }
     }
 
@@ -741,7 +741,7 @@ public class CellNucleus implements ThreadFactory
     {
         for (Thread thread: threads) {
             if (thread.isAlive()) {
-                LOGGER.warn("Forcefully interrupting thread {} during shutdown.", thread.getName());
+                logger.warn("Forcefully interrupting thread {} during shutdown.", thread.getName());
                 thread.interrupt();
             }
         }
@@ -838,14 +838,14 @@ public class CellNucleus implements ThreadFactory
     void addToEventQueue(MessageEvent ce)
     {
         CellMessage msg = ce.getMessage();
-        LOGGER.trace("addToEventQueue : message arrived : {}", msg);
+        logger.trace("addToEventQueue : message arrived : {}", msg);
 
         CellLock lock = _waitHash.remove(msg.getLastUOID());
         if (lock != null) {
             //
             // we were waiting for you (sync or async)
             //
-            LOGGER.trace("addToEventQueue : lock found for : {}", msg);
+            logger.trace("addToEventQueue : lock found for : {}", msg);
             try {
                 _eventQueueSize.incrementAndGet();
                 lock.getExecutor().execute(new CallbackTask(lock, msg));
@@ -853,7 +853,7 @@ public class CellNucleus implements ThreadFactory
                 _eventQueueSize.decrementAndGet();
                 /* Put it back; the timeout handler will eventually take care of it.
                  */
-                LOGGER.error("Dropping reply: {}", e.getMessage());
+                logger.error("Dropping reply: {}", e.getMessage());
                 reregisterCallback(msg.getLastUOID(), lock);
             }
         } else {
@@ -882,7 +882,7 @@ public class CellNucleus implements ThreadFactory
             } catch (RejectedExecutionException e) {
                 EventLogger.queueEnd(ce);
                 _eventQueueSize.decrementAndGet();
-                LOGGER.error("Dropping message: {}", e.getMessage());
+                logger.error("Dropping message: {}", e.getMessage());
             }
         }
     }
@@ -951,7 +951,7 @@ public class CellNucleus implements ThreadFactory
     void shutdown(KillEvent event)
     {
         try (CDC ignored = CDC.reset(CellNucleus.this)) {
-            LOGGER.trace("Received {}", event);
+            logger.trace("Received {}", event);
 
             /* Wait for cell initialization to complete to ensure sequential execution of callbacks.
              */
@@ -1011,7 +1011,7 @@ public class CellNucleus implements ThreadFactory
             /* Shut down message executor.
              */
             if (!MoreExecutors.shutdownAndAwaitTermination(_messageExecutor, 2, TimeUnit.SECONDS)) {
-                LOGGER.warn("Failed to flush message queue during shutdown.");
+                logger.warn("Failed to flush message queue during shutdown.");
             }
 
             /* Shut down cell.
@@ -1028,7 +1028,7 @@ public class CellNucleus implements ThreadFactory
 
             /* Shut down remaining threads.
              */
-            LOGGER.debug("Waiting for all threads in {} to finish", _threads);
+            logger.debug("Waiting for all threads in {} to finish", _threads);
             try {
                 Collection<Thread> threads = getNonDaemonThreads(_threads);
 
@@ -1043,7 +1043,7 @@ public class CellNucleus implements ThreadFactory
             } catch (IllegalThreadStateException e) {
                 _threads.setDaemon(true);
             } catch (InterruptedException e) {
-                LOGGER.warn("Interrupted while waiting for threads");
+                logger.warn("Interrupted while waiting for threads");
             }
 
             /* Declare the cell as dead.
@@ -1086,7 +1086,7 @@ public class CellNucleus implements ThreadFactory
                                 lock.getCallback().answerTimedOut(envelope);
                                 EventLogger.sendEnd(envelope);
                             } catch (RejectedExecutionException e) {
-                                LOGGER.warn("Failed to invoke callback: {}", e.toString());
+                                logger.warn("Failed to invoke callback: {}", e.toString());
                                 reregister.accept(uoid, lock);
                             } catch (RuntimeException e) {
                                 Thread t = Thread.currentThread();
@@ -1098,7 +1098,7 @@ public class CellNucleus implements ThreadFactory
                     /* Put it back and deal with it later.
                      */
                     reregister.accept(uoid, lock);
-                    LOGGER.warn("Failed to invoke callback: {}", e.toString());
+                    logger.warn("Failed to invoke callback: {}", e.toString());
                 }
             }
         }
@@ -1172,10 +1172,10 @@ public class CellNucleus implements ThreadFactory
                         /* May happen when the callback itself tries to schedule the call
                          * on an executor. Put the request back and let it time out.
                          */
-                        LOGGER.error("Failed to invoke callback: {}", e.toString());
+                        logger.error("Failed to invoke callback: {}", e.toString());
                         reregisterCallback(request.getUOID(), _lock);
                     }
-                    LOGGER.trace("addToEventQueue : callback done for : {}", _message);
+                    logger.trace("addToEventQueue : callback done for : {}", _message);
                 } catch (Throwable e) {
                     Thread t = Thread.currentThread();
                     t.getUncaughtExceptionHandler().uncaughtException(t, e);

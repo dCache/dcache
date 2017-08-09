@@ -11,7 +11,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class Exceptions
 {
-    private static final Logger LOG = LoggerFactory.getLogger(Exceptions.class);
+    private static final Logger logger = LoggerFactory.getLogger(Exceptions.class);
 
     private Exceptions()
     {
@@ -76,11 +76,11 @@ public class Exceptions
 
         if (lastException == null) {
             /* This should never happen */
-            LOG.error("Failed to wrap exception with message {}: " +
+            logger.error("Failed to wrap exception with message {}: " +
                     "exception {} not subclass of {}", message, cause.getClass().getCanonicalName(),
                     enclosingType.getCanonicalName());
         } else {
-            LOG.error("Failed to wrap exception with message {}: {}", message, lastException.getMessage());
+            logger.error("Failed to wrap exception with message {}: {}", message, lastException.getMessage());
         }
 
         return cause;

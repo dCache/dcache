@@ -30,7 +30,7 @@ import dmg.util.CommandThrowableException;
 public class       UserSecurityCell
        extends     CellAdapter            {
 
-  private static final Logger _log =
+  private static final Logger logger =
       LoggerFactory.getLogger(UserSecurityCell.class);
 
   private final String       _cellName ;
@@ -69,7 +69,7 @@ public class       UserSecurityCell
       Serializable answer;
 
       try{
-         _log.info( "Message type : "+obj.getClass() ) ;
+         logger.info( "Message type : {}", obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -79,7 +79,7 @@ public class       UserSecurityCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            _log.info('>' + command + "< request from " + user );
+            logger.info(">{}< request from {}", command, user );
             //FIXME: refactoring required
             try{
               if( command.equals( "check-password" ) ) {
@@ -98,7 +98,7 @@ public class       UserSecurityCell
          }else{
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             _log.warn( r ) ;
+             logger.warn( r ) ;
              throw new Exception( r ) ;
          }
       }catch(Exception iex ){
@@ -114,7 +114,7 @@ public class       UserSecurityCell
       try{
          sendMessage( msg ) ;
       }catch( RuntimeException ioe ){
-         _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
+         logger.warn( "Can't send acl_response : {}", ioe, ioe ) ;
       }
   }
   private Serializable execAuthorizedString( String user , String command )
@@ -200,7 +200,7 @@ public class       UserSecurityCell
           throw new Exception("Not authenticated");
       }
       String command = args.argv(0) ;
-      _log.info( "show all : mode="+command+";user=user") ;
+      logger.info( "show all : mode={};user=user", command) ;
       if( command.equals("exception") ) {
           throw new
                   Exception("hallo otto");
@@ -261,7 +261,7 @@ public class       UserSecurityCell
           _userDb.removeContainer( user ) ;
           _aclDb.removeAclItem( "group."+user+".access" ) ;
        }catch( Exception ee ){
-          _log.warn(args + " : " + ee ) ;
+          logger.warn("{} : {}", args, ee ) ;
            //
            // not an error
            //

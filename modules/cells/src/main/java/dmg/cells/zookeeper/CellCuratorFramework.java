@@ -92,7 +92,7 @@ import org.dcache.util.SequentialExecutor;
  */
 public class CellCuratorFramework implements CuratorFramework
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CellCuratorFramework.class);
+    private static final Logger logger = LoggerFactory.getLogger(CellCuratorFramework.class);
 
     private final CuratorFramework inner;
     private final BoundedExecutor executor;
@@ -125,7 +125,7 @@ public class CellCuratorFramework implements CuratorFramework
                                 watcher.process(event);
                             } catch (Exception e) {
                                 ThreadUtils.checkInterrupted(e);
-                                LOGGER.error("Watcher exception", e);
+                                logger.error("Watcher exception", e);
                             }
                         }
                     });

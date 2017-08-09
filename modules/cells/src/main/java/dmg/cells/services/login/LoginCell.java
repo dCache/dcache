@@ -34,7 +34,7 @@ public class      LoginCell
        extends    CellAdapter
        implements Runnable  {
 
-  private static final Logger _log =
+  private static final Logger logger =
       LoggerFactory.getLogger(LoginCell.class);
 
   private StreamEngine   _engine ;
@@ -106,7 +106,7 @@ public class      LoginCell
      Constructor<?> con = null ;
      Object      o;
      for( int i = 0 ; i < args.argc() ; i++ ){
-        _log.info( "Trying to load shell : "+args.argv(i) ) ;
+        logger.info( "Trying to load shell : {}", args.argv(i)) ;
         try{
            c = Class.forName( args.argv(i) ) ;
            int j ;
@@ -124,11 +124,11 @@ public class      LoginCell
 
            o = con.newInstance( objList[j] ) ;
            addCommandListener( o ) ;
-           _log.info( "Added : "+args.argv(i) ) ;
+           logger.info( "Added : {}", args.argv(i)) ;
         }catch(Exception ee ){
-           _log.warn( "Failed to load shell : "+args.argv(i)+" : "+ee ) ;
+           logger.warn( "Failed to load shell : {} : {}",args.argv(i) , ee ) ;
            if( ee instanceof InvocationTargetException ){
-              _log.warn( "   -> Problem in constructor : "+
+              logger.warn( "   -> Problem in constructor : {}",
                 ((InvocationTargetException)ee).getTargetException() ) ;
            }
         }
@@ -157,15 +157,15 @@ public class      LoginCell
                   print( prompt() ) ;
                }
            }catch( IOException e ){
-              _log.info("EOF Exception in read line : "+e ) ;
+              logger.info("EOF Exception in read line : {}", e) ;
               break ;
            }catch( Exception e ){
-              _log.info("I/O Error in read line : "+e ) ;
+              logger.info("I/O Error in read line : {}", e) ;
               break ;
            }
 
         }
-        _log.info( "EOS encountered" ) ;
+        logger.info( "EOS encountered" ) ;
         _readyGate.open() ;
         kill() ;
 
@@ -174,11 +174,11 @@ public class      LoginCell
    @Override
    public void stopped(){
 
-     _log.info( "Clean up called" ) ;
+     logger.info( "Clean up called" ) ;
      println("");
      _out.close();
      _readyGate.check() ;
-     _log.info( "finished" ) ;
+     logger.info( "finished" ) ;
 
    }
   public void println( String str ){

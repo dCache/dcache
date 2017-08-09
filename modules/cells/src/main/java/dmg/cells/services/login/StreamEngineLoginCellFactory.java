@@ -36,7 +36,7 @@ import org.dcache.util.Args;
 
 public abstract class StreamEngineLoginCellFactory extends AbstractService implements LoginCellFactory
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoginManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(LoginManager.class);
 
     private static final Class<?>[] AUTH_CON_SIGNATURE =
             { CellEndpoint.class, Args.class };
@@ -55,7 +55,7 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
         this.endpoint = endpoint;
 
         protocol = checkProtocol(args.getOpt("prot"));
-        LOGGER.info("Using protocol : {}", protocol);
+        logger.info("Using protocol : {}", protocol);
 
         try {
             authClass = toAuthClass(args.getOpt("auth"), protocol);
@@ -70,10 +70,10 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
             } catch (NoSuchMethodException e) {
                 throw new IllegalArgumentException("Class lacks authentication constructor: " + authClass);
             }
-            LOGGER.trace("Using authentication constructor: {}", authConstructor);
+            logger.trace("Using authentication constructor: {}", authConstructor);
         } else {
             authConstructor = null;
-            LOGGER.trace("No authentication used");
+            logger.trace("No authentication used");
         }
 
         this.authConstructor = authConstructor;
@@ -106,7 +106,7 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
             authClass = Class.forName(authClassName);
         }
         if (authClass != null) {
-            LOGGER.info("Using authentication Module: {}", authClass);
+            logger.info("Using authentication Module: {}", authClass);
         }
         return authClass;
     }
@@ -126,7 +126,7 @@ public abstract class StreamEngineLoginCellFactory extends AbstractService imple
         }
 
         String userName = Subjects.getDisplayName(engine.getSubject());
-        LOGGER.info("connection created for user {}", userName);
+        logger.info("connection created for user {}", userName);
 
         int p = userName.indexOf('@');
         if (p > -1) {

@@ -28,7 +28,7 @@ import org.dcache.util.Args;
 public class      TelnetSAuth_A
        implements TelnetServerAuthentication  {
 
-  private static final Logger _log =
+  private static final Logger logger =
       LoggerFactory.getLogger(TelnetSAuth_A.class);
 
   private CellEndpoint _endpoint;
@@ -130,7 +130,7 @@ public class      TelnetSAuth_A
              }
              return true ;
          }catch( Exception e ){
-            _log.info( "Exception in TelnetSAuth_A : "+ e ) ;
+            logger.info( "Exception in TelnetSAuth_A : {}", e ) ;
             return false ;
          }
       }else if( __passwordFile !=  null ){

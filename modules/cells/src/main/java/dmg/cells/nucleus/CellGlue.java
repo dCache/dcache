@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 class CellGlue
 {
-    private static final Logger LOGGER =
+    private static final Logger logger =
             LoggerFactory.getLogger(CellGlue.class);
 
     private final String _cellDomainName;
@@ -287,8 +287,8 @@ class CellGlue
         int n = threadGroup.enumerate(threads);
         for (int i = 0; i < n; i++) {
             Thread thread = threads[i];
-            if (thread.isAlive() && !thread.isDaemon() || LOGGER.isDebugEnabled()) {
-                LOGGER.warn("Thread: {} [{}{}{}] ({}) {}",
+            if (thread.isAlive() && !thread.isDaemon() || logger.isDebugEnabled()) {
+                logger.warn("Thread: {} [{}{}{}] ({}) {}",
                             thread.getName(),
                             (thread.isAlive() ? "A" : "-"),
                             (thread.isDaemon() ? "D" : "-"),
@@ -296,7 +296,7 @@ class CellGlue
                             thread.getPriority(),
                             thread.getState());
                 for (StackTraceElement s : thread.getStackTrace()) {
-                    LOGGER.warn("    {}", s);
+                    logger.warn("    {}", s);
 
                 }
             }
@@ -350,13 +350,13 @@ class CellGlue
     {
         String cellName = nucleus.getCellName();
         if (_publicCellList.remove(cellName, nucleus)) {
-            LOGGER.warn("Apparently cell {} wasn't unpublished before being destroyed. Please contact support@dcache.org.", cellName);
+            logger.warn("Apparently cell {} wasn't unpublished before being destroyed. Please contact support@dcache.org.", cellName);
         }
         if (!_cellList.remove(cellName, nucleus)) {
-            LOGGER.warn("Apparently cell {} wasn't registered before being destroyed. Please contact support@dcache.org.", cellName);
+            logger.warn("Apparently cell {} wasn't registered before being destroyed. Please contact support@dcache.org.", cellName);
         }
         if (_killedCells.remove(nucleus) == null) {
-            LOGGER.warn("Apparently cell {} wasn't killed before being destroyed. Please contact support@dcache.org.", cellName);
+            logger.warn("Apparently cell {} wasn't killed before being destroyed. Please contact support@dcache.org.", cellName);
         }
         notifyAll();
     }
@@ -431,7 +431,7 @@ class CellGlue
             msg = msg.encode();
         }
         CellPath destination = msg.getDestinationPath();
-        LOGGER.trace("sendMessage : {} send to {}", msg.getUOID(), destination);
+        logger.trace("sendMessage : {} send to {}", msg.getUOID(), destination);
         sendMessage(msg, destination.getCurrent(), resolveLocally, resolveRemotely, MAX_ROUTE_LEVELS);
     }
 
@@ -461,7 +461,7 @@ class CellGlue
                 hasDestinationChanged = true;
             }
 
-            LOGGER.trace("sendMessage : next hop at {}: {}", steps, address);
+            logger.trace("sendMessage : next hop at {}: {}", steps, address);
 
             /* If explicitly addressed to a cell in our domain we have to deliver
              * it now.
@@ -514,13 +514,13 @@ class CellGlue
              */
             CellRoute route = _routingTable.find(address, resolveRemotely);
             if (route == null) {
-                LOGGER.trace("sendMessage : no route destination for : {}", address);
+                logger.trace("sendMessage : no route destination for : {}", address);
                 if (!hasTopicRoutes) {
                     sendException(msg, address.toString());
                 }
                 return;
             }
-            LOGGER.trace("sendMessage : using route : {}", route);
+            logger.trace("sendMessage : using route : {}", route);
             address = route.getTarget();
 
             /* Alias routes rewrite the address.
@@ -540,7 +540,7 @@ class CellGlue
         }
         // end of big iteration loop
 
-        LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
+        logger.trace("sendMessage : max route iteration reached: {}", destination);
         sendException(msg, address.toString());
     }
 
@@ -555,12 +555,12 @@ class CellGlue
                 try {
                     destNucleus.addToEventQueue(new MessageEvent(msg.decode()));
                 } catch (SerializationException e) {
-                    LOGGER.error("Received malformed message from {} with UOID {} and session [{}]: {}",
+                    logger.error("Received malformed message from {} with UOID {} and session [{}]: {}",
                                  msg.getSourcePath(), msg.getUOID(), msg.getSession(), e.getMessage());
                     sendException(msg, address.toString());
                 }
             } else if (msg.getSourcePath().hops() > 30) {
-                LOGGER.error("Hop count exceeds 30: {}", msg);
+                logger.error("Hop count exceeds 30: {}", msg);
                 sendException(msg, address.toString());
             } else {
                 msg.addSourceAddress(_domainAddress);
@@ -577,17 +577,17 @@ class CellGlue
         if (msg.getSourceAddress().getCellName().equals("*")) {
             Serializable messageObject = msg.decode().getMessageObject();
             if (messageObject instanceof NoRouteToCellException) {
-                LOGGER.info(
+                logger.info(
                         "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
                         msg.getDestinationPath(), ((NoRouteToCellException) messageObject).getDestinationPath(),
                         routeTarget, _cellDomainName);
             } else {
-                LOGGER.warn(
+                logger.warn(
                         "Message from {} could not be delivered because no route to {} is known.",
                         msg.getSourcePath(), routeTarget);
             }
         } else {
-            LOGGER.debug(
+            logger.debug(
                     "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
                     msg.getSourcePath(), routeTarget);
             CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),

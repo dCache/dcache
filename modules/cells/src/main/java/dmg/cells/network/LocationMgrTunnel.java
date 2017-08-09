@@ -66,7 +66,7 @@ public class LocationMgrTunnel
      */
     private static final Tunnels _tunnels = new Tunnels();
 
-    private static final Logger _log =
+    private static final Logger logger =
         LoggerFactory.getLogger(LocationMgrTunnel.class);
 
     private final CellNucleus  _nucleus;
@@ -122,7 +122,7 @@ public class LocationMgrTunnel
     @Override
     public void stopped()
     {
-        _log.info("Closing tunnel to {}", getRemoteDomainName());
+        logger.info("Closing tunnel to {}", getRemoteDomainName());
         _tunnels.remove(this);
         try {
             try {
@@ -131,7 +131,7 @@ public class LocationMgrTunnel
                     _thread.join(2_000);
                 }
             } catch (IOException e) {
-                _log.debug("Failed to shutdown socket: {}", e.getMessage());
+                logger.debug("Failed to shutdown socket: {}", e.getMessage());
             } catch (UnsupportedOperationException ignored) {
                 // SSLSocket does not support shutdown.
             }  catch (InterruptedException ignored) {
@@ -140,7 +140,7 @@ public class LocationMgrTunnel
             try {
                 _socket.close();
             } catch (IOException e) {
-                _log.warn("Failed to close socket: {}", e.getMessage());
+                logger.warn("Failed to close socket: {}", e.getMessage());
             }
         }
     }
@@ -156,7 +156,7 @@ public class LocationMgrTunnel
         try {
             nucleus.routeAdd(route);
         } catch (IllegalArgumentException e) {
-            _log.warn("Failed to add route: {}", e.getMessage());
+            logger.warn("Failed to add route: {}", e.getMessage());
         }
     }
 
@@ -179,11 +179,11 @@ public class LocationMgrTunnel
                 /* Releases before dCache 3.0 use Java Serialization for CellMessage.
                  * This branch can be removed in 4.0.
                  */
-                _log.debug("Using Java serialization for message envelope.");
+                logger.debug("Using Java serialization for message envelope.");
                 _input = new JavaObjectSource(in);
                 _output = new JavaObjectSink(out);
             } else {
-                _log.debug("Using raw serialization for message envelope.");
+                logger.debug("Using raw serialization for message envelope.");
 
                 /* Since dCache 3.0 we use raw encoding of CellMessage.
                  */
@@ -193,7 +193,7 @@ public class LocationMgrTunnel
 
             _allowForwardingOfRemoteMessages = (_remoteDomainInfo.getRole() != CellDomainRole.CORE);
 
-            _log.info("Established connection with {}", _remoteDomainInfo);
+            logger.info("Established connection with {}", _remoteDomainInfo);
         } catch (BadVersionException e) {
             throw new IOException("Invalid information presented during handshake: " + e.getMessage(), e);
         } catch (ClassNotFoundException e) {
@@ -213,9 +213,9 @@ public class LocationMgrTunnel
             }
         } catch (AsynchronousCloseException | EOFException ignored) {
         } catch (ClassNotFoundException e) {
-            _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
+            logger.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (IOException e) {
-            _log.warn("Error while reading from tunnel: {}", e.toString());
+            logger.warn("Error while reading from tunnel: {}", e.toString());
         } finally {
             kill();
             NDC.pop();
@@ -234,7 +234,7 @@ public class LocationMgrTunnel
                 NDC.push(_remoteDomainInfo.toString());
                 try {
                     kill();
-                    _log.warn("Error while sending message: {}", e.getMessage());
+                    logger.warn("Error while sending message: {}", e.getMessage());
                     NoRouteToCellException noRoute =
                             new NoRouteToCellException(msg, "Communication failure. Message could not be delivered.");
                     CellMessage envelope = new CellMessage(msg.getSourcePath().revert(), noRoute);

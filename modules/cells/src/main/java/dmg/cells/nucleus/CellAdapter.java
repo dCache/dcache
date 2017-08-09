@@ -75,7 +75,7 @@ import static org.dcache.util.MathUtils.subWithInfinity;
 public class CellAdapter
     implements Cell, CellEventListener, CellEndpoint
 {
-    private static final Logger _log =
+    private static final Logger logger =
             LoggerFactory.getLogger(CellAdapter.class);
     public static final String MAX_MESSAGE_THREADS = "cell.max-message-threads";
     public static final String MAX_MESSAGES_QUEUED = "cell.max-messages-queued";
@@ -267,7 +267,7 @@ public class CellAdapter
             } catch (FileNotFoundException e) {
                 // Ignored: Context variable is not defined
             } catch (CommandExitException | IOException e) {
-                _log.warn(e.getMessage());
+                logger.warn(e.getMessage());
             }
         }
     }
@@ -518,9 +518,9 @@ public class CellAdapter
      * @param msg the reference to message arrived.
      */
     public void messageArrived(CellMessage msg) {
-        _log.info(" CellMessage From   : " + msg.getSourcePath());
-        _log.info(" CellMessage To     : " + msg.getDestinationPath());
-        _log.info(" CellMessage Object : " + msg.getMessageObject());
+        logger.info(" CellMessage From   : {}", msg.getSourcePath());
+        logger.info(" CellMessage To     : {}", msg.getDestinationPath());
+        logger.info(" CellMessage Object : {}", msg.getMessageObject());
 
     }
     /**
@@ -535,7 +535,7 @@ public class CellAdapter
         try {
             _nucleus.sendMessage(msg, true, true, true);
         } catch (RuntimeException e) {
-            _log.warn("CellAdapter : Exception in messageToForward : {}", e.toString());
+            logger.warn("CellAdapter : Exception in messageToForward : {}", e.toString());
         }
     }
 
@@ -758,7 +758,7 @@ public class CellAdapter
     @Override
     public void postRemoval(KillEvent ce)
     {
-        _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
+        logger.info("CellAdapter : prepareRemoval : waiting for gate to open");
         try {
             EventLogger.stoppedBegin(getCellName());
             stopped();
@@ -766,7 +766,7 @@ public class CellAdapter
             EventLogger.stoppedEnd(getCellName());
             dumpPinboard();
         }
-        _log.info("CellAdapter : prepareRemoval : done");
+        logger.info("CellAdapter : prepareRemoval : done");
     }
 
     //
@@ -779,17 +779,17 @@ public class CellAdapter
             Map<String,Object> context = getDomainContext();
             String dumpDir = (String) context.get("dumpDirectory");
             if (dumpDir == null) {
-                _log.info("Pinboard not dumped (dumpDirectory not sp.)");
+                logger.info("Pinboard not dumped (dumpDirectory not sp.)");
                 return;
             }
             File dir = new File(dumpDir);
             if (!dir.isDirectory()) {
-                _log.info("Pinboard not dumped (dumpDirectory {} not found)",
+                logger.info("Pinboard not dumped (dumpDirectory {} not found)",
                           dumpDir);
                 return;
             }
             if (pinboard == null) {
-                _log.info("Pinboard not dumped (no pinboard defined)");
+                logger.info("Pinboard not dumped (no pinboard defined)");
                 return;
             }
 
@@ -799,7 +799,7 @@ public class CellAdapter
                                  Long.toHexString(System.currentTimeMillis()));
             pinboard.dump(dump);
         } catch (IOException e) {
-            _log.error("Dumping pinboard failed : {}", e.toString());
+            logger.error("Dumping pinboard failed : {}", e.toString());
         }
     }
     /**
@@ -808,7 +808,7 @@ public class CellAdapter
      */
     @Override
     public void   exceptionArrived(ExceptionEvent ce) {
-        _log.info(" exceptionArrived "+ce);
+        logger.info(" exceptionArrived {}", ce);
     }
 
     /**
@@ -838,7 +838,7 @@ public class CellAdapter
 
         if (msg.isFinalDestination()) {
             if (!msg.isReply() && msg.getLocalAge() > msg.getAdjustedTtl()) {
-                _log.warn("Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
+                logger.warn("Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
                           (obj instanceof CharSequence) ? '\'' + Ascii.truncate((CharSequence) obj, 50, "...") + '\'' : obj.getClass().getSimpleName(),
                           msg.getLocalAge(), msg.getAdjustedTtl());
                 return;
@@ -858,7 +858,7 @@ public class CellAdapter
                     }
                 } catch (CommandPanicException e) {
                     o = e;
-                    _log.error("Command failed due to a bug, please contact support@dcache.org.", e);
+                    logger.error("Command failed due to a bug, please contact support@dcache.org.", e);
                 } catch (CommandException ce) {
                     o = ce;
                 } finally {

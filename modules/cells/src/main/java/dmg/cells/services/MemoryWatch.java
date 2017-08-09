@@ -19,7 +19,7 @@ import static org.dcache.util.ByteUnit.MiB;
 
 public class MemoryWatch extends CellAdapter implements Runnable {
 
-   private static final Logger _log =
+   private static final Logger logger =
        LoggerFactory.getLogger(MemoryWatch.class);
 
    private CellNucleus _nucleus;
@@ -52,7 +52,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
             try {
                 _update = Integer.parseInt(var);
             } catch (Exception ee) {
-                _log.warn("Update not accepted : " + var);
+                logger.warn("Update not accepted : {}", var);
             }
         }
         //
@@ -62,7 +62,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
             try {
                 _maxFileSize = Integer.parseInt(var);
             } catch (Exception ee) {
-                _log.warn("New 'maxFilesize' not accepted : " + var);
+                logger.warn("New 'maxFilesize' not accepted : {}", var);
             }
         }
         //
@@ -72,7 +72,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
             try {
                 _generations = Integer.parseInt(var);
             } catch (Exception ee) {
-                _log.warn("New 'generations' not accepted : " + var);
+                logger.warn("New 'generations' not accepted : {}", var);
             }
         }
         if ((var = _args.getOpt("output")) != null) {
@@ -126,7 +126,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
              }
            }catch(Exception xx){}
          }else{
-             _log.info(str) ;
+             logger.info(str) ;
          }
       }
    }

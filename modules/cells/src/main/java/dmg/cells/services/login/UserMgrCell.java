@@ -26,7 +26,7 @@ import org.dcache.util.Args;
 public class       UserMgrCell
        extends     CellAdapter            {
 
-  private static final Logger _log =
+  private static final Logger logger =
       LoggerFactory.getLogger(UserMgrCell.class);
 
   private String       _cellName ;
@@ -98,13 +98,13 @@ public class       UserMgrCell
       Serializable answer;
 
       try{
-         _log.info( "Message : "+obj.getClass() ) ;
+         logger.info( "Message : {}", obj.getClass() ) ;
          if( ( ! ( obj instanceof Object [] ) ) ||
              (  ((Object[])obj).length < 3 )    ||
              ( !((Object[])obj)[0].equals("request") ) ){
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
-             _log.warn( r ) ;
+             logger.warn( r ) ;
              throw new Exception( r ) ;
          }
          Object [] request    = (Object[])obj ;
@@ -112,7 +112,8 @@ public class       UserMgrCell
                                 "unknown" : (String)request[1] ;
          String command       = (String)request[2] ;
          UserPrivileges priv  = _userDb.getUserPrivileges( user ) ;
-         _log.info('>' + command + "< request from " + user ) ;
+          logger.info(">{}< request from {}", command, user ) ;
+         logger.info(">{}< request from {}", command, user ) ;
          try{
             command  = createMethodName( command ) ;
             Method m = this.getClass().getDeclaredMethod( command , __argListDef ) ;
@@ -138,7 +139,7 @@ public class       UserMgrCell
       try{
          sendMessage( msg ) ;
       }catch( RuntimeException ioe ){
-         _log.warn( "Can't send acl_response : "+ioe ) ;
+         logger.warn( "Can't send acl_response : {}", ioe ) ;
       }
   }
   private String createMethodName( String com ){
@@ -452,14 +453,14 @@ public class       UserMgrCell
       if( isGroup ){
          p = "add-allowed:user:"+userName ;
          if( ! priv.isAllowed( p ) ){
-            _log.info('>' + p + "< denied for " + priv.getUserName() ) ;
+            logger.info(">{}< denied for {}", p,  priv.getUserName() ) ;
             throw new
             Exception( "Operation not allowed for "+priv.getUserName() ) ;
          }
       }else{
          p = "add-allowed:user:*";
          if( ! priv.isAllowed( p ) ){
-            _log.info('>' + p + "< denied for " + priv.getUserName() ) ;
+            logger.info(">{}< denied for {}",  p, priv.getUserName() ) ;
             throw new
             Exception( "Operation not allowed for "+priv.getUserName() ) ;
          }
