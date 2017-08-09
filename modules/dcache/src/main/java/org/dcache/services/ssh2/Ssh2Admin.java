@@ -364,7 +364,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 } catch (IllegalArgumentException e) {
                     String remoteName = ((InetSocketAddress) remote).getHostName();
                     if (Glob.isGlob(pattern)) {
-                        Pattern p = convertPatternToRegex(pattern);
+                        Pattern p = Glob.parseGlobToPattern(pattern);
                         Matcher addressMatcher = p.matcher(remoteAddress);
                         Matcher nameMatcher = p.matcher(remoteName);
                         patternMatches = (addressMatcher.matches() || nameMatcher.matches());
@@ -390,11 +390,6 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     return false;
                 }
             }
-
-        private Pattern convertPatternToRegex(String pattern) {
-            pattern = pattern.replace(".", "\\.");
-            return Glob.parseGlobToPattern(pattern);
-        }
 
         private String strip(String linePart) {
             return linePart.substring(6, linePart.length()-1);
