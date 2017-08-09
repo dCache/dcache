@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 import eu.emi.security.authn.x509.X509Credential;
 import io.milton.http.Response;
-import io.milton.http.Response.Status;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.HttpConnection;
 import org.slf4j.Logger;
@@ -182,17 +181,13 @@ public class RemoteTransferHandler implements CellMessageReceiver
     private static final Logger LOG =
             LoggerFactory.getLogger(RemoteTransferHandler.class);
     private static final long DUMMY_LONG = 0;
-    private static final String REQUEST_HEADER_VERIFICATION =
-            "RequireChecksumVerification";
     private static final String REQUEST_HEADER_TRANSFER_HEADER_PREFIX =
-            "TransferHeader";
+            "transferheader";
 
     private final HashMap<Long,RemoteTransfer> _transfers = new HashMap<>();
 
-    private boolean _defaultVerification;
     private long _performanceMarkerPeriod;
     private CellStub _transferManager;
-
 
     @Required
     public void setTransferManagerStub(CellStub stub)
@@ -211,24 +206,14 @@ public class RemoteTransferHandler implements CellMessageReceiver
         return _performanceMarkerPeriod;
     }
 
-    @Required
-    public void setDefaultVerification(boolean verify)
-    {
-        _defaultVerification = verify;
-    }
-
-    public boolean isDefaultVerification()
-    {
-        return _defaultVerification;
-    }
-
     public void acceptRequest(OutputStream out, Map<String,String> requestHeaders,
             Subject subject, Restriction restriction, FsPath path, URI remote,
-            X509Credential credential, Direction direction)
+            X509Credential credential, Direction direction, boolean verification)
             throws ErrorResponseException, InterruptedException
     {
-        EnumSet<TransferFlag> flags = EnumSet.noneOf(TransferFlag.class);
-        flags = addVerificationFlag(flags, requestHeaders);
+        EnumSet<TransferFlag> flags = verification
+                ? EnumSet.of(TransferFlag.REQUIRE_VERIFICATION)
+                : EnumSet.noneOf(TransferFlag.class);
         ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
         RemoteTransfer transfer = new RemoteTransfer(out, subject, restriction,
                 path, remote, credential, flags, transferHeaders, direction);
@@ -249,44 +234,13 @@ public class RemoteTransferHandler implements CellMessageReceiver
         }
     }
 
-    private EnumSet<TransferFlag> addVerificationFlag(EnumSet<TransferFlag> existingFlags,
-            Map<String,String> headers) throws ErrorResponseException
-    {
-        String header = headers.get(REQUEST_HEADER_VERIFICATION);
-
-        boolean verification;
-        if (header == null) {
-            verification = _defaultVerification;
-        } else {
-            switch (header) {
-            case "true":
-                verification = true;
-                break;
-            case "false":
-                verification = false;
-                break;
-            default:
-                throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                        "HTTP request header '" + REQUEST_HEADER_VERIFICATION + "' " +
-                                "has unknown value \"" + header + "\": " +
-                                "valid values are true or false");
-            }
-        }
-
-        EnumSet<TransferFlag> result = EnumSet.copyOf(existingFlags);
-        if (verification) {
-            result.add(TransferFlag.REQUIRE_VERIFICATION);
-        }
-        return result;
-    }
-
     private ImmutableMap<String,String> buildTransferHeaders(Map<String,String> requestHeaders)
     {
         ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
 
         for (Map.Entry<String,String> header : requestHeaders.entrySet()) {
             String key = header.getKey();
-            if (key.startsWith(REQUEST_HEADER_TRANSFER_HEADER_PREFIX)) {
+            if (key.toLowerCase().startsWith(REQUEST_HEADER_TRANSFER_HEADER_PREFIX)) {
                 builder.put(key.substring(REQUEST_HEADER_TRANSFER_HEADER_PREFIX.length()),
                         header.getValue());
             }
