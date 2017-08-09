@@ -136,7 +136,6 @@
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${webdav.third-party-transfers.performance-marker-period},
                      '${webdav.third-party-transfers.performance-marker-period.unit}')}" />
-      <property name="defaultVerification" value="${webdav.enable.third-party.requiring-verification-by-default}"/>
   </bean>
 
   <bean id="oidc-client-ids"
@@ -158,6 +157,7 @@
       <property name="pathMapper" ref="path-mapper"/>
       <property name="oidClientIds" ref="oidc-client-ids"/>
       <property name="oidClientSecrets" ref="oidc-client-secrets"/>
+      <property name="defaultVerification" value="${webdav.enable.third-party.requiring-verification-by-default}"/>
   </bean>
 
   <bean id="dispatch-filter"
