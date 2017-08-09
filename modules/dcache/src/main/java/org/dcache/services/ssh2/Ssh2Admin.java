@@ -1,5 +1,6 @@
 package org.dcache.services.ssh2;
 
+import com.google.common.base.Splitter;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.NamedFactory;
@@ -14,6 +15,7 @@ import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
+import org.dcache.util.Glob;
 import org.dcache.util.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +33,10 @@ import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -288,7 +292,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             return null;
         }
 
-        private boolean remoteHostIsPermitted(String keyLine, ServerSession session){
+        private boolean remoteHostIsPermitted(String keyLine, ServerSession session) {
             RemoteHostValidator validator = new RemoteHostValidator();
             return validator.isValidHost(keyLine, session);
         }
@@ -327,63 +331,73 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         }
     }
 
-    private class RemoteHostValidator {
+    private static class RemoteHostValidator {
+
+        private enum Outcome {
+            ALLOW, DENY, DEFER
+        }
 
         private boolean isValidHost(String line, ServerSession session) {
-            for (String linePart : line.split(" ")) {
-                if (linePart.startsWith("from=")) {
-                    for (String pattern : strip(linePart).split(",")){
-                        boolean patternIsNegated = pattern.startsWith("!");
-                        boolean patternMatchesHost = patternMatchesHost(pattern, session);
-                        if (patternIsNegated==patternMatchesHost){
-                            return false;
-                        }
+            for (String linePart : Splitter.on(" ").trimResults().omitEmptyStrings().split(line)) {
+                if (linePart.startsWith("from=") && linePart.endsWith("\"")) {
+                    Set<Outcome> outcomes = EnumSet.noneOf(Outcome.class);
+                    for (String pattern : Splitter.on(",").trimResults().omitEmptyStrings().split(strip(linePart))) {
+                        outcomes.add(patternMatchesHost(pattern, session));
                     }
+                    return outcomes.contains(Outcome.ALLOW) && !outcomes.contains(Outcome.DENY);
                 }
             }
             return true;
         }
 
-        private boolean patternMatchesHost(String pattern, ServerSession session){
+        private Outcome patternMatchesHost(String pattern, ServerSession session) {
+            boolean patternMatches = false;
+            boolean patternIsNegated = pattern.startsWith("!");
+            if (patternIsNegated) {
+                pattern = pattern.substring(1);
+            }
             SocketAddress remote = session.getClientAddress();
             if (remote instanceof InetSocketAddress) {
                 String remoteAddress = ((InetSocketAddress) remote).getAddress().getHostAddress();
-                String remoteName = ((InetSocketAddress) remote).getHostName();
-                Pattern p = Pattern.compile(convertPatternToRegex(pattern));
-                Matcher addressMatcher = p.matcher(remoteAddress);
-                Matcher nameMatcher = p.matcher(remoteName);
-                return (addressMatcher.matches()
-                        || nameMatcher.matches()
-                        || addressInCidrRange(pattern, remoteAddress));
+                try {
+                    patternMatches = addressInCidrRange(pattern, remoteAddress);
+                } catch (IllegalArgumentException e) {
+                    String remoteName = ((InetSocketAddress) remote).getHostName();
+                    if (Glob.isGlob(pattern)) {
+                        Pattern p = convertPatternToRegex(pattern);
+                        Matcher addressMatcher = p.matcher(remoteAddress);
+                        Matcher nameMatcher = p.matcher(remoteName);
+                        patternMatches = (addressMatcher.matches() || nameMatcher.matches());
+                    } else {
+                        patternMatches = pattern.equals(remoteName);
+                    }
+                }
             }
-            return false;
+            if (patternIsNegated && patternMatches) {
+                return Outcome.DENY;
+            } else if (!patternIsNegated && patternMatches) {
+                return Outcome.ALLOW;
+            } else {
+                return Outcome.DEFER;
+            }
         }
 
-        private boolean addressInCidrRange(String cidrAddress, String remoteAddress) {
-            cidrAddress = cidrAddress.replace("!","");
-            if (cidrAddress.contains("/")){
-                Subnet subnet = Subnet.create(cidrAddress);
+        private boolean addressInCidrRange(String cidrAddress, String remoteAddress) throws IllegalArgumentException {
                 try {
+                    Subnet subnet = Subnet.create(cidrAddress);
                     return subnet.containsHost(remoteAddress);
                 } catch (UnknownHostException e) {
                     return false;
                 }
             }
-            return false;
-        }
 
-        private String convertPatternToRegex(String pattern){
-            pattern = pattern.replace("!","");
+        private Pattern convertPatternToRegex(String pattern) {
             pattern = pattern.replace(".", "\\.");
-            pattern = pattern.replace("?", ".{1}");
-            pattern = pattern.replace("*", ".*");
-            return pattern;
+            return Glob.parseGlobToPattern(pattern);
         }
 
-        private String strip(String linePart){
-            linePart = linePart.replace("from=", "");
-            linePart = linePart.replace("\"", "");
-            return linePart;
+        private String strip(String linePart) {
+            return linePart.substring(6, linePart.length()-1);
         }
     }
 
@@ -408,5 +422,4 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     .toLogger(_accessLog);
         }
     }
-
 }
