@@ -82,6 +82,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private LoginStrategy _loginStrategy;
     private TimeUnit _idleTimeoutUnit;
     private long _idleTimeout;
+    private enum Outcome { ALLOW, DENY, DEFER }
 
     public Ssh2Admin() {
         _server = SshServer.setUpDefaultServer();
@@ -291,12 +292,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             }
             return null;
         }
-
-        private boolean remoteHostIsPermitted(String keyLine, ServerSession session) {
-            RemoteHostValidator validator = new RemoteHostValidator();
-            return validator.isValidHost(keyLine, session);
-        }
-
+        
         @Override
         public boolean authenticate(String userName, PublicKey key,
                 ServerSession session) {
@@ -308,7 +304,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     successful =
                         fileStream
                         .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
-                        .filter(l -> remoteHostIsPermitted(l, session))
+                        .filter(l -> isValidHost(l, session))
                         .map(this::toPublicKey)
                         .filter(Objects::nonNull)
                         .anyMatch(key::equals);
@@ -328,13 +324,6 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 logLoginTry(userName, session, method, successful, null);
             }
             return successful;
-        }
-    }
-
-    private static class RemoteHostValidator {
-
-        private enum Outcome {
-            ALLOW, DENY, DEFER
         }
 
         private boolean isValidHost(String line, ServerSession session) {
