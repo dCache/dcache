@@ -339,9 +339,10 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
         private boolean isValidHost(String line, ServerSession session) {
             for (String linePart : Splitter.on(" ").trimResults().omitEmptyStrings().split(line)) {
-                if (linePart.startsWith("from=") && linePart.endsWith("\"")) {
+                if (linePart.startsWith("from=\"") && linePart.endsWith("\"")) {
+                    String from = linePart.substring(6, linePart.length()-1);
                     Set<Outcome> outcomes = EnumSet.noneOf(Outcome.class);
-                    for (String pattern : Splitter.on(",").trimResults().omitEmptyStrings().split(strip(linePart))) {
+                    for (String pattern : Splitter.on(",").trimResults().omitEmptyStrings().split(from)) {
                         outcomes.add(patternMatchesHost(pattern, session));
                     }
                     return outcomes.contains(Outcome.ALLOW) && !outcomes.contains(Outcome.DENY);
@@ -351,8 +352,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         }
 
         private Outcome patternMatchesHost(String pattern, ServerSession session) {
-            boolean patternMatches = false;
             boolean patternIsNegated = pattern.startsWith("!");
+            Outcome matchOutcome = patternIsNegated ? Outcome.DENY : Outcome.ALLOW;
             if (patternIsNegated) {
                 pattern = pattern.substring(1);
             }
@@ -360,26 +361,18 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             if (remote instanceof InetSocketAddress) {
                 String remoteAddress = ((InetSocketAddress) remote).getAddress().getHostAddress();
                 try {
-                    patternMatches = addressInCidrRange(pattern, remoteAddress);
+                    if (addressInCidrRange(pattern, remoteAddress)) {
+                        return matchOutcome;
+                    }
                 } catch (IllegalArgumentException e) {
                     String remoteName = ((InetSocketAddress) remote).getHostName();
-                    if (Glob.isGlob(pattern)) {
-                        Pattern p = Glob.parseGlobToPattern(pattern);
-                        Matcher addressMatcher = p.matcher(remoteAddress);
-                        Matcher nameMatcher = p.matcher(remoteName);
-                        patternMatches = (addressMatcher.matches() || nameMatcher.matches());
-                    } else {
-                        patternMatches = pattern.equals(remoteName);
+                    Glob glob = new Glob(pattern);
+                    if (glob.matches(remoteName) || glob.matches(remoteAddress)) {
+                        return matchOutcome;
                     }
                 }
             }
-            if (patternIsNegated && patternMatches) {
-                return Outcome.DENY;
-            } else if (!patternIsNegated && patternMatches) {
-                return Outcome.ALLOW;
-            } else {
-                return Outcome.DEFER;
-            }
+            return Outcome.DEFER;
         }
 
         private boolean addressInCidrRange(String cidrAddress, String remoteAddress) throws IllegalArgumentException {
@@ -390,10 +383,6 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     return false;
                 }
             }
-
-        private String strip(String linePart) {
-            return linePart.substring(6, linePart.length()-1);
-        }
     }
 
     private class AdminConnectionLogger implements SessionListener {
