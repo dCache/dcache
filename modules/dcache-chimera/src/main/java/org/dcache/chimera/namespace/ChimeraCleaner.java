@@ -76,7 +76,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         LoggerFactory.getLogger(ChimeraCleaner.class);
 
     // ToDo: Spring Implementation for queryLimit ( used in runNotification() )
-    private final int queryLimit = 5000;
+    private final static int QUERYLIMIT = 5000;
 
     @Option(
         name="refresh",
@@ -470,9 +470,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         List<String> queryList = new ArrayList<String>();
         do {
-            queryList = _db.queryForList(QUERY, String.class, queryLimit);
+            queryList = _db.queryForList(QUERY, String.class, QUERYLIMIT);
 
-            if(queryList.size() == 0) {
+            if( queryList.isEmpty()) {
                 break;
             }
 
@@ -484,7 +484,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                     _log.warn(e.getCause().getMessage());
                 }
             }
-        } while (queryList.size() >= queryLimit);
+        } while (queryList.size() >= QUERYLIMIT);
     }
 
     private ListenableFuture<List<PnfsDeleteEntryNotificationMessage>> sendDeleteNotifications(PnfsId pnfsId)
