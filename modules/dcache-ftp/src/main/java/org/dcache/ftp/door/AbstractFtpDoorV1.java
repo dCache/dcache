@@ -1102,7 +1102,7 @@ public abstract class AbstractFtpDoorV1
                         _tLog.begin(user, _tlogName, isWrite() ? "write" : "read",
                                 _path.toString(), _remoteSocketAddress.getAddress());
                     } catch (NoSuchElementException | IllegalArgumentException e) {
-                        LOGGER.error("Could not start tLog: " + e.getMessage());
+                        LOGGER.error("Could not start tLog: {}", e.getMessage());
                     }
                 }
             }
