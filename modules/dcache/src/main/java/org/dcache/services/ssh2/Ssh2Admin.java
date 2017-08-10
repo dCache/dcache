@@ -292,7 +292,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             }
             return null;
         }
-        
+
         @Override
         public boolean authenticate(String userName, PublicKey key,
                 ServerSession session) {
@@ -346,32 +346,23 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             if (patternIsNegated) {
                 pattern = pattern.substring(1);
             }
-            SocketAddress remote = session.getClientAddress();
-            if (remote instanceof InetSocketAddress) {
-                String remoteAddress = ((InetSocketAddress) remote).getAddress().getHostAddress();
+            SocketAddress rawRemote = session.getClientAddress();
+            if (rawRemote instanceof InetSocketAddress) {
+                InetSocketAddress remote = (InetSocketAddress) rawRemote;
+                InetAddress remoteAddress = remote.getAddress();
                 try {
-                    if (addressInCidrRange(pattern, remoteAddress)) {
+                    if (Subnet.create(pattern).contains(remoteAddress)) {
                         return matchOutcome;
                     }
                 } catch (IllegalArgumentException e) {
-                    String remoteName = ((InetSocketAddress) remote).getHostName();
                     Glob glob = new Glob(pattern);
-                    if (glob.matches(remoteName) || glob.matches(remoteAddress)) {
+                    if (glob.matches(remote.getHostName()) || glob.matches(remoteAddress.getHostAddress())) {
                         return matchOutcome;
                     }
                 }
             }
             return Outcome.DEFER;
         }
-
-        private boolean addressInCidrRange(String cidrAddress, String remoteAddress) throws IllegalArgumentException {
-                try {
-                    Subnet subnet = Subnet.create(cidrAddress);
-                    return subnet.containsHost(remoteAddress);
-                } catch (UnknownHostException e) {
-                    return false;
-                }
-            }
     }
 
     private class AdminConnectionLogger implements SessionListener {
