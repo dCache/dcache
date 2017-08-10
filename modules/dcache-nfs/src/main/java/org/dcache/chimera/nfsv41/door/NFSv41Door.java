@@ -843,13 +843,13 @@ public class NFSv41Door extends AbstractCellComponent implements
             description = "Show active transfers excluding proxy-io.")
     public class ShowTransfersCmd implements Callable<String> {
 
-        @Option(name = "pool")
+        @Option(name = "pool", usage = "An optional pool for filtering. Glob pattern matching is supported.")
         Glob pool;
 
-        @Option(name = "client")
+        @Option(name = "client", usage = "An optional client for filtering. Glob pattern matching is supported.")
         Glob client;
 
-        @Option(name = "pnfsid")
+        @Option(name = "pnfsid", usage = "An optional pNFS ID for filtering. Glob pattern matching is supported.")
         Glob pnfsid;
 
         @Override
