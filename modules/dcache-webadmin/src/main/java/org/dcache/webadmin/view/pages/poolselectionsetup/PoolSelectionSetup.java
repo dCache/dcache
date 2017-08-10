@@ -78,7 +78,7 @@ public class PoolSelectionSetup extends BasePage {
             return getPoolSelectionSetupService().getEntityContainer();
         } catch (PoolSelectionSetupServiceException ex) {
             error("No Data available yet, please reload page: " + ex.getMessage());
-            _log.debug("no Data: " + ex.getMessage());
+            _log.debug("no Data: {}", ex.getMessage());
             return new DCacheEntityContainerBean();
         }
     }
