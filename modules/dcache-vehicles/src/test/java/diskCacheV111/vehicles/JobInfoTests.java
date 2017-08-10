@@ -1,74 +1,50 @@
 package diskCacheV111.vehicles;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-/**
- * Created by alenaschemmert on 03.08.17.
- */
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.*;
 
 public class JobInfoTests {
 
     private JobInfo jobInfo;
-    private OldJobInfo oldJobInfo;
-    private String ref;
 
     @Before
     public void setUp() {
-        jobInfo = new JobInfo(System.currentTimeMillis(), System.currentTimeMillis() + 1000, "working", 1, "waldo", 2407);
-        oldJobInfo = new OldJobInfo(System.currentTimeMillis(), System.currentTimeMillis() + 1000, "working", 1, "waldo", 2407);
-        ref = jobInfo.toString();
+        long time = 1502366668987L;
+        jobInfo = new JobInfo(time, time + 1000, "RUNNING", 1, "waldo", 2407);
     }
 
     @Test
-    public void toStringShouldBeThreadSafe() {
-        Callable<String> task = jobInfo::toString;
+    public void newToStringShouldBeThreadSafe() {
         ExecutorService exec = Executors.newFixedThreadPool(8);
         List<Future<String>> results = new ArrayList<>();
 
         for (int i = 0; i < 8; i++) {
-            results.add(exec.submit(task));
+            results.add(exec.submit(jobInfo::toString));
         }
         exec.shutdown();
-
         for (Future<String> result : results) {
             try {
-                Assert.assertEquals(ref, result.get());
+                assertEquals("1;waldo:2407;08/10-14:04:29;08/10-14:04:28;RUNNING;", result.get());
             } catch (InterruptedException | ExecutionException e) {
-                Assert.assertFalse(true);
+                fail();
             }
         }
     }
 
     @Test
-    public void OldAndNewShouldBeEqual() {
-        Assert.assertEquals(jobInfo.toString(), oldJobInfo.toString());
+    public void oldAndNewToStringShouldBeEqual() {
+        assertThat(jobInfo.toString(), is("1;waldo:2407;08/10-14:04:29;08/10-14:04:28;RUNNING;"));
     }
 
-    private static class OldJobInfo extends JobInfo {
-        private static final SimpleDateFormat __format = new SimpleDateFormat("MM/dd-HH:mm:ss");
 
-        OldJobInfo(long submitTime, long startTime, String status, int id, String clientName, long clientId) {
-            super(submitTime, startTime, status, id, clientName, clientId);
-        }
-
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(getJobId()).append(';');
-            sb.append(getClientName()).append(':').append(getClientId());
-            synchronized (__format) {
-                sb.append(';').append(__format.format(new Date(getStartTime()))).
-                        append(';').append(__format.format(new Date(getSubmitTime()))).
-                        append(';').append(getStatus()).append(';') ;
-            }
-            return sb.toString();
-        }
-    }
 }
