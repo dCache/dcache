@@ -341,7 +341,7 @@ public class DirectoryLookUpPool extends AbstractCell
                         }
 
                         long numberOfEntries = cntIn.readLong();
-                        _log.debug("requested " + numberOfEntries + " bytes");
+                        _log.debug("requested {} bytes", numberOfEntries);
 
                         cntOut.writeACK(DCapConstants.IOCMD_READ);
                         index += doReadDir(cntOut, ostream, dirList, index,
