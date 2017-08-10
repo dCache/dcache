@@ -62,11 +62,12 @@ public class StripeContextManager
     {
         int i = 0;
         while (i < stripes) {
-            logger.debug("examining stripe " + i);
+            logger.debug("examining stripe {}", i);
             if (contextList[i].getStripeQuitToken() != null) {
                 // obtained quit token from one stripe.
                 stripeQuitTokens++;
-                logger.debug("obtained stripe quit token. Total = " + stripeQuitTokens + "; total needed = " + stripes);
+                logger.debug("obtained stripe quit token. Total = {}; total needed = ",
+                        stripeQuitTokens, stripes);
             }
             i++;
         }

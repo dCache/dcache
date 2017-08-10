@@ -134,8 +134,8 @@ public class TransferMonitor implements Runnable
                 throw new InterruptedException();
             }
 
-            logger.debug("waiting for 1st reply;  maxWait = " +
-                         maxWait + ", ioDelay = " + ioDelay);
+            logger.debug("waiting for 1st reply;  maxWait = {}, ioDelay = {}",
+                         maxWait, ioDelay);
             this.controlChannel.waitFor(aborted,
                                         ioDelay,
                                         maxWait);
@@ -148,7 +148,7 @@ public class TransferMonitor implements Runnable
             // 125 Data connection already open; transfer starting
             if (Reply.isPositivePreliminary(firstReply)) {
                 transferState.transferStarted();
-                logger.debug("first reply OK: " + firstReply.toString());
+                logger.debug("first reply OK: {}", firstReply.toString());
 
                 for (; ; ) {
 
@@ -160,7 +160,7 @@ public class TransferMonitor implements Runnable
 
                     //perf marker
                     if (nextReply.getCode() == 112) {
-                        logger.debug("marker arrived: " + nextReply.toString());
+                        logger.debug("marker arrived: {}", nextReply.toString());
                         if (mListener != null) {
                             mListener.markerArrived(
                                     new PerfMarker(nextReply.getMessage()));
@@ -170,7 +170,7 @@ public class TransferMonitor implements Runnable
 
                     //restart marker
                     if (nextReply.getCode() == 111) {
-                        logger.debug("marker arrived: " + nextReply.toString());
+                        logger.debug("marker arrived: {}", nextReply.toString());
                         if (mListener != null) {
                             mListener.markerArrived(
                                     new GridFTPRestartMarker(
@@ -182,12 +182,12 @@ public class TransferMonitor implements Runnable
                     //226 Transfer complete
                     if (nextReply.getCode() == 226) {
                         abortable = false;
-                        logger.debug("transfer complete: " + nextReply.toString());
+                        logger.debug("transfer complete: {}", nextReply.toString());
                         break;
                     }
 
                     // any other reply
-                    logger.debug("unexpected reply: " + nextReply.toString());
+                    logger.debug("unexpected reply: {}", nextReply.toString());
                     logger.debug("exiting the transfer thread");
                     ServerException e = ServerException.embedUnexpectedReplyCodeException(
                             new UnexpectedReplyCodeException(nextReply),
@@ -199,8 +199,8 @@ public class TransferMonitor implements Runnable
                 }
 
             } else {    //first reply negative
-                logger.debug("first reply bad: " + firstReply.toString());
-                logger.debug("category: " + firstReply.getCategory());
+                logger.debug("first reply bad: {}", firstReply.toString());
+                logger.debug("category: {}", firstReply.getCategory());
                 abortable = false;
                 ServerException e = ServerException.embedUnexpectedReplyCodeException(
                         new UnexpectedReplyCodeException(firstReply));

@@ -102,21 +102,19 @@ public class ByteRangeTest extends TestCase {
 			     int from2, int to2,
 			     int from1after, int to1after,
 			     int expectedReturn) {
-	logger.debug("checking: (" 
-		     + from1 + ".." + to1 +") + ("
-		     + from2 + ".." + to2 +") = ("
-		     + from1after + ".." + to1after + ")");
+	logger.debug("checking: ({}..{}) + ({}..{}) = ({}..{})",
+		     from1, to1, from2, to2, from1after, to1after);
 	ByteRange br1 = new ByteRange(from1, to1);
 	ByteRange br2 = new ByteRange(from2, to2);
 	int ret = br1.merge(br2);
-	logger.debug("... -> (" + br1.from + ".." + br1.to + ")"); 
+	logger.debug("... -> ({}..{})", br1.from, br1.to);
 	assertTrue(ret == expectedReturn);
 	assertTrue(br1.from == from1after);
 	assertTrue(br1.to == to1after);
     }
 
     private void assertConstructorError(int from, int to) {
-	logger.debug("checking constructor: (" + from + "," + to + ")");
+	logger.debug("checking constructor: ({},{})", from, to);
 	boolean threwOk = false;
 	try {
 	    new ByteRange(from, to);

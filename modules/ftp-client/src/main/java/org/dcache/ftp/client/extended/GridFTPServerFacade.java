@@ -94,7 +94,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         if (opts instanceof RetrieveOptions) {
             gSession.parallel =
                     ((RetrieveOptions) opts).getStartingParallelism();
-            logger.debug("parallelism set to " + gSession.parallel);
+            logger.debug("parallelism set to {}", gSession.parallel);
         }
     }
 
@@ -147,7 +147,7 @@ public class GridFTPServerFacade extends FTPServerFacade
             throws UnknownHostException, ClientException, IOException
     {
         if (logger.isDebugEnabled()) {
-            logger.debug("hostport: " + hp.getHost() + " " + hp.getPort());
+            logger.debug("hostport: {} {}", hp.getHost(), hp.getPort());
         }
 
         if (session.serverMode == Session.SERVER_ACTIVE) {
@@ -233,7 +233,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
         gSession.serverAddressList.add(hp);
 
-        logger.debug("started single striped passive server at port " +
+        logger.debug("started single striped passive server at port {}",
                      gSession.serverAddressList.get(0).getPort());
 
         return gSession.serverAddressList;
@@ -305,9 +305,9 @@ public class GridFTPServerFacade extends FTPServerFacade
                     needNewConnections = gSession.parallel - willReuseConnections;
                 }
 
-                logger.debug("will reuse " + willReuseConnections +
-                             " connections and start " + needNewConnections +
-                             " new ones.");
+                logger.debug("will reuse {}  connections and start {}  new ones.",
+                        willReuseConnections,
+                        needNewConnections);
 
                 transferThreadManager.startTransfer(
                         sink,
@@ -384,9 +384,8 @@ public class GridFTPServerFacade extends FTPServerFacade
                 int willCloseConnections = (free > total) ? free - total : 0;
                 int needNewConnections = (total > free) ? total - free : 0;
 
-                logger.debug("will reuse " + willReuseConnections +
-                             " connections, start " + needNewConnections +
-                             " new ones, and close " + willCloseConnections);
+                logger.debug("will reuse {} connections, start {}  new ones, and close {}", willReuseConnections,
+                             needNewConnections, willCloseConnections);
 
                 if (needNewConnections > 0) {
                     transferThreadManager.activeConnect(this.remoteServerAddress,

@@ -78,7 +78,7 @@ public class PerfMarker implements Marker
                 //last line
                 if (!name.startsWith("112")) {
                     //that wasn't a 112 message!
-                    logger.debug("ending line: ->" + name + "<-");
+                    logger.debug("ending line: ->{}<-", name);
                     badMsg("No ending '112' line", msg);
                 }
                 break;

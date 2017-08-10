@@ -84,7 +84,7 @@ public class GridFTPRestartMarkerTest extends TestCase {
     }
 
     private void testConstruction(String in, String out) {
-	logger.info(" constructing: " + in + " -> " + out);
+	logger.info(" constructing: {} -> {}", in, out);
 	GridFTPRestartMarker m = 
 	    new GridFTPRestartMarker("Range Marker " + in);
 	ByteRangeList l = new ByteRangeList();
@@ -93,7 +93,7 @@ public class GridFTPRestartMarkerTest extends TestCase {
     }
 
     private void assertConstructorError(String arg) {
-	logger.info("constructing bad: " + arg);
+	logger.info("constructing bad: {}", arg);
 	boolean threwOk = false;
 	try {
 	    new GridFTPRestartMarker(arg);

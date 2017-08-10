@@ -137,8 +137,8 @@ public class FTPControlChannel extends BasicClientControlChannel
 
             while (!found) {
                 try {
-                    logger.debug("opening control channel to "
-                                 + allIPs[i] + " : " + port);
+                    logger.debug("opening control channel to {} : {}",
+                                 allIPs[i], port);
                     InetSocketAddress isa =
                             new InetSocketAddress(allIPs[i], port);
 
@@ -146,8 +146,8 @@ public class FTPControlChannel extends BasicClientControlChannel
                     socket.connect(isa);
                     found = true;
                 } catch (IOException ioEx) {
-                    logger.debug("failed connecting to  "
-                                 + allIPs[i] + " : " + port + ":" + ioEx);
+                    logger.debug("failed connecting to {} : {}:{}",
+                                 allIPs[i], port, ioEx.toString());
                     i++;
                     if (i == allIPs.length) {
                         if (firstPass) {
@@ -251,7 +251,7 @@ public class FTPControlChannel extends BasicClientControlChannel
                 done = true;
             } catch (SocketTimeoutException e) {
                 // timeouts will happen
-                logger.debug("temp timeout" + e);
+                logger.debug("temp timeout {}", e.toString());
             } catch (Exception e) {
                 throw new InterruptedException();
             } finally {
@@ -345,7 +345,7 @@ public class FTPControlChannel extends BasicClientControlChannel
         Reply reply = new Reply(ftpIn);
         //System.out.println("FTP IN string "+reply.toString());
         if (logger.isDebugEnabled()) {
-            logger.debug("Control channel received: " + reply);
+            logger.debug("Control channel received: {}", reply);
         }
         lastReply = reply;
         return reply;
@@ -371,7 +371,7 @@ public class FTPControlChannel extends BasicClientControlChannel
             throw new IllegalArgumentException("null argument: cmd");
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("Control channel sending: " + cmd);
+            logger.debug("Control channel sending: {}", cmd);
         }
         ftpOut.write(cmd.toString().getBytes(StandardCharsets.US_ASCII));
         ftpOut.flush();

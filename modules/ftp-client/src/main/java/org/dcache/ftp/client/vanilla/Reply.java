@@ -75,7 +75,7 @@ public class Reply
         logger.debug("read 1st line");
         String line = input.readLine();
         if (logger.isDebugEnabled()) {
-            logger.debug("1st line: " + line);
+            logger.debug("1st line: {}", line);
         }
 
         //end of stream
@@ -133,9 +133,9 @@ public class Reply
             String lineSeparator = System.getProperty("line.separator");
             if (logger.isDebugEnabled()) {
                 logger.debug(
-                        "multiline reply; last line should start with ->"
-                        + lastLineStarts + "<-");
-                logger.debug("lenght of line.separator on this OS: " +
+                        "multiline reply; last line should start with ->{}<-",
+                        lastLineStarts);
+                logger.debug("lenght of line.separator on this OS: {}",
                              lineSeparator.length());
             }
             StringBuilder buf = new StringBuilder(message);
@@ -152,7 +152,7 @@ public class Reply
                 //which is incorrectly inserting \0 between lines
                 line = ignoreLeading0(line);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("line : ->" + line + "<-");
+                    logger.debug("line : ->{}<-", line);
                 }
                 buf.append(lineSeparator).append(line);
 
@@ -253,12 +253,12 @@ public class Reply
         if (line.length() > 0 && line.charAt(0) == 0) {
             logger.debug("WARNING: The first character of the reply is 0. Ignoring the character.");
         /*
-	    logger.debug( "\n\nWARNING:\n In the reply received from the server, the first character's code is 0! I will ignore it but this means the server is not following the protocol. Here's the details: \n first line of the reply ->" + line + "<-");
-	    logger.debug( "First 3 chars of reply->" +line.substring(0,3)+"<-"); 
-	    logger.debug( "char 0 ->" + line.charAt(0) + "<- code = " + (int)line.charAt(0));
-	    logger.debug( "char 1 ->" + line.charAt(1) + "<- code = " + (int)line.charAt(1));
-	    logger.debug( "char 2 ->" + line.charAt(2) + "<- code = " + (int)line.charAt(2));
-	    logger.debug( "char 3 ->" + line.charAt(3) + "<- code = " + (int)line.charAt(3));
+	    logger.debug( "\n\nWARNING:\n In the reply received from the server, the first character's code is 0! I will ignore it but this means the server is not following the protocol. Here's the details: \n first line of the reply ->{}<-", line);
+	    logger.debug( "First 3 chars of reply->{}<-", line.substring(0,3));
+	    logger.debug( "char 0 ->{}<- code = {}", line.charAt(0), (int)line.charAt(0));
+	    logger.debug( "char 1 ->{}<- code = ", line.charAt(1),  (int)line.charAt(1));
+	    logger.debug( "char 2 ->{}<- code = ", line.charAt(2), (int)line.charAt(2));
+	    logger.debug( "char 3 ->{}<- code = ", line.charAt(3), (int)line.charAt(3));
 	    */
             return line.substring(1, line.length());
         }

@@ -122,7 +122,7 @@ public abstract class AbstractDataChannel implements DataChannel
 	}
 	*/
 
-        logger.debug("registering handler for class " + clazz.toString() + "; id = " + id);
+        logger.debug("registering handler for class {}; id = {}", clazz.toString(), id);
         dataHandlers.put(id, clazz);
     }
 
@@ -154,7 +154,7 @@ public abstract class AbstractDataChannel implements DataChannel
             throws Exception
     {
         String id = getHandlerID(session.transferMode, session.transferType, SOURCE);
-        logger.debug("type/mode: " + id);
+        logger.debug("type/mode: {}", id);
         Class clazz = (Class) dataHandlers.get(id);
         if (clazz == null) {
             throw new Exception("No data reader for type/mode" + id);

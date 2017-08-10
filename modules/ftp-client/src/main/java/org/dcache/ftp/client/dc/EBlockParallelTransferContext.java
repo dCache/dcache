@@ -78,7 +78,7 @@ public class EBlockParallelTransferContext
     public synchronized Object getQuitToken()
     {
         logger.debug("checking if ready to quit");
-        logger.debug("eodsTotal = " + eodsTotal + "; eodsTransferred = " + eodsTransferred);
+        logger.debug("eodsTotal = {}; eodsTransferred = {}", eodsTotal, eodsTransferred);
         if (eodsTotal != UNDEFINED &&
             eodsTransferred == eodsTotal) {
             // ready to release the quit token. But make sure not to do it twice.

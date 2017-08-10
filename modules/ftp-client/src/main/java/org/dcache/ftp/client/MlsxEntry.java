@@ -101,7 +101,7 @@ public class MlsxEntry
 
                 //next fact
                 String fact = token;
-                logger.debug("fact: " + fact);
+                logger.debug("fact: {}", fact);
                 int equalSign = fact.indexOf('=');
                 String factName = fact.substring(0, equalSign).trim().toLowerCase();
                 String factValue =
@@ -114,7 +114,7 @@ public class MlsxEntry
                 // name: trim leading space
                 this.fileName = token.substring(1,
                                                 token.length());
-                logger.debug("name: " + fileName);
+                logger.debug("name: {}", fileName);
 
             }
         }
