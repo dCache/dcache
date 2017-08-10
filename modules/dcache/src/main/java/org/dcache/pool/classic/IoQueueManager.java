@@ -1,5 +1,9 @@
 package org.dcache.pool.classic;
 
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
+import org.dcache.pool.movers.Mover;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,6 +11,8 @@ import javax.annotation.Nonnull;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +24,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -422,6 +429,9 @@ public class IoQueueManager
         @Option(name = "r", usage = "Sort output in reverse order.")
         boolean reverseSort;
 
+        @Option(name = "c", usage = "Filter output by client IP or hostname.")
+        String clientHost;
+
         @Override
         public Serializable call() throws CommandException
         {
@@ -466,16 +476,43 @@ public class IoQueueManager
                     comparator = comparator.reversed();
                 }
 
+                // Prepare filters
+                Predicate<MoverRequestScheduler.PrioritizedRequest> clientIpFilter;
+                if (clientHost != null && !clientHost.isEmpty()) {
+                    try {
+                        // check and resolve host
+                        clientHost = InetAddress.getByName(clientHost).getHostAddress();
+                    } catch (UnknownHostException e) {
+                        return String.format("Unknown host %s", clientHost);
+                    }
+
+                    // building the filter
+                    clientIpFilter = prioritizedRequest -> {
+                        ProtocolInfo info = prioritizedRequest.getMover().getProtocolInfo();
+                        // ip protocol only
+                        if (info instanceof IpProtocolInfo) {
+                            return ((IpProtocolInfo) info).getSocketAddress().equals(clientHost);
+                        } else {
+                            return false;
+                        }
+                    };
+                } else {
+                    // if no host was provided, we accept all elements
+                    clientIpFilter = prioritizedRequest -> true;
+                }
+
                 StringBuilder sb = new StringBuilder();
                 if (groupByQueue) {
                     queues.stream().forEach(q -> {
                         sb.append("[").append(q.getName()).append("]\n");
                         q.getJobs()
+                                .filter(clientIpFilter)
                                 .sorted()
                                 .forEach(j -> IoQueueManager.toMoverString(j, sb));
                     });
                 } else {
                     queues.stream().flatMap(s -> s.getJobs())
+                            .filter(clientIpFilter)
                             .sorted(comparator)
                             .forEach(j -> IoQueueManager.toMoverString(j, sb));
                 }
