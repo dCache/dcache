@@ -541,7 +541,7 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             openFlags += " kXR_retstat";
         }
 
-        _log.debug("open flags: "+openFlags);
+        _log.debug("open flags: {}", openFlags);
 
         int mode = req.getUMask();
         String s = "";
