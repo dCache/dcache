@@ -357,7 +357,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       }else if( obj instanceof NoRouteToCellException ){
          _log.warn("NoRouteToCell from PoolManager");
       }else{
-         _log.warn("Unknow message arrived from PoolManager : {}", obj.getClass().getName() ) ;
+         _log.warn("Unknown message arrived from PoolManager : {}", obj.getClass().getName() ) ;
       }
    }
    /**
