@@ -101,7 +101,7 @@ public final class SrmReserveSpaceCompanion
     @Override
     public void failure(int rc, Object error)
     {
-        LOGGER.error("Space Reservation Failed rc:" + rc + " error:" + error);
+        LOGGER.error("Space Reservation Failed rc: {} error:{}", rc, error.toString());
         if (error instanceof NoFreeSpaceException) {
             NoFreeSpaceException nfse = (NoFreeSpaceException) error;
             callback.noFreeSpace(nfse.getMessage());
