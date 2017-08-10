@@ -124,7 +124,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                           long lifetime)
     {
         super(requestId, lifetime);
-        logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
+        logger.debug("GetFileRequest, requestId={} fileRequestId = {}", requestId, getId());
         this.surl = surl;
     }
 

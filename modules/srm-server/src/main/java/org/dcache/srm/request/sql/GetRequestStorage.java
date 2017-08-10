@@ -162,7 +162,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
         String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +
                 " WHERE RequestID="+ID;
         Statement sqlStatement = _con.createStatement();
-        logger.debug("executing statement: "+sqlStatementString);
+        logger.debug("executing statement: {}", sqlStatementString);
         ResultSet fileIdsSet = sqlStatement.executeQuery(sqlStatementString);
         List<String> protocols = new ArrayList<>();
         while(fileIdsSet.next()) {

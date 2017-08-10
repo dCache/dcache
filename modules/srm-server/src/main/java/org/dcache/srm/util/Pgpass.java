@@ -117,10 +117,10 @@ public class Pgpass {
 
             //             System.out.println("mode: '"+reply+"'");
             if (reply==null) {
-                _logger.error("Cannot stat '"+_pwdfile+"'");
+                _logger.error("Cannot stat '{}'", _pwdfile);
                 throw new IOException("Cannot stat '"+_pwdfile+"'");
             } else if (!reply.equals("'600'")) {
-                _logger.error("Protection for '"+_pwdfile+"' must be '600'");
+                _logger.error("Protection for '{}' must be '600'", _pwdfile);
                 throw new IOException("Protection for '"+_pwdfile+"' must be '600'");
             }
             /*

@@ -349,7 +349,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.debug("State changed from "+oldState+" to "+getState());
+        logger.debug("State changed from {} to {}", oldState, getState());
         if(state == State.READY) {
             try {
                 getContainerRequest().resetRetryDeltaTime();

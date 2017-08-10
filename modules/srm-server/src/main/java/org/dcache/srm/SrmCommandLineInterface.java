@@ -174,32 +174,32 @@ public class SrmCommandLineInterface
             String pattern = args.argv(0);
             StringBuilder sb = new StringBuilder();
             if (get) {
-                logger.debug("calling srm.cancelAllGetRequest(\"" + pattern + "\")");
+                logger.debug("calling srm.cancelAllGetRequest(\"{}\")", pattern);
                 srm.cancelAllGetRequest(sb, pattern);
             }
             if (bring) {
-                logger.debug("calling srm.cancelAllBringOnlineRequest(\"" + pattern + "\")");
+                logger.debug("calling srm.cancelAllBringOnlineRequest(\"{}\")", pattern);
                 srm.cancelAllBringOnlineRequest(sb, pattern);
             }
             if (put) {
-                logger.debug("calling srm.cancelAllPutRequest(\"" + pattern + "\")");
+                logger.debug("calling srm.cancelAllPutRequest(\"{}\")", pattern);
                 srm.cancelAllPutRequest(sb, pattern);
             }
             if (copy) {
-                logger.debug("calling srm.cancelAllCopyRequest(\"" + pattern + "\")");
+                logger.debug("calling srm.cancelAllCopyRequest(\"{}\")", pattern);
                 srm.cancelAllCopyRequest(sb, pattern);
             }
             if (reserve) {
-                logger.debug("calling srm.cancelAllReserveSpaceRequest(\"" + pattern + "\")");
+                logger.debug("calling srm.cancelAllReserveSpaceRequest(\"{}\")", pattern);
                 srm.cancelAllReserveSpaceRequest(sb, pattern);
             }
             if (ls) {
-                logger.debug("calling srm.cancelAllLsRequests(\"" + pattern + "\")");
+                logger.debug("calling srm.cancelAllLsRequests(\"{}\")", pattern);
                 srm.cancelAllLsRequests(sb, pattern);
             }
             return sb.toString();
         } catch (DataAccessException | SRMException e) {
-            logger.warn("Failure in cancelall: " + e.getMessage());
+            logger.warn("Failure in cancelall: {}", e.getMessage());
             return e.toString();
         }
     }
@@ -558,7 +558,7 @@ public class SrmCommandLineInterface
         }
         int value = Integer.parseInt(args.argv(0));
         srm.setPutMaxReadyJobs(value);
-        logger.info("put-req-max-ready-requests=" + value);
+        logger.info("put-req-max-ready-requests={}", value);
         return "put-req-max-ready-requests=" + value;
     }
 
@@ -573,7 +573,7 @@ public class SrmCommandLineInterface
         }
         int value = Integer.parseInt(args.argv(0));
         srm.setGetMaxReadyJobs(value);
-        logger.info("get-req-max-ready-requests=" + value);
+        logger.info("get-req-max-ready-requests={}", value);
         return "get-req-max-ready-requests=" + value;
     }
 
@@ -588,7 +588,7 @@ public class SrmCommandLineInterface
         }
         int value = Integer.parseInt(args.argv(0));
         srm.setBringOnlineMaxReadyJobs(value);
-        logger.info("bring-online-req-max-ready-requests=" + value);
+        logger.info("bring-online-req-max-ready-requests={}", value);
         return "bring-online-req-max-ready-requests=" + value;
     }
 
@@ -613,7 +613,7 @@ public class SrmCommandLineInterface
         }
         int value = Integer.parseInt(args.argv(0));
         srm.setLsMaxReadyJobs(value);
-        logger.info("ls-request-max-ready-requests=" + value);
+        logger.info("ls-request-max-ready-requests={}", value);
         return "ls-request-max-ready-requests=" + value;
     }
 
