@@ -1,34 +1,9 @@
 package org.dcache.pool.classic;
 
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.ProtocolInfo;
-import org.dcache.pool.movers.Mover;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.IoJobInfo;
-
+import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.CommandException;
@@ -36,11 +11,26 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
-
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.MoverRequestScheduler.Order;
 import org.dcache.util.IoPriority;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static dmg.util.CommandException.checkCommand;
@@ -429,12 +419,11 @@ public class IoQueueManager
         @Option(name = "r", usage = "Sort output in reverse order.")
         boolean reverseSort;
 
-        @Option(name = "c", usage = "Filter output by client IP or hostname.")
+        @Option(name = "client", usage = "Filter output by client IP or hostname.")
         String clientHost;
 
         @Override
-        public Serializable call() throws CommandException
-        {
+        public Serializable call() throws CommandException {
             if (id != null) {
                 return getQueueByJobId(id).orElseThrow(() -> new CommandException("Id doesn't belong to any known scheduler."))
                         .getJobInfo(id).orElseThrow(() -> new CommandException("Job not found : Job-" + id));
@@ -476,28 +465,24 @@ public class IoQueueManager
                     comparator = comparator.reversed();
                 }
 
-                // Prepare filters
                 Predicate<MoverRequestScheduler.PrioritizedRequest> clientIpFilter;
-                if (clientHost != null && !clientHost.isEmpty()) {
+                if (clientHost != null) {
+                    InetAddress clientInetAddress;
                     try {
-                        // check and resolve host
-                        clientHost = InetAddress.getByName(clientHost).getHostAddress();
+                        clientInetAddress = InetAddress.getByName(clientHost);
                     } catch (UnknownHostException e) {
-                        return String.format("Unknown host %s", clientHost);
+                        throw new CommandException("Unknown host " + clientHost);
                     }
 
-                    // building the filter
                     clientIpFilter = prioritizedRequest -> {
                         ProtocolInfo info = prioritizedRequest.getMover().getProtocolInfo();
-                        // ip protocol only
                         if (info instanceof IpProtocolInfo) {
-                            return ((IpProtocolInfo) info).getSocketAddress().equals(clientHost);
+                            return ((IpProtocolInfo) info).getSocketAddress().getAddress().equals(clientInetAddress);
                         } else {
                             return false;
                         }
                     };
                 } else {
-                    // if no host was provided, we accept all elements
                     clientIpFilter = prioritizedRequest -> true;
                 }
 
