@@ -86,7 +86,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
        try{
           sendMessage( msg ) ;
        }catch(RuntimeException ee ){
-          _log.warn("Problem replying : "+ee ) ;
+          _log.warn("Problem replying : {}", ee.toString() ) ;
        }
     }
     @Override
@@ -114,7 +114,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
                    try{
                       sendMessage( msg ) ;
                    }catch(RuntimeException ee ){
-                      _log.warn("Problem replying : "+ee ) ;
+                      _log.warn("Problem replying : {}", ee.toString() ) ;
                    }
                 }catch(Exception eee ){
                    _failed ++ ;
@@ -124,12 +124,12 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
                    try{
                       sendMessage( msg ) ;
                    }catch(RuntimeException ee ){
-                      _log.warn("Problem replying : "+ee ) ;
+                      _log.warn("Problem replying : {}", ee.toString() ) ;
                    }
                 }
             }
         }catch(Exception ee ){
-            _log.warn("Got exception from run while : "+ee);
+            _log.warn("Got exception from run while : {}", ee.toString());
         }finally{
             _log.info("Working thread finished");
         }
@@ -201,7 +201,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         }
 
         HsmControllable hc = (HsmControllable)values[1] ;
-        _log.info("Controller found for "+hsm+" -> "+values[0]);
+        _log.info("Controller found for {}  -> {}", hsm, values[0]);
         hc.getBfDetails( storageInfo );
 
     }

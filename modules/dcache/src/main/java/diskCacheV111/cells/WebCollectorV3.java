@@ -75,8 +75,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         {
             long start = System.currentTimeMillis();
             wait(_mode ? _shortPeriod / 2 : _regularPeriod / 2);
-            _log.debug("Woke up after " + (System.currentTimeMillis() - start)
-                       + " millis");
+            _log.debug("Woke up after {} millis", (System.currentTimeMillis() - start));
         }
 
         private synchronized void setShortPeriod(long shortPeriod)
@@ -93,7 +92,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         private synchronized void topologyChanged(boolean modified)
         {
-            // _log.info("Topology changed : "+modified);
+            // _log.info("Topology changed : {}", modified);
             if (!_enabled) {
                 return;
             }
@@ -850,7 +849,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         // get the translated list
         _log.debug("Preparing pool cost table");
         List<PoolCostEntry> list = preparePoolCostTable();
-        _log.debug("Preparing pool cost table done " + list.size());
+        _log.debug("Preparing pool cost table done {}", list.size());
         // calculate the totals ...
         TreeMap<String, int[]> moverMap = new TreeMap<>();
         int[][] total = new int[5][3];

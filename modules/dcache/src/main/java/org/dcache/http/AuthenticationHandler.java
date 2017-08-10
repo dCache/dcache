@@ -200,7 +200,7 @@ public class AuthenticationHandler extends HandlerWrapper {
         try {
             addresses.add(InetAddress.getByName(address));
         } catch (UnknownHostException e) {
-            LOG.warn("Failed to resolve " + address + ": " + e.getMessage());
+            LOG.warn("Failed to resolve {}: {}", address, e.getMessage());
             return;
         }
 

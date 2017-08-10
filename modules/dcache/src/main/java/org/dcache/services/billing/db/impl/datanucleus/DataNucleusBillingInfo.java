@@ -192,8 +192,7 @@ public class DataNucleusBillingInfo extends AbstractBillingInfoAccess {
                             + type.getName());
             removed = (Long) query.execute();
             tx.commit();
-            logger.trace("successfully removed " + removed
-                            + " entries of type " + type);
+            logger.trace("successfully removed {} entries of type {}", removed, type);
             return removed;
         } finally {
             try {

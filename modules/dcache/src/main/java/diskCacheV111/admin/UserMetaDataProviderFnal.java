@@ -131,22 +131,22 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
             authf = new KAuthFile(_kpwdFilePath);
         }
         catch ( Exception e ) {
-            _log.warn("User authentication file not found: " + e);
+            _log.warn("User authentication file not found: {}", e.toString());
             return answer;
         }
         if (userRole.startsWith("UNSPECIFIED")) {
 
             userRole = authf.getIdMapping(userPrincipal);
-            _log.warn("userRole="+userRole);
+            _log.warn("userRole={}", userRole);
 
             if(userRole == null) {
-                _log.warn("User " + userPrincipal + " not found.");
+                _log.warn("User {} not found.", userPrincipal);
                 return answer;
             }
         }
         pwdRecord = authf.getUserRecord(userRole);
         if( pwdRecord == null ) {
-            _log.warn("User " + userRole + " not found.");
+            _log.warn("User {} not found.", userRole);
             return answer;
         }
 
@@ -162,7 +162,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
         answer.put("gid", String.valueOf(gid));
         answer.put("home", home);
 
-        _log.info("User "+userRole+" logged in");
+        _log.info("User {} logged in", userRole);
         return answer;
     }
 

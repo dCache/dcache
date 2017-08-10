@@ -1107,7 +1107,7 @@ public class UserAdminShell
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException, AclException
     {
-        _log.info("String command (super) " + str);
+        _log.info("String command (super) {}", str);
 
         if (str.trim().isEmpty()) {
             return "";

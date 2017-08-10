@@ -272,8 +272,7 @@ public class ListDirectoryHandler
                     }
                 }
             } catch (CacheException e) {
-                _log.error("Listing of " + _path + " incomplete: " +
-                           e.getMessage());
+                _log.error("Listing of {} incomplete: {}", _path, e.getMessage());
                 return false;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

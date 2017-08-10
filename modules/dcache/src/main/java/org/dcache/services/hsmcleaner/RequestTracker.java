@@ -250,7 +250,7 @@ public class RequestTracker implements CellMessageReceiver
             /* If there is no available pool, then we report failure on
              * all files.
              */
-            _log.warn("No pools attached to " + hsm + " are available");
+            _log.warn("No pools attached to {} are available", hsm );
 
             Iterator<URI> i = _locationsToDelete.get(hsm).iterator();
             while (i.hasNext()) {
@@ -274,8 +274,7 @@ public class RequestTracker implements CellMessageReceiver
      */
     private synchronized void timeout(String hsm, String pool)
     {
-        _log.error("Timeout deleting files on HSM " + hsm
-                   + " attached to " + pool);
+        _log.error("Timeout deleting files on HSM {} attached to {}", hsm, pool);
         _poolRequests.remove(hsm);
         _pools.remove(pool);
         flush(hsm);
@@ -290,7 +289,7 @@ public class RequestTracker implements CellMessageReceiver
          * entries.
          */
         if (msg.getReturnCode() != 0) {
-            _log.error("Received failure from pool: " + msg.getErrorObject());
+            _log.error("Received failure from pool: {}", msg.getErrorObject());
             return;
         }
 
@@ -309,8 +308,7 @@ public class RequestTracker implements CellMessageReceiver
         }
 
         if (!failures.isEmpty()) {
-            _log.warn("Failed to delete " + failures.size()
-                    + " files from HSM " + hsm + ". Will try again later.");
+            _log.warn("Failed to delete {} files from HSM {}. Will try again later.", failures.size(), hsm );
         }
 
         for (URI location : success) {

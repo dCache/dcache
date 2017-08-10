@@ -299,7 +299,7 @@ public class TransferObserverV1
                 _update = Long.parseLong(updateString) * 1000L;
             }
         } catch (NumberFormatException e) {
-            _log.warn("Illegal value for -update: " + updateString);
+            _log.warn("Illegal value for -update: {}", updateString);
         }
 
         useInterpreter(true);

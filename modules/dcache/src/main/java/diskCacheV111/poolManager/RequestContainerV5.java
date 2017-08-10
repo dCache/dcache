@@ -270,7 +270,7 @@ public class RequestContainerV5
     }
 
     public void poolStatusChanged(String poolName, int poolStatus) {
-        _log.info("Restore Manager : got 'poolRestarted' for " + poolName);
+        _log.info("Restore Manager : got 'poolRestarted' for {}", poolName);
         try {
             List<PoolRequestHandler> list;
             synchronized (_handlerHash) {
@@ -293,7 +293,7 @@ public class RequestContainerV5
                          * in this construction we will fall down to next case
                          */
                         if (rph.getPoolCandidate().equals(POOL_UNKNOWN_STRING) ) {
-                            _log.info("Restore Manager : retrying : " + rph);
+                            _log.info("Restore Manager : retrying : {}", rph);
                             rph.retry();
                         }
                     case PoolStatusChangedMessage.DOWN:
@@ -302,7 +302,7 @@ public class RequestContainerV5
                          * pool
                          */
                         if (rph.getPoolCandidate().equals(poolName) ) {
-                            _log.info("Restore Manager : retrying : " + rph);
+                            _log.info("Restore Manager : retrying : {}", rph);
                             rph.retry();
                         }
                 }
@@ -679,7 +679,7 @@ public class RequestContainerV5
         //
         //
         PoolRequestHandler handler;
-        _log.info( "Adding request for : "+canonicalName ) ;
+        _log.info( "Adding request for : {}", canonicalName ) ;
         synchronized( _handlerHash ){
            handler = _handlerHash.computeIfAbsent(canonicalName, n -> new PoolRequestHandler(pnfsId, n, allowedStates));
            handler.addRequest(envelope) ;
@@ -1016,7 +1016,7 @@ public class RequestContainerV5
             Pool2PoolTransferMsg pool2pool =
                     new Pool2PoolTransferMsg(sourcePool.name(), destPool.name(), _fileAttributes);
             pool2pool.setDestinationFileStatus(_destinationFileStatus);
-            _log.info("[p2p] Sending transfer request: " + pool2pool);
+            _log.info("[p2p] Sending transfer request: {}", pool2pool);
             CellMessage cellMessage =
                     new CellMessage(new CellPath(destPool.address()), pool2pool);
 
@@ -1051,9 +1051,7 @@ public class RequestContainerV5
                     CellMessage message = i.next();
                     long ttl = message.getTtl();
                     if (message.getLocalAge() >= ttl) {
-                        _log.info("Discarding request from "
-                                  + message.getSourcePath().getCellName()
-                                  + " because its time to live has been exceeded.");
+                        _log.info("Discarding request from {} because its time to live has been exceeded.", message.getSourcePath().getCellName());
                         i.remove();
                     } else if (ttl < Long.MAX_VALUE) {
                         _nextTtlTimeout = Math.min(_nextTtlTimeout, now + ttl);
@@ -1130,7 +1128,7 @@ public class RequestContainerV5
         }
         private void add( Object obj ){
            synchronized( _fifo ){
-               _log.info( "Adding Object : "+obj ) ;
+               _log.info( "Adding Object : {}", obj ) ;
                _fifo.addFirst(obj) ;
                if( _stateEngineActive ) {
                    return;
@@ -1148,7 +1146,7 @@ public class RequestContainerV5
         private void stateLoop(){
 
            Object inputObject ;
-           _log.info( "ACTIVATING STATE ENGINE "+_pnfsId+" "+(System.currentTimeMillis()-_started)) ;
+           _log.info( "ACTIVATING STATE ENGINE {} {}", _pnfsId, (System.currentTimeMillis()-_started)) ;
 
            while( ! Thread.interrupted() ){
 
@@ -1166,16 +1164,16 @@ public class RequestContainerV5
               }
               _forceContinue = false ;
               try{
-                 _log.info("StageEngine called in mode " +
-                           _state + " with object " +
-                        (  inputObject == null ?
-                             "(NULL)":
-                            (  inputObject instanceof Object [] ?
-                                 ((Object[])inputObject)[0].toString() :
-                                 inputObject.getClass().getName()
-                            )
-                        )
-                    );
+                 _log.info("StageEngine called in mode {}  with object {}", _state,
+                         (
+                         inputObject == null ? "(NULL)":
+                                 (
+                                         inputObject instanceof Object [] ?
+                                                 ((Object[])inputObject)[0].toString()
+                                                 : inputObject.getClass().getName()
+                                 )
+                         )
+                 );
 
                  stateEngine( inputObject ) ;
 
@@ -1209,7 +1207,7 @@ public class RequestContainerV5
                         return true;
                     }
                 } catch (IOException | PatternSyntaxException e) {
-                    _log.error("Failed to verify stage permissions: " + e.getMessage());
+                    _log.error("Failed to verify stage permissions: {}", e.getMessage());
                 }
             }
 
@@ -1501,7 +1499,7 @@ public class RequestContainerV5
                             }
                         }else{
                             _poolCandidate = _bestPool;
-                            _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate.info());
+                            _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
 
                           setError(0,"");
                           nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1524,7 +1522,7 @@ public class RequestContainerV5
                           if( _bestPool != null ){
 
                               _poolCandidate = _bestPool;
-                              _log.info("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidate.info());
+                              _log.info("ST_POOL_2_POOL : Choosing high cost pool {}", _poolCandidate.info());
 
                              setError(0,"");
                              nextStep(RequestState.ST_DONE , CONTINUE ) ;
@@ -1834,7 +1832,7 @@ public class RequestContainerV5
 
               if( messageArrived instanceof Pool2PoolTransferMsg ){
                  Pool2PoolTransferMsg reply = (Pool2PoolTransferMsg)messageArrived ;
-                 _log.info("Pool2PoolTransferMsg replied with : "+reply);
+                 _log.info("Pool2PoolTransferMsg replied with : {}", reply);
                  if( ( _currentRc = reply.getReturnCode() ) == 0 ){
                      _poolCandidate = _p2pDestinationPool;
                     return RequestStatusCode.OK ;

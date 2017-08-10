@@ -172,7 +172,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
         } catch (NoSuchFileException e) {
             return 0;
         } catch (IOException e) {
-            LOGGER.error("Failed to read file size: " + e);
+            LOGGER.error("Failed to read file size: {}", e.toString());
             return 0;
         }
     }

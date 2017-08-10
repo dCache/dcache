@@ -47,7 +47,7 @@ import org.dcache.util.Args;
             try{
                 setVolumeDetails( storageInfo );
             }catch(Exception ee){
-                LOGGER.error("Can't get volume details " + ee);
+                LOGGER.error("Can't get volume details {}", ee.toString());
             }
 
         }
@@ -87,7 +87,7 @@ import org.dcache.util.Args;
                          error);
              }
 
-             LOGGER.info("Output : " + output);
+             LOGGER.info("Output : {}", output);
 
              String volNbf;
              String volStat;
@@ -147,7 +147,7 @@ import org.dcache.util.Args;
                          error);
              }
 
-             LOGGER.info("Output : " + output);
+             LOGGER.info("Output : {}", output);
 
              String tape;
              String status;

@@ -145,7 +145,7 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
         try {
             database.close();
         } catch (DatabaseException e) {
-            LOGGER.error("Ignored: Could not close database: " + e.getMessage());
+            LOGGER.error("Ignored: Could not close database: {}", e.getMessage());
         }
     }
 
@@ -163,7 +163,7 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
 
             return true;
         } catch (IOException e) {
-            LOGGER.error("Failed to touch " + tmp + ": " + e.getMessage());
+            LOGGER.error("Failed to touch {}: {}", tmp, e.getMessage());
             return false;
         }
     }
