@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.dcache.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -71,8 +72,6 @@ import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.poolmanager.PoolManagerStub;
-import org.dcache.util.CDCScheduledExecutorServiceDecorator;
-import org.dcache.util.NDC;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
@@ -115,10 +114,6 @@ import org.dcache.nfs.v4.xdr.utf8str_mixed;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
-import org.dcache.util.FireAndForgetTask;
-import org.dcache.util.RedirectedTransfer;
-import org.dcache.util.Transfer;
-import org.dcache.util.TransferRetryPolicy;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.OncRpcProgram;
@@ -848,43 +843,27 @@ public class NFSv41Door extends AbstractCellComponent implements
             description = "Show active transfers excluding proxy-io.")
     public class ShowTransfersCmd implements Callable<String> {
 
-        @Override
-        public String call() throws IOException {
+        @Option(name = "pool")
+        Glob pool;
 
-            return _ioMessages.values()
-                    .stream()
-                    .map(Object::toString)
-                    .collect(Collectors.joining("\n"));
-        }
-    }
+        @Option(name = "client")
+        Glob client;
 
-
-    @Command(name = "show transfers filtered", hint = "show active transfers filtered",
-            description = "Show active transfers excluding proxy-io filtered by pool, client or pnfsid.")
-    public class ShowTransfersFilteredCmd implements Callable<String> {
-
-        @Argument(required = false, metaVar = "pool")
-        String pool;
-
-        @Argument(required = false, metaVar = "client")
-        String client;
-
-        @Argument(required = false, metaVar = "pnfsid")
-        String pnfsid;
+        @Option(name = "pnfsid")
+        Glob pnfsid;
 
         @Override
         public String call() throws IOException {
 
             return _ioMessages.values()
                     .stream()
-                    .filter(d -> client == null ? true : d.getClient().toString().equals(client))
-                    .filter(d -> pnfsid == null ? true : d.getPnfsId().toString().equals(pnfsid))
-                    .filter(d -> pool == null ? true : d.getPool().equals(pool))
+                    .filter(d -> pool == null ? true : pool.matches(d.getPool()))
+                    .filter(d -> client == null ? true : client.matches(d.getClient().toString()))
+                    .filter(d -> pnfsid == null ? true : pnfsid.matches(d.getPnfsId().toString()))
                     .map(Object::toString)
                     .collect(Collectors.joining("\n"));
         }
     }
-
 
     @Command(name = "show proxyio", hint = "show proxy-io transfers",
             description = "Show active proxy-io transfers.")
