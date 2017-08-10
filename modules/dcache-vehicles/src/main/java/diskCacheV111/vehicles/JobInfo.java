@@ -5,6 +5,8 @@ package diskCacheV111.vehicles;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -53,8 +55,8 @@ public class JobInfo implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append(_jobId).append(';');
         sb.append(_client).append(':').append(_clientId);
-        sb.append(';').append(__formatter.format(Instant.ofEpochMilli(_submitTime)));
-        sb.append(';').append(__formatter.format(Instant.ofEpochMilli(_startTime)));
+        sb.append(';').append(LocalDateTime.ofInstant(Instant.ofEpochMilli(_submitTime), ZoneId.systemDefault()).format(__formatter));
+        sb.append(';').append(LocalDateTime.ofInstant(Instant.ofEpochMilli(_startTime), ZoneId.systemDefault()).format(__formatter));
         sb.append(';').append(_status).append(';');
         return sb.toString();
     }
