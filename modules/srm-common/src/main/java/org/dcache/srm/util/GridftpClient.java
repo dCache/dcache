@@ -397,16 +397,16 @@ public class GridftpClient
             throw new IOException("we wrote more then file size!!!");
         }
 
-        logger.debug("gridFTPWrite() wrote {}bytes", sink.getTransfered());
+        logger.debug("gridFTPWrite() wrote {} bytes", sink.getTransfered());
 
         try {
           if ( _cksmType != null ) {
               verifyCksmValue(_current_source_sink, sourcepath);
           }
         } catch ( ChecksumNotSupported ex){
-          logger.error("Checksum is not supported:{}", ex.toString());
+          logger.error("Checksum is not supported: {}", ex.toString());
         } catch ( ChecksumValueFormatException cvfe) {
-          logger.error("Checksum format is not valid:{}", cvfe.toString());
+          logger.error("Checksum format is not valid: {}", cvfe.toString());
         }
 
         //make these remeber last values
@@ -524,7 +524,7 @@ public class GridftpClient
             throw new IOException("we read more then file size!!!");
         }
 
-        logger.debug("gridFTPWrite() wrote {}bytes", source.getTransfered());
+        logger.debug("gridFTPWrite() wrote {} bytes", source.getTransfered());
         getTransfered();
         getLastTransferTime();
         _current_source_sink = null;
@@ -549,7 +549,7 @@ public class GridftpClient
             }
         } catch ( Exception ex ){
             // send cksm error is often expected for non dCache sites
-            logger.debug("Was not able to send checksum value:{}", ex.toString());
+            logger.debug("Was not able to send checksum value: {}", ex.toString());
         }
     }
 
