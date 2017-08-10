@@ -1,5 +1,6 @@
 package org.dcache.services.ssh2;
 
+import com.google.common.base.Splitter;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.NamedFactory;
@@ -14,6 +15,8 @@ import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
+import org.dcache.util.Glob;
+import org.dcache.util.Subnet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -29,7 +32,10 @@ import java.net.SocketAddress;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -73,6 +79,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private LoginStrategy _loginStrategy;
     private TimeUnit _idleTimeoutUnit;
     private long _idleTimeout;
+    private enum Outcome { ALLOW, DENY, DEFER }
 
     public Ssh2Admin() {
         _server = SshServer.setUpDefaultServer();
@@ -294,11 +301,10 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     successful =
                         fileStream
                         .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
+                        .filter(l -> isValidHost(l, session))
                         .map(this::toPublicKey)
-                        .filter(k -> k != null)
-                        .filter(key::equals)
-                        .findFirst()
-                        .isPresent();
+                        .filter(Objects::nonNull)
+                        .anyMatch(key::equals);
                 }
             } catch (FileNotFoundException e) {
                 _log.debug("File not found: {}", _authorizedKeyList);
@@ -315,6 +321,44 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                 logLoginTry(userName, session, method, successful, null);
             }
             return successful;
+        }
+
+        private boolean isValidHost(String line, ServerSession session) {
+            for (String linePart : Splitter.on(" ").trimResults().omitEmptyStrings().split(line)) {
+                if (linePart.startsWith("from=\"") && linePart.endsWith("\"")) {
+                    String from = linePart.substring(6, linePart.length()-1);
+                    Set<Outcome> outcomes = EnumSet.noneOf(Outcome.class);
+                    for (String pattern : Splitter.on(",").trimResults().omitEmptyStrings().split(from)) {
+                        outcomes.add(patternMatchesHost(pattern, session));
+                    }
+                    return outcomes.contains(Outcome.ALLOW) && !outcomes.contains(Outcome.DENY);
+                }
+            }
+            return true;
+        }
+
+        private Outcome patternMatchesHost(String pattern, ServerSession session) {
+            boolean patternIsNegated = pattern.startsWith("!");
+            Outcome matchOutcome = patternIsNegated ? Outcome.DENY : Outcome.ALLOW;
+            if (patternIsNegated) {
+                pattern = pattern.substring(1);
+            }
+            SocketAddress rawRemote = session.getClientAddress();
+            if (rawRemote instanceof InetSocketAddress) {
+                InetSocketAddress remote = (InetSocketAddress) rawRemote;
+                InetAddress remoteAddress = remote.getAddress();
+                try {
+                    if (Subnet.create(pattern).contains(remoteAddress)) {
+                        return matchOutcome;
+                    }
+                } catch (IllegalArgumentException e) {
+                    Glob glob = new Glob(pattern);
+                    if (glob.matches(remote.getHostName()) || glob.matches(remoteAddress.getHostAddress())) {
+                        return matchOutcome;
+                    }
+                }
+            }
+            return Outcome.DEFER;
         }
     }
 
@@ -339,5 +383,4 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     .toLogger(_accessLog);
         }
     }
-
 }
