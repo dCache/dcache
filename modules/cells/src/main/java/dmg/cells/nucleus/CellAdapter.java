@@ -518,9 +518,9 @@ public class CellAdapter
      * @param msg the reference to message arrived.
      */
     public void messageArrived(CellMessage msg) {
-        _log.info(" CellMessage From   : " + msg.getSourcePath());
-        _log.info(" CellMessage To     : " + msg.getDestinationPath());
-        _log.info(" CellMessage Object : " + msg.getMessageObject());
+        _log.info(" CellMessage From   : {}", msg.getSourcePath());
+        _log.info(" CellMessage To     : {}", msg.getDestinationPath());
+        _log.info(" CellMessage Object : {}", msg.getMessageObject());
 
     }
     /**
@@ -808,7 +808,7 @@ public class CellAdapter
      */
     @Override
     public void   exceptionArrived(ExceptionEvent ce) {
-        _log.info(" exceptionArrived "+ce);
+        _log.info(" exceptionArrived {}", ce);
     }
 
     /**

@@ -106,7 +106,7 @@ public class      LoginCell
      Constructor<?> con = null ;
      Object      o;
      for( int i = 0 ; i < args.argc() ; i++ ){
-        _log.info( "Trying to load shell : "+args.argv(i) ) ;
+        _log.info( "Trying to load shell : {}", args.argv(i) ) ;
         try{
            c = Class.forName( args.argv(i) ) ;
            int j ;
@@ -124,12 +124,12 @@ public class      LoginCell
 
            o = con.newInstance( objList[j] ) ;
            addCommandListener( o ) ;
-           _log.info( "Added : "+args.argv(i) ) ;
+           _log.info( "Added : {}", args.argv(i) ) ;
         }catch(Exception ee ){
-           _log.warn( "Failed to load shell : "+args.argv(i)+" : "+ee ) ;
+           _log.warn( "Failed to load shell : {} : {}", args.argv(i), ee.toString() ) ;
            if( ee instanceof InvocationTargetException ){
-              _log.warn( "   -> Problem in constructor : "+
-                ((InvocationTargetException)ee).getTargetException() ) ;
+              _log.warn( "   -> Problem in constructor : {}",
+                ((InvocationTargetException)ee).getTargetException().toString() ) ;
            }
         }
 
@@ -157,10 +157,10 @@ public class      LoginCell
                   print( prompt() ) ;
                }
            }catch( IOException e ){
-              _log.info("EOF Exception in read line : "+e ) ;
+              _log.info("EOF Exception in read line : {}", e.toString() ) ;
               break ;
            }catch( Exception e ){
-              _log.info("I/O Error in read line : "+e ) ;
+              _log.info("I/O Error in read line : {}", e.toString() ) ;
               break ;
            }
 
