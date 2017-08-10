@@ -347,11 +347,11 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             if (rawRemote instanceof InetSocketAddress) {
                 InetSocketAddress remote = (InetSocketAddress) rawRemote;
                 InetAddress remoteAddress = remote.getAddress();
-                try {
+                if (Subnet.isValid(pattern)) {
                     if (Subnet.create(pattern).contains(remoteAddress)) {
                         return matchOutcome;
                     }
-                } catch (IllegalArgumentException e) {
+                } else {
                     Glob glob = new Glob(pattern);
                     if (glob.matches(remote.getHostName()) || glob.matches(remoteAddress.getHostAddress())) {
                         return matchOutcome;
