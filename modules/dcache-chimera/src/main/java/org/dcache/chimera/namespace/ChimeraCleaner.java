@@ -75,6 +75,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private static final Logger _log =
         LoggerFactory.getLogger(ChimeraCleaner.class);
 
+    // ToDo: Spring Implementation for queryLimit ( used in runNotification() )
+    private final int queryLimit = 5000;
+
     @Option(
         name="refresh",
         description="Refresh interval",
@@ -454,20 +457,34 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
     }
 
+    /**
+     * runNotification
+     * collect messages from database and send Delete Notifications
+     */
     private void runNotification()
             throws InterruptedException
     {
         final String QUERY =
                 "SELECT ipnfsid FROM t_locationinfo_trash t1 " +
-                "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2)";
-        for (String id : _db.queryForList(QUERY, String.class)) {
-            try {
-                sendDeleteNotifications(new PnfsId(id)).get();
-                _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
-            } catch (ExecutionException e) {
-                _log.warn(e.getCause().getMessage());
+                "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2) LIMIT=?";
+
+        List<String> queryList = new ArrayList<String>();
+        do {
+            queryList = _db.queryForList(QUERY, String.class, queryLimit);
+
+            if(queryList.size() == 0) {
+                break;
             }
-        }
+
+            for (String id : queryList) {
+                try {
+                    sendDeleteNotifications(new PnfsId(id)).get();
+                    _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
+                } catch (ExecutionException e) {
+                    _log.warn(e.getCause().getMessage());
+                }
+            }
+        } while (queryList.size() >= queryLimit);
     }
 
     private ListenableFuture<List<PnfsDeleteEntryNotificationMessage>> sendDeleteNotifications(PnfsId pnfsId)
