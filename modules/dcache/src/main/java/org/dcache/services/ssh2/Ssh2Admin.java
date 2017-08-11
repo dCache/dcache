@@ -34,9 +34,10 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import diskCacheV111.util.AuthorizedKeyParser;
@@ -69,6 +70,12 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
     private static final Logger _log = LoggerFactory.getLogger(Ssh2Admin.class);
     private static final Logger _accessLog =
             LoggerFactory.getLogger("org.dcache.access.ssh2");
+
+    // get the user part from a public key line like
+    // ... ssh-rsa AAAA...... user@hostname
+    private static final Pattern _pubKeyFileUsername =
+            Pattern.compile(".*ssh-.* (.*?)@.*");
+
     private final SshServer _server;
     // UniversalSpringCell injected parameters
     private List<File> _hostKeys;
@@ -290,21 +297,45 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             return null;
         }
 
+        private String getUserFromKeyLine(String line) {
+            Matcher m = _pubKeyFileUsername.matcher(line);
+            if (m.matches()) {
+                return m.group(1);
+            }
+            return "";
+        }
+
         @Override
         public boolean authenticate(String userName, PublicKey key,
                 ServerSession session) {
             boolean successful = false;
+            String reason = null;
             _log.debug("Authentication username set to: {} publicKey: {}",
                     userName, key);
             try {
                 try(Stream<String> fileStream = java.nio.file.Files.lines(_authorizedKeyList.toPath())) {
-                    successful =
-                        fileStream
-                        .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
-                        .filter(l -> isValidHost(l, session))
-                        .map(this::toPublicKey)
-                        .filter(Objects::nonNull)
-                        .anyMatch(key::equals);
+                    String matchedPubKey = fileStream
+                            .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
+                            .filter(l -> key.equals(toPublicKey(l)))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (null == matchedPubKey) {
+                        reason = "key file: no match";
+                    } else if (!isValidHost(matchedPubKey, session)) {
+                        reason = "key file: publickey used from unallowed host";
+                    } else {
+                        String keyUsername = getUserFromKeyLine(matchedPubKey);
+                        if (keyUsername.isEmpty()) {
+                            reason =
+                                "key file: no username@host for publickey set";
+                        } else if (userName.equals(keyUsername)) {
+                            successful = true;
+                        } else {
+                            reason = "key file: different username for "
+                                    + "publickey expected";
+                        }
+                    }
                 }
             } catch (FileNotFoundException e) {
                 _log.debug("File not found: {}", _authorizedKeyList);
@@ -318,7 +349,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             if (!session.isAuthenticated()) {
                 String method = "PublicKey (" + key.getAlgorithm() + " "
                         + KeyUtils.getFingerPrint(key) + ")";
-                logLoginTry(userName, session, method, successful, null);
+                logLoginTry(userName, session, method, successful, reason);
             }
             return successful;
         }
