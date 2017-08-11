@@ -115,9 +115,7 @@ public abstract class AbstractBerkeleyDBReplicaStore implements ReplicaStore, En
             database = new ReplicaStoreDatabase(properties, dir.toFile(), readOnly);
             views = new ReplicaStoreView(database);
         } catch (EnvironmentFailureException e) {
-            throw new CacheException(CacheException.PANIC, "Failed to open Berkeley DB database. When upgrading to " +
-                                                           "dCache 2.6, it may be necessary to run the /usr/sbin/dcache-pool-meta-preupgrade utility " +
-                                                           "before starting the pool. If that does not resolve the problem, you should contact " +
+            throw new CacheException(CacheException.PANIC, "Failed to open Berkeley DB database. You should contact " +
                                                            "support@dcache.org", e);
         }
     }
