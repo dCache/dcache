@@ -54,7 +54,7 @@ public class ContextPictureEngine implements HttpResponseEngine, DomainContextAw
       String [] tokens = request.getRequestTokens() ;
       int       offset = request.getRequestTokenOffset() ;
 
-      _log.info("Offset : "+offset);
+      _log.info("Offset : {}", offset);
       for( int i =0 ; i < tokens.length ;i++ ){
          _log.info(i + " -> " + tokens[i]);
       }

@@ -81,7 +81,7 @@ public class NoCachedFilesSpaceSweeper
                 }
             }
         } catch (InterruptedException | CacheException e) {
-            _log.warn("Failed to remove entry from repository: " + e.getMessage() );
+            _log.warn("Failed to remove entry from repository: {}", e.getMessage() );
         }
     }
 }

@@ -136,7 +136,7 @@ public abstract class AbstractMoverProtocolTransferService
                                 fileIoChannel.sync();
                             } catch (SyncFailedException e) {
                                 fileIoChannel.sync();
-                                LOGGER.info("First sync failed [" + e + "], but second sync suceeded");
+                                LOGGER.info("First sync failed [{}], but second sync suceeded", e );
                             }
                         }
                     } else {

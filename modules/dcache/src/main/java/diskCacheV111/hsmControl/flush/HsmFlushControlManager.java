@@ -234,7 +234,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                                _control ? gainControlInterval : 0L);
 
                if (LOG_ENABLED) {
-                   _log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to " + poolName);
+                   _log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to {}", poolName);
                }
                sendMessage(new CellMessage(new CellPath(poolName), msg));
            }
@@ -403,7 +403,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            sendMessage( new CellMessage( new CellAddressCore("PoolManager") , msg ) ) ;
 
        }catch(RuntimeException ee ){
-           _log.warn("setPoolReadOnly : couldn't sent message to PoolManager"+ee);
+           _log.warn("setPoolReadOnly : couldn't sent message to PoolManager{}", ee.toString());
        }
     }
     private void queryPoolMode( String poolName ){
@@ -417,7 +417,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            sendMessage( new CellMessage( new CellAddressCore("PoolManager") , msg ) ) ;
 
        }catch(RuntimeException ee ){
-           _log.warn("queryPoolMode : couldn't sent message to PoolManager"+ee);
+           _log.warn("queryPoolMode : couldn't sent message to PoolManager{}", ee.toString());
        }
     }
     private class PoolCollector implements FutureCallback<Object[]>
@@ -474,7 +474,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            for (Object o : list) {
                String command = "psux ls pgroup " + o;
                if (LOG_ENABLED) {
-                   _log.info("runCollector sending : " + command + " to " + path);
+                   _log.info("runCollector sending : {} to {}", command, path);
                }
                Futures.addCallback(_poolManager.send(command, Object[].class), this);
                _waitingFor++;
@@ -484,7 +484,7 @@ public class HsmFlushControlManager  extends CellAdapter {
           _waitingFor-- ;
           if( _waitingFor == 0 ){
              if(LOG_ENABLED) {
-                 _log.info("PoolCollector : we are done : " + _poolGroupHash);
+                 _log.info("PoolCollector : we are done : {}", _poolGroupHash);
              }
              _active = false ;
              HashMap<String, HFCPool> map = new HashMap<>() ;
@@ -496,7 +496,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                   for (Object aC : c) {
                       String pool = (String) aC;
                       if (LOG_ENABLED) {
-                          _log.info("Adding pool : " + pool);
+                          _log.info("Adding pool : {}", pool);
                       }
                       HFCPool p = _configuredPoolList.get(pool);
                       map.put(pool, p == null ? new HFCPool(pool) : p);
@@ -542,7 +542,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                 String poolGroupName = (String) reply[0] ;
                 _poolGroupHash.put( poolGroupName , (Object[]) reply[1]);
                 if(LOG_ENABLED) {
-                    _log.info("PoolCollector : " + ((Object[]) reply[1]).length + " pools arrived for " + poolGroupName);
+                    _log.info("PoolCollector : {} pools arrived for {}", ((Object[]) reply[1]).length, poolGroupName);
                 }
             }else{
                 _log.warn("PoolCollector : invalid reply arrived");
@@ -860,7 +860,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         synchronized( _propertyLock ){
             info.setDriverProperties( System.currentTimeMillis() - _propertiesUpdated , _properties ) ;
         }
-        //_log.info("DRIVER PROPERTIES : "+info ) ;
+        //_log.info("DRIVER PROPERTIES : {}", info ) ;
         return info ;
     }
     private class EventDispatcher implements HsmFlushControlCore, Runnable  {
@@ -1219,19 +1219,19 @@ public class HsmFlushControlManager  extends CellAdapter {
     //
     private void poolFlushDoFlushMessageArrived( PoolFlushDoFlushMessage msg ){
         if(LOG_ENABLED) {
-            _log.info("poolFlushDoFlushMessageArrived : " + msg);
+            _log.info("poolFlushDoFlushMessageArrived : {}", msg);
         }
         String poolName  = msg.getPoolName() ;
         synchronized( _poolCollector ){
             HFCPool pool = _poolCollector.getPoolByName( poolName) ;
             if( pool == null ){
-               _log.warn("poolFlushDoFlushMessageArrived : message arrived for non configured pool : "+poolName);
+               _log.warn("poolFlushDoFlushMessageArrived : message arrived for non configured pool : {}", poolName);
                return ;
             }
             String storageClass = msg.getStorageClassName()+"@"+msg.getHsmName() ;
             HFCFlushInfo info = pool.flushInfos.get( storageClass );
             if( info == null ){
-               _log.warn("poolFlushDoFlushMessageArrived : message arrived for non existing storage class : "+storageClass);
+               _log.warn("poolFlushDoFlushMessageArrived : message arrived for non existing storage class : {}", storageClass);
                //
                // the real one doesn't exists anymore, so we simulate one.
                //
@@ -1239,8 +1239,8 @@ public class HsmFlushControlManager  extends CellAdapter {
             }
             if( msg.getReturnCode() != 0 ){
                if(LOG_ENABLED) {
-                   _log.info("Flush failed (msg=" + (msg
-                           .isFinished() ? "Finished" : "Ack") + ") : " + msg);
+                   _log.info("Flush failed (msg={}) : {}", (msg
+                           .isFinished() ? "Finished" : "Ack"), msg);
                }
 
                info.setFlushingFailed(msg.getReturnCode(),msg.getErrorObject());
@@ -1251,7 +1251,7 @@ public class HsmFlushControlManager  extends CellAdapter {
             }
             if( msg.isFinished() ){
                 if(LOG_ENABLED) {
-                    _log.info("Flush finished : " + msg);
+                    _log.info("Flush finished : {}", msg);
                 }
 
                 updateFlushCellAndFlushInfos( msg , pool ) ;
@@ -1264,12 +1264,12 @@ public class HsmFlushControlManager  extends CellAdapter {
     }
     private void poolFlushGainControlMessageDidntArrive( String poolName ){
         if(LOG_ENABLED) {
-            _log.info("poolFlushGainControlMessageDidntArrive : " + poolName);
+            _log.info("poolFlushGainControlMessageDidntArrive : {}", poolName);
         }
         synchronized( _poolCollector ){
             HFCPool pool = _poolCollector.getPoolByName( poolName) ;
             if( pool == null ){
-               _log.warn("PoolFlushGainControlMessage : message arrived for non configured pool : "+poolName);
+               _log.warn("PoolFlushGainControlMessage : message arrived for non configured pool : {}", poolName);
                return ;
             }
             pool.isActive    = false ;
@@ -1308,13 +1308,13 @@ public class HsmFlushControlManager  extends CellAdapter {
     }
     private void poolFlushGainControlMessageArrived( PoolFlushGainControlMessage msg ){
         if(LOG_ENABLED) {
-            _log.info("PoolFlushGainControlMessage : " + msg);
+            _log.info("PoolFlushGainControlMessage : {}", msg);
         }
         String poolName  = msg.getPoolName() ;
         synchronized( _poolCollector ){
             HFCPool pool = _poolCollector.getPoolByName( poolName) ;
             if( pool == null ){
-               _log.warn("PoolFlushGainControlMessage : message arrived for non configured pool : "+poolName);
+               _log.warn("PoolFlushGainControlMessage : message arrived for non configured pool : {}", poolName);
                return ;
             }
 
@@ -1325,14 +1325,14 @@ public class HsmFlushControlManager  extends CellAdapter {
     }
     private void poolModeInfoArrived( PoolManagerPoolModeMessage msg ){
         if(LOG_ENABLED) {
-            _log.info("PoolManagerPoolModeMessage : " + msg);
+            _log.info("PoolManagerPoolModeMessage : {}", msg);
         }
         String poolName  = msg.getPoolName() ;
         synchronized( _poolCollector ){
 
             HFCPool pool = _poolCollector.getPoolByName( poolName) ;
             if( pool == null ){
-               _log.warn("poolModeInfoArrived : message arrived for non configured pool : "+poolName);
+               _log.warn("poolModeInfoArrived : message arrived for non configured pool : {}", poolName);
                return ;
             }
             pool.mode = msg.getPoolMode() ;
@@ -1369,13 +1369,12 @@ public class HsmFlushControlManager  extends CellAdapter {
           CellPath        path = nrtc.getDestinationPath() ;
           CellAddressCore core = path.getDestinationAddress() ;
           String          cellName = core.getCellName() ;
-          _log.warn( "NoRouteToCell : "+ cellName + " ("+path+")");
+          _log.warn( "NoRouteToCell : {} ({})", cellName, path);
 
           poolFlushGainControlMessageDidntArrive( cellName ) ;
 
        }else{
-          _log.warn("Unknown message arrived ("+msg.getSourcePath()+") : "+
-               msg.getMessageObject() ) ;
+          _log.warn("Unknown message arrived ({}) : {}", msg.getSourcePath(), msg.getMessageObject() ) ;
          _failed ++ ;
        }
     }

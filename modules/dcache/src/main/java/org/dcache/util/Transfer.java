@@ -1137,17 +1137,15 @@ public class Transfer implements Comparable<Transfer>
              * for the transfer confirmation.
              */
             if (millis > 0 && !waitForMover(millis)) {
-                _log.error("Failed to kill mover " + pool + "/" + moverId
-                           + ": Timeout");
+                _log.error("Failed to kill mover {}/{}: Timeout", pool, moverId);
             }
         } catch (CacheException e) {
             // Not surprising that the pool reported a failure
             // when we killed the mover.
-            _log.debug("Killed mover and pool reported: " +
+            _log.debug("Killed mover and pool reported: {}",
                        e.getMessage());
         } catch (InterruptedException e) {
-            _log.warn("Failed to kill mover " + pool + "/" + moverId
-                      + ": " + e.getMessage());
+            _log.warn("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
             Thread.currentThread().interrupt();
         } finally {
             setStatus(null);
@@ -1192,11 +1190,9 @@ public class Transfer implements Comparable<Transfer>
                 new PnfsHandler(_pnfs, Restrictions.none())
                         .deletePnfsEntry(pnfsId, _path.toString());
             } catch (FileNotFoundCacheException e) {
-                _log.debug("Failed to delete file after failed upload: " +
-                           _path + " (" + pnfsId + "): " + e.getMessage());
+                _log.debug("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
             } catch (CacheException e) {
-                _log.error("Failed to delete file after failed upload: " +
-                           _path + " (" + pnfsId + "): " + e.getMessage());
+                _log.error("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
             } finally {
                 setStatus(null);
             }

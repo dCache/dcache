@@ -1071,8 +1071,7 @@ public class PoolV4
                 && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
             if (!msg.isForceSourceMode()) {
-                LOGGER.warn("PoolIoFileMessage request rejected due to "
-                            + _poolMode);
+                LOGGER.warn("PoolIoFileMessage request rejected due to {}", _poolMode);
                 throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
             }
         }
@@ -1085,8 +1084,7 @@ public class PoolV4
         throws CacheException, IOException, InterruptedException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
-            LOGGER.warn("Pool2PoolTransferMsg request rejected due to "
-                        + _poolMode);
+            LOGGER.warn("Pool2PoolTransferMsg request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
@@ -1116,8 +1114,7 @@ public class PoolV4
         throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
-            LOGGER.warn("PoolFetchFileMessage request rejected due to "
-                        + _poolMode);
+            LOGGER.warn("PoolFetchFileMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
         if (!_hasTapeBackend) {
@@ -1175,8 +1172,7 @@ public class PoolV4
         throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
-            LOGGER.warn("PoolRemoveFilesFromHsmMessage request rejected due to "
-                        + _poolMode);
+            LOGGER.warn("PoolRemoveFilesFromHsmMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
         if (!_hasTapeBackend) {
@@ -1334,8 +1330,7 @@ public class PoolV4
         throws CacheException, InterruptedException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)) {
-            LOGGER.warn("PoolSetStickyMessage request rejected due to "
-                        + _poolMode);
+            LOGGER.warn("PoolSetStickyMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
@@ -1630,12 +1625,10 @@ public class PoolV4
                     _repository.setState(id, ReplicaState.REMOVED);
                     LOGGER.info("File not found in PNFS; removed {}", id);
                 } catch (InterruptedException | CacheException f) {
-                    LOGGER.error("File not found in PNFS, but failed to remove "
-                                 + id + ": " + f);
+                    LOGGER.error("File not found in PNFS, but failed to remove {}: {}", id, f);
                 }
             } catch (CacheException e) {
-                LOGGER.error("Cache location was not registered for "
-                             + id + ": " + e.getMessage());
+                LOGGER.error("Cache location was not registered for {}: {}", id , e.getMessage());
             }
         }
 
@@ -1687,11 +1680,10 @@ public class PoolV4
                 _hybridInventoryActive = false;
             }
 
-            LOGGER.info("Replica "
-                        + (_activate ? "registration" : "deregistration" )
-                        + " finished. " + _hybridCurrent
-                        + " replicas processed in "
-                        + (stopTime-startTime) + " msec");
+            LOGGER.info("Replica {} finished. {} replicas processed in {} msec",
+                    (_activate ? "registration" : "deregistration" ),
+                    _hybridCurrent,
+                    (stopTime-startTime));
         }
     }
 

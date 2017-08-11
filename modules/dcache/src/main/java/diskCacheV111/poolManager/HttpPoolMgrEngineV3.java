@@ -113,7 +113,7 @@ public class HttpPoolMgrEngineV3 implements
         _pnfsManagerAddress = arguments.getOption("pnfsmanager");
 
         for (int i = 0; i < argsString.length; i++) {
-            _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
+            _log.info("HttpPoolMgrEngineV3 : argument : {} : {}", i, argsString[i]);
             if (argsString[i].equals("addStorageInfo")) {
                 _addStorageInfo = true;
                 _log.info("Option accepted : addStorageInfo");
@@ -121,14 +121,14 @@ public class HttpPoolMgrEngineV3 implements
                 _addHsmInfo = true;
                 _log.info("Option accepted : addHsmInfo");
             } else if (argsString[i].startsWith("details=")) {
-                _log.info("Details for lazy restore : "+argsString[i]);
+                _log.info("Details for lazy restore : {}", argsString[i]);
                 decodeDetails(argsString[i]);
             } else if (argsString[i].startsWith("css=")) {
                 decodeCss(argsString[i].substring(4));
             }
         }
         _restoreCollector = new Thread(this, "restore-collector");
-        _log.info("Using CSS file : "+_cssFile);
+        _log.info("Using CSS file : {}", _cssFile);
     }
 
     @Override
@@ -246,7 +246,7 @@ public class HttpPoolMgrEngineV3 implements
                     _pm.sendAsync(_endpoint, new PoolManagerGetRestoreHandlerInfo(), _poolManager.getTimeoutInMillis());
             infos = CellStub.getMessage(future).getResult();
         } catch (CacheException | NoRouteToCellException e) {
-            _log.warn("runRestoreCollector : failure reply from PoolManager : " + e.getMessage());
+            _log.warn("runRestoreCollector : failure reply from PoolManager : {}", e.getMessage());
             return;
         }
 

@@ -600,7 +600,7 @@ public class LegacyAdminShell
         try {
             spreader.waitForReplies();
         } catch (InterruptedException ex) {
-            _log.info("InterruptedException while waiting for a reply from pools " + ex);
+            _log.info("InterruptedException while waiting for a reply from pools {}", ex.toString());
         }
 
         return spreader.getReplies();
@@ -1372,14 +1372,14 @@ public class LegacyAdminShell
             }
             return _completer.complete(buffer, cursor, candidates);
         } catch (Exception e) {
-            _log.info("Completion failed: " + e.toString());
+            _log.info("Completion failed: {}", e.toString());
             return -1;
         }
     }
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
     {
-        _log.info("String command (super) " + str);
+        _log.info("String command (super) {}", str);
 
         if (str.trim().isEmpty()) {
             return "";

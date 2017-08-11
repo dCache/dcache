@@ -201,7 +201,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void handle()
     {
-        log.debug("handling:  " + toString(true));
+        log.debug("handling:  {}", toString(true));
         int last_slash_pos = pnfsPath.lastIndexOf('/');
         if (last_slash_pos == -1) {
             transferRequest.setFailed(2,
@@ -409,7 +409,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 : new PoolMgrSelectReadPoolMsg(fileAttributes, protocol_info, _readPoolSelectionContext);
         request.setBillingPath(pnfsPath);
         request.setSubject(transferRequest.getSubject());
-        log.debug("PoolMgrSelectPoolMsg: " + request);
+        log.debug("PoolMgrSelectPoolMsg: {}", request);
         setState(WAITING_FOR_POOL_INFO_STATE);
         manager.persist(this);
         CellStub.addCallback(manager.getPoolManagerStub().sendAsync(request), this, executor);
@@ -417,7 +417,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void poolInfoArrived(PoolMgrSelectPoolMsg pool_info)
     {
-        log.debug("poolManagerReply = " + pool_info);
+        log.debug("poolManagerReply = {}", pool_info);
 
         if (pool_info instanceof PoolMgrSelectReadPoolMsg) {
             _readPoolSelectionContext =
@@ -461,9 +461,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)
     {
-        log.debug("poolReply = " + poolMessage);
+        log.debug("poolReply = {}", poolMessage);
         info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-        log.debug("Pool " + pool + " will deliver file " + pnfsId + " mover id is " + poolMessage.getMoverId());
+        log.debug("Pool {} will deliver file {} mover id is {}", pool, pnfsId, poolMessage.getMoverId());
         log.debug("Starting moverTimeout timer");
         manager.startTimer(id);
         setMoverId(poolMessage.getMoverId());
@@ -627,7 +627,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void sendSuccessReply()
     {
-        log.debug("sendSuccessReply for: " + toString(true));
+        log.debug("sendSuccessReply for: {}", toString(true));
         if (info.getTimeQueued() < 0) {
             info.setTimeQueued(info.getTimeQueued() + System
                     .currentTimeMillis());
@@ -668,7 +668,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     void sendDoorRequestInfo(int code, String msg)
     {
         info.setResult(code, msg);
-        log.debug("Sending info: " + info);
+        log.debug("Sending info: {}", info);
         manager.getBillingStub().notify(info);
     }
 

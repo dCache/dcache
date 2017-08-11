@@ -191,10 +191,8 @@ public class RemoteGsiftpTransferProtocol
     {
         _pnfsId = fileAttributes.getPnfsId();
         if (_log.isDebugEnabled()) {
-            _log.debug("runIO()\n\tprotocol="
-                    + protocol + ",\n\tStorageInfo=" + StorageInfos.extractFrom(fileAttributes) + ",\n\tPnfsId="
-                    + _pnfsId + ",\n\taccess ="
-                    + access );
+            _log.debug("runIO()\n\tprotocol={},\n\tStorageInfo={},\n\tPnfsId={},\n\taccess ={}",
+                    protocol, StorageInfos.extractFrom(fileAttributes), _pnfsId, access );
         }
         if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
@@ -264,11 +262,10 @@ public class RemoteGsiftpTransferProtocol
             URI src_url = new URI(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
             long size = _client.getSize(src_url.getPath());
-            _log.debug(" received a file size info: " + size +
-                " allocating space on the pool");
-            _log.debug("ALLOC: " + _pnfsId + " : " + size );
+            _log.debug(" received a file size info: {} allocating space on the pool", size );
+            _log.debug("ALLOC: {} : {}", _pnfsId, size );
             allocator.allocate(size);
-            _log.debug(" allocated space " + size);
+            _log.debug(" allocated space {}", size);
             DiskDataSourceSink sink =
                 new DiskDataSourceSink(protocolInfo.getBufferSize(),
                                        false);
@@ -296,10 +293,10 @@ public class RemoteGsiftpTransferProtocol
 
             if (!checksums.isEmpty()){
                 Checksum checksum = checksums.iterator().next();
-                _log.debug("Will use " + checksum + " for transfer verification of "+_pnfsId);
+                _log.debug("Will use {} for transfer verification of {}", checksum, _pnfsId);
                 _client.setChecksum(checksum.getType().getName(), null);
             } else {
-                _log.debug("PnfsId "+_pnfsId+" does not have checksums");
+                _log.debug("PnfsId {} does not have checksums", _pnfsId);
             }
 
             URI dst_url =  new URI(protocolInfo.getGsiftpUrl());
@@ -327,7 +324,7 @@ public class RemoteGsiftpTransferProtocol
                 return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type)).create(_ftpCksm.value);
             }
         } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
-            _log.error("Checksum algorithm is not supported: " + e.getMessage());
+            _log.error("Checksum algorithm is not supported: {}", e.getMessage());
         }
         return null;
     }
@@ -367,17 +364,17 @@ public class RemoteGsiftpTransferProtocol
             _ftpCksm = _client.negotiateCksm(src_url.getPath());
             return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
         } catch (NoSuchAlgorithmException | GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
-            _log.error("Checksum algorithm is not supported: " + e.getMessage());
+            _log.error("Checksum algorithm is not supported: {}", e.getMessage());
         } catch (IOException e) {
-            _log.error("I/O failure talking to FTP server: " + e.getMessage());
+            _log.error("I/O failure talking to FTP server: {}", e.getMessage());
         } catch (ServerException e) {
-            _log.error("GridFTP server failure: " + e.getMessage());
+            _log.error("GridFTP server failure: {}", e.getMessage());
         } catch (KeyStoreException e) {
-            _log.error("GridFTP authentication failure: " + e.getMessage());
+            _log.error("GridFTP authentication failure: {}", e.getMessage());
         } catch (URISyntaxException e) {
-            _log.error("Invalid GridFTP URL: " + e.getMessage());
+            _log.error("Invalid GridFTP URL: {}", e.getMessage());
         } catch (ClientException e) {
-            _log.error("GridFTP client failure: " + e.getMessage());
+            _log.error("GridFTP client failure: {}", e.getMessage());
         }
         return null;
     }
@@ -528,7 +525,7 @@ public class RemoteGsiftpTransferProtocol
                 }
             }
             catch(Exception e){
-                _log.error("could not get "+type+" from pnfs:");
+                _log.error("could not get {} from pnfs:", type);
                 _log.error(e.toString());
                 _log.error("ignoring this error");
 

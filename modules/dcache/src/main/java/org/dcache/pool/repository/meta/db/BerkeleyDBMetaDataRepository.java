@@ -199,7 +199,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
         try {
             return _fileStore.getFreeSpace();
         } catch (IOException e) {
-            LOGGER.warn("Failed to query free space: " + e.toString());
+            LOGGER.warn("Failed to query free space: {}", e.toString());
             return 0;
         }
     }
@@ -214,7 +214,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
         try {
             return _fileStore.getTotalSpace();
         } catch (IOException e) {
-            LOGGER.warn("Failed to query total space: " + e.toString());
+            LOGGER.warn("Failed to query total space: {}", e.toString());
             return 0;
         }
     }

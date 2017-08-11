@@ -172,7 +172,7 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
         try {
             _server.stop();
         } catch (IOException e) {
-            _log.warn("SSH failure during shutdown: " + e.getMessage());
+            _log.warn("SSH failure during shutdown: {}", e.getMessage());
         }
     }
 

@@ -63,7 +63,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
                 _history  = new FileHistory(historyFile);
                 _history.setMaxSize(historySize);
             } catch (IOException e) {
-                _logger.warn("History creation failed: " + e.getMessage());
+                _logger.warn("History creation failed: {}", e.getMessage());
             }
         }
     }
@@ -122,8 +122,8 @@ public class LegacyAdminShellCommand implements Command, Runnable
             try {
                 cleanUp();
             } catch (IOException e) {
-                _logger.warn("Failed to shutdown console cleanly: "
-                        + e.getMessage());
+                _logger.warn("Failed to shutdown console cleanly: {}"
+                        , e.getMessage());
             }
             _exitCallback.onExit(0);
         }

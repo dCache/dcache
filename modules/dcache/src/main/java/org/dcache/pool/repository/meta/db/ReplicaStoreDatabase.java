@@ -53,7 +53,7 @@ public class ReplicaStoreDatabase
         envConfig.setExceptionListener(event -> {
             if (event.getException() instanceof EnvironmentFailureException && !env.isValid()) {
                 setFailed();
-                _log.error("Pool restart required due to Berkeley DB failure: " + event.getException().getMessage());
+                _log.error("Pool restart required due to Berkeley DB failure: {}", event.getException().getMessage());
             }
         });
 
