@@ -66,7 +66,7 @@ public class StripeContextManager
             if (contextList[i].getStripeQuitToken() != null) {
                 // obtained quit token from one stripe.
                 stripeQuitTokens++;
-                logger.debug("obtained stripe quit token. Total = {}; total needed = ",
+                logger.debug("obtained stripe quit token. Total = {}; total needed = {}",
                         stripeQuitTokens, stripes);
             }
             i++;

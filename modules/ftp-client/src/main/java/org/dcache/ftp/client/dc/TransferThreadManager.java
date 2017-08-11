@@ -69,8 +69,8 @@ public class TransferThreadManager
 
             logger.debug(
                     "connecting active socket {}; total cached sockets = {}",
-                    i
-                    + socketPool.count());
+                    i,
+                    socketPool.count());
 
             Task task =
                     new GridFTPActiveConnectTask(
@@ -141,7 +141,7 @@ public class TransferThreadManager
             logger.debug(
                     "checking out a socket; total cached sockets = {}; free = {}; busy = {}",
                     socketPool.count(),
-                    socketPool.countFree()
+                    socketPool.countFree(),
                     socketPool.countBusy());
 
             SocketBox sbox = socketPool.checkOut();
