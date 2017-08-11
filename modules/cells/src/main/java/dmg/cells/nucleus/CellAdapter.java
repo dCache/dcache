@@ -808,7 +808,7 @@ public class CellAdapter
      */
     @Override
     public void   exceptionArrived(ExceptionEvent ce) {
-        _log.info(" exceptionArrived {}", ce);
+        _log.info(" exceptionArrived {}", ce.toString());
     }
 
     /**
