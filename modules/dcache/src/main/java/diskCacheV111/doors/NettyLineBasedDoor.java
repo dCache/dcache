@@ -344,15 +344,17 @@ public class NettyLineBasedDoor
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
     {
-        if (cause instanceof ClosedChannelException) {
-            LOGGER.info("Connection closed");
-        } else if (cause instanceof RuntimeException || cause instanceof Error) {
-            Thread me = Thread.currentThread();
-            me.getUncaughtExceptionHandler().uncaughtException(me, cause);
-            ctx.close();
-        } else {
-            LOGGER.error(cause.toString());
-            ctx.close();
+        try (CDC ignored = cdc.restore()) {
+            if (cause instanceof ClosedChannelException) {
+                LOGGER.info("Connection closed");
+            } else if (cause instanceof RuntimeException || cause instanceof Error) {
+                Thread me = Thread.currentThread();
+                me.getUncaughtExceptionHandler().uncaughtException(me, cause);
+                ctx.close();
+            } else {
+                LOGGER.error(cause.toString());
+                ctx.close();
+            }
         }
     }
 
