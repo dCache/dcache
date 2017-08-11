@@ -322,7 +322,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 runNotification();
             }
         } catch (DataAccessException e) {
-            _log.error("Database failure: " + e.getMessage());
+            _log.error("Database failure: {}", e.getMessage());
         } catch (InterruptedException e) {
             _log.info("Cleaner was interrupted");
         } catch (RuntimeException e) {
@@ -758,7 +758,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             _log.debug("HSM-ChimeraCleaner: remove entries from the trash-table. ilocation={}", uri);
             _db.update("DELETE FROM t_locationinfo_trash WHERE ilocation=? AND itype=0", uri.toString());
         } catch (DataAccessException e) {
-            _log.error("Error when deleting from the trash-table: " + e.getMessage());
+            _log.error("Error when deleting from the trash-table: {}", e.getMessage());
         }
     }
 
