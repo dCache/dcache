@@ -113,20 +113,15 @@ Once all the necessary dependencies had been installed, now you can run the
 test.  In your terminal, change directory to where dcache project source files
 is located.
 
-The robot test files for the frontend service can be found in a directory named
-`frontend` which is located in:
+Once system-test is built, the robot test files for the frontend
+service can be found in a directory named `frontend` which is located
+in:
 
 ```
 packages/system-test/target/dcache/share/robot
 ```
 
-or
-
-```
-packages/system-test/src/main/skel/share/robot
-```
-
-Hence, change directory into either of these two.
+Hence, change directory into that directory.
 
 
 ###### For the whole frontend tests:
