@@ -412,10 +412,8 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
                  * PaintInfo for for this pool.
                  */
                 if (poolPaintInfo == null) {
-                    LOGGER.debug("Inconsistency in information: pool " +
-                               linkPool + " accessible via link " +
-                               linkInfo.getId() +
-                               " but not present as a pool");
+                    LOGGER.debug("Inconsistency in information: pool {} accessible via link " +
+                                    "{} but not present as a pool", linkPool, linkInfo.getId());
                     poolPaintInfo = new PaintInfo(linkPool);
                     paintedPools.put(linkPool, poolPaintInfo);
                 }
