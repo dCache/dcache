@@ -701,7 +701,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                         request.setState(state, "Request now " + state);
                     }
                 } catch (IllegalStateTransition ist) {
-                    LOG.error("Illegal State Transition : " + ist.getMessage());
+                    LOG.error("Illegal State Transition : {}", ist.getMessage());
                 }
             }
         }

@@ -118,12 +118,11 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       File dir = new File(credentialsDirectory);
       if(!dir.exists()) {
           if(!dir.mkdir()) {
-              logger.error("failed to create directory "+credentialsDirectory);
+              logger.error("failed to create directory {}", credentialsDirectory);
           }
       }
       if(!dir.isDirectory() || !dir.canWrite()) {
-          logger.error("credential directory "+credentialsDirectory+
-                  " does not exist or is not writable");
+          logger.error("credential directory {} does not exist or is not writable", credentialsDirectory);
       }
       dbInit();
    }
@@ -156,7 +155,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
                if (!tableRs.next()) {
                    // Table does not exist
                    try (Statement s = con.createStatement()) {
-                       logger.debug("dbInit trying " + createRequestCredentialTable);
+                       logger.debug("dbInit trying {}", createRequestCredentialTable);
                        s.executeUpdate(createRequestCredentialTable);
                    }
                }

@@ -191,7 +191,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     }
 
     public void setStatus(SRMUser user, String status) throws SRMException {
-        logger.debug("("+status+")");
+        logger.debug("({})", status);
         try {
             wlock();
             try {

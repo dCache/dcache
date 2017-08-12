@@ -333,7 +333,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                 }
             }
         } catch (IllegalStateTransition e) {
-            logger.error("Illegal State Transition : " + e.getMessage());
+            logger.error("Illegal State Transition : {}", e.getMessage());
         } finally {
             wunlock();
         }

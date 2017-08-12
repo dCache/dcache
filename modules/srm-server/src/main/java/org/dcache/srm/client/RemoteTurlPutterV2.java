@@ -189,7 +189,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             logger.error("srmPutDone return status is null");
             return;
         }
-        logger.debug("srmPutDone status code="+returnStatus.getStatusCode());
+        logger.debug("srmPutDone status code={}", returnStatus.getStatusCode());
     }
 
     @Override
@@ -276,7 +276,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                         statusCode+" explanation="+status.getExplanation());
             }
             requestToken = srmPrepareToPutResponse.getRequestToken();
-            logger.debug(" srm returned requestToken = "+requestToken+" one of remote surls = "+SURLs[0]);
+            logger.debug(" srm returned requestToken = {} one of remote surls = {}", requestToken, SURLs[0]);
 
             ArrayOfTPutRequestFileStatus arrayOfTPutRequestFileStatus =
                 srmPrepareToPutResponse.getArrayOfFileStatuses();
@@ -308,7 +308,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                     }
                     String surl_string = surl.toString();
                     if(!pendingSurlsToIndex.containsKey(surl_string)) {
-                        logger.error("invalid putRequestFileStatus, surl = "+surl_string+" not found");
+                        logger.error("invalid putRequestFileStatus, surl = {} not found", surl_string);
                         continue;
                     }
                     TReturnStatus fileStatus = putRequestFileStatus.getStatus();
@@ -353,7 +353,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 }
                 try {
 
-                    logger.debug("sleeping "+estimatedWaitInSeconds+" seconds ...");
+                    logger.debug("sleeping {} seconds ...", estimatedWaitInSeconds);
                     Thread.sleep(estimatedWaitInSeconds * 1000);
                 }
                 catch(InterruptedException ie) {
@@ -477,6 +477,6 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             logger.error("srmPutDone return status is null");
             return;
         }
-        logger.debug("srmPutDone status code="+returnStatus.getStatusCode());
+        logger.debug("srmPutDone status code={}", returnStatus.getStatusCode());
     }
 }

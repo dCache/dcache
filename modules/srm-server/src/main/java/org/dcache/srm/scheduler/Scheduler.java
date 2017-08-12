@@ -317,7 +317,7 @@ public class Scheduler <T extends Job>
 
                         synchronized (this) {
                             if (!hasBeenNotified) {
-                                //logger.debug("Scheduler(id="+getId()+").run() waiting for events...");
+                                // logger.debug("Scheduler(id={}"getId()+").run() waiting for events...");
                                 wait(queuesUpdateMaxWait);
                             }
                             hasBeenNotified = false;

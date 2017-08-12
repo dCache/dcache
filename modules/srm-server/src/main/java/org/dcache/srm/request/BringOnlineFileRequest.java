@@ -125,7 +125,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     public BringOnlineFileRequest(long requestId, URI surl, long lifetime)
     {
         super(requestId, lifetime);
-        logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
+        logger.debug("BringOnlineFileRequest, requestId={} fileRequestId = {}", requestId, getId());
         this.surl = surl;
     }
 

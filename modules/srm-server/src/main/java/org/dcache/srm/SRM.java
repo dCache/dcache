@@ -220,7 +220,7 @@ public class SRM implements CellLifeCycleAware
             //already initialized
         }
 
-        logger.debug("srm started :\n\t" + configuration.toString());
+        logger.debug("srm started :\n\t{}", configuration.toString());
     }
 
     public void setSchedulers(SchedulerContainer schedulers)
@@ -440,7 +440,7 @@ public class SRM implements CellLifeCycleAware
             sb.append(r.toString(false)).append('\n');
         } catch (IllegalStateTransition ist) {
             sb.append("Illegal State Transition : ").append(ist.getMessage());
-            logger.error("Illegal State Transition : " +ist.getMessage());
+            logger.error("Illegal State Transition : {}", ist.getMessage());
         }
     }
 
@@ -513,7 +513,7 @@ public class SRM implements CellLifeCycleAware
                     try {
                         job.setState(State.CANCELED, "Canceled by admin through cancelall command.");
                     } catch (IllegalStateTransition ist) {
-                        logger.error("Illegal State Transition : " +ist.getMessage());
+                        logger.error("Illegal State Transition : {}", ist.getMessage());
                     }
                 }).start();
             } catch(SRMInvalidRequestException e) {

@@ -951,7 +951,7 @@ public abstract class Job  {
                 break;
             }
         } catch (IllegalStateTransition e) {
-            logger.error("Failed to restore job: " + e.getMessage());
+            logger.error("Failed to restore job: {}", e.getMessage());
         } finally {
             wunlock();
         }
