@@ -71,8 +71,6 @@ import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.poolmanager.PoolManagerStub;
-import org.dcache.util.CDCScheduledExecutorServiceDecorator;
-import org.dcache.util.NDC;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
@@ -116,6 +114,9 @@ import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
 import org.dcache.util.FireAndForgetTask;
+import org.dcache.util.Glob;
+import org.dcache.util.CDCScheduledExecutorServiceDecorator;
+import org.dcache.util.NDC;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -848,11 +849,23 @@ public class NFSv41Door extends AbstractCellComponent implements
             description = "Show active transfers excluding proxy-io.")
     public class ShowTransfersCmd implements Callable<String> {
 
+        @Option(name = "pool", usage = "An optional pool for filtering. Glob pattern matching is supported.")
+        Glob pool;
+
+        @Option(name = "client", usage = "An optional client for filtering. Glob pattern matching is supported.")
+        Glob client;
+
+        @Option(name = "pnfsid", usage = "An optional pNFS ID for filtering. Glob pattern matching is supported.")
+        Glob pnfsid;
+
         @Override
         public String call() throws IOException {
 
             return _ioMessages.values()
                     .stream()
+                    .filter(d -> pool == null ? true : pool.matches(d.getPool()))
+                    .filter(d -> client == null ? true : client.matches(d.getClient().toString()))
+                    .filter(d -> pnfsid == null ? true : pnfsid.matches(d.getPnfsId().toString()))
                     .map(Object::toString)
                     .collect(Collectors.joining("\n"));
         }
