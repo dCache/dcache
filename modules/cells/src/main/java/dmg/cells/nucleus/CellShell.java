@@ -581,7 +581,7 @@ public class CellShell extends CommandInterpreter
           try{
             _log.warn( "waitForCell : Sending request" ) ;
               answer = _nucleus.sendAndWait(new CellMessage(destination , message), ((long) check) * 1000);
-            _log.warn( "waitForCell : got "+answer ) ;
+            _log.warn( "waitForCell : got {}", answer ) ;
          } catch (NoRouteToCellException e) {
             noRoute = true ;
          } catch (ExecutionException ignored) {

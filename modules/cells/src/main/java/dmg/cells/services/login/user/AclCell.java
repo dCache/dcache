@@ -67,11 +67,11 @@ public class       AclCell
         String tmp;
         if ((tmp = args.getOpt("syspassword")) != null) {
             _sysPassword = new UserPasswords(new File(tmp));
-            _log.info("using as SystemPasswordfile : " + tmp);
+            _log.info("using as SystemPasswordfile : {}", tmp);
         }
         if ((tmp = args.getOpt("egpassword")) != null) {
             _egPassword = new UserPasswords(new File(tmp));
-            _log.info("using as EgPasswordfile : " + tmp);
+            _log.info("using as EgPasswordfile : {}", tmp);
         }
     }
 
@@ -84,7 +84,7 @@ public class       AclCell
       Serializable answer;
 
       try{
-         _log.info( "Message type : "+obj.getClass() ) ;
+         _log.info( "Message type : {}", obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -324,7 +324,7 @@ public class       AclCell
 
          }
       }catch( Throwable t ){
-         _log.warn( "Found : "+t ) ;
+         _log.warn( "Found : {}", t.toString() ) ;
       }
       return false ;
   }
@@ -334,14 +334,14 @@ public class       AclCell
             _sysPassword.update();
         }
      }catch(Exception ee ){
-        _log.warn( "Updating failed : "+_sysPassword ) ;
+        _log.warn( "Updating failed : {}", _sysPassword ) ;
      }
      try{
         if( _egPassword != null ) {
             _egPassword.update();
         }
      }catch(Exception ee ){
-        _log.warn( "Updating failed : "+_egPassword ) ;
+        _log.warn( "Updating failed : {}", _egPassword ) ;
      }
    }
 
