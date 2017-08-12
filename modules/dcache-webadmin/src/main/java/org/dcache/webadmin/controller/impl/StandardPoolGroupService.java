@@ -53,7 +53,7 @@ public class StandardPoolGroupService implements PoolGroupService {
                         currentPoolGroupName, domainMap, cellStates);
                 poolGroups.add(newPoolGroup);
             }
-            _log.debug("returned PoolGroupBeans: " + poolGroups.size());
+            _log.debug("returned PoolGroupBeans: {}", poolGroups.size());
             Collections.sort(poolGroups);
             return poolGroups;
         } catch (DAOException e) {
