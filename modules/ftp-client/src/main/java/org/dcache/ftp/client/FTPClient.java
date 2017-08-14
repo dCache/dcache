@@ -534,7 +534,7 @@ public class FTPClient
         while ((line = reader.readLine()) != null) {
             line = line.trim();
             if (logger.isDebugEnabled()) {
-                logger.debug("line ->,", line);
+                logger.debug("line ->{}", line);
             }
             if (line.equals("")) {
                 continue;
