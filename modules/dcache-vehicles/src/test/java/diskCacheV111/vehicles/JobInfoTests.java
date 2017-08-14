@@ -17,10 +17,10 @@ import static org.junit.Assert.*;
 public class JobInfoTests {
 
     private JobInfo jobInfo;
+    private static final long time = 1502366668987L;
 
     @Before
     public void setUp() {
-        long time = 1502366668987L;
         jobInfo = new JobInfo(time, time + 1000, "RUNNING", 1, "waldo", 2407);
     }
 
