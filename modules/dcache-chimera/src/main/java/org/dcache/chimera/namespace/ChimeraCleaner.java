@@ -470,7 +470,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         List<String> queryFail = new ArrayList<String>();
         do {
-            }
             List<String> queryList = _db.queryForList(QUERY, String.class, QUERYLIMIT);
 
             for (String id : queryList) {
