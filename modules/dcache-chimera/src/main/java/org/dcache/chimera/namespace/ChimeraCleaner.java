@@ -477,9 +477,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                     sendDeleteNotifications(new PnfsId(id)).get();
                     _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
                 } catch (ExecutionException e) {
-                    if(!queryFail.contains(id)) {
                         queryFail.add(id);
-                    }
                     _log.warn(e.getCause().getMessage());
                 }
             }
