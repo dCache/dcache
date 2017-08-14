@@ -231,7 +231,7 @@ public class Transfer implements Comparable<Transfer>
     @Override
     public int compareTo(Transfer o)
     {
-        return Longs.compare(o.getId(), getId());
+        return Long.compare(o.getId(), getId());
     }
 
     /**
