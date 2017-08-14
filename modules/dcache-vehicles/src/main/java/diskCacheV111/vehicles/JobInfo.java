@@ -55,8 +55,8 @@ public class JobInfo implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append(_jobId).append(';');
         sb.append(_client).append(':').append(_clientId);
-        sb.append(';').append(LocalDateTime.ofInstant(Instant.ofEpochMilli(_submitTime), ZoneId.systemDefault()).format(__formatter));
         sb.append(';').append(LocalDateTime.ofInstant(Instant.ofEpochMilli(_startTime), ZoneId.systemDefault()).format(__formatter));
+        sb.append(';').append(LocalDateTime.ofInstant(Instant.ofEpochMilli(_submitTime), ZoneId.systemDefault()).format(__formatter));
         sb.append(';').append(_status).append(';');
         return sb.toString();
     }
