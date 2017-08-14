@@ -468,11 +468,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 "SELECT ipnfsid FROM t_locationinfo_trash t1 " +
                 "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2) LIMIT=?";
 
-        List<String> queryFail = new ArrayList<String>();
+        HashSet<String> queryFail = new HashSet<String>();
         do {
-            List<String> queryList = _db.queryForList(QUERY, String.class, QUERYLIMIT);
+            List<String> results = _db.queryForList(QUERY, String.class, QUERYLIMIT);
 
-            for (String id : queryList) {
+            for (String id : results) {
                 try {
                     sendDeleteNotifications(new PnfsId(id)).get();
                     _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
@@ -484,10 +484,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 }
             }
             if(queryFail.size() >= QUERYLIMIT){
-                _log.warn("Error: Too many unresolved IDs to finish the loop.");
+                _log.error("Error: There have been too many failures while attempting to collect IDs from the t_locationinfo_trash + " +
+                        "and sending them to the deleteNotifications Service. Further deletion is aborted.");
                 break;
             }
-        } while (queryList.size() >= QUERYLIMIT);
+        } while (results.size() >= QUERYLIMIT);
     }
 
     private ListenableFuture<List<PnfsDeleteEntryNotificationMessage>> sendDeleteNotifications(PnfsId pnfsId)
