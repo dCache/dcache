@@ -13,9 +13,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class JobInfo implements Serializable {
 
-     private static final DateTimeFormatter __formatter =
+    private static final DateTimeFormatter __formatter =
             DateTimeFormatter.ofPattern("MM/dd-HH:mm:ss");
-     private static final long serialVersionUID = 5209798222006083955L;
+    private static final long serialVersionUID = 5209798222006083955L;
 
     private final String _client;
     private final long _clientId;
@@ -24,7 +24,7 @@ public class JobInfo implements Serializable {
     private String _status;
     private final long _jobId;
 
-     public JobInfo(long submitTime, long startTime, String status, int id, String clientName, long clientId) {
+    public JobInfo(long submitTime, long startTime, String status, int id, String clientName, long clientId) {
         _submitTime = submitTime;
         _startTime = startTime;
         _status = checkNotNull(status);

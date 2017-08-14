@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles;
 
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ public class JobInfoTests {
         exec.shutdown();
         for (Future<String> result : results) {
             try {
-                assertEquals("1;waldo:2407;08/10-14:04:28;08/10-14:04:29;RUNNING;", result.get());
+                assertThat(result.get(), Matchers.containsString("08/10-14:04:28"));
             } catch (InterruptedException | ExecutionException e) {
                 fail();
             }
