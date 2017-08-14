@@ -28,20 +28,17 @@ import org.slf4j.LoggerFactory;
 class HttpdRequestLog extends AbstractLifeCycle
     implements RequestLog
 {
-    //private static final Logger LOGGER = LoggerFactory.getLogger(HttpdRequestLog.class);
 
-
-    private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.services.httpd");
+    private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.httpd");
 
 
     public void log(Request request, Response response)
     {
         if(ACCESS_LOGGER.isInfoEnabled()){
-            NetLoggerBuilder log = new NetLoggerBuilder(NetLoggerBuilder.Level.TRACE, "org.dcache.services.httpRequestLog").omitNullValues();
+            NetLoggerBuilder log = new NetLoggerBuilder(NetLoggerBuilder.Level.TRACE, "org.dcache.httpd.request").omitNullValues();
             log.add("request: ", request);
             log.add("response: ", response);
             log.toLogger(ACCESS_LOGGER);
-        //LOGGER.trace("request: {}; response: {}", request, response);
         }
     }
 
