@@ -21,7 +21,6 @@ package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -356,7 +355,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         stat.setGid(pStat.getGid());
         stat.setUid(pStat.getUid());
         stat.setDev(pStat.getDev());
-        stat.setIno(Longs.hashCode(pStat.getIno()));
+        stat.setIno(Long.hashCode(pStat.getIno()));
         stat.setMode(pStat.getMode());
         stat.setNlink(pStat.getNlink());
         stat.setRdev(pStat.getRdev());
