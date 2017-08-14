@@ -468,21 +468,25 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 "SELECT ipnfsid FROM t_locationinfo_trash t1 " +
                 "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2) LIMIT=?";
 
-        List<String> queryList = new ArrayList<String>();
+        List<String> queryFail = new ArrayList<String>();
         do {
-            queryList = _db.queryForList(QUERY, String.class, QUERYLIMIT);
-
-            if( queryList.isEmpty()) {
-                break;
             }
+            List<String> queryList = _db.queryForList(QUERY, String.class, QUERYLIMIT);
 
             for (String id : queryList) {
                 try {
                     sendDeleteNotifications(new PnfsId(id)).get();
                     _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
                 } catch (ExecutionException e) {
+                    if(!queryFail.contains(id)) {
+                        queryFail.add(id);
+                    }
                     _log.warn(e.getCause().getMessage());
                 }
+            }
+            if(queryFail.size() >= QUERYLIMIT){
+                _log.warn("Error: Too many unresolved IDs to finish the loop.");
+                break;
             }
         } while (queryList.size() >= QUERYLIMIT);
     }
