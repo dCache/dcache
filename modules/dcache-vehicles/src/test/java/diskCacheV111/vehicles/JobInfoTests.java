@@ -44,7 +44,7 @@ public class JobInfoTests {
 
     @Test
     public void oldAndNewToStringShouldBeEqual() {
-        assertThat(jobInfo.toString(), is("1;waldo:2407;08/10-14:04:28;08/10-14:04:29;RUNNING;"));
+        assertThat(jobInfo.toString(), is("1;waldo:2407;08/10-14:04:29;08/10-14:04:28;RUNNING;"));
     }
 
 
