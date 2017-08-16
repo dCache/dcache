@@ -122,7 +122,7 @@ public abstract class AbstractDataChannel implements DataChannel
 	}
 	*/
 
-        logger.debug("registering handler for class {}; id = {}", clazz.toString(), id);
+        logger.debug("registering handler for class {}; id = {}", clazz, id);
         dataHandlers.put(id, clazz);
     }
 
