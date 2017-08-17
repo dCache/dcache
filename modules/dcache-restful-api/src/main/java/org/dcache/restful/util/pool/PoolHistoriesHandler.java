@@ -283,6 +283,9 @@ public final class PoolHistoriesHandler implements PoolTimeseriesService {
         CountingHistogram model = mergeLastAccess(allHistograms);
 
         PoolData poolData = new PoolData();
+        PoolDataDetails details = new PoolDataDetails();
+        poolData.setDetailsData(details);
+        details.setCostData(groupCost);
         SweeperData sweeperData = new SweeperData();
         sweeperData.setLastAccessHistogram(model);
         poolData.setSweeperData(sweeperData);
@@ -292,6 +295,7 @@ public final class PoolHistoriesHandler implements PoolTimeseriesService {
                                                      timestamp);
         PoolInfoCollectorUtils.updateQstatTimeSeries(pools, group, timestamp);
     }
+
     private CellStub historyService;
 
     /**
