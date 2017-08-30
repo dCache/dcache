@@ -16,6 +16,7 @@
     <properties>
         <raw-files>${project.basedir}/src/main</raw-files>
         <filtered-files>${project.build.directory}/filtered-files</filtered-files>
+        <SHELL_PATH>/bin/sh</SHELL_PATH>
     </properties>
 
     <dependencies>
