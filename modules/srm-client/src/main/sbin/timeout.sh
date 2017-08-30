@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@SHELL_PATH@
 # script to execute a program with a timeout
 #
 # usage: timeout.sh [-debug] timeout program [program arguments]
