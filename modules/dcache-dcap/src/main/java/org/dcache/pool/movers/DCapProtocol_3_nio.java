@@ -16,9 +16,9 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -80,9 +80,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private PnfsId  _pnfsId;
     private int     _sessionId       = -1;
 
-    private  Checksum  _clientChecksum;
-    private Set<ChecksumFactory> _checksumFactories;
-    private Map<ChecksumType, MessageDigest> _digests = Collections.emptyMap();
+    private final EnumSet<ChecksumType> _checksums = EnumSet.noneOf(ChecksumType.class);
+    private Checksum  _clientChecksum;
+    private Set<Checksum> _calculatedChecksums = Collections.emptySet();
 
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256), KiB.toBytes(256), KiB.toBytes(256));
     private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1), MiB.toBytes(1));
@@ -315,7 +315,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     @Override
     public void runIO(FileAttributes fileAttributes,
-                      RepositoryChannel  fileChannel,
+                      RepositoryChannel  channel,
                       ProtocolInfo protocol,
                       Allocator    allocator,
                       Set<? extends OpenOption> access)
@@ -333,6 +333,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         StorageInfo storage = fileAttributes.getStorageInfo();
         _pnfsId              = fileAttributes.getPnfsId();
         _spaceMonitorHandler = new SpaceMonitorHandler(allocator);
+        RepositoryChannel fileChannel = _checksums.isEmpty()
+                ? channel
+                : ChecksumChannel.createWithTypes(channel, _checksums);
         boolean isWrite = access.contains(StandardOpenOption.WRITE);
 
         ////////////////////////////////////////////////////////////////////////
@@ -524,8 +527,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                 case DCapConstants.IOCMD_READ :
                     //
                     //
-                    _digests = Collections.emptyMap();
-
                     long blockSize = requestBlock.nextLong();
 
                     _log.debug("READ byte={}", blockSize);
@@ -562,8 +563,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     //
                 case DCapConstants.IOCMD_SEEK :
 
-                    _digests = Collections.emptyMap();
-
                     long offset = requestBlock.nextLong();
                     int  whence = requestBlock.nextInt();
 
@@ -589,8 +588,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     //                     The IOCMD_SEEK_AND_READ
                     //
                 case DCapConstants.IOCMD_SEEK_AND_READ :
-
-                    _digests = Collections.emptyMap();
 
                     offset    = requestBlock.nextLong();
                     whence    = requestBlock.nextInt();
@@ -630,7 +627,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     //
                 case DCapConstants.IOCMD_SEEK_AND_WRITE :
 
-                    _digests = Collections.emptyMap();
                     offset    = requestBlock.nextLong();
                     whence    = requestBlock.nextInt();
 
@@ -768,6 +764,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }catch(Exception e){
             ioException = e;
         }finally{
+            if (fileChannel instanceof ChecksumChannel) {
+                _calculatedChecksums = ((ChecksumChannel)fileChannel).getChecksums();
+            }
 
             try{
                 _logSocketIO.debug("Socket CLOSE remote = {}:{} local {}:{}",
@@ -1042,7 +1041,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
                         _bigBuffer.flip();
                         bytesAdded += fileChannel.write(_bigBuffer);
-                        updateChecksum(_bigBuffer);
                     } catch (ClosedByInterruptException ee) {
                         // clear interrupted state
                         Thread.interrupted();
@@ -1063,11 +1061,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }
         _status = "Done";
 
-    }
-    private void updateChecksum(ByteBuffer buffer){
-        if (!_digests.isEmpty()) {
-            _digests.values().forEach(d -> d.update((ByteBuffer) buffer.duplicate().flip()));
-        }
     }
 
     private void doTheRead(RepositoryChannel           fileChannel,
@@ -1146,8 +1139,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
             throws NoSuchAlgorithmException
     {
-        _checksumFactories = Sets.newHashSet(ChecksumFactory.getFactory(suggestedAlgorithm));
-        _digests = _checksumFactories.stream().collect(Collectors.toMap(ChecksumFactory::getType, f -> f.create()));
+        _checksums.add(suggestedAlgorithm);
     }
 
     @Override
@@ -1159,12 +1151,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     @Override
     public Set<Checksum> getActualChecksums()
     {
-        return (_digests.isEmpty())
-                ? Collections.emptySet()
-                : _checksumFactories.stream()
-                                  .map(f -> f.create(_digests.get(f.getType())
-                                                            .digest()))
-                                             .collect(Collectors.toSet());
+        return _calculatedChecksums;
     }
-
 }
