@@ -4,8 +4,6 @@ import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ConnectException;
@@ -20,9 +18,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.FileSystems;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
@@ -104,11 +102,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * received.
      */
     protected BlockLog     _blockLog;
-
-    /**
-     * The checksum algorithms to calculate.
-     */
-    private EnumSet<ChecksumType> _checksums = EnumSet.noneOf(ChecksumType.class);
 
     /**
      * The role of this transfer in the transaction. Either Sender or
@@ -244,9 +237,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _role             = role;
         _bytesTransferred = 0;
         _blockLog         = new BlockLog();
-        _fileChannel = _checksums.isEmpty()
-                ? fileChannel
-                : new ChecksumChannel(fileChannel, _checksums);
+        _fileChannel      = fileChannel;
         _allocator        = allocator;
         _reservedSpace    = 0;
         _spaceUsed        = 0;
@@ -312,6 +303,29 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
     }
 
+    @Override
+    public Set<ChecksumType> desiredChecksums(ProtocolInfo info)
+    {
+        if (info instanceof GFtpProtocolInfo) {
+            String type = ((GFtpProtocolInfo) info).getChecksumType();
+
+            if (type != null && !type.equals("Unknown")) {
+                if (ChecksumType.isValid(type)) {
+                    return EnumSet.of(ChecksumType.getChecksumType(type));
+                } else {
+                    _log.error("CRC Algorithm is not supported: {}", type);
+                }
+            }
+        }
+
+        return EnumSet.noneOf(ChecksumType.class);
+    }
+
+    @Override
+    public void acceptIntegrityChecker(Consumer<Checksum> integrityChecker)
+    {
+    }
+
     /** Part of the MoverProtocol interface. */
     @Override
     public void runIO(FileAttributes fileAttributes,
@@ -349,8 +363,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
              */
             throw new CacheException(44, "Internal error: Cannot do passive transfer with mover protocol version 1.");
         }
-
-        addClientRequestedChecksum(gftpProtocolInfo);
 
         /* We initialise these things early, as the job timeout
          * manager will not kill the job otherwise.
@@ -501,36 +513,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     public long getLastTransferred()
     {
         return _lastTransferred;
-    }
-
-    private void addClientRequestedChecksum(GFtpProtocolInfo protocol)
-    {
-        String type = protocol.getChecksumType();
-
-        if (type != null && !type.equals("Unknown")) {
-            if (ChecksumType.isValid(type)) {
-                _checksums.add(ChecksumType.getChecksumType(type));
-            } else {
-                _log.error("CRC Algorithm is not supported: {}", type);
-            }
-        }
-    }
-
-    /** Part of the ChecksumMover interface. */
-    @Override
-    public Checksum getExpectedChecksum()
-    {
-        return null;
-    }
-
-    /** Part of the ChecksumMover interface. */
-    @Nonnull
-    @Override
-    public Set<Checksum> getActualChecksums()
-    {
-        return _fileChannel instanceof ChecksumChannel
-                ? ((ChecksumChannel)_fileChannel).getChecksums()
-                : Collections.emptySet();
     }
 
     /** Part of the ConnectionMonitor interface. */

@@ -31,6 +31,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -131,6 +132,11 @@ public interface Mover<T extends ProtocolInfo>
      */
     @Nonnull
     Set<Checksum> getActualChecksums();
+
+    /**
+     * Add desired additional checksum values.
+     */
+    void addChecksumType(ChecksumType checksum);
 
     /**
      * Returns any known-good checksums obtained from the client.

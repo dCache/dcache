@@ -3,8 +3,6 @@ package org.dcache.pool.movers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -15,10 +13,11 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DCapProrocolChallenge;
@@ -75,12 +74,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private PnfsId  _pnfsId;
     private int     _sessionId       = -1;
 
-    private Checksum  _clientChecksum;
-
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256), KiB.toBytes(256), KiB.toBytes(256));
     private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1), MiB.toBytes(1));
 
     private SpaceMonitorHandler _spaceMonitorHandler;
+    private Consumer<Checksum> _integrityChecker;
 
 
     // bind passive dcap to port defined as org.dcache.dcap.port
@@ -304,6 +302,28 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     @Override
     public String toString(){
         return "SM="+_spaceMonitorHandler+";S="+_status;
+    }
+
+    @Override
+    public Set<ChecksumType> desiredChecksums(ProtocolInfo info)
+    {
+        // The dcap protocol allows the client to supply a checksum value as
+        // part of the IOCMD_CLOSE block.  However, by then we have already
+        // received all the file's data.
+        //
+        // In theory, the client could send a checksum calculated using a
+        // different checksum algorithm; however, in practise, only ADLER32
+        // is supported.
+        //
+        // Therefore, this mover requests an ADLER32 checksum is always
+        // generated, so avoiding re-reading the file's content should the
+        // client supply an ADLER32 checksum as part of the IOCMD_CLOSE block.
+        return EnumSet.of(ChecksumType.ADLER32);
+    }
+
+    @Override
+    public void acceptIntegrityChecker(Consumer<Checksum> integrityChecker) {
+        _integrityChecker = integrityChecker;
     }
 
     @Override
@@ -754,7 +774,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }catch(Exception e){
             ioException = e;
         }finally{
-
             try{
                 _logSocketIO.debug("Socket CLOSE remote = {}:{} local {}:{}",
                         socketChannel.socket().getInetAddress(), socketChannel.socket().getPort(),
@@ -876,9 +895,9 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
         requestBlock.get(array);
 
-        _clientChecksum =
-            new Checksum(ChecksumType.getChecksumType(crcType), array);
-        storage.setKey("flag-c",_clientChecksum.toString());
+        Checksum checksum = new Checksum(ChecksumType.getChecksumType(crcType), array);
+        _integrityChecker.accept(checksum);
+        storage.setKey("flag-c", checksum.toString());
 
     }
     private void doTheSeek(RepositoryChannel fileChannel, int whence, long offset,
@@ -1120,17 +1139,5 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         return _transferTime < 0 ?
             System.currentTimeMillis() - _transferStarted :
             _transferTime ;
-    }
-
-    @Override
-    public Checksum getExpectedChecksum(){
-        return  _clientChecksum ;
-    }
-
-    @Nonnull
-    @Override
-    public Set<Checksum> getActualChecksums()
-    {
-        return Collections.emptySet();
     }
 }

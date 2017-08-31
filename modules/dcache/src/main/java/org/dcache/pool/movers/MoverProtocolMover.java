@@ -44,6 +44,7 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
      * mover implementation suitable for this transfer
      */
     protected final MoverProtocol _moverProtocol;
+    private final Set<Checksum> _checksums = new HashSet<>();
 
     public MoverProtocolMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
                     TransferService<MoverProtocolMover> transferService,
@@ -71,27 +72,16 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
         return _moverProtocol.getLastTransferred();
     }
 
-    @Override
-    public Set<Checksum> getActualChecksums() {
-        if (_moverProtocol instanceof ChecksumMover) {
-            Set<Checksum> checksums = new HashSet<>();
-            checksums.addAll(super.getActualChecksums());
-            checksums.addAll(((ChecksumMover)_moverProtocol).getActualChecksums());
-            return checksums;
-        } else {
-            return super.getActualChecksums();
-        }
+    public void addExpectedChecksum(Checksum checksum)
+    {
+        addChecksumType(checksum.getType());
+        _checksums.add(checksum);
     }
 
-    @Nonnull
     @Override
     public Set<Checksum> getExpectedChecksums()
     {
-        if (_moverProtocol instanceof ChecksumMover) {
-            return Optional.fromNullable(((ChecksumMover) _moverProtocol).getExpectedChecksum()).asSet();
-        } else {
-            return Collections.emptySet();
-        }
+        return _checksums;
     }
 
     public MoverProtocol getMover()

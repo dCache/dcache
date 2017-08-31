@@ -16,6 +16,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +32,7 @@ import org.dcache.util.ChecksumType;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayList;
 import static org.dcache.util.ByteUnit.KiB;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * A wrapper for RepositoryChannel that computes a digest
@@ -93,6 +95,7 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
      * checksum calculations.
      */
     @VisibleForTesting
+    @GuardedBy("_digests")
     ByteBuffer _readBackBuffer = ByteBuffer.allocate(KiB.toBytes(256));
 
     /*
@@ -115,6 +118,38 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
         _digests = types.stream()
                 .map(t -> t.createMessageDigest())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Ensure that a Checksum is calculated for the supplied ChecksumType.  If
+     * the ChecksumType is already registered then this method does nothing,
+     * otherwise the ChecksumChannel is updated to calculate the new ChecksumType.
+     * If the ChecksumChannel has accepted a contiguous range of data from
+     * offset 0 then this method will reread that contiguous range.
+     * @param type The algorithm this ChecksumChannel should calculate.
+     * @throws IOException if the Channel has already started accepting data
+     * and an attempt to reread data from disk fails.
+     */
+    public void addType(ChecksumType type) throws IOException
+    {
+        synchronized (_digests) {
+            if (_digests.stream()
+                    .map(MessageDigest::getAlgorithm)
+                    .noneMatch(t -> t.equals(type.getName()))) {
+                MessageDigest digest = type.createMessageDigest();
+
+                if (_isChecksumViable) {
+                    try {
+                        updateFromChannel(Collections.singleton(digest), 0L, _nextChecksumOffset);
+                    } catch (IOException e) {
+                        throw new IOException("Failed when reading received data: "
+                                + messageOrClassName(e), e);
+                    }
+                }
+
+                _digests.add(digest);
+            }
+        }
     }
 
     @Override
@@ -345,33 +380,39 @@ public class ChecksumChannel extends ForwardingRepositoryChannel
             _digests.forEach(d -> d.update(buffer.duplicate()));
 
             long expectedOffsetAfterRead = _nextChecksumOffset + bytesToRead;
-            try
-            {
-                while (bytesToRead > 0) {
-                    _readBackBuffer.clear();
-                    long limit = Math.min(_readBackBuffer.capacity(), bytesToRead);
-                    _readBackBuffer.limit((int) limit);
-                    int lastBytesRead = _channel.read(_readBackBuffer, _nextChecksumOffset);
-
-                    if (lastBytesRead < 0) {
-                        throw new IOException("Checksum: Unexpectedly hit end-of-stream while reading data back from channel.");
-                    }
-
-                    _readBackBuffer.flip();
-
-                    _digests.forEach(d -> d.update(_readBackBuffer.duplicate()));
-
-                    bytesToRead -= lastBytesRead;
-                    _nextChecksumOffset += lastBytesRead;
-                }
-
-            } catch (IOException | RuntimeException e) {
-                _isChecksumViable = false;
-                throw e;
+            try {
+                updateFromChannel(_digests, _nextChecksumOffset, bytesToRead);
             } finally {
                 _nextChecksumOffset = expectedOffsetAfterRead;
                 _digests.notifyAll();
             }
+        }
+    }
+
+    @GuardedBy("_digests")
+    private void updateFromChannel(Collection<MessageDigest> digests, long offset, long bytesToRead)
+            throws IOException
+    {
+        try {
+            while (bytesToRead > 0) {
+                _readBackBuffer.clear();
+                _readBackBuffer.limit((int) Math.min(_readBackBuffer.capacity(), bytesToRead));
+                int bytesRead = _channel.read(_readBackBuffer, offset);
+
+                if (bytesRead < 0) {
+                    throw new IOException("Checksum: Unexpectedly hit end-of-stream while reading data back from channel.");
+                }
+
+                _readBackBuffer.flip();
+
+                digests.forEach(d -> d.update(_readBackBuffer.asReadOnlyBuffer()));
+
+                bytesToRead -= bytesRead;
+                offset += bytesRead;
+            }
+        } catch (IOException | RuntimeException e) {
+            _isChecksumViable = false;
+            throw e;
         }
     }
 }

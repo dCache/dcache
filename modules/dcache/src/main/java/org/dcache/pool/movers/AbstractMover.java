@@ -32,6 +32,7 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.OpenOption;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
@@ -100,7 +101,24 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         _pathToDoor = pathToDoor;
         _handle = handle;
         _transferService = transferService;
-        _checksumTypes = checksumModule.checksumsWhenWriting(handle);
+        _checksumTypes = EnumSet.copyOf(checksumModule.checksumsWhenWriting(handle));
+    }
+
+    @Override
+    public void addChecksumType(ChecksumType type)
+    {
+        synchronized (_checksumTypes) {
+            if (_checksumChannel == null) {
+                _checksumTypes.add(type);
+            } else {
+                try {
+                    _checksumChannel.addType(type);
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to add {} calculation: {}", type.getName(),
+                            messageOrClassName(e));
+                }
+            }
+        }
     }
 
     @Override
@@ -263,7 +281,9 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
             channel = _handle.createChannel();
             if (getIoMode().contains(StandardOpenOption.WRITE)) {
                 try {
-                    channel = _checksumChannel = new ChecksumChannel(channel, _checksumTypes);
+                    synchronized (_checksumTypes) {
+                        channel = _checksumChannel = new ChecksumChannel(channel, _checksumTypes);
+                    }
                 } catch (Throwable t) {
                     /* This should only happen in case of JVM Errors or if the checksum digest cannot be
                      * instantiated (which, barring bugs, should never happen).

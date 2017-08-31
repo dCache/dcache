@@ -37,6 +37,7 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.pool.movers.ChecksumMover;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.movers.MoverProtocol;
@@ -130,6 +131,7 @@ public abstract class AbstractMoverProtocolTransferService
                 try (RepositoryChannel fileIoChannel = _mover.openChannel()) {
                     if (_mover.getIoMode().contains(StandardOpenOption.WRITE)) {
                         try {
+                            handleChecksumMover();
                             runMover(fileIoChannel);
                         } finally {
                             try {
@@ -153,6 +155,17 @@ public abstract class AbstractMoverProtocolTransferService
                 _completionHandler.failed(why, null);
             } finally {
                 cleanThread();
+            }
+        }
+
+        private void handleChecksumMover()
+        {
+            MoverProtocol mover = _mover.getMover();
+
+            if (mover instanceof ChecksumMover) {
+                ChecksumMover cm = (ChecksumMover) mover;
+                cm.desiredChecksums(_mover.getProtocolInfo()).forEach(_mover::addChecksumType);
+                cm.acceptIntegrityChecker(_mover::addExpectedChecksum);
             }
         }
 

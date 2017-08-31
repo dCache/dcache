@@ -71,8 +71,6 @@ package org.dcache.pool.movers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -81,10 +79,10 @@ import java.nio.file.StandardOpenOption;
 import java.nio.ByteBuffer;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -113,7 +111,6 @@ import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.util.Exceptions.messageOrClassName;
 
-
 public class RemoteGsiftpTransferProtocol
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
@@ -132,7 +129,7 @@ public class RemoteGsiftpTransferProtocol
 
     private RepositoryChannel _fileChannel;
     private GridftpClient _client;
-    private Checksum _remoteChecksum;
+    private Consumer<Checksum> _integrityChecker;
 
     static {
         ChecksumType[] types = ChecksumType.values();
@@ -172,6 +169,18 @@ public class RemoteGsiftpTransferProtocol
     }
 
     @Override
+    public void acceptIntegrityChecker(Consumer<Checksum> integrityChecker)
+    {
+        _integrityChecker = integrityChecker;
+    }
+
+    @Override
+    public Set<ChecksumType> desiredChecksums(ProtocolInfo info)
+    {
+        return EnumSet.noneOf(ChecksumType.class);
+    }
+
+    @Override
     public void runIO(FileAttributes fileAttributes,
                       RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
@@ -197,7 +206,7 @@ public class RemoteGsiftpTransferProtocol
         createFtpClient(remoteGsiftpProtocolInfo);
 
         if (access.contains(StandardOpenOption.WRITE)) {
-            _remoteChecksum = discoverRemoteChecksum(remoteGsiftpProtocolInfo);
+            discoverRemoteChecksum(remoteGsiftpProtocolInfo).ifPresent(_integrityChecker);
             gridFTPRead(remoteGsiftpProtocolInfo, allocator);
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo);
@@ -295,40 +304,24 @@ public class RemoteGsiftpTransferProtocol
         }
     }
 
-    @Override
-    public Checksum getExpectedChecksum()
-    {
-        return _remoteChecksum;
-    }
-
-    @Nonnull
-    @Override
-    public Set<Checksum> getActualChecksums()
-    {
-        return Collections.emptySet();
-    }
-
-    private Checksum discoverRemoteChecksum(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo)
+    private Optional<Checksum> discoverRemoteChecksum(RemoteGsiftpTransferProtocolInfo info)
     {
         try {
-            createFtpClient(remoteGsiftpProtocolInfo);
-            URI src_url =  new URI(remoteGsiftpProtocolInfo.getGsiftpUrl());
-            GridftpClient.Checksum checksum = _client.negotiateCksm(src_url.getPath());
-            return new Checksum(ChecksumType.getChecksumType(checksum.type), checksum.value);
-        } catch (GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
+            String path = new URI(info.getGsiftpUrl()).getPath();
+            GridftpClient.Checksum checksum = _client.negotiateCksm(path);
+            return Optional.of(new Checksum(ChecksumType.valueOf(checksum.type), checksum.value));
+        } catch (GridftpClient.ChecksumNotSupported e) {
             _log.error("Checksum algorithm is not supported: {}", e.getMessage());
         } catch (IOException e) {
             _log.error("I/O failure talking to FTP server: {}", messageOrClassName(e));
         } catch (ServerException e) {
             _log.error("GridFTP server failure: {}", e.getMessage());
-        } catch (KeyStoreException e) {
-            _log.error("GridFTP authentication failure: {}", e.getMessage());
         } catch (URISyntaxException e) {
             _log.error("Invalid GridFTP URL: {}", e.getMessage());
         } catch (ClientException e) {
             _log.error("GridFTP client failure: {}", e.getMessage());
         }
-        return null;
+        return Optional.empty();
     }
 
     @Override

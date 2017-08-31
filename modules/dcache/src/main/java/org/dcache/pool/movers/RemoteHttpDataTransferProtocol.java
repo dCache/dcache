@@ -1,7 +1,6 @@
 package org.dcache.pool.movers;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.Sets;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
@@ -20,8 +19,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.Channels;
@@ -33,6 +30,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
@@ -165,12 +163,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     protected static final String USER_AGENT = "dCache/" +
             Version.of(RemoteHttpDataTransferProtocol.class).getVersion();
 
-    // The RepositoryChannel to verify data integrety when remote supplied
-    // checksums that don't overlap with the on-transfer checksum.
-    private ChecksumChannel _remoteSuppliedChecksumChannel;
-
     private volatile MoverChannel<RemoteHttpDataTransferProtocolInfo> _channel;
-    private Checksum _remoteSuppliedChecksum;
+    private Consumer<Checksum> _integrityChecker;
 
     private CloseableHttpClient _client;
 
@@ -182,6 +176,18 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     private static void checkThat(boolean isOk, String message) throws CacheException
     {
         genericCheck(isOk, CacheException::new, message);
+    }
+
+    @Override
+    public void acceptIntegrityChecker(Consumer<Checksum> integrityChecker)
+    {
+        _integrityChecker = integrityChecker;
+    }
+
+    @Override
+    public Set<ChecksumType> desiredChecksums(ProtocolInfo info)
+    {
+        return EnumSet.noneOf(ChecksumType.class);
     }
 
     @Override
@@ -229,41 +235,22 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
             }
 
             String rfc3230 = headerValue(response, "Digest");
-            Map<ChecksumType,Checksum> checksums =
-                    uniqueIndex(Checksums.decodeRfc3230(rfc3230), Checksum::getType);
+            Set<Checksum> checksums = Checksums.decodeRfc3230(rfc3230);
+            checksums.forEach(_integrityChecker);
 
-            if (!checksums.isEmpty()) {
-                _remoteSuppliedChecksum = Checksums.preferrredOrder().min(checksums.values());
-            }
-
-            if (_remoteSuppliedChecksum == null && info.isVerificationRequired()) {
+            if (checksums.isEmpty() && info.isVerificationRequired()) {
                 throw new ClientProtocolException("failed to verify transfer: " +
                                                   "server sent no useful checksum: " +
                                                   (rfc3230 == null ? "(none sent)" : rfc3230));
             }
 
-            // NB. we MUST NOT close RepositoryChannel as pool wants to do this
-            RepositoryChannel to = decorateForChecksumCalculation(_channel);
-
             HttpEntity entity = response.getEntity();
             if (entity == null) {
                 throw new ClientProtocolException("Response contains no content");
             }
-
-            entity.writeTo(Channels.newOutputStream(to));
+            entity.writeTo(Channels.newOutputStream(_channel));
         } catch (IOException e) {
             throw new ThirdPartyTransferFailedCacheException(e.toString(), e);
-        }
-
-        if (_remoteSuppliedChecksum != null) {
-            Set<Checksum> transferChecksum  = _remoteSuppliedChecksumChannel.getChecksums();
-
-            if (!transferChecksum.stream().anyMatch(c -> c.equals(_remoteSuppliedChecksum)))
-            {
-                throw new ThirdPartyTransferFailedCacheException(
-                        String.format("Received data does not match remote server's checksum (%s != %s)",
-                        transferChecksum, _remoteSuppliedChecksum));
-            }
         }
     }
 
@@ -276,19 +263,6 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                               .setSocketTimeout(SOCKET_TIMEOUT)
                               .build());
         return get;
-    }
-
-    private RepositoryChannel decorateForChecksumCalculation(RepositoryChannel
-            baseChannel)
-    {
-        RepositoryChannel channel = baseChannel;
-
-        if (_remoteSuppliedChecksum != null) {
-            channel = _remoteSuppliedChecksumChannel = new ChecksumChannel(channel,
-                    EnumSet.of(_remoteSuppliedChecksum.getType()));
-        }
-
-        return channel;
     }
 
     private void sendAndCheckFile(RemoteHttpDataTransferProtocolInfo info)
@@ -583,18 +557,4 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         MoverChannel<RemoteHttpDataTransferProtocolInfo> channel = _channel;
         return channel == null ? 0 : channel.getTransferTime();
     }
-
-    @Nonnull
-    @Override
-    public Set<Checksum> getActualChecksums()
-    {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public Checksum getExpectedChecksum()
-    {
-        return _remoteSuppliedChecksum;
-    }
 }
-
