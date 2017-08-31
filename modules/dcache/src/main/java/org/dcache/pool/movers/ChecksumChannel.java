@@ -17,8 +17,10 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -31,6 +33,7 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Lists.newArrayList;
 import static org.dcache.util.ByteUnit.KiB;
@@ -116,6 +119,17 @@ public class ChecksumChannel implements RepositoryChannel
      */
     @VisibleForTesting
     ByteBuffer _zerosBuffer = ZERO_BUFFER.duplicate();
+
+    public static ChecksumChannel createWithTypes(RepositoryChannel inner,
+            Set<ChecksumType> checksumTypes) throws NoSuchAlgorithmException
+    {
+        checkArgument(!checksumTypes.isEmpty());
+        Set<ChecksumFactory> factories = new HashSet<>();
+        for (ChecksumType type : checksumTypes) {
+            factories.add(ChecksumFactory.getFactory(type));
+        }
+        return new ChecksumChannel(inner, factories);
+    }
 
     public ChecksumChannel(RepositoryChannel inner,
                            Set<ChecksumFactory> checksumFactories)
