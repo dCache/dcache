@@ -270,7 +270,7 @@ public class FileOperationHandler {
             return false;
         }
 
-        LOGGER.trace("handleLocationUpdate, update to be registered: {}", data);
+        LOGGER.trace("handleScannedLocation, update to be registered: {}", data);
         return fileOpMap.register(data);
     }
 
@@ -389,8 +389,7 @@ public class FileOperationHandler {
         try {
             namespace.refreshLocations(attributes);
         } catch (CacheException e) {
-            CacheException exception = CacheExceptionUtils.getCacheException(
-                            CacheException.DEFAULT_ERROR_CODE,
+            CacheException exception = CacheExceptionUtils.getCacheException(e.getRc(),
                             FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
                             pnfsId, null, e.getCause());
             completionHandler.taskFailed(pnfsId, exception);
