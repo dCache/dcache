@@ -72,6 +72,7 @@ import diskCacheV111.poolManager.Pool;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.ProportionalPoolSelectionStrategy;
@@ -353,6 +354,14 @@ public abstract class TestBase implements Cancellable {
         newPoolMonitor = new TestPoolMonitor();
         newPoolMonitor.setCostModule(newCostModule);
         newPoolMonitor.setSelectionUnit(newSelectionUnit);
+    }
+
+    protected void deleteAllLocationsForFile(PnfsId pnfsid) {
+        testNamespaceAccess.delete(pnfsid, true);
+    }
+
+    protected void deleteFileFromNamespace(PnfsId pnfsid) {
+        testNamespaceAccess.delete(pnfsid, false);
     }
 
     protected PoolSelectionUnitV2 getUpdatedPsu() {
