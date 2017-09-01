@@ -586,7 +586,7 @@ public class FileOperationHandler {
         }
 
         Serializable exception = msg.getErrorObject();
-        if (exception != null && !CacheExceptionUtils.fileNotFound(exception)) {
+        if (exception != null && !CacheExceptionUtils.replicaNotFound(exception)) {
             throw CacheExceptionUtils.getCacheException(
                             CacheException.SELECTED_POOL_FAILED,
                             FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
