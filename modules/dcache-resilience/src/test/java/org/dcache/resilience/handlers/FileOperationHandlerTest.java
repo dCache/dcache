@@ -630,7 +630,7 @@ public final class FileOperationHandlerTest extends TestBase
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
                                          new CacheException(
-                                                         CacheException.FILE_NOT_FOUND,
+                                                         CacheException.FILE_NOT_IN_REPOSITORY,
                                                          "Source pool failed"));
         fileOperationMap.scan();
     }
