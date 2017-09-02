@@ -1,8 +1,6 @@
 package org.dcache.restful.util;
 
-import javax.security.auth.Subject;
 import javax.servlet.ServletContext;
-import java.security.AccessController;
 
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
@@ -29,11 +27,6 @@ public class ServletContextHandlerAttributes {
     public final static String PIN_MANAGER  = "org.dcache.restful.PIN_MANAGER";
     public final static String POOL_STUB = "org.dcache.restful.POOL_STUB";
     public final static String PathMapper   = "org.dcache.restful.PathMapper";
-
-    public static Subject getSubject()
-    {
-        return Subject.getSubject(AccessController.getContext());
-    }
 
     public static ListDirectoryHandler getListDirectoryHandler(ServletContext ctx)
     {

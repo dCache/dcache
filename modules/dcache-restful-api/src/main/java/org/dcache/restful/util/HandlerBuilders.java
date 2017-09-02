@@ -36,7 +36,7 @@ public class HandlerBuilders
     {
         CellStub cellStub = ServletContextHandlerAttributes.getPnfsManager(ctx);
         PnfsHandler handler = new PnfsHandler(cellStub);
-        handler.setSubject(ServletContextHandlerAttributes.getSubject());
+        handler.setSubject(RequestUser.getSubject());
         handler.setRestriction(HttpServletRequests.getRestriction(request));
         return handler;
     }

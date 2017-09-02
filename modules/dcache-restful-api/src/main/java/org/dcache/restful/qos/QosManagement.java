@@ -18,12 +18,10 @@ import javax.ws.rs.core.MediaType;
 import java.util.Arrays;
 import java.util.List;
 
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import org.dcache.auth.Subjects;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
+import org.dcache.restful.util.RequestUser;
 
 
 /**
@@ -59,8 +57,7 @@ public class QosManagement {
 
 
         try {
-
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
 
@@ -87,7 +84,7 @@ public class QosManagement {
             json.put("message", "successful");
 
         } catch (PermissionDeniedCacheException e) {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
             } else {
                 throw new ForbiddenException(e);
@@ -120,8 +117,7 @@ public class QosManagement {
         BackendCapability backendCapability = new BackendCapability();
 
         try {
-
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
 
@@ -154,7 +150,7 @@ public class QosManagement {
             }
 
         } catch (PermissionDeniedCacheException e) {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
             } else {
                 throw new ForbiddenException(e);
@@ -188,8 +184,7 @@ public class QosManagement {
         BackendCapability backendCapability = new BackendCapability();
 
         try {
-
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
 
@@ -214,7 +209,7 @@ public class QosManagement {
             }
 
         } catch (PermissionDeniedCacheException e) {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
             } else {
                 throw new ForbiddenException(e);

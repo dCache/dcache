@@ -1,15 +1,11 @@
 package org.dcache.restful.qos;
 
-
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
@@ -29,14 +25,7 @@ import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.Set;
 
-import org.dcache.pinmanager.PinManagerPinMessage;
-import org.dcache.pinmanager.PinManagerUnpinMessage;
-import org.dcache.pinmanager.PinManagerCountPinsMessage;
-
-import org.dcache.auth.Subjects;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
-import org.dcache.vehicles.FileAttributes;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -45,24 +34,20 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 
-import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.RemotePoolMonitor;
 
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
-import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.util.HandlerBuilders;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.restful.util.HttpServletRequests;
 
 /**
  * Query current QoS for a file or  change the current QoS
@@ -96,7 +81,7 @@ public class QosManagementNamespace {
 
         BackendCapabilityResponse response = new BackendCapabilityResponse();
         try {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
 
@@ -135,7 +120,7 @@ public class QosManagementNamespace {
                     throw new InternalServerErrorException();
             }
         } catch (PermissionDeniedCacheException e) {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
             } else {
                 throw new ForbiddenException(e);
@@ -168,7 +153,7 @@ public class QosManagementNamespace {
         JSONObject jsonResponse = new JSONObject();
 
         try {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new PermissionDeniedCacheException("Permission denied");
             }
 
@@ -195,7 +180,7 @@ public class QosManagementNamespace {
             }
 
         } catch (PermissionDeniedCacheException e) {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
             } else {
                 throw new ForbiddenException(e);

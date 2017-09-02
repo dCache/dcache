@@ -25,6 +25,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
@@ -40,8 +41,9 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
+
 import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.auth.Subjects;
+
 import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
@@ -56,6 +58,7 @@ import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.HttpServletRequests;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
@@ -225,7 +228,7 @@ public class FileResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (PermissionDeniedCacheException e) {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
             } else {
                 throw new ForbiddenException(e);
@@ -330,7 +333,7 @@ public class FileResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (PermissionDeniedCacheException e) {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
             } else {
                 throw new ForbiddenException(e);
@@ -356,7 +359,7 @@ public class FileResources {
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (PermissionDeniedCacheException e) {
-            if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+            if (RequestUser.isAnonymous()) {
                 throw new NotAuthorizedException(e);
             } else {
                 throw new ForbiddenException(e);

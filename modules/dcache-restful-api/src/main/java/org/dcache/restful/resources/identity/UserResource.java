@@ -38,7 +38,7 @@ import org.dcache.auth.attributes.Role;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.auth.attributes.UnassertedRole;
 import org.dcache.restful.providers.UserAttributes;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
+import org.dcache.restful.util.RequestUser;
 
 import static org.dcache.restful.util.HttpServletRequests.getLoginAttributes;
 
@@ -55,7 +55,7 @@ public class UserResource
     {
         UserAttributes user = new UserAttributes();
 
-        Subject subject = ServletContextHandlerAttributes.getSubject();
+        Subject subject = RequestUser.getSubject();
         if (Subjects.isNobody(subject)) {
             user.setStatus(UserAttributes.AuthenticationStatus.ANONYMOUS);
             user.setUid(null);

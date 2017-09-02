@@ -18,28 +18,18 @@
  */
 package org.dcache.restful.util;
 
-import javax.servlet.http.HttpServletRequest;
-
-import org.dcache.auth.attributes.Restriction;
-import org.dcache.http.AuthenticationHandler;
 
 import javax.security.auth.Subject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.Set;
-
-import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
-import org.dcache.cells.CellStub;
 import org.dcache.http.AuthenticationHandler;
-
-import static org.dcache.restful.util.ServletContextHandlerAttributes.getSubject;
 
 /**
  * Utility class for methods that operate on an HttpServletRequest object.
@@ -68,7 +58,7 @@ public class HttpServletRequests
 
     public static Subject roleAwareSubject(HttpServletRequest request)
     {
-        return isAdmin(request) ? Subjects.ROOT : getSubject();
+        return isAdmin(request) ? Subjects.ROOT : RequestUser.getSubject();
     }
 
     public static Restriction roleAwareRestriction(HttpServletRequest request)

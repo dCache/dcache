@@ -9,8 +9,9 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.StorageInfo;
+
 import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.auth.Subjects;
+
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -18,6 +19,7 @@ import org.dcache.pinmanager.PinManagerCountPinsMessage;
 import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
+import org.dcache.restful.util.RequestUser;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.vehicles.FileAttributes;
 
@@ -40,7 +42,7 @@ public final class NamespaceUtils {
                                         ServletContext ctx)
                     throws CacheException, NoRouteToCellException,
                     InterruptedException {
-        if (Subjects.isNobody(ServletContextHandlerAttributes.getSubject())) {
+        if (RequestUser.isAnonymous()) {
             throw new PermissionDeniedCacheException("Permission denied");
         }
 
