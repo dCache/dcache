@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.cells;
 
+import org.springframework.stereotype.Component;
+
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ForbiddenException;
@@ -68,10 +70,12 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
+
 import org.dcache.restful.services.cells.CellInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
@@ -82,6 +86,7 @@ import org.dcache.cells.json.CellData;
  *
  * @version v1.0
  */
+@Component
 @Path("/cells")
 public final class CellInfoResources {
     @Context

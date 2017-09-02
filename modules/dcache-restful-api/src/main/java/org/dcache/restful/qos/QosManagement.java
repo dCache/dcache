@@ -2,17 +2,16 @@ package org.dcache.restful.qos;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.stereotype.Component;
 
-import javax.ws.rs.Path;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.PathParam;
-
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.ForbiddenException;
-
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Arrays;
@@ -29,6 +28,7 @@ import org.dcache.restful.util.RequestUser;
  */
 
 
+@Component
 @Path("/qos-management/qos/")
 public class QosManagement {
 

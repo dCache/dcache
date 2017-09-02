@@ -501,8 +501,8 @@
                 <version>${version.jersey}</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.jersey.inject</groupId>
-                <artifactId>jersey-hk2</artifactId>
+                <groupId>org.glassfish.jersey.ext</groupId>
+                <artifactId>jersey-spring4</artifactId>
                 <version>${version.jersey}</version>
             </dependency>
             <dependency>

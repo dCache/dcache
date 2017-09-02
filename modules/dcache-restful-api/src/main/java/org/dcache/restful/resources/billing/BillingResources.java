@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.billing;
 
+import org.springframework.stereotype.Component;
+
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
@@ -71,12 +73,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.restful.providers.billing.BillingDataGrid;
 import org.dcache.restful.providers.billing.BillingDataGridEntry;
 import org.dcache.restful.providers.billing.BillingRecords;
@@ -88,6 +92,7 @@ import org.dcache.util.histograms.Histogram;
 /**
  * <p>RestFul API for providing billing records and histograms.</p>
  */
+@Component
 @Path("/billing")
 public class BillingResources {
     @Context

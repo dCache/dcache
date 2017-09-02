@@ -247,6 +247,16 @@
     <property name="executorService" ref="scheduling-service"/>
   </bean>
 
+    <bean class="org.springframework.beans.factory.config.CustomScopeConfigurer">
+        <property name="scopes">
+            <map>
+                <entry key="request">
+                    <bean class="org.springframework.web.context.request.RequestScope"/>
+                </entry>
+            </map>
+        </property>
+    </bean>
+
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
         <description>List of handlers for HTTP requests</description>
         <property name="handlers">
@@ -277,8 +287,13 @@
                                 <list>
                                     <bean class="org.eclipse.jetty.servlet.ServletContextHandler">
                                         <property name="contextPath" value="/api"/>
+                                        <property name="eventListeners">
+                                            <list>
+                                                <bean class="org.springframework.web.context.request.RequestContextListener"/>
+                                            </list>
+                                        </property>
                                         <property name="servletHandler">
-                                            <bean class="org.eclipse.jetty.servlet.ServletHandler">
+                                            <bean class="org.dcache.restful.util.SpringWebServletHandler">
                                                 <property name="servlets">
                                                     <list>
                                                         <bean class="org.eclipse.jetty.servlet.ServletHolder">
@@ -461,6 +476,20 @@
         <property name="proxyConnectionEnabled" value="${frontend.enable.proxy-protocol}"/>
     </bean>
 
+
+    <!-- Resource beans: JAX-RS objects that handle REST requests. -->
+    <bean class="org.dcache.restful.qos.QosManagementNamespace" scope="request"/>
+    <bean class="org.dcache.restful.qos.QosManagement" scope="request"/>
+    <bean class="org.dcache.restful.resources.alarms.AlarmsResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.billing.BillingResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.cells.CellInfoResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.identity.UserResource" scope="request"/>
+    <bean class="org.dcache.restful.resources.namespace.FileResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.namespace.IdResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.pool.PoolInfoResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.restores.RestoreResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.selection.SelectionResources" scope="request"/>
+    <bean class="org.dcache.restful.resources.transfers.TransferResources" scope="request"/>
 
     <beans profile="macaroons-true">
         <bean id="macaroon-processor" class="org.dcache.macaroons.MacaroonProcessor">

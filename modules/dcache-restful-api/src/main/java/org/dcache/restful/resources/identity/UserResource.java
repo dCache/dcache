@@ -18,6 +18,8 @@
  */
 package org.dcache.restful.resources.identity;
 
+import org.springframework.stereotype.Component;
+
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -46,6 +48,7 @@ import static org.dcache.restful.util.HttpServletRequests.getLoginAttributes;
  * Provide services related to the identity the user is currently
  * operating.
  */
+@Component
 @Path("/user")
 public class UserResource
 {

@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.transfers;
 
+import org.springframework.stereotype.Component;
+
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -67,11 +69,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TransferInfo;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
@@ -81,6 +85,7 @@ import org.dcache.restful.util.ServletContextHandlerAttributes;
  *
  * @version v1.0
  */
+@Component
 @Path("/transfers")
 public final class TransferResources {
     @Context

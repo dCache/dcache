@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.restores;
 
+import org.springframework.stereotype.Component;
+
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
@@ -67,10 +69,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
+
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
@@ -81,6 +85,7 @@ import org.dcache.restful.util.ServletContextHandlerAttributes;
  *
  * @version v1.0
  */
+@Component
 @Path("/restores")
 public final class RestoreResources {
     @Context

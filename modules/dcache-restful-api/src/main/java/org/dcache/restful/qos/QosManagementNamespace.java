@@ -2,6 +2,7 @@ package org.dcache.restful.qos;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -53,6 +54,7 @@ import org.dcache.vehicles.FileAttributes;
  * Query current QoS for a file or  change the current QoS
  */
 
+@Component
 @Path("/qos-management/namespace")
 public class QosManagementNamespace {
 

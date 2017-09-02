@@ -61,6 +61,7 @@ package org.dcache.restful.resources.selection;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -74,6 +75,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +84,9 @@ import java.util.stream.Collectors;
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.util.CacheException;
+
 import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.selection.Link;
@@ -102,6 +106,7 @@ import org.dcache.restful.util.ServletContextHandlerAttributes;
  *
  * @version v1.0
  */
+@Component
 @Path("/selection")
 public final class SelectionResources {
     @Context

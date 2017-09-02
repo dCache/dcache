@@ -63,6 +63,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -80,6 +81,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -88,8 +90,10 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
+
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.restful.providers.pool.PoolKillMover;
@@ -105,6 +109,7 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
  *
  * @version v1.0
  */
+@Component
 @Path("/pools")
 public final class PoolInfoResources {
     @Context

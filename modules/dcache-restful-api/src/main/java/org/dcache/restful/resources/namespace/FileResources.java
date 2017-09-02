@@ -5,6 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -75,6 +76,7 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
  *
  * @version v1.0
  */
+@Component
 @Path("/namespace")
 public class FileResources {
 

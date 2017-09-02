@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.namespace;
 
+import org.springframework.stereotype.Component;
+
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
@@ -95,6 +97,7 @@ import org.dcache.vehicles.FileAttributes;
  *
  * @version v1.0
  */
+@Component
 @Path("/id")
 public class IdResources {
 
