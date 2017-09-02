@@ -61,7 +61,7 @@ package org.dcache.restful.resources.billing;
 
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
@@ -86,7 +86,6 @@ import org.dcache.restful.providers.billing.BillingDataGridEntry;
 import org.dcache.restful.providers.billing.BillingRecords;
 import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.restful.util.HttpServletRequests;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.util.histograms.Histogram;
 
 /**
@@ -96,10 +95,10 @@ import org.dcache.util.histograms.Histogram;
 @Path("/billing")
 public class BillingResources {
     @Context
-    ServletContext ctx;
+    private HttpServletRequest request;
 
-    @Context
-    HttpServletRequest request;
+    @Inject
+    private BillingInfoService service;
 
     /**
      * <p>Request records for a given file.</p>
@@ -120,10 +119,7 @@ public class BillingResources {
                                                              + "to admin users.");
             }
 
-            return ServletContextHandlerAttributes.getBillingInfoService(ctx)
-                                                  .getRecords(pnfsid,
-                                                              before,
-                                                              after);
+            return service.getRecords(pnfsid, before, after);
         } catch (FileNotFoundCacheException e) {
             throw new NotFoundException(e);
         } catch (CacheException e) {
@@ -154,8 +150,7 @@ public class BillingResources {
          *  No admin privileges necessary for billing histogram data.
          */
         try {
-            return ServletContextHandlerAttributes.getBillingInfoService(ctx)
-                                                  .getHistogram(key);
+            return service.getHistogram(key);
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
         } catch (IllegalArgumentException e) {
@@ -174,8 +169,7 @@ public class BillingResources {
          *  No admin privileges necessary for billing histogram data.
          */
         try {
-            return ServletContextHandlerAttributes.getBillingInfoService(ctx)
-                                                  .getGrid();
+            return service.getGrid();
         } catch (CacheException e) {
             throw new InternalServerErrorException(e);
         }
@@ -191,8 +185,6 @@ public class BillingResources {
         List<Histogram> gridData = new ArrayList<>();
 
         try {
-            BillingInfoService service
-                            = ServletContextHandlerAttributes.getBillingInfoService(ctx);
             service.getGrid()
                    .getDataGrid()
                    .keySet()

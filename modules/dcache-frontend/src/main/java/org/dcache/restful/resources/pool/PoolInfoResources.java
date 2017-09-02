@@ -65,7 +65,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -94,13 +95,13 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.cells.CellStub;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
 import org.dcache.restful.providers.pool.PoolKillMover;
 import org.dcache.restful.providers.pool.PoolModeUpdate;
 import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.util.HttpServletRequests;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
@@ -113,10 +114,14 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Path("/pools")
 public final class PoolInfoResources {
     @Context
-    ServletContext ctx;
+    private HttpServletRequest request;
 
-    @Context
-    HttpServletRequest request;
+    @Inject
+    private PoolInfoService service;
+
+    @Inject
+    @Named("pool-stub")
+    private CellStub poolStub;
 
     /**
      * @return a list of pool group names
@@ -129,8 +134,7 @@ public final class PoolInfoResources {
         /*
          *  Allow pools and pool groups to be listed without privileges.
          */
-        return ServletContextHandlerAttributes.getPoolInfoService(ctx)
-                                              .listGroups();
+        return service.listPools();
     }
 
     /**
@@ -160,9 +164,6 @@ public final class PoolInfoResources {
         /*
          *  Allow access to aggregated data to be seen without privileges
          */
-        PoolInfoService service
-                        = ServletContextHandlerAttributes.getPoolInfoService(
-                        ctx);
         PoolGroupInfo info = new PoolGroupInfo();
 
         /*
@@ -246,9 +247,6 @@ public final class PoolInfoResources {
                     @DefaultValue("false")
                     @QueryParam("remove") boolean isRemove)
                     throws CacheException {
-        PoolInfoService service
-                        = ServletContextHandlerAttributes.getPoolInfoService(
-                        ctx);
         PoolInfo info = new PoolInfo();
 
         /*
@@ -338,12 +336,10 @@ public final class PoolInfoResources {
          *  Allow pools and pool groups to be listed without privileges.
          */
         if (group == null) {
-            return ServletContextHandlerAttributes.getPoolInfoService(ctx)
-                                                  .listPools();
+            return service.listPools();
         }
 
-        return ServletContextHandlerAttributes.getPoolInfoService(ctx)
-                                              .listPools(group);
+        return service.listPools(group);
     }
 
     /**
@@ -371,9 +367,7 @@ public final class PoolInfoResources {
             if (moverId != null) {
                 message = new PoolMoverKillMessage(pool, moverId,
                                                    update.getReason());
-                ServletContextHandlerAttributes.getPoolStub(ctx)
-                                               .sendAndWait(new CellPath(pool),
-                                                            message);
+                poolStub.sendAndWait(new CellPath(pool), message);
             }
         } catch (JSONException | IllegalArgumentException | JsonParseException
                         | JsonMappingException e) {
@@ -409,9 +403,7 @@ public final class PoolInfoResources {
             PoolV2Mode mode = new PoolV2Mode(update.mode());
             mode.setResilienceEnabled(update.isResilience());
             Message message = new PoolModifyModeMessage(pool, mode);
-            ServletContextHandlerAttributes.getPoolStub(ctx)
-                                           .sendAndWait(new CellPath(pool),
-                                                        message);
+            poolStub.sendAndWait(new CellPath(pool), message);
         } catch (JSONException | IllegalArgumentException | JsonParseException
                         | JsonMappingException e) {
             throw new BadRequestException(e);

@@ -18,7 +18,6 @@
  */
 package org.dcache.restful.util;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import diskCacheV111.util.PnfsHandler;
@@ -32,18 +31,17 @@ import org.dcache.cells.CellStub;
  */
 public class HandlerBuilders
 {
-    public static PnfsHandler pnfsHandler(ServletContext ctx, HttpServletRequest request)
+    public static PnfsHandler pnfsHandler(CellStub pnfsManager, HttpServletRequest request)
     {
-        CellStub cellStub = ServletContextHandlerAttributes.getPnfsManager(ctx);
-        PnfsHandler handler = new PnfsHandler(cellStub);
+        PnfsHandler handler = new PnfsHandler(pnfsManager);
         handler.setSubject(RequestUser.getSubject());
         handler.setRestriction(HttpServletRequests.getRestriction(request));
         return handler;
     }
 
-    public static PnfsHandler roleAwarePnfsHandler(ServletContext ctx, HttpServletRequest request)
+    public static PnfsHandler roleAwarePnfsHandler(CellStub pnfsManager, HttpServletRequest request)
     {
-        PnfsHandler handler = pnfsHandler(ctx, request);
+        PnfsHandler handler = pnfsHandler(pnfsManager, request);
 
         if (HttpServletRequests.isAdmin(request)) {
             handler.setSubject(Subjects.ROOT);

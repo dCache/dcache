@@ -61,7 +61,8 @@ package org.dcache.restful.resources.namespace;
 
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
@@ -84,11 +85,12 @@ import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.cells.CellStub;
 import org.dcache.http.PathMapper;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.util.HandlerBuilders;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.vehicles.FileAttributes;
 
@@ -100,12 +102,22 @@ import org.dcache.vehicles.FileAttributes;
 @Component
 @Path("/id")
 public class IdResources {
-
     @Context
-    ServletContext ctx;
+    private HttpServletRequest request;
 
-    @Context
-    HttpServletRequest request;
+    @Inject
+    private PathMapper pathMapper;
+
+    @Inject
+    private PoolMonitor poolMonitor;
+
+    @Inject
+    @Named("pinManagerStub")
+    private CellStub pinmanager;
+
+    @Inject
+    @Named("pnfs-stub")
+    private CellStub pnfsmanager;
 
     /**
      * <p>Retrieve all the file attributes, plus path, from pnfsid.</p>
@@ -119,7 +131,7 @@ public class IdResources {
     public JsonFileAttributes getAttributes(@PathParam("value") String value) {
         Set<FileAttribute> attributeSet = EnumSet.allOf(FileAttribute.class);
         JsonFileAttributes result = new JsonFileAttributes();
-        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(ctx, request);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
 
         try {
             PnfsId id = new PnfsId(value);
@@ -138,7 +150,6 @@ public class IdResources {
              * Since FileResources maps according to the effective root,
              * we should return the path in the same form here.
              */
-            PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
             result.setPath(pathMapper.asRequestPath(request, path));
 
             String name = path.name();
@@ -151,9 +162,9 @@ public class IdResources {
                                                    true,
                                                    true,
                                                    request,
-                                                   ctx);
+                                                   poolMonitor);
 
-            NamespaceUtils.addQoSAttributes(result, attributes, request, ctx);
+            NamespaceUtils.addQoSAttributes(result, attributes, request, poolMonitor, pinmanager);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Bad pnsfid " + value, e);
         } catch (FileNotFoundCacheException e) {

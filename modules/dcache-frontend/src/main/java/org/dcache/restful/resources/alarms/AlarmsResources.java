@@ -63,7 +63,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -89,7 +89,6 @@ import diskCacheV111.util.CacheException;
 import org.dcache.alarms.LogEntry;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.util.HttpServletRequests;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 
 import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
@@ -102,10 +101,10 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
 @Path("/alarms")
 public final class AlarmsResources {
     @Context
-    ServletContext ctx;
+    private HttpServletRequest request;
 
-    @Context
-    HttpServletRequest request;
+    @Inject
+    private AlarmsInfoService service;
 
     /**
      * <p>Alarms.</p>
@@ -134,9 +133,7 @@ public final class AlarmsResources {
         }
 
         try {
-            return ServletContextHandlerAttributes.getAlarmsInfoService(ctx)
-                                                  .get(offset, limit,
-                                                       after, before, type);
+            return service.get(offset, limit, after, before, type);
         } catch (IllegalArgumentException | CacheException e) {
             throw new BadRequestException(e);
         } catch (Exception e) {
@@ -158,8 +155,7 @@ public final class AlarmsResources {
                             "Alarm service only accessible to admin users.");
         }
 
-        return ServletContextHandlerAttributes.getAlarmsInfoService(ctx)
-                                              .getMap();
+        return service.getMap();
     }
 
     /**
@@ -198,9 +194,6 @@ public final class AlarmsResources {
         try {
             LogEntry[] entries = new ObjectMapper().readValue(requestPayload,
                                                               LogEntry[].class);
-            AlarmsInfoService service =
-                            ServletContextHandlerAttributes.getAlarmsInfoService(ctx);
-
             List<LogEntry> list = Arrays.stream(entries)
                                         .collect(Collectors.toList());
 

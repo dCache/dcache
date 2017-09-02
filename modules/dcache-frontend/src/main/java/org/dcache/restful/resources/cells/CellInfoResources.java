@@ -61,7 +61,7 @@ package org.dcache.restful.resources.cells;
 
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
@@ -76,10 +76,9 @@ import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 
+import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoService;
 import org.dcache.restful.util.HttpServletRequests;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
-import org.dcache.cells.json.CellData;
 
 /**
  * <p>RESTful API to the {@link CellInfoService} service.</p>
@@ -89,11 +88,12 @@ import org.dcache.cells.json.CellData;
 @Component
 @Path("/cells")
 public final class CellInfoResources {
-    @Context
-    ServletContext ctx;
 
     @Context
-    HttpServletRequest request;
+    private HttpServletRequest request;
+
+    @Inject
+    private CellInfoService service;
 
     /**
      * <p>Get a list of current addresses for well-known cells.</p>
@@ -109,8 +109,7 @@ public final class CellInfoResources {
             throw new ForbiddenException(
                             "Cell info service only accessible to admin users.");
         }
-        return ServletContextHandlerAttributes.getCellInfoService(ctx)
-                                              .getAddresses();
+        return service.getAddresses();
     }
 
     /**
@@ -129,8 +128,7 @@ public final class CellInfoResources {
             throw new ForbiddenException(
                             "Cell info service only accessible to admin users.");
         }
-        return ServletContextHandlerAttributes.getCellInfoService(ctx)
-                                              .getCellData(address);
+        return service.getCellData(address);
     }
 
     /**
@@ -146,9 +144,6 @@ public final class CellInfoResources {
             throw new ForbiddenException(
                             "Cell info service only accessible to admin users.");
         }
-
-        CellInfoService service
-                        = ServletContextHandlerAttributes.getCellInfoService(ctx);
 
         return Arrays.stream(service.getAddresses())
                      .map(service::getCellData)

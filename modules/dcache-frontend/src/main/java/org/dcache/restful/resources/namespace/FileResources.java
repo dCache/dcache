@@ -7,7 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -53,14 +54,12 @@ import org.dcache.pinmanager.PinManagerCountPinsMessage;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.policyengine.MigrationPolicyEngine;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.RequestUser;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.restful.util.namespace.NamespaceUtils;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryStream;
@@ -83,16 +82,33 @@ public class FileResources {
     private final String QOS_PIN_REQUEST_ID = "qos";
     private static final Logger LOG = LoggerFactory.getLogger(FileResources.class);
 
-
-    @Context
-    ServletContext ctx;
-
     /*
     This "request" parameter is used to get fully qualified name of the client
      * or the last proxy that sent the request. Later used for quering locality of the file.
      */
     @Context
-    HttpServletRequest request;
+    private HttpServletRequest request;
+
+    @Inject
+    private PoolMonitor poolMonitor;
+
+    @Inject
+    private PathMapper pathMapper;
+
+    @Inject
+    private ListDirectoryHandler listDirectoryHandler;
+
+    @Inject
+    @Named("pool-manager-stub")
+    private CellStub poolmanager;
+
+    @Inject
+    @Named("pinManagerStub")
+    private CellStub pinmanager;
+
+    @Inject
+    @Named("pnfs-stub")
+    private CellStub pnfsmanager;
 
     /**
      * The method offer to list the content of a directory or return metadata of
@@ -160,8 +176,7 @@ public class FileResources {
     {
         JsonFileAttributes fileAttributes = new JsonFileAttributes();
         Set<FileAttribute> attributes = EnumSet.allOf(FileAttribute.class);
-        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(ctx, request);
-        PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
         try {
 
@@ -170,11 +185,11 @@ public class FileResources {
                                                    namespaceAttributes,
                                                    isLocality, isLocations,
                                                    false,
-                                                   request, ctx);
+                                                   request, poolMonitor);
             if (isQos) {
                 NamespaceUtils.addQoSAttributes(fileAttributes,
                                                 namespaceAttributes,
-                                                request, ctx);
+                                                request, poolMonitor, pinmanager);
             }
 
             // fill children list id it's a directory and listing is requested
@@ -194,8 +209,6 @@ public class FileResources {
 
                 List<JsonFileAttributes> children = new ArrayList<>();
 
-                ListDirectoryHandler listDirectoryHandler = ServletContextHandlerAttributes.getListDirectoryHandler(ctx);
-
                 DirectoryStream stream = listDirectoryHandler.list(
                         HttpServletRequests.roleAwareSubject(request),
                         HttpServletRequests.roleAwareRestriction(request),
@@ -214,12 +227,12 @@ public class FileResources {
                                                            entry.getFileAttributes(),
                                                            isLocality, isLocations,
                                                            false,
-                                                           request, ctx);
+                                                           request, poolMonitor);
                     childrenAttributes.setFileName(fName);
                     if (isQos) {
                         NamespaceUtils.addQoSAttributes(childrenAttributes,
                                                         entry.getFileAttributes(),
-                                                        request, ctx);
+                                                        request, poolMonitor, pinmanager);
                     }
                     children.add(childrenAttributes);
                 }
@@ -250,8 +263,7 @@ public class FileResources {
         try {
             JSONObject reqPayload = new JSONObject(requestPayload);
             String action = (String) reqPayload.get("action");
-            PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(ctx, request);
-            PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
+            PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
             FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 
             // FIXME: which attributes do we actually need?
@@ -261,7 +273,7 @@ public class FileResources {
                 case "mkdir":
                     String name = (String) reqPayload.get("name");
                     FsPath.checkChildName(name, BadRequestException::new);
-                    handler = HandlerBuilders.pnfsHandler(ctx, request); // FIXME: non-role identity to ensure correct ownership
+                    handler = HandlerBuilders.pnfsHandler(pnfsmanager, request); // FIXME: non-role identity to ensure correct ownership
                     handler.createPnfsDirectory(path.child(name).toString());
                     break;
 
@@ -274,10 +286,9 @@ public class FileResources {
                 case "qos":
                     String targetQos = reqPayload.getString("target");
                     JsonFileAttributes fileAttributes = new JsonFileAttributes();
-                    NamespaceUtils.addQoSAttributes(fileAttributes, attributes, request, ctx);
+                    NamespaceUtils.addQoSAttributes(fileAttributes, attributes, request, poolMonitor, pinmanager);
                     LOG.debug("Request received to change current QoS from {} to: {} for {}", fileAttributes.currentQos, targetQos, path);
-                    RemotePoolMonitor monitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-                    FileLocality locality = monitor.getFileLocality(attributes, request.getRemoteHost());
+                    FileLocality locality = poolMonitor.getFileLocality(attributes, request.getRemoteHost());
                     LOG.debug("The Locality of the file: {}", locality);
                     if (locality == FileLocality.NONE) {
                         throw new BadRequestException("Transition for directories not supported");
@@ -288,12 +299,8 @@ public class FileResources {
                             null, null, null,
                             URI.create("http://"+request.getRemoteHost()+"/"));
 
-                    CellStub cellStub = ServletContextHandlerAttributes.getPoolManger(ctx);
-                    CellStub pinmanager = ServletContextHandlerAttributes.getPinManager(ctx);
-
-                    PoolMonitor poolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
                     MigrationPolicyEngine migrationPolicyEngine =
-                            new MigrationPolicyEngine(attributes, cellStub, poolMonitor);
+                            new MigrationPolicyEngine(attributes, poolmanager, poolMonitor);
 
                     switch (targetQos) {
                     case QosManagement.DISK_TAPE:
@@ -351,8 +358,7 @@ public class FileResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteFileEntry(@PathParam("value") String requestPath) throws CacheException {
 
-        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(ctx, request);
-        PathMapper pathMapper = ServletContextHandlerAttributes.getPathMapper(ctx);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
         FsPath path = pathMapper.asDcachePath(request, requestPath, ForbiddenException::new);
 
         try {

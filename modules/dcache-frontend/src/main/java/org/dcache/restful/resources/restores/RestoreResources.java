@@ -61,13 +61,12 @@ package org.dcache.restful.resources.restores;
 
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import java.lang.reflect.InvocationTargetException;
@@ -78,7 +77,6 @@ import diskCacheV111.util.PnfsId;
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.services.restores.RestoresInfoService;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 
 /**
  * <p>RESTful API to the {@link RestoresInfoService} service.</p>
@@ -88,8 +86,8 @@ import org.dcache.restful.util.ServletContextHandlerAttributes;
 @Component
 @Path("/restores")
 public final class RestoreResources {
-    @Context
-    ServletContext ctx;
+    @Inject
+    private RestoresInfoService service;
 
     /**
      * <p>Restores.</p>
@@ -117,8 +115,6 @@ public final class RestoreResources {
                                                  @QueryParam("offset") Integer offset,
                                                  @QueryParam("limit") Integer limit,
                                                  @QueryParam("pnfsid") PnfsId pnfsid) {
-        RestoresInfoService service
-                        = ServletContextHandlerAttributes.getRestoresInfoService(ctx);
         try {
             return service.get(token, offset, limit, pnfsid);
         } catch (InvocationTargetException | IllegalAccessException e) {

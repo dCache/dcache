@@ -4,9 +4,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotAuthorizedException;
@@ -17,8 +20,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.BadRequestException;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -26,17 +27,12 @@ import java.net.URISyntaxException;
 import java.util.EnumSet;
 import java.util.Set;
 
-import org.dcache.restful.util.ServletContextHandlerAttributes;
-
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
-
-import org.dcache.poolmanager.RemotePoolMonitor;
-
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -46,6 +42,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
 import org.dcache.pinmanager.PinManagerPinMessage;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.util.HandlerBuilders;
 import org.dcache.restful.util.RequestUser;
 import org.dcache.vehicles.FileAttributes;
@@ -59,10 +56,18 @@ import org.dcache.vehicles.FileAttributes;
 public class QosManagementNamespace {
 
     @Context
-    ServletContext ctx;
+    private HttpServletRequest request;
 
-    @Context
-    HttpServletRequest request;
+    @Inject
+    private PoolMonitor poolMonitor;
+
+    @Inject
+    @Named("pinManagerStub")
+    private CellStub pinmanager;
+
+    @Inject
+    @Named("pnfs-stub")
+    private CellStub pnfsmanager;
 
     /** ID provided by the requestor eg. the SRM door or QoS.**/
 
@@ -90,8 +95,7 @@ public class QosManagementNamespace {
             FileAttributes fileAttributes = getFileAttributes(requestPath);
             FileLocality fileLocality =  getLocality(fileAttributes);
 
-            CellStub cellStub = ServletContextHandlerAttributes.getPinManager(ctx);
-            boolean isPinned = isPinned(fileAttributes, cellStub);
+            boolean isPinned = isPinned(fileAttributes, pinmanager);
 
 
             switch (fileLocality) {
@@ -164,17 +168,16 @@ public class QosManagementNamespace {
 
 
             FileAttributes fileAttributes = getFileAttributes(requestPath);
-            CellStub cellStub = ServletContextHandlerAttributes.getPinManager(ctx);
             FileLocality fileLocality =  getLocality(fileAttributes);
 
             switch (update) {
                 // change QoS to "disk+tape"
                 case QosManagement.DISK_TAPE:
-                    makeDiskAndTape( fileLocality, fileAttributes, cellStub);
+                    makeDiskAndTape(fileLocality, fileAttributes, pinmanager);
                     break;
                 // change QoS to "tape"
                 case QosManagement.TAPE:
-                    makeTape( fileLocality, fileAttributes, cellStub);
+                    makeTape(fileLocality, fileAttributes, pinmanager);
                     break;
                 default:
                     // error cases
@@ -203,7 +206,7 @@ public class QosManagementNamespace {
 
     public FileAttributes getFileAttributes(String requestPath) throws CacheException {
 
-        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(ctx, request);
+        PnfsHandler handler = HandlerBuilders.roleAwarePnfsHandler(pnfsmanager, request);
         FsPath path;
         if (requestPath == null || requestPath.isEmpty()) {
             path = FsPath.ROOT;
@@ -238,8 +241,7 @@ public class QosManagementNamespace {
 
     public FileLocality getLocality(FileAttributes fileAttributes) {
 
-        RemotePoolMonitor remotePoolMonitor = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-        return remotePoolMonitor.getFileLocality(fileAttributes, request.getRemoteHost());
+        return poolMonitor.getFileLocality(fileAttributes, request.getRemoteHost());
     }
 
 

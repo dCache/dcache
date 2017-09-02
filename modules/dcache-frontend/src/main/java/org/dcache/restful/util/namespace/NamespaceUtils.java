@@ -1,6 +1,5 @@
 package org.dcache.restful.util.namespace;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.InternalServerErrorException;
 
@@ -16,11 +15,10 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerCountPinsMessage;
-import org.dcache.poolmanager.RemotePoolMonitor;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.restful.providers.JsonFileAttributes;
 import org.dcache.restful.qos.QosManagement;
 import org.dcache.restful.util.RequestUser;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -34,26 +32,25 @@ public final class NamespaceUtils {
      * @param json               mapped from attributes
      * @param attributes         returned by the query to namespace
      * @param request            to check for client info
-     * @param ctx                for access to remote PoolMonitor
+     * @param poolMonitor        a PoolMonitor to check locality
+     * @param pinmanager         communication with pinmanager
      */
     public static void addQoSAttributes(JsonFileAttributes json,
                                         FileAttributes attributes,
                                         HttpServletRequest request,
-                                        ServletContext ctx)
+                                        PoolMonitor poolMonitor,
+                                        CellStub pinmanager)
                     throws CacheException, NoRouteToCellException,
                     InterruptedException {
         if (RequestUser.isAnonymous()) {
             throw new PermissionDeniedCacheException("Permission denied");
         }
 
-        CellStub pinmanager = ServletContextHandlerAttributes.getPinManager(ctx);
         PinManagerCountPinsMessage msg
                         = new PinManagerCountPinsMessage(attributes.getPnfsId());
         boolean isPinned = pinmanager.sendAndWait(msg).getCount() != 0;
 
-        RemotePoolMonitor monitor
-                        = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-        FileLocality locality = monitor.getFileLocality(attributes,
+        FileLocality locality = poolMonitor.getFileLocality(attributes,
                                                         request.getRemoteHost());
         switch (locality) {
             case NEARLINE:
@@ -116,7 +113,7 @@ public final class NamespaceUtils {
                                                boolean isLocations,
                                                boolean isOptional,
                                                HttpServletRequest request,
-                                               ServletContext ctx) throws CacheException {
+                                               PoolMonitor poolMonitor) throws CacheException {
         json.setPnfsId(attributes.getPnfsId());
 
         if (attributes.isDefined(FileAttribute.NLINK)) {
@@ -144,15 +141,12 @@ public final class NamespaceUtils {
 
         json.setFileMimeType(name);
 
-        RemotePoolMonitor remotePoolMonitor
-                        = ServletContextHandlerAttributes.getRemotePoolMonitor(ctx);
-
         // when user set locality param in the request,
         // the locality should be returned only for directories
         if ((isLocality) && fileType != FileType.DIR) {
             String client = request.getRemoteHost();
             FileLocality fileLocality
-                            = remotePoolMonitor.getFileLocality(attributes,
+                            = poolMonitor.getFileLocality(attributes,
                                                                 client);
             json.setFileLocality(fileLocality);
         }

@@ -61,13 +61,12 @@ package org.dcache.restful.resources.transfers;
 
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import java.lang.reflect.InvocationTargetException;
@@ -78,7 +77,6 @@ import diskCacheV111.util.TransferInfo;
 
 import org.dcache.restful.providers.SnapshotList;
 import org.dcache.restful.services.transfers.TransferInfoService;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 
 /**
  * <p>RESTful API to the {@link TransferInfoService} service.</p>
@@ -88,8 +86,8 @@ import org.dcache.restful.util.ServletContextHandlerAttributes;
 @Component
 @Path("/transfers")
 public final class TransferResources {
-    @Context
-    ServletContext ctx;
+    @Inject
+    private TransferInfoService service;
 
     /**
      * <p>Transfers.</p>
@@ -118,8 +116,6 @@ public final class TransferResources {
                                                    @QueryParam("offset") Integer offset,
                                                    @QueryParam("limit") Integer limit,
                                                    @QueryParam("pnfsid") PnfsId pnfsid) {
-        TransferInfoService service
-                        = ServletContextHandlerAttributes.getTransferInfoService(ctx);
         try {
             return service.get(token, offset, limit, pnfsid);
         } catch (InvocationTargetException | IllegalAccessException e) {

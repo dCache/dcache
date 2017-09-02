@@ -63,7 +63,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.ServletContext;
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -98,7 +99,6 @@ import org.dcache.restful.providers.selection.PreferenceResult;
 import org.dcache.restful.providers.selection.Unit;
 import org.dcache.restful.providers.selection.UnitGroup;
 import org.dcache.restful.util.HttpServletRequests;
-import org.dcache.restful.util.ServletContextHandlerAttributes;
 
 /**
  * <p>RESTful API to the {@link org.dcache.poolmanager.PoolMonitor}, in
@@ -110,10 +110,14 @@ import org.dcache.restful.util.ServletContextHandlerAttributes;
 @Path("/selection")
 public final class SelectionResources {
     @Context
-    ServletContext ctx;
+    private HttpServletRequest request;
 
-    @Context
-    HttpServletRequest request;
+    @Inject
+    private PoolMonitor poolMonitor;
+
+    @Inject
+    @Named("pool-manager-stub")
+    private CellStub poolManager;
 
     @GET
     @Path("/links")
@@ -123,10 +127,6 @@ public final class SelectionResources {
             throw new ForbiddenException(
                             "Link info only accessible to admin users.");
         }
-
-        PoolMonitor poolMonitor
-                        = ServletContextHandlerAttributes.getRemotePoolMonitor(
-                        ctx);
 
         return poolMonitor.getPoolSelectionUnit().getLinks().values()
                           .stream()
@@ -143,10 +143,6 @@ public final class SelectionResources {
                             "Partition info only accessible to admin users.");
         }
 
-        PoolMonitor poolMonitor
-                        = ServletContextHandlerAttributes.getRemotePoolMonitor(
-                        ctx);
-
         return poolMonitor.getPartitionManager().getPartitions().entrySet()
                                                 .stream()
                                                 .map(Partition::new)
@@ -161,10 +157,6 @@ public final class SelectionResources {
             throw new ForbiddenException(
                             "Pool group info only accessible to admin users.");
         }
-
-        PoolMonitor poolMonitor
-                        = ServletContextHandlerAttributes.getRemotePoolMonitor(
-                        ctx);
 
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
@@ -183,10 +175,6 @@ public final class SelectionResources {
                             "Pool info only accessible to admin users.");
         }
 
-        PoolMonitor poolMonitor
-                        = ServletContextHandlerAttributes.getRemotePoolMonitor(
-                        ctx);
-
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         return psu.getPools().values()
@@ -204,10 +192,6 @@ public final class SelectionResources {
                             "Unit group info only accessible to admin users.");
         }
 
-        PoolMonitor poolMonitor
-                        = ServletContextHandlerAttributes.getRemotePoolMonitor(
-                        ctx);
-
         PoolSelectionUnit psu = poolMonitor.getPoolSelectionUnit();
 
         return poolMonitor.getPoolSelectionUnit().getUnitGroups().values()
@@ -224,10 +208,6 @@ public final class SelectionResources {
             throw new ForbiddenException(
                             "Unit info only accessible to admin users.");
         }
-
-        PoolMonitor poolMonitor
-                        = ServletContextHandlerAttributes.getRemotePoolMonitor(
-                        ctx);
 
         return poolMonitor.getPoolSelectionUnit().getSelectionUnits().values()
                           .stream()
@@ -249,8 +229,6 @@ public final class SelectionResources {
         try {
             Match match = new ObjectMapper().readValue(requestPayload,
                                                        Match.class);
-            CellStub poolManager
-                            = ServletContextHandlerAttributes.getPoolManger(ctx);
             PoolPreferenceLevel[] poolPreferenceLevels =
                             poolManager.sendAndWait(match.toPoolManagerCommand(),
                                                     PoolPreferenceLevel[].class);
