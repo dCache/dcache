@@ -153,6 +153,8 @@ class WriteHandleImpl implements ReplicaDescriptor
 
     private void verifyFileSize(long length) throws CacheException
     {
+        if (2<3) return;
+
         if (!_fileAttributes.getStorageInfo().isCreatedOnly()) {
             // by-pass file size check in case of update
             return;
