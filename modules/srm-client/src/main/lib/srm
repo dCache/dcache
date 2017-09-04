@@ -1,161 +1,141 @@
 #!@SHELL_PATH@
+#
+#  Supported environment variables:
+#
+#  DEBUG: 'true' to provide logging output
+#
+#  SECURITY_DEBUG: 'true' to provide security-related debugging
+#      output.
+#
+#  SRM_CONFIG: location of a configuration file that is used as
+#      default values.  Empty string or 'NONE' disables this feature.
+#
+#  JAVA_HOME: location of the JDK.  Overrides the java executable
+#      found used PATH.  The executable $JAVA_HOME/bin/java must
+#      exist.
+#
+#  SRM_JAVA_OPTIONS: options used when creating the JVM.
+#
 
-#DEBUG=true
-#SECURITY_DEBUG=true
-#DEBUG=false
+choosejava() {
+    local testjava bestversion=0 version
 
-javapath=""
-big=0
-correctjavapath=""
-version=0
-
-getVersion() {
-    javapath=$1/bin/java
-    version=$($javapath -version  2>&1 >/dev/null | tr -d '"' | awk '/java version/{print $3 }')
-    if $big -lt $version; then
-            big=$version
-            correctjavapath=$javapath
-    fi
-}
-
-setjavalocation() {
-  for i in /usr /usr/local /usr/java /usr/local/java /opt  /opt/java /opt ; do
-      for j in $i/*sdk* $i/*jdk* $i/*java* $i/*jre* $i; do
-         if [ -x $j/bin/java ] ; then
-            getVersion $j
-         fi
-      done
-  done
-  java_location=$correctjavapath
-}
-
-args=$*
-
-#Check if java already exists in PATH
-if which java >/dev/null 2>&1; then
-    java_location=java
-else
-    #If not, then check if JAVA_HOME is defined
-    if [ -z "$JAVA_HOME" ]; then
-        setjavalocation
-    elif [ -x "$JAVA_HOME/bin/java" ]; then
-        java_location="$JAVA_HOME/bin/java"
+    if [ -n "$JAVA_HOME" ]; then
+        [ -x "$JAVA_HOME/bin/java" ] || fail "Missing executable at \$JAVA_HOME/bin/java"
+        java="$JAVA_HOME/bin/java"
+    elif which java >/dev/null 2>&1; then
+        java=java
     else
-        setjavalocation
+        for i in /usr /usr/local /usr/java /usr/local/java /opt /opt/java; do
+            for j in $i/*sdk* $i/*jdk* $i/*java* $i/*jre* $i; do
+                if [ -x $j/bin/java ] ; then
+                    testjava=$1/bin/java
+                    # FIXME: extracting the version string is broken
+                    # for OpenJDK, with which 'java -version' yields a
+                    # line like:
+                    #
+                    #     openjdk version 1.8.0_131
+                    version=$($testjava -version 2>&1 >/dev/null | tr -d '"' | awk '/java version/{print $3}')
+
+                    # FIXME: versions are multi-element, with '.' and
+                    # '_' as seperators.
+                    if $bestversion -lt $version; then
+                        bestversion=$version
+                        java=$testjava
+                    fi
+                fi
+            done
+        done
     fi
-fi
-#If we find any of the dir above
-if [ -z "$java_location" ]; then
-    echo "JAVA_HOME not defined. java doesnot exist in PATH " >&2
-    echo "Also java not found in usual places" >&2
-    echo "Make sure java is installed. Exiting ..."  >&2
-    return 1
-fi
 
-#echo "java_location is: $java_location"
-if [ -z "$SRM_PATH" ]; then
-    echo SRM_PATH is not set >&2
+    [ -n "$java" ]
+}
+
+java() {
+    cmd="$java $@"
+    if [ "$DEBUG" = "true" ]; then
+        echo "$cmd"
+    fi
+    CLASSPATH="$SRM_PATH/lib/*" sh -c "$cmd"
+}
+
+runSRM() {
+    java $java_options gov.fnal.srm.util.SRMDispatcher $srm_options $enforced_srm_options "$@"
+}
+
+fail() {
+    for msg in "$@"; do
+        echo "$msg" >&2
+    done
     exit 1
+}
+
+[ -n "$SRM_PATH" ] || fail "SRM_PATH is not set"
+
+if [ "$SRM_CONFIG" = "NONE" ]; then
+    unset SRM_CONFIG
 fi
 
-SRM_CP="${SRM_PATH}/lib/*"
-
-if [ -z "${SRM_JAVA_OPTIONS}" ]; then
+if [ -z "$SRM_JAVA_OPTIONS" ]; then
     SRM_JAVA_OPTIONS="-Xms64m -Xmx178m -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 fi
 
-OPTIONS=" ${SRM_JAVA_OPTIONS} -Djava.protocol.handler.pkgs=org.globus.net.protocol"
 
-SRMCP_OPTIONS=""
+choosejava || fail "Unable to find the 'java' program.  Make sure it is installed" \
+                   "and define the JAVA_HOME environment variable, if necessary"
+
+java_options="$SRM_JAVA_OPTIONS -Djava.protocol.handler.pkgs=org.globus.net.protocol"
+
 if [ "$DEBUG" = "true" ]; then
-    OPTIONS=" ${OPTIONS} \"-Dlogback.configurationFile=${SRM_PATH}/conf/logback-axis.xml\""
-    OPTIONS=" ${OPTIONS} -Delectric.logging=SOAP,HTTP"
+    logback="logback-axis.xml"
+    java_options="$java_options -Delectric.logging=SOAP,HTTP"
 elif [ "$SECURITY_DEBUG" = "true" ]; then
-    OPTIONS=" ${OPTIONS} \"-Dlogback.configurationFile=${SRM_PATH}/conf/logback-security.xml\""
+    logback="logback-security.xml"
 else
-    OPTIONS=" ${OPTIONS} \"-Dlogback.configurationFile=${SRM_PATH}/conf/logback.xml\""
+    logback="logback.xml"
 fi
+java_options="$java_options \"-Dlogback.configurationFile=$SRM_PATH/conf/$logback\""
 
-if [ -n "$SRM_CONFIG" -a  "$SRM_CONFIG" != "NONE" -a  ! -f "$SRM_CONFIG" ]; then
-    SRM_CONFIG_PARENT=$(dirname $SRM_CONFIG)
-    mkdir -p "$SRM_CONFIG_PARENT"
-fi
-
-
-# if env variable for user proxy  is defined, use it
 if [ -n "$X509_USER_PROXY" ]; then
-    x509_user_proxy="$X509_USER_PROXY"
+    enforced_srm_options="-use_proxy=true \"-x509_user_proxy=$X509_USER_PROXY\""
 elif [ -r /tmp/x509up_u$(id -u) ]; then
-    x509_user_proxy=/tmp/x509up_u$(id -u)
-fi
-
-if [ -n "$x509_user_proxy" ]; then
-    SRMCP_OPTIONS="$SRMCP_OPTIONS -x509_user_proxy=$x509_user_proxy"
+    srm_options="-use_proxy=true -x509_user_proxy=/tmp/x509up_u$(id -u)"
+else
+    srm_options="-use_proxy=false \"-x509_user_cert=$HOME/.globus/usercert.pem\" \"-x509_user_key=$HOME/.globus/userkey.pem\""
 fi
 
 if [ -n "$X509_CERT_DIR" ]; then
-   x509_user_trusted_certs=$X509_CERT_DIR
+    enforced_srm_options="$enforced_srm_options \"-x509_user_trusted_certificates=$X509_CERT_DIR\""
 elif [ -d "$HOME/.globus/certificates" ]; then
-   x509_user_trusted_certs=$HOME/.globus/certificates
-elif [ -d /etc/grid-security/certificates ]; then
-   x509_user_trusted_certs=/etc/grid-security/certificates
+    srm_options="$srm_options \"-x509_user_trusted_certificates=$HOME/.globus/certificates\""
 else
-   #use /etc/grid-security/certificates anyway
-   x509_user_trusted_certs=/etc/grid-security/certificates
+    srm_options="$srm_options -x509_user_trusted_certificates=/etc/grid-security/certificates"
 fi
 
-if [ -n "$x509_user_proxy" ]; then
-    SRMCP_OPTIONS="$SRMCP_OPTIONS -x509_user_trusted_certificates=$x509_user_trusted_certs"
-fi
-
-if [ -n "$SRM_CONFIG" -a "$SRM_CONFIG" != "NONE" ]; then
+if [ -n "$SRM_CONFIG" ]; then
     if [ ! -f "$SRM_CONFIG" ]; then
-      echo configuration file not found, configuring srmcp >&2
-      use_proxy=true
-      url_copy="$SRM_PATH/sbin/url-copy.sh"
+        echo "configuration file not found, configuring srm-client" >&2
+        mkdir -p "$(dirname $SRM_CONFIG)"
 
-      cmd="$java_location -cp $SRM_CP $OPTIONS gov.fnal.srm.util.SRMDispatcher \
-        \"-urlcopy=$url_copy\" \
-        -x509_user_proxy=$x509_user_proxy \
-        -x509_user_key=$HOME/.globus/userkey.pem \
-        -x509_user_cert=$HOME/.globus/usercert.pem \
-        -x509_user_trusted_certificates=$x509_user_trusted_certs \
-        -use_proxy=$use_proxy \
-        \"-srmcphome=$SRM_PATH\" \
-        -save_conf=$SRM_CONFIG \
-        $args"
+        if runSRM "-save_conf=$SRM_CONFIG" "-urlcopy=$SRM_PATH/sbin/url-copy.sh" "$@"; then
+            echo "created configuration file in $SRM_CONFIG" >&2
+        fi
+    fi
 
-      if [ "$DEBUG" = "true" ]; then
-          echo $cmd
-      fi
-
-      if $cmd; then
-         echo "created configuration file in $SRM_CONFIG" >&2
-      fi
-   fi
-fi
-
-if [ -n "$SRM_CONFIG" -a  "$SRM_CONFIG" != "NONE" -a -f "$SRM_CONFIG" ]; then
-    SRMCP_OPTIONS="-conf=$SRM_CONFIG $SRMCP_OPTIONS"
+    if [ -f "$SRM_CONFIG" ]; then
+        srm_options="-conf=$SRM_CONFIG"
+    fi
 fi
 
 for arg in "$@"; do
-  case "$arg" in
-      -delegate|-delegate=true)
-          # CBC protection works around the TLS 1.0 BEAST attack; it does this by splitting the first
-          # payload into a 1 byte and a n-1 byte chunk. This breaks GSI delegation for JGlobus as
-          # JGlobus expects the certificate as a single TLS frame.
-          OPTIONS="-Djsse.enableCBCProtection=false ${OPTIONS}"
-          break
-          ;;
-  esac
+    case "$arg" in
+        -delegate|-delegate=true)
+            # CBC protection works around the TLS 1.0 BEAST attack; it does this by splitting the first
+            # payload into a 1 byte and a n-1 byte chunk. This breaks GSI delegation for JGlobus as
+            # JGlobus expects the certificate as a single TLS frame.
+            java_options="$java_options -Djsse.enableCBCProtection=false"
+            ;;
+    esac
 done
 
-cmd="$java_location $OPTIONS gov.fnal.srm.util.SRMDispatcher $SRMCP_OPTIONS $args"
-if [ "$DEBUG" = "true" ]; then
-    echo "CLASSPATH: $SRM_CP"
-    echo
-    echo "$cmd"
-fi
-CLASSPATH="$SRM_CP" sh -c "$cmd"
-
+runSRM "$@"
