@@ -488,11 +488,11 @@ public final class Storage
     public void messageArrived(final TransferManagerMessage msg)
     {
         Long callerId = msg.getId();
-        _log.debug("handleTransferManagerMessage for callerId="+callerId);
+        _log.debug("handleTransferManagerMessage for callerId={}", callerId);
 
         TransferInfo info = callerIdToHandler.remove(callerId);
         if (info == null) {
-            _log.error("TransferInfo for callerId="+callerId+"not found");
+            _log.error("TransferInfo for callerId={} not found", callerId);
             return;
         }
 
@@ -1379,8 +1379,7 @@ public final class Storage
         FsPath actualFromFilePath = config.getPath(fromSurl);
         FsPath actualToFilePath = FsPath.create(localTransferPath);
         long id = getNextMessageID();
-        _log.debug("localCopy for user " + user +
-                   "from actualFromFilePath to actualToFilePath");
+        _log.debug("localCopy for user {} from actualFromFilePath to actualToFilePath", user );
         try {
             CopyManagerMessage copyRequest =
                 new CopyManagerMessage(actualFromFilePath.toString(),
@@ -1594,8 +1593,7 @@ public final class Storage
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied");
         } catch (CacheException e) {
-            _log.error("Failed to create directory " + surl + ": "
-                       + e.getMessage());
+            _log.error("Failed to create directory {}: {}", surl, e.getMessage());
             throw new SRMException(String.format("Failed to create directory [rc=%d,msg=%s]",
                                                  e.getRc(), e.getMessage()));
         }
@@ -1648,10 +1646,10 @@ public final class Storage
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied");
         } catch (TimeoutCacheException e) {
-            _log.error("Failed to rename " + fromPath + " due to timeout");
+            _log.error("Failed to rename {} due to timeout", fromPath);
             throw new SRMInternalErrorException("Internal name space timeout");
         } catch (CacheException e) {
-            _log.error("Failed to rename " + fromPath + ": " + e.getMessage());
+            _log.error("Failed to rename {}: {}", fromPath, e.getMessage());
             throw new SRMException(String.format("Rename failed [rc=%d,msg=%s]",
                                                  e.getRc(), e.getMessage()));
         }
@@ -1697,7 +1695,7 @@ public final class Storage
         throws SRMException
     {
         FsPath path = config.getPath(surl);
-        _log.debug(" putToRemoteTURL from "+path+" to " +surl);
+        _log.debug(" putToRemoteTURL from {} to {}", path, surl);
         return performRemoteTransfer(user,remoteTURL,path,false,
                 extraInfo,
                 remoteCredentialId,
@@ -1733,7 +1731,7 @@ public final class Storage
     {
         DcacheUser user = asDcacheUser(srmUser);
 
-        _log.debug("performRemoteTransfer performing "+(store?"store":"restore"));
+        _log.debug("performRemoteTransfer performing {}", (store?"store":"restore"));
 
         IpProtocolInfo protocolInfo;
 
@@ -1804,7 +1802,7 @@ public final class Storage
                 _transferManagerStub.sendAndWait(request);
             long id = reply.getId();
             _log.debug("received first RemoteGsiftpTransferManagerMessage "
-                               + "reply from transfer manager, id =" + id);
+                               + "reply from transfer manager, id ={}", id);
             TransferInfo info =
                 new TransferInfo(id, callbacks);
             _log.debug("storing info for callerId = {}", id);
