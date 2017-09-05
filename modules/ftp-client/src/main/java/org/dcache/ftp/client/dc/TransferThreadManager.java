@@ -68,10 +68,9 @@ public class TransferThreadManager
             socketPool.add(sbox);
 
             logger.debug(
-                    "connecting active socket "
-                    + i
-                    + "; total cached sockets = "
-                    + socketPool.count());
+                    "connecting active socket {}; total cached sockets = {}",
+                    i,
+                    socketPool.count());
 
             Task task =
                     new GridFTPActiveConnectTask(
@@ -140,12 +139,10 @@ public class TransferThreadManager
 
         for (int i = 0; i < connections; i++) {
             logger.debug(
-                    "checking out a socket; total cached sockets = "
-                    + socketPool.count()
-                    + "; free = "
-                    + socketPool.countFree()
-                    + "; busy = "
-                    + socketPool.countBusy());
+                    "checking out a socket; total cached sockets = {}; free = {}; busy = {}",
+                    socketPool.count(),
+                    socketPool.countFree(),
+                    socketPool.countBusy());
 
             SocketBox sbox = socketPool.checkOut();
             if (sbox == null) {
@@ -192,12 +189,10 @@ public class TransferThreadManager
 
         for (int i = 0; i < connections; i++) {
             logger.debug(
-                    "checking out a socket; total cached sockets = "
-                    + socketPool.count()
-                    + "; free = "
-                    + socketPool.countFree()
-                    + "; busy = "
-                    + socketPool.countBusy());
+                    "checking out a socket; total cached sockets = {}; free = {}; busy = {}",
+                    socketPool.count(),
+                    socketPool.countFree(),
+                    socketPool.countBusy());
 
             SocketBox sbox = socketPool.checkOut();
             if (sbox == null) {
@@ -294,14 +289,14 @@ public class TransferThreadManager
     public synchronized void transferThreadStarting()
     {
         transferThreadCount++;
-        logger.debug("one transfer started, total active = " +
+        logger.debug("one transfer started, total active = {}",
                      transferThreadCount);
     }
 
     public synchronized void transferThreadTerminating()
     {
         transferThreadCount--;
-        logger.debug("one transfer terminated, total active = " +
+        logger.debug("one transfer terminated, total active = {}",
                      transferThreadCount);
     }
 

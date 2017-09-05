@@ -93,7 +93,7 @@ public class ReplyTest extends TestCase {
     
     //check if bad reply gets detected
     private void parseBadReply(String s) {
-	logger.info("bad construction:" + s);
+	logger.info("bad construction:{}", s);
 	boolean thrown = false;
 	try {
 	    parseReply(s);
@@ -106,7 +106,7 @@ public class ReplyTest extends TestCase {
 
     // fully test reply; check if input values match parsed values
     private void testReply(String uReplyString, int uCode,  String uMessage, boolean uMultiline) {
-	logger.info("testing object: " + uReplyString);
+	logger.info("testing object: {}", uReplyString);
 	int uClass = uCode / 100;
 	try {
 	    Reply r = new Reply(new BufferedReader(new StringReader(uReplyString)));
@@ -132,7 +132,7 @@ public class ReplyTest extends TestCase {
 
     //only parse reply and see if an exception gets thrown
     private void parseReply(String uReplyString) {
-	logger.debug("parsing: " + uReplyString);
+	logger.debug("parsing: {}", uReplyString);
 	try {
 	    Reply r = new Reply(new BufferedReader(new StringReader(uReplyString)));
 	} catch (Exception e) {

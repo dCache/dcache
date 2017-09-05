@@ -210,7 +210,7 @@ public class PerfMarkerTest extends TestCase {
 				  boolean hasBT, long bt,
 				  boolean hasTSC, long tsc) 
     throws Exception{
-	logger.info("checking object:\n" + in);
+	logger.info("checking object:\n{}", in);
 	PerfMarker m = 
 	    new PerfMarker(in);
 
@@ -282,7 +282,7 @@ public class PerfMarkerTest extends TestCase {
        ensure that constructor throws IllegalArgumentException.
      **/
     private void assertConstructorError(String arg) {
-	logger.info("checking bad construction:\n" + arg);
+	logger.info("checking bad construction:\n{}", arg);
 	boolean threwOk = false;
 	try {
 	    new PerfMarker(arg);

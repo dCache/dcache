@@ -214,7 +214,7 @@ public class FTPServerFacade
                     new HostPort(address, localPort);
         }
 
-        logger.debug("started passive server at port " +
+        logger.debug("started passive server at port {}",
                      session.serverAddress.getPort());
         return session.serverAddress;
 
@@ -232,7 +232,7 @@ public class FTPServerFacade
             IOException
     {
         if (logger.isDebugEnabled()) {
-            logger.debug("hostport: " + hp.getHost() + " " + hp.getPort());
+            logger.debug("hostport: {} {}", hp.getHost(), hp.getPort());
         }
         session.serverMode = Session.SERVER_ACTIVE;
         this.remoteServerAddress = hp;
@@ -536,7 +536,7 @@ public class FTPServerFacade
                 if (aborted.flag) {
                     throw new InterruptedException();
                 }
-                logger.debug("slept " + i);
+                logger.debug("slept {}", i);
                 Thread.sleep(ioDelay);
                 i += ioDelay;
                 if (maxWait != WAIT_FOREVER

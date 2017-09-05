@@ -118,8 +118,8 @@ public class TransferSinkThread extends TransferThread
             transferred += buf.getLength();
             sink.write(buf);
         }
-        logger.debug("finished receiving data; received " +
-                     transferred + " bytes");
+        logger.debug("finished receiving data; received {} bytes",
+                     transferred);
     }
 
     protected void shutdown(Object quitToken) throws IOException

@@ -74,9 +74,9 @@ public class TaskThread implements Runnable
             if (task == null) break;
             exception = null;
             try {
-                logger.debug("executing task: " + task.toString());
+                logger.debug("executing task: {}", task.toString());
                 task.execute();
-                logger.debug("finished task: " + task.toString());
+                logger.debug("finished task: {}", task.toString());
             } catch (Exception e) {
                 exception = e;
             }

@@ -253,13 +253,13 @@ public class ByteRangeListTest extends TestCase {
 
 	String vBefore = list.toFtpCmdArgument();
 	String rBefore = newRange.toString();
-	logger.info("merging range: " + vBefore + " + " + rBefore);
+	logger.info("merging range: {} + {}", vBefore, rBefore);
 
 	// test merge
 
 	list.merge(newRange);
 	String actualResult = list.toFtpCmdArgument();
-	logger.debug("  -> " + actualResult);
+	logger.debug("  -> {}", actualResult);
 	assertTrue(expectedResult.equals(actualResult));
 	logger.debug("ok, merged as expected.");
 
@@ -281,13 +281,13 @@ public class ByteRangeListTest extends TestCase {
      **/
     private void assertMerge(Vector v, String result) {
 	
-	logger.info("merging vector of ranges: " + result);
+	logger.info("merging vector of ranges: {}", result);
 
 	ByteRangeList list1 = new ByteRangeList();
 	for (int i=0; i<v.size(); i++) {
 	    list1.merge((ByteRange)v.elementAt(i));
 	}
-	logger.debug("    -> " + list1.toFtpCmdArgument());
+	logger.debug("    -> {}", list1.toFtpCmdArgument());
 	assertTrue(list1.toFtpCmdArgument().equals(result));
 
  	logger.debug("merging one by one again..");
@@ -295,14 +295,14 @@ public class ByteRangeListTest extends TestCase {
 	for (int i=0; i<v.size(); i++) {
 	    list3.merge((ByteRange)v.elementAt(i));
 	}
-	logger.debug(" .. -> " + list3.toFtpCmdArgument());
+	logger.debug(" .. -> {}", list3.toFtpCmdArgument());
 	assertTrue(list3.toFtpCmdArgument().equals(result));
 
 
 	logger.debug("merging vector at once");
 	ByteRangeList list2 = new ByteRangeList();
 	list2.merge(v);
-	logger.debug(" .. -> " + list2.toFtpCmdArgument());
+	logger.debug(" .. -> {}", list2.toFtpCmdArgument());
 	assertTrue(list2.toFtpCmdArgument().equals(result));    
 
     }
