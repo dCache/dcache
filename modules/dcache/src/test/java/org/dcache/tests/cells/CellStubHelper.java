@@ -1,6 +1,5 @@
 package org.dcache.tests.cells;
 
-import com.google.common.primitives.Ints;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
@@ -87,7 +86,7 @@ public abstract class CellStubHelper
         @Override
         public int compareTo(Handler handler)
         {
-            return Ints.compare(getStep(), handler.getStep());
+            return Integer.compare(getStep(), handler.getStep());
         }
 
         public CellMessage call(CellMessage msg)

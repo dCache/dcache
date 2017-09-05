@@ -69,7 +69,6 @@ package org.dcache.srm.scheduler;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
-import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -543,7 +542,7 @@ public class Scheduler <T extends Job>
         {
             this.formatter = new Formatter(appendable);
             this.fieldWidth = fieldWidth;
-            this.baseWidth = Ints.max(width1, width2 - fieldWidth - 4) + 1;
+            this.baseWidth = Integer.max(width1, width2 - fieldWidth - 4) + 1;
 
             this.field2 = String.format("    %%-%ds %%%dd     [%%s]\n", baseWidth + fieldWidth + 4, fieldWidth);
             this.field2NoState = String.format("    %%-%ds %%%dd\n", baseWidth + fieldWidth + 4, fieldWidth);
@@ -575,7 +574,7 @@ public class Scheduler <T extends Job>
         int fieldWidth = Math.max(3, String.valueOf(getMaxRequests()).length());
         InfoFormatter formatter =
                 new InfoFormatter(appendable, fieldWidth,
-                                  Ints.max(24, 20 + fieldWidth),
+                                  Integer.max(24, 20 + fieldWidth),
                                   28 + fieldWidth);
         formatter.field("Queued", getTotalQueued(), State.QUEUED);
         formatter.field("In progress (max " + getMaxInProgress() + ")", getTotalInprogress(), State.INPROGRESS);

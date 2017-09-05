@@ -1,7 +1,6 @@
 package org.dcache.pinmanager;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Test;
 
@@ -669,7 +668,7 @@ class TestExecutor
         @Override
         public int compareTo(Delayed o)
         {
-            return Longs.compare(getDelay(TimeUnit.MILLISECONDS), o.getDelay(TimeUnit.MILLISECONDS));
+            return Long.compare(getDelay(TimeUnit.MILLISECONDS), o.getDelay(TimeUnit.MILLISECONDS));
         }
 
         @Override

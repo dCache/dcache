@@ -2,7 +2,6 @@ package org.dcache.webadmin.view.pages.activetransfers;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Ordering;
-import com.google.common.primitives.Longs;
 import org.apache.wicket.authroles.authorization.strategies.role.Roles;
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.DataTable;
@@ -211,7 +210,7 @@ public class ActiveTransfersPage extends BasePage
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return Longs.compare(o1.getSerialId(), o2.getSerialId());
+                return Long.compare(o1.getSerialId(), o2.getSerialId());
             }
         },
         PROTOCOL {
@@ -281,7 +280,7 @@ public class ActiveTransfersPage extends BasePage
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return Longs.compare(o1.getWaitingSince(), o2.getWaitingSince());
+                return Long.compare(o1.getWaitingSince(), o2.getWaitingSince());
             }
         },
         STATE {
@@ -295,21 +294,21 @@ public class ActiveTransfersPage extends BasePage
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return Longs.compare(o1.getBytesTransferred(), o2.getBytesTransferred());
+                return Long.compare(o1.getBytesTransferred(), o2.getBytesTransferred());
             }
         },
         RATE {
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return Longs.compare(o1.getTransferRate(), o2.getTransferRate());
+                return Long.compare(o1.getTransferRate(), o2.getTransferRate());
             }
         },
         JOB {
             @Override
             public int compare(ActiveTransfersBean o1, ActiveTransfersBean o2)
             {
-                return Longs.compare(o1.getMoverId(), o2.getMoverId());
+                return Long.compare(o1.getMoverId(), o2.getMoverId());
             }
         }
     }

@@ -16,8 +16,6 @@
  */
 package org.dcache.chimera;
 
-import com.google.common.primitives.Longs;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
@@ -404,7 +402,7 @@ public class FsInode {
 
     @Override
     public int hashCode() {
-        return Longs.hashCode(_ino);
+        return Long.hashCode(_ino);
     }
     // only package classes allowed to use this
     private boolean _ioEnabled;
