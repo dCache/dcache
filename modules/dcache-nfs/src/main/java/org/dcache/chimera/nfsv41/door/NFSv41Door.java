@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -71,7 +72,6 @@ import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.poolmanager.PoolManagerStub;
-import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.FsExport;
@@ -129,6 +129,7 @@ import org.dcache.xdr.gss.GssSessionManager;
 import static java.util.stream.Collectors.toList;
 
 import java.util.stream.Stream;
+
 import javax.annotation.concurrent.GuardedBy;
 
 import org.dcache.auth.attributes.Restrictions;
@@ -249,8 +250,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     /**
      * {@link ExecutorService} used to issue call-backs to the client.
      */
-    private final CDCScheduledExecutorServiceDecorator<ScheduledExecutorService> _callbackExecutor =
-            new CDCScheduledExecutorServiceDecorator<>(Executors.newScheduledThreadPool(1));
+    private final ScheduledExecutorService _callbackExecutor =
+            new CDCScheduledExecutorServiceDecorator<>(Executors.newScheduledThreadPool(1, new ThreadFactoryBuilder().setNameFormat("callback-%d").build()));
 
     /**
      * Exception thrown by transfer if accessed after mover have finished.
@@ -381,6 +382,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     public void destroy() throws IOException {
         _rpcService.stop();
+        _callbackExecutor.shutdown();
         if (_nfs4 != null) {
             _nfs4.getStateHandler().shutdown();
             _proxyIoFactory.shutdown();
