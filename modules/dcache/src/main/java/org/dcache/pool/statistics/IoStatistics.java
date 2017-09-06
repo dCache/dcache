@@ -35,13 +35,13 @@ public class IoStatistics {
      * The minimum value of speeds of all read requests;
      * initial value is maximum double value
      */
-    private double _minReadSpeed = Double.MAX_VALUE;
+    private double _minReadSpeed = 0.0;
 
     /**
      * The maximum value of speeds of all read requests
      * initial value is minimum double value
      */
-    private double _maxReadSpeed = Double.MIN_VALUE;
+    private double _maxReadSpeed = 0.0;
 
     /**
      * The average value of speeds of all read requests
@@ -91,12 +91,12 @@ public class IoStatistics {
     /**
      * The minimum value of speeds of all write requests
      */
-    private double _minWriteSpeed = Double.MAX_VALUE;
+    private double _minWriteSpeed = 0.0;
 
     /**
      * The maximum value of speeds of all write requests
      */
-    private double _maxWriteSpeed = Double.MIN_VALUE;
+    private double _maxWriteSpeed = 0.0;
 
     /**
      * The average value of speeds of all write requests
@@ -153,8 +153,8 @@ public class IoStatistics {
             _readSpeeds[_readSpeedsArrayIndex] = readSpeed;
             _readSpeedsArrayIndex = (_readSpeedsArrayIndex + 1) % _readSpeeds.length;
 
-            _minReadSpeed = Math.min(readSpeed, _minReadSpeed);
-            _maxReadSpeed = Math.max(readSpeed, _maxReadSpeed);
+            _minReadSpeed = _readRequestNum == 0 ? readSpeed : Math.min(readSpeed, _minReadSpeed);
+            _maxReadSpeed = _readRequestNum == 0 ? readSpeed : Math.max(readSpeed, _maxReadSpeed);
             _avgReadSpeed = calculateNewAvg(_nonNegativeReadRequestNum, _avgReadSpeed, readSpeed);
             _95ReadSpeed = percentile.evaluate(_readSpeeds, 0, Math.min(_readSpeeds.length, _nonNegativeReadRequestNum));
 
@@ -190,8 +190,8 @@ public class IoStatistics {
         _writeSpeedsArrayIndex = (_writeSpeedsArrayIndex + 1) % _writeSpeeds.length;
 
 
-        _minWriteSpeed = Math.min(writeSpeed, _minWriteSpeed);
-        _maxWriteSpeed = Math.max(writeSpeed, _maxWriteSpeed);
+        _minWriteSpeed = _writeRequestNum == 0 ? writeSpeed : Math.min(writeSpeed, _minWriteSpeed);
+        _maxWriteSpeed = _writeRequestNum == 0 ? writeSpeed : Math.max(writeSpeed, _maxWriteSpeed);
         _avgWriteSpeed = calculateNewAvg(_writeRequestNum, _avgWriteSpeed, writeSpeed);
         _95WriteSpeed = percentile.evaluate(_writeSpeeds, 0, Math.min(_writeSpeeds.length, _writeRequestNum + 1));
 
@@ -318,25 +318,25 @@ public class IoStatistics {
     public String toString(){
 
        return MoreObjects.toStringHelper(this)
-                .add("number of read requests: ", _readRequestNum)
-                .add("number of read requests with a negative return value: ", getNegativeReadRequestNum())
-                .add("minimum speed of read requests: ", _minReadSpeed)
-                .add("maximum speed of read requests: ", _maxReadSpeed)
-                .add("average speed of read requests: ", _avgReadSpeed)
-                .add("95 percentile speed of read requests: ", _95ReadSpeed)
-                .add("total read time: ", _totalReadTime)
-                .add("total read bytes: ", _totalReadBytes)
-                .add("total requested read bytes: ", _totalRequestedReadBytes)
-                .add("average requested read bytes: ", _totalRequestedReadBytes)
-                .add("number of write requests: ", _writeRequestNum)
-                .add("minimum speed of write requests: ", _minWriteSpeed)
-                .add("maximum speed of write requests: ", _maxWriteSpeed)
-                .add("average speed of write requests: ", _avgWriteSpeed)
-                .add("95 percentile speed of write requests: ", _95WriteSpeed)
-                .add("total write time: ", _totalWriteTime)
-                .add("total written bytes: ", _totalWrittenBytes)
-                .add("total requested write bytes: ", _totalRequestedWriteBytes)
-                .add("average requested write bytes: ", _totalRequestedWriteBytes)
+                .add("nr_rq_read", _readRequestNum)
+                .add("min_bps_read", _minReadSpeed)
+                .add("max_bps_read", _maxReadSpeed)
+                .add("agv_bps_read", _avgReadSpeed)
+                .add("95p_bps_read", _95ReadSpeed)
+                .add("total_read_time", _totalReadTime)
+                .add("total_read_bytes", _totalReadBytes)
+                .add("total_req_read_bytes", _totalRequestedReadBytes)
+                .add("avg_req_read_bytes", _avgRequestedReadBytes)
+
+                .add("nr_rq_write", _writeRequestNum)
+                .add("min_bps_write", _minWriteSpeed)
+                .add("max_bps_write", _maxWriteSpeed)
+                .add("avg_bps_write", _avgWriteSpeed)
+                .add("95p_bps_write", _95WriteSpeed)
+                .add("total_write_time", _totalWriteTime)
+                .add("total_written_bytes", _totalWrittenBytes)
+                .add("total_req_write_bytes", _totalRequestedWriteBytes)
+                .add("agv_req_write_bytes", _avgRequestedWriteBytes)
                 .toString();
     }
 
