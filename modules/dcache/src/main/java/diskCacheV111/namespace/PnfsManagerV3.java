@@ -897,8 +897,11 @@ public class PnfsManagerV3
         @Override
         public String call() throws CacheException, NoSuchAlgorithmException
         {
-            Checksum checksum = getChecksum(ROOT, pnfsId, type);
-            return (checksum == null) ? "" : checksum.toString();
+            return getChecksums(ROOT, pnfsId).stream()
+                    .filter(c -> c.getType() == type)
+                    .map(Checksum::toString)
+                    .findAny()
+                    .orElse("");
         }
     }
 
@@ -1023,17 +1026,6 @@ public class PnfsManagerV3
         }
 
         _log.warn( sb.toString() );
-    }
-
-    private Checksum getChecksum(Subject subject, PnfsId pnfsId,
-                                 ChecksumType type)
-        throws CacheException, NoSuchAlgorithmException
-    {
-        ChecksumFactory factory = ChecksumFactory.getFactory(type);
-        FileAttributes attributes =
-            _nameSpaceProvider.getFileAttributes(subject, pnfsId,
-                                                 EnumSet.of(FileAttribute.CHECKSUM));
-        return factory.find(attributes.getChecksums());
     }
 
     private Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
