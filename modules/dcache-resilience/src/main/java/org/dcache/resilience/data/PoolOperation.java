@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.resilience.data;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import diskCacheV111.util.CacheException;
 import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.PoolScanTask;
@@ -67,6 +70,8 @@ import org.dcache.resilience.util.PoolScanTask;
  * <p>Object stored in the {@link PoolOperationMap}.</p>
  */
 public final class PoolOperation {
+    private static final Logger LOGGER    = LoggerFactory.getLogger(PoolOperation.class);
+
     private static final String TO_STRING = "(completed: %s / %s : %s%%) – "
                     + "(updated: %s)(scanned: %s)(prev %s)(curr %s)(%s) %s";
 
@@ -190,13 +195,20 @@ public final class PoolOperation {
     }
 
     synchronized void incrementCompleted() {
+        LOGGER.debug("entering incrementCompleted, state {}, children {}, completed = {}.",
+                     state, children, completed );
         if (state == State.RUNNING) {
             ++completed;
         }
+        LOGGER.debug("leaving incrementCompleted, state {}, children {}, completed = {}.",
+                     state, children, completed );
     }
 
     synchronized boolean isComplete() {
-        return children > 0 && children == completed;
+        boolean isComplete = children > 0 && children == completed;
+        LOGGER.debug("isComplete {}, children {}, completed = {}.",
+                     isComplete, children, completed );
+        return isComplete;
     }
 
     synchronized void resetChildren() {
