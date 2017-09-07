@@ -264,7 +264,7 @@ public class FileOperationHandler {
      */
     public boolean handleScannedLocation(FileUpdate data, Integer storageUnit)
                     throws CacheException {
-        LOGGER.trace("handleScannedLocation {}", data);
+        LOGGER.debug("handleScannedLocation {}", data);
 
         /*
          * These must be true during a pool scan.
@@ -279,7 +279,8 @@ public class FileOperationHandler {
             return false;
         }
 
-        LOGGER.trace("handleLocationUpdate, update to be registered: {}", data);
+        LOGGER.debug("handleScannedLocation, update to be registered: {}", data);
+        
         return fileOpMap.register(data);
     }
 
