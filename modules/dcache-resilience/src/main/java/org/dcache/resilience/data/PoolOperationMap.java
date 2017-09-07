@@ -649,7 +649,7 @@ public class PoolOperationMap extends RunnableModule {
      * <p>Called by the {@link FileOperationMap ) when a child operation completes.</p>
      */
     public void update(String pool, PnfsId pnfsId) {
-        LOGGER.trace("Parent {}, child operation for {} has completed.", pool,
+        LOGGER.debug("Parent {}, child operation for {} has completed.", pool,
                      pnfsId);
         lock.lock();
         try {
@@ -671,6 +671,8 @@ public class PoolOperationMap extends RunnableModule {
     public void update(String pool,
                        int children,
                        CacheException exception) {
+        LOGGER.debug("Pool {}, operation update, children {}.", pool,
+                     children);
         lock.lock();
         try {
             PoolOperation operation = get(pool);
@@ -981,6 +983,7 @@ public class PoolOperationMap extends RunnableModule {
     }
 
     private void terminate(String pool, PoolOperation operation) {
+        LOGGER.debug("terminate, pool {}, {}.", pool, operation);
         String operationType = Operation.get(operation.currStatus).name();
 
         if (operation.exception != null) {
