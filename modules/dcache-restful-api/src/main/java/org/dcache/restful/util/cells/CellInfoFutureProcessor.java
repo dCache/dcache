@@ -63,7 +63,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellVersion;
-
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoServiceImpl;
 import org.dcache.util.collector.RequestFutureProcessor;
@@ -106,11 +105,9 @@ public final class CellInfoFutureProcessor extends
     @Override
     protected CellData process(String key,
                                CellInfo received,
-                               long sent){
+                               long sent) {
         CellData cellData = new CellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
+        cellData.setRoundTripTime(System.currentTimeMillis() - sent);
         update(cellData, received);
         return cellData;
     }
