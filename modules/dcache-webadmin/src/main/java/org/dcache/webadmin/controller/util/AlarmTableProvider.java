@@ -231,11 +231,11 @@ public class AlarmTableProvider extends
 
                 switch (property) {
                     case "first":
-                        return compare(dir, entry0.getDateOfFirstArrival(),
-                                            entry1.getDateOfFirstArrival());
+                        return compare(dir, entry0.getFirstArrived(),
+                                            entry1.getFirstArrived());
                     case "last":
-                        return compare(dir, entry0.getDateOfLastUpdate(),
-                                            entry1.getDateOfLastUpdate());
+                        return compare(dir, entry0.getLastUpdate(),
+                                            entry1.getLastUpdate());
                     case "type":
                         return compare(dir, entry0.getType(),
                                             entry1.getType());
