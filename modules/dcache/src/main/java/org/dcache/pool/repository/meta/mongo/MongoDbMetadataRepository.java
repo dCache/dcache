@@ -264,7 +264,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
         try {
             return fileStore.getTotalSpace();
         } catch (IOException e) {
-            LOGGER.warn("Failed to query total space: ", e.toString());
+            LOGGER.warn("Failed to query total space: {}", e.toString());
             return 0;
         }
     }
