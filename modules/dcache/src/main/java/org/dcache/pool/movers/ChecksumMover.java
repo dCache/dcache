@@ -14,16 +14,6 @@ import org.dcache.util.ChecksumType;
 public interface ChecksumMover
 {
     /**
-     * Instruct the mover to enable on-the-fly checksum calculation.  This
-     * method is called before runIO.  The pool provides a default or suggested
-     * algorithm that the mover is free to ignore in favour of some preferred
-     * algorithm.
-     * @param suggestedAlgorithm a default algorithm
-     */
-    void enableTransferChecksum(ChecksumType suggestedAlgorithm)
-            throws NoSuchAlgorithmException;
-
-    /**
      * Return an actual checksum computed on the fly during the transfer. Called
      * after runIO.
      *

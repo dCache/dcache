@@ -165,12 +165,6 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     protected static final String USER_AGENT = "dCache/" +
             Version.of(RemoteHttpDataTransferProtocol.class).getVersion();
 
-    // Pool-supplied factory for on-transfer checksums, null if disabled.
-    private ChecksumFactory _onTransfer;
-
-    // The RepositoryChannel to satisfy on-transfer checksum calculation.
-    private ChecksumChannel _onTransferChecksumChannel;
-
     // The RepositoryChannel to verify data integrety when remote supplied
     // checksums that don't overlap with the on-transfer checksum.
     private ChecksumChannel _remoteSuppliedChecksumChannel;
@@ -239,11 +233,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                     uniqueIndex(Checksums.decodeRfc3230(rfc3230), Checksum::getType);
 
             if (!checksums.isEmpty()) {
-                if (_onTransfer != null && checksums.containsKey(_onTransfer.getType())) {
-                    _remoteSuppliedChecksum = checksums.get(_onTransfer.getType());
-                } else {
-                    _remoteSuppliedChecksum = Checksums.preferrredOrder().min(checksums.values());
-                }
+                _remoteSuppliedChecksum = Checksums.preferrredOrder().min(checksums.values());
             }
 
             if (_remoteSuppliedChecksum == null && info.isVerificationRequired()) {
@@ -266,8 +256,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         }
 
         if (_remoteSuppliedChecksum != null) {
-            Set<Checksum> transferChecksum  = (_remoteSuppliedChecksumChannel != null) ?
-                _remoteSuppliedChecksumChannel.getChecksums() : _onTransferChecksumChannel.getChecksums();
+            Set<Checksum> transferChecksum  = _remoteSuppliedChecksumChannel.getChecksums();
 
             if (!transferChecksum.stream().anyMatch(c -> c.equals(_remoteSuppliedChecksum)))
             {
@@ -294,12 +283,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
     {
         RepositoryChannel channel = baseChannel;
 
-        if (_onTransfer != null) {
-            channel = _onTransferChecksumChannel = new ChecksumChannel(channel, Sets.newHashSet(_onTransfer));
-        }
-
-        if (_remoteSuppliedChecksum != null &&
-                (_onTransfer == null || _onTransfer.getType() != _remoteSuppliedChecksum.getType())) {
+        if (_remoteSuppliedChecksum != null) {
             try {
                 channel = _remoteSuppliedChecksumChannel = new ChecksumChannel(channel,
                         Sets.newHashSet(ChecksumFactory.getFactoryFor(_remoteSuppliedChecksum)));
@@ -605,18 +589,11 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         return channel == null ? 0 : channel.getTransferTime();
     }
 
-    @Override
-    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
-            throws NoSuchAlgorithmException
-    {
-        _onTransfer = ChecksumFactory.getFactory(suggestedAlgorithm);
-    }
-
     @Nonnull
     @Override
     public Set<Checksum> getActualChecksums()
     {
-        return _onTransferChecksumChannel != null ? _onTransferChecksumChannel.getChecksums() : Collections.emptySet();
+        return Collections.emptySet();
     }
 
     @Override

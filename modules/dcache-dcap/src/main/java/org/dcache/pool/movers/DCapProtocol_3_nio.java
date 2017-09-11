@@ -1,6 +1,5 @@
 package org.dcache.pool.movers;
 
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,16 +15,12 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DCapProrocolChallenge;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
@@ -80,9 +75,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private PnfsId  _pnfsId;
     private int     _sessionId       = -1;
 
-    private final EnumSet<ChecksumType> _checksums = EnumSet.noneOf(ChecksumType.class);
     private Checksum  _clientChecksum;
-    private Set<Checksum> _calculatedChecksums = Collections.emptySet();
 
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256), KiB.toBytes(256), KiB.toBytes(256));
     private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1), MiB.toBytes(1));
@@ -315,7 +308,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     @Override
     public void runIO(FileAttributes fileAttributes,
-                      RepositoryChannel  channel,
+                      RepositoryChannel  fileChannel,
                       ProtocolInfo protocol,
                       Allocator    allocator,
                       Set<? extends OpenOption> access)
@@ -333,9 +326,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         StorageInfo storage = fileAttributes.getStorageInfo();
         _pnfsId              = fileAttributes.getPnfsId();
         _spaceMonitorHandler = new SpaceMonitorHandler(allocator);
-        RepositoryChannel fileChannel = _checksums.isEmpty()
-                ? channel
-                : ChecksumChannel.createWithTypes(channel, _checksums);
         boolean isWrite = access.contains(StandardOpenOption.WRITE);
 
         ////////////////////////////////////////////////////////////////////////
@@ -764,9 +754,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }catch(Exception e){
             ioException = e;
         }finally{
-            if (fileChannel instanceof ChecksumChannel) {
-                _calculatedChecksums = ((ChecksumChannel)fileChannel).getChecksums();
-            }
 
             try{
                 _logSocketIO.debug("Socket CLOSE remote = {}:{} local {}:{}",
@@ -1136,13 +1123,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     }
 
     @Override
-    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
-            throws NoSuchAlgorithmException
-    {
-        _checksums.add(suggestedAlgorithm);
-    }
-
-    @Override
     public Checksum getExpectedChecksum(){
         return  _clientChecksum ;
     }
@@ -1151,6 +1131,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     @Override
     public Set<Checksum> getActualChecksums()
     {
-        return _calculatedChecksums;
+        return Collections.emptySet();
     }
 }

@@ -368,12 +368,6 @@ public class RemoteGsiftpTransferProtocol
     }
 
     @Override
-    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
-            throws NoSuchAlgorithmException
-    {
-    }
-
-    @Override
     public synchronized void receiveEBlock(byte[] array,
                                            int offset,
                                            int length,

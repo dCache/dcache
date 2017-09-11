@@ -20,10 +20,10 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.FileSystems;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
@@ -516,13 +516,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
     }
 
-    @Override
-    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
-            throws NoSuchAlgorithmException
-    {
-        _checksums.add(suggestedAlgorithm);
-    }
-
     /** Part of the ChecksumMover interface. */
     @Override
     public Checksum getExpectedChecksum()
@@ -690,12 +683,15 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             mode.setPartialRetrieveParameters(offset, size);
 
             if (digest.length() > 0) {
-                mover.enableTransferChecksum(ChecksumType.getChecksumType(digest));
+                ChecksumType type = ChecksumType.getChecksumType(digest);
+                fileChannel = ChecksumChannel.createWithTypes(fileChannel, EnumSet.of(type));
             }
 
             mover.transfer(fileChannel, role, mode, null);
-            if (digest.length() > 0) {
-                System.out.println(mover.getActualChecksums());
+
+            if (fileChannel instanceof ChecksumChannel) {
+                Set<Checksum> checksums = ((ChecksumChannel)fileChannel).getChecksums();
+                System.out.println(checksums.stream().map(Checksum::toString).collect(Collectors.joining(", ")));
             }
         } catch (Exception e) {
             e.printStackTrace();
