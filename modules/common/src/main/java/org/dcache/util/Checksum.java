@@ -6,6 +6,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 
 import java.io.Serializable;
+import java.security.MessageDigest;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -35,6 +36,11 @@ public class Checksum  implements Serializable
     public Checksum(ChecksumType type, byte[] value)
     {
         this(type, bytesToHexString(value));
+    }
+
+    public Checksum(MessageDigest digest)
+    {
+        this(ChecksumType.getChecksumType(digest.getAlgorithm()), digest.digest());
     }
 
     /**

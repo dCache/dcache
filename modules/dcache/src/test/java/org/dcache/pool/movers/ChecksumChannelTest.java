@@ -1,6 +1,5 @@
 package org.dcache.pool.movers;
 
-import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,7 +12,7 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -55,7 +54,7 @@ public class ChecksumChannelTest {
         testFile = Files.createTempFile("ChecksumChannelTest", ".tmp");
         RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, FileStore.O_RW);
         ChecksumFactory checksumFactory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        chksumChannel = new ChecksumChannel(mockRepositoryChannel, Sets.newHashSet(checksumFactory));
+        chksumChannel = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(checksumFactory.getType()));
         chksumChannel._readBackBuffer = ByteBuffer.allocate(2);
         chksumChannel._zerosBuffer = ByteBuffer.allocate(1);
         expectedChecksum = new Checksum(ChecksumType.MD5_TYPE, checksumFactory.create().digest(data));
@@ -163,8 +162,7 @@ public class ChecksumChannelTest {
     public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithSingleBuffer () throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
-        ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers[0]);
     }
@@ -173,8 +171,7 @@ public class ChecksumChannelTest {
     public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithSingleBufferAndPosition () throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
-        ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers[0], 0);
     }
@@ -184,8 +181,7 @@ public class ChecksumChannelTest {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(1);
         when(mockRepositoryChannel.read(any(), eq(3L))).thenReturn(1);
-        ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers[0], 0);
         csc.write(buffers[1], 1);
@@ -199,8 +195,7 @@ public class ChecksumChannelTest {
     public void shouldNotUpdateChecksumForIncompleteWritesWithZeroBytesWritesToChannelWithMultipleBuffers () throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
-        ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers);
     }
@@ -209,8 +204,7 @@ public class ChecksumChannelTest {
     public void shouldNotUpdateChecksumForIncompleteWritesWithZeroByteWritesToChannelWithMultipleBuffersAndOffset () throws IOException, NoSuchAlgorithmException {
         RepositoryChannel mockRepositoryChannel = mock(RepositoryChannel.class);
         when(mockRepositoryChannel.write(any(), anyInt())).thenReturn(0);
-        ChecksumFactory factory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
-        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, new HashSet<>(Arrays.asList(factory)));
+        ChecksumChannel csc = new ChecksumChannel(mockRepositoryChannel, EnumSet.of(ChecksumType.MD5_TYPE));
 
         csc.write(buffers, 0, blockcount);
     }

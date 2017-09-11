@@ -29,12 +29,12 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
@@ -284,13 +284,8 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         RepositoryChannel channel = baseChannel;
 
         if (_remoteSuppliedChecksum != null) {
-            try {
-                channel = _remoteSuppliedChecksumChannel = new ChecksumChannel(channel,
-                        Sets.newHashSet(ChecksumFactory.getFactoryFor(_remoteSuppliedChecksum)));
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("cannot find algorithm: " +
-                        e.getMessage(), e);
-            }
+            channel = _remoteSuppliedChecksumChannel = new ChecksumChannel(channel,
+                    EnumSet.of(_remoteSuppliedChecksum.getType()));
         }
 
         return channel;

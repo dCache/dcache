@@ -1918,7 +1918,7 @@ public abstract class AbstractFtpDoorV1
                 _optCheckSumFactory = null;
             }
             reply("200 OK");
-        } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
+        } catch (IllegalArgumentException e) {
             throw new FTPCommandException(504, "Unsupported checksum type: " + algo);
         }
     }
@@ -2860,7 +2860,7 @@ public abstract class AbstractFtpDoorV1
                 ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
             _checkSum = _checkSumFactory.create(value);
             reply("213 OK");
-        } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             _checkSumFactory = null;
             _checkSum = null;
             throw new FTPCommandException(504, "Unsupported checksum type:" + type);

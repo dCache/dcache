@@ -25,12 +25,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 
 /**
  * Encapsulates checksum policies.
@@ -75,17 +75,14 @@ public interface ChecksumModule
     boolean hasPolicy(PolicyFlag policy);
 
     /**
-     * Returns a set of supported checksum factories for each of the known checksums
-     * of a file, or a default factory if none are supported or known.
+     * A set of checksum types that should be calculated when the pool is
+     * accepting data for a new file.
      *
-     * @param handle A replica descriptor
-     * @return Set of  checksum factories for the provided checksums
-     * @throws NoSuchAlgorithmException If no suitable checksum algorithm is supported
-     * @throws CacheException If the checksums of the file could not be retrieved
+     * @param handle A write descriptor
+     * @return set of ChecksumType that should be calculated
      */
     @Nonnull
-    Set<ChecksumFactory> getProvidedChecksumsFactories(ReplicaDescriptor handle)
-            throws NoSuchAlgorithmException, CacheException;
+    Set<ChecksumType> checksumsWhenWriting(ReplicaDescriptor handle);
 
     /**
      * Applies the post-transfer checksum policy.

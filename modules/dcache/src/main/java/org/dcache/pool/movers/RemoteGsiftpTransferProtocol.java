@@ -311,7 +311,7 @@ public class RemoteGsiftpTransferProtocol
             if (_ftpCksm != null ){
                 return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type)).create(_ftpCksm.value);
             }
-        } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             _log.error("Checksum algorithm is not supported: {}", e.getMessage());
         }
         return null;
@@ -351,7 +351,7 @@ public class RemoteGsiftpTransferProtocol
             URI src_url =  new URI(remoteGsiftpProtocolInfo.getGsiftpUrl());
             _ftpCksm = _client.negotiateCksm(src_url.getPath());
             return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
-        } catch (NoSuchAlgorithmException | GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
+        } catch (GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
             _log.error("Checksum algorithm is not supported: {}", e.getMessage());
         } catch (IOException e) {
             _log.error("I/O failure talking to FTP server: {}", e.getMessage());

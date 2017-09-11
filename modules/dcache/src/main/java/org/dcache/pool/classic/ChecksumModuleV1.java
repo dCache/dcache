@@ -18,8 +18,9 @@
 package org.dcache.pool.classic;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
@@ -29,7 +30,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -39,18 +39,19 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileCorruptedCacheException;
+
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
-import org.dcache.util.Checksums;
 import org.dcache.pool.classic.json.ChecksumModuleData;
 
 import static com.google.common.collect.Iterables.concat;
@@ -65,6 +66,8 @@ public class ChecksumModuleV1
     implements CellCommandListener, ChecksumModule, CellSetupProvider, CellInfoProvider,
                 PoolDataBeanProvider<ChecksumModuleData>
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChecksumModuleV1.class);
+
     private final EnumSet<PolicyFlag> _policy = EnumSet.of(ON_TRANSFER, ENFORCE_CRC);
 
     private double _throughputLimit = Double.POSITIVE_INFINITY;
@@ -359,13 +362,16 @@ public class ChecksumModuleV1
 
     @Nonnull
     @Override
-    public Set<ChecksumFactory> getProvidedChecksumsFactories(ReplicaDescriptor handle)
-            throws NoSuchAlgorithmException, CacheException
+    public Set<ChecksumType> checksumsWhenWriting(ReplicaDescriptor handle)
     {
-        List<Checksum> existingChecksumsByPreference = Checksums.preferrredOrder()
-                                                                .sortedCopy(
-                                                                        Iterables.concat(handle.getChecksums()));
-        return ChecksumFactory.getFactories(existingChecksumsByPreference, getDefaultChecksumType());
+        EnumSet<ChecksumType> types = EnumSet.noneOf(ChecksumType.class);
+        try {
+            handle.getChecksums().forEach(c -> types.add(c.getType()));
+        } catch (CacheException e) {
+            LOGGER.warn("Failed to fetch checksum information: {}", e.getMessage());
+        }
+        types.add(getDefaultChecksumType());
+        return types;
     }
 
     @Override

@@ -30,12 +30,10 @@ import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.OpenOption;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -50,6 +48,7 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 
@@ -76,7 +75,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     protected final String _transferPath;
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
-    private final Set<ChecksumFactory> _checksumFactories;
+    private final Set<ChecksumType> _checksumTypes;
     private volatile ChecksumChannel _checksumChannel;
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
@@ -98,8 +97,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         _pathToDoor = pathToDoor;
         _handle = handle;
         _transferService = transferService;
-        _checksumFactories = getChecksumFactoriesFor(checksumModule,
-                                                     handle);
+        _checksumTypes = checksumModule.checksumsWhenWriting(handle);
     }
 
     @Override
@@ -261,7 +259,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
             channel = _handle.createChannel();
             if (getIoMode().contains(StandardOpenOption.WRITE)) {
                 try {
-                    channel = _checksumChannel = new ChecksumChannel(channel, _checksumFactories);
+                    channel = _checksumChannel = new ChecksumChannel(channel, _checksumTypes);
                 } catch (Throwable t) {
                     /* This should only happen in case of JVM Errors or if the checksum digest cannot be
                      * instantiated (which, barring bugs, should never happen).
@@ -310,20 +308,6 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
             sb.append((System.currentTimeMillis() - lastTransferTime) / 1000L);
         }
         return sb.toString();
-    }
-
-
-    private static Set<ChecksumFactory> getChecksumFactoriesFor(ChecksumModule checksumModule,
-                                                                ReplicaDescriptor handle)
-    {
-        try {
-            return checksumModule.getProvidedChecksumsFactories(handle);
-        } catch (NoSuchAlgorithmException e) {
-            LOGGER.error("Failed to instantiate mover due to unsupported checksum type: {}", e.getMessage());
-        } catch (CacheException e) {
-            LOGGER.error("Failed to instantiate mover: {}", e.getMessage());
-        }
-        return null;
     }
 
     protected abstract String getStatus();

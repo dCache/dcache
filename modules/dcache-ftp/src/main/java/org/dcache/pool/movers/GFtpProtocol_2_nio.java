@@ -246,7 +246,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _blockLog         = new BlockLog();
         _fileChannel = _checksums.isEmpty()
                 ? fileChannel
-                : ChecksumChannel.createWithTypes(fileChannel, _checksums);
+                : new ChecksumChannel(fileChannel, _checksums);
         _allocator        = allocator;
         _reservedSpace    = 0;
         _spaceUsed        = 0;
@@ -684,7 +684,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
             if (digest.length() > 0) {
                 ChecksumType type = ChecksumType.getChecksumType(digest);
-                fileChannel = ChecksumChannel.createWithTypes(fileChannel, EnumSet.of(type));
+                fileChannel = new ChecksumChannel(fileChannel, EnumSet.of(type));
             }
 
             mover.transfer(fileChannel, role, mode, null);
