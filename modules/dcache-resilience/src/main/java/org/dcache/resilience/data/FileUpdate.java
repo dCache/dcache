@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.NoSuchElementException;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -76,6 +77,7 @@ import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.vehicles.FileAttributes;
@@ -294,7 +296,13 @@ public final class FileUpdate {
          * Storage unit is not recorded in checkpoint, so it should
          * be set here.
          */
-        unitIndex = poolInfoMap.getStorageUnitIndex(attributes);
+        try {
+            unitIndex = poolInfoMap.getStorageUnitIndex(attributes);
+        } catch (NoSuchElementException e) {
+            LOGGER.error("validateForAction, cannot handle {}: {}.",
+                         pnfsId, new ExceptionMessage(e));
+            return false;
+        }
 
         LOGGER.trace("validateForAction {} got unit from attributes {}.",
                      pnfsId, unitIndex);
