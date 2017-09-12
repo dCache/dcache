@@ -267,10 +267,16 @@ public class FileOperationHandler {
         LOGGER.trace("handleScannedLocation {}", data);
 
         /*
-         * These must be true during a pool scan.
+         * Prefetch all necessary file attributes, including current locations.
          */
+        if (!data.validateAttributes(namespace)) {
+            /*
+             * Could be the result of deletion from namespace during the scan.
+             */
+            return false;
+        }
+
         data.verifyPoolGroup(poolInfoMap);
-        data.validateAttributes(namespace);
 
         /*
          *  Determine if action needs to be taken.

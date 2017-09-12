@@ -133,8 +133,18 @@ public final class FileUpdate {
                     return null;
                 }
 
+                if (messageType != MessageType.ADD_CACHE_LOCATION) {
+                    /*
+                     * Since the scan began or the broken file reported,
+                     * the file has been removed.
+                     */
+                    throw new FileNotFoundCacheException
+                                    (String.format("File no longer found: %s"
+                                                    , pnfsId));
+                }
+
                 /*
-                 *  Due to a possible race between PnfsManager and resilience
+                 *  May be due to a race between PnfsManager and resilience
                  *  to process the message into/from the namespace.
                  *
                  *  We can assume here that this is a new file, so
@@ -152,10 +162,6 @@ public final class FileUpdate {
                          attributes.getLocations());
             return attributes;
         } catch (FileNotFoundCacheException e) {
-            /*
-             * Most likely we received a PnfsClearCacheLocationMessage
-             * as the result of a file deletion.
-             */
             LOGGER.debug("{}; {} has likely been deleted from the namespace.",
                          e.getMessage(),
                          pnfsId);
