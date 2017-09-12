@@ -17,24 +17,32 @@
  */
 package org.dcache.pool.classic;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -43,6 +51,7 @@ import diskCacheV111.util.FileCorruptedCacheException;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
@@ -54,25 +63,27 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.pool.classic.json.ChecksumModuleData;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
 import static org.dcache.pool.classic.ChecksumModule.PolicyFlag.*;
-import static org.dcache.util.ByteUnit.BYTES;
-import static org.dcache.util.ByteUnit.MiB;
+import static org.dcache.util.ByteUnit.*;
 import static org.dcache.util.ChecksumType.ADLER32;
-import static org.dcache.util.ChecksumType.getChecksumType;
+import static org.dcache.util.ChecksumType.MD5_TYPE;
 
 public class ChecksumModuleV1
     implements CellCommandListener, ChecksumModule, CellSetupProvider, CellInfoProvider,
                 PoolDataBeanProvider<ChecksumModuleData>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChecksumModuleV1.class);
+    private static final Map<ChecksumType,String> CHECKSUM_NAMES = ImmutableMap.of(ADLER32, "adler32", MD5_TYPE, "md5");
+    private static final long MILLISECONDS_IN_SECOND = 1000;
 
     private final EnumSet<PolicyFlag> _policy = EnumSet.of(ON_TRANSFER, ENFORCE_CRC);
 
     private double _throughputLimit = Double.POSITIVE_INFINITY;
     private long _scrubPeriod = TimeUnit.HOURS.toMillis(24L);
-    private ChecksumType _defaultChecksumType = ADLER32;
+    private EnumSet<ChecksumType> _defaultChecksumType = EnumSet.of(ADLER32);
 
     private final CopyOnWriteArrayList<Runnable> listeners = new CopyOnWriteArrayList<>();
 
@@ -84,11 +95,6 @@ public class ChecksumModuleV1
     public void removeListener(Runnable listener)
     {
         listeners.remove(listener);
-    }
-
-    public synchronized ChecksumType getDefaultChecksumType()
-    {
-        return _defaultChecksumType;
     }
 
     public synchronized long getScrubPeriod()
@@ -104,7 +110,7 @@ public class ChecksumModuleV1
     @Override
     public synchronized void printSetup(PrintWriter pw)
     {
-        pw.println("csm set checksumtype " + _defaultChecksumType);
+        pw.println("csm set checksumtype " + defaultChecksumTypes());
         if (hasPolicy(SCRUB)) {
             pw.print("csm set policy -scrub=on");
             pw.print(" -limit=" +
@@ -123,6 +129,12 @@ public class ChecksumModuleV1
         pw.println("");
     }
 
+    @GuardedBy("this")
+    private String defaultChecksumTypes()
+    {
+         return _defaultChecksumType.stream().map(CHECKSUM_NAMES::get).collect(Collectors.joining(" "));
+    }
+
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
@@ -133,7 +145,7 @@ public class ChecksumModuleV1
     public synchronized ChecksumModuleData getDataObject() {
         ChecksumModuleData info = new ChecksumModuleData();
         info.setLabel("Checksum Module");
-        info.setType(_defaultChecksumType.getName());
+        info.setType(defaultChecksumTypes());
         Map<String, String> policies = new HashMap<>();
         _policy.stream().forEach((p) -> policies.put(p.name(), getPolicy(p)));
         policies.put(ON_TRANSFER.name(), "on");
@@ -328,24 +340,33 @@ public class ChecksumModuleV1
 
     @AffectsSetup
     @Command(name = "csm set checksumtype",
-            description = "Sets the default checksum type to compute and store for new files.\n\n" +
-                    "Unless the client has specified a checksum of a different type, the default " +
-                    "checksum defines the checksum that is computed for each new file and stored " +
-                    "in the name space.")
+            description = "Sets the default checksum types to compute and store for new files.\n\n" +
+                    "Checksums of this type are always calculated and stored in the namespace.  " +
+                    "Some protocols allow the client to request additional checksum types, which " +
+                    "will also be stored in the namespace.")
     public class SetChecksumTypeCommand implements Callable<String>
     {
         @Argument(valueSpec = "adler32|md5")
-        String type;
+        String[] arguments;
 
         @Override
-        public String call() throws IllegalArgumentException
+        public String call() throws CommandException
         {
-            ChecksumType checksumType = getChecksumType(type);
+            EnumSet<ChecksumType> newChecksums = EnumSet.noneOf(ChecksumType.class);
+            for (String argument : arguments) {
+                newChecksums.add(CHECKSUM_NAMES.entrySet().stream()
+                        .filter(e -> e.getValue().equalsIgnoreCase(argument))
+                        .map(Map.Entry::getKey)
+                        .findFirst()
+                        .orElseThrow(() -> new CommandException("Unknown checksum type " + argument)));
+            }
+            String checksumList;
             synchronized (ChecksumModuleV1.this) {
-                _defaultChecksumType = checksumType;
+                _defaultChecksumType = newChecksums;
+                checksumList = defaultChecksumTypes();
             }
             listeners.forEach(Runnable::run);
-            return "New checksumtype : "+ checksumType;
+            return "New checksumtype : "+ checksumList;
         }
     }
 
@@ -364,13 +385,12 @@ public class ChecksumModuleV1
     @Override
     public Set<ChecksumType> checksumsWhenWriting(ReplicaDescriptor handle)
     {
-        EnumSet<ChecksumType> types = EnumSet.noneOf(ChecksumType.class);
+        EnumSet<ChecksumType> types = EnumSet.copyOf(_defaultChecksumType);
         try {
             handle.getChecksums().forEach(c -> types.add(c.getType()));
         } catch (CacheException e) {
             LOGGER.warn("Failed to fetch checksum information: {}", e.getMessage());
         }
-        types.add(getDefaultChecksumType());
         return types;
     }
 
@@ -382,12 +402,17 @@ public class ChecksumModuleV1
         Iterable<Checksum> expectedChecksums = handle.getChecksums();
         if (hasPolicy(ON_WRITE)
                 || (hasPolicy(ENFORCE_CRC) && isEmpty(expectedChecksums) && isEmpty(actualChecksums))) {
-            ChecksumFactory factory = ChecksumFactory.getFactory(
-                    concat(expectedChecksums, actualChecksums), getDefaultChecksumType());
+            EnumSet<ChecksumType> types = EnumSet.copyOf(_defaultChecksumType);
+            expectedChecksums.forEach(c -> types.add(c.getType()));
+            actualChecksums.forEach(c -> types.add(c.getType())); // REVISIT do we really need to recalculate these?
+
+            List<MessageDigest> digests = types.stream()
+                    .map(ChecksumFactory::getFactory)
+                    .map(ChecksumFactory::create)
+                    .collect(Collectors.toList());
+
             try (RepositoryChannel channel = handle.createChannel()) {
-                actualChecksums
-                        = concat(actualChecksums,
-                                 Collections.singleton(factory.computeChecksum(channel)));
+                actualChecksums = computeChecksums(channel, digests);
             }
         }
         compareChecksums(expectedChecksums, actualChecksums);
@@ -441,8 +466,14 @@ public class ChecksumModuleV1
     private Iterable<Checksum> verifyChecksum(RepositoryChannel channel, Iterable<Checksum> expectedChecksums, double throughputLimit)
             throws NoSuchAlgorithmException, IOException, InterruptedException, CacheException
     {
-        ChecksumFactory factory = ChecksumFactory.getFactory(expectedChecksums, getDefaultChecksumType());
-        Iterable<Checksum> actualChecksums = Collections.singleton(factory.computeChecksum(channel, throughputLimit));
+        checkArgument(!Iterables.isEmpty(expectedChecksums), "No expected checksums");
+
+        List<MessageDigest> digests = StreamSupport.stream(expectedChecksums.spliterator(), false)
+                .map(ChecksumFactory::getFactoryFor)
+                .map(ChecksumFactory::create)
+                .collect(Collectors.toList());
+
+        Set<Checksum> actualChecksums = computeChecksums(channel, digests, throughputLimit);
         compareChecksums(expectedChecksums, actualChecksums);
         return actualChecksums;
     }
@@ -457,5 +488,114 @@ public class ChecksumModuleV1
             }
             checksumByType.put(checksum.getType(), checksum);
         }
+    }
+
+    private Set<Checksum> computeChecksums(RepositoryChannel channel, Collection<MessageDigest> digests) throws IOException,
+        InterruptedException
+    {
+        return computeChecksums(channel, digests, Double.POSITIVE_INFINITY);
+    }
+
+    /**
+     * Compute the checksum for a file with a limit on how many bytes/second to
+     * checksum.
+     * @param file              the file to compute a checksum for.
+     * @param digests           the digests to update with the file's content
+     * @param throughputLimit   a limit on how many bytes/second that may be
+     *                          checksummed.
+     * @return                  the computed checksum.
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private Set<Checksum> computeChecksums(RepositoryChannel channel, Collection<MessageDigest> digests, double throughputLimit)
+        throws IOException, InterruptedException
+    {
+        long start = System.currentTimeMillis();
+        long pos = 0L;
+        ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(64));
+
+        int rc;
+        while ((rc = channel.read(buffer, pos)) > 0) {
+            pos += rc;
+            buffer.flip();
+            digests.forEach(d -> d.update(buffer.asReadOnlyBuffer()));
+            buffer.clear();
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+            long adjust
+                    = throughputAdjustment(throughputLimit,
+                                           pos,
+                                           System.currentTimeMillis() - start);
+            if (adjust > 0) {
+                Thread.sleep(adjust);
+            }
+        }
+
+        Set<Checksum> checksums = digests.stream()
+                .map(d -> new Checksum(ChecksumType.getChecksumType(d.getAlgorithm()), d.digest()))
+                .collect(Collectors.toSet());
+
+        LOGGER.debug("Computed checksum, length {}, checksum {} in {} ms{}", pos, checksums.toString(),
+                   System.currentTimeMillis() - start, pos == 0 ? ""
+                            : ", throughput " +
+                              throughputAsString(pos, System.currentTimeMillis() - start) +
+                              " MiB/s" +
+                              (Double.isInfinite(throughputLimit)
+                               ? ""
+                               : " (limit " + BYTES.toMiB(throughputLimit) + " MiB/s)"));
+        return checksums;
+    }
+
+    /**
+     * Compute how much to sleep for current throughput not to exceed
+     * <code>throughputLimit</code> given how many bytes read/written for a
+     * certain amount of time.
+     * <h3>Formula</h3>
+     * <p><code>throughputLimit = numBytes/(elapsedTime + adjust)</code>
+     * <p>gives:<p>
+     * <code>adjust = numBytes/throughputLimit - elapsedTime</code>
+     *
+     * @param throughputLimit  max throughput (bytes/second). Must not be <= 0.
+     * @param numBytes         no. of bytes read/written for <code>elapsedTime
+     *                         </code> milliseconds. If 0, adjust will be 0.
+     * @param elapsedTime      elapsed time (milliseconds) when <code>numBytes
+     *                         </code> bytes were read/written.
+     * @return                 how much to sleep (milliseconds) for throughput
+     *                         not to exceed <code>throughputLimit</code>.
+     *                         Guaranteed to be >= 0.
+     */
+    private long throughputAdjustment(double throughputLimit, long numBytes,
+                                      long elapsedTime)
+    {
+        assert throughputLimit > 0 && numBytes >= 0 && elapsedTime >= 0;
+        /**
+         * Adjust is < 0 when numBytes/elapsedTime < throughputLimit
+         * (-elapsedTime when throughputLimit is ∞). Adjust is 0 when numBytes
+         * is 0.
+         */
+        long desiredDuration = (long) Math.ceil(MILLISECONDS_IN_SECOND *
+                                                (numBytes / throughputLimit));
+        long adjust = desiredDuration - elapsedTime;
+        return Math.max(0, adjust);
+    }
+
+    /**
+     * Return the string representation of throughput given the amount of bytes
+     * read/written over a certain time period.
+     * @param numBytes  no. of bytes read/written for <code>millis</code>
+     *                  milliseconds.
+     * @param millis    elapsed time (milliseconds) when <code>numBytes</code>
+     *                  bytes were read/written. If 0 increment by 1 to avoid
+     *                  printing Infinity or NaN.
+     * @return          throughput in (MiB/s) as the string representation of a
+     *                  floating point number. Neither NaN or Infinity will be
+     *                  printed due to the incrementing of <code>millis</code>
+     *                  to 1 if it has a value of 0.
+     */
+    private String throughputAsString(long numBytes, long millis)
+    {
+        return Double.toString(BYTES.toMiB((double) numBytes)
+                        / (( millis == 0 ? 1 : millis ) / (double) MILLISECONDS_IN_SECOND));
     }
 }
