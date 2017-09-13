@@ -1186,7 +1186,7 @@ public class RequestContainerV5
                     _forceContinue = true;
                     _status = "Failed";
                     _log.debug("Subject is not authorized to stage");
-                    _currentRc = CacheException.FILE_NOT_ONLINE;
+                    _currentRc = CacheException.PERMISSION_DENIED;
                     _currentRm = "File not online. Staging not allowed.";
                     sendInfoMessage(
                             _currentRc , "Permission denied." + _currentRm);
