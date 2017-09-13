@@ -413,20 +413,44 @@ public class FileOperationHandler {
             return Type.VOID;
         }
 
-        Collection<String> locations
-                        = poolInfoMap.getMemberLocations(gindex,
-                                                         attributes.getLocations());
+        Collection<String> locations = attributes.getLocations();
+
+        LOGGER.trace("handleVerification {}, locations from namespace: {}",
+                     pnfsId, locations);
+
         /*
-         * Once again, if all the locations are pools now missing
-         * from the group, this is a NOP.
+         * Somehow, all the cache locations for this file have been removed.
          */
         if (locations.isEmpty()) {
+            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+                                                      pnfsId.toString()),
+                         "{} has no locations in the namespace. "
+                                         + "Administrator intervention is required.", pnfsId);
+            String error = String.format("%s has no locations.", pnfsId);
+            CacheException exception
+                            = CacheExceptionUtils.getCacheException(
+                            CacheException.PANIC,
+                            FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+                            pnfsId, error, null);
+            completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
         }
 
-        LOGGER.trace("handleVerification {}, locations {}", pnfsId, locations);
+        locations = poolInfoMap.getMemberLocations(gindex, locations);
 
-         /*
+        LOGGER.trace("handleVerification {}, valid group member locations {}",
+                     pnfsId, locations);
+
+        /*
+         * If all the locations are pools no longer belonging to the group,
+         * the operation should be voided.
+         */
+        if (locations.isEmpty()) {
+            fileOpMap.voidOperation(pnfsId);
+            return Type.VOID;
+        }
+
+        /*
          *  If we have arrived here, we are expecting there to be an
          *  available source file.  So we need the strictly readable
          *  locations, not just "countable" ones.
