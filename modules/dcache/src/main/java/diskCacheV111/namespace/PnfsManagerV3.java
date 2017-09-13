@@ -37,7 +37,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;

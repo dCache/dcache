@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;

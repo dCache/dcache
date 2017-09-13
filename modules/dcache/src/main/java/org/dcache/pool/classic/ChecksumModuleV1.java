@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileCorruptedCacheException;
 
 import dmg.cells.nucleus.CellCommandListener;
@@ -407,8 +406,7 @@ public class ChecksumModuleV1
             actualChecksums.forEach(c -> types.add(c.getType())); // REVISIT do we really need to recalculate these?
 
             List<MessageDigest> digests = types.stream()
-                    .map(ChecksumFactory::getFactory)
-                    .map(ChecksumFactory::create)
+                    .map(ChecksumType::createMessageDigest)
                     .collect(Collectors.toList());
 
             try (RepositoryChannel channel = handle.createChannel()) {
@@ -469,8 +467,8 @@ public class ChecksumModuleV1
         checkArgument(!Iterables.isEmpty(expectedChecksums), "No expected checksums");
 
         List<MessageDigest> digests = StreamSupport.stream(expectedChecksums.spliterator(), false)
-                .map(ChecksumFactory::getFactoryFor)
-                .map(ChecksumFactory::create)
+                .map(Checksum::getType)
+                .map(ChecksumType::createMessageDigest)
                 .collect(Collectors.toList());
 
         Set<Checksum> actualChecksums = computeChecksums(channel, digests, throughputLimit);

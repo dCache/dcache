@@ -26,9 +26,11 @@ public class Checksum  implements Serializable
 
     /**
      * Creates a new instance of Checksum.
-     * @throws IllegalArugmentException if the number of bytes in value is
-     * incorrect for the supplied type
+     * @param type The checksum algorithm.
+     * @param value The checksum value.
      * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if the value has the wrong length for
+     * the checksum algorithm.
      */
     public Checksum(ChecksumType type, byte[] value)
     {
@@ -44,9 +46,11 @@ public class Checksum  implements Serializable
      * Creates a new instance of Checksum based on supplied type and a
      * string of the checksum value in hexadecimal.  If the type is ADLER32
      * then the value may omit any leading zeros.
-     * @throws IllegalArugmentException if the value is inappropriate for
-     * the supplied checksum type.
+     * @param type The checksum algorithm.
+     * @param value The hexadecimal representation of the checksum value.
      * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if the value contains non-hexadecimal
+     * characters or has the wrong length for the checksum type.
      */
     public Checksum(ChecksumType type, String value)
     {
@@ -57,6 +61,14 @@ public class Checksum  implements Serializable
         this.value = normalise(value);
     }
 
+    /**
+     * Check whether the supplied value is consistent with the given
+     * ChecksumType.
+     * @param type The checksum algorithm.
+     * @param value The checksum value to verify.
+     * @return true if value contains only hexadecimal characters and has the
+     * correct length for the supplied algorithm.
+     */
     public static boolean isValid(ChecksumType type, String value)
     {
         String normalised = normalise(type, value);
@@ -79,7 +91,7 @@ public class Checksum  implements Serializable
         return normalised;
     }
 
-    private String normalise(String original)
+    private String normalise(String original) throws IllegalArgumentException
     {
         String normalised = normalise(type, original);
 

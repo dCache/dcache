@@ -25,8 +25,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-import diskCacheV111.util.ChecksumFactory;
-
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -116,8 +114,7 @@ public class ChecksumChannel implements RepositoryChannel
     {
         _channel = inner;
         _digests = types.stream()
-                .map(ChecksumFactory::getFactory)
-                .map(f -> f.create())
+                .map(t -> t.createMessageDigest())
                 .collect(Collectors.toList());
     }
 

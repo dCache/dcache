@@ -83,10 +83,10 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -130,7 +130,7 @@ public class RemoteGsiftpTransferProtocol
 
     private RepositoryChannel _fileChannel;
     private GridftpClient _client;
-    private GridftpClient.Checksum _ftpCksm;
+    private Checksum _remoteChecksum;
 
     static {
         ChecksumType[] types = ChecksumType.values();
@@ -195,7 +195,7 @@ public class RemoteGsiftpTransferProtocol
         createFtpClient(remoteGsiftpProtocolInfo);
 
         if (access.contains(StandardOpenOption.WRITE)) {
-            getChecksumFactory(remoteGsiftpProtocolInfo); // fetches checksum as side-effect
+            _remoteChecksum = discoverRemoteChecksum(remoteGsiftpProtocolInfo);
             gridFTPRead(remoteGsiftpProtocolInfo, allocator);
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo);
@@ -296,14 +296,7 @@ public class RemoteGsiftpTransferProtocol
     @Override
     public Checksum getExpectedChecksum()
     {
-        try {
-            if (_ftpCksm != null ){
-                return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type)).create(_ftpCksm.value);
-            }
-        } catch (IllegalArgumentException e) {
-            _log.error("Checksum algorithm is not supported: {}", e.getMessage());
-        }
-        return null;
+        return _remoteChecksum;
     }
 
     @Nonnull
@@ -313,13 +306,13 @@ public class RemoteGsiftpTransferProtocol
         return Collections.emptySet();
     }
 
-    private ChecksumFactory getChecksumFactory(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo)
+    private Checksum discoverRemoteChecksum(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo)
     {
         try {
             createFtpClient(remoteGsiftpProtocolInfo);
             URI src_url =  new URI(remoteGsiftpProtocolInfo.getGsiftpUrl());
-            _ftpCksm = _client.negotiateCksm(src_url.getPath());
-            return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
+            GridftpClient.Checksum checksum = _client.negotiateCksm(src_url.getPath());
+            return new Checksum(ChecksumType.getChecksumType(checksum.type), checksum.value);
         } catch (GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
             _log.error("Checksum algorithm is not supported: {}", e.getMessage());
         } catch (IOException e) {
@@ -451,30 +444,29 @@ public class RemoteGsiftpTransferProtocol
 
         @Override
         public String getCksmValue(String type)
-            throws IOException,NoSuchAlgorithmException
+                throws IOException,NoSuchAlgorithmException
         {
             try {
                 PnfsHandler pnfs = new PnfsHandler(_cell, PNFS_MANAGER);
                 FileAttributes attributes =
-                    pnfs.getFileAttributes(_pnfsId, EnumSet.of(FileAttribute.CHECKSUM));
-                Checksum pnfsChecksum =
-                    ChecksumFactory.getFactory(ChecksumType.getChecksumType(type)).find(attributes.getChecksums());
-                if ( pnfsChecksum != null ){
-                    String hexValue = pnfsChecksum.getValue();
-                    _log.debug(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
-                    return hexValue;
+                        pnfs.getFileAttributes(_pnfsId, EnumSet.of(FileAttribute.CHECKSUM));
+
+                ChecksumType t = ChecksumType.getChecksumType(type);
+                Optional<String> checksum = attributes.getChecksums().stream()
+                        .filter(c -> c.getType() == t)
+                        .map(Checksum::getValue)
+                        .findFirst();
+
+                if (checksum.isPresent()) {
+                    return checksum.get();
                 }
-            }
-            catch(Exception e){
-                _log.error("could not get {} from pnfs:", type);
-                _log.error(e.toString());
-                _log.error("ignoring this error");
-
+            } catch (CacheException e) {
+                _log.warn("Failed to fetch checksum information: {}", e.getMessage());
             }
 
-            String hexValue = GridftpClient.getCksmValue(_fileChannel,type);
+            String value = GridftpClient.getCksmValue(_fileChannel, type);
             _fileChannel.position(0);
-            return hexValue;
+            return value;
         }
 
         @Override
