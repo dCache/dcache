@@ -279,7 +279,7 @@ public class FileOperationHandler {
             return false;
         }
 
-        LOGGER.trace("handleScannedLocation, update to be registered: {}", data);
+        LOGGER.debug("handleScannedLocation, update to be registered: {}", data);
         return fileOpMap.register(data);
     }
 
