@@ -111,6 +111,7 @@ public class CopyFilter implements Filter
     private static final String QUERY_KEY_ASKED_TO_DELEGATE = "asked-to-delegate";
     private static final String REQUEST_HEADER_CREDENTIAL = "Credential";
     private static final String REQUEST_HEADER_AUTHORIZATION = "Authorization";
+    private static final String REQUEST_HEADER_VERIFICATION = "RequireChecksumVerification";
     private static final String SCHEME_AUTHORIZATION_BEARER_WITH_SPACE = "BEARER ";
 
     private static final Set<AccessMask> READ_ACCESS_MASK =
@@ -123,6 +124,7 @@ public class CopyFilter implements Filter
     private ImmutableMap<String,String> _clientIds;
     private ImmutableMap<String,String> _clientSecrets;
     private ImmutableMap<String, OpenIdClientSecret> _oidcClientCredentials = ImmutableMap.of();
+    private boolean _defaultVerification;
 
     /**
      * Describes where to fetch the delegated credential, if at all.
@@ -197,6 +199,17 @@ public class CopyFilter implements Filter
     public void setRemoteTransferHandler(RemoteTransferHandler handler)
     {
         _remoteTransfers = handler;
+    }
+
+    @Required
+    public void setDefaultVerification(boolean verify)
+    {
+        _defaultVerification = verify;
+    }
+
+    public boolean isDefaultVerification()
+    {
+        return _defaultVerification;
     }
 
     public void setOidClientIds(ImmutableMap<String,String> clientIds)
@@ -293,6 +306,12 @@ public class CopyFilter implements Filter
         // Note that each invocation of Request#getHeaders creates a HashMap
         // and populates it with all headers.  Therefore, we use ServletRequest
         // which Milton only makes available via a ThreadLocal.
+
+        // Note that HttpSerlvetRequest#getHeader is case insensitive, as
+        // required by:
+        //
+        //     https://tools.ietf.org/html/rfc7230#section-3.2
+        //
         HttpServletRequest servletRequest = ServletRequest.getRequest();
 
         String pullUrl = servletRequest.getHeader(Direction.PULL.getHeaderName());
@@ -362,14 +381,19 @@ public class CopyFilter implements Filter
         } else {
             _remoteTransfers.acceptRequest(response.getOutputStream(),
                     request.getHeaders(), getSubject(), getRestriction(), path,
-                    remote, credential, direction);
+                    remote, credential, direction, isVerificationRequired());
         }
     }
 
     private CredentialSource getCredentialSource(Request request, TransferType type)
             throws ErrorResponseException
     {
-        String headerValue = request.getHeaders().get(REQUEST_HEADER_CREDENTIAL);
+        // Note that HttpSerlvetRequest#getHeader is case insensitive, as
+        // required by:
+        //
+        //     https://tools.ietf.org/html/rfc7230#section-3.2
+        //
+        String headerValue = ServletRequest.getRequest().getHeader(REQUEST_HEADER_CREDENTIAL);
         CredentialSource source;
 
         if (headerValue != null) {
@@ -593,13 +617,43 @@ public class CopyFilter implements Filter
 
     private boolean isAuthorizationHeaderBearer(Request request)
     {
-        return Strings.nullToEmpty(request.getHeaders()
-                                          .get(REQUEST_HEADER_AUTHORIZATION))
+        // Note that HttpSerlvetRequest#getHeader is case insensitive, as
+        // required by:
+        //
+        //     https://tools.ietf.org/html/rfc7230#section-3.2
+        //
+        return Strings.nullToEmpty(ServletRequest.getRequest().getHeader(REQUEST_HEADER_AUTHORIZATION))
                       .toUpperCase()
                       .startsWith(SCHEME_AUTHORIZATION_BEARER_WITH_SPACE);
     }
 
     private static <T> Predicate<T> not(Predicate<T> t) {
         return t.negate();
+    }
+
+    private boolean isVerificationRequired() throws ErrorResponseException
+    {
+        // Note that HttpSerlvetRequest#getHeader is case insensitive, as
+        // required by:
+        //
+        //     https://tools.ietf.org/html/rfc7230#section-3.2
+        //
+        String header = ServletRequest.getRequest().getHeader(REQUEST_HEADER_VERIFICATION);
+
+        if (header == null) {
+            return _defaultVerification;
+        }
+
+        switch (header) {
+        case "true":
+            return true;
+        case "false":
+            return false;
+        default:
+            throw new ErrorResponseException(Status.SC_BAD_REQUEST,
+                    "HTTP request header '" + REQUEST_HEADER_VERIFICATION + "' " +
+                            "has unknown value \"" + header + "\": " +
+                            "valid values are true or false");
+        }
     }
 }
