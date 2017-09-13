@@ -79,25 +79,18 @@ import org.dcache.resilience.util.ExceptionMessage;
  *      Also implements the migration task termination logic.</p>
  */
 public final class FileTaskCompletionHandler implements TaskCompletionHandler {
-    static final String WILL_RETRY_LATER
-                    = "A best effort at retry will be made "
-                    + "during the next periodic scan.";
-
     static final String ABORT_REPLICATION_LOG_MESSAGE
-                    = "Aborting replication for {}; pools tried: {}; {} "
-                    + WILL_RETRY_LATER;
+                    = "Aborting replication for {}; pools tried: {}; {}";
 
     static final String VERIFY_FAILURE_MESSAGE
-                    = "Processing for pnfsId %s failed during verify; %s "
-                    + WILL_RETRY_LATER;
+                    = "Processing for %s failed during verify. %s%s";
 
     static final String FAILED_COPY_MESSAGE
-                    = "Migration task for %s failed: %s.";
+                    = "Migration task for %s failed. %s%s.";
 
     static final String FAILED_REMOVE_MESSAGE
                     = "Failed to remove %s from %s; %s. "
-                    + "This means that an unnecessary copy may still exist; "
-                    + WILL_RETRY_LATER;
+                    + "This means that an unnecessary copy may still exist.";
 
     private static final Logger LOGGER
                     = LoggerFactory.getLogger(FileTaskCompletionHandler.class);
