@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.NoSuchElementException;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -76,6 +77,7 @@ import org.dcache.resilience.db.NamespaceAccess;
 import org.dcache.resilience.db.ScanSummary;
 import org.dcache.resilience.handlers.FileOperationHandler;
 import org.dcache.resilience.handlers.ResilienceMessageHandler;
+import org.dcache.resilience.util.ExceptionMessage;
 import org.dcache.resilience.util.LocationSelector;
 import org.dcache.resilience.util.PoolSelectionUnitDecorator.SelectionAction;
 import org.dcache.vehicles.FileAttributes;
@@ -131,8 +133,18 @@ public final class FileUpdate {
                     return null;
                 }
 
+                if (messageType != MessageType.ADD_CACHE_LOCATION) {
+                    /*
+                     * Since the scan began or the broken file reported,
+                     * the file has been removed.
+                     */
+                    throw new FileNotFoundCacheException
+                                    (String.format("File no longer found: %s"
+                                                    , pnfsId));
+                }
+
                 /*
-                 *  Due to a possible race between PnfsManager and resilience
+                 *  May be due to a race between PnfsManager and resilience
                  *  to process the message into/from the namespace.
                  *
                  *  We can assume here that this is a new file, so
@@ -150,10 +162,6 @@ public final class FileUpdate {
                          attributes.getLocations());
             return attributes;
         } catch (FileNotFoundCacheException e) {
-            /*
-             * Most likely we received a PnfsClearCacheLocationMessage
-             * as the result of a file deletion.
-             */
             LOGGER.debug("{}; {} has likely been deleted from the namespace.",
                          e.getMessage(),
                          pnfsId);
@@ -294,7 +302,13 @@ public final class FileUpdate {
          * Storage unit is not recorded in checkpoint, so it should
          * be set here.
          */
-        unitIndex = poolInfoMap.getStorageUnitIndex(attributes);
+        try {
+            unitIndex = poolInfoMap.getStorageUnitIndex(attributes);
+        } catch (NoSuchElementException e) {
+            LOGGER.error("validateForAction, cannot handle {}: {}.",
+                         pnfsId, new ExceptionMessage(e));
+            return false;
+        }
 
         LOGGER.trace("validateForAction {} got unit from attributes {}.",
                      pnfsId, unitIndex);
