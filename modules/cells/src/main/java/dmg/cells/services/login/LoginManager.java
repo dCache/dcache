@@ -1,5 +1,6 @@
 package dmg.cells.services.login;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
@@ -22,6 +23,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -31,6 +33,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellEvent;
@@ -44,6 +48,7 @@ import dmg.util.KeepAliveListener;
 
 import org.dcache.util.Args;
 import org.dcache.util.NDC;
+import org.dcache.util.Subnet;
 import org.dcache.util.Version;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -82,6 +87,8 @@ public class LoginManager
     private volatile boolean _sending = true;
     private volatile int _maxLogin = -1;
 
+    private final Set<Subnet> _allowed;
+
     /**
      * Tagging interface that a CellMessage payload implements to indicate
      * the notification should be forwarded to all children.
@@ -115,6 +122,9 @@ public class LoginManager
         super(name, cellType, argString);
         _nucleus = getNucleus();
         _args = getArgs();
+
+        //allowed subnets
+        _allowed = allowedSubnets(_args.getOption("netmask", ""));
     }
 
     @Override
@@ -543,6 +553,19 @@ public class LoginManager
                 while (!_serverSocket.isClosed()) {
                     try {
                         Socket socket = _serverSocket.accept();
+                        InetSocketAddress remoteAddress = (InetSocketAddress)socket.getRemoteSocketAddress();
+
+
+                        if (!remoteAddress.getAddress().isAnyLocalAddress() &&
+                            !remoteAddress.getAddress().isLoopbackAddress() &&
+                            !_allowed.isEmpty() &&
+                            _allowed.stream()
+                                    .noneMatch(s -> s.contains(remoteAddress.getAddress()))) {
+                            throw new IOException("Remote Host ("
+                                                    + remoteAddress.getAddress()
+                                                    + ") not in the list of allowed subnets");
+                        }
+
                         socket.setKeepAlive(true);
                         socket.setTcpNoDelay(true);
                         LOGGER.debug("Socket OPEN (ACCEPT) remote = {} local = {}",
@@ -812,6 +835,29 @@ public class LoginManager
         } catch (ExecutionException e) {
             LOGGER.warn(e.getCause().getMessage());
             return false;
+        }
+    }
+
+    public static Set<Subnet> allowedSubnets(String netmask)
+    {
+        return StreamSupport.stream(Splitter.on(CharMatcher.whitespace())
+                                            .trimResults()
+                                            .omitEmptyStrings()
+                                            .split(netmask)
+                                            .spliterator(),
+                false)
+                            .filter(s -> !s.isEmpty())
+                            .map(LoginManager::validateCreateSubnet)
+                            .collect(Collectors.toSet());
+    }
+
+    public static Subnet validateCreateSubnet(String subnet)
+    {
+        try {
+            return Subnet.create(subnet);
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException(
+                    String.format("Invalid IP/subnet '%s': %s\n.", subnet, iae.getMessage()));
         }
     }
 }

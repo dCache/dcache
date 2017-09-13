@@ -81,7 +81,6 @@ import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static dmg.cells.nucleus.CellDomainRole.CORE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -381,7 +380,7 @@ public class LocationManager extends CellAdapter
         public static CoreDomains createWithMode(String domainName, CuratorFramework client, String mode)
                 throws BadConfigException
         {
-            LOGGER.error("Creating CoreDomains: {}, {}", domainName, mode);
+            LOGGER.info("Creating CoreDomains: {}, {}", domainName, mode);
             ConnectionType type = ConnectionType.fromConfig(mode).orElseThrow(() -> new BadConfigException("Bad mode " + mode));
 
             switch (type) {
@@ -808,7 +807,9 @@ public class LocationManager extends CellAdapter
         private void startListenerWithTcp()
                 throws ExecutionException, InterruptedException, UnknownHostException
         {
-            String cellArgs = args.argv(0);
+            String cellArgs = String.format("%s -netmask='%s'",
+                                            args.argv(0),
+                                            args.getOption("netmask", ""));
             lmPlain = startListener(cellArgs);
             LOGGER.info("lmPlain: {}; port; {} ", lmPlain, lmPlain.getListenPort());
             info.addCore("tcp", InetAddress.getLocalHost().getCanonicalHostName(), lmPlain.getListenPort());
