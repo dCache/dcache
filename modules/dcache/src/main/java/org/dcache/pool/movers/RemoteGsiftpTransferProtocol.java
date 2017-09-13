@@ -80,15 +80,10 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.ByteBuffer;
 import java.security.KeyStoreException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -116,7 +111,6 @@ import org.dcache.util.PortRange;
 import org.dcache.util.URIs;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.util.ByteUnit.KiB;
 
 public class RemoteGsiftpTransferProtocol
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
@@ -133,11 +127,6 @@ public class RemoteGsiftpTransferProtocol
     private long _starttime;
     private long _timeout_time;
     private PnfsId _pnfsId;
-
-    private Set<ChecksumFactory> _checksumFactories;
-    private Map<ChecksumType, MessageDigest> _transferMessageDigests;
-
-    private long _previousUpdateEndOffset;
 
     private RepositoryChannel _fileChannel;
     private GridftpClient _client;
@@ -321,27 +310,7 @@ public class RemoteGsiftpTransferProtocol
     @Override
     public Set<Checksum> getActualChecksums()
     {
-        try {
-            if (_transferMessageDigests == null) {
-                return Collections.emptySet();
-            }
-
-            ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
-            _fileChannel.position(_previousUpdateEndOffset);
-            while (_fileChannel.read(buffer) >= 0) {
-                buffer.flip();
-                _transferMessageDigests.values().forEach(d -> d.update(buffer));
-                buffer.clear();
-            }
-
-            return _checksumFactories.stream()
-                                     .map(f -> f.create(_transferMessageDigests.get(f.getType())
-                                                                               .digest()))
-                                     .collect(Collectors.toSet());
-        } catch (IOException e) {
-            _log.error(e.toString());
-            return Collections.emptySet();
-        }
+        return Collections.emptySet();
     }
 
     private ChecksumFactory getChecksumFactory(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo)
@@ -382,11 +351,6 @@ public class RemoteGsiftpTransferProtocol
 
         ByteBuffer bb = ByteBuffer.wrap(array, offset, length);
         _fileChannel.write(bb, offsetOfArrayInFile);
-        if (_transferMessageDigests != null
-            && _previousUpdateEndOffset == offsetOfArrayInFile) {
-            _previousUpdateEndOffset += length;
-            _transferMessageDigests.values().forEach(d -> d.update(array, offset, length));
-        }
     }
 
     private class DiskDataSourceSink implements IDiskDataSourceSink
