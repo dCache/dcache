@@ -62,13 +62,13 @@ package org.dcache.resilience.db;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
-import javax.sql.DataSource;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.CacheException;
@@ -255,9 +255,11 @@ public class LocalNamespaceAccess implements NamespaceAccess {
                 FileUpdate data = new FileUpdate(pnfsId, pool, type, action,
                                                  group, full);
                 try {
+                    LOGGER.debug("checking {}, {}.", pool, pnfsId);
                     if (handler.handleScannedLocation(data, storageUnit)) {
                         scan.incrementCount();
                     }
+                    LOGGER.debug("after checking {}, {}, count is {}.", pool, pnfsId, scan.getCount());
                 } catch (CacheException e) {
                     LOGGER.debug("{}: {}", data, new ExceptionMessage(e));
                 }
