@@ -69,6 +69,7 @@ import java.util.Map;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import org.dcache.resilience.data.FileUpdate;
@@ -111,7 +112,10 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
     @Override
     public FileAttributes getRequiredAttributes(PnfsId pnfsId)
                     throws CacheException {
-        return fileAttributes.get(pnfsId);
+        if (fileAttributes.containsKey(pnfsId)) {
+            return fileAttributes.get(pnfsId);
+        }
+        throw new FileNotFoundCacheException(pnfsId.toString());
     }
 
     @Override
@@ -141,6 +145,9 @@ public final class TestNamespaceAccess extends LocalNamespaceAccess {
             attributes.setRetentionPolicy(stored.getRetentionPolicy());
             attributes.setStorageClass(stored.getStorageClass());
             attributes.setLocations(stored.getLocations());
+        } else {
+            throw new FileNotFoundCacheException(attributes.getPnfsId().toString(),
+                                                 new Exception("test simulation"));
         }
     }
 
