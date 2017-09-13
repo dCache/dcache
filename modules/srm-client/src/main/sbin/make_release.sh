@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@SHELL_PATH@
 
 version=$1
 if [ "$version" = "" ]

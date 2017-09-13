@@ -251,7 +251,7 @@ public class TimeseriesHistogram extends HistogramModel
                     break;
             }
 
-            metadata.updateStatistics(value, System.currentTimeMillis());
+            metadata.updateStatistics(value, timestamp);
         }
     }
 }

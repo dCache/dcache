@@ -100,6 +100,16 @@ abstract class InaccessibleFileHandler {
     protected abstract Type handleInaccessibleFile(FileOperation operation);
 
     /**
+     * <p>Takes the appropriate action when it is discovered there are no
+     *    locations in the namespace for a file which has not been deleted.</p>
+     *
+     * @param operation contains information keyed to the PoolInfoMap.
+     * @return type of operation which the caller should proceed with; this
+     *          will in most cases be VOID.
+     */
+    protected abstract Type handleNoLocationsForFile(FileOperation operation);
+
+    /**
      * <p>This logic will usually involve checking that readable locations
      *    is 0, and may involve other checks on the file operation attributes,
      *    depending on the implementation.</p>

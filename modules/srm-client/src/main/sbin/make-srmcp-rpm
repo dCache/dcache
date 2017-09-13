@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@SHELL_PATH@
 ########################################################################
 # Script: srmcp-prepare_package  major_version  minor_version release_number
 #

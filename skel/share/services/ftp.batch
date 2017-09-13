@@ -121,4 +121,5 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -cipher-flags=\"${ftp.authn.ciphers}\" \
    -key-cache-lifetime=\"${ftp.authn.gsi.delegation.cache.lifetime}\" \
    -key-cache-lifetime-unit=\"${ftp.authn.gsi.delegation.cache.lifetime.unit}\" \
+   -netmask=\"${ftp.net.allowed-subnets}\" \
    "

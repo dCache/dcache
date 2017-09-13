@@ -60,8 +60,6 @@ documents or software obtained from this server.
 package org.dcache.resilience.util;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
@@ -72,8 +70,11 @@ import org.dcache.util.CacheExceptionFactory;
  * <p>Wrapper methods for processing and handling {@link CacheException}s.</p>
  */
 public final class CacheExceptionUtils {
+    static final String WILL_RETRY_LATER
+                    = " A best effort at retry will be made "
+                    + "during the next periodic scan.";
 
-    public static boolean fileNotFound(Serializable object) {
+    public static boolean replicaNotFound(Serializable object) {
         if (object instanceof ExecutionException) {
             ExecutionException exception = (ExecutionException) object;
             object = exception.getCause();
@@ -91,26 +92,36 @@ public final class CacheExceptionUtils {
                     return true;
             }
         }
+
         return false;
     }
 
+    /**
+     * @param rc error code for CacheException
+     * @param template string formatting, must have three '%' markers.
+     * @param pnfsid of the file operation
+     * @param info
+     * @param e
+     * @return appropriate CacheException to be propagated.
+     */
     public static CacheException getCacheException(int rc,
                                                    String template,
-                                                   PnfsId pnfs,
-                                                   String optional,
+                                                   PnfsId pnfsid,
+                                                   String info,
                                                    Throwable e) {
-        List<Object> args = new ArrayList<>();
-        args.add(pnfs);
+        Object[] args = new Object[3];
+        args[0] = pnfsid;
+        args[1] = info == null? "" : info;
+        args[2] = e == null? "" : new ExceptionMessage(e);
 
-        if (optional != null) {
-            args.add(optional);
+        String message = String.format(template, args);
+
+        FailureType failureType = getFailureType(rc, true);
+
+        if (failureType != FailureType.FATAL
+                        && failureType != FailureType.BROKEN) {
+            message += WILL_RETRY_LATER;
         }
-
-        if (e != null) {
-            args.add(new ExceptionMessage(e));
-        }
-
-        String message = String.format(template, args.toArray());
 
         if (e != null) {
             return CacheExceptionFactory.exceptionOf(rc, message, e);
@@ -125,7 +136,11 @@ public final class CacheExceptionUtils {
             return FailureType.RETRIABLE;
         }
 
-        switch (exception.getRc()) {
+        return getFailureType(exception.getRc(), isCopyOperation);
+    }
+
+    private static FailureType getFailureType(int rc, boolean isCopyOperation) {
+        switch (rc) {
             case CacheException.FILE_CORRUPTED:
             case CacheException.BROKEN_ON_TAPE:
                 return FailureType.BROKEN;
