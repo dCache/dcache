@@ -20,6 +20,7 @@ package org.dcache.pool.movers;
 import com.google.common.base.Optional;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -66,6 +67,21 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     public long getLastTransferred()
     {
         return _moverProtocol.getLastTransferred();
+    }
+
+    @Override
+    public Set<Checksum> getActualChecksums() {
+        if (_moverProtocol instanceof ChecksumMover) {
+            Checksum checksum = ((ChecksumMover)_moverProtocol).getActualChecksum();
+            if (checksum != null) {
+                Set<Checksum> checksums = new HashSet<>();
+                checksums.addAll(super.getActualChecksums());
+                checksums.add(checksum);
+                return checksums;
+            }
+        }
+
+        return super.getActualChecksums();
     }
 
     @Override
