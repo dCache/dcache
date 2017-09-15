@@ -145,7 +145,6 @@ public final class CacheExceptionUtils {
             case CacheException.BROKEN_ON_TAPE:
                 return FailureType.BROKEN;
             case CacheException.FILE_NOT_IN_REPOSITORY:
-            case CacheException.FILE_NOT_FOUND:
                 if (isCopyOperation) {
                     /*
                      * The source for a copy is missing.
@@ -193,6 +192,8 @@ public final class CacheExceptionUtils {
             case CacheException.SERVICE_UNAVAILABLE:
             case CacheException.TIMEOUT:
                 return FailureType.RETRIABLE;
+
+            case CacheException.FILE_NOT_FOUND:
             default:
                 return FailureType.FATAL;
         }
