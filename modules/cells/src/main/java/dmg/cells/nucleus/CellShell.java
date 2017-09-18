@@ -1797,7 +1797,7 @@ public class CellShell extends CommandInterpreter
                     } else if (!(error instanceof CommandEvaluationException)) {
                         String msg =
                             Exceptions.getMessageWithCauses(error);
-                        println(err, String.format("%s: line %d: Command failed (%s)",
+                        println(err, String.format("%s: line %d: Command failed: %s",
                                                    source, no, msg));
                     }
                 }
