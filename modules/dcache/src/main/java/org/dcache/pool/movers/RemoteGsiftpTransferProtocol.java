@@ -196,20 +196,10 @@ public class RemoteGsiftpTransferProtocol
         RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo
             = (RemoteGsiftpTransferProtocolInfo) protocol;
 
-        /* If on transfer checksum calculation is enabled, check if
-         * we have a protocol specific preferred algorithm.
-         */
-        if (_checksumFactory != null) {
-            ChecksumFactory factory = getChecksumFactory(remoteGsiftpProtocolInfo);
-            if (factory != null) {
-                _checksumFactory = factory;
-            }
-            _transferMessageDigest = _checksumFactory.create();
-        }
-
         createFtpClient(remoteGsiftpProtocolInfo);
 
         if ( access == IoMode.WRITE) {
+            getChecksumFactory(remoteGsiftpProtocolInfo); // fetches checksum as side-effect
             gridFTPRead(remoteGsiftpProtocolInfo, allocator);
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo);
@@ -371,9 +361,6 @@ public class RemoteGsiftpTransferProtocol
     public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
             throws NoSuchAlgorithmException
     {
-        _checksumFactory = ChecksumFactory.getFactory(suggestedAlgorithm);
-        _transferMessageDigest =
-                (_checksumFactory != null) ? _checksumFactory.create() : null;
     }
 
     @Override
