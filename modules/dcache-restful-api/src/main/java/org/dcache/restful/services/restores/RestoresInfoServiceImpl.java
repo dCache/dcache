@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.services.restores;
 
+import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -81,9 +82,9 @@ import diskCacheV111.vehicles.RestoreHandlerInfo;
 import dmg.util.command.Command;
 import org.dcache.restful.providers.restores.RestoreInfo;
 import org.dcache.restful.providers.restores.RestoresList;
-import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.restful.util.restores.RestoreCollector;
 import org.dcache.restful.util.transfers.TransferCollector;
+import org.dcache.services.collector.CellDataCollectingService;
 
 /**
  * <p>Service layer responsible for collecting information from
@@ -178,6 +179,7 @@ public final class RestoresInfoServiceImpl extends
     @Override
     protected void update(ListenableFuture<RestoreHandlerInfo[]> future) {
         Map<String, RestoreInfo> newInfo = new HashMap<>();
+        Throwable thrownDuringExecution = null;
 
         try {
             RestoreHandlerInfo[] refreshed = future.get();
@@ -189,9 +191,16 @@ public final class RestoresInfoServiceImpl extends
         } catch (InterruptedException e) {
             LOGGER.trace("Update was interrupted.");
         } catch (CacheException e) {
-            LOGGER.warn("Update could not complete: {}, {}.", e, e.getCause());
+            Throwable t = e.getCause();
+            LOGGER.warn("Update could not complete: {}, {}.",
+                        e.getMessage(),
+                        t == null ? "" : t.toString());
         } catch (ExecutionException e) {
-            LOGGER.warn("Update could not complete: {}, {}.", e, e.getCause());
+            thrownDuringExecution = e.getCause();
+            Throwable t = thrownDuringExecution.getCause();
+            LOGGER.warn("Update could not complete: {}, {}.",
+                        thrownDuringExecution.getMessage(),
+                        t == null ? "" : t.toString());
         }
 
         synchronized (this) {
@@ -202,6 +211,10 @@ public final class RestoresInfoServiceImpl extends
                 }
             }
             restores.putAll(newInfo);
+        }
+
+        if (thrownDuringExecution != null) {
+            Throwables.throwIfUnchecked(thrownDuringExecution);
         }
     }
 

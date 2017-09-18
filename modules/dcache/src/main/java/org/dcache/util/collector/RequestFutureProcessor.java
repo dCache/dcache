@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.util.collector;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -71,6 +72,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 /**
@@ -166,18 +168,24 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
             String key = entry.getKey();
             ListenableFutureWrapper<D> wrapper = entry.getValue();
             D received = null;
+            Throwable thrownDuringExecution = null;
 
             try {
                 received = wrapper.getFuture().get();
             } catch (InterruptedException e) {
                 LOGGER.trace("Listener runnable was interrupted; returning ...");
             } catch (ExecutionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof NoRouteToCellException) {
+                thrownDuringExecution = e.getCause();
+                if (thrownDuringExecution instanceof NoRouteToCellException) {
                     LOGGER.trace("Endpoint currently unavailable: {}.", key);
+                } else if (thrownDuringExecution instanceof TimeoutCacheException ) {
+                    LOGGER.trace("Request timed out for {}.", key);
                 } else {
+                    Throwable t = thrownDuringExecution.getCause();
                     LOGGER.warn("Update of data for {} failed: {} / {}.",
-                                key, e.getMessage(), e.getCause());
+                                key,
+                                thrownDuringExecution.getMessage(),
+                                t == null ? "" : t.toString());
                 }
             }
 
@@ -187,6 +195,10 @@ public abstract class RequestFutureProcessor<T extends Serializable, D> {
             }
 
             remove(key);
+
+            if (thrownDuringExecution != null) {
+                Throwables.throwIfUnchecked(thrownDuringExecution);
+            }
         }, executor);
     }
 
