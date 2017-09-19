@@ -18,10 +18,11 @@
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 package org.dcache.chimera.nfs.v4.xdr;
+import com.google.common.io.BaseEncoding;
+
 import java.util.Arrays;
 
 import java.io.Serializable;
-import org.dcache.util.Bytes;
 
 public class stateid4 implements  Serializable {
 
@@ -60,7 +61,7 @@ public class stateid4 implements  Serializable {
         StringBuilder sb = new StringBuilder();
 
         sb.append("[");
-        sb.append(Bytes.toHexString(other));
+        sb.append(BaseEncoding.base16().lowerCase().encode(other));
         sb.append(", seq: ").append(seqid.value).append("]");
         return sb.toString();
     }

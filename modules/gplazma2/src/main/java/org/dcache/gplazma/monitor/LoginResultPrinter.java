@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.BaseEncoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -59,7 +60,6 @@ import static java.util.concurrent.TimeUnit.*;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
-import static org.dcache.util.Bytes.toHexString;
 
 
 
@@ -353,7 +353,7 @@ public class LoginResultPrinter
             switch(tag) {
                 case 0: // otherName, OtherName
                     bytes = (byte[]) object;
-                    sb.append("otherName: ").append(toHexString(bytes));
+                    sb.append("otherName: ").append(BaseEncoding.base16().lowerCase().encode(bytes));
                     break;
 
                 case 1: // rfc822Name, IA5String
@@ -366,7 +366,7 @@ public class LoginResultPrinter
 
                 case 3: // x400Address, ORAddress
                     bytes = (byte[]) object;
-                    sb.append("x400: ").append(toHexString(bytes));
+                    sb.append("x400: ").append(BaseEncoding.base16().lowerCase().encode(bytes));
                     break;
 
                 case 4: // directoryName, Name
@@ -375,7 +375,7 @@ public class LoginResultPrinter
 
                 case 5: // ediPartyName, EDIPartyName
                     bytes = (byte[]) object;
-                    sb.append("EDI party name: ").append(toHexString(bytes));
+                    sb.append("EDI party name: ").append(BaseEncoding.base16().lowerCase().encode(bytes));
                     break;
 
                 case 6: // uniformResourceIdentifier, IA5String
@@ -388,7 +388,7 @@ public class LoginResultPrinter
 
                 case 8: // registeredID, OBJECT IDENTIFIER
                     bytes = (byte[]) object;
-                    sb.append("oid: ").append(toHexString(bytes));
+                    sb.append("oid: ").append(BaseEncoding.base16().lowerCase().encode(bytes));
                     break;
 
                 default:
@@ -397,7 +397,7 @@ public class LoginResultPrinter
                     // representation for currently unknown tags
                     sb.append(object.getClass().getSimpleName());
                     sb.append(" [").append(tag).append("]");
-                    sb.append(" ").append(toHexString(bytes));
+                    sb.append(" ").append(BaseEncoding.base16().lowerCase().encode(bytes));
                     break;
             }
 

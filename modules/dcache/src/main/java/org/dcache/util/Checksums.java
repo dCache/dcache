@@ -5,6 +5,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Maps.EntryTransformer;
 import com.google.common.collect.Ordering;
+import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +73,7 @@ public class Checksums
 
                 switch(f.getType()) {
                 case ADLER32:
-                    return "adler32=" + Checksum.bytesToHexString(bytes);
+                    return "adler32=" + BaseEncoding.base16().lowerCase().encode(bytes);
                 case MD4_TYPE:
                     return null;
                 case MD5_TYPE:

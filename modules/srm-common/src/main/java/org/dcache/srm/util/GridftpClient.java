@@ -2,6 +2,7 @@
 
 package org.dcache.srm.util;
 
+import com.google.common.io.BaseEncoding;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
@@ -204,7 +205,7 @@ public class GridftpClient
             bb.flip();
             md.update(bb) ;
         }
-        return printbytes(md.digest());
+        return BaseEncoding.base16().lowerCase().encode(md.digest());
     }
 
 
@@ -1114,24 +1115,4 @@ public class GridftpClient
         }
         return svalue;
     }
-    public static String printbytes(byte[] bs)
-    {
-        StringBuilder sb= new StringBuilder();
-        for (byte b : bs) {
-            byteToHexString(b, sb);
-        }
-        return sb.toString();
-    }
-
-    private static final char [] __map =
-    { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' } ;
-
-    private static void byteToHexString( byte b, StringBuilder sb ) {
-
-        int x = ( b < 0 ) ? ( 256 + (int)b ) : (int)b ;
-        sb.append(__map[ ((int)b >> 4 ) & 0xf ]);
-        sb.append(__map[ ((int)b      ) & 0xf ]);
-    }
-
-
 }

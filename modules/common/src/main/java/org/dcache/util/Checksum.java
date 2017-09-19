@@ -2,8 +2,8 @@ package org.dcache.util;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import com.google.common.io.BaseEncoding;
 
 import java.io.Serializable;
 import java.security.MessageDigest;
@@ -17,10 +17,7 @@ public class Checksum  implements Serializable
 {
     private static final long serialVersionUID = 7338775749513974986L;
 
-    private static final String HEX_DIGITS = "0123456789abcdef";
-
-    private static final CharMatcher HEXADECIMAL =
-            CharMatcher.anyOf(HEX_DIGITS);
+    private static final CharMatcher HEXADECIMAL = CharMatcher.anyOf("0123456789abcdef");
 
     private static final char DELIMITER = ':';
 
@@ -35,7 +32,7 @@ public class Checksum  implements Serializable
      */
     public Checksum(ChecksumType type, byte[] value)
     {
-        this(type, bytesToHexString(value));
+        this(type, BaseEncoding.base16().lowerCase().encode(value));
     }
 
     public Checksum(MessageDigest digest)
@@ -149,18 +146,6 @@ public class Checksum  implements Serializable
     public String toString(boolean useStringKey)
     {
         return (useStringKey ? type.getName() : String.valueOf(type.getType())) + ':' + value;
-    }
-
-    public static String bytesToHexString(byte[] bytes)
-    {
-        checkNotNull(bytes, "byte array may not be null");
-
-        StringBuilder sb = new StringBuilder();
-        for (byte aByte : bytes) {
-            sb.append(HEX_DIGITS.charAt((aByte >> 4) & 0xf));
-            sb.append(HEX_DIGITS.charAt(aByte & 0xf));
-        }
-        return sb.toString();
     }
 
     private static byte[] stringToBytes(String str)
