@@ -19,6 +19,7 @@ package diskCacheV111.util;
 
 import com.google.common.base.Optional;
 
+import java.util.Collections;
 import java.util.Set;
 
 import org.dcache.util.Checksum;
@@ -55,6 +56,11 @@ public class FileCorruptedCacheException extends CacheException
         _actualChecksums = Optional.absent();
         _expectedSize = Optional.absent();
         _actualSize = Optional.absent();
+    }
+
+    public FileCorruptedCacheException(Checksum expectedChecksum, Checksum actualChecksum)
+    {
+        this(Collections.singleton(expectedChecksum), Collections.singleton(actualChecksum));
     }
 
     public FileCorruptedCacheException(Set<Checksum> expectedChecksums, Set<Checksum> actualChecksums)
