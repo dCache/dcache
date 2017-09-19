@@ -6,6 +6,7 @@ import com.google.common.io.BaseEncoding;
 import java.io.Serializable;
 import java.security.MessageDigest;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.padStart;
 import static org.dcache.util.ChecksumType.ADLER32;
@@ -55,7 +56,14 @@ public class Checksum  implements Serializable
         checkNotNull(value, "value may not be null");
 
         this.type = type;
-        this.value = normalise(value);
+        this.value = normalise(type, value);
+
+        checkArgument(HEXADECIMAL.matchesAllOf(this.value),
+                "checksum value \"%s\" contains non-hexadecimal digits", value);
+
+        checkArgument(this.value.length() == type.getNibbles(),
+            "%s requires %d hexadecimal digits but \"%s\" has %d",
+            type.getName(), type.getNibbles(), value, this.value.length());
     }
 
     /**
@@ -88,24 +96,6 @@ public class Checksum  implements Serializable
         return normalised;
     }
 
-    private String normalise(String original) throws IllegalArgumentException
-    {
-        String normalised = normalise(type, original);
-
-        if (!HEXADECIMAL.matchesAllOf(normalised)) {
-            throw new IllegalArgumentException("checksum value \"" +
-                    original + "\" contains non-hexadecimal digits");
-        }
-
-        if (normalised.length() != type.getNibbles()) {
-            throw new IllegalArgumentException(type.getName() + " requires " +
-                    type.getNibbles() + " hexadecimal digits but \"" +
-                    original + "\" has " + normalised.length());
-        }
-
-        return normalised;
-    }
-
     public ChecksumType getType()
     {
         return type;
@@ -114,11 +104,6 @@ public class Checksum  implements Serializable
     public String getValue()
     {
         return value;
-    }
-
-    public byte[] getBytes()
-    {
-        return stringToBytes(value);
     }
 
     @Override
@@ -149,26 +134,7 @@ public class Checksum  implements Serializable
     @Override
     public String toString()
     {
-        return toString(false);
-    }
-
-    public String toString(boolean useStringKey)
-    {
-        return (useStringKey ? type.getName() : String.valueOf(type.getType())) + ':' + value;
-    }
-
-    private static byte[] stringToBytes(String str)
-    {
-        if ((str.length() % 2) != 0) {
-            str = '0' + str;
-        }
-
-        byte[] r = new byte[str.length() / 2];
-
-        for (int i = 0, l = str.length(); i < l; i += 2) {
-            r[i / 2] = (byte) Integer.parseInt(str.substring(i, i + 2), 16);
-        }
-        return r;
+        return type.getType() + ":" + value;
     }
 
     /**

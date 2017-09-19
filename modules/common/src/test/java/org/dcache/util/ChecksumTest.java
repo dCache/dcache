@@ -15,13 +15,11 @@ public class ChecksumTest
     @Test
     public void testValidAdler32NoPaddingNeeded()
     {
-        byte[] expected = {0x00, 0x67, 0x5a, (byte)0xf7};
-
         Checksum checksum = new Checksum(ADLER32, "00675af7");
 
         assertThat(checksum.getValue(), equalTo("00675af7"));
+        assertThat(checksum.toString(), equalTo("1:00675af7"));
         assertThat(checksum.getType(), equalTo(ADLER32));
-        assertThat(checksum.getBytes(), equalTo(expected));
     }
 
     @Test
@@ -32,32 +30,28 @@ public class ChecksumTest
         Checksum checksum = new Checksum(ADLER32, value);
 
         assertThat(checksum.getValue(), equalTo("00675af7"));
+        assertThat(checksum.toString(), equalTo("1:00675af7"));
         assertThat(checksum.getType(), equalTo(ADLER32));
-        assertThat(checksum.getBytes(), equalTo(value));
     }
 
     @Test
     public void testValidAdler32NoPaddingNeededUpperCase()
     {
-        byte[] expected = {0x00, 0x67, 0x5a, (byte)0xf7};
-
         Checksum checksum = new Checksum(ADLER32, "00675AF7");
 
         assertThat(checksum.getValue(), equalTo("00675af7"));
+        assertThat(checksum.toString(), equalTo("1:00675af7"));
         assertThat(checksum.getType(), equalTo(ADLER32));
-        assertThat(checksum.getBytes(), equalTo(expected));
     }
 
     @Test
     public void testValidAdler32PaddingNeeded()
     {
-        byte[] expected = {0x00, 0x67, 0x5a, (byte)0xf7};
-
         Checksum checksum = new Checksum(ADLER32, "675af7");
 
         assertThat(checksum.getValue(), equalTo("00675af7"));
+        assertThat(checksum.toString(), equalTo("1:00675af7"));
         assertThat(checksum.getType(), equalTo(ADLER32));
-        assertThat(checksum.getBytes(), equalTo(expected));
     }
 
     @Test
@@ -67,11 +61,9 @@ public class ChecksumTest
 
         Checksum checksum = new Checksum(ADLER32, value);
 
-        byte[] expected = {0x00, 0x67, 0x5a, (byte)0xf7};
-
         assertThat(checksum.getValue(), equalTo("00675af7"));
+        assertThat(checksum.toString(), equalTo("1:00675af7"));
         assertThat(checksum.getType(), equalTo(ADLER32));
-        assertThat(checksum.getBytes(), equalTo(expected));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -108,15 +100,11 @@ public class ChecksumTest
     @Test
     public void testValidMD5FromString()
     {
-        byte[] expected = {0x65, (byte)0xe3, 0x11, (byte)0xe6, 0x78,
-            (byte)0xcf, (byte)0xc5, (byte)0x8a, 0x1c, (byte)0x8c, 0x74, 0x04,
-            0x52, (byte)0xb3, 0x70, (byte)0x8f};
-
         Checksum checksum = new Checksum(MD5_TYPE, "65e311e678cfc58a1c8c740452b3708f");
 
         assertThat(checksum.getValue(), equalTo("65e311e678cfc58a1c8c740452b3708f"));
+        assertThat(checksum.toString(), equalTo("2:65e311e678cfc58a1c8c740452b3708f"));
         assertThat(checksum.getType(), equalTo(MD5_TYPE));
-        assertThat(checksum.getBytes(), equalTo(expected));
     }
 
     @Test
@@ -129,8 +117,8 @@ public class ChecksumTest
         Checksum checksum = new Checksum(MD5_TYPE, value);
 
         assertThat(checksum.getValue(), equalTo("65e311e678cfc58a1c8c740452b3708f"));
+        assertThat(checksum.toString(), equalTo("2:65e311e678cfc58a1c8c740452b3708f"));
         assertThat(checksum.getType(), equalTo(MD5_TYPE));
-        assertThat(checksum.getBytes(), equalTo(value));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -170,15 +158,11 @@ public class ChecksumTest
     @Test
     public void testValidMD4()
     {
-        byte[] expected = {0x65, (byte)0xe3, 0x11, (byte)0xe6, 0x78,
-            (byte)0xcf, (byte)0xc5, (byte)0x8a, 0x1c, (byte)0x8c, 0x74, 0x04,
-            0x52, (byte)0xb3, 0x70, (byte)0x8f};
-
         Checksum checksum = new Checksum(MD4_TYPE, "65e311e678cfc58a1c8c740452b3708f");
 
         assertThat(checksum.getValue(), equalTo("65e311e678cfc58a1c8c740452b3708f"));
+        assertThat(checksum.toString(), equalTo("3:65e311e678cfc58a1c8c740452b3708f"));
         assertThat(checksum.getType(), equalTo(MD4_TYPE));
-        assertThat(checksum.getBytes(), equalTo(expected));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -208,39 +192,28 @@ public class ChecksumTest
     @Test
     public void testParseChecksumForAdler32NoPaddingNeeded()
     {
-        byte[] expected = {0x00, 0x67, 0x5a, (byte)0xf7};
-
         Checksum checksum = Checksum.parseChecksum("1:00675af7");
 
         assertThat(checksum.getValue(), equalTo("00675af7"));
         assertThat(checksum.getType(), equalTo(ADLER32));
-        assertThat(checksum.getBytes(), equalTo(expected));
     }
 
     @Test
     public void testParseChecksumForAdler32PaddingNeeded()
     {
-        byte[] expected = {0x00, 0x67, 0x5a, (byte)0xf7};
-
         Checksum checksum = Checksum.parseChecksum("1:675af7");
 
         assertThat(checksum.getValue(), equalTo("00675af7"));
         assertThat(checksum.getType(), equalTo(ADLER32));
-        assertThat(checksum.getBytes(), equalTo(expected));
     }
 
     @Test
     public void testParseChecksumForMD5()
     {
-        byte[] expected = {0x65, (byte)0xe3, 0x11, (byte)0xe6, 0x78,
-            (byte)0xcf, (byte)0xc5, (byte)0x8a, 0x1c, (byte)0x8c, 0x74, 0x04,
-            0x52, (byte)0xb3, 0x70, (byte)0x8f};
-
         Checksum checksum = Checksum.parseChecksum("2:65e311e678cfc58a1c8c740452b3708f");
 
         assertThat(checksum.getValue(), equalTo("65e311e678cfc58a1c8c740452b3708f"));
         assertThat(checksum.getType(), equalTo(MD5_TYPE));
-        assertThat(checksum.getBytes(), equalTo(expected));
    }
 
     @Test

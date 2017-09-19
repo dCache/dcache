@@ -69,14 +69,15 @@ public class Checksums
      */
     private static final Function<Checksum,String> TO_RFC3230_FRAGMENT =
             f -> {
-                byte[] bytes = f.getBytes();
+                String value = f.getValue();
 
                 switch(f.getType()) {
                 case ADLER32:
-                    return "adler32=" + BaseEncoding.base16().lowerCase().encode(bytes);
+                    return "adler32=" + value;
                 case MD4_TYPE:
                     return null;
                 case MD5_TYPE:
+                    byte[] bytes = BaseEncoding.base16().lowerCase().decode(value);
                     return "md5=" + Base64.getEncoder().encodeToString(bytes);
                 default:
                     return null;

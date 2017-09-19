@@ -66,20 +66,19 @@ public class ChecksumCalculatingTransfer extends Transfer
                 (InetSocketAddress) ssc.getLocalAddress(), 1, 1, 1,
                 MiB.toBytes(1), 0, getFileAttributes().getSize()));
         Checksum existingChecksum = Checksums.preferrredOrder().max(getFileAttributes().getChecksums());
-        ChecksumType verifyingChecksumType = existingChecksum.getType();
         try {
             selectPoolAndStartMover(TransferRetryPolicies.tryOncePolicy());
             SocketChannel s = ssc.accept();
             ByteBuffer buffer = ByteBuffer.allocate(MiB.toBytes(1));
-            MessageDigest desiredChecksum = desiredType.createMessageDigest();
-            MessageDigest verifyingChecksum = verifyingChecksumType.createMessageDigest();
+            MessageDigest desiredDigest = desiredType.createMessageDigest();
+            MessageDigest verifyingDigest = existingChecksum.getType().createMessageDigest();
 
             while (s.read(buffer) > -1) {
                 advanceCalculated(buffer.position());
                 buffer.flip();
-                desiredChecksum.update(buffer);
+                desiredDigest.update(buffer);
                 buffer.rewind();
-                verifyingChecksum.update(buffer);
+                verifyingDigest.update(buffer);
                 buffer.clear();
             }
 
@@ -93,10 +92,11 @@ public class ChecksumCalculatingTransfer extends Transfer
                 throw new CacheException("File size mismatch: " + getCalculated() + " != " + getFileAttributes().getSize());
             }
 
-            if (!Arrays.equals(verifyingChecksum.digest(), existingChecksum.getBytes())) {
-                throw new CacheException("Corrupt data: " + Arrays.toString(verifyingChecksum.digest()) + " != " + Arrays.toString(existingChecksum.getBytes()));
+            Checksum verifyingChecksum = new Checksum(verifyingDigest);
+            if (!existingChecksum.equals(verifyingChecksum)) {
+                throw new CacheException("Corrupt data: " + verifyingChecksum + " != " + existingChecksum);
             }
-            return new Checksum(desiredChecksum);
+            return new Checksum(desiredDigest);
         } finally {
             if (!success) {
                 killMover(0, "killed by failure");
