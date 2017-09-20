@@ -67,7 +67,7 @@ public class ChecksumScanner
 
     private void onConfigChange()
     {
-        if (_csm.hasPolicy(ChecksumModule.PolicyFlag.SCRUB)) {
+        if (_csm.isScrubEnabled()) {
             startScrubber();
         } else {
             stopScrubber();
@@ -338,7 +338,7 @@ public class ChecksumScanner
         @Override
         public synchronized void start()
         {
-            if (_csm.hasPolicy(ChecksumModule.PolicyFlag.SCRUB) && !isActive()) {
+            if (_csm.isScrubEnabled() && !isActive()) {
                 super.start();
             }
         }

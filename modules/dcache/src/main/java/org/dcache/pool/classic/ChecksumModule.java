@@ -28,6 +28,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -38,43 +39,6 @@ import org.dcache.util.ChecksumType;
 public interface ChecksumModule
 {
     /**
-     * The policy implemented by a ChecksumModule is determined by these policy flags.
-     */
-    enum PolicyFlag {
-        /** Validate checksum on file read. Not implemented. */
-        ON_READ,
-
-        /** Validate checksum before flush to HSM. */
-        ON_FLUSH,
-
-        /** Validate checsum after restore from HSM. */
-        ON_RESTORE,
-
-        /** Validate checksum after file was written to pool. */
-        ON_WRITE,
-
-        /** Validate checksum while file is being written to pool. */
-        ON_TRANSFER,
-
-        /** Enforce availability of a checksum on upload. */
-        ENFORCE_CRC,
-
-        /** Retrieve checksums from HSM after restore and register in name space. */
-        GET_CRC_FROM_HSM,
-
-        /** Background checksum verification. */
-        SCRUB
-    }
-
-    /**
-     * Determines if the policy is enabled.
-     *
-     * @param policy A checksum policy
-     * @return true if the policy is enabled, false otherwise
-     */
-    boolean hasPolicy(PolicyFlag policy);
-
-    /**
      * A set of checksum types that should be calculated when the pool is
      * accepting data for a new file.
      *
@@ -83,6 +47,26 @@ public interface ChecksumModule
      */
     @Nonnull
     Set<ChecksumType> checksumsWhenWriting(ReplicaDescriptor handle);
+
+    /**
+     * Verify the integrity of a file identified as broken.  If knownChecksums
+     * is empty then the replica's data is assumed to be correct.
+     * <p>
+     * Checksums may be calculated in addition to those required to verify
+     * the knownChecksums.  Any such additional checksums are returned and are
+     * intended to be stored locally and sent to the namespace.
+     * @param entry The broken replica
+     * @param knownChecksums Any known checksums for valid data.
+     * @throws IOException if checksums could not be calculated
+     * @throws FileCorruptedCacheException if the stored data is corrupt
+     * @throws InterruptedException if the pool is shut down during the verification process.
+     * @return Any additional checksums calculated
+     */
+    @Nonnull
+    public Set<Checksum> verifyBrokenFile(ReplicaRecord entry,
+            @Nonnull Set<Checksum> knownChecksums)
+            throws IOException, FileCorruptedCacheException, InterruptedException;
+
 
     /**
      * Applies the post-transfer checksum policy.
@@ -122,13 +106,14 @@ public interface ChecksumModule
      * Should be called after restoring a file from HSM.
      *
      * @param handle A write descriptor
+     * @param checksums Any additional expected checksums
      * @throws CacheException If the checksums could not be verified
      * @throws FileCorruptedCacheException If checksums do not match
      * @throws NoSuchAlgorithmException If no suitable checksum algorithm is supported
      * @throws IOException If an I/O error happened while computing the checksum
      * @throws InterruptedException If the thread is interrupted
      */
-    void enforcePostRestorePolicy(ReplicaDescriptor handle)
+    void enforcePostRestorePolicy(ReplicaDescriptor handle, @Nonnull Set<Checksum> checksums)
             throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException;
 
     /**

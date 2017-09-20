@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +34,10 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,11 +64,13 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.pool.classic.json.ChecksumModuleData;
+import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.ReplicaRecord;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
-import static org.dcache.pool.classic.ChecksumModule.PolicyFlag.*;
+import static org.dcache.pool.classic.ChecksumModuleV1.PolicyFlag.*;
 import static org.dcache.util.ByteUnit.*;
 import static org.dcache.util.ChecksumType.ADLER32;
 import static org.dcache.util.ChecksumType.MD5_TYPE;
@@ -77,6 +82,35 @@ public class ChecksumModuleV1
     private static final Logger LOGGER = LoggerFactory.getLogger(ChecksumModuleV1.class);
     private static final Map<ChecksumType,String> CHECKSUM_NAMES = ImmutableMap.of(ADLER32, "adler32", MD5_TYPE, "md5");
     private static final long MILLISECONDS_IN_SECOND = 1000;
+
+    /**
+     * The policy implemented by a ChecksumModule is determined by these policy flags.
+     */
+    enum PolicyFlag {
+        /** Validate checksum on file read. Not implemented. */
+        ON_READ,
+
+        /** Validate checksum before flush to HSM. */
+        ON_FLUSH,
+
+        /** Validate checsum after restore from HSM. */
+        ON_RESTORE,
+
+        /** Validate checksum after file was written to pool. */
+        ON_WRITE,
+
+        /** Validate checksum while file is being written to pool. */
+        ON_TRANSFER,
+
+        /** Enforce availability of a checksum on upload. */
+        ENFORCE_CRC,
+
+        /** Retrieve checksums from HSM after restore and register in name space. */
+        GET_CRC_FROM_HSM,
+
+        /** Background checksum verification. */
+        SCRUB
+    }
 
     private final EnumSet<PolicyFlag> _policy = EnumSet.of(ON_TRANSFER, ENFORCE_CRC);
 
@@ -374,8 +408,12 @@ public class ChecksumModuleV1
         return hasPolicy(flag) ? "on" : "off";
     }
 
-    @Override
-    public synchronized boolean hasPolicy(PolicyFlag flag)
+    public boolean isScrubEnabled()
+    {
+        return hasPolicy(SCRUB);
+    }
+
+    private synchronized boolean hasPolicy(PolicyFlag flag)
     {
         return _policy.contains(flag);
     }
@@ -391,6 +429,38 @@ public class ChecksumModuleV1
             LOGGER.warn("Failed to fetch checksum information: {}", e.getMessage());
         }
         return types;
+    }
+
+
+    @Override
+    public Set<Checksum> verifyBrokenFile(ReplicaRecord entry, Set<Checksum> expectedChecksums) throws IOException, FileCorruptedCacheException, InterruptedException
+    {
+        Set<Checksum> additionalChecksums = Collections.emptySet();
+
+        switch (entry.getState()) {
+        case FROM_CLIENT:
+            EnumSet<ChecksumType> types = EnumSet.noneOf(ChecksumType.class);
+            expectedChecksums.stream().forEach(c -> types.add(c.getType()));
+            if (hasPolicy(ON_WRITE) || (hasPolicy(ON_TRANSFER) && hasPolicy(ENFORCE_CRC))) {
+                types.addAll(_defaultChecksumType);
+            }
+
+            if (!types.isEmpty()) {
+                List<MessageDigest> digests = types.stream()
+                        .map(ChecksumType::createMessageDigest)
+                        .collect(Collectors.toList());
+
+                try (RepositoryChannel channel = entry.openChannel(FileStore.O_READ)) {
+                    Set<Checksum> actualChecksums = computeChecksums(channel, digests);
+                    compareChecksums(expectedChecksums, actualChecksums);
+
+                    additionalChecksums = Sets.difference(actualChecksums, expectedChecksums)
+                            .copyInto(new HashSet<>());
+                }
+            }
+        }
+
+        return additionalChecksums;
     }
 
     @Override
@@ -427,9 +497,15 @@ public class ChecksumModuleV1
     }
 
     @Override
-    public void enforcePostRestorePolicy(ReplicaDescriptor handle)
+    public void enforcePostRestorePolicy(ReplicaDescriptor handle, Set<Checksum> expectedChecksums)
             throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException
     {
+        if (hasPolicy(GET_CRC_FROM_HSM)) {
+            LOGGER.info("Obtained checksums {} for {} from HSM", expectedChecksums,
+                    handle.getFileAttributes().getPnfsId());
+            handle.addChecksums(expectedChecksums);
+        }
+
         if (hasPolicy(ON_RESTORE)) {
             handle.addChecksums(verifyChecksum(handle));
         }
@@ -476,7 +552,7 @@ public class ChecksumModuleV1
         return actualChecksums;
     }
 
-    private void compareChecksums(Iterable<Checksum> expected, Iterable<Checksum> actual) throws CacheException
+    private void compareChecksums(Iterable<Checksum> expected, Iterable<Checksum> actual) throws FileCorruptedCacheException
     {
         Map<ChecksumType, Checksum> checksumByType = Maps.newHashMap();
         for (Checksum checksum: concat(expected, actual)) {

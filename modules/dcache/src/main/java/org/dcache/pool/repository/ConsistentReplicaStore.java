@@ -31,7 +31,6 @@ import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Iterables.isEmpty;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.Exceptions.messageOrClassName;
 
@@ -193,18 +192,10 @@ public class ConsistentReplicaStore
 
             /* Verify checksum. Will fail if there is a mismatch.
              */
-            Set<Checksum> expectedChecksums = attributesInNameSpace.getChecksumsIfPresent().or(Collections.emptySet());
-            Iterable<Checksum> actualChecksums;
-            if (!expectedChecksums.isEmpty() && _checksumModule != null &&
-                    (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_WRITE) ||
-                            _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER) ||
-                            _checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_RESTORE))) {
-                try (RepositoryChannel channel = entry.openChannel(FileStore.O_READ)) {
-                    actualChecksums = _checksumModule.verifyChecksum(channel, expectedChecksums);
-                }
-            } else {
-                actualChecksums = Collections.emptySet();
-            }
+            Set<Checksum> namespaceChecksums = attributesInNameSpace.getChecksumsIfPresent().or(Collections.emptySet());
+            Set<Checksum> additionalChecksums = _checksumModule == null
+                    ? Collections.emptySet()
+                    : _checksumModule.verifyBrokenFile(entry, namespaceChecksums);
 
             /* We always register the file location.
              */
@@ -253,12 +244,12 @@ public class ConsistentReplicaStore
 
                     _log.warn("Recovering: Setting size of {} in name space to {}.", id, length);
                 }
-                if (!isEmpty(actualChecksums)) {
-                    attributesToUpdate.setChecksums(Sets.newHashSet(actualChecksums));
+                if (!additionalChecksums.isEmpty()) {
+                    attributesToUpdate.setChecksums(additionalChecksums);
                     attributesInNameSpace.setChecksums(
-                            Sets.newHashSet(concat(expectedChecksums, actualChecksums)));
+                            Sets.newHashSet(concat(namespaceChecksums, additionalChecksums)));
                     _log.warn("Recovering: Setting checksum of {} in name space to {}.",
-                            id, actualChecksums);
+                            id, additionalChecksums);
                 }
             }
 

@@ -1137,15 +1137,11 @@ public class NearlineStorageHandler
         }
 
         @Override
-        public void completed(Set<Checksum> checksums)
+        public void completed(Set<Checksum> expectedChecksums)
         {
             Throwable error = null;
             try {
-                if (checksumModule.hasPolicy(ChecksumModule.PolicyFlag.GET_CRC_FROM_HSM)) {
-                    LOGGER.info("Obtained checksums {} for {} from HSM", checksums, getFileAttributes().getPnfsId());
-                    descriptor.addChecksums(checksums);
-                }
-                checksumModule.enforcePostRestorePolicy(descriptor);
+                checksumModule.enforcePostRestorePolicy(descriptor, expectedChecksums);
                 descriptor.commit();
                 LOGGER.info("Staged {} from nearline storage.", getFileAttributes().getPnfsId());
             } catch (InterruptedException | CacheException | RuntimeException | Error e) {
