@@ -45,6 +45,8 @@ check -strong resilience.limits.pool.restart-grace-period.unit
 check -strong resilience.limits.pool.scan-threads
 check -strong resilience.limits.startup-delay
 check -strong resilience.limits.startup-delay.unit
+check -strong resilience.limits.copy-launch-delay
+check -strong resilience.limits.copy-launch-delay.unit
 check -strong resilience.pool-selection-strategy
 check -strong resilience.watchdog.scan.period
 check -strong resilience.watchdog.scan.period.unit

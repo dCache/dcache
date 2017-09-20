@@ -241,7 +241,7 @@
       <constructor-arg>
           <bean class="java.util.concurrent.Executors"
                 factory-method="newScheduledThreadPool"
-                destroy-method="shutdown">
+                 destroy-method="shutdown">
               <constructor-arg value="${pool.limits.worker-threads}"/>
               <property name="executeExistingDelayedTasksAfterShutdownPolicy"
                         value="false"/>
