@@ -94,25 +94,6 @@ public class MiltonHandler
         }
     }
 
-    private void setCORSHeaders (HttpServletRequest request, HttpServletResponse response)
-    {
-        String clientOrigin = request.getHeader("origin");
-        if (Objects.equals(request.getMethod(), "OPTIONS")) {
-            response.setHeader("Access-Control-Allow-Methods", "PUT, POST, DELETE");
-            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Suppress-WWW-Authenticate");
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Origin", clientOrigin);
-            if (_allowedClientOrigins.size() > 1) {
-                response.setHeader("Vary", "Origin");
-            }
-        } else {
-            response.setHeader("Access-Control-Allow-Origin", clientOrigin);
-            if (_allowedClientOrigins.size() > 1) {
-                response.setHeader("Vary", "Origin");
-            }
-        }
-    }
-
     @Override
     public void setCellAddress(CellAddressCore address)
     {
@@ -127,17 +108,24 @@ public class MiltonHandler
         try (CDC ignored = CDC.reset(_myAddress)) {
             Transfer.initSession(false, false);
             ServletContext context = ContextHandler.getCurrentContext();
-            String clientOrigin = request.getHeader("origin");
 
-            boolean isOriginAllow = _allowedClientOrigins.contains(clientOrigin);
-            if (isOriginAllow) {
-                setCORSHeaders(request, response);
+            String clientOrigin = request.getHeader("origin");
+            if (_allowedClientOrigins.contains(clientOrigin)) {
+                response.setHeader("Access-Control-Allow-Origin", clientOrigin);
+                if (_allowedClientOrigins.size() > 1) {
+                    response.setHeader("Vary", "Origin");
+                }
             }
 
             switch (request.getMethod()) {
             case "USERINFO":
                 response.sendError(501, "Not implemented");
                 break;
+            case "OPTIONS":
+                response.setHeader("Access-Control-Allow-Methods", "PUT, POST, DELETE");
+                response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Suppress-WWW-Authenticate");
+                response.setHeader("Access-Control-Allow-Credentials", "true");
+                // fall through, to allow Milton to add more details.
             default:
                 Subject subject = Subject.getSubject(AccessController.getContext());
                 ServletRequest req = new DcacheServletRequest(request, context);
