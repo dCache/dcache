@@ -113,11 +113,11 @@
       </constructor-arg>
     </bean>
 
-    <bean id="FileOpExecutor" class="org.dcache.util.CDCExecutorServiceDecorator">
+    <bean id="FileOpExecutor" class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
       <description>Thread pool service for executing verification of individual pnfs operations</description>
       <constructor-arg>
-        <bean class="org.dcache.util.BoundedCachedExecutor"
-              destroy-method="shutdownNow">
+        <bean class="java.util.concurrent.Executors" factory-method="newScheduledThreadPool"
+                                                     destroy-method="shutdownNow">
           <constructor-arg value="${resilience.limits.file.operation-threads}"/>
         </bean>
       </constructor-arg>
@@ -230,8 +230,10 @@
       <property name="fileOpMap" ref="FileOpMap"/>
       <property name="poolInfoMap" ref="PoolInfoMap"/>
       <property name="locationSelector" ref="LocationSelector"/>
-      <property name="scheduledService" ref="MigrationExecutor"/>
+      <property name="migrationTaskService" ref="MigrationExecutor"/>
       <property name="taskService" ref="FileOpExecutor"/>
+      <property name="launchDelay" value="${resilience.limits.copy-launch-delay}"/>
+      <property name="launchDelayUnit" value="${resilience.limits.copy-launch-delay.unit}"/>
     </bean>
 
     <bean id="PoolOpHandler" class="org.dcache.resilience.handlers.PoolOperationHandler">

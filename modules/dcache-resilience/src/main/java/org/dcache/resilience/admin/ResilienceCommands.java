@@ -399,20 +399,27 @@ public final class ResilienceCommands implements CellCommandListener {
         String arg = "INFO";
 
         @Option(name = "checkpoint",
-                        usage = "With reset mode (one of checkpoint|sweep). "
+                        usage = "With reset mode (one of checkpoint|sweep|delay). "
                                         + "Interval length between checkpointing "
                                         + "of the file operation data.")
         Long checkpoint;
 
         @Option(name = "sweep",
-                        usage = "With reset mode (one of checkpoint|sweep). "
+                        usage = "With reset mode (one of checkpoint|sweep|delay). "
                                         + "Minimal interval between sweeps of "
                                         + "the file operations.")
         Long sweep;
 
+        @Option(name = "delay",
+                        usage = "With reset mode (one of checkpoint|sweep|delay). "
+                                        + "Delay before actual execution of a task "
+                                        + "which has been set to the running state.")
+        Long delay;
+
         @Option(name = "unit",
                         valueSpec = "SECONDS|MINUTES|HOURS",
-                        usage = "Checkpoint or sweep interval unit.") TimeUnit unit;
+                        usage = "Checkpoint, sweep or delay interval unit.")
+        TimeUnit unit;
 
         @Option(name = "retries",
                         usage = "Maximum number of retries on a failed operation.")
@@ -476,6 +483,11 @@ public final class ResilienceCommands implements CellCommandListener {
                         if (unit != null) {
                             fileOperationMap.setTimeoutUnit(unit);
                         }
+                    } else if (delay != null) {
+                        fileOperationHandler.setLaunchDelay(delay);
+                        if (unit != null) {
+                            fileOperationHandler.setLaunchDelayUnit(unit);
+                        }
                     }
 
                     if (retries != null) {
@@ -508,6 +520,9 @@ public final class ResilienceCommands implements CellCommandListener {
                                       fileOperationMap.getCheckpointExpiry(),
                                       fileOperationMap.getCheckpointExpiryUnit(),
                                       fileOperationMap.getCheckpointFilePath()));
+            info.append(String.format("task launch delay %s %s\n",
+                                      fileOperationHandler.getLaunchDelay(),
+                                      fileOperationHandler.getLaunchDelayUnit()));
             counters.getFileOpSweepInfo(info);
             counters.getCheckpointInfo(info);
             return info.toString();

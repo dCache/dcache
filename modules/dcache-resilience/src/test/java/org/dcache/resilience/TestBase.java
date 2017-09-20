@@ -508,7 +508,7 @@ public abstract class TestBase implements Cancellable {
         fileOperationHandler.setLocationSelector(locationSelector);
         fileOperationHandler.setFileOpMap(fileOperationMap);
         fileOperationHandler.setTaskService(longJobExecutor);
-        fileOperationHandler.setScheduledService(scheduledExecutorService);
+        fileOperationHandler.setMigrationTaskService(scheduledExecutorService);
         fileOperationHandler.setPoolStub(testPoolStub);
     }
 

@@ -69,9 +69,9 @@ import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -139,17 +139,28 @@ public class FileOperationHandler {
 
     private CellStub                  pinManager;
     private CellStub                  pools;
-    private ExecutorService           taskService;
-    private ScheduledExecutorService  scheduledService;
+    private ScheduledExecutorService  taskService;
+    private ScheduledExecutorService  migrationTaskService;
     private FileTaskCompletionHandler completionHandler;
     private InaccessibleFileHandler   inaccessibleFileHandler;
 
-    public ExecutorService getTaskService() {
+    private long        launchDelay       =  0L;
+    private TimeUnit    launchDelayUnit   = TimeUnit.SECONDS;
+
+    public ScheduledExecutorService getTaskService() {
         return taskService;
     }
 
     public ScheduledExecutorService getRemoveService() {
-        return scheduledService;
+        return migrationTaskService;
+    }
+
+    public long getLaunchDelay() {
+       return launchDelay;
+    }
+
+    public TimeUnit getLaunchDelayUnit() {
+        return launchDelayUnit;
     }
 
     public void handleBrokenFileLocation(PnfsId pnfsId, String pool) {
@@ -316,7 +327,7 @@ public class FileOperationHandler {
                         pools,
                         null,   // PnfsManager cell stub not used
                         pinManager,
-                        scheduledService,
+                        migrationTaskService,
                         taskSelectionStrategy,
                         list,
                         false,  // eager; update should not happen
@@ -470,6 +481,14 @@ public class FileOperationHandler {
         this.inaccessibleFileHandler = inaccessibleFileHandler;
     }
 
+    public void setLaunchDelay(long launchDelay) {
+        this.launchDelay = launchDelay;
+    }
+
+    public void setLaunchDelayUnit(TimeUnit launchDelayUnit) {
+        this.launchDelayUnit = launchDelayUnit;
+    }
+
     public void setLocationSelector(LocationSelector locationSelector) {
         this.locationSelector = locationSelector;
     }
@@ -490,11 +509,11 @@ public class FileOperationHandler {
         this.pools = pools;
     }
 
-    public void setScheduledService(ScheduledExecutorService scheduledService) {
-        this.scheduledService = scheduledService;
+    public void setMigrationTaskService(ScheduledExecutorService migrationTaskService) {
+        this.migrationTaskService = migrationTaskService;
     }
 
-    public void setTaskService(ExecutorService taskService) {
+    public void setTaskService(ScheduledExecutorService taskService) {
         this.taskService = taskService;
     }
 
