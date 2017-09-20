@@ -79,7 +79,6 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ServiceUnavailableException;
-
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -231,16 +230,28 @@ public abstract class CellDataCollectingService<D, C extends CellMessagingCollec
              */
             return;
         } catch (IllegalStateException e) {
+            Throwable t = e.getCause();
             LOGGER.info("Could not run collection: {}, {}.",
-                        e.getMessage(), e.getCause());
+                        e.getMessage(),
+                        t == null ? "" : t.toString());
         } catch (ServiceUnavailableException e) {
+            Throwable t = e.getCause();
             LOGGER.debug("Could not run collection: {}, {}.",
-                            e.getMessage(), e.getCause());
+                        e.getMessage(),
+                        t == null ? "" : t.toString());
         } catch (CacheException e) {
+            Throwable t = e.getCause();
             LOGGER.info("Could not run collection: {}, {}.",
-                        e.getMessage(), e.getCause());
+                        e.getMessage(),
+                        t == null ? "" : t.toString());
         } catch (RuntimeException ee) {
-            LOGGER.error(ee.toString(), ee);
+            Thread thisThread = Thread.currentThread();
+            thisThread.getUncaughtExceptionHandler()
+                      .uncaughtException(thisThread, ee);
+            LOGGER.error("Uncaught runtime exception in update; this is most "
+                                         + "likely a bug.  No further collection "
+                                         + "has been scheduled.");
+            return;
         }
 
         scheduleNext(timeout, timeoutUnit);
