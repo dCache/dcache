@@ -1828,12 +1828,6 @@ public class PoolV4
         }
     }
 
-    @Deprecated
-    public String ac_set_p2p_$_1(Args args)
-    {
-        return "WARNING: this command is obsolete";
-    }
-
     @Command(name = "pool disable")
     class PoolDisableCommand implements Callable<String>
     {
@@ -1915,13 +1909,6 @@ public class PoolV4
         }
     }
 
-    @Deprecated
-    public String ac_set_max_movers_$_1(Args args)
-    {
-        return "Please use 'mover|st|rh set max active <jobs>'";
-
-    }
-
     @AffectsSetup
     @Command(name = "set report remove")
     class SetReportRemoveCommand implements Callable<String>
@@ -1944,18 +1931,6 @@ public class PoolV4
             }
             return "";
         }
-    }
-
-    @Deprecated
-    public String ac_set_sticky_$_0_1(Args args)
-    {
-        return "The command is deprecated and has no effect";
-    }
-
-    @Deprecated
-    public String ac_set_cleaning_interval_$_1(Args args)
-    {
-        return "The command is deprecated and has no effect";
     }
 
     @AffectsSetup
