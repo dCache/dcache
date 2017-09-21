@@ -1,10 +1,10 @@
 package diskCacheV111.services;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import jersey.repackaged.com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.FTPTransactionLog;

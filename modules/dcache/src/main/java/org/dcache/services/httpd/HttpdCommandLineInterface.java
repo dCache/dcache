@@ -1,7 +1,7 @@
 package org.dcache.services.httpd;
 
 import com.google.common.base.Joiner;
-import jersey.repackaged.com.google.common.base.Throwables;
+import com.google.common.base.Throwables;
 import org.eclipse.jetty.server.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
