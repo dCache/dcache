@@ -138,11 +138,6 @@ public class MiltonHandler
             case "USERINFO":
                 response.sendError(501, "Not implemented");
                 break;
-            case "OPTIONS":
-                if (isOriginAllow) {
-                    setCORSHeaders(request, response);
-                }
-                break;
             default:
                 Subject subject = Subject.getSubject(AccessController.getContext());
                 ServletRequest req = new DcacheServletRequest(request, context);
