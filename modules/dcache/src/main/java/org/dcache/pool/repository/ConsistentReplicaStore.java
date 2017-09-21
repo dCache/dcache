@@ -47,35 +47,6 @@ public class ConsistentReplicaStore
 {
     private static final Logger _log = LoggerFactory.getLogger(ConsistentReplicaStore.class);
 
-    private static final String RECOVERING_MSG =
-        "Recovering %1$s...";
-    private static final String PARTIAL_FROM_TAPE_MSG =
-        "Recovering: Removed %1$s because it was not fully staged.";
-    private static final String FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS =
-        "Recovering: Fetched storage info for %1$s from name space.";
-    private static final String FILE_NOT_FOUND_MSG =
-        "Recovering: Removed %1$s because name space entry was deleted.";
-    private static final String UPDATE_SIZE_MSG =
-        "Recovering: Setting size of %1$s in name space to %2$d.";
-    private static final String UPDATE_ACCESS_LATENCY_MSG =
-        "Recovering: Setting access latency of %1$s in name space to %2$s.";
-    private static final String UPDATE_RETENTION_POLICY_MSG =
-        "Recovering: Setting retention policy of %1$s in name space to %2$s.";
-    private static final String UPDATE_CHECKSUM_MSG =
-        "Recovering: Setting checksum of %1$s in name space to %2$s.";
-    private static final String MARKED_MSG =
-        "Recovering: Marked %1$s as %2$s.";
-    private static final String BAD_MSG =
-        "Marked %1$s bad: %2$s.";
-    private static final String BAD_SIZE_MSG =
-        "File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.";
-    private static final String MISSING_ACCESS_LATENCY =
-        "Missing access latency for %1$s.";
-    private static final String MISSING_RETENTION_POLICY =
-        "Missing retention policy for %1$s.";
-    private static final String EMPTY_FILE_IS_NEW_MSG =
-        "Recovering: Removed empty file %1$s because name space entry is still new.";
-
     private final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =
             EnumSet.of(STORAGEINFO, LOCATIONS, ACCESS_LATENCY, RETENTION_POLICY, SIZE, CHECKSUM);
 
@@ -135,7 +106,7 @@ public class ConsistentReplicaStore
     {
         ReplicaRecord entry = _replicaStore.get(id);
         if (entry != null && isBroken(entry)) {
-            _log.warn(String.format(RECOVERING_MSG, id));
+            _log.warn("Recovering {}...", id);
 
             try {
                 /* It is safe to remove FROM_STORE/FROM_POOL replicas: We have
@@ -149,7 +120,7 @@ public class ConsistentReplicaStore
                 case DESTROYED:
                     _replicaStore.remove(id);
                     _pnfsHandler.clearCacheLocation(id);
-                    _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
+                    _log.info("Recovering: Removed {} because it was not fully staged.", id);
                     return null;
                 }
 
@@ -158,7 +129,7 @@ public class ConsistentReplicaStore
                 throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage(), e);
             } catch (FileNotFoundCacheException e) {
                 _replicaStore.remove(id);
-                _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
+                _log.warn("Recovering: Removed {} because name space entry was deleted.", id);
                 return null;
             } catch (FileIsNewCacheException e) {
                 _replicaStore.remove(id);
@@ -172,9 +143,8 @@ public class ConsistentReplicaStore
             } catch (CacheException | NoSuchAlgorithmException e) {
                 entry.update(r -> r.setState(ReplicaState.BROKEN));
                 _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
-                                id.toString(),
-                                _poolName),
-                                String.format(BAD_MSG, id, e.getMessage()));
+                                id.toString(), _poolName),
+                        "Marked {} bad: {}.", id, e.getMessage());
             }
         }
 
@@ -198,7 +168,7 @@ public class ConsistentReplicaStore
 
            ReplicaState state = entry.getState();
 
-           _log.warn(String.format(FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
+           _log.warn("Recovering: Fetched storage info for {} from name space.", id);
            FileAttributes attributesInNameSpace = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
 
            /* As a special case, empty files upon client upload are deleted, except if we already managed to
@@ -215,8 +185,9 @@ public class ConsistentReplicaStore
              * may thus safe some time for incomplete files.
              */
             if (attributesInNameSpace.isDefined(FileAttribute.SIZE) && attributesInNameSpace.getSize() != length) {
-                throw new CacheException(String.format(BAD_SIZE_MSG, id,
-                        attributesInNameSpace.getSize(), length));
+                String message = String.format("File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.",
+                                id, attributesInNameSpace.getSize(), length);
+                throw new CacheException(message);
             }
 
             /* Verify checksum. Will fail if there is a mismatch.
@@ -249,13 +220,14 @@ public class ConsistentReplicaStore
                      */
                     FileAttributes attributesOnPool = entry.getFileAttributes();
                     if (attributesOnPool.isUndefined(ACCESS_LATENCY)) {
-                        throw new CacheException(String.format(MISSING_ACCESS_LATENCY, id));
+                        throw new CacheException("Missing access latency for " + id + ".");
                     }
 
                     AccessLatency accessLatency = attributesOnPool.getAccessLatency();
                     attributesToUpdate.setAccessLatency(accessLatency);
                     attributesInNameSpace.setAccessLatency(accessLatency);
-                    _log.warn(String.format(UPDATE_ACCESS_LATENCY_MSG, id, accessLatency));
+                    _log.warn("Recovering: Setting access latency of {} in name space to {}.",
+                            id, accessLatency);
                 }
 
                 if (attributesInNameSpace.isUndefined(RETENTION_POLICY)) {
@@ -264,26 +236,28 @@ public class ConsistentReplicaStore
                      */
                     FileAttributes attributesOnPool = entry.getFileAttributes();
                     if (attributesOnPool.isUndefined(RETENTION_POLICY)) {
-                        throw new CacheException(String.format(MISSING_RETENTION_POLICY, id));
+                        throw new CacheException("Missing retention policy for " + id + ".");
                     }
 
                     RetentionPolicy retentionPolicy = attributesOnPool.getRetentionPolicy();
                     attributesToUpdate.setRetentionPolicy(retentionPolicy);
                     attributesInNameSpace.setRetentionPolicy(retentionPolicy);
 
-                    _log.warn(String.format(UPDATE_RETENTION_POLICY_MSG, id, retentionPolicy));
+                    _log.warn("Recovering: Setting retention policy of {} in name space to {}.",
+                            id, retentionPolicy);
                 }
                 if (attributesInNameSpace.isUndefined(SIZE)) {
                     attributesToUpdate.setSize(length);
                     attributesInNameSpace.setSize(length);
 
-                    _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
+                    _log.warn("Recovering: Setting size of {} in name space to {}.", id, length);
                 }
                 if (!isEmpty(actualChecksums)) {
                     attributesToUpdate.setChecksums(Sets.newHashSet(actualChecksums));
                     attributesInNameSpace.setChecksums(
                             Sets.newHashSet(concat(expectedChecksums, actualChecksums)));
-                    _log.warn(String.format(UPDATE_CHECKSUM_MSG, id, actualChecksums));
+                    _log.warn("Recovering: Setting checksum of {} in name space to {}.",
+                            id, actualChecksums);
                 }
             }
 
@@ -310,7 +284,7 @@ public class ConsistentReplicaStore
                     r.setState(targetState);
                     return null;
                 });
-                _log.warn(String.format(MARKED_MSG, id, targetState));
+                _log.warn("Recovering: Marked {} as {}.", id, targetState);
             } else {
                 entry.update(r -> r.setFileAttributes(attributesInNameSpace));
             }

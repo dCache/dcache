@@ -570,13 +570,13 @@ class Companion
 
         if (_error != null) {
             if (_error instanceof RuntimeException || _error instanceof Error) {
-                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error),
-                           (Throwable) _error);
+                _log.error("P2P for {} failed: {}", _pnfsId, _error,
+                        (Throwable) _error);
             } else {
-                _log.error(String.format("P2P for %s failed: %s", _pnfsId, _error));
+                _log.error("P2P for {} failed: {}", _pnfsId, _error);
             }
         } else {
-            _log.info(String.format("P2P for %s completed", _pnfsId));
+            _log.info("P2P for {} completed", _pnfsId);
         }
 
         if (_callback != null) {

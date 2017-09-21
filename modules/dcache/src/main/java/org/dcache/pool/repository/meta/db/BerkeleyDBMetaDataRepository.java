@@ -36,9 +36,6 @@ import static java.util.Arrays.asList;
  */
 public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
 {
-    private static final String REMOVING_REDUNDANT_META_DATA =
-            "Removing redundant meta data for %s.";
-
     /**
      * The file store for which we hold the meta data.
      */
@@ -83,7 +80,7 @@ public class BerkeleyDBMetaDataRepository extends AbstractBerkeleyDBReplicaStore
             if (indexOptions.contains(IndexOption.ALLOW_REPAIR)) {
                 for (String id : records) {
                     if (!files.contains(new PnfsId(id))) {
-                        LOGGER.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
+                        LOGGER.warn("Removing redundant meta data for {}.", id);
                         views.getStorageInfoMap().remove(id);
                         views.getStateMap().remove(id);
                     }
