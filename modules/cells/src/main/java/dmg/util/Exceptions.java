@@ -3,6 +3,8 @@ package dmg.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -17,16 +19,28 @@ public class Exceptions
     {
     }
 
+    private static String meaningfulMessage(Throwable t)
+    {
+        return t.getMessage() != null ? t.getMessage() : t.getClass().getName();
+    }
+
     /**
      * Returns the message string of the Throwable and that of all its
      * causes.
      */
     public static String getMessageWithCauses(Throwable t)
     {
-        StringBuilder msg = new StringBuilder(t.getMessage());
+        StringBuilder msg = new StringBuilder(meaningfulMessage(t));
         t = t.getCause();
         while (t != null) {
-            msg.append("; caused by: ").append(t.getMessage());
+            msg.append("; caused by: ");
+            if (t instanceof RuntimeException) {
+                StringWriter w = new StringWriter();
+                t.printStackTrace(new PrintWriter(w));
+                msg.append(w.getBuffer());
+                break; // printStackTrace includes all subsequent causes
+            }
+            msg.append(meaningfulMessage(t));
             t = t.getCause();
         }
         return msg.toString();
