@@ -318,6 +318,7 @@
       <description>Generic transfer service</description>
       <property name="checksumModule" ref="csm"/>
       <property name="postTransferService" ref="post-transfer-service"/>
+      <property name="allocator" ref="allocator" />
   </bean>
 
   <bean id="nfs-transfer-service" class="org.dcache.chimera.nfsv41.mover.NfsTransferService"
@@ -395,6 +396,7 @@
       <property name="namespaceMode" value="${pool.authn.namespace-mode}"/>
       <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
       <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
+      <property name="allocator" ref="allocator" />
   </bean>
 
   <bean id="banned-ciphers" class="org.dcache.util.Crypto"
@@ -419,6 +421,7 @@
               <constructor-arg value="${pool.mover.ftp.port.max}"/>
           </bean>
       </property>
+      <property name="allocator" ref="allocator" />
   </bean>
 
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"

@@ -41,6 +41,7 @@ import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.MoverProtocolMover;
+import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.CDCExecutorServiceDecorator;
@@ -57,6 +58,7 @@ public abstract class AbstractMoverProtocolTransferService
                             new ThreadFactoryBuilder().setNameFormat(getClass().getSimpleName() + "-transfer-service-%d").build()));
     private ChecksumModule _checksumModule;
     private PostTransferService _postTransferService;
+    private Allocator _allocator;
 
     @Required
     public void setChecksumModule(ChecksumModule checksumModule)
@@ -68,6 +70,11 @@ public abstract class AbstractMoverProtocolTransferService
     public void setPostTransferService(PostTransferService postTransferService)
     {
         _postTransferService = postTransferService;
+    }
+
+    @Required
+    public void setAllocator(Allocator allocator) {
+        _allocator = allocator;
     }
 
     @Override
@@ -159,7 +166,7 @@ public abstract class AbstractMoverProtocolTransferService
         private void runMover(RepositoryChannel fileIoChannel) throws Exception
         {
             _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(),
-                    _mover.getIoHandle(), _mover.getIoMode());
+                    _allocator, _mover.getIoMode());
         }
 
         private synchronized void setThread() throws InterruptedException {

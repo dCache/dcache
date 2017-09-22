@@ -42,7 +42,6 @@ import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
 
 import org.dcache.auth.OpenIdCredentialRefreshable;
-import org.dcache.pool.movers.MoverChannel.AllocatorMode;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
@@ -193,8 +192,7 @@ public class RemoteHttpDataTransferProtocol implements MoverProtocol,
                 attributes, access);
         RemoteHttpDataTransferProtocolInfo info =
                 (RemoteHttpDataTransferProtocolInfo) genericInfo;
-        _channel = new MoverChannel<>(access, attributes, info, channel,
-                allocator, AllocatorMode.HARD);
+        _channel = new MoverChannel<>(access, attributes, info, channel);
 
         _client = createHttpClient();
         try {

@@ -3,6 +3,7 @@
 package org.dcache.pool.classic;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -122,7 +123,6 @@ import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v5.ReplicaRepository;
-import org.dcache.util.Args;
 import org.dcache.util.IoPriority;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
@@ -772,11 +772,16 @@ public class PoolV4
                         _replicaStatePolicy.getStickyRecords(attributes);
                 ReplicaState targetState =
                         _replicaStatePolicy.getTargetState(attributes);
+                // FIXME: we need a way to propagate this information with the request
+                Set<? extends OpenOption> flags = pi.getProtocol().equals("NFS4") ?
+                        Sets.newHashSet(StandardOpenOption.CREATE, Repository.OpenFlags.NONBLOCK) :
+                        Sets.newHashSet(StandardOpenOption.CREATE);
+
                 handle = _repository.createEntry(attributes,
                                                  ReplicaState.FROM_CLIENT,
                                                  targetState,
                                                  stickyRecords,
-                                                 EnumSet.of(StandardOpenOption.CREATE));
+                                                 flags);
             } else {
                 Set<? extends OpenOption> openFlags =
                         message.isPool2Pool()
