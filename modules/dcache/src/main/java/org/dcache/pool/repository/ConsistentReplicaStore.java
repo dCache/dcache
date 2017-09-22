@@ -212,15 +212,8 @@ public class ConsistentReplicaStore
              * may thus safe some time for incomplete files.
              */
             if (attributesInNameSpace.isDefined(FileAttribute.SIZE) && attributesInNameSpace.getSize() != length) {
-                String message = String.format(BAD_SIZE_MSG,
-                                               id,
-                                               attributesInNameSpace.getSize(),
-                                               length);
-                _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
-                                                        id.toString(),
-                                                        _poolName),
-                                                        message);
-                throw new CacheException(message);
+                throw new CacheException(String.format(BAD_SIZE_MSG, id,
+                        attributesInNameSpace.getSize(), length));
             }
 
             /* Verify checksum. Will fail if there is a mismatch.
@@ -253,10 +246,7 @@ public class ConsistentReplicaStore
                      */
                     FileAttributes attributesOnPool = entry.getFileAttributes();
                     if (attributesOnPool.isUndefined(ACCESS_LATENCY)) {
-                        String message = String.format(MISSING_ACCESS_LATENCY, id);
-                        _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
-                                        _poolName), message);
-                        throw new CacheException(message);
+                        throw new CacheException(String.format(MISSING_ACCESS_LATENCY, id));
                     }
 
                     AccessLatency accessLatency = attributesOnPool.getAccessLatency();
@@ -271,10 +261,7 @@ public class ConsistentReplicaStore
                      */
                     FileAttributes attributesOnPool = entry.getFileAttributes();
                     if (attributesOnPool.isUndefined(RETENTION_POLICY)) {
-                        String message = String.format(MISSING_RETENTION_POLICY, id);
-                        _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
-                                        _poolName), message);
-                        throw new CacheException(message);
+                        throw new CacheException(String.format(MISSING_RETENTION_POLICY, id));
                     }
 
                     RetentionPolicy retentionPolicy = attributesOnPool.getRetentionPolicy();
