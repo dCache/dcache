@@ -1,21 +1,20 @@
 package org.dcache.pool.statistics;
 
+import org.dcache.pool.repository.ForwardingRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
 /**
  * This class decorates any RepositoryChannel and adds the function of collecting data for the IoStatistics
  * Hint: It might be interesting for further developments to have a closer look at return values from read and write methods, when they equal 0
  */
-public class IoStatisticsChannel implements RepositoryChannel {
+public class IoStatisticsChannel extends ForwardingRepositoryChannel {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(IoStatisticsChannel.class);
@@ -23,11 +22,18 @@ public class IoStatisticsChannel implements RepositoryChannel {
     /**
      * Inner channel to which all operations are delegated.
      */
-    private RepositoryChannel channel;
+    private final RepositoryChannel channel;
 
     private final IoStatistics statistics = new IoStatistics();
 
-    public IoStatisticsChannel(RepositoryChannel channel){ this.channel = channel; }
+    public IoStatisticsChannel(RepositoryChannel channel){
+        this.channel = channel;
+    }
+
+    @Override
+    protected RepositoryChannel delegate() {
+        return channel;
+    }
 
     /**
      * Returns the object most central of this decorator
@@ -55,11 +61,6 @@ public class IoStatisticsChannel implements RepositoryChannel {
         long duration = System.nanoTime() - startTime;
         statistics.updateRead(readBytes, duration, requestedReadBytes);
         return readBytes;
-    }
-
-    @Override
-    public void sync() throws SyncFailedException, IOException {
-        channel.sync();
     }
 
     @Override
@@ -133,26 +134,6 @@ public class IoStatisticsChannel implements RepositoryChannel {
     }
 
     @Override
-    public long position() throws IOException {
-        return channel.position();
-    }
-
-    @Override
-    public SeekableByteChannel position(long newPosition) throws IOException {
-        return channel.position(newPosition);
-    }
-
-    @Override
-    public long size() throws IOException {
-        return channel.size();
-    }
-
-    @Override
-    public SeekableByteChannel truncate(long size) throws IOException {
-        return channel.truncate(size);
-    }
-
-    @Override
     public int read(ByteBuffer dst) throws IOException {
         long requestedReadBytes = dst.limit() - dst.position();
         long startTime = System.nanoTime();
@@ -170,15 +151,5 @@ public class IoStatisticsChannel implements RepositoryChannel {
         long duration = System.nanoTime() - startTime;
         statistics.updateWrite(writtenBytes, duration, requestedWriteBytes);
         return writtenBytes;
-    }
-
-    @Override
-    public boolean isOpen() {
-        return channel.isOpen();
-    }
-
-    @Override
-    public void close() throws IOException {
-        channel.close();
     }
 }

@@ -14,8 +14,6 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +23,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
+import org.dcache.pool.repository.ForwardingRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -38,7 +37,7 @@ import static org.dcache.util.ByteUnit.KiB;
  * on the fly during write as long as all writes are
  * sequential.
  */
-public class ChecksumChannel implements RepositoryChannel
+public class ChecksumChannel extends ForwardingRepositoryChannel
 {
     private static final Logger _log =
             LoggerFactory.getLogger(ChecksumChannel.class);
@@ -119,21 +118,8 @@ public class ChecksumChannel implements RepositoryChannel
     }
 
     @Override
-    public long position() throws IOException
-    {
-        return _channel.position();
-    }
-
-    @Override
-    public SeekableByteChannel position(long position) throws IOException
-    {
-        return _channel.position(position);
-    }
-
-    @Override
-    public long size() throws IOException
-    {
-        return _channel.size();
+    protected RepositoryChannel delegate() {
+        return _channel;
     }
 
     @Override
@@ -154,31 +140,6 @@ public class ChecksumChannel implements RepositoryChannel
         } finally {
             _ioStateReadLock.unlock();
         }
-    }
-
-    @Override
-    public int read(ByteBuffer buffer, long position) throws IOException
-    {
-        return _channel.read(buffer, position);
-    }
-
-    @Override
-    public SeekableByteChannel truncate(long size) throws IOException
-    {
-        return _channel.truncate(size);
-    }
-
-    @Override
-    public void sync() throws IOException
-    {
-        _channel.sync();
-    }
-
-    @Override
-    public long transferTo(long position, long count,
-                           WritableByteChannel target) throws IOException
-    {
-        return _channel.transferTo(position, count, target);
     }
 
     @Override
@@ -235,37 +196,6 @@ public class ChecksumChannel implements RepositoryChannel
     public synchronized long write(ByteBuffer[] srcs) throws IOException
     {
         return write(srcs, 0, srcs.length);
-    }
-
-    @Override
-    public boolean isOpen()
-    {
-        return _channel.isOpen();
-    }
-
-    @Override
-    public void close() throws IOException
-    {
-        _channel.close();
-    }
-
-    @Override
-    public long read(ByteBuffer[] dsts, int offset, int length)
-            throws IOException
-    {
-        return _channel.read(dsts, offset, length);
-    }
-
-    @Override
-    public long read(ByteBuffer[] dsts) throws IOException
-    {
-        return _channel.read(dsts);
-    }
-
-    @Override
-    public int read(ByteBuffer dst) throws IOException
-    {
-        return _channel.read(dst);
     }
 
     /**
