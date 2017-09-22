@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,7 +40,6 @@ import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
-import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.vehicles.FileAttributes;
@@ -57,7 +56,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
             NfsTransferService nfsTransferService, PnfsHandler pnfsHandler, ChecksumModule checksumModule) {
-        super(handle, message, pathToDoor, nfsTransferService, MoverChannel.AllocatorMode.SOFT, checksumModule);
+        super(handle, message, pathToDoor, nfsTransferService, checksumModule);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
         _state = new MoverState(null, new stateid4(legacyStateid.other, legacyStateid.seqid.value));

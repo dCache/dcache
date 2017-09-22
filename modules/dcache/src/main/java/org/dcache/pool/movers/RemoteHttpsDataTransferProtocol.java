@@ -26,7 +26,6 @@ import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
 
@@ -51,14 +50,14 @@ public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProto
 
     @Override
     public void runIO(FileAttributes attributes, RepositoryChannel channel,
-                      ProtocolInfo genericInfo, Allocator allocator, Set<? extends OpenOption> access)
+                      ProtocolInfo genericInfo, Set<? extends OpenOption> access)
             throws CacheException, IOException, InterruptedException
     {
         RemoteHttpsDataTransferProtocolInfo info =
                 (RemoteHttpsDataTransferProtocolInfo) genericInfo;
         privateKey = info.getPrivateKey();
         chain = info.getCertificateChain();
-        super.runIO(attributes, channel, genericInfo, allocator, access);
+        super.runIO(attributes, channel, genericInfo, access);
     }
 
     @Override

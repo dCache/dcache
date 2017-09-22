@@ -4,5 +4,4 @@ public interface ConnectionMonitor
 {
     void receivedBlock(long position, long size) throws FTPException;
     void sentBlock(long position, long size) throws FTPException;
-    void preallocate(long position) throws InterruptedException;
 }

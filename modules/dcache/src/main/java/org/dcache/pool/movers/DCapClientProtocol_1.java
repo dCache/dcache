@@ -32,7 +32,6 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
@@ -76,7 +75,6 @@ public class DCapClientProtocol_1 implements MoverProtocol
     public void runIO(FileAttributes fileAttributes,
                        RepositoryChannel fileChannel,
                        ProtocolInfo protocol ,
-                       Allocator    allocator ,
                        Set<? extends OpenOption> access) throws CacheException, IOException, InterruptedException
     {
         PnfsId pnfsId = fileAttributes.getPnfsId();
@@ -137,7 +135,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
 
         if( access.contains(StandardOpenOption.WRITE))
             {
-                dcapReadFile(dcap_socket,fileChannel,allocator);
+                dcapReadFile(dcap_socket,fileChannel);
             }
         else
             {
@@ -164,9 +162,8 @@ public class DCapClientProtocol_1 implements MoverProtocol
         return System.currentTimeMillis() -starttime;
     }
 
-    private void dcapReadFile(Socket _socket,
-                              RepositoryChannel fileChannel,
-                              Allocator allocator) throws IOException, InterruptedException
+    private void dcapReadFile(Socket _socket, RepositoryChannel fileChannel)
+                    throws IOException, InterruptedException
     {
         last_transfer_time    = System.currentTimeMillis();
         DataInputStream in   = new DataInputStream(_socket.getInputStream());
@@ -215,8 +212,6 @@ public class DCapClientProtocol_1 implements MoverProtocol
                              returnCode+") "+error);
         }
         long filesize = in.readLong();
-        say("<WaitingForSpace-"+filesize+">");
-        allocator.allocate(filesize);
         //
         in.readLong();   // file position
 

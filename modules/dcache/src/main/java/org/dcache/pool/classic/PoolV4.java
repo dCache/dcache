@@ -3,6 +3,7 @@
 package org.dcache.pool.classic;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -122,7 +123,6 @@ import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v5.ReplicaRepository;
-import org.dcache.util.Args;
 import org.dcache.util.IoPriority;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
@@ -776,7 +776,7 @@ public class PoolV4
                                                  ReplicaState.FROM_CLIENT,
                                                  targetState,
                                                  stickyRecords,
-                                                 EnumSet.of(StandardOpenOption.CREATE));
+                                                 moverFactory.getChannelCreateOptions());
             } else {
                 Set<? extends OpenOption> openFlags =
                         message.isPool2Pool()

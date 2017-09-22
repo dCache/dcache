@@ -35,7 +35,6 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.net.ProtocolConnectionPool.Listen;
 import org.dcache.net.ProtocolConnectionPoolFactory;
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
@@ -50,8 +49,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 {
     private static Logger _log = LoggerFactory.getLogger(DCapProtocol_3_nio.class);
     private static Logger _logSocketIO = LoggerFactory.getLogger("logger.dev.org.dcache.io.socket");
-    private static final Logger _logSpaceAllocation = LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
-    private static final int INC_SPACE = MiB.toBytes(50);
 
     /**
      * Max request size that client sent by client that we will accept.
@@ -77,7 +74,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256), KiB.toBytes(256), KiB.toBytes(256));
     private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1), MiB.toBytes(1));
 
-    private SpaceMonitorHandler _spaceMonitorHandler;
     private Consumer<Checksum> _integrityChecker;
 
 
@@ -142,47 +138,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         _args = args;
     }
 
-    private class SpaceMonitorHandler {
-
-        private final Allocator _allocator;
-        private long         _spaceAllocated;
-        private long          _allocationSpace = INC_SPACE;
-        private long         _spaceUsed;
-        private SpaceMonitorHandler(Allocator allocator){
-            _allocator = allocator;
-        }
-        private void setAllocationSpace(long allocSpace){
-            _allocationSpace = allocSpace;
-        }
-        private void setInitialSpace(long space){
-            _spaceAllocated = space;
-            _spaceUsed      = space;
-        }
-
-        @Override
-        public String toString(){
-            return "{a="+_spaceAllocated+";u="+_spaceUsed+"}";
-        }
-        private void getSpace(long newEof) throws InterruptedException{
-            if (_allocator == null) {
-                return;
-            }
-
-            while(newEof > _spaceAllocated){
-                _status = "WaitingForSpace("+_allocationSpace+")";
-                _log.debug("Allocating new space : {}", _allocationSpace);
-                _logSpaceAllocation.debug("ALLOC: {} : {}", _pnfsId, _allocationSpace);
-                _allocator.allocate(_allocationSpace);
-                _spaceAllocated += _allocationSpace;
-                _log.debug("Allocated new space : {}", _allocationSpace);
-                _status = "";
-            }
-        }
-        private void newFilePosition(long newPosition){
-            _spaceUsed = Math.max(newPosition, _spaceUsed);
-        }
-
-    }
     //
     //   helper class to use nio channels for input requests.
     //
@@ -301,7 +256,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
     @Override
     public String toString(){
-        return "SM="+_spaceMonitorHandler+";S="+_status;
+        return _status;
     }
 
     @Override
@@ -330,7 +285,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     public void runIO(FileAttributes fileAttributes,
                       RepositoryChannel  fileChannel,
                       ProtocolInfo protocol,
-                      Allocator    allocator,
                       Set<? extends OpenOption> access)
         throws Exception
     {
@@ -345,27 +299,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
         StorageInfo storage = fileAttributes.getStorageInfo();
         _pnfsId              = fileAttributes.getPnfsId();
-        _spaceMonitorHandler = new SpaceMonitorHandler(allocator);
         boolean isWrite = access.contains(StandardOpenOption.WRITE);
 
         ////////////////////////////////////////////////////////////////////////
         //                                                                    //
         //    Prepare the tunable parameters                                  //
         //                                                                    //
-
-        try{
-            String allocation = storage.getKey("alloc-size");
-            if(allocation != null){
-                long allocSpace = Long.parseLong(allocation);
-                if(allocSpace <= 0) {
-                    // negative allocation requested....Ignoring
-                    _log.info("Options : alloc-space = {} ....Ignoring", allocSpace);
-                }else{
-                    _spaceMonitorHandler.setAllocationSpace(allocSpace);
-                    _log.info("Options : alloc-space = {}", allocSpace);
-                }
-            }
-        }catch(NumberFormatException e){ /* bad values are ignored */}
 
         try{
             String io = storage.getKey("io-error");
@@ -452,8 +391,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         _transferStarted  = System.currentTimeMillis();
         _bytesTransferred = 0;
         _lastTransferred  = _transferStarted;
-
-        _spaceMonitorHandler.setInitialSpace(fileChannel.size());
 
         boolean      notDone      = true;
         RequestBlock requestBlock = new RequestBlock();
@@ -948,10 +885,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             }
 
             //
-            //  allocate the space if necessary
-            //
-            _spaceMonitorHandler.getSpace(newOffset);
-            //
             // set the new file offset
             //
             fileChannel.position(newOffset);
@@ -1004,14 +937,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
             rest = _bigBuffer.getInt();
             _log.debug("Next data block : {} bytes", rest);
             //
-            // if there is a space monitor, we use it
-            //
-            long position = fileChannel.position();
-            //
-            // allocate the space
-            //
-            _spaceMonitorHandler.getSpace(position + rest);
-            //
             // we take whatever we get from the client
             // and at the end we tell'em that something went
             // terribly wrong.
@@ -1061,7 +986,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                 if((_ioError > 0L) &&
                     (_bytesTransferred > _ioError)){ _io_ok = false; }
             }
-            _spaceMonitorHandler.newFilePosition(position + bytesAdded);
 
             _log.debug("Block Done");
         }

@@ -110,19 +110,4 @@ class ReadHandleImpl implements ReplicaDescriptor
     public void commit() throws IllegalStateException, InterruptedException, CacheException {
         // NOP
     }
-
-    @Override
-    public void allocate(long size) throws IllegalStateException, IllegalArgumentException, InterruptedException {
-        throw new IllegalStateException("Read-only handle");
-    }
-
-    @Override
-    public boolean allocateNow(long size) throws IllegalStateException, IllegalArgumentException, InterruptedException {
-        throw new IllegalStateException("Read-only handle");
-    }
-
-    @Override
-    public void free(long size) throws IllegalStateException, IllegalArgumentException {
-        throw new IllegalStateException("Read-only handle");
-    }
 }

@@ -296,7 +296,6 @@ class Companion
         Throwable error = null;
         try {
             try {
-                handle.allocate(handle.getFileAttributes().getSize());
                 Set<ChecksumType> checksums = _checksumModule.checksumsWhenWriting(handle);
                 Set<Checksum> actualChecksums = copy(uri, handle, checksums);
                 _checksumModule.enforcePostTransferPolicy(handle, actualChecksums);

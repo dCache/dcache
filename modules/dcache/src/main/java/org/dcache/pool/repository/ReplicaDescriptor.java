@@ -18,13 +18,8 @@ import org.dcache.vehicles.FileAttributes;
  * Two or more read descriptors for the same entry can be open
  * simultaneously. An open read descriptor does not prevent entry state
  * changes.
- *
- * The descriptor provides methods for allocating space for the
- * entry. Space must be allocated before it is consumed on the
- * disk. It is the responsibility of the handle to release any
- * over allocation after the transfer has completed.
  */
-public interface ReplicaDescriptor extends Allocator
+public interface ReplicaDescriptor
 {
     /*
      * TODO:
