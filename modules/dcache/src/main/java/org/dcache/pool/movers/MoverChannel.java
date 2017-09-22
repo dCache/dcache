@@ -4,10 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.file.OpenOption;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicLong;
@@ -15,14 +13,9 @@ import java.util.Set;
 
 import diskCacheV111.vehicles.ProtocolInfo;
 
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.ForwardingRepositoryChannel;
-import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.util.ByteUnit.MiB;
 
 /**
  * A wrapper for RepositoryChannel adding features used by movers.
@@ -33,16 +26,6 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
         LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
                                 MoverChannel.class.getName());
 
-    public enum AllocatorMode {
-        SOFT,
-        HARD
-    }
-    /**
-     * The minimum number of bytes to increment the space
-     * allocation.
-     */
-    private static final long SPACE_INC = MiB.toBytes(50);
-
     /**
      * Inner channel to which most operations are delegated.
      */
@@ -52,11 +35,6 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
      * The {@link OpenOption} of the mover that created this MoverChannel.
      */
     private final Set<? extends OpenOption> _mode;
-
-    /**
-     * Space allocator provided by the pool.
-     */
-    private final Allocator _allocator;
 
     /**
      * Timestamp of when the transfer started.
@@ -86,31 +64,18 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
      */
     private final FileAttributes _fileAttributes;
 
-    /**
-     * The number of bytes reserved in the space allocator. Only
-     * updated while the monitor lock is held.
-     */
-    private volatile long _reserved;
-
-    /**
-     * Tells, should allocator block for available space or not.
-     */
-    private final AllocatorMode _allocatorMode;
-
-    public MoverChannel(Mover<T> mover, RepositoryChannel channel, AllocatorMode allocatorMode)
+    public MoverChannel(Mover<T> mover, RepositoryChannel channel)
     {
-        this(mover.getIoMode(), mover.getFileAttributes(), mover.getProtocolInfo(), channel, mover.getIoHandle(), allocatorMode);
+        this(mover.getIoMode(), mover.getFileAttributes(), mover.getProtocolInfo(), channel);
     }
 
     public MoverChannel(Set<? extends OpenOption> mode, FileAttributes attributes, T protocolInfo,
-            RepositoryChannel channel, Allocator allocator, AllocatorMode allocatorMode)
+            RepositoryChannel channel)
     {
         _mode = mode;
         _protocolInfo = protocolInfo;
         _channel = channel;
-        _allocator = allocator;
         _fileAttributes = attributes;
-        _allocatorMode = allocatorMode;
     }
 
     @Override
@@ -192,7 +157,6 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
     @Override
     public synchronized int write(ByteBuffer src) throws IOException {
         try {
-            preallocate(position() + src.remaining());
             int bytes = _channel.write(src);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -204,7 +168,6 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
     @Override
     public int write(ByteBuffer buffer, long position) throws IOException {
         try {
-            preallocate(position + buffer.remaining());
             int bytes = _channel.write(buffer, position);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -216,12 +179,6 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
     @Override
     public synchronized long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
         try {
-            long remaining = 0;
-            for (int i = offset; i < offset + length; i++) {
-                remaining += srcs[i].remaining();
-            }
-            preallocate(position() + remaining);
-
             long bytes = _channel.write(srcs, offset, length);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -233,12 +190,6 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
     @Override
     public synchronized long write(ByteBuffer[] srcs) throws IOException {
         try {
-            long remaining = 0;
-            for (ByteBuffer src: srcs) {
-                remaining += src.remaining();
-            }
-            preallocate(position() + remaining);
-
             long bytes = _channel.write(srcs);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -261,7 +212,6 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
     @Override
     public long transferFrom(ReadableByteChannel src, long position, long count) throws IOException {
         try {
-            preallocate(position + count);
             long bytes = _channel.transferFrom(src, position, count);
             _bytesTransferred.getAndAdd(bytes);
             return bytes;
@@ -294,32 +244,5 @@ public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryCh
 
     public long getLastTransferred() {
         return _lastTransferred.get();
-    }
-
-    public long getAllocated() {
-        return _reserved;
-    }
-
-    private synchronized void preallocate(long pos)
-        throws IOException
-    {
-        try {
-            checkArgument(pos >= 0);
-
-            if (pos > _reserved) {
-                long delta = Math.max(pos - _reserved, SPACE_INC);
-                _logSpaceAllocation.trace("preallocate: {}", delta);
-                if (_allocatorMode == AllocatorMode.HARD) {
-                    _allocator.allocate(delta);
-                } else if (!_allocator.allocateNow(delta)) {
-                    throw new OutOfDiskException();
-                }
-                _reserved += delta;
-            }
-        } catch (InterruptedException e) {
-            throw new InterruptedIOException(e.getMessage());
-        } catch (IllegalStateException e) {
-            throw new ClosedChannelException();
-        }
     }
 }

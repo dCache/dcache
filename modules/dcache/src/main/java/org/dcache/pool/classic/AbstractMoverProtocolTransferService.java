@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2015 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -171,8 +171,7 @@ public abstract class AbstractMoverProtocolTransferService
 
         private void runMover(RepositoryChannel fileIoChannel) throws Exception
         {
-            _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(),
-                    _mover.getIoHandle(), _mover.getIoMode());
+            _mover.getMover().runIO(_mover.getFileAttributes(), fileIoChannel, _mover.getProtocolInfo(), _mover.getIoMode());
         }
 
         private synchronized void setThread() throws InterruptedException {

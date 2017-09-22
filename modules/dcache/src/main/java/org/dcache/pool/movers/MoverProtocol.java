@@ -5,7 +5,6 @@ import java.util.Set;
 
 import diskCacheV111.vehicles.ProtocolInfo;
 
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
 
@@ -13,13 +12,11 @@ public interface MoverProtocol
 {
 
     /**
-     * @param allocator Space allocator. May be null for a read-only
-     * transfer.
+     * Start mover
      */
     void runIO(FileAttributes fileAttributes,
                RepositoryChannel diskFile,
                ProtocolInfo protocol,
-               Allocator allocator,
                Set<? extends OpenOption> access)
         throws Exception;
 

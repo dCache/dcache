@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 - 2015 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2017 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,16 +40,13 @@ import java.nio.file.StandardOpenOption;
 public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverChannelMover<P, M>> extends AbstractMover<P, M>
 {
     private volatile MoverChannel<P> _wrappedChannel;
-    private final MoverChannel.AllocatorMode _allocatorMode;
 
     public MoverChannelMover(ReplicaDescriptor handle, PoolIoFileMessage message,
                              CellPath pathToDoor,
                              TransferService<M> transferService,
-                             MoverChannel.AllocatorMode allocatorMode,
                              ChecksumModule checksumModule)
     {
         super(handle, message, pathToDoor, transferService, checksumModule);
-        _allocatorMode = allocatorMode;
     }
 
     @Override
@@ -89,7 +86,7 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
     public synchronized MoverChannel<P> open() throws DiskErrorCacheException, InterruptedIOException
     {
         checkState(_wrappedChannel == null);
-        _wrappedChannel = new MoverChannel<>(this, openChannel(), _allocatorMode);
+        _wrappedChannel = new MoverChannel<>(this, openChannel());
         return _wrappedChannel;
     }
 
@@ -113,7 +110,6 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
             if (_wrappedChannel != null && getIoMode().contains(StandardOpenOption.WRITE)) {
                 long size = _wrappedChannel.size();
                 s.append(":SU=").append(size);
-                s.append(";SA=").append(_wrappedChannel.getAllocated());
             }
         } catch (IOException e) {
         }

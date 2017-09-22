@@ -72,7 +72,6 @@ public class ModeS extends Mode
         public void read(Multiplexer multiplexer, SelectionKey key)
             throws IOException, InterruptedException, FTPException
         {
-            _monitor.preallocate(_position + _blockSize);
             long nbytes = transferFrom(_socket, _position, _blockSize);
             if (nbytes == -1) {
                 close(multiplexer, key, true);

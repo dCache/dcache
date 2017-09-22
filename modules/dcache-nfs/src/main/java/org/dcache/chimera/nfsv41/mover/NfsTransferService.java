@@ -1,5 +1,6 @@
 package org.dcache.chimera.nfsv41.mover;
 
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
@@ -17,8 +18,11 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.OpenOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.Set;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -46,6 +50,7 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.Repository;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.IoStrategy;
@@ -202,6 +207,12 @@ public class NfsTransferService
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
     {
         return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler, _checksumModule);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Set<? extends OpenOption> getChannelCreateOptions() {
+        return Sets.newHashSet(StandardOpenOption.CREATE, Repository.OpenFlags.NONBLOCK_SPACE_ALLOCATION);
     }
 
     @Override

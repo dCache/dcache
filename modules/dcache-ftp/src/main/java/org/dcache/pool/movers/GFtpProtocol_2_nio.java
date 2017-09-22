@@ -43,7 +43,6 @@ import org.dcache.ftp.data.ModeS;
 import org.dcache.ftp.data.ModeX;
 import org.dcache.ftp.data.Multiplexer;
 import org.dcache.ftp.data.Role;
-import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -115,19 +114,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected long         _bytesTransferred;
 
     /**
-     * The number of bytes reserved in the space allocator.
-     */
-    protected long         _reservedSpace;
-
-    /**
-     * The number of bytes of the reservation actually used. This is
-     * less than or equal to _reservedSpace and bigger than or equal
-     * to _bytesTransferred. It may differ from _bytesTransferred
-     * because data can be received out of order.
-     */
-    protected long         _spaceUsed;
-
-    /**
      * The time stamp according to System.currentTimeMillis() for when
      * the last transfer was started.
      */
@@ -138,12 +124,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * the last piece of data was transferred.
      */
     protected long         _lastTransferred;
-
-    /**
-     * The space allocator is used to preallocate space when receiving
-     * data.
-     */
-    protected Allocator _allocator;
 
     /**
      * All communication is asynchronous.
@@ -222,14 +202,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
     @Override
     public String toString() {
-        return "SU=" + _spaceUsed + ";SA=" + _reservedSpace + ";S=" + _status;
+        return _status;
     }
 
     /**
      * Receive a file.
      */
-    public void transfer(RepositoryChannel fileChannel, Role role,
-                         Mode mode, Allocator allocator)
+    public void transfer(RepositoryChannel fileChannel, Role role, Mode mode)
             throws Exception
     {
         /* Initialise transfer parameters.
@@ -238,9 +217,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _bytesTransferred = 0;
         _blockLog         = new BlockLog();
         _fileChannel      = fileChannel;
-        _allocator        = allocator;
-        _reservedSpace    = 0;
-        _spaceUsed        = 0;
         _status           = "None";
 
         /* Startup the transfer. The transfer is performed on a single
@@ -331,7 +307,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     public void runIO(FileAttributes fileAttributes,
                       RepositoryChannel fileChannel,
                       ProtocolInfo protocol,
-                      Allocator    allocator,
                       Set<? extends OpenOption> access)
             throws Exception
     {
@@ -479,7 +454,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
 
         try {
-            transfer(fileChannel, role, mode, allocator);
+            transfer(fileChannel, role, mode);
         } finally {
             /* Log some useful information about the transfer. This
              * will be send back to the door by the pool cell.
@@ -522,7 +497,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         checkState(_role == Role.Receiver, "Only receivers can receive");
         checkArgument(position >= 0, "Position must be non-negative");
         checkArgument(size >= 0, "Size must be non-negative");
-        checkState(position + size <= _spaceUsed, "Must call preallocate before receiving data");
 
         _log.trace("received {} {}", position, size);
 
@@ -544,35 +518,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _blockLog.addBlock(position, size);
         _bytesTransferred += size;
         _lastTransferred = System.currentTimeMillis();
-    }
-
-    /**
-     * Part of the ConnectionMonitor interface. This is the only call
-     * used inside the event loop that may block. This may happen when
-     * we run out of space. In principle, other streams receiving data
-     * placed earlier in the file may continue, however if we are
-     * about to run out of disk space, it may actually be a good idea
-     * to block all streams.
-     */
-    @Override
-    public void preallocate(long position) throws InterruptedException
-    {
-        if (_role != Role.Receiver) {
-            throw new IllegalStateException("Only receivers can allocate space");
-        }
-        if (position < 0) {
-            throw new IllegalArgumentException("Position must be positive");
-        }
-
-        if (position > _reservedSpace) {
-            long additional = Math.max(position - _reservedSpace, SPACE_INC);
-            _status = "WaitingForSpace(" + additional + ")";
-            _logSpaceAllocation.debug("ALLOC: {}", additional );
-            _allocator.allocate(additional);
-            _status = "None";
-            _reservedSpace += additional;
-        }
-        _spaceUsed = Math.max(_spaceUsed, position);
     }
 
     /**
@@ -669,7 +614,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 fileChannel = new ChecksumChannel(fileChannel, EnumSet.of(type));
             }
 
-            mover.transfer(fileChannel, role, mode, null);
+            mover.transfer(fileChannel, role, mode);
 
             if (fileChannel instanceof ChecksumChannel) {
                 Set<Checksum> checksums = ((ChecksumChannel)fileChannel).getChecksums();
