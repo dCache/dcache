@@ -29,6 +29,8 @@ import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v3.entry.CacheRepositoryEntryState;
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 public class CacheRepositoryEntryImpl implements MetaDataRecord
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
@@ -187,7 +189,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         try {
             _state.setState(state);
         } catch (IOException e) {
-            throw new DiskErrorCacheException(e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to set state: " + messageOrClassName(e), e);
         }
     }
 
@@ -197,7 +199,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         try {
             return _state.removeExpiredStickyFlags();
         } catch (IOException e) {
-            throw new DiskErrorCacheException(e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to remove expired sticky flags: " + messageOrClassName(e), e);
         }
     }
 
@@ -210,7 +212,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             return false;
 
         } catch (IllegalStateException | IOException e) {
-            throw new DiskErrorCacheException(e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to set sticky: " + messageOrClassName(e), e);
         }
     }
 
@@ -234,7 +236,8 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
                 setStorageInfo(null);
             }
         } catch (IOException e) {
-            throw new DiskErrorCacheException(_pnfsId + " " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to set file attributes for "
+                    + _pnfsId + ": " + messageOrClassName(e), e);
         }
     }
 

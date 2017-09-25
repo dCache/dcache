@@ -19,6 +19,8 @@ import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.SpaceRecord;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 class CheckHealthTask implements Runnable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckHealthTask.class);
@@ -130,7 +132,7 @@ class CheckHealthTask implements Runnable
                 }
             } catch (IOException e) {
                 LOGGER.error("Failed to launch health check command '{}': {}",
-                        Arrays.toString(_commands), e.getMessage());
+                        Arrays.toString(_commands), messageOrClassName(e));
             } finally {
                 NDC.pop();
             }

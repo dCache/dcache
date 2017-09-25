@@ -38,6 +38,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.pool.repository.EntryState.CACHED;
 import static org.dcache.pool.repository.EntryState.PRECIOUS;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Server component of migration module.
@@ -314,7 +315,7 @@ public class MigrationModuleServer
                     break;
                 }
             } catch (IOException e) {
-                finished(new DiskErrorCacheException("I/O error during checksum calculation: " + e.getMessage()));
+                finished(new DiskErrorCacheException("I/O error during checksum calculation: " + messageOrClassName(e)));
             } catch (InterruptedException e) {
                 finished(new CacheException("Task was cancelled"));
             } catch (IllegalTransitionException e) {

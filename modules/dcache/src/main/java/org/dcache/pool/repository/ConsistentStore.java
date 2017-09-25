@@ -32,6 +32,7 @@ import static org.dcache.namespace.FileAttribute.CHECKSUM;
 import static org.dcache.namespace.FileAttribute.RETENTION_POLICY;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Wrapper for a MetaDataStore which encapsulates the logic for
@@ -152,7 +153,7 @@ public class ConsistentStore
 
                 entry = rebuildEntry(entry);
             } catch (IOException e) {
-                throw new DiskErrorCacheException("I/O error in healer: " + e.getMessage());
+                throw new DiskErrorCacheException("I/O error in healer: " + messageOrClassName(e));
             } catch (CacheException e) {
                 switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:

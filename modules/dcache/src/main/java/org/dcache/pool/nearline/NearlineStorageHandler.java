@@ -104,6 +104,7 @@ import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.util.concurrent.Futures.transformAsync;
 import static org.dcache.namespace.FileAttribute.*;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Entry point to and management interface for the nearline storage subsystem.
@@ -1050,7 +1051,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             } catch (NoSuchAlgorithmException e) {
                 error = new CacheException(1010, "Checksum calculation failed: " + e.getMessage(), e);
             } catch (IOException e) {
-                error = new DiskErrorCacheException("Checksum calculation failed due to I/O error: " + e.getMessage(), e);
+                error = new DiskErrorCacheException("Checksum calculation failed due to I/O error: " + messageOrClassName(e), e);
             } finally {
                 done(error);
             }

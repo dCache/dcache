@@ -33,6 +33,7 @@ import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.util.ConfigurationMapFactoryBean;
 
 import static java.util.Arrays.asList;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * BerkeleyDB based MetaDataRepository implementation.
@@ -261,7 +262,7 @@ public class BerkeleyDBMetaDataRepository
 
             return true;
         } catch (IOException e) {
-            _log.error("Failed to touch " + tmp + ": " + e.getMessage());
+            _log.error("Failed to touch " + tmp + ": " + messageOrClassName(e));
             return false;
         }
     }
