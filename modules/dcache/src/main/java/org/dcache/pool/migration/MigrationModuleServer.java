@@ -20,11 +20,13 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.p2p.P2PClient;
@@ -39,6 +41,7 @@ import org.dcache.pool.migration.json.MigrationData;
 
 import static org.dcache.pool.repository.ReplicaState.CACHED;
 import static org.dcache.pool.repository.ReplicaState.PRECIOUS;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Server component of migration module.
@@ -322,7 +325,7 @@ public class MigrationModuleServer
                     break;
                 }
             } catch (IOException e) {
-                finished(new DiskErrorCacheException("I/O error during checksum calculation: " + e.getMessage()));
+                finished(new DiskErrorCacheException("I/O error during checksum calculation: " + messageOrClassName(e)));
             } catch (InterruptedException e) {
                 finished(new CacheException("Task was cancelled"));
             } catch (IllegalTransitionException e) {

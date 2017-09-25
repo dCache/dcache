@@ -37,8 +37,10 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.util.Checksum;
+import org.dcache.util.Exceptions;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 public class ChecksumScanner
     implements CellCommandListener, CellLifeCycleAware
@@ -145,13 +147,13 @@ public class ChecksumScanner
                         _unableCount++;
                     } catch (IOException e) {
                         _unableCount++;
-                        throw new IOException("failed to read " + id + ": " + e.getMessage(), e);
+                        throw new IOException("failed to read " + id + ": " + messageOrClassName(e), e);
                     }
                     _totalCount++;
                 }
             } catch (IOException e) {
-                _log.error("Aborting 'cms check' full-scan: {}", e.getMessage());
-                setAbortMessage("failure in underlying storage: " + e.getMessage());
+                _log.error("Aborting 'cms check' full-scan: {}", messageOrClassName(e));
+                setAbortMessage("failure in underlying storage: " + messageOrClassName(e));
             } finally {
                 startScrubber();
             }
@@ -260,7 +262,7 @@ public class ChecksumScanner
             try {
                 Files.write(line, _scrubberStateFile, Charset.defaultCharset());
             } catch (IOException e) {
-                _log.error("Failed to save scrubber state ({}) to {}: {}", line, _scrubberStateFile, e.getMessage());
+                _log.error("Failed to save scrubber state ({}) to {}: {}", line, _scrubberStateFile, messageOrClassName(e));
             }
         }
 
@@ -286,7 +288,7 @@ public class ChecksumScanner
                 return;
             } catch (IOException e) {
                 _log.error("Failed to read scrubber saved state from {}: {}",
-                          _scrubberStateFile, e.getMessage());
+                          _scrubberStateFile, messageOrClassName(e));
                 return;
             }
 
@@ -377,8 +379,8 @@ public class ChecksumScanner
                         }
                         isFinished = true;
                     } catch (IOException e) {
-                        _log.error("Aborting scrubber run: {}", e.getMessage());
-                        setAbortMessage("failure in underlying storage: " + e.getMessage());
+                        _log.error("Aborting scrubber run: {}", messageOrClassName(e));
+                        setAbortMessage("failure in underlying storage: " + messageOrClassName(e));
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
                     } catch (IllegalStateException e) {
                         _log.error("Aborting scrubber run: {}", e.getMessage());
@@ -470,7 +472,7 @@ public class ChecksumScanner
                     }
                 } catch (IOException e) {
                     _unableCount++;
-                    throw new IOException("Unable to read " + id + ": " + e.getMessage(), e);
+                    throw new IOException("Unable to read " + id + ": " + messageOrClassName(e), e);
                 } catch (FileNotInCacheException | NotInTrashCacheException e) {
                     /* It was removed before we could get it. No problem.
                      */
