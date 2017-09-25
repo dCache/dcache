@@ -54,7 +54,7 @@ fi
 if [ ! -f etc/admin/authorized_keys2 ]; then
     for pubkey in id_rsa.pub id_dsa.pub; do
         if [ -f ~/.ssh/$pubkey ]; then
-            cat ~/.ssh/$pubkey >> etc/admin/authorized_keys2
+            awk '{print $1,$2,"admin@localhost"}' ~/.ssh/$pubkey >> etc/admin/authorized_keys2
         fi
     done
 fi
