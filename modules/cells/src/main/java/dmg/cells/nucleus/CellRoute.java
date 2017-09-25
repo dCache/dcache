@@ -5,10 +5,7 @@ import com.google.common.base.MoreObjects;
 import java.io.Serializable;
 import java.util.Objects;
 
-import org.dcache.util.Args;
-
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Arrays.asList;
 
 /*
 * route add -default             <cell>[@<domain>]
@@ -36,91 +33,16 @@ public class CellRoute implements Serializable
     public static final int ALIAS = 6;
     public static final int TOPIC = 7;
 
-    private static final String[] TYPE_NAMES =
+    // FIXME this should be an enum.
+    // See CellShell#RouteCommand
+    static final String[] TYPE_NAMES =
             {"Auto", "Exact", "Queue", "Domain",
                     "Default", "Dumpster", "Alias", "Topic"};
-
-    private static int getTypeOf(Args args)
-    {
-        if (args.argc() == 0) {
-            throw new IllegalArgumentException("Not enough arguments");
-        }
-
-        String opt = (args.optc() == 0) ? "-auto" : args.optv(0);
-        int type = AUTO;
-        switch (opt) {
-        case "auto":
-            type = AUTO;
-            break;
-        case "domain":
-            type = DOMAIN;
-            break;
-        case "wellknown":
-        case "queue":
-            type = QUEUE;
-            break;
-        case "exact":
-            type = EXACT;
-            break;
-        case "default":
-            type = DEFAULT;
-            break;
-        case "dumpster":
-            type = DUMPSTER;
-            break;
-        case "alias":
-            type = ALIAS;
-            break;
-        case "topic":
-            type = TOPIC;
-            break;
-        }
-
-        switch (args.argc()) {
-        case 1:
-            if (type != DEFAULT && type != DUMPSTER) {
-                throw new IllegalArgumentException("Not enough arguments");
-            }
-            break;
-        case 2:
-            if (type == DEFAULT || type == DUMPSTER) {
-                throw new IllegalArgumentException("Too many arguments");
-            }
-            break;
-        default:
-            throw new IllegalArgumentException("Too many arguments");
-        }
-
-        return type;
-    }
-
-    private static int getTypeOf(String type)
-    {
-        int i = asList(TYPE_NAMES).indexOf(type);
-        if (i == -1) {
-            throw new IllegalArgumentException("Illegal Route Type: " + type);
-        }
-        return i;
-    }
-
-    public CellRoute(Args args)
-            throws IllegalArgumentException
-    {
-        this((args.argc() != 2) ? null : args.argv(0),
-                (args.argc() != 2) ? args.argv(0) : args.argv(1),
-                getTypeOf(args));
-    }
 
     public CellRoute(String dest, CellAddressCore gateway, int type)
             throws IllegalArgumentException
     {
         this(dest, gateway.toString(), type);
-    }
-
-    public CellRoute(String dest, String gateway, String type)
-            throws IllegalArgumentException
-    {
-        this(dest, gateway, getTypeOf(type));
     }
 
     public CellRoute(String dest, String gateway, int type)
@@ -253,11 +175,13 @@ public class CellRoute implements Serializable
         return TYPE_NAMES[_type];
     }
 
+    @Override
     public int hashCode()
     {
         return _type ^ Objects.hash(_destCell, _destDomain, _gateway);
     }
 
+    @Override
     public boolean equals(Object o)
     {
         if (o == this) {
@@ -273,6 +197,7 @@ public class CellRoute implements Serializable
                route._type == _type;
     }
 
+    @Override
     public String toString()
     {
         return MoreObjects.toStringHelper(this)

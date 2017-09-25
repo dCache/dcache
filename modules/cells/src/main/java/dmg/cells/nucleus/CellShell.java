@@ -35,6 +35,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +73,9 @@ import dmg.util.command.Option;
 
 import org.dcache.util.Args;
 import org.dcache.util.ColumnWriter;
+import org.dcache.util.Glob;
+
+import static dmg.util.CommandException.checkCommand;
 
 /**
   *
@@ -388,6 +392,8 @@ public class CellShell extends CommandInterpreter
    //
    //   getroutes, getcelltunnelinfos, getcellinfos
    //
+
+    /* Do not modify or remove this command: is used by pcells */
     @Command(name = "getroutes", hint = "list all routes",
             description = "List all message routes available in " +
                     "this domain. The returned information " +
@@ -620,45 +626,317 @@ public class CellShell extends CommandInterpreter
       }
       return "" ;
    }
-   ////////////////////////////////////////////////////////////
-   //
-   //   route
-   //
-   public static final String fh_route =
-          " Syntax : route      # show all routes\n"+
-          "          route add|delete [options] <source> <destination>\n" ;
 
-   public String ac_route_$_0( Args args ){
-       return  _nucleus.getRoutingTable().toString() ;
-   }
-   public static final String hh_route_add = "-options <source> <destination>" ;
-   public static final String fh_route_add = fh_route ;
-   public String ac_route_add_$_1_2(Args args)
-       throws IllegalArgumentException
-   {
-       _nucleus.routeAdd( new CellRoute( args ) );
-       return "Done\n" ;
-   }
-   public static final String hh_route_delete = "-options <source> <destination>" ;
-   public static final String fh_route_delete = fh_route ;
-   public String ac_route_delete_$_1_2(Args args)
-       throws IllegalArgumentException
-   {
-       _nucleus.routeDelete(new CellRoute(args));
-       return "Done\n" ;
-   }
-   public static final String hh_route_find = "<address>" ;
-   public String ac_route_find_$_1( Args args )
-       throws IllegalArgumentException
-   {
-       CellAddressCore addr = new CellAddressCore( args.argv(0) ) ;
-       CellRoute route = _nucleus.routeFind( addr );
-       if( route != null ) {
-           return route.toString() + '\n';
-       } else {
-           return "No Route To cell : " + addr + '\n';
-       }
-   }
+    @Command(name="route", hint = "show routing table",
+            description =
+              "A cell message is sent with a destination path, consisting of "
+            + "one or more 'hops', where each hop is a cell address.  The "
+            + "routing table describes how messages are handled.  When given a "
+            + "message to send, the domain will use the next address in the "
+            + "destination path (the next-hop address) and the routing table "
+            + "to decide how to handle the message."
+            + "\n\n"
+            + "The routine table has various routine table entries (or "
+            + "'routes').  Each route has a TYPE, which provides both an "
+            + "implicit priority and how the message will be handled.  "
+            + "Routes have a DESTINATION address, which selects which messages "
+            + "are affected by this route and many types also have a "
+            + "TARGET address that has some type-specific meaning."
+            + "\n\n"
+            + "There are seven possible types: alias, default, domain, "
+            + "dumpster, exact, queue, topic.  These have the following semantics:"
+            + "\n\n"
+            + "    ALIAS: if next-hop address matches the DESTINATION address "
+            + "then rename next-hop address to the TARGET address and route "
+            + "accordingly.  The routing table can have at most one ALIAS or "
+            + "EXACT route with the same DESTINATION address."
+            + "\n\n"
+            + "    DEFAULT: deliver to the TARGET address.  If multiple DEFAULT "
+            + "routes exist then one is choosen pseudo-randomly."
+            + "\n\n"
+            + "    DOMAIN: deliver to the TARGET address if the next-hop "
+            + "address' domain matches the DESTINATION address domain.  The "
+            + "routing table can have at most one DOMAIN route with the same "
+            + "DESTINATION address domain."
+            + "\n\n"
+            + "    DUMPSTER: legacy type -- not supported."
+            + "\n\n"
+            + "    EXACT: if the next-hop address matches the DESTINATION "
+            + "address then deliver to the TARGET address.  The routing table "
+            + "can have at most one ALIAS or EXACT route with the same "
+            + "DESTINATION address."
+            + "\n\n"
+            + "    QUEUE: if the next-hop address matches the DESTINATION "
+            + "address then deliver to the TARGET address.  If the routing table "
+            + "has multiple QUEUE routes with DESTINATION addresses that matches "
+            + "a message's next-hop address then the message is delivered to the "
+            + "TARGET address of one QUEUE route chosen pseudo-randomly."
+            + "\n\n"
+            + "    TOPIC: deliver to the TARGET address.  If the routing table "
+            + "has multiple TOPIC routes with DESTINATION addresses that "
+            + "matches a message next-hop address then that message is "
+            + "delivered to all corresponding TARGET addresses."
+            + "\n\n"
+            + "Message routing is handled in the following fashion:"
+            + "\n\n"
+            + "    1. if the domain of the message next-hop address is this "
+            + "domain then try to deliver the message to the corresponding "
+            + "cell and no further action is taken.  If no such cell exists "
+            + "then return an error to the sender."
+            + "\n\n"
+            + "    2. if the message next-hop address matches one or more "
+            + "TOPIC route DESTINATION addresses then deliver the message to each "
+            + "corresponding TARGET address.  No further action is taken."
+            + "\n\n"
+            + "    3. If the message next-hop address matches an EXACT route "
+            + "DESTINATION address then the message is delivered to the "
+            + "corresponding TARGET address and no further action is taken."
+            + "\n\n"
+            + "    4. If the message next-hop address matches an ALIAS route "
+            + "DESTINATION address then change the next-hop address to the "
+            + "corresponding TARGET address and route accordingly."
+            + "\n\n"
+            + "    5. If the message next-hop address has domain 'local' "
+            + "then try matching QUEUE routes, otherwise try matching "
+            + "DOMAIN routes."
+            + "\n\n"
+            + "    6. Deliver to the DEFAULT route TARGET address if the "
+            + "routing table has one."
+            + "\n\n"
+            + "    7. Return an error to the sender.")
+    public class RouteCommand implements Callable<String>
+    {
+        @Option(name="destination",
+                usage="Show only routes with a matching DESTINATION address. "
+                        + "This option value is a glob pattern.")
+        private Glob destination = Glob.ANY;
+
+        @Option(name="type",
+                // Note: must keep values in sync with CellRoute#TYPE_NAMES
+                values={"auto", "exact", "queue", "domain",
+                        "default", "dumpster", "alias", "topic"},
+                usage="Limit output to routing entries of this type. Default "
+                        + "shows all routes.")
+        private String type;
+
+        @Option(name="target",
+                usage="Show only routes with a matching TARGET address.  This "
+                        + "option value is a glob pattern.")
+        private Glob target = Glob.ANY;
+
+        @Override
+        public String call()
+        {
+            ColumnWriter writer = new ColumnWriter()
+                    .header("TYPE").left("type").space()
+                    .header("DESTINATION").right("dest-cell").fixed("@").left("dest-domain").space()
+                    .header("TARGET").right("target-cell").fixed("@").left("target-domain");
+
+            Arrays.stream(_nucleus.getRoutingList())
+                    .filter(this::matches)
+                    .forEach(r -> {
+                                writer.row()
+                                        .value("dest-cell", r.getCellName())
+                                        .value("dest-domain", r.getDomainName())
+                                        .value("type", r.getRouteTypeName().toUpperCase())
+                                        .value("target-cell", r.getTarget().getCellName())
+                                        .value("target-domain", r.getTarget().getCellDomainName());
+                            });
+
+            return writer.toString();
+        }
+
+        private boolean matches(CellRoute r)
+        {
+            return (type == null || type.equalsIgnoreCase(r.getRouteTypeName()))
+                    && destination.matches(r.getCellName() + "@" + r.getDomainName())
+                    && target.matches(r.getTargetName());
+        }
+    }
+
+    private abstract class RouteSpecifyingCommand
+    {
+        @Option(name = "alias", usage="Specifies an ALIAS route type.")
+        boolean aliasType;
+
+        @Option(name = "auto", usage="Specifies an AUTO route type.  This is "
+                + "the default if no type is specified.")
+        boolean autoType;
+
+        @Option(name = "default", usage="Specifies an DEFAULT route type.  A "
+                + "DESTINATION address must not be supplied.")
+        boolean defaultType;
+
+        @Option(name = "domain", usage="Specifies an DOMAIN route type")
+        boolean domainType;
+
+        @Option(name = "dumpster", usage="Specifies an DUMPSTER route type.  A "
+                + "DESTINATION address must not be supplied.")
+        boolean dumpsterType;
+
+        @Option(name = "exact", usage="Specifies an EXACT route type.")
+        boolean exactType;
+
+        @Option(name = "queue", usage="Specifies an QUEUE route type.")
+        boolean queueType;
+
+        @Option(name = "topic", usage="Specifies an TOPIC route type.")
+        boolean topicType;
+
+        @Option(name = "wellknown", usage="Specifies an QUEUE route type.  "
+                + "This option exists for backwards compatibility.")
+        boolean wellknownType;
+
+        @Argument(index=-2, required=false,
+                usage="The DESTINATION address for this route.  These limits "
+                        + "the effect of a route to only those messages with a "
+                        + "next-hop address that matches this value."
+                        + "\n\n"
+                        + "The exact match depends on the route type.  It must "
+                        + "not be specified for DEFAULT and DUMPSTER route "
+                        + "types but is required for all others.")
+        String destination;
+
+        @Argument(index=-1,
+                usage="The TARGET address for this route.  This argument is "
+                        + "interpreted depending on the route type.  Typically "
+                        + "it is the address to which a message is sent.")
+        String target;
+
+        private int updateType(int currentType, boolean hasOption, int newType)
+                throws CommandException
+        {
+            if (hasOption) {
+                if (currentType != -1) {
+                    throw new CommandException(String.format("Multiple route types specified (%s and %s)",
+                            CellRoute.TYPE_NAMES[currentType], CellRoute.TYPE_NAMES[newType]));
+                }
+                currentType = newType;
+            }
+
+            return currentType;
+        }
+
+        private int getType() throws CommandException
+        {
+            int type = -1;
+
+            type = updateType(type, aliasType, CellRoute.ALIAS);
+            type = updateType(type, autoType, CellRoute.AUTO);
+            type = updateType(type, defaultType, CellRoute.DEFAULT);
+            type = updateType(type, domainType, CellRoute.DOMAIN);
+            type = updateType(type, dumpsterType, CellRoute.DUMPSTER);
+            type = updateType(type, exactType, CellRoute.EXACT);
+            type = updateType(type, queueType, CellRoute.QUEUE);
+            type = updateType(type, topicType, CellRoute.TOPIC);
+            type = updateType(type, wellknownType, CellRoute.QUEUE);
+
+            return type == -1 ? CellRoute.AUTO : type;
+        }
+
+        private void checkArguments(int type) throws CommandException
+        {
+            switch (type) {
+            case CellRoute.DEFAULT:
+            case CellRoute.DUMPSTER:
+                checkCommand(destination == null, "Too many arguments");
+                break;
+            default:
+                checkCommand(destination != null, "Not enough arguments");
+                break;
+            }
+        }
+
+        protected CellRoute getCellRoute() throws CommandException
+        {
+            int type = getType();
+            checkArguments(type);
+            return new CellRoute(destination, target, type);
+        }
+    }
+
+    @Command(name="route add", hint = "add an entry to the routing table",
+            description = "Add a new route to the routing table."
+                    + "\n\n"
+                    + "NOTE: dCache adds routing entries automatically; "
+                    + "therefore, this command SHOULD NOT be needed under "
+                    + "normal operational conditions."
+                    + "\n\n"
+                    + "NOTE: incorrect changes to the message routing table "
+                    + "could lead to significant failures or failures that "
+                    + "are difficult to diagnose.  Therefore, only those with "
+                    + "detailed knowledge of dCache messaging internals should "
+                    + "use this command.")
+    public class RouteAddCommand extends RouteSpecifyingCommand implements Callable<String>
+    {
+        @Override
+        public String call() throws CommandException
+        {
+            try {
+                _nucleus.routeAdd(getCellRoute());
+            } catch (IllegalArgumentException e) {
+                throw new CommandException(e.getMessage());
+            }
+            return "Done\n";
+        }
+    }
+
+    @Command(name="route delete", hint = "remove a route from the routing table",
+            description = "Removes an existing route from the routing table."
+                    + "\n\n"
+                    + "NOTE: dCache removes routing entries automatically; "
+                    + "therefore, this command SHOULD NOT be needed under "
+                    + "normal operational conditions."
+                    + "\n\n"
+                    + "NOTE: incorrect changes to the message routing table "
+                    + "could lead to significant failures or failures that "
+                    + "are difficult to diagnose.  Therefore, only those with "
+                    + "detailed knowledge of dCache messaging internals should "
+                    + "use this command.")
+    public class RouteDeleteCommand extends RouteSpecifyingCommand implements Callable<String>
+    {
+        @Override
+        public String call() throws CommandException
+        {
+            try {
+                _nucleus.routeDelete(getCellRoute());
+            } catch (IllegalArgumentException e) {
+                throw new CommandException(e.getMessage());
+            }
+            return "Done\n";
+        }
+    }
+
+    @Command(name="route find", hint="simulate message routing",
+            description = "Exercise the routing table to discover where a "
+                    + "message with a specific next-hop address would be "
+                    + "delivered."
+                    + "\n\n"
+                    + "NOTE: delivery of messages to locally running cells are "
+                    + "not considered.")
+    public class RouteFindCommand implements Callable<String>
+    {
+        @Argument(usage="The next-hop address of the simulated message.")
+        CellAddressCore address;
+
+        @Override
+        public String call() throws Exception
+        {
+            CellRoute route = _nucleus.routeFind(address);
+            if (route == null) {
+                return "No route for address " + address + '\n';
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Routing details for a message with ").append(address).append(" as next-hop address:\n");
+            sb.append("         type: ").append(route.getRouteTypeName().toUpperCase()).append('\n');
+            sb.append("  destination: ").append(route.getCellName()).append('@').append(route.getDomainName()).append('\n');
+            sb.append("       target: ").append(route.getTargetName()).append('\n');
+
+            return sb.toString();
+        }
+    }
+
    ////////////////////////////////////////////////////////////
    //
    //   ps -af <cellname>

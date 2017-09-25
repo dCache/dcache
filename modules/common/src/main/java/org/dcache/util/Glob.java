@@ -21,8 +21,10 @@ public class Glob implements Serializable
 {
     private static final long serialVersionUID = -5052804169005574207L;
     private static final CharMatcher WILDCARD = CharMatcher.anyOf("*?{");
+    public static final Glob ANY = new Glob("*");
 
     private final String _pattern;
+
 
     public Glob(String s)
     {
