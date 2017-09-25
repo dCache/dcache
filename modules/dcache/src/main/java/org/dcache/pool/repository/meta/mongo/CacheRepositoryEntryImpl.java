@@ -3,7 +3,9 @@ package org.dcache.pool.repository.meta.mongo;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
+
 import diskCacheV111.util.AccessLatency;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +24,7 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
+
 import java.net.URISyntaxException;
 import java.nio.file.OpenOption;
 import java.util.ArrayList;
@@ -29,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.bson.Document;
 
 import org.dcache.namespace.FileAttribute;
@@ -39,6 +43,8 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.pool.repository.StickyRecord;
 
 import org.dcache.vehicles.FileAttributes;
+
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.UpdatableRecord {
 
@@ -149,7 +155,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
                     .getFileAttributeView(pnfsId)
                     .setTimes(FileTime.fromMillis(time), null, null);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to set modification time: " + pnfsId, e);
+            throw new DiskErrorCacheException("Failed to set modification time for " + pnfsId + ": " + messageOrClassName(e), e);
         }
         lastAccess = System.currentTimeMillis();
     }
@@ -196,7 +202,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
             }
             state.setState(newState);
         } catch (IOException e) {
-            throw new DiskErrorCacheException(e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to set state: " + messageOrClassName(e), e);
         }
         return null;
     }
@@ -206,7 +212,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
         try {
             return state.removeExpiredStickyFlags();
         } catch (IOException e) {
-            throw new DiskErrorCacheException(e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to remove expired sticky flags: " + messageOrClassName(e), e);
         }
     }
 
@@ -216,7 +222,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
             return state.setSticky(owner, expire, overwrite);
 
         } catch (IllegalStateException | IOException e) {
-            throw new DiskErrorCacheException(e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to set sticky flags: " + messageOrClassName(e), e);
         }
     }
 
@@ -239,7 +245,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord, ReplicaRecord.Up
                 setStorageInfo(null);
             }
         } catch (IOException e) {
-            throw new DiskErrorCacheException(pnfsId + " " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to set file attributes for " + pnfsId + ": " + messageOrClassName(e), e);
         }
         return null;
     }

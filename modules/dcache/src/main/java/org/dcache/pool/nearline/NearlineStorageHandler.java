@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -70,6 +71,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
+
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellIdentityAware;
@@ -80,6 +82,7 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.PoolDataBeanProvider;
@@ -112,6 +115,7 @@ import static com.google.common.util.concurrent.Futures.transformAsync;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.SIZE;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Entry point to and management interface for the nearline storage subsystem.
@@ -1149,7 +1153,7 @@ public class NearlineStorageHandler
             } catch (NoSuchAlgorithmException e) {
                 error = new CacheException(1010, "Checksum calculation failed: " + e.getMessage(), e);
             } catch (IOException e) {
-                error = new DiskErrorCacheException("Checksum calculation failed due to I/O error: " + e.getMessage(), e);
+                error = new DiskErrorCacheException("Checksum calculation failed due to I/O error: " + messageOrClassName(e), e);
             } finally {
                 done(error);
             }

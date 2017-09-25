@@ -111,6 +111,8 @@ import org.dcache.util.PortRange;
 import org.dcache.util.URIs;
 import org.dcache.vehicles.FileAttributes;
 
+import static org.dcache.util.Exceptions.messageOrClassName;
+
 
 public class RemoteGsiftpTransferProtocol
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
@@ -316,7 +318,7 @@ public class RemoteGsiftpTransferProtocol
         } catch (GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
             _log.error("Checksum algorithm is not supported: {}", e.getMessage());
         } catch (IOException e) {
-            _log.error("I/O failure talking to FTP server: {}", e.getMessage());
+            _log.error("I/O failure talking to FTP server: {}", messageOrClassName(e));
         } catch (ServerException e) {
             _log.error("GridFTP server failure: {}", e.getMessage());
         } catch (KeyStoreException e) {

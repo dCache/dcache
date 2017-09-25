@@ -26,6 +26,7 @@ import org.dcache.pool.repository.ReplicaStore;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  *
@@ -112,7 +113,7 @@ public class FileMetaDataRepository
             }
             return files;
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + messageOrClassName(e), e);
         }
     }
 
@@ -141,7 +142,7 @@ public class FileMetaDataRepository
             return new CacheRepositoryEntryImpl(id, controlFile, _fileStore, siFile);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
-                    "Failed to create new entry " + id + ": " + e.getMessage(), e);
+                    "Failed to create new entry " + id + ": " + messageOrClassName(e), e);
         }
     }
 
@@ -158,7 +159,7 @@ public class FileMetaDataRepository
             return new CacheRepositoryEntryImpl(id, controlFile, _fileStore, siFile);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
-                    "Failed to read meta data for " + id + ": " + e.getMessage(), e);
+                    "Failed to read meta data for " + id + ": " + messageOrClassName(e), e);
         }
     }
 
@@ -169,7 +170,7 @@ public class FileMetaDataRepository
         try {
             _fileStore.remove(id);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to remove " + id + ": " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to remove " + id + ": " + messageOrClassName(e), e);
         }
         deleteIfExists(_metadir.resolve(id.toString()));
         deleteIfExists(_metadir.resolve("SI-" + id.toString()));
@@ -180,7 +181,7 @@ public class FileMetaDataRepository
         try {
             Files.deleteIfExists(path);
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Failed to remove " + path + ": " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to remove " + path + ": " + messageOrClassName(e), e);
         }
     }
 
@@ -196,7 +197,7 @@ public class FileMetaDataRepository
             Files.createFile(tmp);
             return true;
         } catch (IOException e) {
-            _log.error("Failed to touch " + tmp + ": " + e.getMessage(), e);
+            _log.error("Failed to touch " + tmp + ": " + messageOrClassName(e), e);
             return false;
         }
     }

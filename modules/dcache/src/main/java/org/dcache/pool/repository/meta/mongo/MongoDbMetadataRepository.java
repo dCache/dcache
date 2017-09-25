@@ -17,12 +17,15 @@ import java.util.Set;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
+
 import dmg.cells.nucleus.EnvironmentAware;
+
 import java.io.IOException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+
 import org.bson.Document;
 
 import org.dcache.pool.repository.DuplicateEntryException;
@@ -30,14 +33,18 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.ReplicaRecord;
 import org.dcache.pool.repository.ReplicaStore;
 import org.dcache.util.Version;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * {@link ReplicaStore} implementation back-ended with MongoDB.
@@ -175,7 +182,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
             }
             return files;
         } catch (IOException e) {
-            throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + messageOrClassName(e), e);
         }
     }
 
@@ -188,7 +195,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
             return new CacheRepositoryEntryImpl(pool, id, collection, fileStore);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
-                    "Failed to read meta data for " + id + ": " + e.getMessage(), e);
+                    "Failed to read meta data for " + id + ": " + messageOrClassName(e), e);
         }
     }
 
@@ -205,7 +212,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
             return new CacheRepositoryEntryImpl(pool, id, collection, fileStore);
         } catch (IOException e) {
             throw new DiskErrorCacheException(
-                    "Failed to create new entry " + id + ": " + e.getMessage(), e);
+                    "Failed to create new entry " + id + ": " + messageOrClassName(e), e);
 
         }
     }
@@ -218,7 +225,7 @@ public class MongoDbMetadataRepository implements ReplicaStore, EnvironmentAware
 
         } catch (IOException | MongoException e) {
             isOk = false;
-            throw new DiskErrorCacheException("Failed to remove " + id + ": " + e.getMessage(), e);
+            throw new DiskErrorCacheException("Failed to remove " + id + ": " + messageOrClassName(e), e);
         }
     }
 
