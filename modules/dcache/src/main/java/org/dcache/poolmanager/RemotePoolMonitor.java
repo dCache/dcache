@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.remoting.RemoteProxyFailureException;
 
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
@@ -39,12 +40,16 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.CellEventListener;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellRoute;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
+import org.dcache.util.TimeUtils;
 import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.util.MathUtils.addWithInfinity;
@@ -54,7 +59,7 @@ import static org.dcache.util.MathUtils.subWithInfinity;
  * PoolMonitor that delegates to a PoolMonitor obtained from pool manager.
  */
 public class RemotePoolMonitor
-        implements PoolMonitor, CellLifeCycleAware, CellMessageReceiver, CellEventListener
+        implements PoolMonitor, CellLifeCycleAware, CellMessageReceiver, CellEventListener, CellInfoProvider
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemotePoolMonitor.class);
 
@@ -101,6 +106,23 @@ public class RemotePoolMonitor
     public void routeDeleted(CellEvent ce)
     {
     }
+
+    public void getInfo(PrintWriter pw)
+    {
+        if (lastRefreshTime > 0) {
+            pw.println("last refreshed = " +
+                    TimeUtils.relativeTimestamp(lastRefreshTime, System.currentTimeMillis()));
+
+        }
+        pw.println("refresh count = " + refreshCount);
+        pw.println("active refresh target = " + poolManagerStub);
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
+    }
+
 
     @Override
     public synchronized void afterStart()
