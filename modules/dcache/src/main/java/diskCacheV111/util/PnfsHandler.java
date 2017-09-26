@@ -126,9 +126,7 @@ public class PnfsHandler
      * Sends a PnfsMessage to PnfsManager.
      */
     public void send(PnfsMessage msg) {
-        if (_cellStub == null) {
-            throw new IllegalStateException("Missing endpoint");
-        }
+        checkState(_cellStub != null, "Missing endpoint");
 
         if (_subject != null) {
             msg.setSubject(_subject);
@@ -139,6 +137,29 @@ public class PnfsHandler
         }
 
         _cellStub.notify(msg);
+    }
+
+    /**
+     * Send a PnfsMessage to PnfsManager indicating that an expected response
+     * will be ignored after some timeout has elapsed.  This method exists
+     * primarily to support legacy code; new code should consider using the
+     * requestAsync method instead.
+     * @param msg The message to send
+     * @param timeout The duration, in milliseconds, after which any response
+     * will be ignored.
+     */
+    public void send(PnfsMessage msg, long timeout) {
+        checkState(_cellStub != null, "Missing endpoint");
+
+        if (_subject != null) {
+            msg.setSubject(_subject);
+        }
+
+        if (_restriction != null) {
+            msg.setRestriction(_restriction);
+        }
+
+        _cellStub.notify(msg, timeout);
     }
 
     /**

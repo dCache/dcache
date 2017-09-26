@@ -1229,10 +1229,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected void askForFileAttributes()
             throws IllegalArgumentException
         {
-            setTimer(60 * 1000);
+            long timeout = TimeUnit.MINUTES.toMillis(1);
+            setTimer(timeout);
 
             _log.debug("Requesting file attributes for {}", _message);
-            _pnfs.send(_message);
+            _pnfs.send(_message, timeout);
             setStatus("WaitingForPnfs");
         }
 
@@ -2147,10 +2148,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             getPoolMessage.setSubject(_subject);
             getPoolMessage.setId(_sessionId);
             try {
-                _cell.sendMessage(new CellMessage(new CellPath(_isHsmRequest
+                CellMessage envelope = new CellMessage(new CellPath(_isHsmRequest
                                                                ? _hsmManager
                                                                : _poolManagerName) ,
-                                                  getPoolMessage));
+                                                  getPoolMessage);
+                if (_poolRetry > 0) {
+                    envelope.setTtl(_poolRetry);
+                }
+                _cell.sendMessage(envelope);
             } catch (RuntimeException ie) {
                 sendReply( "fileAttributesAvailable" , 2 ,
                            ie.toString() ) ;
