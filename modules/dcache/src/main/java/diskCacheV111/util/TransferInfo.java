@@ -82,26 +82,15 @@ public class TransferInfo implements Serializable {
                     + "(%s)(state %s)(elapsed %s)(transferred %s)(speed %s)\n";
 
     protected static String getTimeString(long time, boolean display) {
+        if (!display) {
+            return String.valueOf(time);
+        }
+
         DurationParser durations = new DurationParser(time,
                                                       TimeUnit.MILLISECONDS).parseAll();
 
-        if (display) {
-            return String.format("%d+%02d:%02d:%02d",
-                                 durations.get(TimeUnit.DAYS),
-                                 durations.get(TimeUnit.HOURS),
-                                 durations.get(TimeUnit.MINUTES),
-                                 durations.get(TimeUnit.SECONDS));
-        }
-
-        if (durations.get(TimeUnit.DAYS) > 0) {
-            return String.format("%d d %02d:%02d:%02d",
-                                 durations.get(TimeUnit.DAYS),
-                                 durations.get(TimeUnit.HOURS),
-                                 durations.get(TimeUnit.MINUTES),
-                                 durations.get(TimeUnit.SECONDS));
-        }
-
-        return String.format("%02d:%02d:%02d",
+        return String.format("%d+%02d:%02d:%02d",
+                             durations.get(TimeUnit.DAYS),
                              durations.get(TimeUnit.HOURS),
                              durations.get(TimeUnit.MINUTES),
                              durations.get(TimeUnit.SECONDS));
