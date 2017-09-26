@@ -159,11 +159,14 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     }
 
     /**
-     * Submit a request to start a mover to the named pool.
+     * Submit a request to start a mover to the named pool.  Any response
+     * message is handled explicitly within the cell code.
+     *
+     * This method exists primarily to support legacy code; new code should
+     * consider using the startAsync method instead.
      *
      * @param pool The address of the pool
      * @param msg  The mover creation request
-     * @return An asynchronous reply
      */
     public void start(CellAddressCore pool, PoolIoFileMessage msg)
     {
@@ -173,15 +176,37 @@ public class PoolManagerStub implements CellMessageSender, CellIdentityAware
     }
 
     /**
-     * Submit a request to pool manager.
+     * Submit a request to pool manager.  Any response message is handled
+     * explicitly within the cell code.
+     *
+     * This method exists primarily to support legacy code; new code should
+     * consider using the sendAsync method instead.
      *
      * @param msg The pool manager request
-     * @return An asynchronous reply
      */
     public void send(PoolManagerMessage msg)
     {
         CellMessage envelope = new CellMessage();
         envelope.addSourceAddress(address);
+        handler.send(endpoint, envelope, msg);
+    }
+
+    /**
+     * Submit a request to pool manager, indicating that the response will be
+     * ignored after some timeout.  Any response message is handled explicitly
+     * within the cell code.
+     *
+     * This method exists primarily to support legacy code; new code should
+     * consider using the sendAsync method instead.
+     *
+     * @param msg The pool manager request
+     * @param timeout How long before PoolManager should discard this request
+     */
+    public void send(PoolManagerMessage msg, long timeout)
+    {
+        CellMessage envelope = new CellMessage();
+        envelope.addSourceAddress(address);
+        envelope.setTtl(timeout);
         handler.send(endpoint, envelope, msg);
     }
 
