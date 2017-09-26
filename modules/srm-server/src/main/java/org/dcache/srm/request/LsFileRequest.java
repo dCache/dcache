@@ -161,7 +161,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                                        parent.getLongFormat());
                     }
                     if (logger.isDebugEnabled()) {
-                        logger.debug("LsFileRequest.run(), TOOK " + (System.currentTimeMillis() - t0));
+                        logger.debug("LsFileRequest.run(), TOOK {}", (System.currentTimeMillis() - t0));
                     }
                     try {
                         getContainerRequest().resetRetryDeltaTime();
@@ -208,7 +208,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
 
     @Override
         protected void stateChanged(State oldState) {
-                logger.debug("State changed from "+oldState+" to "+getState());
+                logger.debug("State changed from {} to {}", oldState, getState());
                 super.stateChanged(oldState);
         }
 

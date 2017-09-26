@@ -99,8 +99,8 @@ public class GridFTPPassiveConnectTask extends PassiveConnectTask
         SocketPool socketPool = ((EBlockParallelTransferContext) context).getSocketPool();
         logger.debug("adding new socket to the pool");
         socketPool.add(sBox);
-        logger.debug("available cached sockets: " + socketPool.countFree()
-                     + "; busy: " + socketPool.countBusy());
+        logger.debug("available cached sockets: {} ; busy: {}", socketPool.countFree(),
+                     socketPool.countBusy());
 
         return sBox;
 

@@ -64,7 +64,7 @@ import diskCacheV111.util.ServiceUnavailableException;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.restful.util.admin.CellMessagingCollector;
+import org.dcache.util.collector.CellMessagingCollector;
 import org.dcache.vehicles.alarms.AlarmMappingRequestMessage;
 
 /**

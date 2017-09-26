@@ -10,6 +10,7 @@ import org.dcache.poolmanager.RemotePoolMonitor;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.services.billing.BillingInfoService;
 import org.dcache.restful.services.cells.CellInfoService;
+import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.services.restores.RestoresInfoService;
 import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.util.list.ListDirectoryHandler;
@@ -21,6 +22,7 @@ public class ServletContextHandlerAttributes {
     public final static String CI = "org.dcache.restful.CI";
     public final static String CS = "org.dcache.restful.CS";
     public final static String POOL_MANAGER = "org.dcache.restful.PoolManager";
+    public final static String PI =  "org.dcache.restful.PI";
     public final static String PM = "org.dcache.restful.PM";
     public final static String RS = "org.dcache.restful.RS";
     public final static String TF = "org.dcache.restful.TF";
@@ -87,5 +89,10 @@ public class ServletContextHandlerAttributes {
     public static AlarmsInfoService getAlarmsInfoService(ServletContext ctx)
     {
         return (AlarmsInfoService) ctx.getAttribute(AL);
+    }
+
+    public static PoolInfoService getPoolInfoService(ServletContext ctx)
+    {
+        return (PoolInfoService) (ctx.getAttribute(PI));
     }
 }

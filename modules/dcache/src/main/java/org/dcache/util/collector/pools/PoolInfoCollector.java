@@ -57,72 +57,81 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.admin;
+package org.dcache.util.collector.pools;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.springframework.beans.factory.annotation.Required;
 
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessageSender;
-import org.dcache.cells.CellStub;
+import diskCacheV111.vehicles.Message;
+import dmg.cells.nucleus.CellPath;
+import org.dcache.pool.json.PoolData;
+import org.dcache.services.history.pools.PoolListingService;
+import org.dcache.util.collector.CellMessagingCollector;
+import org.dcache.util.collector.ListenableFutureWrapper;
 
 /**
- * <p>The primary function of the services in support of
- *    the RESTful admin resources is to gather information
- *    from other dCache cells via messaging, and to cache it.</p>
- *
- * <p>This class provides the common API for the collection of data.</p>
+ * <p>This collector provides a thin layer on top of cell adapter
+ *    functionality.  It is mainly responsible for sending messages and returning
+ *    message reply futures.  The principal collect method scatter/gathers
+ *    requests to all the pools.</p>
  */
-public abstract class CellMessagingCollector<D> implements CellMessageSender {
-    protected static final Logger LOGGER
-                    = LoggerFactory.getLogger(CellMessagingCollector.class);
+public abstract class PoolInfoCollector<T extends Message> extends
+                CellMessagingCollector<Map<String, ListenableFutureWrapper<T>>> {
+    private PoolListingService service;
 
     /**
-     * <p>For querying various endpoints during information collection.</p>
-     */
-    protected final CellStub stub = new CellStub();
-
-    /**
-     * <p>Should be overridden to do any special internal initialization.</p>
+     * <p>This is the method used to collect cachable data which
+     * the service will transform, update, cache and persist.</p>
      *
-     * @param timeout cell timeout value.
-     * @param timeUnit cell timeout unit.
+     * @return a map of Futures which can be used to
+     * fetch the {@link PoolData}.
+     * @throws InterruptedException
      */
-    public void initialize(Long timeout, TimeUnit timeUnit) {
-        reset(timeout, timeUnit);
-    }
-
-    /**
-     * <p>Provides for dynamic changes to timeout period, e.g., from
-     *      an admin command.</p>
-     *
-     * <p>Should be called at least at initialization.</p>
-     *
-     * @param timeout cell timeout value.
-     * @param timeUnit cell timeout unit.
-     */
-    public void reset(Long timeout, TimeUnit timeUnit) {
-        stub.setTimeout(timeout);
-        stub.setTimeoutUnit(timeUnit);
-    }
-
     @Override
-    public void setCellEndpoint(CellEndpoint endpoint) {
-        stub.setCellEndpoint(endpoint);
+    public Map<String, ListenableFutureWrapper<T>> collectData()
+                    throws InterruptedException {
+        if (service == null) {
+            return Collections.EMPTY_MAP;
+        }
+
+        String[] pools = service.listPools();
+
+        Map<String, ListenableFutureWrapper<T>> infoMap = new HashMap<>();
+
+        long now = System.currentTimeMillis();
+
+        for (String pool : pools) {
+            infoMap.put(pool, sendRequestToPool(pool, newMessage(now)));
+        }
+
+        return infoMap;
     }
 
     /**
-     * <p>Should be overridden to do any special internal cleanup.</p>
+     * <p>Auxiliary utility.</p>
+     *
+     * @param pool    to which to send request
+     * @param message to send
+     * @return Futures which can be used to wait for the returned message.
      */
-    public void shutdown() {
-        //NOP
+    public <T extends Message> ListenableFutureWrapper<T> sendRequestToPool(String pool,
+                                                                     T message) {
+        ListenableFuture<T> future = stub.send(new CellPath(pool), message);
+        ListenableFutureWrapper<T> wrapper = new ListenableFutureWrapper<>();
+        wrapper.setFuture(future);
+        wrapper.setKey(pool);
+        wrapper.setSent(System.currentTimeMillis());
+        return wrapper;
     }
 
-    /**
-     * <p>Should do the actual collection.</p>
-     */
-    public abstract D collectData() throws InterruptedException, CacheException;
+    @Required
+    public void setService(PoolListingService service) {
+        this.service = service;
+    }
+
+    protected abstract T newMessage(long timestamp);
 }

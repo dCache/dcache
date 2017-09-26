@@ -357,7 +357,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
       }else if( obj instanceof NoRouteToCellException ){
          _log.warn("NoRouteToCell from PoolManager");
       }else{
-         _log.warn("Unknow message arrived from PoolManager : "+obj.getClass().getName() ) ;
+         _log.warn("Unknown message arrived from PoolManager : {}", obj.getClass().getName() ) ;
       }
    }
    /**
@@ -377,9 +377,9 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           }
 
       }else if( obj instanceof NoRouteToCellException ){
-          _log.warn("messageFromPool got NoRouteToCellException : "+obj);
+          _log.warn("messageFromPool got NoRouteToCellException : {}", obj);
       }else{
-          _log.warn("messageFromPool got Unknown object : "+obj);
+          _log.warn("messageFromPool got Unknown object : {}", obj);
       }
    }
    /**
@@ -575,11 +575,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private void queryPoolManager(){
 
       try{
-         _log.debug("Sending xgetcellinfo to "+_poolManagerName);
+         _log.debug("Sending xgetcellinfo to {}", _poolManagerName);
          CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , "xgetcellinfo" );
          sendMessage( msg );
       }catch(RuntimeException ee){
-         _log.warn("Exception in sending query to pool "+_poolManagerName);
+         _log.warn("Exception in sending query to pool {}", _poolManagerName);
       }
 
    }
@@ -589,11 +589,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    private void queryLinks(){
        try{
           String command = "psux ls link -x -resolve" ;
-          _log.debug("Sending poolManager query "+command+" to "+_poolManagerName);
+          _log.debug("Sending poolManager query {} to {}", command, _poolManagerName);
           CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , command );
           sendMessage( msg );
        }catch(RuntimeException ee){
-          _log.warn("Exception in sending query to pool : "+_poolManagerName);
+          _log.warn("Exception in sending query to pool : {}", _poolManagerName);
        }
    }
    /**
@@ -626,7 +626,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           }
 
           if( ( _poolQuerySteps > 0 ) && (  ( counter % _poolQuerySteps ) == 0 ) ){
-             _log.info("Waiting a while ("+_poolQueryBreak+") millis");
+             _log.info("Waiting a while ({}) millis", _poolQueryBreak);
              try{
                 if( _poolQueryBreak > 0L ) {
                     Thread.sleep(_poolQueryBreak);

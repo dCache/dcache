@@ -98,11 +98,11 @@ public class FeatureListTest extends TestCase{
 	switch (expectedResult) {
 	case Y: 	    
 	    assertTrue(fl.contains(feature));
-	    logger.info("okay, contains " + feature);
+	    logger.info("okay, contains {}", feature);
 	    break;
 	case N:
 	    assertTrue( ! fl.contains(feature));
-	    logger.info("okay, does not contain " + feature);
+	    logger.info("okay, does not contain {}", feature);
 	    break;
 	case E:
 	    boolean threwOk = false;

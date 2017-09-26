@@ -4,6 +4,7 @@ package diskCacheV111.util;
 
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
+import com.google.common.io.BaseEncoding;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -109,7 +110,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     }
 
     public String getId() {
-        return bytesToHexString(_a);
+        return BaseEncoding.base16().upperCase().encode(_a);
     }
 
     @Override
@@ -122,7 +123,7 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     }
 
     public static String toCompleteId(String shortId) {
-        return bytesToHexString(_stringToBytes(shortId));
+        return BaseEncoding.base16().upperCase().encode(_stringToBytes(shortId));
     }
 
     public byte[] getBytes() {
@@ -171,27 +172,6 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
         } else {
             return s;
         }
-    }
-
-    /**
-     * Translation table used by bytesToHexString.
-     */
-    private static final char[] valueToHex = {
-            '0', '1', '2', '3', '4', '5',
-            '6', '7', '8', '9', 'A', 'B',
-            'C', 'D', 'E', 'F'};
-
-    /**
-     * Converts a byte array into the string representation in base 16.
-     */
-    private static String bytesToHexString(byte[] b) {
-        char[] result = new char[2 * b.length];
-        for (int i = 0; i < b.length; i++) {
-            int value = (b[i] + 0x100) & 0xFF;
-            result[2 * i] = valueToHex[value >> 4];
-            result[2 * i + 1] = valueToHex[value & 0x0F];
-        }
-        return new String(result);
     }
 
     private static byte[] _stringToBytes(String idString) {

@@ -23,6 +23,7 @@ import com.google.common.base.Splitter;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.dcache.util.Subnet;
 
@@ -62,13 +63,13 @@ public class ClientIPCaveatVerifier implements GeneralCaveatVerifier
     {
         checkCaveat(address != null, "client has unknown address");
 
-        try {
-            List<String> subnets = Splitter.on(',').trimResults().omitEmptyStrings().splitToList(caveat.getValue());
-            checkCaveat(subnets.stream().map(Subnet::create).anyMatch(s -> s.contains(address)),
-                    "Client fails to match IP caveat %s", caveat);
-        } catch (IllegalArgumentException e) {
-            throw InvalidCaveatException.wrap("Invalid netmask in IP caveat " + caveat, e);
-        }
+        List<String> subnets = Splitter.on(',').trimResults().omitEmptyStrings().splitToList(caveat.getValue());
+        List<String> badSubnets = subnets.stream()
+                .filter(s -> !Subnet.isValid(s))
+                .collect(Collectors.toList());
+        checkCaveat(badSubnets.isEmpty(), "Invalid subnets: %s", badSubnets);
+        checkCaveat(subnets.stream().map(Subnet::create).anyMatch(s -> s.contains(address)),
+                "Client fails to match IP caveat %s", caveat);
     }
 
     public Optional<String> getError()

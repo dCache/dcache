@@ -1,6 +1,5 @@
 package org.dcache.pool.movers;
 
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,16 +15,12 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DCapProrocolChallenge;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
@@ -80,9 +75,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     private PnfsId  _pnfsId;
     private int     _sessionId       = -1;
 
-    private  Checksum  _clientChecksum;
-    private Set<ChecksumFactory> _checksumFactories;
-    private Map<ChecksumType, MessageDigest> _digests = Collections.emptyMap();
+    private Checksum  _clientChecksum;
 
     private final MoverIoBuffer _defaultBufferSize = new MoverIoBuffer(KiB.toBytes(256), KiB.toBytes(256), KiB.toBytes(256));
     private final MoverIoBuffer _maxBufferSize     = new MoverIoBuffer(MiB.toBytes(1), MiB.toBytes(1), MiB.toBytes(1));
@@ -524,8 +517,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                 case DCapConstants.IOCMD_READ :
                     //
                     //
-                    _digests = Collections.emptyMap();
-
                     long blockSize = requestBlock.nextLong();
 
                     _log.debug("READ byte={}", blockSize);
@@ -562,8 +553,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     //
                 case DCapConstants.IOCMD_SEEK :
 
-                    _digests = Collections.emptyMap();
-
                     long offset = requestBlock.nextLong();
                     int  whence = requestBlock.nextInt();
 
@@ -589,8 +578,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     //                     The IOCMD_SEEK_AND_READ
                     //
                 case DCapConstants.IOCMD_SEEK_AND_READ :
-
-                    _digests = Collections.emptyMap();
 
                     offset    = requestBlock.nextLong();
                     whence    = requestBlock.nextInt();
@@ -630,7 +617,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
                     //
                 case DCapConstants.IOCMD_SEEK_AND_WRITE :
 
-                    _digests = Collections.emptyMap();
                     offset    = requestBlock.nextLong();
                     whence    = requestBlock.nextInt();
 
@@ -1042,7 +1028,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
 
                         _bigBuffer.flip();
                         bytesAdded += fileChannel.write(_bigBuffer);
-                        updateChecksum(_bigBuffer);
                     } catch (ClosedByInterruptException ee) {
                         // clear interrupted state
                         Thread.interrupted();
@@ -1063,11 +1048,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
         }
         _status = "Done";
 
-    }
-    private void updateChecksum(ByteBuffer buffer){
-        if (!_digests.isEmpty()) {
-            _digests.values().forEach(d -> d.update((ByteBuffer) buffer.duplicate().flip()));
-        }
     }
 
     private void doTheRead(RepositoryChannel           fileChannel,
@@ -1143,14 +1123,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     }
 
     @Override
-    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
-            throws NoSuchAlgorithmException
-    {
-        _checksumFactories = Sets.newHashSet(ChecksumFactory.getFactory(suggestedAlgorithm));
-        _digests = _checksumFactories.stream().collect(Collectors.toMap(ChecksumFactory::getType, f -> f.create()));
-    }
-
-    @Override
     public Checksum getExpectedChecksum(){
         return  _clientChecksum ;
     }
@@ -1159,12 +1131,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover, CellArg
     @Override
     public Set<Checksum> getActualChecksums()
     {
-        return (_digests.isEmpty())
-                ? Collections.emptySet()
-                : _checksumFactories.stream()
-                                  .map(f -> f.create(_digests.get(f.getType())
-                                                            .digest()))
-                                             .collect(Collectors.toSet());
+        return Collections.emptySet();
     }
-
 }

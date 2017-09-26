@@ -20,7 +20,6 @@ package org.dcache.pool.nearline;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Ordering;
-import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -537,7 +536,7 @@ public class NearlineStorageHandler
         @Override
         public int compareTo(AbstractRequest<K> o)
         {
-            return Longs.compare(createdAt, o.createdAt);
+            return Long.compare(createdAt, o.createdAt);
         }
     }
 

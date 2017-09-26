@@ -219,7 +219,7 @@ public class PinRequestProcessor
                 RequestContainerV5.allStates :
                 RequestContainerV5.allStatesExceptStage;
         } catch (PatternSyntaxException | IOException ex) {
-            _log.error("Failed to check stage permission: " + ex);
+            _log.error("Failed to check stage permission: {}", ex.toString());
         }
         return RequestContainerV5.allStatesExceptStage;
     }

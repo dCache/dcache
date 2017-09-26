@@ -187,6 +187,8 @@
         <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}"/>
         <property name="loginBrokerPublisher" ref="lb"/>
         <property name="vfsCacheConfig" ref="cache-config"/>
+        <property name="supportedLayouts" value="${nfs.pnfs.layouts}" />
+        <property name="accessLogMode" value="${nfs.enable.access-log}" />
     </bean>
 
     <bean id="pool-manager-handler" class="org.dcache.poolmanager.PoolManagerHandlerSubscriber">
@@ -200,6 +202,9 @@
         <property name="timeUnit" value="${nfs.namespace-cache.time.unit}" />
         <property name="fsStatLifeTime" value="${nfs.fs-stat-cache.time}" />
         <property name="fsStatTimeUnit" value="${nfs.fs-stat-cache.time.unit}" />
+        <property name="readdirMaxEntries" value="${nfs.readdir-cache.size}" />
+        <property name="readdirLifeTime" value="${nfs.readdir-cache.time}" />
+        <property name="readdirLifeTimeUnit" value="${nfs.readdir-cache.unit}" />
     </bean>
 
     <beans  profile="portmap-true">

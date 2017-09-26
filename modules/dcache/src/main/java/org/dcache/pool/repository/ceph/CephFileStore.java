@@ -227,6 +227,12 @@ public class CephFileStore implements FileStore {
         try {
             rbd.remove(imageName);
         } catch (RadosException e) {
+
+            // ignore file-not-found error code (negative number).
+            if (Errno.valueOf(Math.abs(e.getErrorCode())) == Errno.ENOENT) {
+                return;
+            }
+
             throwIfMappable(e, "Failed to remove file: " + imageName);
             throw e;
         }

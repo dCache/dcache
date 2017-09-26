@@ -110,6 +110,21 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     @Test
+    public void shouldAbortOperationWhenFileWasDeletedAfterAddCacheMessageProcessed()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        givenAFileUpdateForANewFileOnAPoolWithNoTags();
+        whenHandleUpdateIsCalled();
+        whenVerifyIsRun();
+        givenFileIsDeleted();
+        whenScanIsRun();
+        whenTaskIsCreatedAndCalled();
+        assertTrue(theOperationFailed());
+        whenScanIsRun();
+        assertNull(fileOperationMap.getOperation(update.pnfsId));
+    }
+
+    @Test
     public void shouldCreateMigrationTaskWhenVerifyResultIsCopy()
                     throws CacheException, IOException, InterruptedException {
         setUpTest(false);
@@ -143,6 +158,16 @@ public final class FileOperationHandlerTest extends TestBase
         whenOperationFailsWithNewTargetError();
         whenVerifyIsRun();
         whenScanIsRun();
+        assertNull(fileOperationMap.getOperation(update.pnfsId));
+    }
+
+    @Test
+    public void shouldNotProcessFileNotInNamespace()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        givenAFileUpdateForANewFileOnAPoolWithNoTags();
+        givenFileIsDeleted();
+        whenHandleUpdateIsCalled();
         assertNull(fileOperationMap.getOperation(update.pnfsId));
     }
 
@@ -220,7 +245,8 @@ public final class FileOperationHandlerTest extends TestBase
         givenUpdateHasBeenAddedToMapWithCountOf(1);
         whenVerifyIsRun();
         assertEquals("REMOVE", verifyType);
-        assertEquals(2, fileOperationMap.getOperation(update.pnfsId).getOpCount());
+        assertEquals(2,
+                     fileOperationMap.getOperation(update.pnfsId).getOpCount());
     }
 
     @Test
@@ -344,6 +370,21 @@ public final class FileOperationHandlerTest extends TestBase
         assertTrue(theOperationCountIs(1));
     }
 
+    @Test
+    public void shouldVoidOperationWhenFileNotDeletedButNoLocationsFound()
+                    throws CacheException, IOException, InterruptedException {
+        setUpTest(false);
+        givenAFileUpdateForANewFileOnAPoolWithNoTags();
+        whenHandleUpdateIsCalled();
+        whenVerifyIsRun();
+        givenAllLocationsAreRemoved();
+        whenScanIsRun();
+        whenTaskIsCreatedAndCalled();
+        assertTrue(theOperationFailed());
+        whenScanIsRun();
+        assertNull(fileOperationMap.getOperation(update.pnfsId));
+    }
+
     private void afterInspectingSourceAndTarget() {
         FileOperation operation = fileOperationMap.getOperation(update.pnfsId);
         originalSource = operation.getSource();
@@ -354,37 +395,6 @@ public final class FileOperationHandlerTest extends TestBase
         Task inner = task.getMigrationTask();
         assertNotNull(inner);
         assertEquals(inner.getPnfsId(), update.pnfsId);
-    }
-
-    private void givenACustodialFileUpdateFromAPoolScan()
-                    throws CacheException {
-        loadNewFilesOnPoolsWithHostAndRackTags();
-        setUpdateWithGroup(aCustodialOnlineFile(), MessageType.POOL_STATUS_DOWN,
-                           SelectionAction.NONE);
-    }
-
-    private void givenANewLocationForFile() throws CacheException {
-        Integer pool = poolInfoMap.getPoolIndex(update.pool);
-        Integer group = poolInfoMap.getResilientPoolGroup(pool);
-        Collection<Integer> pools = poolInfoMap.getPoolsOfGroup(group);
-        for (Integer p : pools) {
-            if (p != pool) {
-                attributes.getLocations().add(poolInfoMap.getPool(p));
-                setUpdate(attributes, MessageType.ADD_CACHE_LOCATION);
-                break;
-            }
-        }
-    }
-
-    private void givenANewTagRequirementForFileStorageUnit() {
-        Integer unit = poolInfoMap.getStorageUnitIndex(attributes);
-        StorageUnitConstraints constraints
-                        = poolInfoMap.getStorageUnitConstraints(unit);
-        int req = constraints.getRequired();
-        storageUnit = poolInfoMap.getUnit(unit);
-        poolInfoMap.setUnitConstraints(storageUnit, req,
-                                       ImmutableList.of("hostname","rack"));
-
     }
 
     private void givenAFileUpdateClearCacheLocationForAFileWithNoLocationsInNamespace()
@@ -405,7 +415,7 @@ public final class FileOperationHandlerTest extends TestBase
                     throws CacheException {
         loadFilesWithExcessLocations();
         setUpdate(aFileWithAReplicaOnAllResilientPools(),
-                        MessageType.POOL_STATUS_UP);
+                  MessageType.POOL_STATUS_UP);
     }
 
     private void givenAFileUpdateForAFileWithNoLocationsYetInAttributes()
@@ -427,7 +437,7 @@ public final class FileOperationHandlerTest extends TestBase
                     throws CacheException {
         loadFilesWithRequiredLocations();
         setUpdate(aReplicaOnlineFileWithNoTags(),
-                        MessageType.POOL_STATUS_UP);
+                  MessageType.POOL_STATUS_UP);
     }
 
     private void givenAFileUpdateForANewFileOnAPoolWithHostAndRackTags()
@@ -454,7 +464,7 @@ public final class FileOperationHandlerTest extends TestBase
                     throws CacheException {
         loadNewFilesOnPoolsWithHostAndRackTags();
         setUpdate(aReplicaOnlineFileWithBothTags(),
-                        MessageType.ADD_CACHE_LOCATION);
+                  MessageType.ADD_CACHE_LOCATION);
         String key = attributes.getStorageClass() + "@" + attributes.getHsm();
         makeNonResilient(key);
     }
@@ -472,11 +482,32 @@ public final class FileOperationHandlerTest extends TestBase
                            MessageType.POOL_STATUS_UP, SelectionAction.ADD);
     }
 
-    private void givenAFileUpdateFromAPoolScanForPoolRemovedFromGroup()
-                    throws CacheException {
-        loadNewFilesOnPoolsWithHostAndRackTags();
-        setUpdateWithGroup(aReplicaOnlineFileWithBothTags(),
-                           MessageType.POOL_STATUS_DOWN, SelectionAction.REMOVE);
+    private void givenANewLocationForFile() throws CacheException {
+        Integer pool = poolInfoMap.getPoolIndex(update.pool);
+        Integer group = poolInfoMap.getResilientPoolGroup(pool);
+        Collection<Integer> pools = poolInfoMap.getPoolsOfGroup(group);
+        for (Integer p : pools) {
+            if (p != pool) {
+                attributes.getLocations().add(poolInfoMap.getPool(p));
+                setUpdate(attributes, MessageType.ADD_CACHE_LOCATION);
+                break;
+            }
+        }
+    }
+
+    private void givenANewTagRequirementForFileStorageUnit() {
+        Integer unit = poolInfoMap.getStorageUnitIndex(attributes);
+        StorageUnitConstraints constraints
+                        = poolInfoMap.getStorageUnitConstraints(unit);
+        int req = constraints.getRequired();
+        storageUnit = poolInfoMap.getUnit(unit);
+        poolInfoMap.setUnitConstraints(storageUnit, req,
+                                       ImmutableList.of("hostname", "rack"));
+
+    }
+
+    private void givenAllLocationsAreRemoved() {
+        deleteAllLocationsForFile(attributes.getPnfsId());
     }
 
     private void givenAllPoolsOfflineExceptSourceAndTarget()
@@ -487,6 +518,14 @@ public final class FileOperationHandlerTest extends TestBase
                 shutPoolDown(p);
             }
         });
+    }
+
+    private void givenFileIsDeleted() {
+        deleteFileFromNamespace(attributes.getPnfsId());
+    }
+
+    private void givenSourcePoolIsDown() {
+        shutPoolDown(update.pool);
     }
 
     private void givenUpdateHasBeenAddedToMapWithCountOf(int count)
@@ -501,10 +540,6 @@ public final class FileOperationHandlerTest extends TestBase
                                 pool, group, unit, attributes);
         update.setCount(count);
         fileOperationMap.register(update);
-    }
-
-    private void givenSourcePoolIsDown() {
-        shutPoolDown(update.pool);
     }
 
     private boolean noOperationHasBeenAdded() {
@@ -537,7 +572,8 @@ public final class FileOperationHandlerTest extends TestBase
         poolOperationMap.setRescanWindow(Integer.MAX_VALUE);
         poolOperationMap.setDownGracePeriod(0);
         poolOperationMap.loadPools();
-        fileOperationMap.initialize(()-> {});
+        fileOperationMap.initialize(() -> {
+        });
         fileOperationMap.reload();
     }
 
@@ -553,7 +589,7 @@ public final class FileOperationHandlerTest extends TestBase
     }
 
     private void setUpdateWithGroup(FileAttributes attributes, MessageType type,
-                    SelectionAction action) {
+                                    SelectionAction action) {
         this.attributes = attributes;
         PnfsId pnfsId = attributes.getPnfsId();
         Iterator<String> iterator = attributes.getLocations().iterator();
@@ -569,7 +605,7 @@ public final class FileOperationHandlerTest extends TestBase
 
     private void shutPoolDown(String pool) {
         PoolStateUpdate update = new PoolStateUpdate(pool,
-                        new PoolV2Mode(PoolV2Mode.DISABLED_DEAD));
+                                                     new PoolV2Mode(PoolV2Mode.DISABLED_DEAD));
         poolInfoMap.updatePoolStatus(update);
     }
 
@@ -589,6 +625,11 @@ public final class FileOperationHandlerTest extends TestBase
         return operation != null && operation.getOpCount() == count;
     }
 
+    private boolean theOperationFailed() {
+        FileOperation operation = fileOperationMap.getOperation(update.pnfsId);
+        return operation != null && operation.getStateName().equals("FAILED");
+    }
+
     private void whenHandleUpdateIsCalled() throws CacheException {
         fileOperationHandler.handleLocationUpdate(update);
     }
@@ -596,24 +637,27 @@ public final class FileOperationHandlerTest extends TestBase
     private void whenOperationFailsFatally() throws IOException {
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
-                                         new CacheException(CacheException.DEFAULT_ERROR_CODE,
-                                        FORCED_FAILURE.toString()));
+                                         new CacheException(
+                                                         CacheException.DEFAULT_ERROR_CODE,
+                                                         FORCED_FAILURE.toString()));
         fileOperationMap.scan();
     }
 
     private void whenOperationFailsWithBrokenFileError() throws IOException {
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
-                                         new CacheException(CacheException.FILE_CORRUPTED,
-                                        "broken"));
+                                         new CacheException(
+                                                         CacheException.FILE_CORRUPTED,
+                                                         "broken"));
         fileOperationMap.scan();
     }
 
     private void whenOperationFailsWithNewTargetError() throws IOException {
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
-                                         new CacheException(CacheException.FILE_IN_CACHE,
-                                        FORCED_FAILURE.toString()));
+                                         new CacheException(
+                                                         CacheException.FILE_IN_CACHE,
+                                                         FORCED_FAILURE.toString()));
         fileOperationMap.scan();
     }
 
@@ -630,12 +674,12 @@ public final class FileOperationHandlerTest extends TestBase
         fileOperationMap.scan();
         fileOperationMap.updateOperation(update.pnfsId,
                                          new CacheException(
-                                                         CacheException.FILE_NOT_FOUND,
+                                                         CacheException.FILE_NOT_IN_REPOSITORY,
                                                          "Source pool failed"));
         fileOperationMap.scan();
     }
 
-    private void whenScanIsRun() throws IOException{
+    private void whenScanIsRun() throws IOException {
         fileOperationMap.scan();
         /*
          *  Also force a save.

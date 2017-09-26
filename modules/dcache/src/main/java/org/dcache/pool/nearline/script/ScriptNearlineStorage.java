@@ -59,6 +59,7 @@ import org.dcache.util.BoundedExecutor;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.CDCScheduledExecutorServiceDecorator;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Arrays.asList;
@@ -256,7 +257,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
                 try {
                     String firstLine = Files.readFirstLine(checksumFile, Charsets.US_ASCII);
                     if (firstLine != null) {
-                        Checksum checksum = Checksum.parseChecksum("1:" + firstLine);
+                        Checksum checksum = new Checksum(ChecksumType.ADLER32, firstLine);
                         return Collections.singleton(checksum);
                     }
                 } finally {

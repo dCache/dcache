@@ -202,6 +202,7 @@
         <property name="executor" ref="storage-executor"/>
         <property name="directoryListSource" ref="list-handler"/>
         <property name="loginBrokerSource" ref="login-broker-source"/>
+        <property name="srmProtocol" value="${srmmanager.loginbroker.srm-protocol}"/>
         <property name="pnfsStub" ref="pnfs-stub"/>
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="poolManagerStub" ref="pool-manager-stub"/>
@@ -238,13 +239,11 @@
 
     <bean id="config" class="diskCacheV111.srm.dcache.Configuration" depends-on="liquibase">
         <description>SRM configuration</description>
-        <property name="port" value="${srmmanager.net.port}"/>
         <property name="timeout"
                   value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
                      ${srmmanager.limits.external-copy-script.timeout},
                      '${srmmanager.limits.external-copy-script.timeout.unit}')}" />
         <property name="srmHost" value="${srmmanager.net.host}"/>
-        <property name="srmHostsAsArray" value="${srmmanager.net.local-hosts}"/>
         <property name="caCertificatePath" value="${srmmanager.authn.capath}"/>
         <property name="sizeOfSingleRemoveBatch"
                   value="${srmmanager.limits.remove-batch-size}"/>

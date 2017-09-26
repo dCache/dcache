@@ -70,7 +70,7 @@ public class RrdRequestCounters<T> {
     public RrdRequestCounters(RequestCounters<T> requestCounters,
             String rrdDir,long updatePeriodSecs,
             long graphPeriodSecs) throws IOException {
-        logger.debug("RrdRequestCounters("+requestCounters+", "+rrdDir);
+        logger.debug("RrdRequestCounters({}, {}", requestCounters, rrdDir);
         this.requestCounters = requestCounters;
         this.rrdDir = rrdDir;
         File dir = new File(rrdDir);
@@ -116,13 +116,13 @@ public class RrdRequestCounters<T> {
 
     private void updateRrds() throws IOException {
         boolean countersAdded = false;
-        logger.debug("updateRrds() for "+requestCounters);
+        logger.debug("updateRrds() for {}", requestCounters);
         synchronized (requestCounters) {
             for(T key:requestCounters.keySet()) {
-                logger.debug("updatePrds(): key is "+key);
+                logger.debug("updatePrds(): key is {}", key);
                 if(!rrdcounters.containsKey(key)) {
                     RequestCounter requestCounter = requestCounters.getCounter(key);
-                    logger.debug("updatePrds(): creating RRDRequestCounter for "+requestCounter);
+                    logger.debug("updatePrds(): creating RRDRequestCounter for {}", requestCounter);
                     RRDRequestCounter rrdRequestCounter =
                             new RRDRequestCounter(rrdDir,requestCounter,updatePeriodSecs);
                     rrdcounters.put(key, rrdRequestCounter);

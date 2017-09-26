@@ -8,6 +8,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
@@ -227,7 +228,9 @@ public final class NamespaceUtils {
         }
 
         if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
-            json.setStorageInfo(attributes.getStorageInfo());
+            StorageInfo info = attributes.getStorageInfo();
+            json.setStorageInfo(info);
+            json.setSuris(info.locations());
         }
     }
 

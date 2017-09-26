@@ -89,6 +89,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
@@ -328,15 +329,9 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             isSourceSrm = sourceProtocol.equals("srm");
             isDestinationSrm = destinationProtocol.equals("srm");
 
-            Set<String> srmHosts = getConfiguration().getSrmHosts();
-            isSourceLocal =
-                    isSourceSrm &&
-                    (sourcePort == -1 || sourcePort == getConfiguration().getPort()) &&
-                    (sourceHost == null || srmHosts.stream().anyMatch(sourceHost::equalsIgnoreCase));
-            isDestinationLocal =
-                    isDestinationSrm &&
-                    (destinationPort == -1 || destinationPort == getConfiguration().getPort()) &&
-                    (destinationHost == null || srmHosts.stream().anyMatch(destinationHost::equalsIgnoreCase));
+            AbstractStorageElement storage = SRM.getSRM().getStorage();
+            isSourceLocal = storage.isLocalSurl(source);
+            isDestinationLocal = storage.isLocalSurl(destination);
 
             LOG.debug("src (srm={}, local={}), dest (srm={}, local={})",
                       isSourceSrm, isSourceLocal, isDestinationSrm, isDestinationLocal);
@@ -706,7 +701,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                         request.setState(state, "Request now " + state);
                     }
                 } catch (IllegalStateTransition ist) {
-                    LOG.error("Illegal State Transition : " + ist.getMessage());
+                    LOG.error("Illegal State Transition : {}", ist.getMessage());
                 }
             }
         }

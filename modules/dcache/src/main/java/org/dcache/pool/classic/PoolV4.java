@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
+import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
 import diskCacheV111.util.CacheException;
@@ -76,7 +77,6 @@ import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
@@ -93,7 +93,6 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
-
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
@@ -102,6 +101,11 @@ import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.PoolDataBeanProvider;
 import org.dcache.pool.assumption.Assumption;
+import org.dcache.pool.json.PoolDataDetails;
+import org.dcache.pool.json.PoolDataDetails.Duplicates;
+import org.dcache.pool.json.PoolDataDetails.Lsf;
+import org.dcache.pool.json.PoolDataDetails.OnOff;
+import org.dcache.pool.json.PoolDataDetails.P2PMode;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.nearline.HsmSet;
@@ -123,12 +127,6 @@ import org.dcache.util.IoPriority;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
-import diskCacheV111.pools.json.PoolCostData;
-import org.dcache.pool.json.PoolDataDetails;
-import org.dcache.pool.json.PoolDataDetails.Duplicates;
-import org.dcache.pool.json.PoolDataDetails.Lsf;
-import org.dcache.pool.json.PoolDataDetails.OnOff;
-import org.dcache.pool.json.PoolDataDetails.P2PMode;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -1045,10 +1043,13 @@ public class PoolV4
 
         try {
             int id = kill.getMoverId();
-            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
+            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id)
+                    .orElseThrow(() -> new NoSuchElementException("Id doesn't belong to any known scheduler."));
             String explanation = kill.getExplanation();
             LOGGER.info("Killing mover {}: {}", id, explanation);
-            js.cancel(id, explanation);
+            if (!js.cancel(id, explanation)) {
+                throw new NoSuchElementException("Job " + id + " not found");
+            }
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
             LOGGER.info(e.toString());
@@ -1070,8 +1071,7 @@ public class PoolV4
                 && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
             if (!msg.isForceSourceMode()) {
-                LOGGER.warn("PoolIoFileMessage request rejected due to "
-                            + _poolMode);
+                LOGGER.warn("PoolIoFileMessage request rejected due to {}", _poolMode);
                 throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
             }
         }
@@ -1084,8 +1084,7 @@ public class PoolV4
         throws CacheException, IOException, InterruptedException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
-            LOGGER.warn("Pool2PoolTransferMsg request rejected due to "
-                        + _poolMode);
+            LOGGER.warn("Pool2PoolTransferMsg request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
@@ -1115,8 +1114,7 @@ public class PoolV4
         throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
-            LOGGER.warn("PoolFetchFileMessage request rejected due to "
-                        + _poolMode);
+            LOGGER.warn("PoolFetchFileMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
         if (!_hasTapeBackend) {
@@ -1174,8 +1172,7 @@ public class PoolV4
         throws CacheException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) {
-            LOGGER.warn("PoolRemoveFilesFromHsmMessage request rejected due to "
-                        + _poolMode);
+            LOGGER.warn("PoolRemoveFilesFromHsmMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
         if (!_hasTapeBackend) {
@@ -1333,8 +1330,7 @@ public class PoolV4
         throws CacheException, InterruptedException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)) {
-            LOGGER.warn("PoolSetStickyMessage request rejected due to "
-                        + _poolMode);
+            LOGGER.warn("PoolSetStickyMessage request rejected due to {}", _poolMode);
             throw new CacheException(CacheException.POOL_DISABLED, "Pool is disabled");
         }
 
@@ -1542,7 +1538,7 @@ public class PoolV4
         }
     }
 
-    private PoolCostInfo getPoolCostInfo()
+    public PoolCostInfo getPoolCostInfo()
     {
         return new PoolCostInfo(IoQueueManager.DEFAULT_QUEUE, _poolInfo);
     }
@@ -1629,12 +1625,10 @@ public class PoolV4
                     _repository.setState(id, ReplicaState.REMOVED);
                     LOGGER.info("File not found in PNFS; removed {}", id);
                 } catch (InterruptedException | CacheException f) {
-                    LOGGER.error("File not found in PNFS, but failed to remove "
-                                 + id + ": " + f);
+                    LOGGER.error("File not found in PNFS, but failed to remove {}: {}", id, f);
                 }
             } catch (CacheException e) {
-                LOGGER.error("Cache location was not registered for "
-                             + id + ": " + e.getMessage());
+                LOGGER.error("Cache location was not registered for {}: {}", id , e.getMessage());
             }
         }
 
@@ -1686,11 +1680,10 @@ public class PoolV4
                 _hybridInventoryActive = false;
             }
 
-            LOGGER.info("Replica "
-                        + (_activate ? "registration" : "deregistration" )
-                        + " finished. " + _hybridCurrent
-                        + " replicas processed in "
-                        + (stopTime-startTime) + " msec");
+            LOGGER.info("Replica {} finished. {} replicas processed in {} msec",
+                    (_activate ? "registration" : "deregistration" ),
+                    _hybridCurrent,
+                    (stopTime-startTime));
         }
     }
 
@@ -1835,12 +1828,6 @@ public class PoolV4
         }
     }
 
-    @Deprecated
-    public String ac_set_p2p_$_1(Args args)
-    {
-        return "WARNING: this command is obsolete";
-    }
-
     @Command(name = "pool disable")
     class PoolDisableCommand implements Callable<String>
     {
@@ -1922,13 +1909,6 @@ public class PoolV4
         }
     }
 
-    @Deprecated
-    public String ac_set_max_movers_$_1(Args args)
-    {
-        return "Please use 'mover|st|rh set max active <jobs>'";
-
-    }
-
     @AffectsSetup
     @Command(name = "set report remove")
     class SetReportRemoveCommand implements Callable<String>
@@ -1951,18 +1931,6 @@ public class PoolV4
             }
             return "";
         }
-    }
-
-    @Deprecated
-    public String ac_set_sticky_$_0_1(Args args)
-    {
-        return "The command is deprecated and has no effect";
-    }
-
-    @Deprecated
-    public String ac_set_cleaning_interval_$_1(Args args)
-    {
-        return "The command is deprecated and has no effect";
     }
 
     @AffectsSetup

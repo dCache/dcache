@@ -65,9 +65,9 @@ public class PoolInfoObserverV3 extends AbstractCell
                             try {
                                 refresh();
                             } catch (CacheException | NoRouteToCellException e) {
-                                _log.error("Failed to update topology map: " + e.getMessage());
+                                _log.error("Failed to update topology map: {}", e.getMessage());
                             } catch (RuntimeException e) {
-                                _log.error("Failed to update topology map: " + e);
+                                _log.error("Failed to update topology map: {}", e.toString());
                             }
 
                             Thread.sleep(_interval * 1000);

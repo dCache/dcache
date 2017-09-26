@@ -581,7 +581,7 @@ public class CellShell extends CommandInterpreter
           try{
             _log.warn( "waitForCell : Sending request" ) ;
               answer = _nucleus.sendAndWait(new CellMessage(destination , message), ((long) check) * 1000);
-            _log.warn( "waitForCell : got "+answer ) ;
+            _log.warn( "waitForCell : got {}", answer ) ;
          } catch (NoRouteToCellException e) {
             noRoute = true ;
          } catch (ExecutionException ignored) {
@@ -1797,7 +1797,7 @@ public class CellShell extends CommandInterpreter
                     } else if (!(error instanceof CommandEvaluationException)) {
                         String msg =
                             Exceptions.getMessageWithCauses(error);
-                        println(err, String.format("%s: line %d: Command failed (%s)",
+                        println(err, String.format("%s: line %d: Command failed: %s",
                                                    source, no, msg));
                     }
                 }

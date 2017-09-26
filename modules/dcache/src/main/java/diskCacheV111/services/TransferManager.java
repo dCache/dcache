@@ -323,7 +323,7 @@ public abstract class TransferManager extends AbstractCellComponent
             @Override
             public void run()
             {
-                log.error("timer for handler " + id + " has expired, killing");
+                log.error("timer for handler {} has expired, killing", id );
                 Object o = _moverTimeoutTimerTasks.remove(id);
                 if (o == null) {
                     log.error("TimerTask.run(): timer task for handler Id={} not found in moverTimoutTimerTasks hashtable", id);

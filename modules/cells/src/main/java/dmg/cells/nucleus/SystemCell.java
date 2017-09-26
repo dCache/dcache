@@ -283,10 +283,10 @@ public class      SystemCell
 
    @Override
    public void messageArrived( CellMessage msg ){
-        _log.info( "Message arrived : "+msg ) ;
+        _log.info( "Message arrived : {}", msg ) ;
         _packetsReceived ++ ;
         if( msg.isReply() ){
-            _log.warn("Seems to a bounce : "+msg);
+            _log.warn("Seems to a bounce : {}", msg);
             return ;
         }
         Object obj  = msg.getMessageObject() ;
@@ -309,7 +309,7 @@ public class      SystemCell
            if( command.length() < 1 ) {
                return;
            }
-           _log.info( "Command(p="+as.getAuthorizedPrincipal()+") : "+command ) ;
+           _log.info( "Command(p={}) : {}", as.getAuthorizedPrincipal(), command ) ;
            reply = _cellShell.objectCommand2( command ) ;
         } else {
             return;

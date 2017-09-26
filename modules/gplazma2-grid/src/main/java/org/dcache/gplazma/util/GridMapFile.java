@@ -47,7 +47,7 @@ public class GridMapFile
 
             }
         } catch (IOException e) {
-            _log.error("Failed to load grid-mapfile: " + e.getMessage());
+            _log.error("Failed to load grid-mapfile: {}", e.getMessage());
         }
     }
 

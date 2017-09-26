@@ -68,6 +68,7 @@ import dmg.util.TimebasedCounter;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -230,7 +231,7 @@ public class Transfer implements Comparable<Transfer>
     @Override
     public int compareTo(Transfer o)
     {
-        return Longs.compare(o.getId(), getId());
+        return Long.compare(o.getId(), getId());
     }
 
     /**
@@ -1136,17 +1137,15 @@ public class Transfer implements Comparable<Transfer>
              * for the transfer confirmation.
              */
             if (millis > 0 && !waitForMover(millis)) {
-                _log.error("Failed to kill mover " + pool + "/" + moverId
-                           + ": Timeout");
+                _log.error("Failed to kill mover {}/{}: Timeout", pool, moverId);
             }
         } catch (CacheException e) {
             // Not surprising that the pool reported a failure
             // when we killed the mover.
-            _log.debug("Killed mover and pool reported: " +
+            _log.debug("Killed mover and pool reported: {}",
                        e.getMessage());
         } catch (InterruptedException e) {
-            _log.warn("Failed to kill mover " + pool + "/" + moverId
-                      + ": " + e.getMessage());
+            _log.warn("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
             Thread.currentThread().interrupt();
         } finally {
             setStatus(null);
@@ -1182,13 +1181,18 @@ public class Transfer implements Comparable<Transfer>
         if (pnfsId != null) {
             setStatus("PnfsManager: Deleting name space entry");
             try {
-                _pnfs.deletePnfsEntry(pnfsId, _path.toString());
+                /*  A user may be authorised to upload data but not delete data.
+                 *  During error recovery, a door may attempt to delete the
+                 *  bad file, which (in general) such users are not authorised
+                 *  to do.  Therefore, this delete operation is done with no
+                 *  restriction.
+                 */
+                new PnfsHandler(_pnfs, Restrictions.none())
+                        .deletePnfsEntry(pnfsId, _path.toString());
             } catch (FileNotFoundCacheException e) {
-                _log.debug("Failed to delete file after failed upload: " +
-                           _path + " (" + pnfsId + "): " + e.getMessage());
+                _log.debug("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
             } catch (CacheException e) {
-                _log.error("Failed to delete file after failed upload: " +
-                           _path + " (" + pnfsId + "): " + e.getMessage());
+                _log.error("Failed to delete file after failed upload: {} ({}): {}", _path, pnfsId, e.getMessage());
             } finally {
                 setStatus(null);
             }

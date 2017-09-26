@@ -241,7 +241,7 @@
       <constructor-arg>
           <bean class="java.util.concurrent.Executors"
                 factory-method="newScheduledThreadPool"
-                destroy-method="shutdown">
+                 destroy-method="shutdown">
               <constructor-arg value="${pool.limits.worker-threads}"/>
               <property name="executeExistingDelayedTasksAfterShutdownPolicy"
                         value="false"/>
@@ -488,6 +488,7 @@
     <property name="migrationServer" ref="migration-server"/>
     <property name="p2pClient" ref="pp"/>
     <property name="queueManager" ref="io-queue-manager"/>
+    <property name="repositoryDataProvider" ref="rep"/>
     <property name="repository" ref="rep"/>
     <property name="storageHandler" ref="storagehandler"/>
     <property name="sweeper" ref="sweeper"/>

@@ -57,39 +57,115 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.cells;
+package org.dcache.restful.providers.pool;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import java.io.Serializable;
+
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
+import org.dcache.pool.json.PoolData;
+import org.dcache.pool.movers.json.MoverData;
+import org.dcache.pool.nearline.json.NearlineData;
+import org.dcache.util.histograms.Histogram;
 
 /**
- * <p>Wraps the future so that round-trip time can be computed.</p>
+ * <p>Container for all metadata requests pertaining to a pool.</p>
+ * <p>
+ * <p>Some of the fields may be <code>null</code>, depending on the
+ * type of request this is used to respond to.</p>
+ * <p>
+ * <p>Part of the RESTful API.</p>
  */
-public class ListenableFutureWrapper<D> {
-    private String key;
-    private Long sent;
-    private ListenableFuture<D> future;
+public class PoolInfo implements Serializable {
+    private static final long serialVersionUID = 5758816176471906326L;
+    private PoolData                 poolData;
+    private CacheRepositoryEntryInfo pnfsidInfo;
+    private String                   repositoryListing;
+    private Histogram[]              queueStat;
+    private Histogram[]              fileStat;
+    private MoverData[]              movers;
+    private MoverData[]              p2ps;
+    private NearlineData[]           flush;
+    private NearlineData[]           stage;
+    private NearlineData[]           remove;
 
-    public ListenableFuture<D> getFuture() {
-        return future;
+    public Histogram[] getFileStat() {
+        return fileStat;
     }
 
-    public String getKey() {
-        return key;
+    public NearlineData[] getFlush() {
+        return flush;
     }
 
-    public Long getSent() {
-        return sent;
+    public MoverData[] getMovers() {
+        return movers;
     }
 
-    public void setFuture(ListenableFuture<D> future) {
-        this.future = future;
+    public MoverData[] getP2ps() {
+        return p2ps;
     }
 
-    public void setKey(String key) {
-        this.key = key;
+    public CacheRepositoryEntryInfo getPnfsidInfo() {
+        return pnfsidInfo;
     }
 
-    public void setSent(Long sent) {
-        this.sent = sent;
+    public PoolData getPoolData() {
+        return poolData;
+    }
+
+    public Histogram[] getQueueStat() {
+        return queueStat;
+    }
+
+    public NearlineData[] getRemove() {
+        return remove;
+    }
+
+    public String getRepositoryListing() {
+        return repositoryListing;
+    }
+
+    public NearlineData[] getStage() {
+        return stage;
+    }
+
+    public void setFileStat(Histogram[] fileStat) {
+        this.fileStat = fileStat;
+    }
+
+    public void setFlush(NearlineData[] flush) {
+        this.flush = flush;
+    }
+
+    public void setMovers(MoverData[] movers) {
+        this.movers = movers;
+    }
+
+    public void setP2ps(MoverData[] p2ps) {
+        this.p2ps = p2ps;
+    }
+
+    public void setPnfsidInfo(
+                    CacheRepositoryEntryInfo pnfsidInfo) {
+        this.pnfsidInfo = pnfsidInfo;
+    }
+
+    public void setPoolData(PoolData poolData) {
+        this.poolData = poolData;
+    }
+
+    public void setQueueStat(Histogram[] queueStat) {
+        this.queueStat = queueStat;
+    }
+
+    public void setRemove(NearlineData[] remove) {
+        this.remove = remove;
+    }
+
+    public void setRepositoryListing(String repositoryListing) {
+        this.repositoryListing = repositoryListing;
+    }
+
+    public void setStage(NearlineData[] stage) {
+        this.stage = stage;
     }
 }

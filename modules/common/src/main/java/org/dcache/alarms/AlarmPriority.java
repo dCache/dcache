@@ -61,9 +61,28 @@ package org.dcache.alarms;
 
 /**
  * For marking alert level.
- *
- * @author arossi
  */
 public enum AlarmPriority {
-    LOW, MODERATE, HIGH, CRITICAL
+    LOW
+                    {
+                        @Override
+                        public int getLevel() { return 0; }
+                    },
+    MODERATE
+                    {
+                        @Override
+                        public int getLevel() { return 1; }
+                    },
+    HIGH
+                    {
+                        @Override
+                        public int getLevel() { return 2; }
+                    },
+    CRITICAL
+                    {
+                        @Override
+                        public int getLevel() { return 3; }
+                    };
+
+    public abstract int getLevel();
 }

@@ -9,6 +9,7 @@ ${ENDPOINT}       api/v1/namespace
 ${HTTP}           http://${SERVER}:3880/${ENDPOINT}
 ${HTTPS}          https://${SERVER}:3881/${ENDPOINT}
 ${HTTPS_NA}       https://${SERVER}:3882/${ENDPOINT}
+${TRUSTSTORE}     ${CURDIR}${/}..${/}..${/}..${/}etc${/}grid-security${/}certificates
 
 *** Keywords ***
 Run WhoAmI Command

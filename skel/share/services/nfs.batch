@@ -49,6 +49,7 @@ check nfs.db.password
 check nfs.db.password.file
 check nfs.domain
 check nfs.mover.queue
+check -strong nfs.enable.access-log
 
 create org.dcache.cells.UniversalSpringCell ${nfs.cell.name} \
         "classpath:org/dcache/chimera/nfsv41/door/nfsv41-common.xml \

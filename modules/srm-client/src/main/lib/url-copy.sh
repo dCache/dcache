@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@SHELL_PATH@
 #if script returns to quickly java does not see error code!!!
 sleep 1
 #default values

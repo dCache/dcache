@@ -59,147 +59,20 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.cells;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import org.springframework.beans.factory.annotation.Required;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellVersion;
-import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.json.CellData;
 import org.dcache.restful.services.cells.CellInfoServiceImpl;
+import org.dcache.util.collector.RequestFutureProcessor;
 
 /**
  * <p>Used in conjunction with the {@link CellInfoCollector} as message
  * post-processor.  Updates the cell data based on the info received.</p>
  */
-public final class CellInfoFutureProcessor {
-    private static final Logger LOGGER
-                    = LoggerFactory.getLogger(CellInfoFutureProcessor.class);
-
-    private final Map<String, ListenableFutureWrapper<CellInfo>> futureMap
-                    = new HashMap<>();
-
-    private final Map<String, CellData> next
-                    = Collections.synchronizedMap(new HashMap<>());
-
-    /**
-     * <p>Injected</p>
-     */
-    private Executor executor;
-    private CellInfoServiceImpl service;
-
-    /**
-     * <p>Cancels all futures in map.</p>
-     */
-    public synchronized void cancel() {
-        futureMap.values().stream()
-                 .forEach(wrapper -> wrapper.getFuture().cancel(true));
-        futureMap.clear();
-    }
-
-    public synchronized boolean isProcessing() {
-        return !futureMap.isEmpty();
-    }
-
-    /**
-     * <p>Adds listener to each future returned.</p>
-     *
-     * @param futureMap returned from most recent collection.
-     * @throws IllegalStateException if the processor is still
-     *                               running a previous pass.
-     */
-    public synchronized void process(
-                    Map<String, ListenableFutureWrapper<CellInfo>> futureMap)
-                    throws IllegalStateException, IllegalArgumentException {
-        if (!this.futureMap.isEmpty()) {
-            String error = "Cannot execute process; previous processing "
-                            + "has not completed.";
-            throw new IllegalStateException(error);
-        }
-
-        /*
-         * Avoid potential concurrent modification exception when
-         * removing, possibly while still adding listeners (below).
-         */
-        this.futureMap.clear();
-        this.futureMap.putAll(futureMap);
-
-        /*
-         * Inject a listener into the futures.
-         */
-        futureMap.entrySet().stream().forEach(this::addListener);
-    }
-
-    public void setExecutor(Executor executor) {
-        this.executor = executor;
-    }
-
-    public void setService(CellInfoServiceImpl service) {
-        this.service = service;
-    }
-
-    /**
-     * <p>Adds listener which is responsible for transforming the cell info
-     * into the stored object.</p>
-     *
-     * @param entry holding the listenable future for the cell info.
-     */
-    private void addListener(Map.Entry<String,
-                    ListenableFutureWrapper<CellInfo>> entry) {
-        entry.getValue().getFuture().addListener(() -> {
-            String key = entry.getKey();
-            ListenableFutureWrapper<CellInfo> wrapper = entry.getValue();
-            try {
-                CellInfo received = wrapper.getFuture().get();
-
-                if (received == null) {
-                    remove(key);
-                    return;
-                }
-
-                CellData cellData = new CellData();
-                if (cellData != null) {
-                    cellData.setRoundTripTime(System.currentTimeMillis()
-                                                              - wrapper.getSent());
-                }
-
-                update(cellData, received);
-                next.put(key, cellData);
-            } catch (InterruptedException e) {
-                LOGGER.trace("Listener runnable was interrupted; returning ...");
-            } catch (ExecutionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof NoRouteToCellException) {
-                    LOGGER.trace("Endpoint currently unavailable: {}.", key);
-                } else {
-                    LOGGER.warn("Update of cell data for {} failed: {} / {}.",
-                                key, e.getMessage(), e.getCause());
-                }
-            }
-
-            remove(key);
-        }, executor);
-    }
-
-    private synchronized void remove(String key) {
-        futureMap.remove(key);
-
-        /*
-         *  If future map is empty, swap current for next.
-         *  This is to avoid stale entries in the cache.
-         */
-        if (futureMap.isEmpty()) {
-            service.updateCache(next);
-            next.clear();
-        }
-    }
-
+public final class CellInfoFutureProcessor extends
+                RequestFutureProcessor<CellData, CellInfo> {
     private static void update(CellData cellData, CellInfo received) {
         cellData.setCreationTime(received.getCreationTime());
         cellData.setDomainName(received.getDomainName());
@@ -215,5 +88,27 @@ public final class CellInfoFutureProcessor {
         cellData.setVersion(version.toString());
         cellData.setState(received.getState());
         cellData.setThreadCount(received.getThreadCount());
+    }
+
+    private CellInfoServiceImpl service;
+
+    @Required
+    public void setService(CellInfoServiceImpl service) {
+        this.service = service;
+    }
+
+    @Override
+    protected void postProcess() {
+        service.updateCache(next);
+    }
+
+    @Override
+    protected CellData process(String key,
+                               CellInfo received,
+                               long sent) {
+        CellData cellData = new CellData();
+        cellData.setRoundTripTime(System.currentTimeMillis() - sent);
+        update(cellData, received);
+        return cellData;
     }
 }

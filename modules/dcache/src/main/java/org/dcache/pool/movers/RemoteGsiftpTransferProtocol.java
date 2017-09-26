@@ -80,18 +80,13 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.ByteBuffer;
 import java.security.KeyStoreException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -116,7 +111,6 @@ import org.dcache.util.PortRange;
 import org.dcache.util.URIs;
 import org.dcache.vehicles.FileAttributes;
 
-import static org.dcache.util.ByteUnit.KiB;
 
 public class RemoteGsiftpTransferProtocol
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
@@ -134,14 +128,9 @@ public class RemoteGsiftpTransferProtocol
     private long _timeout_time;
     private PnfsId _pnfsId;
 
-    private Set<ChecksumFactory> _checksumFactories;
-    private Map<ChecksumType, MessageDigest> _transferMessageDigests;
-
-    private long _previousUpdateEndOffset;
-
     private RepositoryChannel _fileChannel;
     private GridftpClient _client;
-    private GridftpClient.Checksum _ftpCksm;
+    private Checksum _remoteChecksum;
 
     static {
         ChecksumType[] types = ChecksumType.values();
@@ -191,10 +180,8 @@ public class RemoteGsiftpTransferProtocol
     {
         _pnfsId = fileAttributes.getPnfsId();
         if (_log.isDebugEnabled()) {
-            _log.debug("runIO()\n\tprotocol="
-                    + protocol + ",\n\tStorageInfo=" + StorageInfos.extractFrom(fileAttributes) + ",\n\tPnfsId="
-                    + _pnfsId + ",\n\taccess ="
-                    + access );
+            _log.debug("runIO()\n\tprotocol={},\n\tStorageInfo={},\n\tPnfsId={},\n\taccess ={}",
+                    protocol, StorageInfos.extractFrom(fileAttributes), _pnfsId, access );
         }
         if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
             throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
@@ -205,22 +192,10 @@ public class RemoteGsiftpTransferProtocol
         RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo
             = (RemoteGsiftpTransferProtocolInfo) protocol;
 
-        /* If on transfer checksum calculation is enabled, check if
-         * we have a protocol specific preferred algorithm.
-         */
-        if (_checksumFactories != null) {
-            ChecksumFactory factory = getChecksumFactory(remoteGsiftpProtocolInfo);
-            if (factory != null) {
-                _checksumFactories = new HashSet<>(Arrays.asList(factory));
-            }
-            _transferMessageDigests = _checksumFactories.stream()
-                                                        .collect(Collectors.toMap(f -> f.getType(),
-                                                                                  f -> f.create()));
-        }
-
         createFtpClient(remoteGsiftpProtocolInfo);
 
         if (access.contains(StandardOpenOption.WRITE)) {
+            _remoteChecksum = discoverRemoteChecksum(remoteGsiftpProtocolInfo);
             gridFTPRead(remoteGsiftpProtocolInfo, allocator);
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo);
@@ -264,11 +239,10 @@ public class RemoteGsiftpTransferProtocol
             URI src_url = new URI(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
             long size = _client.getSize(src_url.getPath());
-            _log.debug(" received a file size info: " + size +
-                " allocating space on the pool");
-            _log.debug("ALLOC: " + _pnfsId + " : " + size );
+            _log.debug(" received a file size info: {} allocating space on the pool", size );
+            _log.debug("ALLOC: {} : {}", _pnfsId, size );
             allocator.allocate(size);
-            _log.debug(" allocated space " + size);
+            _log.debug(" allocated space {}", size);
             DiskDataSourceSink sink =
                 new DiskDataSourceSink(protocolInfo.getBufferSize(),
                                        false);
@@ -296,10 +270,10 @@ public class RemoteGsiftpTransferProtocol
 
             if (!checksums.isEmpty()){
                 Checksum checksum = checksums.iterator().next();
-                _log.debug("Will use " + checksum + " for transfer verification of "+_pnfsId);
+                _log.debug("Will use {} for transfer verification of {}", checksum, _pnfsId);
                 _client.setChecksum(checksum.getType().getName(), null);
             } else {
-                _log.debug("PnfsId "+_pnfsId+" does not have checksums");
+                _log.debug("PnfsId {} does not have checksums", _pnfsId);
             }
 
             URI dst_url =  new URI(protocolInfo.getGsiftpUrl());
@@ -322,75 +296,37 @@ public class RemoteGsiftpTransferProtocol
     @Override
     public Checksum getExpectedChecksum()
     {
-        try {
-            if (_ftpCksm != null ){
-                return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type)).create(_ftpCksm.value);
-            }
-        } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
-            _log.error("Checksum algorithm is not supported: " + e.getMessage());
-        }
-        return null;
+        return _remoteChecksum;
     }
 
     @Nonnull
     @Override
     public Set<Checksum> getActualChecksums()
     {
-        try {
-            if (_transferMessageDigests == null) {
-                return Collections.emptySet();
-            }
-
-            ByteBuffer buffer = ByteBuffer.allocate(KiB.toBytes(128));
-            _fileChannel.position(_previousUpdateEndOffset);
-            while (_fileChannel.read(buffer) >= 0) {
-                buffer.flip();
-                _transferMessageDigests.values().forEach(d -> d.update(buffer));
-                buffer.clear();
-            }
-
-            return _checksumFactories.stream()
-                                     .map(f -> f.create(_transferMessageDigests.get(f.getType())
-                                                                               .digest()))
-                                     .collect(Collectors.toSet());
-        } catch (IOException e) {
-            _log.error(e.toString());
-            return Collections.emptySet();
-        }
+        return Collections.emptySet();
     }
 
-    private ChecksumFactory getChecksumFactory(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo)
+    private Checksum discoverRemoteChecksum(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo)
     {
         try {
             createFtpClient(remoteGsiftpProtocolInfo);
             URI src_url =  new URI(remoteGsiftpProtocolInfo.getGsiftpUrl());
-            _ftpCksm = _client.negotiateCksm(src_url.getPath());
-            return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
-        } catch (NoSuchAlgorithmException | GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
-            _log.error("Checksum algorithm is not supported: " + e.getMessage());
+            GridftpClient.Checksum checksum = _client.negotiateCksm(src_url.getPath());
+            return new Checksum(ChecksumType.getChecksumType(checksum.type), checksum.value);
+        } catch (GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
+            _log.error("Checksum algorithm is not supported: {}", e.getMessage());
         } catch (IOException e) {
-            _log.error("I/O failure talking to FTP server: " + e.getMessage());
+            _log.error("I/O failure talking to FTP server: {}", e.getMessage());
         } catch (ServerException e) {
-            _log.error("GridFTP server failure: " + e.getMessage());
+            _log.error("GridFTP server failure: {}", e.getMessage());
         } catch (KeyStoreException e) {
-            _log.error("GridFTP authentication failure: " + e.getMessage());
+            _log.error("GridFTP authentication failure: {}", e.getMessage());
         } catch (URISyntaxException e) {
-            _log.error("Invalid GridFTP URL: " + e.getMessage());
+            _log.error("Invalid GridFTP URL: {}", e.getMessage());
         } catch (ClientException e) {
-            _log.error("GridFTP client failure: " + e.getMessage());
+            _log.error("GridFTP client failure: {}", e.getMessage());
         }
         return null;
-    }
-
-    @Override
-    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
-            throws NoSuchAlgorithmException
-    {
-        _checksumFactories = new HashSet<>(Arrays.asList(ChecksumFactory.getFactory(suggestedAlgorithm)));
-        _transferMessageDigests =
-                (_checksumFactories != null) ?  _checksumFactories.stream().collect(Collectors.toMap(f -> f.getType(),
-                                                                                                     f -> f.create()))
-                                             : null;
     }
 
     @Override
@@ -408,11 +344,6 @@ public class RemoteGsiftpTransferProtocol
 
         ByteBuffer bb = ByteBuffer.wrap(array, offset, length);
         _fileChannel.write(bb, offsetOfArrayInFile);
-        if (_transferMessageDigests != null
-            && _previousUpdateEndOffset == offsetOfArrayInFile) {
-            _previousUpdateEndOffset += length;
-            _transferMessageDigests.values().forEach(d -> d.update(array, offset, length));
-        }
     }
 
     private class DiskDataSourceSink implements IDiskDataSourceSink
@@ -513,30 +444,29 @@ public class RemoteGsiftpTransferProtocol
 
         @Override
         public String getCksmValue(String type)
-            throws IOException,NoSuchAlgorithmException
+                throws IOException,NoSuchAlgorithmException
         {
             try {
                 PnfsHandler pnfs = new PnfsHandler(_cell, PNFS_MANAGER);
                 FileAttributes attributes =
-                    pnfs.getFileAttributes(_pnfsId, EnumSet.of(FileAttribute.CHECKSUM));
-                Checksum pnfsChecksum =
-                    ChecksumFactory.getFactory(ChecksumType.getChecksumType(type)).find(attributes.getChecksums());
-                if ( pnfsChecksum != null ){
-                    String hexValue = pnfsChecksum.getValue();
-                    _log.debug(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
-                    return hexValue;
+                        pnfs.getFileAttributes(_pnfsId, EnumSet.of(FileAttribute.CHECKSUM));
+
+                ChecksumType t = ChecksumType.getChecksumType(type);
+                Optional<String> checksum = attributes.getChecksums().stream()
+                        .filter(c -> c.getType() == t)
+                        .map(Checksum::getValue)
+                        .findFirst();
+
+                if (checksum.isPresent()) {
+                    return checksum.get();
                 }
-            }
-            catch(Exception e){
-                _log.error("could not get "+type+" from pnfs:");
-                _log.error(e.toString());
-                _log.error("ignoring this error");
-
+            } catch (CacheException e) {
+                _log.warn("Failed to fetch checksum information: {}", e.getMessage());
             }
 
-            String hexValue = GridftpClient.getCksmValue(_fileChannel,type);
+            String value = GridftpClient.getCksmValue(_fileChannel, type);
             _fileChannel.position(0);
-            return hexValue;
+            return value;
         }
 
         @Override

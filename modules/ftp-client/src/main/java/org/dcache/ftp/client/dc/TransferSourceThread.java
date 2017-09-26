@@ -55,7 +55,7 @@ public class TransferSourceThread extends TransferThread
         this.localControlChannel = localControlChannel;
         this.context = context;
         this.writer = dataChannel.getDataChannelSink(context);
-        logger.debug("using socket " + socketBox.getSocket().toString());
+        logger.debug("using socket {}", socketBox.getSocket().toString());
         writer.setDataStream(socketBox.getSocket().getOutputStream());
     }
 
@@ -76,8 +76,8 @@ public class TransferSourceThread extends TransferThread
                     writer.write(buf);
                 }
 
-                logger.debug("finished sending data; sent " +
-                             transferred + " bytes");
+                logger.debug("finished sending data; sent {} bytes",
+                             transferred);
 
             } catch (Exception e) {
                 // this happens also if thread gets interrupted

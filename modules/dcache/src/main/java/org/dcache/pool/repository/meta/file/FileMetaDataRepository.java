@@ -226,7 +226,7 @@ public class FileMetaDataRepository
         try {
             return _fileStore.getFreeSpace();
         } catch (IOException e) {
-            _log.warn("Failed to query free space: " + e.toString());
+            _log.warn("Failed to query free space: {}", e.toString());
             return 0;
         }
     }
@@ -241,7 +241,7 @@ public class FileMetaDataRepository
         try {
             return _fileStore.getTotalSpace();
         } catch (IOException e) {
-            _log.warn("Failed to query total space: " + e.toString());
+            _log.warn("Failed to query total space: {}", e.toString());
             return 0;
         }
     }

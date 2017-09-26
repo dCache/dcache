@@ -448,29 +448,29 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             }
 
             try {
-                _log.info("Starting hourly run for : "+path);
+                _log.info("Starting hourly run for : {}", path);
 
                 createHourlyRawFile(path, _calendar);
 
-                _log.info("Hourly run finished for : "+path);
+                _log.info("Hourly run finished for : {}", path);
 
                 File today = getTodayPath(_calendar);
-                _log.info("Creating daily file : "+today);
+                _log.info("Creating daily file : {}", today);
 
                 //noinspection ResultOfMethodCallIgnored
                 today.delete();
                 copyFile(path, today);
 
-                _log.info("Daily file done : "+today);
+                _log.info("Daily file done : {}", today);
 
                 File yesterday = getYesterdayPath(_calendar);
                 if (yesterday.exists()) {
                     File diffFile  = getTodayDiffPath(_calendar);
-                    _log.info("Starting diff run for : "+yesterday);
+                    _log.info("Starting diff run for : {}", yesterday);
 
                     createDiffFile(today, yesterday, diffFile);
 
-                    _log.info("Finishing diff run for : "+diffFile);
+                    _log.info("Finishing diff run for : {}", diffFile);
                 }
                 if (_calendar.get(Calendar.HOUR_OF_DAY) == 23) {
                     resetBillingStatistics();
@@ -501,7 +501,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     @Override
     public void run(CellCron.TimerTask task) {
         if (task == _hourly) {
-            _log.info("Hourly ticker : "+ new Date());
+            _log.info("Hourly ticker : {}", new Date());
             Calendar calendar = (Calendar)task.getCalendar().clone();
             new HourlyRunner(calendar);
             task.repeatNextHour();
@@ -774,7 +774,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                                 synchronized(this) { _recentPoolStatistics = map; }
                                 _log.info("Finishing internal Manual run");
                             } catch(Exception e) {
-                                _log.info("Aborting internal Manual run "+e);
+                                _log.info("Aborting internal Manual run {}", e.toString());
                             }
                         }
                     },
@@ -785,11 +785,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             final File file = new File(args.argv(0));
             _nucleus.newThread(() -> {
                 try {
-                    _log.info("Starting Manual run for file : "+file);
+                    _log.info("Starting Manual run for file : {}", file);
                     createHourlyRawFile(file, new GregorianCalendar());
-                    _log.info("Finishing Manual run for file : "+file);
+                    _log.info("Finishing Manual run for file : {}", file);
                 } catch(Exception e) {
-                    _log.info("Aborting Manual run for file : "+file+" "+e);
+                    _log.info("Aborting Manual run for file : {} {}", file, e.toString());
                 }
             }, file.toString()).start();
 
@@ -1034,7 +1034,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
         File diffFile  = getTodayDiffPath(calendar);
         if (! diffFile.exists()) {
-            _log.warn("prepareDailyHtmlFiles : File not found : "+diffFile);
+            _log.warn("prepareDailyHtmlFiles : File not found : {}", diffFile);
             return;
         }
         File dir = getHtmlPath(calendar);

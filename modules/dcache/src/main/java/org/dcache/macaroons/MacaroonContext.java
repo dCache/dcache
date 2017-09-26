@@ -184,14 +184,29 @@ public class MacaroonContext
 
     public Optional<EnumSet<Activity>> getAllowedActivities()
     {
-        if (activities.size() == Activity.values().length) {
+        /*  In general, any non-READ_METADATA activity only makes sense if
+         *  the user is allowed to "enter a directory".  This requires the user
+         *  isn't banned from the READ_METADATA activity, which would be the
+         *  case if the "activity" caveat failed to include READ_METADATA
+         *  activity.  Therefore, we treat the user's authorisation of any other
+         *  activity as an implicit authorisation of the READ_METADATA activity.
+         *
+         *  Note that other caveats can impose additional Restrictions that
+         *  limit READ_METADATA; e.g., the path caveat.  Implicitly authorising
+         *  READ_METADATA in allowed activities does not stop those other
+         *  Restrictions from being effective.
+         */
+
+        if (activities.size() == Activity.values().length ||
+                activities.size() == Activity.values().length-1 && !activities.contains(Activity.READ_METADATA)) {
+            // As an optimisation, treat an authorisation of all activities as
+            // if the macaroon has no activity caveat.
             return Optional.empty();
+        } else if (activities.isEmpty()) {
+            return Optional.of(EnumSet.noneOf(Activity.class));
         } else {
             EnumSet<Activity> a = EnumSet.copyOf(activities);
-            // LIST does not make sense without READ_METADATA, so add it automatically.
-            if (a.contains(Activity.LIST)) {
-                a.add(Activity.READ_METADATA);
-            }
+            a.add(Activity.READ_METADATA);
             return Optional.of(a);
         }
     }

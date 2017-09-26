@@ -77,7 +77,7 @@ import dmg.util.command.Option;
 import org.dcache.restful.providers.billing.BillingDataGrid;
 import org.dcache.restful.providers.billing.BillingDataGridEntry;
 import org.dcache.restful.providers.billing.BillingRecords;
-import org.dcache.restful.services.admin.CellDataCollectingService;
+import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.restful.util.billing.BillingInfoCollectionUtils;
 import org.dcache.restful.util.billing.BillingInfoCollector;
 import org.dcache.util.histograms.Histogram;

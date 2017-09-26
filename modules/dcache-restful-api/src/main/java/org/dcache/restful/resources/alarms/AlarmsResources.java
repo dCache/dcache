@@ -59,12 +59,11 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.alarms;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -73,17 +72,16 @@ import javax.ws.rs.GET;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
-import org.dcache.restful.providers.alarms.AlarmsList;
+import org.dcache.alarms.LogEntry;
 import org.dcache.restful.services.alarms.AlarmsInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
@@ -97,9 +95,6 @@ import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse
  */
 @Path("/alarms")
 public final class AlarmsResources {
-    /**
-     * <p>Contains the reference to the {@link AlarmsInfoService} implementation.</p>
-     */
     @Context
     ServletContext ctx;
 
@@ -111,17 +106,6 @@ public final class AlarmsResources {
      *
      * <p>The Alarms endpoint returns a (filtered) list of alarms.</p>
      *
-     * <p>Expected behavior:  if a token is given along with one of the
-     *    query parameters (after, before, type), but the corresponding
-     *    snapshop does not have the same values for those parameters,
-     *    a new snapshot with a new token will be returned, setting offset
-     *    back to 0.</p>
-     *
-     * @param token  Use the snapshot corresponding to this UUID.
-     *               A <code>null</code> value indicates a request for
-     *               refreshed (i.e., current) alarms.
-     * @param offset Return alarms beginning at this index.
-     * @param limit  Return at most this number of items.
      * @param after  Return no alarms before this datestamp.
      * @param before Return no alarms after this datestamp.
      * @param type   Return only alarms of this type.
@@ -131,12 +115,9 @@ public final class AlarmsResources {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public AlarmsList getAlarms(@QueryParam("token") UUID token,
-                                   @QueryParam("offset") Integer offset,
-                                   @QueryParam("limit") Integer limit,
-                                   @QueryParam("after") Long after,
-                                   @QueryParam("before") Long before,
-                                   @QueryParam("type") String type) {
+    public List<LogEntry> getAlarms(@QueryParam("after") Long after,
+                                    @QueryParam("before") Long before,
+                                    @QueryParam("type") String type) {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Alarm service only accessible to admin users.");
@@ -144,10 +125,7 @@ public final class AlarmsResources {
 
         try {
             return ServletContextHandlerAttributes.getAlarmsInfoService(ctx)
-                                                  .get(token,
-                                                       offset,
-                                                       limit,
-                                                       after,
+                                                  .get(after,
                                                        before,
                                                        type);
         } catch (IllegalArgumentException | CacheException e) {
@@ -178,75 +156,47 @@ public final class AlarmsResources {
     /**
      * <p>Request to delete the indicated alarm from the service's store.</p>
      *
-     * @param token  Use the snapshot corresponding to this UUID.
-     * @param index  Index of the alarm in this snapshot.
+     * @param requestPayload containing the object to delete.
      */
     @DELETE
-    @Path("/{token : .*}-{index : .*}")
+    @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteAlarmEntry(@NotNull
-                                     @PathParam("token") UUID token,
-                                     @PathParam("index") Integer index) throws
+    public Response deleteAlarmEntry(String requestPayload) throws
                     CacheException {
-        if (!HttpServletRequests.isAdmin(request)) {
-            throw new ForbiddenException(
-                            "Alarm service only accessible to admin users.");
-        }
-
-        try {
-            ServletContextHandlerAttributes.getAlarmsInfoService(ctx)
-                                           .delete(token, index);
-        } catch (IllegalArgumentException | CacheException e) {
-            throw new BadRequestException(e);
-        } catch (Exception e) {
-            throw new InternalServerErrorException(e);
-        }
-
-        return successfulResponse(Response.Status.OK);
+        return updateOrDelete(requestPayload, true);
     }
 
     /**
      * <p>Request to update the indicated alarm.</p>
      *
-     * @param token  Use the snapshot corresponding to this UUID.
-     * @param index  Index of the alarm in this snapshot.
-     * @param requestPayload indicating the action and the value to update.
+     * @param requestPayload containing the object with updated fields.
      */
     @POST
-    @Path("/{token : .*}-{index : .*}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateAlarmEntry(@PathParam("token") UUID token,
-                                     @PathParam("index") Integer index,
-                                     String requestPayload) throws
+    public Response updateAlarmEntry(String requestPayload) throws
                     CacheException {
+        return updateOrDelete(requestPayload, false);
+    }
 
+    private Response updateOrDelete(String requestPayload, boolean delete)
+                throws CacheException {
         if (!HttpServletRequests.isAdmin(request)) {
             throw new ForbiddenException(
                             "Alarm service only accessible to admin users.");
         }
 
         try {
-            JSONObject reqPayload = new JSONObject(requestPayload);
-            String action = (String) reqPayload.get("action");
-            String value  = (String) reqPayload.get("value");
+            LogEntry entry = new ObjectMapper().readValue(requestPayload,
+                                                          LogEntry.class);
             AlarmsInfoService service =
                             ServletContextHandlerAttributes.getAlarmsInfoService(ctx);
-
-            switch(action) {
-                case "close":
-                    service.update(token, index, Boolean.parseBoolean(value));
-                    break;
-                case "comment":
-                    service.update(token, index, value);
-                    break;
-                default:
-                    throw new IllegalArgumentException("unsupported request: "
-                                                                       + action
-                                                                       + ", "
-                                                                       + value);
+            if (delete) {
+                service.delete(entry);
+            } else {
+                service.update(entry);
             }
-        } catch (JSONException | IllegalArgumentException | CacheException e) {
+        } catch (JSONException | IllegalArgumentException e) {
             throw new BadRequestException(e);
         } catch (Exception e) {
             throw new InternalServerErrorException(e);
@@ -254,4 +204,5 @@ public final class AlarmsResources {
 
         return successfulResponse(Response.Status.OK);
     }
+
 }

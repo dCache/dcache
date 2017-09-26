@@ -1,6 +1,7 @@
 package org.dcache.restful.providers;
 
 import java.net.FileNameMap;
+import java.net.URI;
 import java.net.URLConnection;
 import java.util.Collection;
 import java.util.List;
@@ -119,6 +120,11 @@ public class JsonFileAttributes
      * The storage info of a file.
      */
     private StorageInfo _storageInfo;
+
+    /**
+     * The storage uri list
+     */
+    private List<URI> _suris;
 
     /**
      * The storage class of a file.
@@ -320,6 +326,14 @@ public class JsonFileAttributes
 
     public void setStorageClass(String _storageClass) {
         this._storageClass = _storageClass;
+    }
+
+    public List<URI> getSuris() {
+        return _suris;
+    }
+
+    public void setSuris(List<URI> suris) {
+        this._suris = suris;
     }
 
     public String getHsm() {

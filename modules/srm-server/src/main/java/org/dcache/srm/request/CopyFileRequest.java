@@ -434,7 +434,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                                       srme.getMessage(),
                                       TStatusCode.SRM_INVALID_PATH);
             } catch (IllegalStateTransition ist) {
-                LOG.error("Illegal State Transition : " +ist.getMessage());
+                LOG.error("Illegal State Transition : {}", ist.getMessage());
             }
             return;
         }
@@ -532,10 +532,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 try {
                     getContainerRequest().fileRequestCompleted();
                 } catch (SRMInvalidRequestException ire) {
-                    LOG.error("Failed to find container request: " + ire.toString());
+                    LOG.error("Failed to find container request: {}", ire.toString());
                 }
             } catch (IllegalStateTransition ist) {
-                LOG.error("Failed to set copy file request state to DONE: "  +
+                LOG.error("Failed to set copy file request state to DONE: {}",
                         ist.getMessage());
             }
         }
@@ -550,10 +550,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 try {
                     getContainerRequest().fileRequestCompleted();
                 } catch (SRMInvalidRequestException e) {
-                    LOG.error("Failed to find container request: " + e);
+                    LOG.error("Failed to find container request: {}", e.toString());
                 }
             } catch (IllegalStateTransition ist) {
-                LOG.error("Failed to set copy file request state to FAILED: " +
+                LOG.error("Failed to set copy file request state to FAILED: {}",
                         ist.getMessage());
             }
         }

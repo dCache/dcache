@@ -1,6 +1,10 @@
 package org.dcache.util;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+
+import diskCacheV111.util.Adler32;
 
 /**
  * This enum contains information about Checksum types that dCache understands.
@@ -8,7 +12,12 @@ import java.util.Arrays;
  */
 public enum ChecksumType
 {
-    ADLER32(1,"ADLER32", 32),
+    ADLER32(1,"ADLER32", 32) {
+        @Override
+        public MessageDigest createMessageDigest() {
+            return new Adler32();
+        }
+    },
     MD5_TYPE(2,"MD5", 128),
     MD4_TYPE(3,"MD4", 128);
 
@@ -72,6 +81,28 @@ public enum ChecksumType
     public int getType()
     {
         return type;
+    }
+
+    /**
+     * Create a MessageDigest object that generates this type of checksum.
+     */
+    public MessageDigest createMessageDigest()
+    {
+        try {
+            return MessageDigest.getInstance(getName());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("This is a bug in ChecksumType: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Create a Checksum that describes the supplied data.
+     * @param data The data with which to calculate the checksum.
+     * @return A Checksum of the supplied data using this algorithm.
+     */
+    public Checksum calculate(byte[] data)
+    {
+        return new Checksum(this, createMessageDigest().digest(data));
     }
 
     /**

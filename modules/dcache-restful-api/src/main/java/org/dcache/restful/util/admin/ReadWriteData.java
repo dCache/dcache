@@ -113,24 +113,6 @@ public class ReadWriteData<K, V extends Serializable> {
         }
     }
 
-    public void write(K key, V value) {
-        try {
-            writeLock.lock();
-            cache.put(key, value);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public void write(Map<K, V> values) {
-        try {
-            writeLock.lock();
-            cache.putAll(values);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
     public void clearAndWrite(Map<K, V> values) {
         try {
             writeLock.lock();

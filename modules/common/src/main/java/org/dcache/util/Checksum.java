@@ -1,12 +1,10 @@
 package org.dcache.util;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
+import com.google.common.io.BaseEncoding;
 
 import java.io.Serializable;
-import java.util.Set;
+import java.security.MessageDigest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.padStart;
@@ -16,10 +14,7 @@ public class Checksum  implements Serializable
 {
     private static final long serialVersionUID = 7338775749513974986L;
 
-    private static final String HEX_DIGITS = "0123456789abcdef";
-
-    private static final CharMatcher HEXADECIMAL =
-            CharMatcher.anyOf(HEX_DIGITS);
+    private static final CharMatcher HEXADECIMAL = CharMatcher.anyOf("0123456789abcdef");
 
     private static final char DELIMITER = ':';
 
@@ -28,22 +23,31 @@ public class Checksum  implements Serializable
 
     /**
      * Creates a new instance of Checksum.
-     * @throws IllegalArugmentException if the number of bytes in value is
-     * incorrect for the supplied type
+     * @param type The checksum algorithm.
+     * @param value The checksum value.
      * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if the value has the wrong length for
+     * the checksum algorithm.
      */
     public Checksum(ChecksumType type, byte[] value)
     {
-        this(type, bytesToHexString(value));
+        this(type, BaseEncoding.base16().lowerCase().encode(value));
+    }
+
+    public Checksum(MessageDigest digest)
+    {
+        this(ChecksumType.getChecksumType(digest.getAlgorithm()), digest.digest());
     }
 
     /**
      * Creates a new instance of Checksum based on supplied type and a
      * string of the checksum value in hexadecimal.  If the type is ADLER32
      * then the value may omit any leading zeros.
-     * @throws IllegalArugmentException if the value is inappropriate for
-     * the supplied checksum type.
+     * @param type The checksum algorithm.
+     * @param value The hexadecimal representation of the checksum value.
      * @throws NullPointerException if either argument is null
+     * @throws IllegalArgumentException if the value contains non-hexadecimal
+     * characters or has the wrong length for the checksum type.
      */
     public Checksum(ChecksumType type, String value)
     {
@@ -54,6 +58,14 @@ public class Checksum  implements Serializable
         this.value = normalise(value);
     }
 
+    /**
+     * Check whether the supplied value is consistent with the given
+     * ChecksumType.
+     * @param type The checksum algorithm.
+     * @param value The checksum value to verify.
+     * @return true if value contains only hexadecimal characters and has the
+     * correct length for the supplied algorithm.
+     */
     public static boolean isValid(ChecksumType type, String value)
     {
         String normalised = normalise(type, value);
@@ -76,7 +88,7 @@ public class Checksum  implements Serializable
         return normalised;
     }
 
-    private String normalise(String original)
+    private String normalise(String original) throws IllegalArgumentException
     {
         String normalised = normalise(type, original);
 
@@ -145,18 +157,6 @@ public class Checksum  implements Serializable
         return (useStringKey ? type.getName() : String.valueOf(type.getType())) + ':' + value;
     }
 
-    public static String bytesToHexString(byte[] bytes)
-    {
-        checkNotNull(bytes, "byte array may not be null");
-
-        StringBuilder sb = new StringBuilder();
-        for (byte aByte : bytes) {
-            sb.append(HEX_DIGITS.charAt((aByte >> 4) & 0xf));
-            sb.append(HEX_DIGITS.charAt(aByte & 0xf));
-        }
-        return sb.toString();
-    }
-
     private static byte[] stringToBytes(String str)
     {
         if ((str.length() % 2) != 0) {
@@ -193,17 +193,5 @@ public class Checksum  implements Serializable
         String checksum = digest.substring(del + 1);
 
         return new Checksum(ChecksumType.getChecksumType(type), checksum);
-    }
-
-
-    /**
-     * Returns an {@link Optional} containing checksum of a given type. If
-     * no matching checksum type is found, an empty {@link Optional} will be returned.
-     * @param checksums to evaluate
-     * @param type of checksum
-     * @return Optional containing checksum
-     */
-    public static Optional<Checksum> forType(final Set<Checksum> checksums, final ChecksumType type) {
-        return Iterables.tryFind(checksums, t -> t.getType() == type);
     }
 }

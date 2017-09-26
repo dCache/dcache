@@ -53,6 +53,6 @@ public abstract class PoolListFromPoolManager
     @Override
     public void failure(int rc, Object error)
     {
-        _log.error("Failed to query pool manager (" + error + ")");
+        _log.error("Failed to query pool manager ({})", error );
     }
 }

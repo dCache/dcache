@@ -33,10 +33,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
@@ -62,6 +62,7 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
@@ -296,8 +297,8 @@ class Companion
         try {
             try {
                 handle.allocate(handle.getFileAttributes().getSize());
-                Set<ChecksumFactory> checksumFactories = _checksumModule.getProvidedChecksumsFactories(handle);
-                Set<Checksum> actualChecksums = copy(uri, handle, checksumFactories);
+                Set<ChecksumType> checksums = _checksumModule.checksumsWhenWriting(handle);
+                Set<Checksum> actualChecksums = copy(uri, handle, checksums);
                 _checksumModule.enforcePostTransferPolicy(handle, actualChecksums);
             } finally {
                 setThread(null);
@@ -317,10 +318,10 @@ class Companion
         }
     }
 
-    private Set<Checksum> copy(String uri, ReplicaDescriptor handle, Set<ChecksumFactory> checksumFactories)
+    private Set<Checksum> copy(String uri, ReplicaDescriptor handle, Set<ChecksumType> checksums)
             throws IOException
     {
-        try (ChecksumChannel checksumChannel = new ChecksumChannel(handle.createChannel(), checksumFactories)) {
+        try (ChecksumChannel checksumChannel = new ChecksumChannel(handle.createChannel(), checksums)) {
 
             HttpGet get = new HttpGet(uri);
             get.addHeader(HttpHeaders.CONNECTION, HTTP.CONN_CLOSE);

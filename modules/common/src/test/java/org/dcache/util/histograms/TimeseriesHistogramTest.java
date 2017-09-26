@@ -80,6 +80,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     TimeseriesHistogram timeseriesHistogram;
     HistogramModel      originalModel;
+    long                now;
 
     @Test
     public void buildShouldSucceedForTimeseriesHistogramWithFileSizeValues()
@@ -245,11 +246,10 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     private void assertThatUpdateAveragesLastValue() {
         Double[][] values = values();
-        Double[] last = values[values.length - 1];
-        double lastValue = last[1];
+        double lastValue = values[values.length - 1][1];
         double newValue = lastValue * 3;
         double average = (lastValue + newValue) / 2;
-        timeseriesHistogram.average(newValue, System.currentTimeMillis());
+        timeseriesHistogram.average(newValue, now);
         values = values();
         assertTrue("value was not replaced",
                    lastValue != values[values.length - 1][1]);
@@ -259,10 +259,9 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     private void assertThatUpdateReplacesLastValue() {
         Double[][] values = values();
-        Double[] last = values[values.length - 1];
-        double lastValue = last[1];
+        double lastValue = values[values.length - 1][1];
         double newValue = lastValue * 3;
-        timeseriesHistogram.replace(newValue, System.currentTimeMillis());
+        timeseriesHistogram.replace(newValue, now);
         values = values();
         assertTrue("value was not replaced",
                    lastValue != values[values.length - 1][1]);
@@ -272,7 +271,6 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     private void assertThatUpdateRotatesBuffer(int units) {
         Double[][] originals = values();
-        long now = System.currentTimeMillis();
 
         timeseriesHistogram.average(2.53, now);
         timeseriesHistogram.average(5.71, now);
@@ -304,10 +302,9 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
 
     private void assertThatUpdateSumsLastValue() {
         Double[][] values = values();
-        Double[] last = values[values.length - 1];
-        double lastValue = last[1];
+        double lastValue = values[values.length - 1][1];
         double newValue = lastValue * 3;
-        timeseriesHistogram.add(newValue, System.currentTimeMillis());
+        timeseriesHistogram.add(newValue, now);
         values = values();
         assertTrue("value was not replaced",
                    lastValue != values[values.length - 1][1]);
@@ -318,7 +315,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
     private double getHoursInThePastFromNow(int hours) {
         Calendar calendar = Calendar.getInstance();
         long diff = TimeUnit.HOURS.toMillis(hours);
-        calendar.setTimeInMillis(System.currentTimeMillis() - diff);
+        calendar.setTimeInMillis(now - diff);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
@@ -369,6 +366,7 @@ public final class TimeseriesHistogramTest extends HistogramModelTest {
         }
 
         model = timeseriesHistogram;
+        now = System.currentTimeMillis();
     }
 
     private void givenValidTimeframeSpecification() {

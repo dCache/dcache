@@ -322,7 +322,7 @@ public class Job
                     // File was removed before we got to it - not a
                     // problem.
                 } catch (CacheException e) {
-                    _log.error("Failed to load entry: " + e.getMessage());
+                    _log.error("Failed to load entry: {}", e.getMessage());
                 }
             }
         } catch (IllegalStateException e) {
@@ -561,13 +561,11 @@ public class Job
                 } catch (FileNotInCacheException e) {
                     _sizes.remove(pnfsId);
                 } catch (CacheException e) {
-                    _log.error("Migration job failed to read entry: " +
-                               e.getMessage());
+                    _log.error("Migration job failed to read entry: {}", e.getMessage());
                     setState(State.FAILED);
                     break;
                 } catch (InterruptedException e) {
-                    _log.error("Migration job was interrupted: " +
-                               e.getMessage());
+                    _log.error("Migration job was interrupted: {}", e.getMessage());
                     setState(State.FAILED);
                     break;
                 } finally {
@@ -936,8 +934,7 @@ public class Job
         } catch (IllegalTransitionException e) {
             // File is likely about to be removed. TODO: log it
         } catch (CacheException e) {
-            _log.error("Migration job failed to update source mode: " +
-                       e.getMessage());
+            _log.error("Migration job failed to update source mode: {}", e.getMessage());
             setState(State.FAILED);
         } catch (InterruptedException e) {
             _log.error("Migration job was interrupted");

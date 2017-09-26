@@ -69,7 +69,6 @@ import org.dcache.util.IRegexFilterable;
 
 /**
  * Storage class for all log events.<br>
- * <br>
  *
  * Uses the unique key for hashCode and equals.
  * Also implements comparable on the basis of the unique key.
@@ -78,28 +77,32 @@ import org.dcache.util.IRegexFilterable;
  */
 public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
 
-    private static final long serialVersionUID = -8477649423971508910L;
-    private static final String FORMAT = "E MMM dd HH:mm:ss zzz yyyy";
+    private static final long   serialVersionUID = -8477649423971508910L;
+    private static final String FORMAT           = "E MMM dd HH:mm:ss zzz yyyy";
+
+    private static String getFormattedDate(Date date) {
+        DateFormat format = new SimpleDateFormat(FORMAT);
+        format.setLenient(false);
+        return format.format(date);
+    }
 
     private String key;
-    private Long firstArrived;
-    private Long lastUpdate;
+    private Long   firstArrived;
+    private Long   lastUpdate;
     private String type;
     private String host;
     private String domain;
     private String service;
     private String info;
     private String notes;
-    private Boolean closed = false;
-    private Boolean alarm = false;
+    private Boolean closed   = false;
+    private Boolean alarm    = false;
     private Integer received = 1;
 
     /*
-     *  No longer used, but maintained for backward compatibility.
-     *  All newly created entries now default to 4, which was
-     *  the previous "CRITICAL" value.
+     *  Reset by request processor according to current mapping.
      */
-    private Integer severity = 4;
+    private Integer severity;
 
     @Override
     public int compareTo(LogEntry o) {
@@ -115,14 +118,6 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
         return key.equals(((LogEntry) other).key);
     }
 
-    public Date getDateOfFirstArrival() {
-        return new Date(firstArrived);
-    }
-
-    public Date getDateOfLastUpdate() {
-        return new Date(lastUpdate);
-    }
-
     public String getDomain() {
         return domain;
     }
@@ -131,12 +126,24 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
         return firstArrived;
     }
 
+    /*
+     *  NOTE: TODO once webadmin is removed, this can be changed into
+     *        TODO a private method used by the formattedString method.
+     *        TODO webadmin uses the getter in the Wicket property bindings.
+     */
     public String getFormattedDateOfFirstArrival() {
-        return getFormattedDate(getDateOfFirstArrival());
+        return firstArrived == null ? "" :
+                        getFormattedDate(new Date(firstArrived));
     }
 
+    /*
+     *  NOTE: TODO once webadmin is removed, this can be changed into
+     *        TODO a private method used by the formattedString method.
+     *        TODO webadmin uses the getter in the Wicket property bindings.
+     */
     public String getFormattedDateOfLastUpdate() {
-        return getFormattedDate(getDateOfLastUpdate());
+        return lastUpdate == null ? "" :
+                        getFormattedDate(new Date(lastUpdate));
     }
 
     public String getHost() {
@@ -196,20 +203,26 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
         this.closed = closed;
     }
 
-    public void setDateOfFirstArrival(Date date) {
-        firstArrived = date.getTime();
-    }
-
-    public void setDateOfLastUpdate(Date date) {
-        lastUpdate = date.getTime();
-    }
-
     public void setDomain(String domain) {
         this.domain = domain;
     }
 
     public void setFirstArrived(Long timestamp) {
         firstArrived = timestamp;
+    }
+
+    /*
+     *  NOTE: TODO once the getter is eliminated, we can eliminate this method
+     *        TODO it is here simply to make the JSON serializer happy
+     */
+    public void setFormattedDateOfFirstArrival(String string) {
+    }
+
+    /*
+     *  NOTE: TODO once the getter is eliminated, we can eliminate this method
+     *        TODO it is here simply to make the JSON serializer happy
+     */
+    public void setFormattedDateOfLastUpdate(String string) {
     }
 
     public void setHost(String host) {
@@ -265,8 +278,7 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
      * Sets <code>alarm</code>, <code>closed</code> and <code>notes</code> fields.
      * <p> Entry can get unmarked as alarm if its definition has been removed.
      *
-     * @param entry
-     *            from which to get updatable values.
+     * @param entry from which to get updatable values.
      */
     public void update(LogEntry entry) {
         if (entry == null) {
@@ -275,11 +287,5 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
         closed = entry.isClosed();
         notes = entry.getNotes();
         alarm = entry.isAlarm();
-    }
-
-    private static String getFormattedDate(Date date) {
-        DateFormat format = new SimpleDateFormat(FORMAT);
-        format.setLenient(false);
-        return format.format(date);
     }
 }

@@ -57,14 +57,19 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.providers.alarms;
+package org.dcache.util.collector.pools;
 
-import org.dcache.alarms.LogEntry;
-import org.dcache.restful.providers.SnapshotList;
+import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
 
 /**
- * <p>JSON wrapper for returning list of log entries.</p>
+ * <p>Used to gather timeseries data from the pools. These include
+ *    request statistics and file lifetime statistics over a rotating
+ *    window.</p>
  */
-public class AlarmsList extends SnapshotList<LogEntry> {
-
+public class PoolLiveDataCollector extends
+                PoolInfoCollector<PoolLiveDataForHistoriesMessage> {
+    @Override
+    protected PoolLiveDataForHistoriesMessage newMessage(long timestamp) {
+        return new PoolLiveDataForHistoriesMessage();
+    }
 }

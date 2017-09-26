@@ -56,7 +56,6 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
 {
     private static final int MAX_CONCURRENT_TRANSFERS = 10;
     private static final ChecksumAlgorithm ADLER32 = new ChecksumAlgorithm("ADLER32");
-    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
 
     private final ExecutorService _executor = Executors.newFixedThreadPool(MAX_CONCURRENT_TRANSFERS);
 
@@ -467,7 +466,8 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             HashCode remoteChecksum = getRemoteChecksum();
 
             if (localChecksum != null && remoteChecksum != null && !remoteChecksum.equals(localChecksum)) {
-                throw new IOException("checksum mismatch: " + bigEndian(remoteChecksum) + " != " + bigEndian(localChecksum));
+                throw new IOException("checksum mismatch: " + reverseHexString(remoteChecksum)
+                        + " != " + reverseHexString(localChecksum));
             }
         }
 
@@ -561,7 +561,8 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
             HashCode remoteChecksum = getRemoteChecksum();
 
             if (remoteChecksum != null && localChecksum != null && !remoteChecksum.equals(localChecksum)) {
-                throw new IOException("checksum mismatch: " + bigEndian(remoteChecksum) + " != " + bigEndian(localChecksum));
+                throw new IOException("checksum mismatch: " + reverseHexString(remoteChecksum)
+                        + " != " + reverseHexString(localChecksum));
             }
         }
 
@@ -624,18 +625,15 @@ public class GridFTPTransferAgent extends AbstractFileTransferAgent implements C
         }
     }
 
-    /**
-     * Similar to HashCode#toString but provides the HashCode value in
-     * the more common big-endian format.
-     */
-    String bigEndian(HashCode hash)
+    private static String reverseHexString(HashCode hash)
     {
-        byte[] bytes = hash.asBytes();
-        StringBuilder sb = new StringBuilder(2 * bytes.length);
-        for (int i = bytes.length-1; i >= 0; i--) {
-            byte b = bytes[i];
-            sb.append(HEX_DIGITS[(b >> 4) & 0xf]).append(HEX_DIGITS[b & 0xf]);
+        byte[] data = hash.asBytes();
+        byte[] reversed = new byte[data.length];
+
+        for (int i = 0; i < data.length; i++) {
+            reversed [data.length-1-i] = data [i];
         }
-        return sb.toString();
+
+        return BaseEncoding.base16().lowerCase().encode(reversed);
     }
 }

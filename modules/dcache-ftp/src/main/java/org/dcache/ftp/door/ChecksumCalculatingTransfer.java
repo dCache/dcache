@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.EnumSet;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
@@ -25,6 +24,7 @@ import diskCacheV111.vehicles.GFtpProtocolInfo;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.util.PortRange;
 import org.dcache.util.Transfer;
@@ -39,13 +39,13 @@ public class ChecksumCalculatingTransfer extends Transfer
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChecksumCalculatingTransfer.class);
 
-    private final ChecksumFactory desiredType;
+    private final ChecksumType desiredType;
     private final PortRange portRange;
 
     private long calculated;
 
     public ChecksumCalculatingTransfer(PnfsHandler pnfs, Subject subject,
-            Restriction namespaceRestriction, FsPath path, ChecksumFactory type,
+            Restriction namespaceRestriction, FsPath path, ChecksumType type,
             PortRange range)
     {
         super(pnfs, subject, namespaceRestriction, path);
@@ -61,18 +61,18 @@ public class ChecksumCalculatingTransfer extends Transfer
         portRange.bind(ssc.socket());
         setAdditionalAttributes(EnumSet.of(FileAttribute.CHECKSUM));
         readNameSpaceEntry(false);
-        LOGGER.debug("calculating checksum using port " + ssc.getLocalAddress());
+        LOGGER.debug("calculating checksum using port {}", ssc.getLocalAddress());
         setProtocolInfo(new GFtpProtocolInfo("GFtp", 1, 0,
                 (InetSocketAddress) ssc.getLocalAddress(), 1, 1, 1,
                 MiB.toBytes(1), 0, getFileAttributes().getSize()));
         Checksum existingChecksum = Checksums.preferrredOrder().max(getFileAttributes().getChecksums());
-        ChecksumFactory verifyingChecksumFactory = ChecksumFactory.getFactoryFor(existingChecksum);
+        ChecksumType verifyingChecksumType = existingChecksum.getType();
         try {
             selectPoolAndStartMover(TransferRetryPolicies.tryOncePolicy());
             SocketChannel s = ssc.accept();
             ByteBuffer buffer = ByteBuffer.allocate(MiB.toBytes(1));
-            MessageDigest desiredChecksum = desiredType.create();
-            MessageDigest verifyingChecksum = verifyingChecksumFactory.create();
+            MessageDigest desiredChecksum = desiredType.createMessageDigest();
+            MessageDigest verifyingChecksum = verifyingChecksumType.createMessageDigest();
 
             while (s.read(buffer) > -1) {
                 advanceCalculated(buffer.position());
@@ -96,7 +96,7 @@ public class ChecksumCalculatingTransfer extends Transfer
             if (!Arrays.equals(verifyingChecksum.digest(), existingChecksum.getBytes())) {
                 throw new CacheException("Corrupt data: " + Arrays.toString(verifyingChecksum.digest()) + " != " + Arrays.toString(existingChecksum.getBytes()));
             }
-            return desiredType.create(desiredChecksum.digest());
+            return new Checksum(desiredChecksum);
         } finally {
             if (!success) {
                 killMover(0, "killed by failure");

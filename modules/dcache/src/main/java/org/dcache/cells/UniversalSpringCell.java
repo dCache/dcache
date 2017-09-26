@@ -1392,7 +1392,7 @@ public class UniversalSpringCell
         {
             ChildData newData = _cache.getCurrentData();
             if (newData == null) {
-                LOGGER.error("Setup node " + _node + " in ZooKeeper disappeared. Service must be restarted.");
+                LOGGER.error("Setup node {} in ZooKeeper disappeared. Service must be restarted.", _node );
                 kill();
             } else if (newData.getStat().getVersion() > _current.getVersion()) {
                 apply(newData);

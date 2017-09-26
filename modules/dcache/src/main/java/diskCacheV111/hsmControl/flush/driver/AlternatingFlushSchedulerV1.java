@@ -226,21 +226,22 @@ import static org.dcache.util.ByteUnit.MiB;
          public void poolIoModeUpdated( Pool ip , boolean newIsReadOnly ){
 
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode " + newIsReadOnly);
+                _log.info("PROGRESS-H({}/{}) new pool i/o mode {}", _name, ip._name, newIsReadOnly);
             }
             //
             // new pool mode arrived, in wrong state
             //
             if( _progressState != PS_WAITING_FOR_STATE_CHANGE ){
-              _log.warn("PROGRESS-H("+_name+"/"+ip._name+
-                   ") Warning : new pool i/o mode arrived unexpectedly in state "+_progressState);
+              _log.warn("PROGRESS-H({}/{}) Warning : new pool i/o mode arrived unexpectedly in state {}", _name,
+                      ip._name, _progressState);
               return ;
             }
             //
             // wrong pool mode arrived
             //
             if( ip._expectedReadOnly != newIsReadOnly ){
-              _log.warn("PROGRESS-H("+_name+"/"+ip._name+") Warning : got I/O mode rdonly="+newIsReadOnly+" expected rdOnly="+_expectedReadOnly);
+              _log.warn("PROGRESS-H({}/{}) Warning : got I/O mode rdonly={} expected rdOnly={}", _name,
+                      ip._name, newIsReadOnly, _expectedReadOnly);
               return ;
             }
             //
@@ -259,7 +260,7 @@ import static org.dcache.util.ByteUnit.MiB;
                  }
              }
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode total=" + total + ";rdOnly=" + modeOk);
+                _log.info("PROGRESS-H({}/{}) new pool i/o mode total={};rdOnly={}", _name, ip._name, total, modeOk);
             }
             //
             // not yet
@@ -274,7 +275,7 @@ import static org.dcache.util.ByteUnit.MiB;
                // all pools are readyOnly; flush them all.
                //
                if(_parameter._p_poolset) {
-                   _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Flushing all");
+                   _log.info("PROGRESS-H({}/{}) new pool i/o mode done; Flushing all", _name, ip._name);
                }
                int flushed = 0 ;
                 for (Object o : _poolMap.values()) {
@@ -292,13 +293,14 @@ import static org.dcache.util.ByteUnit.MiB;
                   newState( PS_WAITING_FOR_FLUSH_DONE ) ;
                }else{
                   if(_parameter._p_poolset) {
-                      _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; nothing to flush; switching back to read/write");
+                      _log.info("PROGRESS-H({}/{}) new pool i/o mode done; nothing to flush; " +
+                              "switching back to read/write", _name, ip._name );
                   }
                   switchToNewPoolMode(false);
                }
             }else{
                if(_parameter._p_poolset) {
-                   _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") new pool i/o mode done; Switching back to IDLE");
+                   _log.info("PROGRESS-H({}/{}) new pool i/o mode done; Switching back to IDLE", _name, ip._name );
                }
 
                newState( PS_IDLE ) ;
@@ -307,7 +309,7 @@ import static org.dcache.util.ByteUnit.MiB;
          public boolean inProgress(){ return _progressState != 0 ; }
          public void flushingDone( Pool ip  , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + "/" + ip._name + ") flushingDone");
+                _log.info("PROGRESS-H({}/{}) flushingDone", _name, ip._name );
             }
             //
             // check if all are done
@@ -334,7 +336,7 @@ import static org.dcache.util.ByteUnit.MiB;
          }
          private void flushAll(){
             if(_parameter._p_poolset) {
-                _log.info("PROGRESS-H(" + _name + ") flush all; switching to readOnly");
+                _log.info("PROGRESS-H({}) flush all; switching to readOnly", _name );
             }
             switchToNewPoolMode(true);
          }
@@ -374,7 +376,7 @@ import static org.dcache.util.ByteUnit.MiB;
 
          Pool ip = (Pool)pool.getDriverHandle() ;
          if( ip == null ){
-            _log.warn("getInternalPool : Yet unconfigured pool arrived "+pool.getName()+"; configuring");
+            _log.warn("getInternalPool : Yet unconfigured pool arrived {}; configuring", pool.getName());
             pool.setDriverHandle( ip = new Pool( pool.getName() , pool ) ) ;
          }
          return ip ;
@@ -402,13 +404,13 @@ import static org.dcache.util.ByteUnit.MiB;
          // printout what we got from our master
          //
          for( int i = 0 ; i < args.argc() ; i++ ){
-             _log.info("    args "+i+" : "+args.argv(i)) ;
+             _log.info("    args {} : ", i, args.argv(i)) ;
          }
          for( int i = 0 ; i < args.optc() ; i++ ){
-             _log.info("    opts "+args.optv(i)+"="+args.getOpt(args.optv(i))) ;
+             _log.info("    opts {}={}", args.optv(i), args.getOpt(args.optv(i))) ;
          }
          for (Object o : _core.getConfiguredPools()) {
-             _log.info("    configured pool : " + (o).toString());
+             _log.info("    configured pool : {}", (o).toString());
          }
          //
          //  Walk through the already known pools, create our internal presentation
@@ -418,7 +420,7 @@ import static org.dcache.util.ByteUnit.MiB;
 
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool) o;
              Pool ip = getInternalPool(pool);
-             _log.info("init : " + pool.getName() + " " + ip);
+             _log.info("init : {} {}", pool.getName(), ip);
          }
          String tmp = args.getOpt("driver-config-file") ;
          if( tmp != null ) {
@@ -433,7 +435,7 @@ import static org.dcache.util.ByteUnit.MiB;
      @Override
      public void propertiesUpdated( Map<String,Object> properties ){
          if(_parameter._p_events) {
-             _log.info("EVENT : propertiesUpdated : " + properties);
+             _log.info("EVENT : propertiesUpdated : {}", properties);
          }
         _parameter.propertiesUpdated( properties ) ;
      }
@@ -445,11 +447,11 @@ import static org.dcache.util.ByteUnit.MiB;
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
 
          if(_parameter._p_events) {
-             _log.info("EVENT : poolIoModeUpdated : " + pool);
+             _log.info("EVENT : poolIoModeUpdated : {}", pool);
          }
 
          if( ! pool.isActive() ){
-            _log.warn("poolIoModeUpdated : Pool "+poolName+" not yet active (ignoring)");
+            _log.warn("poolIoModeUpdated : Pool {} not yet active (ignoring)", poolName);
             return ;
          }
 
@@ -466,16 +468,16 @@ import static org.dcache.util.ByteUnit.MiB;
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          if(_parameter._p_events) {
-             _log.info("EVENT : flushingDone : pool =" + poolName + ";class=" + storageClassName /* + "flushInfo="+flushInfo */);
+             _log.info("EVENT : flushingDone : pool ={};class={}", poolName, storageClassName /* + "flushInfo="+flushInfo */);
          }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
-            _log.warn("flushingDone : for a non configured pool : "+poolName);
+            _log.warn("flushingDone : for a non configured pool : {}", poolName);
             return ;
          }
          if( ! pool.isActive() ){
-            _log.warn("flushingDone : Pool "+poolName+" not yet active (ignoring)");
+            _log.warn("flushingDone : Pool {} not yet active (ignoring)", poolName);
             return ;
          }
 
@@ -493,11 +495,11 @@ import static org.dcache.util.ByteUnit.MiB;
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
 
          if(_parameter._p_events) {
-             _log.info("EVENT : poolFlushInfoUpdated : " + pool.getName());
+             _log.info("EVENT : poolFlushInfoUpdated : {}", pool.getName());
          }
          //
          if( ! pool.isActive() ){
-            _log.warn("poolFlushInfoUpdated : Pool "+poolName+" not yet active (ignoring)");
+            _log.warn("poolFlushInfoUpdated : Pool {} not yet active (ignoring)", poolName);
             return ;
          }
          Pool ip = getInternalPool( pool ) ;
@@ -543,7 +545,7 @@ import static org.dcache.util.ByteUnit.MiB;
      @Override
      public void command( Args args  ){
          if(_parameter._p_events) {
-             _log.info("EVENT : command : " + args);
+             _log.info("EVENT : command : {}", args);
          }
          if (args.argc() == 0) {
              return;
@@ -554,9 +556,9 @@ import static org.dcache.util.ByteUnit.MiB;
                  throw new
                          Exception("Null pointer from command call");
              }
-             _log.info("Command returns : "+reply.toString() );
+             _log.info("Command returns : {}", reply.toString() );
          }catch(Exception ee ){
-             _log.warn("Command returns an exception ("+ee.getClass().getName()+") : " + ee.toString());
+             _log.warn("Command returns an exception ({}) : {}", ee.getClass().getName(), ee.toString());
          }
      }
      @Override
@@ -569,16 +571,16 @@ import static org.dcache.util.ByteUnit.MiB;
      public void configuredPoolAdded( String poolName ){
 
          if(_parameter._p_events) {
-             _log.info("EVENT : Configured pool added : " + poolName);
+             _log.info("EVENT : Configured pool added : {}", poolName);
          }
 
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
-            _log.warn("Pool not found in _core database : "+poolName);
+            _log.warn("Pool not found in _core database : {}", poolName);
             return ;
          }
          if( ! pool.isActive() ){
-            _log.warn("Pool "+poolName+" not yet active (ignoring)");
+            _log.warn("Pool {} not yet active (ignoring)", poolName);
             return ;
          }
          Pool ip = getInternalPool( pool ) ;
@@ -593,7 +595,7 @@ import static org.dcache.util.ByteUnit.MiB;
      @Override
      public void configuredPoolRemoved( String poolName ){
          if(_parameter._p_events) {
-             _log.info("EVENT : Configured pool removed : " + poolName + "  (ignoring)");
+             _log.info("EVENT : Configured pool removed : {}  (ignoring)", poolName );
          }
      }
      //-----------------------------------------------------------------------------------------
@@ -647,12 +649,8 @@ import static org.dcache.util.ByteUnit.MiB;
 
          }
          if(_parameter._p_rules) {
-             _log.info("RULES : statistics : " +
-                     "total=" + totalAvailable +
-                     ";readOnly=" + totalReadOnly +
-                     ";flushing=" + totalFlushing +
-                     ";progress=" + inProgress +
-                     ";candidates=" + candidates.size());
+             _log.info("RULES : statistics : total={};readOnly={};flushing={};progress={};candidates={}",
+                     totalAvailable, totalReadOnly, totalFlushing, inProgress, candidates.size());
          }
 
          if(candidates.isEmpty()){
@@ -662,14 +660,14 @@ import static org.dcache.util.ByteUnit.MiB;
             return ;
          }
          //if( totalReadOnly > (int)( (double)totalAvailable * _parameter._percentageToFlush ) ){
-         //   if(_parameter._p_rules)_log.info("RULES : too many pools ReadOnly ("+totalReadOnly+" out of "+totalAvailable+")") ;
+         //   if(_parameter._p_rules)_log.info("RULES : too many pools ReadOnly ({} out of {})", totalReadOnly, totalAvailable) ;
          //   return ;
          //}
          // DEBUG
          if(_parameter._p_rules){
              for (Object candidate : candidates) {
                  Pool pp = (Pool) candidate;
-                 _log.info("RULES : weight of " + pp._name + " " + getPoolMetric(pp));
+                 _log.info("RULES : weight of {} {}", pp._name, getPoolMetric(pp));
              }
          }
          Collections.sort( candidates , _poolComparator );
@@ -689,7 +687,7 @@ import static org.dcache.util.ByteUnit.MiB;
              PoolSet ps = pp.getParentPoolSet();
 
              if (_parameter._p_rules) {
-                 _log.info("RULES : checking " + pp._name + "/" + ps._name + " " + getPoolMetric(pp));
+                 _log.info("RULES : checking {}/ {} {}", pp._name, ps._name, getPoolMetric(pp));
              }
 
              Collection<String> potentialRdOnlyPools = new HashSet<>(rdOnlyHash);
@@ -697,13 +695,14 @@ import static org.dcache.util.ByteUnit.MiB;
                  potentialRdOnlyPools.add(o.toString());
              }
              if (_parameter._p_rules) {
-                 _log.info("RULES : potential rdOnlyPools : " + potentialRdOnlyPools);
+                 _log.info("RULES : potential rdOnlyPools : {}", potentialRdOnlyPools);
              }
              int total = potentialRdOnlyPools.size();
 
              if (total > (int) ((double) totalAvailable * _parameter._percentageToFlush)) {
                  if (_parameter._p_rules) {
-                     _log.info("RULES : " + ps._name + " would be too many pools ReadOnly (" + total + " out of " + totalAvailable + ")");
+                     _log.info("RULES : {} would be too many pools ReadOnly ({} out of {})",
+                             ps._name, total, totalAvailable );
                  }
                  continue;
              }
@@ -719,8 +718,7 @@ import static org.dcache.util.ByteUnit.MiB;
          }
 
          if(_parameter._p_rules) {
-             _log.info("RULES : flushing poolset : " + best._name + " with pools " + best
-                     .keySet());
+             _log.info("RULES : flushing poolset : {} with pools {}", best._name, best.keySet());
          }
 
          best.flushAll() ;
@@ -779,10 +777,10 @@ import static org.dcache.util.ByteUnit.MiB;
            for (Map.Entry<String, PoolSet> hostEntry : _hostMap.entrySet()) {
                String hostName = hostEntry.getKey();
                PoolSet hostMap = hostEntry.getValue();
-               _log.info(" >>" + hostName + "<<");
+               _log.info(" >>{}<<", hostName);
                for (Map.Entry<String, Pool> e : hostMap.entrySet()) {
                    String name = e.getKey();
-                   _log.info("     " + name + (extended ? e.getValue()
+                   _log.info("     {}{}", name, (extended ? e.getValue()
                            .toString() : ""));
                }
            }
@@ -833,22 +831,19 @@ import static org.dcache.util.ByteUnit.MiB;
 
              long size = flush.getTotalPendingFileSize();
 
-             _log.info("flushPool : class = " + info
-                     .getName() + " size = " + size + " flushing = " + info
-                     .isFlushing());
+             _log.info("flushPool : class = {} size = {} flushing = {}", info.getName(), size, info.isFlushing());
              //
              // is precious size > 0 and are we not yet flushing ?
              //
              try {
                  if ((size > 0L) && !info.isFlushing()) {
-                     _log.info("flushPool : !!! flushing " + _parameter._flushAtOnce + " of " + pool
-                             .getName() + " " + info.getName());
+                     _log.info("flushPool : !!! flushing {} of {} {}", _parameter._flushAtOnce, pool.
+                             getName(), info.getName());
                      info.flush(_parameter._flushAtOnce);
                      flushing++;
                  }
              } catch (Exception ee) {
-                 _log.warn("flushPool : Problem flushing " + pool
-                         .getName() + " " + info.getName() + " " + ee);
+                 _log.warn("flushPool : Problem flushing {} {} {}", pool.getName(), info.getName(), ee.toString());
              }
 
          }
@@ -1000,7 +995,7 @@ import static org.dcache.util.ByteUnit.MiB;
                         properties.remove(key);
                     }
                 } catch (Exception ee) {
-                    _log.warn("Exception while seting " + key + " " + ee);
+                    _log.warn("Exception while seting {} {}", key, ee.toString());
                 }
             }
            //

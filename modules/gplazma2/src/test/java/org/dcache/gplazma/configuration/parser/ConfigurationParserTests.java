@@ -158,7 +158,7 @@ public class ConfigurationParserTests
         ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
         Configuration configuration =
                 parser.parse(INVALID_CONFIG);
-        logger.error("Parsed INVALID_CONFIG is \n"+configuration);
+        logger.error("Parsed INVALID_CONFIG is \n{}", configuration);
 
 
     }
@@ -169,7 +169,7 @@ public class ConfigurationParserTests
         ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
         Configuration configuration =
                 parser.parse(INVALID_CONFIG_WRONG_TYPE);
-        logger.error("Parsed INVALID_CONFIG_WRONG_TYPE is \n"+configuration);
+        logger.error("Parsed INVALID_CONFIG_WRONG_TYPE is \n{}", configuration);
 
     }
 
@@ -179,7 +179,7 @@ public class ConfigurationParserTests
         ConfigurationParser parser = pamConfigParserFactory.newConfigurationParser();
         Configuration configuration =
                 parser.parse(INVALID_CONFIG_WRONG_CONTROL);
-        logger.error("Parsed INVALID_CONFIG_WRONG_CONTROL is \n"+configuration);
+        logger.error("Parsed INVALID_CONFIG_WRONG_CONTROL is \n{}", configuration);
 
     }
 
@@ -195,7 +195,7 @@ public class ConfigurationParserTests
         ConfigurationItem[] configItemArray =
                 configItemList
                         .toArray(new ConfigurationItem[configItemList.size()]);
-        logger.debug("Parsed TEST_CONFIG is \n"+configuration);
+        logger.debug("Parsed TEST_CONFIG is \n{}", configuration);
 
         assertArrayEquals(TEST_CONFIG_ARRAY, configItemArray);
     }

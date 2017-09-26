@@ -67,9 +67,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
-
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.migration.PoolMigrationCopyFinishedMessage;
 import org.dcache.pool.migration.Task;
@@ -102,6 +100,7 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
     private final PnfsId               pnfsId;
     private final FileOperationHandler handler;
     private final int                  retry;
+
 
     private Task   migrationTask;
     private Future future;
@@ -141,20 +140,6 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
 
     @Override
     public Void call() {
-        if (retry > 0) {
-            synchronized(this) {
-                try {
-                    wait(TimeUnit.SECONDS.toMillis(5));
-                } catch (InterruptedException e) {
-                    /*
-                     *  Consider this a cancellation.
-                     */
-                    cancelled = true;
-                    return null;
-                }
-            }
-        }
-
         startTime = System.currentTimeMillis();
         FileAttributes attributes = FileAttributes.of().accessLatency(ONLINE).pnfsId(pnfsId).build();
 
@@ -285,7 +270,17 @@ public final class ResilientFileTask implements Cancellable, Callable<Void> {
     }
 
     public void submit() {
-        future = this.handler.getTaskService().submit(new FutureTask<>(this));
+        long delay = handler.getLaunchDelay();
+        TimeUnit unit = handler.getLaunchDelayUnit();
+
+        if (delay == 0 && retry > 0) {
+            delay = 5;
+            unit = TimeUnit.SECONDS;
+        }
+
+        future = this.handler.getTaskService()
+                             .schedule(new FutureTask<>(this),
+                                       delay, unit);
     }
 
     void runRemove(FileAttributes attributes) {

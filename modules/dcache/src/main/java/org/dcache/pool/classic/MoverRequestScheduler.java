@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -28,7 +30,9 @@ import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
 import diskCacheV111.vehicles.ProtocolInfo;
+
 import dmg.cells.nucleus.CDC;
+
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -51,6 +55,9 @@ public class MoverRequestScheduler
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(MoverRequestScheduler.class);
+
+    private static final long DEFAULT_LAST_ACCESSED = 0;
+    private static final long DEFAULT_TOTAL = 0;
 
     /**
      * The name of IoScheduler.
@@ -86,12 +93,12 @@ public class MoverRequestScheduler
     /**
      * JTM timeout since last activity.
      */
-    private long _lastAccessed;
+    private long _lastAccessed = DEFAULT_LAST_ACCESSED;
 
     /**
      * JTM timeout since transfer start.
      */
-    private long _total;
+    private long _total = DEFAULT_TOTAL;
 
     /**
      * Current queue order.
@@ -291,20 +298,12 @@ public class MoverRequestScheduler
     }
 
     /**
-     * Get job information
-     *
-     * @param id
-     * @return
-     * @throws NoSuchElementException if job with specified <code>id</code> does
-     *                                not exist
+     * Get job information.
      */
-    public JobInfo getJobInfo(int id) throws NoSuchElementException
+    public Optional<JobInfo> getJobInfo(int id) throws NoSuchElementException
     {
         PrioritizedRequest request = _jobs.get(id);
-        if (request == null) {
-            throw new NoSuchElementException("Job not found : Job-" + id);
-        }
-        return request.toJobInfo();
+        return request == null ? Optional.empty() : Optional.of(request.toJobInfo());
     }
 
     /**
@@ -424,18 +423,20 @@ public class MoverRequestScheduler
      *
      * @param id
      * @param explanation A reason to log
-     * @throws NoSuchElementException
+     * @return true if a job was killed, false otherwise
      */
-    public synchronized void cancel(int id, @Nullable String explanation) throws NoSuchElementException
+    public synchronized boolean cancel(int id, @Nullable String explanation)
     {
+        boolean killed = false;
         PrioritizedRequest request = _jobs.get(id);
-        if (request == null) {
-            throw new NoSuchElementException("Job " + id + " not found");
+        if (request != null) {
+            request.kill(explanation);
+            if (_queue.remove(request)) {
+                postprocessWithoutJobSlot(request);
+            }
+            killed = true;
         }
-        request.kill(explanation);
-        if (_queue.remove(request)) {
-            postprocessWithoutJobSlot(request);
-        }
+        return killed;
     }
 
     private void postprocessWithoutJobSlot(PrioritizedRequest request)
@@ -595,6 +596,11 @@ public class MoverRequestScheduler
         _lastAccessed = lastAccessed;
     }
 
+    public boolean hasNonDefaultLastAccessed()
+    {
+        return _lastAccessed != DEFAULT_LAST_ACCESSED;
+    }
+
     public synchronized long getTotal()
     {
         return _total;
@@ -604,6 +610,11 @@ public class MoverRequestScheduler
     {
         checkArgument(total >= 0L, "The total timeout must be greater than or equal to 0.");
         _total = total;
+    }
+
+    public boolean hasNonDefaultTotal()
+    {
+        return _total != DEFAULT_TOTAL;
     }
 
     static class PrioritizedRequest implements IoPrioritizable, Comparable<PrioritizedRequest>

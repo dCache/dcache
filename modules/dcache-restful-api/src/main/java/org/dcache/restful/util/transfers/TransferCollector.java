@@ -68,7 +68,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.TransferInfo;
@@ -78,7 +77,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.cells.services.login.LoginBrokerSubscriber;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
-import org.dcache.restful.util.admin.CellMessagingCollector;
+import org.dcache.util.collector.CellMessagingCollector;
 
 import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.catchingAsync;

@@ -352,10 +352,10 @@ public final class ReserveSpaceRequest extends Request {
             try {
                 request.setState(State.FAILED,reason);
             } catch(IllegalStateTransition ist) {
-                logger.error("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : {}", ist.getMessage());
             }
 
-            logger.error("ReserveSpace error: "+ reason);
+            logger.error("ReserveSpace error: {}", reason);
         }
 
         @Override
@@ -371,10 +371,10 @@ public final class ReserveSpaceRequest extends Request {
             try {
                 request.setStateAndStatusCode(State.FAILED,reason,TStatusCode.SRM_NO_FREE_SPACE);
             } catch(IllegalStateTransition ist) {
-                logger.error("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : {}", ist.getMessage());
             }
 
-            logger.error("ReserveSpace failed (NoFreeSpace), no free space : "+reason);
+            logger.error("ReserveSpace failed (NoFreeSpace), no free space : {}", reason);
         }
 
         @Override
@@ -390,7 +390,7 @@ public final class ReserveSpaceRequest extends Request {
             try {
                 request.setState(State.FAILED,e.getMessage());
             } catch(IllegalStateTransition ist) {
-              logger.error("Illegal State Transition : " +ist.getMessage());
+              logger.error("Illegal State Transition : {}", ist.getMessage());
             }
 
             logger.error("ReserveSpace exception: ",e);
@@ -434,7 +434,7 @@ public final class ReserveSpaceRequest extends Request {
                     request.setState(State.DONE,"space reservation succeeded" );
                 }
             } catch(IllegalStateTransition ist) {
-                logger.error("Illegal State Transition : " +ist.getMessage());
+                logger.error("Illegal State Transition : {}", ist.getMessage());
             } finally {
                 wunlock();
             }

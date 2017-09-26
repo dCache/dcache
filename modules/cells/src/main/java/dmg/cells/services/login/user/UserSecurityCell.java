@@ -69,7 +69,7 @@ public class       UserSecurityCell
       Serializable answer;
 
       try{
-         _log.info( "Message type : "+obj.getClass() ) ;
+         _log.info( "Message type : {}", obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
@@ -200,7 +200,7 @@ public class       UserSecurityCell
           throw new Exception("Not authenticated");
       }
       String command = args.argv(0) ;
-      _log.info( "show all : mode="+command+";user=user") ;
+      _log.info( "show all : mode={};user=user", command) ;
       if( command.equals("exception") ) {
           throw new
                   Exception("hallo otto");

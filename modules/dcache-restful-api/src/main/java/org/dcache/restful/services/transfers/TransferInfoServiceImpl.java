@@ -88,7 +88,7 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 import org.dcache.auth.FQAN;
 import org.dcache.restful.providers.transfers.TransferList;
-import org.dcache.restful.services.admin.CellDataCollectingService;
+import org.dcache.services.collector.CellDataCollectingService;
 import org.dcache.restful.util.transfers.TransferCollector;
 import org.dcache.restful.util.transfers.TransferFilter;
 

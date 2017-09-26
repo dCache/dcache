@@ -89,8 +89,8 @@ public class EBlockImageDCReader
             context.eodTransferred();
             if (logger.isDebugEnabled()) {
                 logger.debug(
-                        "Received EOD. Still expecting: "
-                        + ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
+                        "Received EOD. Still expecting: {}",
+                        ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
                            ? "?"
                            : Integer.toString(
                                 context.eodsTotal - context.eodsTransferred)));
@@ -100,8 +100,8 @@ public class EBlockImageDCReader
         if (eof) {
             context.setEodsTotal((int) offset);
             if (logger.isDebugEnabled()) {
-                logger.debug("Received EODC. Expecting total EODs: "
-                             + context.getEodsTotal());
+                logger.debug("Received EODC. Expecting total EODs: {}",
+                        context.getEodsTotal());
             }
             return null;
 

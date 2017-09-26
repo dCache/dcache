@@ -291,7 +291,7 @@ public class PoolManagerV5
                 }
 
             } catch (Exception ee) {
-                _log.warn("WatchdogThread : illegal arguments [" + parameter + "] (using defaults) " + ee.getMessage());
+                _log.warn("WatchdogThread : illegal arguments [{}] (using defaults) {}", parameter, ee.getMessage());
             }
         }
 
@@ -749,7 +749,7 @@ public class PoolManagerV5
             QuotaMgrCheckQuotaMessage quotas = new QuotaMgrCheckQuotaMessage(storageClass);
            return _quotaManager.sendAndWait(quotas).isHardQuotaExceeded();
         } catch (Exception e) {
-            _log.warn("quotasExceeded of " + storageClass + " : Exception : {}", e.toString());
+            _log.warn("quotasExceeded of {} : Exception : {}", storageClass, e.toString());
             return false;
         }
     }

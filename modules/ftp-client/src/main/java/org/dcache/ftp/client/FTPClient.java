@@ -422,9 +422,8 @@ public class FTPClient
         {
             if (logger.isDebugEnabled()) {
                 logger.debug(
-                        "received "
-                        + buffer.getLength()
-                        + " bytes of directory listing");
+                        "received {} bytes of directory listing"
+                        , buffer.getLength());
             }
             this.received.write(buffer.getBuffer(), 0, buffer.getLength());
         }
@@ -535,7 +534,7 @@ public class FTPClient
         while ((line = reader.readLine()) != null) {
             line = line.trim();
             if (logger.isDebugEnabled()) {
-                logger.debug("line ->" + line);
+                logger.debug("line ->{}", line);
             }
             if (line.equals("")) {
                 continue;
@@ -636,7 +635,7 @@ public class FTPClient
 
         while ((line = reader.readLine()) != null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("line ->" + line);
+                logger.debug("line ->{}", line);
             }
 
             fileInfo = new FileInfo();
@@ -754,7 +753,7 @@ public class FTPClient
         while ((line = reader.readLine()) != null) {
 
             if (logger.isDebugEnabled()) {
-                logger.debug("line ->" + line);
+                logger.debug("line ->{}", line);
             }
 
             try {

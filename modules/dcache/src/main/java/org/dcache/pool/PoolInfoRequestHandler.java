@@ -59,42 +59,48 @@ documents or software obtained from this server.
  */
 package org.dcache.pool;
 
+import org.springframework.beans.factory.annotation.Required;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
+
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.Reply;
+
 import org.dcache.cells.MessageReply;
+import org.dcache.cells.json.CellData;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.classic.PoolV4;
-import org.dcache.pool.nearline.NearlineStorageHandler;
-import org.dcache.pool.repository.Repository;
-import org.dcache.cells.json.CellData;
-import org.dcache.vehicles.pool.CacheEntryInfoMessage;
-import org.dcache.vehicles.pool.PoolDataRequestMessage;
-import org.dcache.vehicles.pool.PoolFlushListingMessage;
-import org.dcache.vehicles.pool.PoolMoverListingMessage;
-import org.dcache.vehicles.pool.PoolP2PListingMessage;
-import org.dcache.vehicles.pool.PoolRemoveListingMessage;
-import org.dcache.vehicles.pool.PoolStageListingMessage;
 import org.dcache.pool.classic.json.ChecksumModuleData;
 import org.dcache.pool.classic.json.FlushControllerData;
 import org.dcache.pool.classic.json.HSMFlushQManagerData;
 import org.dcache.pool.classic.json.JobTimeoutManagerData;
-import org.dcache.pool.migration.json.MigrationData;
-import org.dcache.pool.movers.json.MoverData;
-import org.dcache.pool.p2p.json.P2PData;
-import org.dcache.pool.json.PoolData;
-import org.dcache.pool.repository.json.RepositoryData;
 import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.classic.json.TransferServicesData;
+import org.dcache.pool.json.PoolData;
+import org.dcache.pool.migration.json.MigrationData;
+import org.dcache.pool.movers.json.MoverData;
+import org.dcache.pool.nearline.NearlineStorageHandler;
+import org.dcache.pool.p2p.json.P2PData;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.json.RepositoryData;
+import org.dcache.vehicles.pool.CacheEntryInfoMessage;
+import org.dcache.vehicles.pool.PoolDataRequestMessage;
+import org.dcache.vehicles.pool.PoolFlushListingMessage;
+import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
+import org.dcache.vehicles.pool.PoolMoverListingMessage;
+import org.dcache.vehicles.pool.PoolP2PListingMessage;
+import org.dcache.vehicles.pool.PoolRemoveListingMessage;
+import org.dcache.vehicles.pool.PoolStageListingMessage;
 
 /**
  * <p>Serves requests from frontend pool info service for info relating to the
@@ -152,6 +158,20 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
                 request.setTransferServicesData(transferServices.getDataObject());
 
                 message.setData(request);
+                reply.reply(message);
+            } catch (Exception e) {
+                reply.fail(message, e);
+            }
+        });
+        return reply;
+    }
+
+    public Reply messageArrived(PoolLiveDataForHistoriesMessage message) {
+        MessageReply<Message> reply = new MessageReply<>();
+        executor.execute(() -> {
+            try {
+                message.setPoolCostData(new PoolCostData(pool.getPoolCostInfo()));
+                message.setSweeperData(sweeper.getDataObject());
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
@@ -291,68 +311,79 @@ public final class PoolInfoRequestHandler implements CellMessageReceiver,
         this.supplier = supplier;
     }
 
-    public void setChecksumModule(PoolDataBeanProvider checksumModule) {
-        this.checksumModule = checksumModule;
+    @Required
+    public void setChecksumModule(PoolDataBeanProvider<ChecksumModuleData> provider) {
+        checksumModule = provider;
     }
 
+    @Required
     public void setExecutor(ExecutorService executor) {
         this.executor = executor;
     }
 
-    public void setFlushController(
-                    PoolDataBeanProvider flushController) {
-        this.flushController = flushController;
+    @Required
+    public void setFlushController(PoolDataBeanProvider<FlushControllerData> provider) {
+        flushController = provider;
     }
 
-    public void setHsmFlushQueueManager(
-                    PoolDataBeanProvider hsmFlushQueueManager) {
-        this.hsmFlushQueueManager = hsmFlushQueueManager;
+    @Required
+    public void setHsmFlushQueueManager(PoolDataBeanProvider<HSMFlushQManagerData>  provider) {
+        hsmFlushQueueManager = provider;
     }
 
-    public void setJobTimeoutManager(
-                    PoolDataBeanProvider jobTimeoutManager) {
-        this.jobTimeoutManager = jobTimeoutManager;
+    @Required
+    public void setJobTimeoutManager(PoolDataBeanProvider<JobTimeoutManagerData> provider) {
+        jobTimeoutManager = provider;
     }
 
-    public void setMigrationClient(
-                    PoolDataBeanProvider migrationClient) {
-        this.migrationClient = migrationClient;
+    @Required
+    public void setMigrationClient(PoolDataBeanProvider<MigrationData> provider) {
+        migrationClient = provider;
     }
 
-    public void setMigrationServer(
-                    PoolDataBeanProvider migrationServer) {
-        this.migrationServer = migrationServer;
+    @Required
+    public void setMigrationServer(PoolDataBeanProvider<MigrationData> provider) {
+        migrationServer = provider;
     }
 
-    public void setP2pClient(PoolDataBeanProvider p2pClient) {
-        this.p2pClient = p2pClient;
+    @Required
+    public void setP2pClient(PoolDataBeanProvider<P2PData> provider) {
+        p2pClient = provider;
     }
 
+    @Required
     public void setPool(PoolV4 pool) {
         this.pool = pool;
     }
 
-    public void setQueueManager(IoQueueManager queueManager) {
-        this.queueManager = queueManager;
+    @Required
+    public void setQueueManager(IoQueueManager manager) {
+        queueManager = manager;
     }
 
-    public void setRepository(PoolDataBeanProvider repository) {
-        this.repositoryProvider = repository;
-        this.repository = (Repository)repository;
+    @Required
+    public void setRepositoryDataProvider(PoolDataBeanProvider<RepositoryData> provider) {
+        repositoryProvider = provider;
     }
 
-    public void setStorageHandler(
-                    NearlineStorageHandler storageHandler) {
-        this.storageHandler = storageHandler;
+    @Required
+    public void setRepository(Repository repository) {
+        this.repository = repository;
     }
 
-    public void setSweeper(PoolDataBeanProvider sweeper) {
-        this.sweeper = sweeper;
+    @Required
+    public void setStorageHandler(NearlineStorageHandler handler) {
+        storageHandler = handler;
     }
 
-    public void setTransferServices(
-                    PoolDataBeanProvider transferServices) {
-        this.transferServices = transferServices;
+    @Required
+    public void setSweeper(PoolDataBeanProvider<SweeperData> provider) {
+        sweeper = provider;
+    }
+
+    @Required
+    public void setTransferServices(PoolDataBeanProvider<TransferServicesData> provider) {
+        transferServices = provider;
     }
 
     private CellData getCellInfoRequest() {

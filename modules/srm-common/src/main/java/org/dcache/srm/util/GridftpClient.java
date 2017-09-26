@@ -2,6 +2,7 @@
 
 package org.dcache.srm.util;
 
+import com.google.common.io.BaseEncoding;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
@@ -114,10 +115,10 @@ public class GridftpClient
     {
         if(bufferSize >0) {
             _bufferSize = bufferSize;
-            logger.debug("memory buffer size is set to "+bufferSize);
+            logger.debug("memory buffer size is set to {}", bufferSize);
         }
         _host = host;
-        logger.debug("connecting to "+_host+" on port "+port);
+        logger.debug("connecting to {} on port {}", _host, port);
 
         ClientGsiEngineDssContextFactory dssContextFactory =
                 new ClientGsiEngineDssContextFactory(
@@ -204,7 +205,7 @@ public class GridftpClient
             bb.flip();
             md.update(bb) ;
         }
-        return printbytes(md.digest());
+        return BaseEncoding.base16().lowerCase().encode(md.digest());
     }
 
 
@@ -258,7 +259,7 @@ public class GridftpClient
         if(emode) {
             _client.setMode(GridFTPSession.MODE_EBLOCK);
             // adding parallelism
-            logger.debug("parallelism: " + _streamsNum);
+            logger.debug("parallelism: {}", _streamsNum);
             _client.setOptions(new RetrieveOptions(_streamsNum));
         }
         else {
@@ -269,7 +270,7 @@ public class GridftpClient
                 if(passive_server_mode){
                     logger.debug("server is passive");
                     HostPort serverHostPort = _client.setPassive();
-                    logger.debug("serverHostPort="+serverHostPort.getHost()+":"+serverHostPort.getPort());
+                    logger.debug("serverHostPort={}:{}", serverHostPort.getHost(), serverHostPort.getPort());
                     _client.setLocalActive();
                 }else{
                     logger.debug("server is active");
@@ -292,9 +293,9 @@ public class GridftpClient
         throws IOException, ServerException, FTPReplyParseException,
                UnexpectedReplyCodeException
     {
-        logger.debug(" sending wait command to ncsa host " + _host);
+        logger.debug(" sending wait command to ncsa host {}", _host);
         Reply reply = _client.quote("SITE WAIT");
-        logger.debug("Reply is "+reply);
+        logger.debug("Reply is {}", reply);
         if(Reply.isPositiveCompletion( reply)) {
             logger.debug("sending wait command successful");
         } else {
@@ -397,16 +398,16 @@ public class GridftpClient
             throw new IOException("we wrote more then file size!!!");
         }
 
-        logger.debug("gridFTPWrite() wrote "+sink.getTransfered()+"bytes");
+        logger.debug("gridFTPWrite() wrote {} bytes", sink.getTransfered());
 
         try {
           if ( _cksmType != null ) {
               verifyCksmValue(_current_source_sink, sourcepath);
           }
         } catch ( ChecksumNotSupported ex){
-          logger.error("Checksum is not supported:"+ex.toString());
+          logger.error("Checksum is not supported: {}", ex.toString());
         } catch ( ChecksumValueFormatException cvfe) {
-          logger.error("Checksum format is not valid:"+cvfe.toString());
+          logger.error("Checksum format is not valid: {}", cvfe.toString());
         }
 
         //make these remeber last values
@@ -500,7 +501,7 @@ public class GridftpClient
         throws InterruptedException, ClientException, ServerException,
                IOException, NoSuchAlgorithmException
     {
-        logger.debug("gridFTPWrite started, destination path is "+destinationpath);
+        logger.debug("gridFTPWrite started, destination path is {}", destinationpath);
 
         setCommonOptions(emode,passive_server_mode);
 
@@ -524,7 +525,7 @@ public class GridftpClient
             throw new IOException("we read more then file size!!!");
         }
 
-        logger.debug("gridFTPWrite() wrote "+source.getTransfered()+"bytes");
+        logger.debug("gridFTPWrite() wrote {} bytes", source.getTransfered());
         getTransfered();
         getLastTransferTime();
         _current_source_sink = null;
@@ -549,7 +550,7 @@ public class GridftpClient
             }
         } catch ( Exception ex ){
             // send cksm error is often expected for non dCache sites
-            logger.debug("Was not able to send checksum value:"+ex.toString());
+            logger.debug("Was not able to send checksum value: {}", ex.toString());
         }
     }
 
@@ -918,7 +919,7 @@ public class GridftpClient
         public void run() {
             try {
                 if(_read) {
-                    logger.debug("starting a transfer from "+_path);
+                    logger.debug("starting a transfer from {}", _path);
                     if(_client.isFeatureSupported("GETPUT")) {
                         _client.get2(_path, (_emode ? false: _passive_server_mode),
                                     _source_sink, null);
@@ -927,7 +928,7 @@ public class GridftpClient
                     }
                 }
                 else {
-                    logger.debug("starting a transfer to "+_path);
+                    logger.debug("starting a transfer to {}", _path);
                     if(_client.isFeatureSupported("GETPUT")) {
                         _client.put2(_path, (_emode ? true : _passive_server_mode),
                                     _source_sink, null);
@@ -1114,24 +1115,4 @@ public class GridftpClient
         }
         return svalue;
     }
-    public static String printbytes(byte[] bs)
-    {
-        StringBuilder sb= new StringBuilder();
-        for (byte b : bs) {
-            byteToHexString(b, sb);
-        }
-        return sb.toString();
-    }
-
-    private static final char [] __map =
-    { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' } ;
-
-    private static void byteToHexString( byte b, StringBuilder sb ) {
-
-        int x = ( b < 0 ) ? ( 256 + (int)b ) : (int)b ;
-        sb.append(__map[ ((int)b >> 4 ) & 0xf ]);
-        sb.append(__map[ ((int)b      ) & 0xf ]);
-    }
-
-
 }

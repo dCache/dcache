@@ -133,7 +133,7 @@ public class MissingFileHandler implements CellMessageReceiver
                 return false;
             } catch (ExecutionException e) {
                 Throwable t = e.getCause();
-                _log.error("Plugin bug: " + t.getMessage(),
+                _log.error("Plugin bug: {}", t.getMessage(),
                         t);
                 return true;
             }

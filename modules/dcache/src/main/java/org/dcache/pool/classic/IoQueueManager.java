@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Comparator;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -24,6 +24,7 @@ import diskCacheV111.vehicles.IoJobInfo;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellSetupProvider;
+import dmg.util.CommandException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.DelayedCommand;
@@ -35,6 +36,7 @@ import org.dcache.pool.classic.MoverRequestScheduler.Order;
 import org.dcache.util.IoPriority;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static dmg.util.CommandException.checkCommand;
 import static java.util.stream.Collectors.joining;
 
 public class IoQueueManager
@@ -83,10 +85,24 @@ public class IoQueueManager
      */
     private final MoverRequestScheduler p2pQueue;
 
+    /**
+     * Queues, as supplied by the 'pool.queues' configuration property.
+     */
+    private String[] propertyQueues = new String[0];
+
+
     public IoQueueManager()
     {
         defaultQueue = createQueue(DEFAULT_QUEUE, Order.LIFO);
         p2pQueue = createQueue(P2P_QUEUE_NAME, Order.LIFO);
+    }
+
+    @Override
+    public CellSetupProvider mock()
+    {
+        IoQueueManager mock = new IoQueueManager();
+        mock.setQueues(propertyQueues);
+        return mock;
     }
 
     public void addFaultListener(FaultListener listener)
@@ -107,6 +123,7 @@ public class IoQueueManager
 
     public void setQueues(String[] queues)
     {
+        propertyQueues = queues.clone();
         for (String queue : queues) {
             queue = queue.trim();
             if (queue.startsWith("-")) {
@@ -134,13 +151,9 @@ public class IoQueueManager
     }
 
     @Nonnull
-    public MoverRequestScheduler getQueueByJobId(int jobId) throws NoSuchElementException
+    public Optional<MoverRequestScheduler> getQueueByJobId(int jobId)
     {
-        MoverRequestScheduler queue = queuesById.get(jobId >> 24);
-        if (queue == null) {
-            throw new NoSuchElementException("Id doesn't belong to any known scheduler.");
-        }
-        return queue;
+        return Optional.ofNullable(queuesById.get(jobId >> 24));
     }
 
     public int getOrCreateMover(String queueName, String doorUniqueId, MoverSupplier moverSupplier,
@@ -149,12 +162,16 @@ public class IoQueueManager
         return getQueueByNameOrDefault(queueName).getOrCreateMover(moverSupplier, doorUniqueId, priority);
     }
 
+    @Override
     public void printSetup(PrintWriter pw)
     {
         queues().forEach(q -> pw.println("mover queue create " + q.getName() + " -order=" + q.getOrder()));
         queues().forEach(q -> pw.println("mover set max active -queue=" + q.getName() + " " + q.getMaxActiveJobs()));
-        queues().forEach(q -> pw.println("jtm set timeout -queue=" + q.getName() + " -lastAccess=" +
-                                         (q.getLastAccessed() / 1000L) + " -total=" + (q.getTotal() / 1000L)));
+        queues().stream()
+                .filter(q -> q.hasNonDefaultLastAccessed() || q.hasNonDefaultTotal())
+                .forEach(q -> pw.println("jtm set timeout -queue=" + q.getName()
+                        + " -lastAccess=" + (q.getLastAccessed() / 1000L)
+                        + " -total=" + (q.getTotal() / 1000L)));
     }
 
     public synchronized void shutdown() throws InterruptedException
@@ -197,9 +214,9 @@ public class IoQueueManager
     }
 
     private String moverSetMaxActive(MoverRequestScheduler js, int active)
-            throws IllegalArgumentException
+            throws CommandException
     {
-        checkArgument(active >= 0, "<maxActiveMovers> must be >= 0");
+        checkCommand(active >= 0, "<maxActiveMovers> must be >= 0");
         js.setMaxActiveJobs(active);
 
         return "Max Active Io Movers set to " + active;
@@ -231,16 +248,14 @@ public class IoQueueManager
         String queueName;
 
         @Override
-        public String call() throws IllegalArgumentException
+        public String call() throws CommandException
         {
             if (queueName == null) {
                 return moverSetMaxActive(defaultQueue, maxActiveIoMovers);
             }
 
             MoverRequestScheduler js = queuesByName.get(queueName);
-            if (js == null) {
-                return "Not found : " + queueName;
-            }
+            checkCommand(js != null, "Not found : %s", queueName);
 
             return moverSetMaxActive(js, maxActiveIoMovers);
         }
@@ -259,7 +274,7 @@ public class IoQueueManager
         int maxActiveP2PTransfers;
 
         @Override
-        public String call() throws IllegalArgumentException
+        public String call() throws CommandException
         {
             return moverSetMaxActive(p2pQueue, maxActiveP2PTransfers);
         }
@@ -365,18 +380,19 @@ public class IoQueueManager
         long total;
 
         @Override
-        public synchronized String call() throws IllegalArgumentException, NoSuchElementException
+        public synchronized String call() throws CommandException
         {
+            checkCommand(lastAccessed >= 0L, "invalid lastAccess value %d: must be >= 0", lastAccessed);
+            checkCommand(total >= 0L, "invalid total value %d: must be >= 0", total);
+
             if (name == null) {
                 for (MoverRequestScheduler queue : queues()) {
                     queue.setLastAccessed(lastAccessed * 1000L);
                     queue.setTotal(total * 1000L);
                 }
             } else {
-                MoverRequestScheduler queue = queuesByName.get(this.name);
-                if (queue == null) {
-                    throw new NoSuchElementException("No such queue: " + name);
-                }
+                MoverRequestScheduler queue = queuesByName.get(name);
+                checkCommand(queue != null, "No such queue: %s", name);
                 queue.setLastAccessed(lastAccessed * 1000L);
                 queue.setTotal(total * 1000L);
             }
@@ -407,19 +423,18 @@ public class IoQueueManager
         boolean reverseSort;
 
         @Override
-        public Serializable call() throws NoSuchElementException
+        public Serializable call() throws CommandException
         {
             if (id != null) {
-                return getQueueByJobId(id).getJobInfo(id);
+                return getQueueByJobId(id).orElseThrow(() -> new CommandException("Id doesn't belong to any known scheduler."))
+                        .getJobInfo(id).orElseThrow(() -> new CommandException("Job not found : Job-" + id));
             }
 
             boolean groupByQueue;
             Collection<MoverRequestScheduler> queues;
             if (queueName != null && !queueName.isEmpty()) {
                 MoverRequestScheduler js = queuesByName.get(queueName);
-                if (js == null) {
-                    throw new NoSuchElementException("Not found : " + queueName);
-                }
+                checkCommand(js != null, "Not found : %s", queueName);
                 queues = Collections.singleton(js);
                 groupByQueue = false;
             } else {
@@ -480,10 +495,10 @@ public class IoQueueManager
         boolean isBinary;
 
         @Override
-        public Serializable call() throws NoSuchElementException
+        public Serializable call() throws CommandException
         {
             if (id != null) {
-                return p2pQueue.getJobInfo(id);
+                return p2pQueue.getJobInfo(id).orElseThrow(() -> new CommandException("Job not found : Job-" + id));
             }
             if (isBinary) {
                 return p2pQueue.getJobs().toArray(IoJobInfo[]::new);
@@ -508,11 +523,13 @@ public class IoQueueManager
         int id;
 
         @Override
-        public String call() throws NoSuchElementException, IllegalArgumentException
+        public String call() throws CommandException
         {
-            MoverRequestScheduler js = getQueueByJobId(id);
+            MoverRequestScheduler js = getQueueByJobId(id).orElseThrow(() -> new CommandException("Id doesn't belong to any known scheduler."));
             LOGGER.info("Killing mover {}", id);
-            js.cancel(id, "killed through admin interface");
+            if (!js.cancel(id, "killed through admin interface")) {
+                throw new CommandException("Unknown id: " + id);
+            }
             return "Kill initialized.";
         }
     }

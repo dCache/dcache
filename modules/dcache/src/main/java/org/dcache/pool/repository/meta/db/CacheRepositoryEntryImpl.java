@@ -154,7 +154,7 @@ public class CacheRepositoryEntryImpl implements ReplicaRecord
         try {
             return _state.isMutable() ? _repository.getFileSize(_pnfsId) : _size;
         } catch (IOException e) {
-            _log.error("Failed to read file size: " + e);
+            _log.error("Failed to read file size: {}", e.toString());
             return 0;
         }
     }

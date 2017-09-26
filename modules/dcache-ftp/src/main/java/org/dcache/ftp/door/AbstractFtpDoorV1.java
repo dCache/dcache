@@ -141,7 +141,6 @@ import diskCacheV111.doors.LineBasedInterpreter;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
@@ -873,8 +872,7 @@ public abstract class AbstractFtpDoorV1
     private final String _ftpDoorName;
     private final String _tlogName;
     protected Checksum _checkSum;
-    protected ChecksumFactory _checkSumFactory;
-    protected ChecksumFactory _optCheckSumFactory;
+    protected ChecksumType _optCheckSumType;
     protected long _allo;
 
     /** List of selected RFC 3659 facts. */
@@ -1076,12 +1074,12 @@ public abstract class AbstractFtpDoorV1
             protocolInfo.setMode(_xferMode);
             protocolInfo.setProtocolFamily(_protocolFamily);
 
-            if (_optCheckSumFactory != null) {
-                protocolInfo.setChecksumType(_optCheckSumFactory.getType().getName());
+            if (_optCheckSumType != null) {
+                protocolInfo.setChecksumType(_optCheckSumType.getName());
             }
 
-            if (_checkSumFactory != null) {
-                protocolInfo.setChecksumType(_checkSumFactory.getType().getName());
+            if (_checkSum != null) {
+                protocolInfo.setChecksumType(_checkSum.getType().getName());
             }
 
             return protocolInfo;
@@ -1102,7 +1100,7 @@ public abstract class AbstractFtpDoorV1
                         _tLog.begin(user, _tlogName, isWrite() ? "write" : "read",
                                 _path.toString(), _remoteSocketAddress.getAddress());
                     } catch (NoSuchElementException | IllegalArgumentException e) {
-                        LOGGER.error("Could not start tLog: " + e.getMessage());
+                        LOGGER.error("Could not start tLog: {}", e.getMessage());
                     }
                 }
             }
@@ -1910,17 +1908,14 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        try {
-            if (!algo.equalsIgnoreCase("NONE")) {
-                _optCheckSumFactory =
-                    ChecksumFactory.getFactory(ChecksumType.getChecksumType(algo));
-            } else {
-                _optCheckSumFactory = null;
-            }
-            reply("200 OK");
-        } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
+        if (algo.equalsIgnoreCase("NONE")) {
+            _optCheckSumType = null;
+        } else if (ChecksumType.isValid(algo)) {
+            _optCheckSumType = ChecksumType.getChecksumType(algo);
+        } else {
             throw new FTPCommandException(504, "Unsupported checksum type: " + algo);
         }
+        reply("200 OK");
     }
 
     private void opts_mlst(String facts)
@@ -2790,13 +2785,19 @@ public abstract class AbstractFtpDoorV1
 
         try {
             FsPath absPath = absolutePath(path);
-            ChecksumFactory cf =
-                ChecksumFactory.getFactory(ChecksumType.getChecksumType(algo));
+            if (!ChecksumType.isValid(algo)) {
+                throw new NoSuchAlgorithmException(algo);
+            }
+            ChecksumType type = ChecksumType.getChecksumType(algo);
             FileAttributes attributes =
                 _pnfs.getFileAttributes(absPath, EnumSet.of(PNFSID, CHECKSUM));
-            Checksum checksum = cf.find(attributes.getChecksums());
+            Checksum checksum = attributes.getChecksums().stream()
+                    .filter(c -> c.getType() == type)
+                    .findFirst()
+                    .orElse(null);
+
             if (checksum == null) {
-                ChecksumCalculatingTransfer cct = new ChecksumCalculatingTransfer(_pnfs, _subject, _authz, absPath, cf, new PortRange(0,0));
+                ChecksumCalculatingTransfer cct = new ChecksumCalculatingTransfer(_pnfs, _subject, _authz, absPath, type, new PortRange(0,0));
                 setTransfer(cct);
                 TimerTask sendProgress = null;
                 try {
@@ -2823,11 +2824,12 @@ public abstract class AbstractFtpDoorV1
                 }
                 _pnfs.setFileAttributes(attributes.getPnfsId(), FileAttributes.ofChecksum(checksum));
             }
+
             reply("213 " + checksum.getValue());
         } catch (InterruptedException | IOException | CacheException e) {
             throw new FTPCommandException(550, "Error retrieving " + path
                                           + ": " + e.getMessage());
-        } catch (IllegalArgumentException | NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new FTPCommandException(504, "Unsupported checksum type:" + e);
         }
     }
@@ -2855,15 +2857,14 @@ public abstract class AbstractFtpDoorV1
 
     public void doCheckSum(String type, String value) throws FTPCommandException
     {
+        checkFTPCommand(ChecksumType.isValid(type), 504, "Unsupported checksum type");
+
         try {
-            _checkSumFactory =
-                ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
-            _checkSum = _checkSumFactory.create(value);
+            _checkSum = new Checksum(ChecksumType.getChecksumType(type), value);
             reply("213 OK");
-        } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
-            _checkSumFactory = null;
+        } catch (RuntimeException e) {
             _checkSum = null;
-            throw new FTPCommandException(504, "Unsupported checksum type:" + type);
+            throw e;
         }
     }
 
@@ -3296,8 +3297,7 @@ public abstract class AbstractFtpDoorV1
         checkFTPCommand(!xferMode.equals("X") || mode != Mode.PASSIVE || !_settings.isProxyRequiredOnPassive(),
                 504, "Cannot use passive X mode");
         checkFTPCommand(mode != Mode.INVALID, 425, "Issue PASV or PORT to reset data channel.");
-        checkFTPCommand(_checkSumFactory == null && _checkSum == null,
-                503,"Expecting STOR ESTO PUT commands");
+        checkFTPCommand(_checkSum == null, 503, "Expecting STOR ESTO PUT commands");
 
         FtpTransfer transfer =
             new FtpTransfer(absolutePath(file),
@@ -3476,7 +3476,6 @@ public abstract class AbstractFtpDoorV1
             LOGGER.error("Store failed", e);
             transfer.abort(451, "Transient internal failure");
         } finally {
-            _checkSumFactory = null;
             _checkSum = null;
             _allo = 0;
         }

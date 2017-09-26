@@ -4,7 +4,6 @@ package diskCacheV111.poolManager;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -415,7 +414,7 @@ public class PoolMonitorV5
                     {
                         String s1 = id + pool1;
                         String s2 = id + pool2;
-                        return Ints.compare(s1.hashCode(), s2.hashCode());
+                        return Integer.compare(s1.hashCode(), s2.hashCode());
                     }
                 };
 

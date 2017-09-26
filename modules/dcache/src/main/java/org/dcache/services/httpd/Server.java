@@ -49,7 +49,7 @@ public class Server extends org.eclipse.jetty.server.Server
         try {
             stop();
         } catch (Exception e) {
-            LOG.error("Web server shutdown failed: " + e);
+            LOG.error("Web server shutdown failed: {}", e.toString());
         }
     }
 }

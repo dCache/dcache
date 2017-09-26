@@ -40,7 +40,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
     public List<PoolSpaceBean> getPoolBeans() throws PoolSpaceServiceException {
         try {
             Set<Pool> pools = getPoolsDAO().getPools();
-            _log.debug("returned pools: " + pools.size());
+            _log.debug("returned pools: {}", pools.size());
             List<PoolSpaceBean> poolBeans = new ArrayList<>(pools.size());
             Map<String, List<String>> domainMap = getDomainsDAO().getDomainsMap();
 
@@ -48,7 +48,7 @@ public class StandardPoolSpaceService implements PoolSpaceService {
                 PoolSpaceBean newPoolBean = createPoolBean(currentPool, domainMap);
                 poolBeans.add(newPoolBean);
             }
-            _log.debug("returned PoolBeans: " + poolBeans.size());
+            _log.debug("returned PoolBeans: {}", poolBeans.size());
             Collections.sort(poolBeans);
             return poolBeans;
 

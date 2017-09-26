@@ -43,7 +43,7 @@ Send Request to All Listed Sites
     \              ${Path}=                      Get From Dictionary    ${entry}                Path
     \              ${ExpectedResponseHeader}=    Get From Dictionary    ${entry}                ExpectedResponseHeader
     \              ${RequestHeaders}=            Get From Dictionary    ${entry}                RequestHeaders
-    \              Create Session                rest                   ${SiteName}
+    \              Create Session                rest                   ${SiteName}             verify=${TRUSTSTORE}
     \              ${resp}=                      Get Request            rest                    ${Path}
     ...            headers=${RequestHeaders}
     \              Should Be Equal As Strings    ${resp.status_code}    ${StatusCode}

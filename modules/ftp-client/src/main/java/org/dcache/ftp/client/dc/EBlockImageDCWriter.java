@@ -48,9 +48,9 @@ public class EBlockImageDCWriter
         }
 
         output.writeByte(0);
-        logger.debug("buffer length: " + buf.getLength());
+        logger.debug("buffer length: {}", buf.getLength());
         output.writeLong(buf.getLength());
-        logger.debug("offset: " + offset);
+        logger.debug("offset: {}", offset);
         output.writeLong(offset);
         output.write(buf.getBuffer(), 0, buf.getLength());
         //output.flush();
@@ -71,8 +71,8 @@ public class EBlockImageDCWriter
                 output.writeByte(desc);
                 output.writeLong(0);
                 output.writeLong(context.eodsTotal);
-                logger.debug("wrote EOF (expected EODS: "
-                             + context.eodsTotal + ") and EOD");
+                logger.debug("wrote EOF (expected EODS: {}) and EOD",
+                             context.eodsTotal);
             } else {
                 desc = EOD;
                 output.writeByte(desc);

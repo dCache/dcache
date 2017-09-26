@@ -1,6 +1,9 @@
 package org.dcache.util;
 
+import com.google.common.net.InetAddresses;
+
 import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.Inet4Address;
@@ -76,6 +79,47 @@ public class Subnet implements Serializable {
      */
     public static Subnet create(InetAddress subnetAddress, int mask) {
         return new Subnet(subnetAddress, mask);
+    }
+
+    /**
+     * Check whether the supplied pattern will compile into a Subnet.
+     * In effect, this method returns false if Subnet#create(String) throws
+     * the IllegalArgumentException and returns true if Subnet#create(String)
+     * does not throw an exception.
+     */
+    public static boolean isValid(String netmaskPattern)
+    {
+        // REVISIT there is far too much overlap between this method and
+        // the create(String) method.  These methods should be refactored
+        // to expose the commonality.
+
+        String[] parts = netmaskPattern.split("/");
+        if (!InetAddresses.isInetAddress(parts [0])) {
+            return false;
+        }
+
+        InetAddress originalAddress = InetAddresses.forString(parts [0]);
+
+        String originalHostAddress = originalAddress.getHostAddress();
+        if (DOCUMENTATION_ADDRESS.matcher(originalHostAddress).matches() ||
+                TOREDO_ADDRESS.matcher(originalHostAddress).matches()) {
+            return false;
+        }
+
+        if (parts.length > 1) {
+            InetAddress subnetAddress = IPMatcher.tryConvertToIPv4(originalAddress);
+
+            int maskBitLength = subnetAddress instanceof Inet4Address ? 32 : 128;
+            int cidrMask = IPMatcher.convertToCidrIfIsIPv4Mask(parts[1]);
+            // if a conversion from IPv6 to IPv4 actually happened
+            boolean isIpV6Mask = MAPPED_ADDRESS.matcher(parts [0]).matches() || originalAddress instanceof Inet6Address;
+            if (isIpV6Mask && (maskBitLength == 32)) {
+                cidrMask = cidrMask==128? 32 : cidrMask & 0x1f;
+            }
+
+            return cidrMask <= maskBitLength;
+        }
+        return true;
     }
 
     /**

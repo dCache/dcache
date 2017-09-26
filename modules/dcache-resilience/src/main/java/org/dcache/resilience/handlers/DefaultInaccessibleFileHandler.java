@@ -79,6 +79,26 @@ public final class DefaultInaccessibleFileHandler extends InaccessibleFileHandle
                     + "Administrator intervention is required.  Run the command "
                     + "'inaccessible {}' to produce a list of orphaned pnfsids.";
 
+    private static final String MISSING_LOCATIONS_MESSAGE
+                    = "{} has no locations in the namespace. "
+                    + "Administrator intervention is required.";
+
+    @Override
+    protected Type handleNoLocationsForFile(FileOperation operation) {
+        PnfsId pnfsId = operation.getPnfsId();
+        LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.INACCESSIBLE_FILE,
+                                                  pnfsId.toString()),
+                     MISSING_LOCATIONS_MESSAGE, pnfsId);
+        String error = String.format("%s has no locations.", pnfsId);
+        CacheException exception
+                        = CacheExceptionUtils.getCacheException(
+                        CacheException.PANIC,
+                        FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
+                        pnfsId, error, null);
+        completionHandler.taskFailed(pnfsId, exception);
+        return Type.VOID;
+    }
+
     @Override
     protected Type handleInaccessibleFile(FileOperation operation) {
         Integer pindex = operation.getParent();

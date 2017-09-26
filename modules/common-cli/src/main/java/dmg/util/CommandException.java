@@ -1,5 +1,7 @@
 package dmg.util;
 
+import static org.dcache.util.Exceptions.genericCheck;
+
 /**
   *
   *
@@ -40,4 +42,10 @@ public class CommandException extends Exception {
    public String getMessage(){
       return "("+_errorCode+") "+super.getMessage() ;
    }
+
+    public static void checkCommand(boolean isOK, String format, Object... arguments)
+            throws CommandException
+    {
+        genericCheck(isOK, m -> new CommandException(m), format, arguments);
+    }
 }

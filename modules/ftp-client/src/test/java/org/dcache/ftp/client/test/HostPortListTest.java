@@ -148,7 +148,7 @@ public class HostPortListTest extends TestCase {
 	make sure the constructor throws an exception.
     **/
     private void testConstructorError(String msg) {
-	logger.info("checking bad message: " + msg);
+	logger.info("checking bad message: {}", msg);
 	boolean threwOk = false;
 	try {
 	    new HostPortList(msg);

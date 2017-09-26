@@ -34,7 +34,7 @@ public abstract class StreamEngineFactory {
             break;
         case "telnet": {
             TelnetServerAuthentication auth = new TelnetSAuth_A(endpoint, argsForAuth);
-            _log.info("Using authentication Module : " + TelnetSAuth_A.class);
+            _log.info("Using authentication Module : {}", TelnetSAuth_A.class);
             engine = new TelnetStreamEngine(socket, auth);
             break;
         }

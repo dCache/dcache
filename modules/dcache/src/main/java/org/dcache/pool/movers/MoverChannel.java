@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.io.SyncFailedException;
 import java.nio.file.OpenOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -17,6 +16,7 @@ import java.util.Set;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.ForwardingRepositoryChannel;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
@@ -27,7 +27,7 @@ import static org.dcache.util.ByteUnit.MiB;
 /**
  * A wrapper for RepositoryChannel adding features used by movers.
  */
-public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
+public class MoverChannel<T extends ProtocolInfo> extends ForwardingRepositoryChannel
 {
     private static final Logger _logSpaceAllocation =
         LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
@@ -114,9 +114,8 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     }
 
     @Override
-    public long position() throws IOException
-    {
-        return _channel.position();
+    protected RepositoryChannel delegate() {
+        return _channel;
     }
 
     @Override
@@ -125,18 +124,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     {
         _channel.position(position);
         return this;
-    }
-
-    @Override
-    public long size() throws IOException
-    {
-        return _channel.size();
-    }
-
-    @Override
-    public void sync() throws SyncFailedException, IOException
-    {
-        _channel.sync();
     }
 
     @Override
@@ -155,12 +142,6 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     {
         _lastTransferred.set(System.currentTimeMillis());
         _channel.close();
-    }
-
-    @Override
-    public boolean isOpen()
-    {
-        return _channel.isOpen();
     }
 
     @Override

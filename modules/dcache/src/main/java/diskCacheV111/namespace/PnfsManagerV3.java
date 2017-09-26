@@ -37,7 +37,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
@@ -897,8 +896,11 @@ public class PnfsManagerV3
         @Override
         public String call() throws CacheException, NoSuchAlgorithmException
         {
-            Checksum checksum = getChecksum(ROOT, pnfsId, type);
-            return (checksum == null) ? "" : checksum.toString();
+            return getChecksums(ROOT, pnfsId).stream()
+                    .filter(c -> c.getType() == type)
+                    .map(Checksum::toString)
+                    .findAny()
+                    .orElse("");
         }
     }
 
@@ -1013,7 +1015,7 @@ public class PnfsManagerV3
         BlockingQueue<CellMessage> fifo = _fifos[queueId];
         Object[] fifoContent = fifo.toArray();
 
-        _log.warn("PnfsManager thread #" + queueId + " queue dump (" +fifoContent.length+ "):");
+        _log.warn("PnfsManager thread #{} queue dump ({}):", queueId, fifoContent.length);
 
         StringBuilder sb = new StringBuilder();
 
@@ -1023,17 +1025,6 @@ public class PnfsManagerV3
         }
 
         _log.warn( sb.toString() );
-    }
-
-    private Checksum getChecksum(Subject subject, PnfsId pnfsId,
-                                 ChecksumType type)
-        throws CacheException, NoSuchAlgorithmException
-    {
-        ChecksumFactory factory = ChecksumFactory.getFactory(type);
-        FileAttributes attributes =
-            _nameSpaceProvider.getFileAttributes(subject, pnfsId,
-                                                 EnumSet.of(FileAttribute.CHECKSUM));
-        return factory.find(attributes.getChecksums());
     }
 
     private Set<Checksum> getChecksums(Subject subject, PnfsId pnfsId)
@@ -1134,7 +1125,7 @@ public class PnfsManagerV3
     }
 
     public void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage){
-        _log.info("addCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsMessage.getPnfsId());
+        _log.info("addCacheLocation : {} for {}", pnfsMessage.getPoolName(), pnfsMessage.getPnfsId());
         try {
             /* At this point, the file is no longer new and should
              * really have level 2 set. Otherwise we would not be able
@@ -1164,7 +1155,7 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException fnf ) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
         } catch (CacheException e){
-            _log.warn("Exception in addCacheLocation: " + e);
+            _log.warn("Exception in addCacheLocation: {}", e.toString());
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e){
             _log.error("Exception in addCacheLocation", e);
@@ -1176,7 +1167,7 @@ public class PnfsManagerV3
 
     public void clearCacheLocation(PnfsClearCacheLocationMessage pnfsMessage){
         PnfsId pnfsId = pnfsMessage.getPnfsId();
-        _log.info("clearCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsId);
+        _log.info("clearCacheLocation : {} for {}", pnfsMessage.getPoolName(), pnfsId);
         try {
             checkMask(pnfsMessage);
             checkRestriction(pnfsMessage, UPDATE_METADATA);
@@ -1187,7 +1178,7 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException fnf ) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
         } catch (CacheException e){
-            _log.warn("Exception in clearCacheLocation for "+pnfsId+": "+e);
+            _log.warn("Exception in clearCacheLocation for {}: {}", pnfsId, e.toString());
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e){
             _log.error("Exception in clearCacheLocation for "+pnfsId, e);
@@ -1201,7 +1192,7 @@ public class PnfsManagerV3
         Subject subject = pnfsMessage.getSubject();
         try {
             PnfsId pnfsId = populatePnfsId(pnfsMessage);
-            _log.info("get cache locations for " + pnfsId);
+            _log.info("get cache locations for {}", pnfsId);
 
             checkMask(pnfsMessage);
             checkRestriction(pnfsMessage, READ_METADATA);
@@ -1210,7 +1201,7 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException fnf ) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
         } catch (CacheException e){
-            _log.warn("Exception in getCacheLocations: " + e);
+            _log.warn("Exception in getCacheLocations: {}", e.toString());
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e){
             _log.error("Exception in getCacheLocations", e);
@@ -1262,7 +1253,7 @@ public class PnfsManagerV3
                      */
                     attrs = _nameSpaceProvider.getFileAttributes(ROOT, pnfsId, requested);
                 } catch (CacheException e) {
-                    _log.warn("Can't determine storageInfo: " + e);
+                    _log.warn("Can't determine storageInfo: {}", e.toString());
                 }
                 break;
 
@@ -1430,7 +1421,7 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException e) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage());
         } catch (CacheException e) {
-            _log.warn("Failed to delete entry: " + e.getMessage());
+            _log.warn("Failed to delete entry: {}", e.getMessage());
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
             _log.error("Failed to delete entry", e);
@@ -1486,12 +1477,12 @@ public class PnfsManagerV3
 
         try {
             if (globalPath == null) {
-                _log.info("map:  id2path for " + pnfsId);
+                _log.info("map:  id2path for {}", pnfsId);
                 String path = pathfinder(subject, pnfsId);
                 checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(path));
                 pnfsMessage.setGlobalPath(path);
             } else {
-                _log.info("map:  path2id for " + globalPath);
+                _log.info("map:  path2id for {}", globalPath);
                 checkRestriction(pnfsMessage, READ_METADATA, FsPath.create(globalPath));
                 pnfsMessage.setPnfsId(pathToPnfsid(subject, globalPath, shouldResolve));
             }
@@ -1500,7 +1491,7 @@ public class PnfsManagerV3
             pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
         }catch (CacheException ce) {
             pnfsMessage.setFailed(ce.getRc(), ce.getMessage());
-            _log.warn("mapPath: " + ce.getMessage());
+            _log.warn("mapPath: {}", ce.getMessage());
         } catch (RuntimeException e) {
             _log.error("Exception in mapPath (pathfinder) " + e, e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
@@ -2050,7 +2041,7 @@ public class PnfsManagerV3
             return db % _threadGroups;
         }
 
-        _log.info("Path cache miss for " + path);
+        _log.info("Path cache miss for {}", path);
 
         return MathUtils.absModulo(path.hashCode(), _threadGroups);
     }
@@ -2138,7 +2129,7 @@ public class PnfsManagerV3
         } catch (FileNotFoundCacheException e){
             message.setFailed(e.getRc(), e);
         } catch (CacheException e) {
-            _log.warn("Error while retrieving file attributes: " + e.getMessage());
+            _log.warn("Error while retrieving file attributes: {}", e.getMessage());
             message.setFailed(e.getRc(), e);
         } catch (RuntimeException e) {
             _log.error("Error while retrieving file attributes: " + e.getMessage(), e);

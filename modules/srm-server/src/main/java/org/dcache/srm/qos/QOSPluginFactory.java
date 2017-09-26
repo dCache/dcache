@@ -21,7 +21,7 @@ public class QOSPluginFactory {
 								qosPluginClass).asSubclass(QOSPlugin.class);
 				qosPlugin = pluginClass.newInstance();
 				qosPlugin.setSrm(srm);
-				logger.debug("Created new qos plugin of type " + qosPluginClass);
+				logger.debug("Created new qos plugin of type {}", qosPluginClass);
 			} catch (Exception e) {
 				logger.error("Could not create class " + qosPluginClass, e);
 			}

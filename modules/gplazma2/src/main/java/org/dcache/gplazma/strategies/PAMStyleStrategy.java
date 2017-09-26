@@ -137,7 +137,7 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
         }
 
         if(firstRequiredPluginException != null) {
-            logger.info("all session plugins ran, at least one required failed, throwing exception : "+
+            logger.info("all session plugins ran, at least one required failed, throwing exception : {}",
                     firstRequiredPluginException);
             throw firstRequiredPluginException;
         }

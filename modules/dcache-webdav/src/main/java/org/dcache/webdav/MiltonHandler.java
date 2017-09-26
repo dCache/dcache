@@ -2,9 +2,12 @@ package org.dcache.webdav;
 
 import com.google.common.collect.ImmutableList;
 import io.milton.http.Auth;
+import io.milton.http.FileItem;
 import io.milton.http.HttpManager;
+import io.milton.http.RequestParseException;
 import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
+import org.apache.commons.fileupload.FileUploadException;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -24,6 +27,7 @@ import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -90,25 +94,6 @@ public class MiltonHandler
         }
     }
 
-    private void setCORSHeaders (HttpServletRequest request, HttpServletResponse response)
-    {
-        String clientOrigin = request.getHeader("origin");
-        if (Objects.equals(request.getMethod(), "OPTIONS")) {
-            response.setHeader("Access-Control-Allow-Methods", "PUT, POST, DELETE");
-            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Suppress-WWW-Authenticate");
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Origin", clientOrigin);
-            if (_allowedClientOrigins.size() > 1) {
-                response.setHeader("Vary", "Origin");
-            }
-        } else {
-            response.setHeader("Access-Control-Allow-Origin", clientOrigin);
-            if (_allowedClientOrigins.size() > 1) {
-                response.setHeader("Vary", "Origin");
-            }
-        }
-    }
-
     @Override
     public void setCellAddress(CellAddressCore address)
     {
@@ -123,11 +108,13 @@ public class MiltonHandler
         try (CDC ignored = CDC.reset(_myAddress)) {
             Transfer.initSession(false, false);
             ServletContext context = ContextHandler.getCurrentContext();
-            String clientOrigin = request.getHeader("origin");
 
-            boolean isOriginAllow = _allowedClientOrigins.contains(clientOrigin);
-            if (isOriginAllow) {
-                setCORSHeaders(request, response);
+            String clientOrigin = request.getHeader("origin");
+            if (_allowedClientOrigins.contains(clientOrigin)) {
+                response.setHeader("Access-Control-Allow-Origin", clientOrigin);
+                if (_allowedClientOrigins.size() > 1) {
+                    response.setHeader("Vary", "Origin");
+                }
             }
 
             switch (request.getMethod()) {
@@ -135,10 +122,10 @@ public class MiltonHandler
                 response.sendError(501, "Not implemented");
                 break;
             case "OPTIONS":
-                if (isOriginAllow) {
-                    setCORSHeaders(request, response);
-                }
-                break;
+                response.setHeader("Access-Control-Allow-Methods", "PUT, POST, DELETE");
+                response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Suppress-WWW-Authenticate");
+                response.setHeader("Access-Control-Allow-Credentials", "true");
+                // fall through, to allow Milton to add more details.
             default:
                 Subject subject = Subject.getSubject(AccessController.getContext());
                 ServletRequest req = new DcacheServletRequest(request, context);
@@ -166,6 +153,34 @@ public class MiltonHandler
         public DcacheServletRequest(HttpServletRequest request,
                                     ServletContext context) {
             super(request, context);
+        }
+
+        @Override
+        public void parseRequestParameters(Map<String, String> params, Map<String, FileItem> files)
+                throws RequestParseException
+        {
+            /*
+             * io.milton.http.ResourceHandlerHelper#process calls
+             * Request#parseRequestParameters and catches any
+             * RequestParseException thrown.  Unfortunately, it logs this
+             * with a stack-trace, but otherwise ignores such failures.
+             *
+             * See  https://github.com/miltonio/milton2/issues/93 for details.
+             *
+             * As a work-around, such exceptions are caught here and
+             * converted into an unchecked exception that results in
+             * the server responding with a 400 Bad Request.
+             */
+            try {
+                super.parseRequestParameters(params, files);
+            } catch (RequestParseException e) {
+                // Inexplicably, Milton wraps any FileUploadException with a
+                // RequestParseException containing a meaningless message.
+                String message = e.getCause() instanceof FileUploadException
+                    ? e.getCause().getMessage()
+                    : e.getMessage();
+                throw new UncheckedBadRequestException(message, e, null);
+            }
         }
 
         @Override

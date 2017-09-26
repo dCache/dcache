@@ -24,11 +24,13 @@ public class SubnetTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testCreateStringWithInvalidCidrPattern() {
+        assertFalse(Subnet.isValid("something"));
         Subnet.create("something");
     }
 
     @Test
     public void testCreateStringWithValidCidrPatternIPv4() throws UnknownHostException {
+        assertTrue(Subnet.isValid("192.168.0.0/24"));
         Subnet subnet = Subnet.create("192.168.0.0/24");
         assertTrue(subnet.containsHost("192.168.0.1"));
         assertTrue(subnet.contains(forString("192.168.0.1")));
@@ -51,11 +53,13 @@ public class SubnetTest {
 
     @Test(expected=NumberFormatException.class)
     public void testCidrWithInvalidMask() {
+        assertFalse(Subnet.isValid("1.2.3.4/abc"));
         Subnet.create("1.2.3.4/abc");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testCidrWithInvalidAddress() {
+        assertFalse(Subnet.isValid("foobar/22"));
         Subnet.create("foobar/22");
     }
 
@@ -64,96 +68,67 @@ public class SubnetTest {
         Subnet subnet = Subnet.create();
         assertEquals("all", subnet.toString());
 
-        subnet = Subnet.create("::/0");
-        assertEquals("::/0", subnet.toString());
-
-        subnet = Subnet.create("0.0.0.0/0");
-        assertEquals("0.0.0.0/0", subnet.toString());
-
-        subnet = Subnet.create("0.0.0.0/0.0.0.0");
-        assertEquals("0.0.0.0/0", subnet.toString());
-
-        subnet = Subnet.create("192.168.0.0/24");
-        assertEquals("192.168.0.0/24", subnet.toString());
-
-        subnet = Subnet.create("192.168.0.0");
-        assertEquals("192.168.0.0/32", subnet.toString());
-
-        subnet = Subnet.create("192.168.0.0/32");
-        assertEquals("192.168.0.0/32", subnet.toString());
-
-        subnet = Subnet.create("192.168.0.0/255.255.255.255");
-        assertEquals("192.168.0.0/32", subnet.toString());
-
-        subnet = Subnet.create("::1");
-        assertEquals("::1/128", subnet.toString());
-
-        subnet = Subnet.create("2000::00ff:ff00");
-        assertEquals("2000::ff:ff00/128", subnet.toString());
-
-        subnet = Subnet.create("2001:0001::00ff:ff00");
-        assertEquals("2001:1::ff:ff00/128", subnet.toString());
+        testCreateToString("::/0");
+        testCreateToString("0.0.0.0/0");
+        testCreateToString("0.0.0.0/0.0.0.0", "0.0.0.0/0");
+        testCreateToString("192.168.0.0/24");
+        testCreateToString("192.168.0.0", "192.168.0.0/32");
+        testCreateToString("192.168.0.0/32");
+        testCreateToString("192.168.0.0/255.255.255.255", "192.168.0.0/32");
+        testCreateToString("::1", "::1/128");
+        testCreateToString("2000::00ff:ff00", "2000::ff:ff00/128");
+        testCreateToString("2001:0001::00ff:ff00", "2001:1::ff:ff00/128");
 
         // special addresses starting with 2002 are mapped to IPv4
         // using bytes 2 to 5 (starting counting at 0):
-        subnet = Subnet.create("2002:0102:0304::00ff:ff00");
-        assertEquals("1.2.3.4/32", subnet.toString());
-
-        subnet = Subnet.create("2002:0102:0304::00ff:ff00/112");
-        assertEquals("1.2.0.0/16", subnet.toString());
-
-        subnet = Subnet.create("2003::00ff:ff00");
-        assertEquals("2003::ff:ff00/128", subnet.toString());
+        testCreateToString("2002:0102:0304::00ff:ff00", "1.2.3.4/32");
+        testCreateToString("2002:0102:0304::00ff:ff00/112", "1.2.0.0/16");
+        testCreateToString("2003::00ff:ff00", "2003::ff:ff00/128");
 
         // compatible ipv4 addresses:
-        subnet = Subnet.create("::192.168.0.0/120");
-        assertEquals("192.168.0.0/24", subnet.toString());
-
-        subnet = Subnet.create("::c0a8:0/120");
-        assertEquals("192.168.0.0/24", subnet.toString());
-
-        subnet = Subnet.create("::c0a8:1");
-        assertEquals("192.168.0.1/32", subnet.toString());
+        testCreateToString("::192.168.0.0/120", "192.168.0.0/24");
+        testCreateToString("::c0a8:0/120", "192.168.0.0/24");
+        testCreateToString("::c0a8:1", "192.168.0.1/32");
 
         // mapped ipv4 addresses:
-        subnet = Subnet.create("::ffff:192.168.0.0/120");
-        assertEquals("192.168.0.0/24", subnet.toString());
+        testCreateToString("::ffff:192.168.0.0/120", "192.168.0.0/24");
+        testCreateToString("::ffff:192.168.0.0/128", "192.168.0.0/32");
+        testCreateToString("::ffff:192.168.0.0/64", "192.168.0.0/0");
+        testCreateToString("0:0:0::ffff:192.168.0.0/127", "192.168.0.0/31");
+        testCreateToString("0:0:0::ffff:192.168.0.0/128", "192.168.0.0/32");
+        testCreateToString("1234:1234:1234:1234:1234:1234:1234:1234/96",
+                "1234:1234:1234:1234:1234:1234::/96");
+        testCreateToString("1234:1234:1234::1234:1234:1234/96",
+                "1234:1234:1234::1234:0:0/96");
+        testCreateToString("0:11:0:11::1", "0:11:0:11::1/128");
+        testCreateToString("00ff:ff:00ff:00ff:00ff::1", "ff:ff:ff:ff:ff::1/128");
+        testCreateToString("192.168.0.0/255.255.255.0", "192.168.0.0/24");
+        testCreateToString("::ffff:192.168.0.0/128", "192.168.0.0/32");
+    }
 
-        subnet = Subnet.create("::ffff:192.168.0.0/128");
-        assertEquals("192.168.0.0/32", subnet.toString());
+    private void testCreateToString(String source)
+    {
+        assertTrue(Subnet.isValid(source));
+        assertCreateToString(source, source);
+    }
 
-        subnet = Subnet.create("::ffff:192.168.0.0/64");
-        assertEquals("192.168.0.0/0", subnet.toString());
+    private void testCreateToString(String source, String expected)
+    {
+        assertTrue(Subnet.isValid(source));
+        assertTrue(Subnet.isValid(expected));
+        assertCreateToString(source, expected);
+    }
 
-        subnet = Subnet.create("0:0:0::ffff:192.168.0.0/127");
-        assertEquals("192.168.0.0/31", subnet.toString());
-
-        subnet = Subnet.create("0:0:0::ffff:192.168.0.0/128");
-        assertEquals("192.168.0.0/32", subnet.toString());
-
-        subnet = Subnet.create("1234:1234:1234:1234:1234:1234:1234:1234/96");
-        assertEquals("1234:1234:1234:1234:1234:1234::/96", subnet.toString());
-
-        subnet = Subnet.create("1234:1234:1234::1234:1234:1234/96");
-        assertEquals("1234:1234:1234::1234:0:0/96", subnet.toString());
-
-        subnet = Subnet.create("0:11:0:11::1");
-        assertEquals("0:11:0:11::1/128", subnet.toString());
-
-        subnet = Subnet.create("00ff:ff:00ff:00ff:00ff::1");
-        assertEquals("ff:ff:ff:ff:ff::1/128", subnet.toString());
-
-        subnet = Subnet.create("192.168.0.0/255.255.255.0");
-        assertEquals("192.168.0.0/24", subnet.toString());
-
-        subnet = Subnet.create("::ffff:192.168.0.0/128");
-        assertEquals("192.168.0.0/32", subnet.toString());
+    private void assertCreateToString(String source, String expected)
+    {
+        assertEquals(expected, Subnet.create(source).toString());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldThrowExceptionWhenCreateIsCalledWithDocumentationAddress() {
         // special addresses for documentation starting with 2001:db8
         // are mapped to IPv4 and inverted:
+        assertFalse(Subnet.isValid("2001:db8::00ff:ff00"));
         Subnet.create("2001:db8::00ff:ff00");
     }
 
@@ -161,6 +136,7 @@ public class SubnetTest {
     public void shouldThrowExceptionWhenCreateIsCalledWithToredoAddress() {
         // special addresses for documentation starting with 2001:db8
         // are mapped to IPv4 and inverted:
+        assertFalse(Subnet.isValid("2001::00ff:ff00"));
         Subnet.create("2001::00ff:ff00");
     }
 
@@ -176,11 +152,13 @@ public class SubnetTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void shouldThrowExceptionForTooBigMaskForIPv4Address() {
+        assertFalse(Subnet.isValid("0.0.0.0/33"));
         Subnet.create("0.0.0.0/33");
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void shouldThrowExceptionForTooBigMaskForIPv6Address() {
+        assertFalse(Subnet.isValid("::/129"));
         Subnet.create("::/129");
     }
 
@@ -217,6 +195,8 @@ public class SubnetTest {
 
     private boolean matches(String subnetLabel, String ip)
     {
+        assertTrue(Subnet.isValid(subnetLabel));
+        assertTrue(Subnet.isValid(ip));
         Subnet subnet = Subnet.create(subnetLabel);
         InetAddress address;
         try {

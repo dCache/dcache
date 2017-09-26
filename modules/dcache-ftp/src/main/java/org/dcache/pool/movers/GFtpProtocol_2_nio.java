@@ -1,7 +1,6 @@
 package org.dcache.pool.movers;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,17 +20,12 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.FileSystems;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.vehicles.GFtpProtocolInfo;
 import diskCacheV111.vehicles.GFtpTransferStartedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -44,8 +38,6 @@ import dmg.util.Exceptions;
 
 import org.dcache.ftp.data.BlockLog;
 import org.dcache.ftp.data.ConnectionMonitor;
-import org.dcache.ftp.data.DigestThread;
-import org.dcache.ftp.data.DirectDigestThread;
 import org.dcache.ftp.data.FTPException;
 import org.dcache.ftp.data.Mode;
 import org.dcache.ftp.data.ModeE;
@@ -83,9 +75,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /** The minimum number of bytes to increment the space allocation. */
     public static final long SPACE_INC = MiB.toBytes(50);
 
-    /** Key used to extract the read ahead from the domain context. */
-    public static final String READ_AHEAD_KEY = "gsiftpReadAhead";
-
     /**
      * Default block size for mode S. Although mode S is not a block
      * protocol, the block size parameter defines the largest amount
@@ -117,15 +106,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected BlockLog     _blockLog;
 
     /**
-     * If a checksum is requested, this points to the checksum factory
-     * to use.
+     * The checksum algorithms to calculate.
      */
-    protected Set<ChecksumFactory> _checksumFactories;
-
-    /**
-     * If a checksum is requested, this points to the algorithm used.
-     */
-    protected Map<ChecksumType,MessageDigest> _digests = Collections.emptyMap();
+    private EnumSet<ChecksumType> _checksums = EnumSet.noneOf(ChecksumType.class);
 
     /**
      * The role of this transfer in the transaction. Either Sender or
@@ -244,18 +227,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
     }
 
-    /**
-     * Factory for creating a digest thread. May return null if no
-     * checksum type is defined.
-     */
-    protected DigestThread createDigestThread()
-    {
-        if (_digests.isEmpty()) {
-            return null;
-        }
-        return new DirectDigestThread(_fileChannel, _blockLog, _digests);
-    }
-
     @Override
     public String toString() {
         return "SU=" + _spaceUsed + ";SA=" + _reservedSpace + ";S=" + _status;
@@ -273,42 +244,20 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         _role             = role;
         _bytesTransferred = 0;
         _blockLog         = new BlockLog();
-        _fileChannel      = fileChannel;
+        _fileChannel = _checksums.isEmpty()
+                ? fileChannel
+                : new ChecksumChannel(fileChannel, _checksums);
         _allocator        = allocator;
         _reservedSpace    = 0;
         _spaceUsed        = 0;
         _status           = "None";
-        DigestThread digestThread = null;
 
         /* Startup the transfer. The transfer is performed on a single
          * thread, no matter the number of streams.
-         *
-         * Checksum computation is performed on a different
-         * thread. The checksum computation thread is not allowed to
-         * overtake the transfer thread, but we also ensure that the
-         * checksum thread does not fall too far behind. This is to
-         * increase the chance that data has not yet been evicted from
-         * the cache.
          */
         _multiplexer = new Multiplexer();
         try {
             _inProgress = true;
-
-            digestThread = createDigestThread();
-            if (digestThread != null) {
-                Object o = _cell.getDomainContext().get(READ_AHEAD_KEY);
-                if (o != null && ((String)o).length() > 0) {
-                    try {
-                        digestThread.setReadAhead(Long.parseLong((String)o));
-                    } catch (NumberFormatException e) {
-                        _log.error("Failed parsing read ahead: {}", e.getMessage());
-                    }
-                }
-
-                _log.debug("Initiated checksum computation thread");
-                digestThread.start();
-            }
-
             _multiplexer.add(mode);
 
             _log.trace("Entering event loop");
@@ -344,23 +293,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             _log.trace("Left event loop and closing channels");
             _multiplexer.close();
 
-            /* Wait for checksum computation to finish before
-             * returning. Otherwise getActualChecksum() could
-             * possibly return an incomplete checksum.
-             *
-             * REVISIT: If the mover gets killed here, we break out
-             * with an InterruptedException. This is as such not a
-             * major problem, since everything after this point is not
-             * essential for clean up. It is however unfortunate that
-             * the job gets killed because we wait for checksum
-             * computation (in particular because the checksum
-             * computation may be the cause of the timeout if it is
-             * very slow).
-             */
-            if (digestThread != null) {
-                digestThread.join();
-            }
-
             /* Log some useful information about the transfer.
              */
             long amount = getBytesTransferred();
@@ -371,17 +303,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             } else {
                 _log.info("Transfer finished: {} bytes transferred in less than 1 ms", amount);
             }
-        }
-
-        /* REVISIT: Error reporting from the digest thread is not
-         * optimal. In case of errors, they are not detected until
-         * here. It would be better if digestThread could shutdown the
-         * multiplexer. Maybe we should simply embed the DigestThread
-         * class into the Mover.
-         */
-        if (digestThread != null && digestThread.getLastError() != null) {
-            _log.error(digestThread.getLastError().toString());
-            throw digestThread.getLastError();
         }
 
         /* Check that we receive the whole file.
@@ -429,17 +350,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             throw new CacheException(44, "Internal error: Cannot do passive transfer with mover protocol version 1.");
         }
 
-        /* If on transfer checksum calculation is enabled, check if
-         * we have a protocol specific preferred algorithm.
-         */
-        if (_checksumFactories != null) {
-            ChecksumFactory factory = getChecksumFactory(gftpProtocolInfo);
-            if (factory != null) {
-                _checksumFactories = new HashSet<>(Arrays.asList(factory));
-            }
-            _digests = _checksumFactories.stream().collect(Collectors.toMap(f -> f.getType(),
-                                                                            f -> f.create()));
-        }
+        addClientRequestedChecksum(gftpProtocolInfo);
 
         /* We initialise these things early, as the job timeout
          * manager will not kill the job otherwise.
@@ -592,28 +503,17 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         return _lastTransferred;
     }
 
-    /** Part of the ChecksumMover interface. */
-    private ChecksumFactory getChecksumFactory(GFtpProtocolInfo protocol)
+    private void addClientRequestedChecksum(GFtpProtocolInfo protocol)
     {
         String type = protocol.getChecksumType();
-        if (type == null || type.equals("Unknown")) {
-            return null;
+
+        if (type != null && !type.equals("Unknown")) {
+            if (ChecksumType.isValid(type)) {
+                _checksums.add(ChecksumType.getChecksumType(type));
+            } else {
+                _log.error("CRC Algorithm is not supported: {}", type);
+            }
         }
-
-        try {
-            return ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
-        } catch (NoSuchAlgorithmException e) {
-            _log.error("CRC Algorithm is not supported: {}", type);
-        }
-
-        return null;
-    }
-
-    @Override
-    public void enableTransferChecksum(ChecksumType suggestedAlgorithm)
-            throws NoSuchAlgorithmException
-    {
-        _checksumFactories = Sets.newHashSet(ChecksumFactory.getFactory(suggestedAlgorithm));
     }
 
     /** Part of the ChecksumMover interface. */
@@ -628,11 +528,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     @Override
     public Set<Checksum> getActualChecksums()
     {
-        return (_digests.isEmpty())
-                        ? Collections.emptySet() :
-                          _checksumFactories.stream()
-                                            .map(f -> f.create(_digests.get(f.getType()).digest()))
-                                            .collect(Collectors.toSet());
+        return _fileChannel instanceof ChecksumChannel
+                ? ((ChecksumChannel)_fileChannel).getChecksums()
+                : Collections.emptySet();
     }
 
     /** Part of the ConnectionMonitor interface. */
@@ -687,7 +585,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         if (position > _reservedSpace) {
             long additional = Math.max(position - _reservedSpace, SPACE_INC);
             _status = "WaitingForSpace(" + additional + ")";
-            _logSpaceAllocation.debug("ALLOC: " + additional );
+            _logSpaceAllocation.debug("ALLOC: {}", additional );
             _allocator.allocate(additional);
             _status = "None";
             _reservedSpace += additional;
@@ -785,12 +683,15 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             mode.setPartialRetrieveParameters(offset, size);
 
             if (digest.length() > 0) {
-                mover.enableTransferChecksum(ChecksumType.getChecksumType(digest));
+                ChecksumType type = ChecksumType.getChecksumType(digest);
+                fileChannel = new ChecksumChannel(fileChannel, EnumSet.of(type));
             }
 
             mover.transfer(fileChannel, role, mode, null);
-            if (digest.length() > 0) {
-                System.out.println(mover.getActualChecksums());
+
+            if (fileChannel instanceof ChecksumChannel) {
+                Set<Checksum> checksums = ((ChecksumChannel)fileChannel).getChecksums();
+                System.out.println(checksums.stream().map(Checksum::toString).collect(Collectors.joining(", ")));
             }
         } catch (Exception e) {
             e.printStackTrace();

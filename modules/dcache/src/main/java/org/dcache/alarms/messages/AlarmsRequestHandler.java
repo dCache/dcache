@@ -59,13 +59,14 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.messages;
 
-import java.util.ArrayList;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
 import org.dcache.alarms.AlarmPriorityMap;
+import org.dcache.alarms.LogEntry;
 import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.alarms.dao.LogEntryDAO;
@@ -93,7 +94,10 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
                 String type = message.getType();
                 AlarmDAOFilter filter
                                 = AlarmJDOUtils.getFilter(after, before, type);
-                message.setAlarms(new ArrayList<>(access.get(filter)));
+                message.setAlarms(access.get(filter)
+                                        .stream()
+                                        .map(this::setSeverity)
+                                        .collect(Collectors.toList()));
                 reply.reply(message);
             } catch (Exception e) {
                 reply.fail(message, e);
@@ -151,5 +155,10 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
 
     public void setMap(AlarmPriorityMap map) {
         this.map = map;
+    }
+
+    private LogEntry setSeverity(LogEntry entry) {
+        entry.setSeverity(map.getPriority(entry.getType()).getLevel());
+        return entry;
     }
 }

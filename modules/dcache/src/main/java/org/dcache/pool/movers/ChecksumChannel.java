@@ -14,19 +14,16 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-import diskCacheV111.util.ChecksumFactory;
-
+import org.dcache.pool.repository.ForwardingRepositoryChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -40,7 +37,7 @@ import static org.dcache.util.ByteUnit.KiB;
  * on the fly during write as long as all writes are
  * sequential.
  */
-public class ChecksumChannel implements RepositoryChannel
+public class ChecksumChannel extends ForwardingRepositoryChannel
 {
     private static final Logger _log =
             LoggerFactory.getLogger(ChecksumChannel.class);
@@ -52,14 +49,9 @@ public class ChecksumChannel implements RepositoryChannel
     RepositoryChannel _channel;
 
     /**
-     * Factory object for creating digests.
-     */
-    private final Set<ChecksumFactory> _checksumFactories;
-
-    /**
      * Digest used for computing the checksum during write.
      */
-    private final Map<ChecksumType, MessageDigest> _digests;
+    private final List<MessageDigest> _digests;
 
     /**
      * Cached checksum after getChecksums is called the first time.
@@ -117,31 +109,17 @@ public class ChecksumChannel implements RepositoryChannel
     @VisibleForTesting
     ByteBuffer _zerosBuffer = ZERO_BUFFER.duplicate();
 
-    public ChecksumChannel(RepositoryChannel inner,
-                           Set<ChecksumFactory> checksumFactories)
+    public ChecksumChannel(RepositoryChannel inner, Set<ChecksumType> types)
     {
         _channel = inner;
-        _checksumFactories = checksumFactories;
-        _digests = _checksumFactories.stream().collect(Collectors.toMap(f -> f.getType(),
-                                                                        f -> f.create()));
+        _digests = types.stream()
+                .map(t -> t.createMessageDigest())
+                .collect(Collectors.toList());
     }
 
     @Override
-    public long position() throws IOException
-    {
-        return _channel.position();
-    }
-
-    @Override
-    public SeekableByteChannel position(long position) throws IOException
-    {
-        return _channel.position(position);
-    }
-
-    @Override
-    public long size() throws IOException
-    {
-        return _channel.size();
+    protected RepositoryChannel delegate() {
+        return _channel;
     }
 
     @Override
@@ -162,31 +140,6 @@ public class ChecksumChannel implements RepositoryChannel
         } finally {
             _ioStateReadLock.unlock();
         }
-    }
-
-    @Override
-    public int read(ByteBuffer buffer, long position) throws IOException
-    {
-        return _channel.read(buffer, position);
-    }
-
-    @Override
-    public SeekableByteChannel truncate(long size) throws IOException
-    {
-        return _channel.truncate(size);
-    }
-
-    @Override
-    public void sync() throws IOException
-    {
-        _channel.sync();
-    }
-
-    @Override
-    public long transferTo(long position, long count,
-                           WritableByteChannel target) throws IOException
-    {
-        return _channel.transferTo(position, count, target);
     }
 
     @Override
@@ -245,37 +198,6 @@ public class ChecksumChannel implements RepositoryChannel
         return write(srcs, 0, srcs.length);
     }
 
-    @Override
-    public boolean isOpen()
-    {
-        return _channel.isOpen();
-    }
-
-    @Override
-    public void close() throws IOException
-    {
-        _channel.close();
-    }
-
-    @Override
-    public long read(ByteBuffer[] dsts, int offset, int length)
-            throws IOException
-    {
-        return _channel.read(dsts, offset, length);
-    }
-
-    @Override
-    public long read(ByteBuffer[] dsts) throws IOException
-    {
-        return _channel.read(dsts);
-    }
-
-    @Override
-    public int read(ByteBuffer dst) throws IOException
-    {
-        return _channel.read(dst);
-    }
-
     /**
      * @return final checksum of this channel
      */
@@ -314,9 +236,9 @@ public class ChecksumChannel implements RepositoryChannel
                         feedZerosToDigesterForRangeGaps();
                     }
 
-                    return _checksumFactories.stream().map(e -> e.create(_digests.get(e.getType())
-                                                                                        .digest()))
-                                                      .collect(Collectors.toSet());
+                    return _digests.stream()
+                            .map(Checksum::new)
+                            .collect(Collectors.toSet());
                 } catch (IOException e) {
                     _log.info("Unable to generate checksum of sparse file: {}", e.toString());
                     return Collections.emptySet();
@@ -420,9 +342,7 @@ public class ChecksumChannel implements RepositoryChannel
             // update offset prior digest calculation as digests#update will update position in the buffer
             _nextChecksumOffset += buffer.remaining();
 
-            _digests.values().stream().forEach(d -> {
-                d.update(buffer.duplicate());
-            });
+            _digests.forEach(d -> d.update(buffer.duplicate()));
 
             long expectedOffsetAfterRead = _nextChecksumOffset + bytesToRead;
             try
@@ -439,9 +359,7 @@ public class ChecksumChannel implements RepositoryChannel
 
                     _readBackBuffer.flip();
 
-                    _digests.values().stream().forEach(d -> {
-                        d.update(_readBackBuffer.duplicate());
-                    });
+                    _digests.forEach(d -> d.update(_readBackBuffer.duplicate()));
 
                     bytesToRead -= lastBytesRead;
                     _nextChecksumOffset += lastBytesRead;

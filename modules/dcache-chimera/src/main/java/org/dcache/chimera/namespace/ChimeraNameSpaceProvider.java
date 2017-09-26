@@ -1,7 +1,6 @@
 package org.dcache.chimera.namespace;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -28,6 +27,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -90,7 +90,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.nullToEmpty;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
+
 import org.dcache.chimera.FileState;
+
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 
@@ -1089,14 +1091,20 @@ public class ChimeraNameSpaceProvider
             }
 
             if (attr.isDefined(FileAttribute.CHECKSUM)) {
-                for (Checksum sum: attr.getChecksums()) {
-                    ChecksumType type = sum.getType();
-                    String value = sum.getValue();
-                    Optional<Checksum> existingSum = Checksum.forType(_fs.getInodeChecksums(inode),type);
-                    if (!existingSum.isPresent()) {
-                        _fs.setInodeChecksum(inode, type.getType(), value);
-                    } else if (!existingSum.get().equals(sum)) {
-                        throw new FileCorruptedCacheException(existingSum.asSet(), Collections.singleton(new Checksum(type, value)));
+                for (Checksum newChecksum: attr.getChecksums()) {
+                    ChecksumType type = newChecksum.getType();
+
+                    Optional<Checksum> existingChecksum = _fs.getInodeChecksums(inode).stream()
+                            .filter(c -> c.getType() == type)
+                            .findFirst();
+
+                    if (existingChecksum.isPresent()) {
+                        Checksum existing = existingChecksum.get();
+                        if (!existing.equals(newChecksum)) {
+                            throw new FileCorruptedCacheException(existing, newChecksum);
+                        }
+                    } else {
+                        _fs.setInodeChecksum(inode, type.getType(), newChecksum.getValue());
                     }
                 }
             }

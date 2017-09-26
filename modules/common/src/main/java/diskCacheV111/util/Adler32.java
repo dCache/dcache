@@ -10,10 +10,10 @@
 package diskCacheV111.util;
 
 
+import com.google.common.io.BaseEncoding;
+
 import java.io.FileInputStream;
 import java.security.MessageDigest;
-
-import org.dcache.util.Checksum;
 
 import static org.dcache.util.ByteUnit.KiB;
 
@@ -131,7 +131,7 @@ public class Adler32 extends MessageDigest
        started = System.currentTimeMillis() - started ;
        in.close() ;
        byte [] digest = adler.digest() ;
-       System.out.println("Adler : ("+sum+") "+Checksum.bytesToHexString(digest) ) ;
+       System.out.println("Adler : (" + sum + ") " + BaseEncoding.base16().lowerCase().encode(digest));
        System.out.println("Done in "+started+" milli seconds" ) ;
        System.exit(0);
    }

@@ -272,7 +272,7 @@ public class TerapathsPlugin implements QOSPlugin {
                                             .getBandwidth()
                                             .getBandwidth();
 
-                                    logger.debug("Submitted qos request " + tpTicket.id);
+                                    logger.debug("Submitted qos request {}", tpTicket.id);
                                     successFlag = true;
                                     break;
                                 }
@@ -307,15 +307,15 @@ public class TerapathsPlugin implements QOSPlugin {
 		//	Date now = new Date();
 		//	long now = now.getTime();
 		//	long timeLeft = tpTicket.endTime - now;
-		//	logger.debug("End time="+(tpTicket.endTime/1000)+"s now="+(now/1000)+"s expires in "+(timeLeft/1000)+"s");
+		//	logger.debug("End time={}s now={}s expires in {}s", (tpTicket.endTime/1000), (now/1000), (timeLeft/1000));
 		//	long transferTimeLeft = 0;
 		//	if (tpTicket.bytes!=-1 && tpTicket.bandwidth!=-1)
 		//		transferTimeLeft = tpTicket.bytes/(tpTicket.bandwidth*8); // TODO: change bytes to remaining bytes
 		//	if (timeLeft - transferTime < 0)
-		//		logger.debug("AM: will extend end time by "+extendTime);
+		//		logger.debug("AM: will extend end time by {}", extendTime);
 		//	else
 		//		logger.debug("AM: no need to extend end time");
-		//	logger.debug("Ticket "+tpTicket.id+" enabled");
+		//	logger.debug("Ticket {} enabled", tpTicket.id);
 		//}
 	}
 

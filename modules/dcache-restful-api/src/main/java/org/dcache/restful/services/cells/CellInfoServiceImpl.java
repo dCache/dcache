@@ -61,19 +61,18 @@ package org.dcache.restful.services.cells;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.util.command.Command;
-import org.dcache.restful.services.admin.CellDataCollectingService;
+import org.dcache.cells.json.CellData;
 import org.dcache.restful.util.admin.ReadWriteData;
 import org.dcache.restful.util.cells.CellInfoCollector;
 import org.dcache.restful.util.cells.CellInfoFutureProcessor;
-import org.dcache.restful.util.cells.ListenableFutureWrapper;
-import org.dcache.cells.json.CellData;
+import org.dcache.services.collector.CellDataCollectingService;
+import org.dcache.util.collector.ListenableFutureWrapper;
 
 /**
  * <p>Responsible for serving up data from the cache.</p>
@@ -134,7 +133,11 @@ public class CellInfoServiceImpl extends
     public CellData getCellData(String address) {
         CellData cached = cache.read(address);
         if (cached == null) {
-            throw new NoSuchElementException(address);
+            cached = new CellData();
+            String[] key = address.split("@");
+            cached.setCellName(key[0]);
+            cached.setDomainName(key[1]);
+            cached.setState(4); // "Unknown"
         }
         return cached;
     }

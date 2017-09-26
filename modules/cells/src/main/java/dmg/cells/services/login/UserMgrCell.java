@@ -98,7 +98,7 @@ public class       UserMgrCell
       Serializable answer;
 
       try{
-         _log.info( "Message : "+obj.getClass() ) ;
+         _log.info( "Message : {}", obj.getClass() ) ;
          if( ( ! ( obj instanceof Object [] ) ) ||
              (  ((Object[])obj).length < 3 )    ||
              ( !((Object[])obj)[0].equals("request") ) ){
@@ -138,7 +138,7 @@ public class       UserMgrCell
       try{
          sendMessage( msg ) ;
       }catch( RuntimeException ioe ){
-         _log.warn( "Can't send acl_response : "+ioe ) ;
+         _log.warn( "Can't send acl_response : {}", ioe.toString() ) ;
       }
   }
   private String createMethodName( String com ){

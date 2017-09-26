@@ -64,7 +64,7 @@ Send Request to All Listed Sites
     \                   ${Path}=                Get From Dictionary  ${entry}                Path
     \                   ${AuthValue}=           Get From Dictionary  ${entry}                AuthValue
     \                   ${ExceptedStatusCode}=  Get From Dictionary  ${entry}                ExceptedStatusCode
-    \                   Create Session          rest                 ${SiteName}             auth=${AuthValue}
+    \                   Create Session          rest                 ${SiteName}             auth=${AuthValue}    verify=${TRUSTSTORE}
     \                   ${resp}=                Get Request          rest                    ${Path}
     \                   Should Be Equal As Strings                   ${resp.status_code}     ${ExceptedStatusCode}
 

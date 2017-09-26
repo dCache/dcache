@@ -69,9 +69,9 @@ import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -139,17 +139,28 @@ public class FileOperationHandler {
 
     private CellStub                  pinManager;
     private CellStub                  pools;
-    private ExecutorService           taskService;
-    private ScheduledExecutorService  scheduledService;
+    private ScheduledExecutorService  taskService;
+    private ScheduledExecutorService  migrationTaskService;
     private FileTaskCompletionHandler completionHandler;
     private InaccessibleFileHandler   inaccessibleFileHandler;
 
-    public ExecutorService getTaskService() {
+    private long        launchDelay       =  0L;
+    private TimeUnit    launchDelayUnit   = TimeUnit.SECONDS;
+
+    public ScheduledExecutorService getTaskService() {
         return taskService;
     }
 
     public ScheduledExecutorService getRemoveService() {
-        return scheduledService;
+        return migrationTaskService;
+    }
+
+    public long getLaunchDelay() {
+       return launchDelay;
+    }
+
+    public TimeUnit getLaunchDelayUnit() {
+        return launchDelayUnit;
     }
 
     public void handleBrokenFileLocation(PnfsId pnfsId, String pool) {
@@ -255,13 +266,19 @@ public class FileOperationHandler {
      */
     public boolean handleScannedLocation(FileUpdate data, Integer storageUnit)
                     throws CacheException {
-        LOGGER.trace("handleScannedLocation {}", data);
+        LOGGER.debug("handleScannedLocation {}", data);
 
         /*
-         * These must be true during a pool scan.
+         * Prefetch all necessary file attributes, including current locations.
          */
+        if (!data.validateAttributes(namespace)) {
+            /*
+             * Could be the result of deletion from namespace during the scan.
+             */
+            return false;
+        }
+
         data.verifyPoolGroup(poolInfoMap);
-        data.validateAttributes(namespace);
 
         /*
          *  Determine if action needs to be taken.
@@ -270,7 +287,7 @@ public class FileOperationHandler {
             return false;
         }
 
-        LOGGER.trace("handleLocationUpdate, update to be registered: {}", data);
+        LOGGER.debug("handleScannedLocation, update to be registered: {}", data);
         return fileOpMap.register(data);
     }
 
@@ -309,7 +326,7 @@ public class FileOperationHandler {
                         pools,
                         null,   // PnfsManager cell stub not used
                         pinManager,
-                        scheduledService,
+                        migrationTaskService,
                         taskSelectionStrategy,
                         list,
                         false,  // eager; update should not happen
@@ -389,28 +406,40 @@ public class FileOperationHandler {
         try {
             namespace.refreshLocations(attributes);
         } catch (CacheException e) {
-            CacheException exception = CacheExceptionUtils.getCacheException(
-                            CacheException.DEFAULT_ERROR_CODE,
+            CacheException exception = CacheExceptionUtils.getCacheException(e.getRc(),
                             FileTaskCompletionHandler.VERIFY_FAILURE_MESSAGE,
                             pnfsId, null, e.getCause());
             completionHandler.taskFailed(pnfsId, exception);
             return Type.VOID;
         }
 
-        Collection<String> locations
-                        = poolInfoMap.getMemberLocations(gindex,
-                                                         attributes.getLocations());
+        Collection<String> locations = attributes.getLocations();
+
+        LOGGER.trace("handleVerification {}, locations from namespace: {}",
+                     pnfsId, locations);
+
         /*
-         * Once again, if all the locations are pools now missing
-         * from the group, this is a NOP.
+         * Somehow, all the cache locations for this file have been removed.
          */
         if (locations.isEmpty()) {
+            return inaccessibleFileHandler.handleNoLocationsForFile(operation);
+        }
+
+        locations = poolInfoMap.getMemberLocations(gindex, locations);
+
+        LOGGER.trace("handleVerification {}, valid group member locations {}",
+                     pnfsId, locations);
+
+        /*
+         * If all the locations are pools no longer belonging to the group,
+         * the operation should be voided.
+         */
+        if (locations.isEmpty()) {
+            fileOpMap.voidOperation(pnfsId);
             return Type.VOID;
         }
 
-        LOGGER.trace("handleVerification {}, locations {}", pnfsId, locations);
-
-         /*
+        /*
          *  If we have arrived here, we are expecting there to be an
          *  available source file.  So we need the strictly readable
          *  locations, not just "countable" ones.
@@ -451,6 +480,14 @@ public class FileOperationHandler {
         this.inaccessibleFileHandler = inaccessibleFileHandler;
     }
 
+    public void setLaunchDelay(long launchDelay) {
+        this.launchDelay = launchDelay;
+    }
+
+    public void setLaunchDelayUnit(TimeUnit launchDelayUnit) {
+        this.launchDelayUnit = launchDelayUnit;
+    }
+
     public void setLocationSelector(LocationSelector locationSelector) {
         this.locationSelector = locationSelector;
     }
@@ -471,11 +508,11 @@ public class FileOperationHandler {
         this.pools = pools;
     }
 
-    public void setScheduledService(ScheduledExecutorService scheduledService) {
-        this.scheduledService = scheduledService;
+    public void setMigrationTaskService(ScheduledExecutorService migrationTaskService) {
+        this.migrationTaskService = migrationTaskService;
     }
 
-    public void setTaskService(ExecutorService taskService) {
+    public void setTaskService(ScheduledExecutorService taskService) {
         this.taskService = taskService;
     }
 
@@ -586,7 +623,7 @@ public class FileOperationHandler {
         }
 
         Serializable exception = msg.getErrorObject();
-        if (exception != null && !CacheExceptionUtils.fileNotFound(exception)) {
+        if (exception != null && !CacheExceptionUtils.replicaNotFound(exception)) {
             throw CacheExceptionUtils.getCacheException(
                             CacheException.SELECTED_POOL_FAILED,
                             FileTaskCompletionHandler.FAILED_REMOVE_MESSAGE,
