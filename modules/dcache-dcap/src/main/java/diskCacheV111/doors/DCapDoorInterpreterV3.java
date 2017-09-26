@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.security.auth.Subject;
 
+import java.util.concurrent.TimeUnit;
+
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.AccessLatency;
@@ -1072,10 +1074,11 @@ public class DCapDoorInterpreterV3
         protected void askForFileAttributes()
             throws IllegalArgumentException
         {
-            setTimer(60 * 1000);
+            long timeout = TimeUnit.MINUTES.toMillis(1);
+            setTimer(timeout);
 
             _log.debug("Requesting file attributes for {}", _message);
-            _pnfs.send(_message);
+            _pnfs.send(_message, timeout);
             setStatus("WaitingForPnfs");
         }
 
@@ -1996,9 +1999,17 @@ public class DCapDoorInterpreterV3
             getPoolMessage.setId(_sessionId);
             try {
                 if (_isHsmRequest) {
-                    _cell.sendMessage(new CellMessage(_settings.getHsmManager(), getPoolMessage));
+                    CellMessage envelope = new CellMessage(_settings.getHsmManager(), getPoolMessage);
+                    if (_settings.getPoolRetry() > 0) {
+                        envelope.setTtl(_settings.getPoolRetry());
+                    }
+                    _cell.sendMessage(envelope);
                 } else {
-                    _poolMgrStub.send(getPoolMessage);
+                    if (_settings.getPoolRetry() > 0) {
+                        _poolMgrStub.send(getPoolMessage, _settings.getPoolRetry());
+                    } else {
+                        _poolMgrStub.send(getPoolMessage);
+                    }
                 }
             } catch (RuntimeException ie) {
                 sendReply( "fileAttributesAvailable" , 2 ,
