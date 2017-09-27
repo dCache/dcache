@@ -59,25 +59,46 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.resources.pool;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONException;
+
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
 
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PoolModifyModeMessage;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.restful.providers.pool.PoolGroupInfo;
 import org.dcache.restful.providers.pool.PoolInfo;
+import org.dcache.restful.providers.pool.PoolKillMover;
+import org.dcache.restful.providers.pool.PoolModeUpdate;
 import org.dcache.restful.services.pool.PoolInfoService;
 import org.dcache.restful.util.HttpServletRequests;
 import org.dcache.restful.util.ServletContextHandlerAttributes;
+
+import static org.dcache.restful.providers.SuccessfulResponse.successfulResponse;
 
 /**
  * <p>RESTful API to the {@link PoolInfoService} service.</p>
@@ -91,29 +112,6 @@ public final class PoolInfoResources {
 
     @Context
     HttpServletRequest request;
-
-    /**
-     * <p>Get a list of current pools.</p>
-     *
-     * @param group limit the list to this pool group
-     * @return names of pools in system, or in the specified group, if specified
-     * @throws CacheException
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public String[] getPools(@QueryParam("group") String group)
-                    throws CacheException {
-        /*
-         *  Allow pools and pool groups to be listed without privileges.
-         */
-        if (group == null) {
-            return ServletContextHandlerAttributes.getPoolInfoService(ctx)
-                                                  .listPools();
-        }
-
-        return ServletContextHandlerAttributes.getPoolInfoService(ctx)
-                                              .listPools(group);
-    }
 
     /**
      * @return a list of pool group names
@@ -131,119 +129,10 @@ public final class PoolInfoResources {
     }
 
     /**
-     * <p>Main request for pool info.  The returned object is populated
-     *    according to the parameter options.</p>
-     *
-     * @param poolName  the pool in question
-     * @param pnfsid    if not <code>null</code>, include repository info for
-     *                  this file
-     * @param isInfo    if true, include extended (diagnostic) cell info
-     * @param isFilestat if true, include file lifetime histograms
-     * @param isQueuestat if true, include queue histograms
-     * @param isMovers if true, include list of movers (excluding p2ps)
-     * @param isP2ps if true, include list of server and client p2ps
-     * @param isFlush if true, include list of store/flush requests
-     * @param isStage if true, include list of restore/stage requests
-     * @param isRemove if true, include list of remove requests
-     * @return the info object populated with the requested data
-     * @throws CacheException
-     */
-    @GET
-    @Path("{name : .*}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public PoolInfo getPoolInfo(
-                    @PathParam("name") String poolName,
-                    @QueryParam("pnfsid") PnfsId pnfsid,
-                    @DefaultValue("false")
-                    @QueryParam("info") boolean isInfo,
-                    @DefaultValue("false")
-                    @QueryParam("filestat") boolean isFilestat,
-                    @DefaultValue("false")
-                    @QueryParam("queuestat") boolean isQueuestat,
-                    @DefaultValue("false")
-                    @QueryParam("movers") boolean isMovers,
-                    @DefaultValue("false")
-                    @QueryParam("p2ps") boolean isP2ps,
-                    @DefaultValue("false")
-                    @QueryParam("flush") boolean isFlush,
-                    @DefaultValue("false")
-                    @QueryParam("stage") boolean isStage,
-                    @DefaultValue("false")
-                    @QueryParam("remove") boolean isRemove)throws CacheException {
-        PoolInfoService service
-                        = ServletContextHandlerAttributes.getPoolInfoService(ctx);
-        PoolInfo info = new PoolInfo();
-
-        /*
-         *  Allow histograms to be seen without privileges
-         */
-        if (isFilestat) {
-            service.getFileStat(poolName, info);
-        }
-
-        if (isQueuestat) {
-            service.getQueueStat(poolName, info);
-        }
-
-        boolean isAdmin = HttpServletRequests.isAdmin(request);
-
-        if (isInfo) {
-            if (!isAdmin) {
-                throw new ForbiddenException("Pool info only accessible to admin users.");
-            }
-            service.getDiagnosticInfo(poolName, info);
-        }
-
-        if (pnfsid != null) {
-            if (!isAdmin) {
-                throw new ForbiddenException("Repository info only accessible to admin users.");
-            }
-            service.getCacheInfo(poolName, pnfsid, info);
-        }
-
-        if (isMovers) {
-            if (!isAdmin) {
-                throw new ForbiddenException("Mover info only accessible to admin users.");
-            }
-            service.getMovers(poolName, info);
-        }
-
-        if (isP2ps) {
-            if (!isAdmin) {
-                throw new ForbiddenException("P2P info only accessible to admin users.");
-            }
-            service.getP2p(poolName, info);
-        }
-
-        if (isFlush) {
-            if (!isAdmin) {
-                throw new ForbiddenException("Flush info only accessible to admin users.");
-            }
-            service.getFlush(poolName, info);
-        }
-
-        if (isStage) {
-            if (!isAdmin) {
-                throw new ForbiddenException("Stage info only accessible to admin users.");
-            }
-            service.getStage(poolName, info);
-        }
-
-        if (isRemove) {
-            if (!isAdmin) {
-                throw new ForbiddenException("Remove info only accessible to admin users.");
-            }
-            service.getRemove(poolName, info);
-        }
-
-        return info;
-    }
-
-    /**
      * <p>Request for data aggregated by pool group.</p>
      *
-     * @param groupName of pool group; 'ALL'/'all' is reserved to mean all pools
-     * @param isFilestat if true, include file lifetime histograms
+     * @param groupName   of pool group; 'ALL'/'all' is reserved to mean all pools
+     * @param isFilestat  if true, include file lifetime histograms
      * @param isQueuestat if true, include queue histograms
      * @return the object populated with lists of the requested histograms
      * @throws CacheException
@@ -286,25 +175,245 @@ public final class PoolInfoResources {
 
         if (isCellInfo) {
             if (!isAdmin) {
-                throw new ForbiddenException("Cell Info accessible to admin users.");
+                throw new ForbiddenException(
+                                "Cell Info accessible to admin users.");
             }
             service.getGroupCellInfos(groupName, info);
         }
 
         if (isQueueInfo) {
             if (!isAdmin) {
-                throw new ForbiddenException("Cell Info accessible to admin users.");
+                throw new ForbiddenException(
+                                "Cell Info accessible to admin users.");
             }
             service.getGroupQueueInfos(groupName, info);
         }
 
         if (isSpaceInfo) {
             if (!isAdmin) {
-                throw new ForbiddenException("Cell Info accessible to admin users.");
+                throw new ForbiddenException(
+                                "Cell Info accessible to admin users.");
             }
             service.getGroupSpaceInfos(groupName, info);
         }
 
         return info;
+    }
+
+    /**
+     * <p>Main request for pool info.  The returned object is populated
+     * according to the parameter options.</p>
+     *
+     * @param poolName    the pool in question
+     * @param pnfsid      if not <code>null</code>, include repository info for
+     *                    this file
+     * @param isInfo      if true, include extended (diagnostic) cell info
+     * @param isFilestat  if true, include file lifetime histograms
+     * @param isQueuestat if true, include queue histograms
+     * @param isMovers    if true, include list of movers (excluding p2ps)
+     * @param isP2ps      if true, include list of server and client p2ps
+     * @param isFlush     if true, include list of store/flush requests
+     * @param isStage     if true, include list of restore/stage requests
+     * @param isRemove    if true, include list of remove requests
+     * @return the info object populated with the requested data
+     * @throws CacheException
+     */
+    @GET
+    @Path("{name : .*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PoolInfo getPoolInfo(
+                    @PathParam("name") String poolName,
+                    @QueryParam("pnfsid") PnfsId pnfsid,
+                    @DefaultValue("false")
+                    @QueryParam("info") boolean isInfo,
+                    @DefaultValue("false")
+                    @QueryParam("filestat") boolean isFilestat,
+                    @DefaultValue("false")
+                    @QueryParam("queuestat") boolean isQueuestat,
+                    @DefaultValue("false")
+                    @QueryParam("movers") boolean isMovers,
+                    @DefaultValue("false")
+                    @QueryParam("p2ps") boolean isP2ps,
+                    @DefaultValue("false")
+                    @QueryParam("flush") boolean isFlush,
+                    @DefaultValue("false")
+                    @QueryParam("stage") boolean isStage,
+                    @DefaultValue("false")
+                    @QueryParam("remove") boolean isRemove)
+                    throws CacheException {
+        PoolInfoService service
+                        = ServletContextHandlerAttributes.getPoolInfoService(
+                        ctx);
+        PoolInfo info = new PoolInfo();
+
+        /*
+         *  Allow histograms to be seen without privileges
+         */
+        if (isFilestat) {
+            service.getFileStat(poolName, info);
+        }
+
+        if (isQueuestat) {
+            service.getQueueStat(poolName, info);
+        }
+
+        boolean isAdmin = HttpServletRequests.isAdmin(request);
+
+        if (isInfo) {
+            if (!isAdmin) {
+                throw new ForbiddenException(
+                                "Pool info only accessible to admin users.");
+            }
+            service.getDiagnosticInfo(poolName, info);
+        }
+
+        if (pnfsid != null) {
+            if (!isAdmin) {
+                throw new ForbiddenException(
+                                "Repository info only accessible to admin users.");
+            }
+            service.getCacheInfo(poolName, pnfsid, info);
+        }
+
+        if (isMovers) {
+            if (!isAdmin) {
+                throw new ForbiddenException(
+                                "Mover info only accessible to admin users.");
+            }
+            service.getMovers(poolName, info);
+        }
+
+        if (isP2ps) {
+            if (!isAdmin) {
+                throw new ForbiddenException(
+                                "P2P info only accessible to admin users.");
+            }
+            service.getP2p(poolName, info);
+        }
+
+        if (isFlush) {
+            if (!isAdmin) {
+                throw new ForbiddenException(
+                                "Flush info only accessible to admin users.");
+            }
+            service.getFlush(poolName, info);
+        }
+
+        if (isStage) {
+            if (!isAdmin) {
+                throw new ForbiddenException(
+                                "Stage info only accessible to admin users.");
+            }
+            service.getStage(poolName, info);
+        }
+
+        if (isRemove) {
+            if (!isAdmin) {
+                throw new ForbiddenException(
+                                "Remove info only accessible to admin users.");
+            }
+            service.getRemove(poolName, info);
+        }
+
+        return info;
+    }
+
+    /**
+     * <p>Get a list of current pools.</p>
+     *
+     * @param group limit the list to this pool group
+     * @return names of pools in system, or in the specified group, if specified
+     * @throws CacheException
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public String[] getPools(@QueryParam("group") String group)
+                    throws CacheException {
+        /*
+         *  Allow pools and pool groups to be listed without privileges.
+         */
+        if (group == null) {
+            return ServletContextHandlerAttributes.getPoolInfoService(ctx)
+                                                  .listPools();
+        }
+
+        return ServletContextHandlerAttributes.getPoolInfoService(ctx)
+                                              .listPools(group);
+    }
+
+    /**
+     * <p>Request to update the indicated pool to either enabled or disabled.</p>
+     *
+     * @param requestPayload containing the object with updated fields.
+     */
+    @POST
+    @Path("movers")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response killMovers(String requestPayload) throws
+                    CacheException {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Pool command only accessible to admin users.");
+        }
+
+        try {
+            PoolKillMover update = new ObjectMapper().readValue(requestPayload,
+                                                                PoolKillMover.class);
+            String pool = update.getPool();
+            Message message;
+            Integer moverId = update.getMoverId();
+            if (moverId != null) {
+                message = new PoolMoverKillMessage(pool, moverId,
+                                                   update.getReason());
+                ServletContextHandlerAttributes.getPoolStub(ctx)
+                                               .sendAndWait(new CellPath(pool),
+                                                            message);
+            }
+        } catch (JSONException | IllegalArgumentException | JsonParseException
+                        | JsonMappingException e) {
+            throw new BadRequestException(e);
+        } catch (IOException | InterruptedException | NoRouteToCellException e) {
+            throw new InternalServerErrorException(e);
+        }
+
+        return successfulResponse(Response.Status.OK);
+    }
+
+    /**
+     * <p>Request to update the indicated pool to either enabled or disabled.</p>
+     *
+     * @param requestPayload containing the object with updated fields.
+     */
+    @POST
+    @Path("mode")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateMode(String requestPayload) throws
+                    CacheException {
+        if (!HttpServletRequests.isAdmin(request)) {
+            throw new ForbiddenException(
+                            "Pool command only accessible to admin users.");
+        }
+
+        try {
+            PoolModeUpdate update
+                            = new ObjectMapper().readValue(requestPayload,
+                                                           PoolModeUpdate.class);
+            String pool = update.getPool();
+            PoolV2Mode mode = new PoolV2Mode(update.mode());
+            mode.setResilienceEnabled(update.isResilience());
+            Message message = new PoolModifyModeMessage(pool, mode);
+            ServletContextHandlerAttributes.getPoolStub(ctx)
+                                           .sendAndWait(new CellPath(pool),
+                                                        message);
+        } catch (JSONException | IllegalArgumentException | JsonParseException
+                        | JsonMappingException e) {
+            throw new BadRequestException(e);
+        } catch (IOException | InterruptedException | NoRouteToCellException e) {
+            throw new InternalServerErrorException(e);
+        }
+
+        return successfulResponse(Response.Status.OK);
     }
 }
