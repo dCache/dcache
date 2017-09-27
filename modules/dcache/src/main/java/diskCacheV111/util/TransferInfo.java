@@ -74,29 +74,27 @@ public class TransferInfo implements Serializable {
     private static final long serialVersionUID = 7303353263666911507L;
 
     protected static String getTimeString(long time, boolean display) {
+        if (!display) {
+            return String.valueOf(time);
+        }
+
         DurationParser durations = new DurationParser(time,
                                                       TimeUnit.MILLISECONDS).parseAll();
 
-        if (display) {
-            return String.format("%d+%02d:%02d:%02d",
-                            durations.get(TimeUnit.DAYS),
-                            durations.get(TimeUnit.HOURS),
-                            durations.get(TimeUnit.MINUTES),
-                            durations.get(TimeUnit.SECONDS));
-        }
+        return String.format("%d+%02d:%02d:%02d",
+                             durations.get(TimeUnit.DAYS),
+                             durations.get(TimeUnit.HOURS),
+                             durations.get(TimeUnit.MINUTES),
+                             durations.get(TimeUnit.SECONDS));
+    }
 
-        if (durations.get(TimeUnit.DAYS) > 0) {
-            return String.format("%d d %02d:%02d:%02d",
-                            durations.get(TimeUnit.DAYS),
-                            durations.get(TimeUnit.HOURS),
-                            durations.get(TimeUnit.MINUTES),
-                            durations.get(TimeUnit.SECONDS));
-        }
+    public enum MoverState {
+        NOTFOUND, STAGING, QUEUED, RUNNING, CANCELED, DONE
+    }
 
-        return String.format("%02d:%02d:%02d",
-                        durations.get(TimeUnit.HOURS),
-                        durations.get(TimeUnit.MINUTES),
-                        durations.get(TimeUnit.SECONDS));
+    public enum TransferField {
+        DOMAIN, PROT, UID, GID, VOMSGROUP, PROC, PNFSID,
+        POOL, HOST, STATUS, STATE, WAITING, MOVER
     }
 
     protected String cellName   = "";
