@@ -85,9 +85,10 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      * Enable access with this mover.
      * @param completionHandler to be called when mover finishes.
      * @return handle to cancel mover if needed
+     * @throws InterruptedException if mover was cancelled
      * @throws DiskErrorCacheException
      */
-    public Cancellable enable(final CompletionHandler<Void,Void> completionHandler) throws DiskErrorCacheException {
+    public Cancellable enable(final CompletionHandler<Void,Void> completionHandler) throws DiskErrorCacheException, InterruptedException {
 
         open();
         _completionHandler = completionHandler;
