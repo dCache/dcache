@@ -18,6 +18,7 @@
 package org.dcache.pool.movers;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -30,6 +31,7 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
 import static com.google.common.base.Preconditions.checkState;
+
 import java.nio.file.StandardOpenOption;
 
 /**
@@ -80,10 +82,11 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
      * about the progress of the transfer.
      *
      * @return an open MoverChannel
+     * @throws InterruptedIOException if the mover was cancelled
      * @throws DiskErrorCacheException if the file could not be opened
      * @throws IllegalStateException if called more than once
      */
-    public synchronized MoverChannel<P> open() throws DiskErrorCacheException
+    public synchronized MoverChannel<P> open() throws DiskErrorCacheException, InterruptedIOException
     {
         checkState(_wrappedChannel == null);
         _wrappedChannel = new MoverChannel<>(this, openChannel(), _allocatorMode);
