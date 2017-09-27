@@ -9,6 +9,8 @@ check frontend.cell.subscribe
 check -strong frontend.net.port
 check -strong frontend.net.listen
 check -strong frontend.service.alarms
+check -strong frontend.service.pool.timeout
+check -strong frontend.service.pool.timeout.unit
 check -strong frontend.service.pnfsmanager
 check -strong frontend.service.pnfsmanager.timeout
 check -strong frontend.service.pnfsmanager.timeout.unit

@@ -56,6 +56,12 @@
       <property name="timeoutUnit" value="${frontend.service.poolmanager.timeout.unit}"/>
   </bean>
 
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
+    <description>Pool communication stub</description>
+    <property name="timeout" value="${frontend.service.pool.timeout}"/>
+    <property name="timeoutUnit" value="${frontend.service.pool.timeout.unit}"/>
+  </bean>
+
   <bean id="login-stub" class="org.dcache.cells.CellStub">
       <description>Login service communication stub</description>
       <property name="destination" value="${frontend.service.gplazma}"/>
@@ -308,7 +314,7 @@
                                                     <map>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).DL}"
                                                                value-ref="list-handler"/>
-                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).CS}"
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PNFS_MANAGER}"
                                                                value-ref="pnfs-stub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).POOL_MANAGER}"
                                                                value-ref="pool-manager-stub"/>
@@ -326,8 +332,10 @@
                                                                value-ref="alarms-info-service"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PI}"
                                                               value-ref="pool-info-service"/>
-                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PinMngStub}"
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PIN_MANAGER}"
                                                                value-ref= "pinManagerStub"/>
+                                                        <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).POOL_STUB}"
+                                                             value-ref= "pool-stub"/>
                                                         <entry key="#{ T(org.dcache.restful.util.ServletContextHandlerAttributes).PathMapper}"
                                                                value-ref= "path-mapper"/>
                                                     </map>
