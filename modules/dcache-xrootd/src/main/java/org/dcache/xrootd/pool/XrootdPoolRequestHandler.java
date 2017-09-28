@@ -52,6 +52,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
+import org.dcache.xrootd.core.XrootdSessionIdentifier;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.AuthenticationRequest;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
@@ -59,6 +60,7 @@ import org.dcache.xrootd.protocol.messages.DirListRequest;
 import org.dcache.xrootd.protocol.messages.EndSessionRequest;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
+import org.dcache.xrootd.protocol.messages.LoginResponse;
 import org.dcache.xrootd.protocol.messages.MkDirRequest;
 import org.dcache.xrootd.protocol.messages.MvRequest;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
@@ -80,6 +82,7 @@ import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
+
 
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
@@ -213,9 +216,9 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg)
-    {
-        return withOk(msg);
+    protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg) {
+        XrootdSessionIdentifier sessionId = new XrootdSessionIdentifier();
+        return new LoginResponse(msg, sessionId, "");
     }
 
     @Override
