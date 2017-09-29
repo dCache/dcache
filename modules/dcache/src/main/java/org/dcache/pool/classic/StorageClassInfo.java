@@ -15,7 +15,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.dcache.pool.nearline.NearlineStorageHandler;
@@ -80,8 +79,6 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
     private long _recentFlushId;
     private int _requestsSubmitted;
     private int _maxRequests;
-    private StorageClassInfoFlushable _callback;
-    private Executor _callbackExecutor;
 
     public StorageClassInfo(NearlineStorageHandler storageHandler, String hsmName,
           String storageClass) {
@@ -117,14 +114,6 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
         _activeCounter--;
         if (_activeCounter <= 0) {
             _activeCounter = 0;
-            if (_callback != null) {
-                CallbackTask task = new CallbackTask(_hsmName, _storageClass, _errorCounter,
-                      _recentFlushId, _requestsSubmitted, _callback);
-                Executor executor = _callbackExecutor;
-                _callbackExecutor = null;
-                _callback = null;
-                return () -> executor.execute(task);
-            }
         }
         return () -> {
         };
@@ -155,45 +144,13 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
         internalFailed(exc, pnfsId).run();
     }
 
-    private static class CallbackTask implements Runnable {
-
-        private final int flushErrorCounter;
-        private final long flushId;
-        private final int requests;
-        private final StorageClassInfoFlushable callback;
-        private final String hsm;
-        private final String storageClass;
-
-        private CallbackTask(String hsm, String storageClass, int flushErrorCounter,
-              long flushId, int requests, StorageClassInfoFlushable callback) {
-            this.flushErrorCounter = flushErrorCounter;
-            this.flushId = flushId;
-            this.requests = requests;
-            this.callback = callback;
-            this.hsm = hsm;
-            this.storageClass = storageClass;
-        }
-
-        @Override
-        public void run() {
-            try {
-                callback.storageClassInfoFlushed(hsm, storageClass, flushId, requests,
-                      flushErrorCounter);
-            } catch (Throwable e) {
-                Thread t = Thread.currentThread();
-                t.getUncaughtExceptionHandler().uncaughtException(t, e);
-            }
-        }
-    }
-
-    public long flush(int maxCount, StorageClassInfoFlushable callback, Executor executor) {
+    public long flush(int maxCount) {
         long id = System.currentTimeMillis();
-        internalFlush(id, maxCount, callback, executor).run();
+        internalFlush(id, maxCount).run();
         return id;
     }
 
-    private synchronized Runnable internalFlush(long id, int maxCount,
-          StorageClassInfoFlushable callback, Executor executor) {
+    private synchronized Runnable internalFlush(long id, int maxCount) {
         LOGGER.info("Flushing {}", this);
 
         if (_activeCounter > 0) {
@@ -211,9 +168,6 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
         _recentFlushId = _lastSubmittedAt = id;
 
         if (maxCount != 0) {
-            _callback = callback;
-            _callbackExecutor = executor;
-
             // REVISIT: why Map.Entry.comparingByValue().thenComparing(Map.Entry.comparingByKey()) doesn't work?!
             Comparator<Map.Entry<PnfsId, Entry>> byPnfsId = Map.Entry.comparingByKey();
             Comparator<Map.Entry<PnfsId, Entry>> byTimeStamp = Map.Entry.comparingByValue();
@@ -227,9 +181,6 @@ public class StorageClassInfo implements CompletionHandler<Void, PnfsId> {
                         .limit(maxCount)
                         .collect(Collectors.toList()),
                   this);
-        } else if (callback != null) {
-            CallbackTask task = new CallbackTask(_hsmName, _storageClass, 0, id, 0, callback);
-            return () -> executor.execute(task);
         }
         return () -> {
         };

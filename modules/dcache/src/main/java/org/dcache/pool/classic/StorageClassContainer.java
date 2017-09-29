@@ -221,13 +221,13 @@ public class StorageClassContainer
                       .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted)
                             .reversed())
                       .limit(flushLimit)
-                      .forEach(i -> i.flush(Integer.MAX_VALUE, null, null));
+                      .forEach(i -> i.flush(Integer.MAX_VALUE));
                 break;
             default:
                 ready.stream()
                       .sorted(Comparator.comparing(StorageClassInfo::getLastSubmitted))
                       .limit(flushLimit)
-                      .forEach(i -> i.flush(Integer.MAX_VALUE, null, null));
+                      .forEach(i -> i.flush(Integer.MAX_VALUE));
                 break;
         }
     }

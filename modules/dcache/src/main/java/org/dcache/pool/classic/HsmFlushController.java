@@ -8,16 +8,12 @@ import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
-import diskCacheV111.vehicles.PoolFlushGainControlMessage;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoAware;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellSetupProvider;
-import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.Reply;
 import dmg.util.Formats;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -158,27 +154,6 @@ public class HsmFlushController
         _flushExecutor.shutdown();
     }
 
-    public synchronized PoolFlushGainControlMessage messageArrived(
-          PoolFlushGainControlMessage gain) {
-        long holdTimer = gain.getHoldTimer();
-        if (holdTimer > 0) {
-            _holdUntil = System.currentTimeMillis() + holdTimer;
-            reschedule();
-        }
-        if (gain.getReplyRequired()) {
-            gain.setCellInfo(getCellInfo());
-            gain.setFlushInfos(_storageQueue.getFlushInfos());
-        }
-        gain.setSucceeded();
-        return gain;
-    }
-
-    public synchronized Reply messageArrived(PoolFlushDoFlushMessage msg) {
-        PrivateFlush flush = new PrivateFlush(msg);
-        _flushExecutor.execute(new FireAndForgetTask(flush));
-        return flush;
-    }
-
     @Override
     public synchronized void printSetup(PrintWriter pw) {
         pw.println("#\n# Flushing Thread setup\n#");
@@ -205,56 +180,6 @@ public class HsmFlushController
                   _future.getDelay(TimeUnit.MILLISECONDS));
         }
         return info;
-    }
-
-    private class PrivateFlush extends DelayedReply implements Runnable, StorageClassInfoFlushable {
-
-        private final PoolFlushDoFlushMessage _flush;
-
-        private PrivateFlush(PoolFlushDoFlushMessage flush) {
-            _flush = flush;
-        }
-
-        @Override
-        public void run() {
-            String hsm = _flush.getHsmName();
-            String storageClass = _flush.getStorageClassName();
-            String composed = storageClass + "@" + hsm;
-
-            try {
-                StorageClassInfo info = _storageQueue.getStorageClassInfo(hsm, storageClass);
-                if (info == null) {
-                    LOGGER.error("Flush failed: No queue for {}", composed);
-                    _flush.setFailed(576, "Flush failed: No queue for " + composed);
-                } else {
-                    int max = _flush.getMaxFlushCount();
-                    long flushId = info.flush((max == 0) ? Integer.MAX_VALUE : max, this,
-                          _flushExecutor);
-                    _flush.setFlushId(flushId);
-                }
-                _flush.setSucceeded();
-            } catch (RuntimeException e) {
-                LOGGER.error("Private flush failed for " + composed
-                      + ". Please report to support@dcache.org", e);
-                _flush.setFailed(576, e);
-            }
-            if (_flush.getReplyRequired()) {
-                reply(_flush);
-            }
-        }
-
-        @Override
-        public void storageClassInfoFlushed(String hsm, String storageClass, long flushId,
-              int requests, int failed) {
-            LOGGER.info("Flushed: {}  {}, id={};R={};f={}", hsm, storageClass, flushId, requests,
-                  failed);
-            if (_flush.getReplyRequired()) {
-                _flush.setCellInfo(getCellInfo());
-                _flush.setFlushInfos(_storageQueue.getFlushInfos());
-                _flush.setResult(requests, failed);
-                reply(_flush);
-            }
-        }
     }
 
     private class FlushTask implements Runnable {
@@ -408,7 +333,7 @@ public class HsmFlushController
                 throw new IllegalArgumentException(
                       "No such storage class: " + storageClass + "@" + hsm);
             }
-            long id = info.flush(count, null, null);
+            long id = info.flush(count);
             return "Flush initiated (id=" + id + ")";
         }
     }
