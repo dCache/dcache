@@ -102,6 +102,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.util.Exceptions;
 import org.dcache.util.PingMoversTask;
@@ -1301,6 +1302,7 @@ public class DcacheResourceFactory
     private static boolean isDigestRequested()
     {
         switch (HttpManager.request().getMethod()) {
+        case PUT:
         case HEAD:
         case GET:
             String wantDigest = ServletRequest.getRequest().getHeader("Want-Digest");
@@ -1364,6 +1366,7 @@ public class DcacheResourceFactory
     private class HttpTransfer extends RedirectedTransfer<String>
     {
         private URI _location;
+        private ChecksumType _wantedChecksum;
         private InetSocketAddress _clientAddressForPool;
         protected HttpProtocolInfo.Disposition _disposition;
 
@@ -1389,7 +1392,8 @@ public class DcacheResourceFactory
                         getCellName(), getCellDomainName(),
                         _path.toString(),
                         _location,
-                        _disposition);
+                        _disposition,
+                        _wantedChecksum);
             protocolInfo.setSessionId((int) getId());
             return protocolInfo;
         }
@@ -1409,6 +1413,11 @@ public class DcacheResourceFactory
         public void setLocation(URI location)
         {
             _location = location;
+        }
+
+        public void setWantedChecksum(ChecksumType type)
+        {
+            _wantedChecksum = type;
         }
 
         public void setProxyTransfer(boolean isProxyTransfer)
@@ -1516,7 +1525,12 @@ public class DcacheResourceFactory
         {
             super(pnfs, subject, restriction, path);
 
-            _mtime = OwncloudClients.parseMTime(ServletRequest.getRequest());
+            HttpServletRequest request = ServletRequest.getRequest();
+
+            _mtime = OwncloudClients.parseMTime(request);
+
+            Checksums.parseWantDigest(request.getHeader("Want-Digest"))
+                    .ifPresent(t -> setWantedChecksum(t));
         }
 
         @Override

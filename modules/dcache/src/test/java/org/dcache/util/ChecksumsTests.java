@@ -309,7 +309,7 @@ public class ChecksumsTests
     @Test
     public void shouldGenerateNoHeaderIfNoWantDigest()
     {
-        Optional<String> value = Checksums.digestHeader(null, FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+        Optional<String> value = Checksums.digestHeader((String)null, FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
         assertThat(value.isPresent(), is(equalTo(false)));
     }
 

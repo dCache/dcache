@@ -337,6 +337,13 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         rfc3230(resource, response);
     }
 
+    @Override
+    public void respondCreated(Resource resource, Response response, Request request)
+    {
+        super.respondCreated(resource, response, request);
+        rfc3230(resource, response);
+    }
+
     private void rfc3230(Resource resource, Response response)
     {
         if (resource instanceof DcacheFileResource) {

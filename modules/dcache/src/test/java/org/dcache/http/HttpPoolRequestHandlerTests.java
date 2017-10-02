@@ -12,6 +12,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
@@ -26,16 +27,25 @@ import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 import org.python.google.common.collect.Lists;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,8 +55,11 @@ import java.util.UUID;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
+import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
@@ -445,6 +458,30 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
+    public void shouldAcceptPutRequestWithAdlerWantDigest() throws Exception
+    {
+        givenDoorHasOrganisedWriteOf(file("/path/to/file").with(SOME_UUID));
+        whenClientMakes(a(PUT)
+                .withHeader("Want-Digest", "adler32")
+                .withEntity("Hello, world")
+                .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
+        assertThat(_response.getStatus(), is(CREATED));
+        assertThat(_response.headers().get("Digest"), equalTo("adler32=1bd40469"));
+    }
+
+    @Test
+    public void shouldAcceptPutRequestWithMd5WantDigest() throws Exception
+    {
+        givenDoorHasOrganisedWriteOf(file("/path/to/file").with(SOME_UUID));
+        whenClientMakes(a(PUT)
+                .withHeader("Want-Digest", "md5")
+                .withEntity("Hello, world")
+                .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
+        assertThat(_response.getStatus(), is(CREATED));
+        assertThat(_response.headers().get("Digest"), equalTo("md5=vG5vFrigd+9fvI1Z0LkxuQ=="));
+    }
+
+    @Test
     public void shouldRejectPutOnRead() throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
@@ -501,7 +538,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     private void givenDoorHasOrganisedWriteOf(final FileInfo file)
-            throws URISyntaxException
+            throws URISyntaxException, IOException
     {
         String path = file.getPath();
 
@@ -513,7 +550,41 @@ public class HttpPoolRequestHandlerTests
                         new InetSocketAddress((InetAddress) null, 0),
                         null, null, path,
                         new URI("http", "localhost", path, null)));
-        given(channel.release()).willReturn(Futures.immediateCheckedFuture(null));
+
+        File tmpfile = File.createTempFile("http-pool-test", null);
+        RepositoryChannel repoChannel = new FileRepositoryChannel(tmpfile.toPath(),
+                EnumSet.of(StandardOpenOption.WRITE, StandardOpenOption.DELETE_ON_CLOSE));
+        ChecksumChannel checksums = new ChecksumChannel(repoChannel, EnumSet.noneOf(ChecksumType.class));
+
+        Answer<Void> acceptChecksum = (i) -> {
+                    checksums.addType(i.getArgumentAt(0, ChecksumType.class));
+                    return null;
+                };
+        Mockito.doAnswer(acceptChecksum).when(channel).addChecksumType(anyObject());
+        given(channel.write((ByteBuffer)anyObject()))
+                .willAnswer((i) -> {
+                    ByteBuffer src = i.getArgumentAt(0, ByteBuffer.class);
+                    return checksums.write(src);
+                });
+        given(channel.write((ByteBuffer[])anyObject()))
+                .willAnswer((i) -> {
+                    ByteBuffer[] src = i.getArgumentAt(0, ByteBuffer[].class);
+                    return checksums.write(src);
+                });
+        given(channel.write(anyObject(), anyInt(), anyInt()))
+                .willAnswer((i) -> {
+                    ByteBuffer[] arg = i.getArgumentAt(0, ByteBuffer[].class);
+                    int offset = i.getArgumentAt(1, Integer.class);
+                    int length = i.getArgumentAt(2, Integer.class);
+                    return checksums.write(arg, offset, length);
+                });
+
+
+        given(channel.release()).willAnswer((i) -> {
+                file.getFileAttributes().setChecksums(checksums.getChecksums());
+                return Futures.immediateCheckedFuture(null);});
+
+        given(channel.getFileAttributes()).willReturn(file.getFileAttributes());
 
         given(_server.openFile(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }
@@ -565,6 +636,13 @@ public class HttpPoolRequestHandlerTests
             return this;
         }
 
+        public FileInfo withMD5(String value)
+        {
+            Checksum checksum = new Checksum(ChecksumType.MD5_TYPE, value);
+            _attributes.setChecksums(Sets.newHashSet(checksum));
+            return this;
+        }
+
         public String getPath()
         {
             return _path;
@@ -612,6 +690,7 @@ public class HttpPoolRequestHandlerTests
         private HttpVersion _version = HTTP_1_1;
         private String _uri;
         private Multimap<String,String> _headers = ArrayListMultimap.create();
+        private byte[] _entity;
 
         public RequestInfo(HttpMethod type)
         {
@@ -637,20 +716,37 @@ public class HttpPoolRequestHandlerTests
             return this;
         }
 
+        public RequestInfo withEntity(String entity)
+        {
+            _entity = entity.getBytes(StandardCharsets.UTF_8);
+            _headers.put("Content-Length", Integer.toString(_entity.length));
+            return this;
+        }
+
         private HttpRequest buildRequest()
         {
             checkState(_uri != null, "URI has not been specified in test");
 
-            HttpRequest request = new DefaultFullHttpRequest(_version, _method, _uri);
+            HttpRequest request = (_entity == null)
+                    ? new DefaultFullHttpRequest(_version, _method, _uri)
+                    : new DefaultHttpRequest(_version, _method, _uri);
 
             _headers.asMap().forEach((k,v) -> request.headers().set(k, Lists.newArrayList(v)));
 
             return request;
         }
 
+        private Optional<LastHttpContent> buildContent()
+        {
+            return Optional.ofNullable(_entity)
+                    .map(Unpooled::wrappedBuffer)
+                    .map(DefaultLastHttpContent::new);
+        }
+
         public void sendEventsTo(EmbeddedChannel channel)
         {
             channel.writeInbound(buildRequest());
+            buildContent().ifPresent(channel::writeInbound);
         }
     }
 

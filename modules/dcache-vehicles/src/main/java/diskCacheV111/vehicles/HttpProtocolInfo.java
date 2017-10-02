@@ -2,6 +2,10 @@ package diskCacheV111.vehicles;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.EnumSet;
+import java.util.Optional;
+
+import org.dcache.util.ChecksumType;
 
 /**
  * @author Patrick F.
@@ -41,6 +45,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private final String httpDoorDomainName;
   private final String path;
   private final URI _location;
+  private final ChecksumType _wantedChecksum;
 
   private final Disposition _disposition;
 
@@ -54,7 +59,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
                            URI location)
   {
       this(protocol, major, minor, clientSocketAddress, httpDoorCellName,
-              httpDoorDomainName, path, location, null);
+              httpDoorDomainName, path, location, null, null);
   }
 
   public HttpProtocolInfo( String protocol, int major , int minor ,
@@ -65,6 +70,19 @@ public class HttpProtocolInfo implements IpProtocolInfo
                            URI location,
                            Disposition disposition)
   {
+      this(protocol, major, minor, clientSocketAddress, httpDoorCellName,
+              httpDoorDomainName, path, location, disposition, null);
+  }
+
+  public HttpProtocolInfo( String protocol, int major , int minor ,
+                           InetSocketAddress clientSocketAddress,
+                           String httpDoorCellName ,
+                           String httpDoorDomainName,
+                           String path,
+                           URI location,
+                           Disposition disposition,
+                           ChecksumType wantedChecksum)
+  {
     _name  = protocol ;
     _minor = minor ;
     _major = major ;
@@ -74,6 +92,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
     this.path = path;
     _location = location;
     _disposition = disposition;
+    _wantedChecksum = wantedChecksum;
   }
 
   public String getHttpDoorCellName()
@@ -96,6 +115,12 @@ public class HttpProtocolInfo implements IpProtocolInfo
   {
     _sessionId = sessionId ;
   }
+
+  public Optional<ChecksumType> getWantedChecksum()
+  {
+      return Optional.ofNullable(_wantedChecksum);
+  }
+
   //
   //  the ProtocolInfo interface
   //

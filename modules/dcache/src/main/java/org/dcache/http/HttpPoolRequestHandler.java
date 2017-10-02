@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +49,7 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import dmg.util.HttpException;
 
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
 
@@ -99,6 +101,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * reference to the file in between channel events.
      */
     private NettyTransferService<HttpProtocolInfo>.NettyMoverChannel _writeChannel;
+
+    private Optional<ChecksumType> _wantedDigest;
 
     public HttpPoolRequestHandler(NettyTransferService<HttpProtocolInfo> server, int chunkSize)
     {
@@ -351,6 +355,10 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                         "Resource is not open for writing");
             }
 
+            file.getProtocolInfo().getWantedChecksum().ifPresent(file::addChecksumType);
+            _wantedDigest = Checksums.parseWantDigest(request.headers().get("Want-Digest"));
+            _wantedDigest.ifPresent(file::addChecksumType);
+
             if (is100ContinueExpected(request)) {
                 context.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE))
                         .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
@@ -409,7 +417,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                         public void onSuccess(Void result)
                         {
                             try {
-                                context.writeAndFlush(new HttpPutResponse(size, location), promise);
+                                Optional<String> digest = _wantedDigest
+                                        .flatMap(t -> Checksums.digestHeader(t, writeChannel.getFileAttributes()));
+                                context.writeAndFlush(new HttpPutResponse(size, location, digest), promise);
                             } catch (IOException e) {
                                 context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()), promise);
                             }
@@ -609,7 +619,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     private static class HttpPutResponse extends HttpTextResponse
     {
-        public HttpPutResponse(long size, URI location)
+        public HttpPutResponse(long size, URI location, Optional<String> digest)
                 throws IOException
         {
             /* RFC 2616: 9.6. If a new resource is created, the origin server
@@ -633,6 +643,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             if (location != null) {
                 headers().set(LOCATION, location);
             }
+
+            digest.ifPresent(v -> headers().add(DIGEST, v));
         }
     }
 }

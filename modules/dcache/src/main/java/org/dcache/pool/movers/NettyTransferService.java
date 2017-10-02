@@ -49,6 +49,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -66,6 +67,7 @@ import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.CDCThreadFactory;
+import org.dcache.util.ChecksumType;
 import org.dcache.util.NettyPortRange;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
@@ -354,7 +356,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                     throws Exception
             {
                 NettyMoverChannel channel =
-                        autoclose(new NettyMoverChannel(mover.open(), connectTimeoutUnit.toMillis(connectTimeout), this));
+                        autoclose(new NettyMoverChannel(mover.open(), connectTimeoutUnit.toMillis(connectTimeout), this,
+                                mover::addChecksumType));
                 if (uuids.putIfAbsent(mover.getUuid(), channel) != null) {
                     throw new IllegalStateException("UUID conflict");
                 }
@@ -430,13 +433,16 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         private final CompletionHandler<Void, Void> completionHandler;
         private final CDC cdc = new CDC();
         private final SettableFuture<Void> closeFuture = SettableFuture.create();
+        private final Consumer<ChecksumType> checksumCalculation;
 
         public NettyMoverChannel(MoverChannel<P> file,
                                  long connectTimeout,
-                                 CompletionHandler<Void, Void> completionHandler)
+                                 CompletionHandler<Void, Void> completionHandler,
+                                 Consumer<ChecksumType> checksumCalculation)
         {
             super(file);
             this.completionHandler = completionHandler;
+            this.checksumCalculation = checksumCalculation;
             timeout = timeoutScheduler.schedule(() -> {
                 try (CDC ignored = cdc.restore()) {
                     if (sync.onTimeout()) {
@@ -448,6 +454,11 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                     }
                 }
             }, connectTimeout, TimeUnit.MILLISECONDS);
+        }
+
+        public void addChecksumType(ChecksumType type)
+        {
+            checksumCalculation.accept(type);
         }
 
         @Override

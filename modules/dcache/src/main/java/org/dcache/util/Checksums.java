@@ -119,17 +119,27 @@ public class Checksums
      */
     public static Optional<String> digestHeader(@Nullable String wantDigest, FileAttributes attributes)
     {
-        Optional<ChecksumType> selected = attributes.getChecksumsIfPresent()
+        return attributes.getChecksumsIfPresent()
                 .filter(s -> !s.isEmpty())
                 .map(s -> s.stream()
                         .map(Checksum::getType)
                         .collect(Collectors.toCollection(() -> EnumSet.noneOf(ChecksumType.class))))
-                .flatMap(t -> Checksums.parseWantDigest(wantDigest, t));
+                .flatMap(t -> Checksums.parseWantDigest(wantDigest, t))
+                .flatMap(t -> digestHeader(t, attributes));
+    }
 
+    /**
+     * If present, return the checksum of the requested type encoded for
+     * RFC 3230 Digest header.
+     * @param type The desired algorithm
+     * @param attributes The FileAttributes that may contain the directed checksum
+     * @return If checksum is preset then the desired RFC3230-encoded checksum value.
+     */
+    public static Optional<String> digestHeader(ChecksumType type, FileAttributes attributes)
+    {
         return attributes.getChecksumsIfPresent()
-                .filter(s -> selected.isPresent())
                 .flatMap(s -> s.stream()
-                        .filter(c -> c.getType() == selected.get())
+                        .filter(c -> c.getType() == type)
                         .findFirst())
                 .map(c -> TO_RFC3230_FRAGMENT.apply(c));
     }
