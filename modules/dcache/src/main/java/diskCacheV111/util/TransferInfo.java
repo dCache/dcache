@@ -302,10 +302,10 @@ public class TransferInfo implements Serializable {
 
         if (moverStatus != null) {
             state = moverStatus.name();
-            size = String.valueOf(bytesTransferred);
-            speed = transferTime > 0 ?
-                            String.valueOf((1000 * bytesTransferred)/(1024 * transferTime))
-                            : "-";
+            if (bytesTransferred != null) {
+                size = String.valueOf(bytesTransferred);
+            }
+            speed = String.valueOf(getTransferRate());
         }
 
         return String.format(FORMAT,
