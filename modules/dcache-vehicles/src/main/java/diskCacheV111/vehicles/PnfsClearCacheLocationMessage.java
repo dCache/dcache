@@ -11,7 +11,7 @@ public class PnfsClearCacheLocationMessage extends PnfsModifyCacheLocationMessag
     private static final long serialVersionUID = 3605282936760879338L;
 
     public PnfsClearCacheLocationMessage(PnfsId pnfsId, String poolName){
-	super(pnfsId,poolName);
+	this(pnfsId, poolName, false);
     }
     public PnfsClearCacheLocationMessage(PnfsId pnfsId, String poolName , boolean removeIfLast ){
 	super(pnfsId,poolName);
