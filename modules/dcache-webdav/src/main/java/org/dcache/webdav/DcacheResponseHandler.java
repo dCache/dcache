@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import diskCacheV111.util.FsPath;
@@ -336,16 +337,11 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         rfc3230(resource, response);
     }
 
-
     private void rfc3230(Resource resource, Response response)
     {
-        if(resource instanceof DcacheFileResource) {
-            DcacheFileResource file = (DcacheFileResource) resource;
-            String digest = file.getRfc3230Digest();
-
-            if(!digest.isEmpty()) {
-                response.setNonStandardHeader("Digest", digest);
-            }
+        if (resource instanceof DcacheFileResource) {
+            ((DcacheFileResource) resource).getRfc3230Digest()
+                    .ifPresent(d -> response.setNonStandardHeader("Digest", d));
         }
     }
 }

@@ -9,13 +9,12 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.DefaultHttpRequest;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
@@ -27,7 +26,6 @@ import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 import org.python.google.common.collect.Lists;
 
 import java.io.IOException;
@@ -35,12 +33,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -53,7 +51,6 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
@@ -170,8 +167,9 @@ public class HttpPoolRequestHandlerTests
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
                 withAdler32("03da0195"));
 
-        whenClientMakes(a(GET).
-                forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
+        whenClientMakes(a(GET)
+                .withHeader("Want-Digest", "adler32")
+                .forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH, "100"));
@@ -298,8 +296,9 @@ public class HttpPoolRequestHandlerTests
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
                 withAdler32("03da0195"));
 
-        whenClientMakes(a(GET).withHeader("Range", "bytes=0-499").
-                forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
+        whenClientMakes(a(GET).withHeader("Range", "bytes=0-499")
+                .withHeader("Want-Digest", "adler32")
+                .forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
@@ -345,8 +344,9 @@ public class HttpPoolRequestHandlerTests
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
                 withAdler32("03da0195"));
 
-        whenClientMakes(a(GET).withHeader("Range", "bytes=0-0,-1").
-                forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
+        whenClientMakes(a(GET).withHeader("Range", "bytes=0-0,-1")
+                .withHeader("Want-Digest", "adler32")
+                .forUri("/path/to/file?dcache-http-uuid="+SOME_UUID));
 
         assertThat(_response.getStatus(), is(PARTIAL_CONTENT));
         assertThat(_response, hasHeader(ACCEPT_RANGES, "bytes"));
@@ -637,71 +637,32 @@ public class HttpPoolRequestHandlerTests
             return this;
         }
 
-        public String getUri()
+        private HttpRequest buildRequest()
         {
             checkState(_uri != null, "URI has not been specified in test");
-            return _uri;
+
+            HttpRequest request = new DefaultFullHttpRequest(_version, _method, _uri);
+
+            _headers.asMap().forEach((k,v) -> request.headers().set(k, Lists.newArrayList(v)));
+
+            return request;
         }
 
-        public Multimap<String,String> getHeaders()
+        public void sendEventsTo(EmbeddedChannel channel)
         {
-            return _headers;
-        }
-
-        public HttpVersion getProtocolVersion()
-        {
-            return _version;
-        }
-
-        public HttpMethod getMethod()
-        {
-            return _method;
+            channel.writeInbound(buildRequest());
         }
     }
 
     private void whenClientMakes(RequestInfo info) throws Exception
     {
-        _channel.writeInbound(buildRequest(info));
+        info.sendEventsTo(_channel);
 
         _response = (HttpResponse) _channel.readOutbound();
         _additionalWrites.addAll(_channel.outboundMessages());
         _channel.outboundMessages().clear();
         if (!(Iterables.getLast(_additionalWrites, _response) instanceof LastHttpContent)) {
             throw new RuntimeException("Reply lacks LastHttpContent.");
-        }
-    }
-
-    private HttpRequest buildRequest(RequestInfo info)
-    {
-        HttpRequest request = new DefaultFullHttpRequest(info.getProtocolVersion(), info.getMethod(), info.getUri());
-        for(Map.Entry<String,Collection<String>> entry : info.getHeaders().asMap().entrySet()) {
-            request.headers().set(entry.getKey(), Lists.newArrayList(entry.getValue()));
-        }
-        return request;
-    }
-
-    private static URI withPath(String path)
-    {
-        return argThat(new UriPathMatcher(path));
-    }
-
-    /**
-     * A custom argument matcher that matches if the URI has a path
-     * equal to the path supplied when constructing this object.
-     */
-    private static class UriPathMatcher extends ArgumentMatcher<URI>
-    {
-        private final String _path;
-
-        public UriPathMatcher(String path)
-        {
-            checkArgument(path != null, "path cannot be null");
-            _path = path;
-        }
-
-        @Override
-        public boolean matches(Object uri) {
-            return _path.equals(((URI) uri).getPath());
         }
     }
 

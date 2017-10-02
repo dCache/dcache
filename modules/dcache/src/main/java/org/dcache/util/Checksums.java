@@ -9,12 +9,19 @@ import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
@@ -100,6 +107,36 @@ public class Checksums
     }
 
     /**
+     * Choose the best checksum algorithm based on the client's stated
+     * preferences and what checksums are available.  Ties (e.g., client
+     * wants either ADLER32 or MD5 with no preference with both checksums are
+     * available) are resolved by a hard-coded ordering of checksum algorithms.
+     * The returned value is encoded as a header value for an RFC 3230 Digest
+     * header.
+     * @param wantDigest The client-supplied Want-Digest header
+     * @param attributes The FileAttributes of the targeted file
+     * @return the value of a Digest HTTP header, if appropriate.
+     */
+    public static Optional<String> digestHeader(@Nullable String wantDigest, FileAttributes attributes)
+    {
+        Optional<Set<Checksum>> knownChecksums = Optional.ofNullable(attributes.getChecksumsIfPresent().orNull());
+
+        Optional<ChecksumType> selected = knownChecksums
+                .filter(s -> !s.isEmpty())
+                .map(s -> s.stream()
+                        .map(Checksum::getType)
+                        .collect(Collectors.toCollection(() -> EnumSet.noneOf(ChecksumType.class))))
+                .flatMap(t -> Checksums.parseWantDigest(wantDigest, t));
+
+        return knownChecksums
+                .filter(s -> selected.isPresent())
+                .flatMap(s -> s.stream()
+                        .filter(c -> c.getType() == selected.get())
+                        .findFirst())
+                .map(c -> TO_RFC3230_FRAGMENT.apply(c));
+    }
+
+    /**
      * Parse the RFC-3230 Digest response header value.  If there is no
      * understandable checksum or null is supplied then an empty set is
      * returned.
@@ -114,6 +151,38 @@ public class Checksums
                 RFC3230_TO_CHECKSUM);
 
         return checksums.values().stream().filter(Objects::nonNull).collect(Collectors.toSet());
+    }
+
+    /**
+     * Choose the best checksum algorithm based on the client's stated
+     * preferences.  Ties (e.g., client wants either ADLER32 or MD5 with no
+     * preference) are resolved by a hard-coded ordering of checksum algorithms.
+     * @param wantDigest The value of the RFC 3230 Want-Digest HTTP header.
+     * @return The best algorithm, if any match.
+     */
+    public static Optional<ChecksumType> parseWantDigest(String wantDigest)
+    {
+        return parseWantDigest(wantDigest, EnumSet.allOf(ChecksumType.class));
+    }
+
+    /**
+     * Choose the best checksum algorithm based on the client's stated
+     * preferences and what checksums are available.
+     */
+    private static Optional<ChecksumType> parseWantDigest(@Nullable String wantDigest,
+            EnumSet<ChecksumType> allowedTypes)
+    {
+        return Optional.ofNullable(wantDigest).flatMap(v ->
+                Splitter.on(',').omitEmptyStrings().trimResults().splitToList(v).stream()
+                        .map(QualityValue::of)
+                        .filter(q -> q.quality() != 0)
+                        .filter(q -> ChecksumType.isValid(q.value()))
+                        .map(q -> q.mapWith(ChecksumType::getChecksumType))
+                        .filter(q -> allowedTypes.contains(q.value()))
+                        .sorted(Comparator.<QualityValue<ChecksumType>>comparingDouble(q -> q.quality()).reversed()
+                                .thenComparing(q -> q.value(), PREFERRED_CHECKSUM_TYPE_ORDERING))
+                        .map(QualityValue::value)
+                        .findFirst());
     }
 
     public static Ordering<Checksum> preferrredOrder()

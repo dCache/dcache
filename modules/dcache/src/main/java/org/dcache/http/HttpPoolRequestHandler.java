@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
@@ -47,6 +48,7 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import dmg.util.HttpException;
 
 import org.dcache.pool.movers.NettyTransferService;
+import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -278,11 +280,14 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         }
 
+        String wantDigest = request.headers().get("Want-Digest");
+        Optional<String> digest = Checksums.digestHeader(wantDigest, file.getFileAttributes());
+
         if (ranges == null || ranges.isEmpty()) {
             /*
              * GET for a whole file
              */
-            context.write(new HttpGetResponse(fileSize, file))
+            context.write(new HttpGetResponse(fileSize, file, digest))
                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             context.write(read(file, 0, fileSize - 1))
                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
@@ -293,7 +298,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
              */
             HttpByteRange range = ranges.get(0);
             context.write(new HttpPartialContentResponse(range.getLower(), range.getUpper(),
-                                                         fileSize, buildDigest(file)))
+                                                         fileSize, digest))
                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             context.write(read(file, range.getLower(), range.getUpper()))
                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
@@ -317,7 +322,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             ByteBuf endMarker = createMultipartEnd();
             totalLen += endMarker.readableBytes();
 
-            context.write(new HttpMultipartResponse(buildDigest(file), totalLen))
+            context.write(new HttpMultipartResponse(digest, totalLen))
                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             for (int i = 0; i < ranges.size(); i++) {
                 HttpByteRange range = ranges.get(i);
@@ -448,7 +453,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
         try {
             NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = open(request, false);
-            context.write(new HttpGetResponse(file.size(), file))
+
+            Optional<String> digest = Checksums.digestHeader(request.headers().get("Want-Digest"), file.getFileAttributes());
+            context.write(new HttpGetResponse(file.size(), file, digest))
                     .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } catch (IOException | IllegalArgumentException e) {
@@ -551,16 +558,15 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     private static class HttpGetResponse extends DefaultHttpResponse
     {
-        public HttpGetResponse(long fileSize, NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file)
+        public HttpGetResponse(long fileSize,
+                NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
+                Optional<String> digest)
         {
             super(HTTP_1_1, OK);
             HttpProtocolInfo protocolInfo = file.getProtocolInfo();
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, fileSize);
-            String digest = buildDigest(file);
-            if(!digest.isEmpty()) {
-                headers().add(DIGEST, digest);
-            }
+            digest.ifPresent(v -> headers().add(DIGEST, v));
             headers().add("Content-Disposition",
                           contentDisposition(protocolInfo.getDisposition(),
                                              FsPath.create(protocolInfo.getPath()).name()));
@@ -575,7 +581,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         public HttpPartialContentResponse(long lower,
                                           long upper,
                                           long total,
-                                          String digest)
+                                          Optional<String> digest)
         {
             super(HTTP_1_1, PARTIAL_CONTENT);
 
@@ -585,23 +591,19 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
             headers().add(CONTENT_RANGE, contentRange);
-            if (!digest.isEmpty()) {
-                headers().add(DIGEST, digest);
-            }
+            digest.ifPresent(v -> headers().add(DIGEST, v));
         }
     }
 
     private static class HttpMultipartResponse extends DefaultHttpResponse
     {
-        public HttpMultipartResponse(String digest, long totalBytes)
+        public HttpMultipartResponse(Optional<String> digest, long totalBytes)
         {
             super(HTTP_1_1, PARTIAL_CONTENT);
             headers().add(ACCEPT_RANGES, BYTES);
             headers().add(CONTENT_LENGTH, totalBytes);
             headers().add(CONTENT_TYPE, MULTIPART_TYPE);
-            if(!digest.isEmpty()) {
-                headers().add(DIGEST, digest);
-            }
+            digest.ifPresent(v ->headers().add(DIGEST, v));
         }
     }
 
@@ -631,7 +633,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             if (location != null) {
                 headers().set(LOCATION, location);
             }
-
         }
     }
 }

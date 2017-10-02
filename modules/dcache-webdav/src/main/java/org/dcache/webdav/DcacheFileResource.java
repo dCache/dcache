@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -35,6 +36,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
+import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
 
 import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
@@ -195,9 +197,10 @@ public class DcacheFileResource
         }
     }
 
-    public String getRfc3230Digest()
+    public Optional<String> getRfc3230Digest()
     {
-        return _attributes.getChecksumsIfPresent().transform(TO_RFC3230).or("");
+        String wantDigest = ServletRequest.getRequest().getHeader("Want-Digest");
+        return Checksums.digestHeader(wantDigest, _attributes);
     }
 
     @Override

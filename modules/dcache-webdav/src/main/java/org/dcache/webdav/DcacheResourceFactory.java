@@ -93,7 +93,6 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.LoginAttributes;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
-import org.dcache.auth.attributes.Role;
 import org.dcache.cells.CellStub;
 import org.dcache.http.AuthenticationHandler;
 import org.dcache.http.PathMapper;
@@ -103,6 +102,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.PoolManagerStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
+import org.dcache.util.Checksums;
 import org.dcache.util.Exceptions;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.RedirectedTransfer;
@@ -1303,10 +1303,8 @@ public class DcacheResourceFactory
         switch (HttpManager.request().getMethod()) {
         case HEAD:
         case GET:
-            // TODO: parse the Want-Digest to see if the requested digest(s) are
-            //       supported.  If not then we can omit fetching the checksum
-            //       values.
-            return HttpManager.request().getHeaders().containsKey("Want-Digest");
+            String wantDigest = ServletRequest.getRequest().getHeader("Want-Digest");
+            return Checksums.parseWantDigest(wantDigest).isPresent();
         default:
             return false;
         }

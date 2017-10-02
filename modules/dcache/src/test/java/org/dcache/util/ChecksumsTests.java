@@ -7,20 +7,26 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+
+import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.util.ChecksumType.*;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public class ChecksumsTests
 {
+    private static final Checksum ADLER32_HELLO_WORLD
+            = ChecksumType.ADLER32.calculate("Hello, world".getBytes(StandardCharsets.UTF_8));
+
     private String _rfc3230;
     private Collection<Checksum> _checksums;
 
@@ -235,6 +241,100 @@ public class ChecksumsTests
 
         assertThat(result, equalTo(expected));
     }
+
+    @Test
+    public void shouldFindAdler32AsSingleEntry()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("adler32");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(ChecksumType.ADLER32)));
+    }
+
+    @Test
+    public void shouldFindMd5AsSingleEntry()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("md5");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(ChecksumType.MD5_TYPE)));
+    }
+
+    @Test
+    public void shouldFindSingleGoodEntryWithQ()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("adler32;q=0.5");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(ChecksumType.ADLER32)));
+    }
+
+    @Test
+    public void shouldSelectSecondAsBestByInternalPreference()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("adler32,md5");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(ChecksumType.MD5_TYPE)));
+    }
+
+    @Test
+    public void shouldSelectFirstAsBestByInternalPreference()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("md5,adler32");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(ChecksumType.MD5_TYPE)));
+    }
+
+    @Test
+    public void shouldSelectBestByExplicitQ()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("adler32;q=0.5,md5;q=1");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(ChecksumType.MD5_TYPE)));
+    }
+
+    @Test
+    public void shouldSelectBestByImplicitQ()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("adler32;q=0.5,md5");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(ChecksumType.MD5_TYPE)));
+    }
+
+    @Test
+    public void shouldIgnoreUnknownAlgorithm()
+    {
+        Optional<ChecksumType> type = Checksums.parseWantDigest("adler32;q=0.5,UNKNOWN;q=1");
+        assertThat(type.isPresent(), is(equalTo(true)));
+        assertThat(type.get(), is(equalTo(ChecksumType.ADLER32)));
+    }
+
+    @Test
+    public void shouldGenerateNoHeaderIfNoWantDigest()
+    {
+        Optional<String> value = Checksums.digestHeader(null, FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+        assertThat(value.isPresent(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldGenerateNHeaderIfWantDigestOfAvailableChecksum()
+    {
+        Optional<String> value = Checksums.digestHeader("adler32", FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+        assertThat(value.isPresent(), is(equalTo(true)));
+        assertThat(value.get(), startsWith("adler32="));
+    }
+
+    @Test
+    public void shouldGenerateNoHeaderIfWantDigestOfUnavailableChecksum()
+    {
+        Optional<String> value = Checksums.digestHeader("md5", FileAttributes.ofChecksum(ADLER32_HELLO_WORLD));
+        assertThat(value.isPresent(), is(equalTo(false)));
+    }
+
+    @Test
+    public void shouldGenerateNoHeaderIfWantDigestButNoChecksumAvailable()
+    {
+        Optional<String> value = Checksums.digestHeader("adler32", new FileAttributes());
+        assertThat(value.isPresent(), is(equalTo(false)));
+    }
+
 
     private Checksum newMd5Checksum(String value)
     {
