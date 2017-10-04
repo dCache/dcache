@@ -66,6 +66,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
@@ -106,15 +107,11 @@ public final class PoolTimeseriesServiceImpl extends
         }
     }
 
-    public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String pool,
+    public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String key,
                                                                   Set<TimeseriesType> types) {
         Map<TimeseriesType, TimeseriesHistogram> histograms = new HashMap<>();
 
-        PoolInfoWrapper info = null;
-
-        synchronized (cache) {
-            info = cache.get(pool);
-        }
+        PoolInfoWrapper info = getWrapper(key);
 
         if (info != null) {
             histograms.put(TimeseriesType.ACTIVE_FLUSH, info.getActiveFlush());
@@ -130,7 +127,7 @@ public final class PoolTimeseriesServiceImpl extends
             histograms.put(TimeseriesType.QUEUED_P2P, info.getQueuedP2P());
             histograms.put(TimeseriesType.QUEUED_P2P_CLIENT,
                            info.getQueuedP2PClient());
-            histograms.put(TimeseriesType.QUEUED_STAGE, info.getActiveStage());
+            histograms.put(TimeseriesType.QUEUED_STAGE, info.getQueuedStage());
             histograms.put(TimeseriesType.FILE_LIFETIME_MAX,
                            info.getFileLiftimeMax());
             histograms.put(TimeseriesType.FILE_LIFETIME_AVG,
@@ -142,6 +139,16 @@ public final class PoolTimeseriesServiceImpl extends
         }
 
         return histograms;
+    }
+
+    public PoolInfoWrapper getWrapper(String key) {
+        synchronized (cache) {
+            return cache.get(key);
+        }
+    }
+
+    public PoolSelectionUnit getSelectionUnit() {
+        return monitor.getPoolSelectionUnit();
     }
 
     @Override

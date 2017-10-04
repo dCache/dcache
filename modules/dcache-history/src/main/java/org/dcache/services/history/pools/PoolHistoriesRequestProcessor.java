@@ -74,24 +74,27 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import diskCacheV111.pools.json.PoolCostData;
+import diskCacheV111.util.CacheException;
 import org.dcache.pool.classic.json.SweeperData;
+import org.dcache.pool.json.PoolData;
+import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolInfoWrapper;
-import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.collector.RequestFutureProcessor;
+import org.dcache.util.collector.pools.PoolHistoriesAggregator;
+import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.histograms.CountingHistogram;
 import org.dcache.vehicles.pool.PoolLiveDataForHistoriesMessage;
 
 /**
  * <p>Handles the transformation of message content from pools into a cached
- *    {@link PoolInfoWrapper}.  The data handled by this transformation are
- *    the timeseries histograms for request queues and for file lifetime.</p>
+ * {@link PoolInfoWrapper}.  The data handled by this transformation are
+ * the timeseries histograms for request queues and for file lifetime.</p>
  *
  * <p>Post-processing stores all data to local files that are read back
- *    in on start-up.</p>
+ * in on start-up.</p>
  */
 public final class PoolHistoriesRequestProcessor extends
                 RequestFutureProcessor<PoolInfoWrapper, PoolLiveDataForHistoriesMessage> {
-
     private static final FilenameFilter filter = new FilenameFilter() {
         @Override
         public boolean accept(File dir, String name) {
@@ -100,6 +103,7 @@ public final class PoolHistoriesRequestProcessor extends
     };
 
     private PoolTimeseriesServiceImpl service;
+    private PoolHistoriesAggregator   handler;
     private File                      storageDir;
 
     /**
@@ -147,6 +151,11 @@ public final class PoolHistoriesRequestProcessor extends
     }
 
     @Required
+    public void setHandler(PoolHistoriesAggregator handler) {
+        this.handler = handler;
+    }
+
+    @Required
     public void setService(PoolTimeseriesServiceImpl service) {
         this.service = service;
     }
@@ -158,6 +167,14 @@ public final class PoolHistoriesRequestProcessor extends
 
     @Override
     protected void postProcess() {
+        try {
+            handler.aggregateDataForPoolGroups(next,
+                                               service.getSelectionUnit());
+        } catch (CacheException e) {
+            LOGGER.error("Could not add aggregate data for pool groups: {}.",
+                         e.getMessage());
+        }
+
         writeMapToDisk();
         service.updateJsonData(next);
     }
@@ -166,12 +183,17 @@ public final class PoolHistoriesRequestProcessor extends
     protected PoolInfoWrapper process(String key,
                                       PoolLiveDataForHistoriesMessage data,
                                       long sent) {
-        PoolInfoWrapper info = new PoolInfoWrapper();
-        info.setKey(key);
+        PoolInfoWrapper info = service.getWrapper(key);
+
+        if (info == null) {
+            info = new PoolInfoWrapper();
+            info.setKey(key);
+        }
 
         long timestamp = System.currentTimeMillis();
 
         PoolCostData poolCostData = data.getPoolCostData();
+
         if (poolCostData != null) {
             PoolInfoCollectorUtils.updateQstatTimeSeries(poolCostData,
                                                          info,
@@ -187,6 +209,13 @@ public final class PoolHistoriesRequestProcessor extends
                                                          info,
                                                          timestamp);
         }
+
+        PoolData poolData = new PoolData();
+        PoolDataDetails details = new PoolDataDetails();
+        poolData.setDetailsData(details);
+        details.setCostData(poolCostData);
+        poolData.setSweeperData(sweeperData);
+        info.setInfo(poolData);
 
         return info;
     }

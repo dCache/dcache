@@ -59,18 +59,22 @@ documents or software obtained from this server.
  */
 package org.dcache.util.collector.pools;
 
+import org.apache.commons.math3.util.FastMath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolQueueData;
+import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolInfoWrapper;
@@ -202,6 +206,35 @@ public final class PoolInfoCollectorUtils {
     }
 
     /**
+     * <p>Creates empty placeholders in order to aggregate pool space
+     * data (used for pool group info).</p>
+     *
+     * @param info the pool group data
+     * @return the existing or new cost data object
+     */
+    public static PoolCostData createCostDataIfEmpty(PoolInfoWrapper info) {
+        PoolData poolData = info.getInfo();
+        if (poolData == null) {
+            poolData = new PoolData();
+            info.setInfo(poolData);
+        }
+
+        PoolDataDetails detailsData = poolData.getDetailsData();
+        if (detailsData == null) {
+            detailsData = new PoolDataDetails();
+            poolData.setDetailsData(detailsData);
+        }
+
+        PoolCostData groupCostData = detailsData.getCostData();
+        if (groupCostData == null) {
+            groupCostData = new PoolCostData();
+            detailsData.setCostData(groupCostData);
+        }
+
+        return groupCostData;
+    }
+
+    /**
      * <p>Accesses current state of selection unit.</p>
      */
     public static String[] listGroups(PoolSelectionUnit poolSelectionUnit) {
@@ -245,6 +278,86 @@ public final class PoolInfoCollectorUtils {
                                 .stream()
                                 .map(SelectionPool::getName)
                                 .toArray(String[]::new);
+    }
+
+    /**
+     * <p>Combines the pool last access data into an aggregate for the group.</p>
+     *
+     * @param pools the pools of the group
+     * @return aggregated histogram model
+     */
+    public static CountingHistogram mergeLastAccess(List<PoolInfoWrapper> pools) {
+        List<CountingHistogram> allHistograms =
+                        pools.stream()
+                             .map(PoolInfoWrapper::getInfo)
+                             .map(PoolData::getSweeperData)
+                             .map(SweeperData::getLastAccessHistogram)
+                             .collect(Collectors.toList());
+
+        CountingHistogram groupHistogram
+                        = SweeperData.createLastAccessHistogram();
+
+        if (allHistograms.isEmpty()) {
+            groupHistogram.setData(Collections.EMPTY_LIST);
+            groupHistogram.configure();
+            return groupHistogram;
+        }
+
+        /*
+         *  Find the histogram with the highest last bin (and consequently
+         *  the widest bins).
+         *
+         *  Merge the statistics.
+         */
+        double maxBinValue = Double.MIN_VALUE;
+        CountingHistogram standard = null;
+        HistogramMetadata metadata = new HistogramMetadata();
+
+        for (CountingHistogram h : allHistograms) {
+            double currentMaxBin = h.getHighestBin();
+            if (currentMaxBin > maxBinValue) {
+                standard = h;
+                maxBinValue = currentMaxBin;
+            }
+            metadata.mergeStatistics(h.getMetadata());
+        }
+
+        int binCount = standard.getBinCount();
+        double binSize = standard.getBinSize();
+
+        groupHistogram.setBinCount(binCount);
+        groupHistogram.setBinSize(binSize);
+        groupHistogram.setBinUnit(standard.getBinUnit());
+        groupHistogram.setBinWidth(standard.getBinWidth());
+        groupHistogram.setHighestBin(standard.getHighestBin());
+        groupHistogram.setLowestBin(standard.getLowestBin());
+        groupHistogram.setMetadata(metadata);
+
+        /*
+         *  Configuration of counting histogram assumes raw unordered
+         *  data.  To merge counting histograms, we just need to sum the
+         *  already configured data to the correct bin.
+         */
+        double[] dataArray = new double[binCount];
+        for (CountingHistogram h : allHistograms) {
+            List<Double> currentData = h.getData();
+            double currentBinSize = h.getBinSize();
+            int numBins = currentData.size();
+            for (int bin = 0; bin < numBins; ++bin) {
+                int groupBin = (int) FastMath.floor(
+                                (bin * currentBinSize) / binSize);
+                dataArray[groupBin] += currentData.get(bin);
+            }
+        }
+
+        List<Double> groupData = new ArrayList<>();
+        for (double d : dataArray) {
+            groupData.add(d);
+        }
+
+        groupHistogram.setData(groupData);
+
+        return groupHistogram;
     }
 
     /**
@@ -323,9 +436,7 @@ public final class PoolInfoCollectorUtils {
                                                                TimeseriesHistogram model,
                                                                long timestamp) {
         if (model == null) {
-            model = newLifetimeTimeSeriesHistogram(series,
-                                                   "File Lifetime "
-                                                                   + series);
+            model = newLifetimeTimeSeriesHistogram(series, series);
         }
 
         model.replace(newValue, timestamp);
