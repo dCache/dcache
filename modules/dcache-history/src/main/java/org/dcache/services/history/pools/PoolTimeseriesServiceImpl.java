@@ -62,6 +62,8 @@ package org.dcache.services.history.pools;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -166,6 +168,15 @@ public final class PoolTimeseriesServiceImpl extends
         return PoolInfoCollectorUtils.listPools(monitor.getPoolSelectionUnit());
     }
 
+    public Set<String> validKeys() {
+        Set<String> keys = new HashSet<>();
+        PoolSelectionUnit psu = monitor.getPoolSelectionUnit();
+        keys.addAll(psu.getPools().keySet());
+        keys.addAll(psu.getPoolGroups().keySet());
+        keys.add(ALL);
+        return keys;
+    }
+
     public Reply messageArrived(PoolTimeseriesRequestMessage message) {
         MessageReply<Message> reply = new MessageReply<>();
         executor.execute(() -> {
@@ -203,8 +214,30 @@ public final class PoolTimeseriesServiceImpl extends
      */
     public void updateJsonData(Map<String, PoolInfoWrapper> next) {
         synchronized (cache) {
-            cache.clear();
+            /*
+             *  If a pool goes offline, then the message requesting data
+             *  will result in a null entry in the map.   We do not want to
+             *  overwrite data in the current cache with this null because
+             *  this will cause the history to be lost when the map is written
+             *  to disk.
+             *
+             *  At the same time, we do not want to have to reread the saved
+             *  data from disk at each collection.
+             *
+             *  However, if we simply overwrite without clearing the cache,
+             *  we could find that pools which have been eliminated still
+             *  continue to be reported.
+             *
+             *  We thus need to prune the cache against the listed
+             *  pools and groups.
+             */
             cache.putAll(next);
+            Set<String> valid = validKeys();
+            for (Iterator i = cache.keySet().iterator(); i.hasNext();) {
+                if (!valid.contains(i.next())) {
+                    i.remove();
+                }
+            }
         }
     }
 

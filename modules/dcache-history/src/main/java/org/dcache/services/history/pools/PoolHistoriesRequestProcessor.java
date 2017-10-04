@@ -72,6 +72,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.util.CacheException;
@@ -126,6 +127,8 @@ public final class PoolHistoriesRequestProcessor extends
         Map<String, PoolInfoWrapper> values = new HashMap<>();
 
         File[] files = storageDir.listFiles(filter);
+        Set<String> validKeys = service.validKeys();
+
         PoolInfoWrapper info;
         String key;
 
@@ -139,7 +142,13 @@ public final class PoolHistoriesRequestProcessor extends
                 if (key.contains(".")) {
                     key = key.substring(0, key.lastIndexOf("."));
                 }
-                values.put(key, info);
+
+                /*
+                 *  Do not reload data for pools or groups which have been removed.
+                 */
+                if (validKeys.contains(key)) {
+                    values.put(key, info);
+                }
             } catch (IOException e) {
                 LOGGER.warn("There was a problem deserializing json file {}: "
                                             + "{}, {}",
