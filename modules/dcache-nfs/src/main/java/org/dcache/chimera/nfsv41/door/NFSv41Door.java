@@ -352,6 +352,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void init() throws Exception {
 
         _chimeraVfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
+        _chimeraVfs.setPnfsHandler(_pnfsHandler);
+        _chimeraVfs.setPoolManagerStub(_poolManagerStub);
+
         _vfs = new VfsCache(_chimeraVfs, _vfsCacheConfig);
         MountServer ms = new MountServer(_exportFile, _vfs);
 

@@ -18,6 +18,7 @@ import javax.security.auth.Subject;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1200,6 +1201,11 @@ public class PnfsManagerV3
                 requested.add(FileAttribute.STORAGEINFO);
                 requested.add(FileAttribute.PNFSID);
 
+                PnfsId parentPnfsId = pnfsMessage.getPnfsId();
+                if (parentPnfsId != null) {
+                    String parentPath = _nameSpaceProvider.pnfsidToPath(subject, parentPnfsId);
+                    path = Paths.get(parentPath, path).toString();
+                }
                 attrs = _nameSpaceProvider.createFile(subject, path, assign, requested);
 
                 StorageInfo info = attrs.getStorageInfo();

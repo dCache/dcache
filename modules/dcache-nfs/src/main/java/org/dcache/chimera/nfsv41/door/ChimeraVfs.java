@@ -20,16 +20,27 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
+import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.StorageInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutionException;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AceFlags;
@@ -41,6 +52,7 @@ import org.dcache.chimera.DirNotEmptyHimeraFsException;
 import org.dcache.chimera.DirectoryStreamHelper;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileState;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.FsInode_CONST;
@@ -61,6 +73,9 @@ import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.PermissionDeniedChimeraFsException;
 import org.dcache.chimera.StorageGenericLocation;
+import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
 import org.dcache.nfs.status.ExistException;
@@ -88,12 +103,16 @@ import org.dcache.nfs.vfs.DirectoryStream;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.VirtualFileSystem;
+import org.dcache.poolmanager.PoolManagerStub;
+import org.dcache.vehicles.FileAttributes;
 
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.NO_STAT;
 import static org.dcache.chimera.FileSystemProvider.StatCacheOption.STAT;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_EXTEND;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACCESS4_MODIFY;
 import static org.dcache.nfs.v4.xdr.nfs4_prot.ACE4_INHERIT_ONLY_ACE;
+
+import static org.dcache.namespace.FileAttribute.*;
 
 /**
  * Interface to a virtual file system.
@@ -103,6 +122,16 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     private static final Logger _log = LoggerFactory.getLogger(ChimeraVfs.class);
     private final JdbcFs _fs;
     private final NfsIdMapping _idMapping;
+
+    /**
+     * handle to PnfsManager
+     */
+    private PnfsHandler _pnfsHandler;
+
+    /**
+     * Handle to PoolManager.
+     */
+    private PoolManagerStub _poolManagerStub;
 
     /**
      * minimal binary handle size which can be processed.
@@ -136,8 +165,44 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         int gid = (int)Subjects.getPrimaryGid(subject);
         try {
             FsInode parentFsInode = toFsInode(parent);
-            FsInode fsInode = _fs.createFile(parentFsInode, path, uid, gid, mode | typeToChimera(type), typeToChimera(type));
+            PnfsId parentPnfsId = new PnfsId(parentFsInode.getId());
+            // resuest storageInfo of newly created file will match with
+            // storage info of the parent directory
+            FileAttributes fileAttributes = _pnfsHandler.getFileAttributes(parentPnfsId, EnumSet.of(
+                    STORAGEINFO,
+                    HSM,
+                    STORAGECLASS,
+                    PNFSID,
+                    ACCESS_LATENCY,
+                    RETENTION_POLICY
+            ));
+
+            PoolMgrSelectWritePoolMsg request
+                    = new PoolMgrSelectWritePoolMsg(fileAttributes,
+                            new NFS4ProtocolInfo(new InetSocketAddress(0), null, null), 0);
+            request = _poolManagerStub.sendAsync(request).get();
+
+            // create file with a given pool. If create succeeds, then new location
+            // is registered as well
+
+            // sanitize file attributes
+            fileAttributes = new FileAttributes();
+            fileAttributes.setOwner(uid);
+            fileAttributes.setGroup(gid);
+            fileAttributes.setMode(mode);
+            fileAttributes.setFileType(FileType.REGULAR);
+            fileAttributes.setLocations(ImmutableList.of(request.getPoolName()));
+
+            PnfsCreateEntryMessage createEntry = new PnfsCreateEntryMessage(path, fileAttributes);
+            // dirty-dirty hack: use pnfsid field as id of the parent directory
+            createEntry.setPnfsId(parentPnfsId);
+            createEntry = _pnfsHandler.request(createEntry);
+
+            FsInode fsInode = _fs.id2inode(createEntry.getPnfsId().getId(), NO_STAT);
             return toInode(fsInode);
+        } catch (CacheException | InterruptedException | ExecutionException e) {
+            _log.warn("Failed to fetch storage info: {}", e.toString());
+            throw ExceptionUtils.asNfsException(e, NfsIoException.class);
         } catch (FileExistsChimeraFsException e) {
             throw new ExistException("path already exists");
         }
@@ -690,6 +755,9 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         return args;
     }
 
+    public void setPnfsHandler(PnfsHandler pnfs) {
+        _pnfsHandler = pnfs;
+    }
 
     /**
      * Generate directory cookie for a given entry.
@@ -698,5 +766,9 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         // to avoid collisions when on hard links, generate cookie based on inumber and name hash
         // reset upper bit to have only positive numbers
         return (stat.getIno() << 32 | name.hashCode()) & 0x7FffffffffffffffL;
+    }
+
+    public void setPoolManagerStub(PoolManagerStub stub) {
+        _poolManagerStub = stub;
     }
 }
