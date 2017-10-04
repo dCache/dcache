@@ -60,7 +60,6 @@ import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.PermissionDeniedChimeraFsException;
-import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.nfs.status.BadHandleException;
 import org.dcache.nfs.status.BadOwnerException;
 import org.dcache.nfs.status.ExistException;
@@ -590,7 +589,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
      *
      * @param handle to construct inode from.
      * @return object inode.
-     * @throws ChimeraFsException
+     * @throws BadHandleException if provided {@c0de handle} can't be converted into FsInode.
      */
     public FsInode inodeFromBytes(byte[] handle) throws BadHandleException {
         FsInode inode;
