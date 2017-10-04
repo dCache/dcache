@@ -57,86 +57,87 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.pool;
+package org.dcache.util.collector.pools;
 
-import org.springframework.beans.factory.annotation.Required;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.cells.json.CellData;
-import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolInfoWrapper;
-import org.dcache.restful.services.pool.PoolInfoServiceImpl;
-import org.dcache.util.collector.RequestFutureProcessor;
-import org.dcache.vehicles.pool.PoolDataRequestMessage;
+import org.dcache.services.history.pools.PoolListingService;
 
 /**
- * <p>Handles the transformation of message content from pools into a cached
- *    {@link PoolInfoWrapper}.  The data handled by this transformation are
- *    the basic diagnostic information plus the precomputed LRU histogram
- *    from the sweeper.</p>
- *
- * <p>Post-processing aggregates the data according to pool groups and adds
- *    these to the cache as well.</p>
+ * <p>Responsible for processing pool data into aggregated group data,
+ *      included the 'all pools' group.</p>
  */
-public final class PoolDataRequestProcessor
-                extends RequestFutureProcessor<PoolInfoWrapper, PoolDataRequestMessage> {
-    private PoolInfoServiceImpl  service;
-    private PoolHistoriesHandler handler;
+public abstract class PoolInfoAggregator {
 
-    @Required
-    public void setHandler(PoolHistoriesHandler handler) {
-        this.handler = handler;
-    }
-
-    @Required
-    public void setService(PoolInfoServiceImpl service) {
-        this.service = service;
-    }
-
-    @Override
-    protected void postProcess() {
-        try {
-            handler.aggregateDataForPoolGroups(next,
-                                               service.getSelectionUnit());
-        } catch (CacheException e) {
-            LOGGER.warn("Aggregation of timeseries data failed: {} / {}.",
-                        e.getMessage(), e.getCause());
-        }
-
-        service.updateJsonData(next);
-    }
-
-    @Override
-    protected PoolInfoWrapper process(String key,
-                                      PoolDataRequestMessage message,
-                                      long sent) {
-        PoolData poolData = message.getData();
-
-        CellData cellData = poolData.getCellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
-
-        PoolInfoWrapper info = new PoolInfoWrapper();
-        info.setKey(key);
+    /**
+     * <p>Merges the data for the pools into the aggregate info
+     * for all pool groups.</p>
+     *
+     * @param data current map of info wrappers from pools.
+     * @param psu  for determining pools of pool groups.
+     * @throws CacheException
+     */
+    public void aggregateDataForPoolGroups(Map<String, PoolInfoWrapper> data,
+                                           PoolSelectionUnit psu)
+                    throws CacheException {
+        psu.getPoolGroups()
+           .values().stream()
+           .map(SelectionPoolGroup::getName)
+           .forEach((group) -> {
+               PoolInfoWrapper groupInfo = getAggregateWrapper(group);
+               List<PoolInfoWrapper> poolInfo
+                               = getWrappers(psu.getPoolsByPoolGroup(group),
+                                             data);
+               update(groupInfo, poolInfo);
+               data.put(group, groupInfo);
+           });
 
         /*
-         *  NB:  the counts histogram is already part of the sweeper
-         *  data object (data.getSweeperData().getLastAccessHistogram()).
+         *  Aggregate for all pools.
          */
-        info.setInfo(poolData);
+        PoolInfoWrapper groupInfo = getAggregateWrapper(PoolListingService.ALL);
+        List<PoolInfoWrapper> poolInfo
+                        = getWrappers(psu.getAllDefinedPools(false),
+                                      data);
+        update(groupInfo, poolInfo);
+        data.put(PoolListingService.ALL, groupInfo);
+    }
 
-        try {
-            handler.addHistoricalData(info);
-        } catch (NoRouteToCellException | InterruptedException e) {
-            LOGGER.debug("Could not add historical data for {}: {}/ {}.",
-                     key, e.getMessage(), e.getCause());
-        } catch (CacheException e) {
-            LOGGER.error("Could not add historical data for {}: {}/ {}.",
-                         key, e.getMessage(), e.getCause());
-        }
+    /**
+     * <p>Create wrapper if it doesn't exist.</p>
+     *
+     * @param key to get aggregate data wrapper for.
+     */
+    protected abstract PoolInfoWrapper getAggregateWrapper(String key);
 
-        return info;
+    /**
+     * <p>Should do the actual aggregation and/or fetching of the appropriate
+     *    data and add it to the given wrapper.</p>
+     *
+     * @param group to update
+     * @param pools pool info for pools in the group
+     */
+    protected abstract void update(PoolInfoWrapper group,
+                                   List<PoolInfoWrapper> pools);
+
+    /**
+     * @param pools of the group
+     * @return list of current pool info objects
+     */
+    private static List<PoolInfoWrapper> getWrappers(Collection<SelectionPool> pools,
+                                                    Map<String, PoolInfoWrapper> data) {
+        return pools.stream()
+                    .map(SelectionPool::getName)
+                    .map(data::get)
+                    .filter((e) -> e != null)
+                    .collect(Collectors.toList());
     }
 }

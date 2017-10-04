@@ -57,86 +57,51 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.restful.util.pool;
+package org.dcache.util.collector.pools;
 
 import org.springframework.beans.factory.annotation.Required;
 
-import diskCacheV111.util.CacheException;
-import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.cells.json.CellData;
+import java.util.List;
+
+import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolInfoWrapper;
-import org.dcache.restful.services.pool.PoolInfoServiceImpl;
-import org.dcache.util.collector.RequestFutureProcessor;
-import org.dcache.vehicles.pool.PoolDataRequestMessage;
+import org.dcache.services.history.pools.PoolTimeseriesServiceImpl;
+import org.dcache.util.histograms.CountingHistogram;
 
 /**
- * <p>Handles the transformation of message content from pools into a cached
- *    {@link PoolInfoWrapper}.  The data handled by this transformation are
- *    the basic diagnostic information plus the precomputed LRU histogram
- *    from the sweeper.</p>
- *
- * <p>Post-processing aggregates the data according to pool groups and adds
- *    these to the cache as well.</p>
+ * <p>Called during the collection gathering in order to aggregate
+ * pool data such as queue/mover timeseries
+ * counts or the running statistics on file lifetime.</p>
  */
-public final class PoolDataRequestProcessor
-                extends RequestFutureProcessor<PoolInfoWrapper, PoolDataRequestMessage> {
-    private PoolInfoServiceImpl  service;
-    private PoolHistoriesHandler handler;
+public class PoolHistoriesAggregator extends PoolInfoAggregator {
+    private PoolTimeseriesServiceImpl service;
 
     @Required
-    public void setHandler(PoolHistoriesHandler handler) {
-        this.handler = handler;
-    }
-
-    @Required
-    public void setService(PoolInfoServiceImpl service) {
+    public void setService(PoolTimeseriesServiceImpl service) {
         this.service = service;
     }
 
     @Override
-    protected void postProcess() {
-        try {
-            handler.aggregateDataForPoolGroups(next,
-                                               service.getSelectionUnit());
-        } catch (CacheException e) {
-            LOGGER.warn("Aggregation of timeseries data failed: {} / {}.",
-                        e.getMessage(), e.getCause());
+    protected PoolInfoWrapper getAggregateWrapper(String key) {
+        PoolInfoWrapper groupInfo = service.getWrapper(key);
+        if (groupInfo == null) {
+            groupInfo = new PoolInfoWrapper();
+            groupInfo.setKey(key);
         }
-
-        service.updateJsonData(next);
+        return groupInfo;
     }
 
     @Override
-    protected PoolInfoWrapper process(String key,
-                                      PoolDataRequestMessage message,
-                                      long sent) {
-        PoolData poolData = message.getData();
-
-        CellData cellData = poolData.getCellData();
-        if (cellData != null) {
-            cellData.setRoundTripTime(System.currentTimeMillis() - sent);
-        }
-
-        PoolInfoWrapper info = new PoolInfoWrapper();
-        info.setKey(key);
-
-        /*
-         *  NB:  the counts histogram is already part of the sweeper
-         *  data object (data.getSweeperData().getLastAccessHistogram()).
-         */
-        info.setInfo(poolData);
-
-        try {
-            handler.addHistoricalData(info);
-        } catch (NoRouteToCellException | InterruptedException e) {
-            LOGGER.debug("Could not add historical data for {}: {}/ {}.",
-                     key, e.getMessage(), e.getCause());
-        } catch (CacheException e) {
-            LOGGER.error("Could not add historical data for {}: {}/ {}.",
-                         key, e.getMessage(), e.getCause());
-        }
-
-        return info;
+    protected void update(PoolInfoWrapper group, List<PoolInfoWrapper> pools) {
+        long timestamp = System.currentTimeMillis();
+        CountingHistogram model = PoolInfoCollectorUtils.mergeLastAccess(pools);
+        PoolData poolData = new PoolData();
+        SweeperData sweeperData = new SweeperData();
+        sweeperData.setLastAccessHistogram(model);
+        poolData.setSweeperData(sweeperData);
+        group.setInfo(poolData);
+        PoolInfoCollectorUtils.updateFstatTimeSeries(model.getMetadata(), group, timestamp);
+        PoolInfoCollectorUtils.updateQstatTimeSeries(pools, group, timestamp);
     }
 }

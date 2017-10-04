@@ -148,6 +148,7 @@
 
   <bean id="pool-histories-handler" class="org.dcache.restful.util.pool.PoolHistoriesHandler">
     <property name="historyService" ref="pool-history-service"/>
+    <property name="poolInfoService" ref="pool-info-service"/>
   </bean>
 
   <bean id="pool-info-collector" class="org.dcache.restful.util.pool.PoolDiagnosticInfoCollector">
