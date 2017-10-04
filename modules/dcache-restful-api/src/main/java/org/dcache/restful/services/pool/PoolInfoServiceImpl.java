@@ -147,6 +147,10 @@ public class PoolInfoServiceImpl extends
      */
     private int maxPoolActivityListSize;
 
+    public ReadWriteData<String, PoolInfoWrapper> getCache() {
+        return cache;
+    }
+
     /**
      * <p>Synchronous.</p>
      */

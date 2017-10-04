@@ -59,11 +59,17 @@
     <property name="poolManagerStub" ref="pool-manager-stub"/>
   </bean>
 
+  <bean id="pool-histories-handler" class="org.dcache.util.collector.pools.PoolHistoriesAggregator">
+    <description>Aggregates data for pool groups</description>
+    <property name="service" ref="pool-timeseries-service"/>
+  </bean>
+
   <bean id="pool-request-processor" class="org.dcache.services.history.pools.PoolHistoriesRequestProcessor">
       <description>Processes, caches and stores the live data collected from the pools</description>
       <property name="executor" ref="pool-listener-executor"/>
       <property name="service" ref="pool-timeseries-service"/>
       <property name="storageDir" value="${history.service.pools.storage-dir}"/>
+      <property name="handler" ref="pool-histories-handler"/>
   </bean>
 
   <bean id="pool-data-collector" class="org.dcache.util.collector.pools.PoolLiveDataCollector">
