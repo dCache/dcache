@@ -518,6 +518,10 @@ public class NearlineStorageHandler
             info.setActivated(activatedAt);
             info.setCreated(createdAt);
             info.setState(state.get().name());
+            long now = System.currentTimeMillis();
+            info.setTotalElapsed(now-createdAt);
+            info.setRunning(now-activatedAt);
+            info.setUuid(String.valueOf(getId()));
             return info;
         }
 
