@@ -236,7 +236,7 @@ public final class BillingInfoCollectionUtils {
                         msg.setType(type);
                         messages.add(msg);
                         msg = new BillingDataRequestMessage();
-                        msg.setDataType(SeriesDataType.MAXSECS);
+                        msg.setDataType(SeriesDataType.MINSECS);
                         msg.setTimeFrame(timeFrame);
                         msg.setType(type);
                         messages.add(msg);
