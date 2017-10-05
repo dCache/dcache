@@ -37,6 +37,7 @@ import diskCacheV111.vehicles.PoolStatusChangedMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
@@ -52,6 +53,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -72,6 +74,7 @@ import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.poolmanager.PoolManagerStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.FsExport;
@@ -82,6 +85,7 @@ import org.dcache.nfs.status.BadLayoutException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.NoMatchingLayoutException;
 import org.dcache.nfs.status.BadStateidException;
+import org.dcache.nfs.status.ServerFaultException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -1006,8 +1010,33 @@ public class NFSv41Door extends AbstractCellComponent implements
                  * or p2p is required.
                  */
                 setOnlineFilesOnly(true);
-                _log.debug("looking for {} pool for {}", (isWrite() ? "write" : "read"), getPnfsId());
-                _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
+                // REVISIT: this have to go into Transfer class.
+                if (isWrite() && getFileAttributes().isDefined(FileAttribute.LOCATIONS) && !getFileAttributes().getLocations().isEmpty()) {
+
+                    /*
+                     * If we need to start a write-mover for a file which already has
+                     * a location assigned to it, then we stick that location and by-pass
+                     * any pool selection step.
+                     */
+
+                    Collection<String> locations = getFileAttributes().getLocations();
+                    if (locations.size() > 1) {
+                        /*
+                         * Huh! We don't support mirroring (yet), thus there
+                         * can't by multiple locations, unless some something
+                         * went wrong!
+                         */
+                        throw new ServerFaultException("multiple locations for: " + getPnfsId() + " : " + locations);
+                    }
+                    String location = locations.iterator().next();
+                    _log.debug("Using pre-existing WRITE pool {} for {}", location, getPnfsId());
+                    setPool(location);
+                    setPoolAddress(new CellAddressCore(location));
+                    _redirectFuture = startMoverAsync(STAGE_REQUEST_TIMEOUT);
+                } else {
+                    _log.debug("looking a {} pool for {}", (isWrite() ? "WRITE" : "READ"), getPnfsId());
+                    _redirectFuture = selectPoolAndStartMoverAsync(POOL_SELECTION_RETRY_POLICY);
+                }
             }
 
             /*
