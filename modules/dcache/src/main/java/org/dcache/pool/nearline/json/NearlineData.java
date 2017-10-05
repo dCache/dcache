@@ -77,6 +77,8 @@ public class NearlineData implements Serializable {
     private String uri;
     private long   created;
     private long   activated;
+    private long   running;
+    private long   totalElapsed;
 
     public long getActivated() {
         return activated;
@@ -90,12 +92,20 @@ public class NearlineData implements Serializable {
         return pnfsId;
     }
 
+    public long getRunning() {
+        return running;
+    }
+
     public String getState() {
         return state;
     }
 
     public String getStorageClass() {
         return storageClass;
+    }
+
+    public long getTotalElapsed() {
+        return totalElapsed;
     }
 
     public String getType() {
@@ -122,12 +132,20 @@ public class NearlineData implements Serializable {
         this.pnfsId = pnfsId;
     }
 
+    public void setRunning(long running) {
+        this.running = running;
+    }
+
     public void setState(String state) {
         this.state = state;
     }
 
     public void setStorageClass(String storageClass) {
         this.storageClass = storageClass;
+    }
+
+    public void setTotalElapsed(long totalElapsed) {
+        this.totalElapsed = totalElapsed;
     }
 
     public void setType(String type) {
