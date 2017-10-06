@@ -229,7 +229,7 @@ public class AccessLogAwareOperationFactory extends MDSOperationFactory {
             Inode parent = context.currentInode();
             FsInode cParentInode = _vfs.inodeFromBytes(parent.getFileId());
 
-            if (_args.opopen.openhow.opentype == opentype4.OPEN4_CREATE) {
+            if (_args.opopen.openhow.opentype != opentype4.OPEN4_CREATE) {
                 // by-pass logging if no create
                 super.process(context, result);
                 return;
