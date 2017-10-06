@@ -17,6 +17,7 @@
  */
 package org.dcache.xrootd.door;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.net.InetAddresses;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.attributes.Restriction;
 import org.dcache.auth.attributes.Restrictions;
+import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksum;
@@ -52,6 +54,7 @@ import org.dcache.util.Checksums;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.core.XrootdException;
+import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
 import org.dcache.xrootd.protocol.messages.DirListResponse;
 import org.dcache.xrootd.protocol.messages.MkDirRequest;
@@ -82,10 +85,13 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         LoggerFactory.getLogger(XrootdRedirectHandler.class);
 
     private final XrootdDoor _door;
-    private final FsPath _rootPath;
 
     private Restriction _authz = Restrictions.denyAll();
-    private final Map<String,String> _appIoQueues;
+    private final Map<String, String> _appIoQueues;
+
+    private FsPath _rootPath;
+    private FsPath _userRootPath;
+    private boolean _isLoggedIn;
 
     /**
      * Custom entries for kXR_Qconfig requests.
@@ -178,15 +184,17 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
             if (neededPerm == FilePerm.WRITE) {
                 boolean createDir = req.isMkPath();
                 boolean overwrite = req.isDelete() && !req.isNew();
+                boolean persistOnSuccessfulClose = (req.getOptions()
+                        & XrootdProtocol.kXR_posc) == XrootdProtocol.kXR_posc;
+                // TODO: replace with req.isPersistOnSuccessfulClose() with the latest xrootd4j
 
-                transfer =
-                    _door.write(remoteAddress, createFullPath(req.getPath()), ioQueue,
-                                uuid, createDir, overwrite, size, localAddress,
-                                req.getSubject(), _authz);
+                transfer = _door.write(remoteAddress, createFullPath(req.getPath()),
+                        ioQueue, uuid, createDir, overwrite, size, localAddress,
+                        req.getSubject(), _authz, persistOnSuccessfulClose,
+                        ((_isLoggedIn) ? _userRootPath : _rootPath));
             } else {
-                transfer =
-                    _door.read(remoteAddress, createFullPath(req.getPath()), ioQueue,
-                               uuid, localAddress, req.getSubject(), _authz);
+                transfer = _door.read(remoteAddress, createFullPath(req.getPath()), ioQueue,
+                                uuid, localAddress, req.getSubject(), _authz);
             }
 
             // ok, open was successful
@@ -540,6 +548,9 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
         if ((options & kXR_retstat) == kXR_retstat) {
             openFlags += " kXR_retstat";
         }
+        if ((options & kXR_posc) == kXR_posc) {
+            openFlags += " kXR_posc";
+        }
 
         _log.debug("open flags: {}", openFlags);
 
@@ -734,12 +745,21 @@ public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
     /**
      * Execute login strategy to make an user authorization decision.
      */
-    private void loggedIn(LoginEvent event)
-    {
+    private void loggedIn(LoginEvent event) {
         LoginReply reply = event.getLoginReply();
         _authz = Restrictions.none();
         if (reply != null) {
             _authz = reply.getRestriction();
+            _isLoggedIn = true;
+            _userRootPath = reply.getLoginAttributes().stream()
+                    .filter(RootDirectory.class::isInstance)
+                    .findFirst()
+                    .map(RootDirectory.class::cast)
+                    .map(RootDirectory::getRoot)
+                    .map(FsPath::create)
+                    .orElse(FsPath.ROOT);
+        } else {
+            _isLoggedIn = false;
         }
     }
 
