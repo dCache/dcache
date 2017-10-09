@@ -568,9 +568,9 @@ public class PoolSelectionUnitV2
     public PoolPreferenceLevel[] match(DirectionType type,  String netUnitName, String protocolUnitName,
                     FileAttributes fileAttributes, String linkGroupName) {
 
-        String storeUnitName = fileAttributes.getStorageClass()+"@"+fileAttributes.getHsm();
-        String dCacheUnitName = fileAttributes.getCacheClass();
         StorageInfo storageInfo = fileAttributes.getStorageInfo();
+        String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
+        String dCacheUnitName = storageInfo.getCacheClass();
 
         Map<String, String> variableMap = storageInfo.getMap();
 
