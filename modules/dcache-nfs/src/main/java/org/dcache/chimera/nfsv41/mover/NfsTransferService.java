@@ -222,7 +222,7 @@ public class NfsTransferService
              * message when the file is closed).
              */
             return cancellableMover;
-        } catch (DiskErrorCacheException | SocketException | RuntimeException e) {
+        } catch (DiskErrorCacheException | InterruptedException | SocketException | RuntimeException e) {
             completionHandler.failed(e, null);
         }
         return null;

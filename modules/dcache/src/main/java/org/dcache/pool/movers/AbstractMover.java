@@ -28,6 +28,7 @@ import javax.security.auth.Subject;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.CompletionHandler;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
@@ -48,10 +49,12 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
+import org.dcache.util.Exceptions;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.util.Exceptions.messageOrClassName;
 
 /**
  * Abstract base class for movers.
@@ -250,9 +253,10 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
      * TODO: Consider moving this method to RepositoryChannel.
      *
      * @return An open RepositoryChannel to the replica of this mover
+     * @throws InterruptedException if the mover was cancelled
      * @throws DiskErrorCacheException If the file could not be opened
      */
-    public RepositoryChannel openChannel() throws DiskErrorCacheException {
+    public RepositoryChannel openChannel() throws DiskErrorCacheException, InterruptedException {
         RepositoryChannel channel;
         try {
             channel = _handle.createChannel();
@@ -271,9 +275,12 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
                     throw t;
                 }
             }
+        } catch (AsynchronousCloseException e) {
+            throw new InterruptedException("mover interrupted while opening file: " + Exceptions.messageOrClassName(e));
         } catch (IOException e) {
             throw new DiskErrorCacheException(
-                    "File could not be opened; please check the file system: " + e.getMessage(), e);
+                    "File could not be opened; please check the file system: "
+                    + messageOrClassName(e), e);
         }
         return channel;
     }

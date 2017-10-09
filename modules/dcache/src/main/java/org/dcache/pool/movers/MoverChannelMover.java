@@ -79,10 +79,11 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
      * about the progress of the transfer.
      *
      * @return an open MoverChannel
+     * @throws InterruptedException if the mover was cancelled
      * @throws DiskErrorCacheException if the file could not be opened
      * @throws IllegalStateException if called more than once
      */
-    public synchronized MoverChannel<P> open() throws DiskErrorCacheException
+    public synchronized MoverChannel<P> open() throws DiskErrorCacheException, InterruptedException
     {
         checkState(_wrappedChannel == null);
         _wrappedChannel = new MoverChannel<>(this, openChannel(), _allocatorMode);
