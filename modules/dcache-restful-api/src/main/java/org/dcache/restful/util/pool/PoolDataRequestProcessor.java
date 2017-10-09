@@ -112,7 +112,8 @@ public final class PoolDataRequestProcessor
                                       long sent) {
         PoolData poolData = message.getData();
 
-        CellData cellData = poolData.getCellData();
+        CellData cellData = poolData == null ? null : poolData.getCellData();
+
         if (cellData != null) {
             cellData.setRoundTripTime(System.currentTimeMillis() - sent);
         }
