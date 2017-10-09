@@ -59,19 +59,15 @@ documents or software obtained from this server.
  */
 package org.dcache.restful.util.pool;
 
-import org.apache.commons.math3.util.FastMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import diskCacheV111.poolManager.PoolSelectionUnit;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
-import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPoolGroup;
 import diskCacheV111.pools.json.PoolCostData;
 import diskCacheV111.pools.json.PoolSpaceData;
 import diskCacheV111.util.CacheException;
@@ -81,11 +77,11 @@ import org.dcache.pool.classic.json.SweeperData;
 import org.dcache.pool.json.PoolData;
 import org.dcache.pool.json.PoolDataDetails;
 import org.dcache.pool.json.PoolInfoWrapper;
-import org.dcache.restful.services.pool.PoolInfoService;
+import org.dcache.restful.services.pool.PoolInfoServiceImpl;
 import org.dcache.services.history.pools.PoolTimeseriesService;
+import org.dcache.util.collector.pools.PoolInfoAggregator;
 import org.dcache.util.collector.pools.PoolInfoCollectorUtils;
 import org.dcache.util.histograms.CountingHistogram;
-import org.dcache.util.histograms.HistogramMetadata;
 import org.dcache.util.histograms.TimeseriesHistogram;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage;
 import org.dcache.vehicles.histograms.PoolTimeseriesRequestMessage.TimeseriesType;
@@ -96,207 +92,19 @@ import static dmg.cells.nucleus.CellEndpoint.SendFlag.RETRY_ON_NO_ROUTE_TO_CELL;
  * <p>Called during the collection gathering in order to obtain
  * historical (i.e., stateful) pool data such as queue/mover timeseries
  * counts or the running statistics on file lifetime.</p>
- * <p>
+ *
  * <p>Delegates to a service interface to obtain the individual pool
  * data objects.</p>
- * <p>
- * <p>Also responsible for aggregation of historical data according to
+ *
+ * <p>Also responsible for aggregation of cost info data according to
  * pool groups.</p>
  */
-public final class PoolHistoriesHandler implements PoolTimeseriesService {
-    /**
-     * <p>Merges the data for the pools into the aggregate space info and
-     * time series histograms for the pool group.</p>
-     *
-     * @param data current map of historical timeseries data from pools.
-     * @param psu  for determining pools of pool groups.
-     * @throws CacheException
-     */
-    public static void aggregateDataForPoolGroups(
-                    Map<String, PoolInfoWrapper> data,
-                    PoolSelectionUnit psu)
-                    throws CacheException {
-        psu.getPoolGroups()
-           .values().stream()
-           .map(SelectionPoolGroup::getName)
-           .forEach((group) -> {
-               PoolInfoWrapper groupInfo = new PoolInfoWrapper();
-               List<PoolInfoWrapper> poolInfo
-                               = fetch(psu.getPoolsByPoolGroup(group), data);
-               update(groupInfo, poolInfo);
-               data.put(group, groupInfo);
-           });
-
-        /*
-         *  Aggregate for all pools.
-         */
-        PoolInfoWrapper groupInfo = new PoolInfoWrapper();
-        List<PoolInfoWrapper> poolInfo
-                        = fetch(psu.getAllDefinedPools(false), data);
-        update(groupInfo, poolInfo);
-        data.put(PoolInfoService.ALL, groupInfo);
-    }
-
-    /**
-     * <p>Creates empty placeholders in order to aggregate pool space
-     * data (used for pool group info).</p>
-     *
-     * @param info the pool group data
-     * @return the existing or new cost data object
-     */
-    private static PoolCostData createCostDataIfEmpty(PoolInfoWrapper info) {
-        PoolData poolData = info.getInfo();
-        if (poolData == null) {
-            poolData = new PoolData();
-            info.setInfo(poolData);
-        }
-
-        PoolDataDetails detailsData = poolData.getDetailsData();
-        if (detailsData == null) {
-            detailsData = new PoolDataDetails();
-            poolData.setDetailsData(detailsData);
-        }
-
-        PoolCostData groupCostData = detailsData.getCostData();
-        if (groupCostData == null) {
-            groupCostData = new PoolCostData();
-            detailsData.setCostData(groupCostData);
-        }
-
-        return groupCostData;
-    }
-
-    /**
-     * @param pools of the group
-     * @return list of current pool info objects
-     */
-    private static List<PoolInfoWrapper> fetch(
-                    Collection<SelectionPool> pools,
-                    Map<String, PoolInfoWrapper> data) {
-        return pools.stream()
-                    .map(SelectionPool::getName)
-                    .map(data::get)
-                    .filter((e) -> e != null)
-                    .collect(Collectors.toList());
-    }
-
-    /**
-     * <p>Combines the pool last access data into an aggregate for the group.</p>
-     *
-     * @param allHistograms of the pools of the group
-     * @return aggregated histogram model
-     */
-    private static CountingHistogram mergeLastAccess(
-                    List<CountingHistogram> allHistograms) {
-        CountingHistogram groupHistogram = new CountingHistogram();
-        HistogramMetadata metadata = new HistogramMetadata();
-
-        if (allHistograms.isEmpty()) {
-            groupHistogram.setMetadata(metadata);
-            return groupHistogram;
-        }
-
-        /*
-         *  Find the histogram with the highest last bin (and consequently
-         *  the widest bins).
-         *
-         *  Merge the statistics.
-         */
-        double maxBinValue = Double.MIN_VALUE;
-        CountingHistogram standard = null;
-        for (CountingHistogram h : allHistograms) {
-            double currentMaxBin = h.getHighestBin();
-            if (currentMaxBin > maxBinValue) {
-                standard = h;
-                maxBinValue = currentMaxBin;
-            }
-            metadata.mergeStatistics(h.getMetadata());
-        }
-
-        int binCount = standard.getBinCount();
-        double binSize = standard.getBinSize();
-
-        groupHistogram.setBinCount(binCount);
-        groupHistogram.setBinSize(binSize);
-        groupHistogram.setBinUnit(standard.getBinUnit());
-        groupHistogram.setBinUnitLabel(standard.getBinUnitLabel());
-        groupHistogram.setBinWidth(standard.getBinWidth());
-        groupHistogram.setDataUnitLabel(standard.getDataUnitLabel());
-        groupHistogram.setHighestBin(standard.getHighestBin());
-        groupHistogram.setLowestBin(standard.getLowestBin());
-        groupHistogram.setIdentifier(standard.getIdentifier());
-        groupHistogram.setMetadata(metadata);
-
-        /*
-         *  Configuration of counting histogram assumes raw unordered
-         *  data.  To merge counting histograms, we just need to sum the
-         *  already configured data to the correct bin.
-         */
-        double[] dataArray = new double[binCount];
-        for (CountingHistogram h : allHistograms) {
-            List<Double> currentData = h.getData();
-            double currentBinSize = h.getBinSize();
-            int numBins = currentData.size();
-            for (int bin = 0; bin < numBins; ++bin) {
-                int groupBin = (int) FastMath.floor(
-                                (bin * currentBinSize) / binSize);
-                dataArray[groupBin] += currentData.get(bin);
-            }
-        }
-
-        List<Double> groupData = new ArrayList<>();
-        for (double d : dataArray) {
-            groupData.add(d);
-        }
-
-        groupHistogram.setData(groupData);
-
-        return groupHistogram;
-    }
-
-    /**
-     * @param group stored data for the group
-     * @param pools stored data for the pools of the group
-     */
-    private static void update(PoolInfoWrapper group,
-                               List<PoolInfoWrapper> pools) {
-        long timestamp = System.currentTimeMillis();
-
-        PoolCostData groupCost = createCostDataIfEmpty(group);
-        PoolSpaceData groupSpace = new PoolSpaceData();
-        groupCost.setSpace(groupSpace);
-        pools.stream()
-             .map(PoolInfoWrapper::getInfo)
-             .map(PoolData::getDetailsData)
-             .map(PoolDataDetails::getCostData)
-             .map(PoolCostData::getSpace)
-             .filter((s) -> s != null)
-             .forEach(groupSpace::aggregateData);
-
-        List<CountingHistogram> allHistograms =
-                        pools.stream()
-                             .map(PoolInfoWrapper::getInfo)
-                             .map(PoolData::getSweeperData)
-                             .map(SweeperData::getLastAccessHistogram)
-                             .collect(Collectors.toList());
-
-        CountingHistogram model = mergeLastAccess(allHistograms);
-
-        PoolData poolData = new PoolData();
-        PoolDataDetails details = new PoolDataDetails();
-        poolData.setDetailsData(details);
-        details.setCostData(groupCost);
-        SweeperData sweeperData = new SweeperData();
-        sweeperData.setLastAccessHistogram(model);
-        poolData.setSweeperData(sweeperData);
-        group.setInfo(poolData);
-
-        PoolInfoCollectorUtils.updateFstatTimeSeries(model.getMetadata(), group,
-                                                     timestamp);
-        PoolInfoCollectorUtils.updateQstatTimeSeries(pools, group, timestamp);
-    }
-
-    private CellStub historyService;
+public final class PoolHistoriesHandler extends PoolInfoAggregator
+                implements PoolTimeseriesService {
+    private static final Logger LOGGER
+                    = LoggerFactory.getLogger(PoolHistoriesHandler.class);
+    private CellStub            historyService;
+    private PoolInfoServiceImpl poolInfoService;
 
     /**
      * <p>Responsible for adding the timeseries histograms to the
@@ -352,5 +160,59 @@ public final class PoolHistoriesHandler implements PoolTimeseriesService {
     @Required
     public void setHistoryService(CellStub historyService) {
         this.historyService = historyService;
+    }
+
+    @Required
+    public void setPoolInfoService(PoolInfoServiceImpl poolInfoService) {
+        this.poolInfoService = poolInfoService;
+    }
+
+    @Override
+    protected PoolInfoWrapper getAggregateWrapper(String key) {
+        PoolInfoWrapper groupInfo = poolInfoService.getCache().read(key);
+        if (groupInfo == null) {
+            groupInfo = new PoolInfoWrapper();
+            groupInfo.setKey(key);
+        }
+        return groupInfo;
+    }
+
+    /**
+     * @param group stored data for the group
+     * @param pools stored data for the pools of the group
+     */
+    @Override
+    protected void update(PoolInfoWrapper group, List<PoolInfoWrapper> pools) {
+        PoolCostData groupCost = PoolInfoCollectorUtils.createCostDataIfEmpty(group);
+        PoolSpaceData groupSpace = new PoolSpaceData();
+        groupCost.setSpace(groupSpace);
+        pools.stream()
+             .map(PoolInfoWrapper::getInfo)
+             .map(PoolData::getDetailsData)
+             .map(PoolDataDetails::getCostData)
+             .map(PoolCostData::getSpace)
+             .filter(Objects::nonNull)
+             .forEach(groupSpace::aggregateData);
+
+        CountingHistogram model = PoolInfoCollectorUtils.mergeLastAccess(pools);
+
+        PoolData poolData = new PoolData();
+        PoolDataDetails details = new PoolDataDetails();
+        poolData.setDetailsData(details);
+        details.setCostData(groupCost);
+        SweeperData sweeperData = new SweeperData();
+        sweeperData.setLastAccessHistogram(model);
+        poolData.setSweeperData(sweeperData);
+        group.setInfo(poolData);
+
+        try {
+            addHistoricalData(group);
+        } catch (NoRouteToCellException | InterruptedException e) {
+            LOGGER.debug("Could not add historical data for {}: {}/ {}.",
+                         group, e.getMessage(), e.getCause());
+        } catch (CacheException e) {
+            LOGGER.error("Could not add historical data for {}: {}/ {}.",
+                         group, e.getMessage(), e.getCause());
+        }
     }
 }

@@ -62,10 +62,13 @@ package org.dcache.services.history.pools;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.Reply;
@@ -106,15 +109,11 @@ public final class PoolTimeseriesServiceImpl extends
         }
     }
 
-    public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String pool,
+    public Map<TimeseriesType, TimeseriesHistogram> getTimeseries(String key,
                                                                   Set<TimeseriesType> types) {
         Map<TimeseriesType, TimeseriesHistogram> histograms = new HashMap<>();
 
-        PoolInfoWrapper info = null;
-
-        synchronized (cache) {
-            info = cache.get(pool);
-        }
+        PoolInfoWrapper info = getWrapper(key);
 
         if (info != null) {
             histograms.put(TimeseriesType.ACTIVE_FLUSH, info.getActiveFlush());
@@ -130,7 +129,7 @@ public final class PoolTimeseriesServiceImpl extends
             histograms.put(TimeseriesType.QUEUED_P2P, info.getQueuedP2P());
             histograms.put(TimeseriesType.QUEUED_P2P_CLIENT,
                            info.getQueuedP2PClient());
-            histograms.put(TimeseriesType.QUEUED_STAGE, info.getActiveStage());
+            histograms.put(TimeseriesType.QUEUED_STAGE, info.getQueuedStage());
             histograms.put(TimeseriesType.FILE_LIFETIME_MAX,
                            info.getFileLiftimeMax());
             histograms.put(TimeseriesType.FILE_LIFETIME_AVG,
@@ -142,6 +141,16 @@ public final class PoolTimeseriesServiceImpl extends
         }
 
         return histograms;
+    }
+
+    public PoolInfoWrapper getWrapper(String key) {
+        synchronized (cache) {
+            return cache.get(key);
+        }
+    }
+
+    public PoolSelectionUnit getSelectionUnit() {
+        return monitor.getPoolSelectionUnit();
     }
 
     @Override
@@ -157,6 +166,15 @@ public final class PoolTimeseriesServiceImpl extends
     @Override
     public String[] listPools() {
         return PoolInfoCollectorUtils.listPools(monitor.getPoolSelectionUnit());
+    }
+
+    public Set<String> validKeys() {
+        Set<String> keys = new HashSet<>();
+        PoolSelectionUnit psu = monitor.getPoolSelectionUnit();
+        keys.addAll(psu.getPools().keySet());
+        keys.addAll(psu.getPoolGroups().keySet());
+        keys.add(ALL);
+        return keys;
     }
 
     public Reply messageArrived(PoolTimeseriesRequestMessage message) {
@@ -196,8 +214,30 @@ public final class PoolTimeseriesServiceImpl extends
      */
     public void updateJsonData(Map<String, PoolInfoWrapper> next) {
         synchronized (cache) {
-            cache.clear();
+            /*
+             *  If a pool goes offline, then the message requesting data
+             *  will result in a null entry in the map.   We do not want to
+             *  overwrite data in the current cache with this null because
+             *  this will cause the history to be lost when the map is written
+             *  to disk.
+             *
+             *  At the same time, we do not want to have to reread the saved
+             *  data from disk at each collection.
+             *
+             *  However, if we simply overwrite without clearing the cache,
+             *  we could find that pools which have been eliminated still
+             *  continue to be reported.
+             *
+             *  We thus need to prune the cache against the listed
+             *  pools and groups.
+             */
             cache.putAll(next);
+            Set<String> valid = validKeys();
+            for (Iterator i = cache.keySet().iterator(); i.hasNext();) {
+                if (!valid.contains(i.next())) {
+                    i.remove();
+                }
+            }
         }
     }
 
