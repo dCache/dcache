@@ -310,19 +310,19 @@ public class AccessLogAwareOperationFactory extends MDSOperationFactory {
             FsInode cParentInode = _vfs.inodeFromBytes(parent.getFileId());
 
             String name = new String(_args.opremove.target.value, UTF_8);
-            FsInode cInode = _jdbcFs.inodeOf(cParentInode, name, FileSystemProvider.StatCacheOption.NO_STAT);
 
             NetLoggerBuilder nl = new NetLoggerBuilder(NetLoggerBuilder.Level.INFO, "org.dcache.nfs.remove")
                     .omitNullValues()
                     .onLogger(ACCESS_LOGGER)
                     .add("user.mapped", context.getSubject())
                     .add("socket.remote", context.getRemoteSocketAddress())
-                    .add("obj.path", _inode2path.apply(cParentInode) + "/" + name)
-                    .add("obj.id", cInode.getId());
+                    .add("obj.path", _inode2path.apply(cParentInode) + "/" + name);
 
             int status = nfsstat.NFS_OK;
             try {
+                FsInode cInode = _jdbcFs.inodeOf(cParentInode, name, FileSystemProvider.StatCacheOption.NO_STAT);
                 super.process(context, result);
+                nl.add("obj.id", cInode.getId());
             } catch (ChimeraNFSException e) {
                 status = e.getStatus();
                 throw e;
