@@ -16,18 +16,19 @@ import org.dcache.restful.services.transfers.TransferInfoService;
 import org.dcache.util.list.ListDirectoryHandler;
 
 public class ServletContextHandlerAttributes {
-    public final static String AL = "org.dcache.restful.AL";
-    public final static String BL = "org.dcache.restful.BL";
-    public final static String DL = "org.dcache.restful";
-    public final static String CI = "org.dcache.restful.CI";
-    public final static String CS = "org.dcache.restful.CS";
+    public final static String AL           = "org.dcache.restful.AL";
+    public final static String BL           = "org.dcache.restful.BL";
+    public final static String DL           = "org.dcache.restful";
+    public final static String CI           = "org.dcache.restful.CI";
+    public final static String PNFS_MANAGER = "org.dcache.restful.PNFS_MANAGER";
     public final static String POOL_MANAGER = "org.dcache.restful.PoolManager";
-    public final static String PI =  "org.dcache.restful.PI";
-    public final static String PM = "org.dcache.restful.PM";
-    public final static String RS = "org.dcache.restful.RS";
-    public final static String TF = "org.dcache.restful.TF";
-    public final static String PinMngStub = "org.dcache.restful.PinMngStub";
-    public final static String PathMapper = "org.dcache.restful.PathMapper";
+    public final static String PI           =  "org.dcache.restful.PI";
+    public final static String PM           = "org.dcache.restful.PM";
+    public final static String RS           = "org.dcache.restful.RS";
+    public final static String TF           = "org.dcache.restful.TF";
+    public final static String PIN_MANAGER  = "org.dcache.restful.PIN_MANAGER";
+    public final static String POOL_STUB = "org.dcache.restful.POOL_STUB";
+    public final static String PathMapper   = "org.dcache.restful.PathMapper";
 
     public static Subject getSubject()
     {
@@ -39,9 +40,9 @@ public class ServletContextHandlerAttributes {
         return (ListDirectoryHandler) (ctx.getAttribute(DL));
     }
 
-    public static CellStub getCellStub(ServletContext ctx)
+    public static CellStub getPoolStub(ServletContext ctx)
     {
-        return (CellStub) (ctx.getAttribute(CS));
+        return (CellStub) ctx.getAttribute(POOL_STUB);
     }
 
     public static RemotePoolMonitor getRemotePoolMonitor(ServletContext ctx)
@@ -51,8 +52,12 @@ public class ServletContextHandlerAttributes {
 
     public static CellStub getPinManager(ServletContext ctx)
     {
-        CellStub cellStub = (CellStub) (ctx.getAttribute(PinMngStub));
-        return cellStub;
+        return (CellStub) (ctx.getAttribute(PIN_MANAGER));
+    }
+
+    public static CellStub getPnfsManager(ServletContext ctx)
+    {
+        return (CellStub) (ctx.getAttribute(PNFS_MANAGER));
     }
 
     public static PathMapper getPathMapper(ServletContext ctx)
@@ -67,8 +72,7 @@ public class ServletContextHandlerAttributes {
 
     public static CellStub getPoolManger(ServletContext ctx)
     {
-        CellStub cellStub = (CellStub) ctx.getAttribute(POOL_MANAGER);
-        return cellStub;
+        return (CellStub) ctx.getAttribute(POOL_MANAGER);
     }
 
     public static BillingInfoService getBillingInfoService(ServletContext ctx)
