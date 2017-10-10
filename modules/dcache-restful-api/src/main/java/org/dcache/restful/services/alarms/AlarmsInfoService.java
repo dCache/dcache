@@ -74,14 +74,17 @@ public interface AlarmsInfoService {
      *
      * <p>This method should fetch the list synchronously
      * and throw an exception if it fails.</p>
-     *
+     * @param offset into result list
+     * @param limit max entries to return
      * @param after  no alarms before this datestamp
      * @param before no alarms after this datestamp
      * @param type   only alarms of this type
      * @return list of {@link LogEntry} beans.
      * @throws CacheException if the fetch operation fails.
      */
-    List<LogEntry> get(Long after,
+    List<LogEntry> get(Long offset,
+                       Long limit,
+                       Long after,
                        Long before,
                        String type) throws CacheException, InterruptedException;
 

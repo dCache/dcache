@@ -92,10 +92,14 @@ public class AlarmsRequestHandler implements CellMessageReceiver {
                 Long after = message.getAfter();
                 Long before = message.getBefore();
                 String type = message.getType();
-                AlarmDAOFilter filter
-                                = AlarmJDOUtils.getFilter(after, before, type);
+                Long offset = message.getOffset();
+                Long limit = message.getLimit();
+                AlarmDAOFilter filter = AlarmJDOUtils.getFilter(after, before, type);
                 message.setAlarms(access.get(filter)
                                         .stream()
+                                        .sorted()
+                                        .skip(offset == null ? 0 : offset)
+                                        .limit(limit == null ? Long.MAX_VALUE : limit)
                                         .map(this::setSeverity)
                                         .collect(Collectors.toList()));
                 reply.reply(message);

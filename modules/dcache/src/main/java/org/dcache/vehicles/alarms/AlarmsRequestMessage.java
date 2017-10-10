@@ -68,9 +68,11 @@ import org.dcache.alarms.LogEntry;
  * <p>Request for list of alarms filtered by date range and/or type.</p>
  */
 public class AlarmsRequestMessage extends Message {
-    private Long before;
-    private Long after;
-    private String type;
+    private Long           limit;
+    private Long           offset;
+    private Long           before;
+    private Long           after;
+    private String         type;
     private List<LogEntry> alarms;
 
     public Long getAfter() {
@@ -83,6 +85,14 @@ public class AlarmsRequestMessage extends Message {
 
     public Long getBefore() {
         return before;
+    }
+
+    public Long getLimit() {
+        return limit;
+    }
+
+    public Long getOffset() {
+        return offset;
     }
 
     public String getType() {
@@ -99,6 +109,14 @@ public class AlarmsRequestMessage extends Message {
 
     public void setBefore(Long before) {
         this.before = before;
+    }
+
+    public void setLimit(Long limit) {
+        this.limit = limit;
+    }
+
+    public void setOffset(Long offset) {
+        this.offset = offset;
     }
 
     public void setType(String type) {
