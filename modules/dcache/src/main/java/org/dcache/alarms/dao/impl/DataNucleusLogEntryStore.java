@@ -215,6 +215,7 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
                      */
                     logger.trace("makePersistent alarm, key={}",
                                  entry.getKey());
+                    entry.setReceived(1);
                     insertManager.makePersistent(entry);
                     logger.trace("committing");
                 }

@@ -97,7 +97,7 @@ public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
     private String notes;
     private Boolean closed   = false;
     private Boolean alarm    = false;
-    private Integer received = 1;
+    private Integer received;
 
     /*
      *  Reset by request processor according to current mapping.
