@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.BindException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -222,7 +223,7 @@ public class NfsTransferService
              * message when the file is closed).
              */
             return cancellableMover;
-        } catch (DiskErrorCacheException | SocketException | RuntimeException e) {
+        } catch (DiskErrorCacheException | InterruptedIOException | SocketException | RuntimeException e) {
             completionHandler.failed(e, null);
         }
         return null;
